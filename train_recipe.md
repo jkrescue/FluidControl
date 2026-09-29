@@ -533,5 +533,6 @@ CUDA_VISIBLE_DEVICES=0 .venv/bin/python scripts/evaluate_tandem_fno.py \
 | 严格基线与多步评估 | `artifacts/tandem_fno/evaluation_dense.json`、`artifacts/tandem_fno_rollout/evaluation_dense.json` |
 | 模型误差对照 | `artifacts/tandem_fno_rollout/baseline_comparison.json` |
 | 多步流场可视化 | `artifacts/tandem_fno_rollout/rollout_visualizations/` |
+| 多步结果校验和 | `artifacts/tandem_fno_rollout/EVIDENCE_SHA256SUMS` |
 
 所有命令都从原始数值文件生成可复查产物。不要只保留终端截图；保留日志、JSON、固定提交号、原始算例配置和 checkpoint。

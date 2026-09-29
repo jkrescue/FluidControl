@@ -379,6 +379,7 @@ DataPipe 审计得到 12,000/2,400/2,400 个 train/validation/test 窗口。输�
 | `artifacts/tandem_fno_rollout/evaluation_dense.json` | 多步模型严格 test rollout 结果 |
 | `artifacts/tandem_fno_rollout/baseline_comparison.json` | 单步基线与多步模型对照 |
 | `artifacts/tandem_fno_rollout/rollout_visualizations/` | 36 张多步模型流场对比图 |
+| `artifacts/tandem_fno_rollout/EVIDENCE_SHA256SUMS` | 最佳模型、配置、指标和 36 张图片的 SHA-256 清单 |
 | `artifacts/tandem_fno/stage1_release/` | 第一阶段冻结清单与 SHA-256 校验 |
 
 ## 12. 源代码索引
