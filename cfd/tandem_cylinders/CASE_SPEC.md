@@ -321,7 +321,30 @@ DataPipe 审计得到 12,000/2,400/2,400 个 train/validation/test 窗口。输�
 
 现有数据不覆盖跨雷诺数、跨圆心距、跨几何、三维湍流、电机真实功耗、结构疲劳寿命及工程安全认证。跨来流速度研究需要增加多雷诺数 CFD 轨迹，并将 `U∞/Re` 作为模型条件。闭环控制结论需要通过独立 OpenFOAM 回放或实验验证，并同时报告控制收益、动作约束、控制代价和鲁棒性。
 
-## 11. 文件索引
+## 11. 产物与证据索引
+
+| 产物或日志 | 内容 |
+| --- | --- |
+| `artifacts/tandem_cylinders/dynamic_dataset_manifest.json` | 16 条动态轨迹的质量检查清单 |
+| `artifacts/tandem_cylinders/rotation_grid_comparison.json` | 旋转代表工况的粗、中网格比较 |
+| `artifacts/tandem_cylinders/vtk_export.log` | 全量 VTK 导出日志 |
+| `artifacts/tandem_cylinders/vtk_counts.txt` | 21 条轨迹的 VTK 帧数检查 |
+| `artifacts/tandem_cylinders/curator_official_vtk_api_check.log` | 官方 VTKSource 与 Mesh API 检查，标记 `OFFICIAL_VTK_MESH_API_OK` |
+| `artifacts/tandem_cylinders/curator_smoke_hdf5_check.log` | 单轨迹 HDF5 结构与数值检查，标记 `SMOKE_HDF5_OK` |
+| `data/curated/tandem_cylinders/manifest.json` | Curator 数据集文件及划分清单 |
+| `data/curated/tandem_cylinders/normalization.json` | 仅基于训练集计算的归一化统计 |
+| `artifacts/tandem_cylinders/curated_validation.json` | 全量 HDF5 独立审计，标记 `CURATED_DATASET_OK` |
+| `artifacts/tandem_cylinders/datapipe_validation.log` | DataPipe 形状、样本数和有限值检查，标记 `PHYSICSNEMO_DATAPIPE_OK` |
+| `artifacts/tandem_cylinders/gpu_diagnostic.log` | GPU、CUDA、NCCL 和 P2P 状态记录 |
+| `artifacts/tandem_cylinders/nccl_shm_check.log` | 双 GPU SHM all-reduce 检查，标记 `NCCL_ALL_REDUCE_OK` |
+| `artifacts/tandem_fno/environment.log` | 正式训练环境记录 |
+| `artifacts/tandem_fno/best/` | Epoch 50 最佳模型与训练状态 |
+| `artifacts/tandem_fno/training_history.json` | 逐 Epoch 训练与验证指标 |
+| `artifacts/tandem_fno/evaluation.json` | 独立测试轨迹 rollout 结果 |
+| `artifacts/tandem_fno/rollout_visualizations/` | 27 张流场对比图 |
+| `artifacts/tandem_fno/stage1_release/` | 第一阶段冻结清单与 SHA-256 校验 |
+
+## 12. 源代码索引
 
 | 文件或目录 | 内容 |
 | --- | --- |
