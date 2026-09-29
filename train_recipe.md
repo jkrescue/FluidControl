@@ -3,7 +3,7 @@
 更新时间：2026-09-29
 远程项目：`~/workspace/fluid_control`
 
-本文给出从 OpenFOAM 原始结果、PhysicsNeMo Curator、PhysicsNeMo Datapipe 到 FNO 训练和测试的完整可执行流程。训练阶段由项目负责人手动执行。每一步先检查预期产物，再进入下一步；脚本默认拒绝覆盖已有结果。
+本文给出从 OpenFOAM 原始结果、PhysicsNeMo Curator、PhysicsNeMo Datapipe 到 FNO 训练和测试的完整可执行流程。每一步先检查预期产物，再进入下一步；脚本默认拒绝覆盖已有结果。
 
 ## 0. 长期系统目标与当前阶段位置
 
@@ -23,7 +23,7 @@
 
 当前数据只覆盖 `U∞=1、Re=100、L/D=5`，且模型使用完整流场输入。跨来流闭环控制需要新增多 `U∞/Re` CFD 数据并把来流作为条件；真实在线应用还需要稀疏传感器状态估计。闭环策略必须回到独立 OpenFOAM 中回放验证。适用范围和扩展条件见 `cfd/tandem_cylinders/CASE_SPEC.md` 第 10 节。本阶段继续完成代理模型训练和独立 test rollout，不在当前步骤实现控制器。
 
-当前工作先完成代理模型的多步训练、独立测试和论文复现对照。闭环控制在这些结果冻结后开展；已有控制草案保存在 `closed_loop_control_spec.md`，不属于本轮验收范围。
+现有动作域内的多步训练、独立测试和论文物理基线对照已经完成。当前下一步是验证并扩展高转速 CFD 动作域；扩展代理通过独立测试后，再进入论文闭环控制复现。已有控制草案保存在 `closed_loop_control_spec.md`。
 
 ## 1. 固定的软件和数据边界
 
@@ -569,6 +569,8 @@ PYTHONPATH=src CUDA_VISIBLE_DEVICES=0 \
 每个 `.vtr` 同时包含 `ground_truth_U/p`、`prediction_U/p`、`absolute_error_U/p` 和 `valid_mask`。物理时间、转速及真实/预测后柱 `Cd/Cl` 保存在 Field Data；每个轨迹目录的 `.pvd` 可直接在 ParaView 中播放。
 
 2026-09-29 的实际导出包含 35 个 CFD `.vtu` 和 33 个预测 `.vtr`。全部 68 个数据文件已由 PyVista 回读，字段、点数和有限值检查通过，状态为 `PARAVIEW_VTK_EXPORT_OK`。Mac 副本位于 `results/tandem_paraview_20260929/`，压缩包为 `results/tandem_paraview_20260929.tar.gz`，SHA-256 为 `95fd50e5c1b9451fb19c7a01e056274c6392448c5efffa71effd2d56cecedc3a`。
+
+连续时间序列另存于 Mac 的 `results/paraview_continuous_20260929/`。训练入口 `dynamic_train_00.vtm.series` 直接引用 OpenFOAM 生成的 801 个 `.vtm/.vtu`，时间范围为 `80..160`、间隔为 `0.1`。PhysicsNeMo Epoch 20 模型对三条独立测试轨迹分别连续 rollout 100 步，并转换为三个 `.pvd + 100 VTU` 时间序列。四个入口均已使用 ParaView 6.1.0 实际打开，时间轴和字段检查通过。
 
 ## 12. 产物与审计位置
 
