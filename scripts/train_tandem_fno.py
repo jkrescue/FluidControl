@@ -224,6 +224,7 @@ def main(cfg: DictConfig) -> None:
             "best_validation_state_mae": best,
             "validation": metrics,
             "data_root": str(Path(cfg.data.root).resolve()),
+            "action_scale": train.action_scale,
             "model_config": OmegaConf.to_container(cfg.model, resolve=True),
         }
         if dist.rank == 0:
@@ -249,6 +250,7 @@ def main(cfg: DictConfig) -> None:
                     "gpu_budget_gib": memory_budget_bytes / 1024**3,
                     "gpu_reserve_gib": memory_reserve_bytes / 1024**3,
                     "world_size": dist.world_size,
+                    "action_scale": train.action_scale,
                 }
             ),
             flush=True,

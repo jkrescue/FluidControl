@@ -105,6 +105,8 @@ def main() -> None:
     network.eval()
 
     stats = json.loads((args.data / "normalization.json").read_text(encoding="utf-8"))
+    data_manifest = json.loads((args.data / "manifest.json").read_text(encoding="utf-8"))
+    action_scale = float(data_manifest.get("max_abs_omega", 1.0))
     state_mean = torch.tensor(stats["state_mean"], device=dist.device)[:, None, None]
     state_std = torch.tensor(stats["state_std"], device=dist.device)[:, None, None]
     force_mean = torch.tensor(stats["force_mean"], device=dist.device)
@@ -117,6 +119,7 @@ def main() -> None:
         "checkpoint_metadata": metadata,
         "segment_stride": args.segment_stride,
         "evaluation_batch_size": args.evaluation_batch_size,
+        "action_scale": action_scale,
         "cases": [],
     }
     for path in sorted((args.data / args.split).glob("*.h5")):
@@ -129,6 +132,7 @@ def main() -> None:
             y = np.asarray(handle["y"][:])
         normalized = (state - state_mean) / state_std
         normalized *= mask
+        model_omega = omega / action_scale
         case_report = {"case": path.stem, "horizons": {}, "visualizations": []}
         for horizon in args.horizons:
             model_errors = []
@@ -158,8 +162,8 @@ def main() -> None:
                 predicted_force_normalized = None
                 for offset in range(horizon):
                     step_indices = start_indices + offset
-                    omega_now = omega[step_indices].reshape(-1, 1, 1, 1).expand(-1, 1, height, width)
-                    omega_next = omega[step_indices + 1].reshape(-1, 1, 1, 1).expand(-1, 1, height, width)
+                    omega_now = model_omega[step_indices].reshape(-1, 1, 1, 1).expand(-1, 1, height, width)
+                    omega_next = model_omega[step_indices + 1].reshape(-1, 1, 1, 1).expand(-1, 1, height, width)
                     inputs = torch.cat([predicted, active_mask, omega_now, omega_next], dim=1)
                     with torch.no_grad():
                         raw = network(inputs)

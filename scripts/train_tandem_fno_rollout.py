@@ -272,6 +272,7 @@ def main(cfg: DictConfig) -> None:
             "rollout_steps": rollout_steps,
             "teacher_forcing_ratio": current_teacher_forcing,
             "initialized_from": initialized_from,
+            "action_scale": train.action_scale,
             "model_config": OmegaConf.to_container(cfg.model, resolve=True),
         }
         if dist.rank == 0:

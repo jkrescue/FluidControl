@@ -33,6 +33,12 @@ CONSTANT_SPLITS = {
     "control_small_p050": "test",
 }
 
+PROFILE_COUNTS = {
+    "stage1": {"train": 15, "validation": 3, "test": 3},
+    "expanded_v1": {"train": 24, "validation": 4, "test": 4},
+}
+PROFILE_ACTION_LIMITS = {"stage1": 1.0, "expanded_v1": 5.0}
+
 
 def load_coefficients(path: Path) -> np.ndarray:
     rows = []
@@ -48,16 +54,18 @@ def load_coefficients(path: Path) -> np.ndarray:
     return result
 
 
-def case_records(cases_root: Path) -> list[dict[str, Any]]:
+def case_records(cases_root: Path, profile: str) -> list[dict[str, Any]]:
     records = []
-    for case in sorted(cases_root.glob("dynamic_*")):
+    pattern = "dynamic_*" if profile == "stage1" else "expanded_*"
+    for case in sorted(cases_root.glob(pattern)):
         config = json.loads((case / "case_config.json").read_text(encoding="utf-8"))
         records.append({"name": case.name, "split": config["split"], "config": config})
-    for name, split in CONSTANT_SPLITS.items():
-        case = cases_root / name
-        config = json.loads((case / "case_config.json").read_text(encoding="utf-8"))
-        records.append({"name": name, "split": split, "config": config})
-    expected = {"train": 15, "validation": 3, "test": 3}
+    if profile == "stage1":
+        for name, split in CONSTANT_SPLITS.items():
+            case = cases_root / name
+            config = json.loads((case / "case_config.json").read_text(encoding="utf-8"))
+            records.append({"name": name, "split": split, "config": config})
+    expected = PROFILE_COUNTS[profile]
     actual = {split: sum(record["split"] == split for record in records) for split in expected}
     if actual != expected:
         raise ValueError(f"unexpected trajectory split counts: {actual}, expected {expected}")
@@ -79,9 +87,10 @@ class TandemTrajectorySource(Source[dict[str, Any]]):
     def params(cls) -> list[Param]:
         return [Param(name="cases_root", description="OpenFOAM cases directory", type=str)]
 
-    def __init__(self, cases_root: Path, nx: int, ny: int) -> None:
+    def __init__(self, cases_root: Path, nx: int, ny: int, profile: str = "stage1") -> None:
         self.cases_root = cases_root
-        self.records = case_records(cases_root)
+        self.profile = profile
+        self.records = case_records(cases_root, profile)
         self.nx = nx
         self.ny = ny
         self.x = np.linspace(8.0, 25.0, nx, dtype=np.float32)
@@ -169,7 +178,7 @@ class TandemTrajectorySource(Source[dict[str, Any]]):
             valid = mask[0].astype(bool)
             frame[2, valid] -= frame[2, valid].mean(dtype=np.float64)
 
-        force_root = "80" if record["name"].startswith("dynamic_") else "0"
+        force_root = "80" if record["name"].startswith(("dynamic_", "expanded_")) else "0"
         aligned = []
         for object_name in ("forceFront", "forceRear"):
             raw = load_coefficients(case / "postProcessing" / object_name / force_root / "coefficient.dat")
@@ -198,6 +207,9 @@ class NumericalQualityFilter(Filter[dict[str, Any]]):
     def params(cls) -> list[Param]:
         return []
 
+    def __init__(self, max_abs_omega: float = 1.0) -> None:
+        self.max_abs_omega = float(max_abs_omega)
+
     def __call__(self, items: Generator[dict[str, Any], None, None]) -> Generator[dict[str, Any], None, None]:
         for item in items:
             if item["state"].shape[0] != 801 or item["state"].shape[1] != 3:
@@ -207,8 +219,10 @@ class NumericalQualityFilter(Filter[dict[str, Any]]):
             coverage = item["mask"].mean()
             if not 0.8 < coverage < 1.0:
                 raise ValueError(f"{item['case']}: unexpected valid-grid coverage {coverage}")
-            if np.max(np.abs(item["omega"])) > 1.000001:
-                raise ValueError(f"{item['case']}: action outside first-stage range")
+            if np.max(np.abs(item["omega"])) > self.max_abs_omega + 1.0e-6:
+                raise ValueError(
+                    f"{item['case']}: action outside profile range +/-{self.max_abs_omega}"
+                )
             yield item
 
 
@@ -289,16 +303,28 @@ def main() -> None:
     parser.add_argument("--nx", type=int, default=256)
     parser.add_argument("--ny", type=int, default=128)
     parser.add_argument("--limit", type=int)
+    parser.add_argument("--profile", choices=sorted(PROFILE_COUNTS), default="stage1")
+    parser.add_argument("--jobs", type=int, default=1,
+                        help="Curator workers; use process_pool when greater than one")
+    parser.add_argument("--backend", choices=("sequential", "process_pool"), default="sequential")
     args = parser.parse_args()
+    if args.jobs < 1:
+        parser.error("--jobs must be at least 1")
+    if args.backend == "sequential" and args.jobs != 1:
+        parser.error("the sequential backend requires --jobs 1")
     if args.output.exists() and any(args.output.iterdir()):
         raise FileExistsError(f"refusing to overwrite non-empty output directory: {args.output}")
 
-    source = TandemTrajectorySource(args.cases_root.resolve(), args.nx, args.ny)
-    pipeline = source.filter(NumericalQualityFilter()).write(TrajectoryHDF5Sink(args.output.resolve()))
+    source = TandemTrajectorySource(args.cases_root.resolve(), args.nx, args.ny, args.profile)
+    pipeline = source.filter(NumericalQualityFilter(PROFILE_ACTION_LIMITS[args.profile])).write(
+        TrajectoryHDF5Sink(args.output.resolve())
+    )
     indices = range(min(args.limit, len(source))) if args.limit else None
     results = run_pipeline(
-        pipeline, n_jobs=1, backend="sequential", indices=indices, use_tui=False
+        pipeline, n_jobs=args.jobs, backend=args.backend, indices=indices, use_tui=False
     )
+    if any(not paths for paths in results):
+        raise RuntimeError("Curator pipeline returned one or more empty sink results")
     if args.limit:
         print(f"Curator smoke run wrote {len(results)} trajectory file(s); normalization deferred")
         return
@@ -307,6 +333,7 @@ def main() -> None:
     (args.output / "normalization.json").write_text(json.dumps(stats, indent=2) + "\n", encoding="utf-8")
     manifest = {
         "schema_version": 1,
+        "profile": args.profile,
         "trajectory_counts": {split: len(list((args.output / split).glob("*.h5"))) for split in ("train", "validation", "test")},
         "frames_per_trajectory": 801,
         "pairs_per_trajectory": 800,
@@ -314,6 +341,7 @@ def main() -> None:
         "fields": ["u", "v", "gauge_pressure", "valid_mask", "rear_omega", "front_cd_cl", "rear_cd_cl"],
         "pressure_preprocessing": "subtract valid-domain spatial mean independently at every frame",
         "normalization": "normalization.json, train split only",
+        "max_abs_omega": PROFILE_ACTION_LIMITS[args.profile],
         "curator_pipeline": [
             "TandemTrajectorySource[VTKSource + Mesh.sample_data_at_points]",
             "NumericalQualityFilter",

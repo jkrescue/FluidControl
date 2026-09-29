@@ -94,6 +94,8 @@ def main() -> None:
     network.eval()
 
     stats = json.loads((args.data / "normalization.json").read_text(encoding="utf-8"))
+    data_manifest = json.loads((args.data / "manifest.json").read_text(encoding="utf-8"))
+    action_scale = float(data_manifest.get("max_abs_omega", 1.0))
     state_mean = torch.tensor(stats["state_mean"], device=dist.device)[:, None, None]
     state_std = torch.tensor(stats["state_std"], device=dist.device)[:, None, None]
     force_mean = torch.tensor(stats["force_mean"], device=dist.device)
@@ -120,6 +122,7 @@ def main() -> None:
         "start": args.start,
         "steps": args.steps,
         "written_rollout_steps": sorted(selected_steps),
+        "action_scale": action_scale,
         "cases": [],
     }
     for path in paths:
@@ -140,10 +143,11 @@ def main() -> None:
         records = []
         case_dir = args.output / path.stem
         height, width = active_mask.shape[-2:]
+        model_omega = omega / action_scale
         for rollout_step in range(1, args.steps + 1):
             index = args.start + rollout_step - 1
-            omega_now = omega[index].reshape(1, 1, 1, 1).expand(1, 1, height, width)
-            omega_next = omega[index + 1].reshape(1, 1, 1, 1).expand(1, 1, height, width)
+            omega_now = model_omega[index].reshape(1, 1, 1, 1).expand(1, 1, height, width)
+            omega_next = model_omega[index + 1].reshape(1, 1, 1, 1).expand(1, 1, height, width)
             inputs = torch.cat((predicted, active_mask, omega_now, omega_next), dim=1)
             with torch.no_grad():
                 raw = network(inputs)

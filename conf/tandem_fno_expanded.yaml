@@ -1,0 +1,24 @@
+defaults:
+  - tandem_fno
+  - _self_
+
+data:
+  root: data/curated/tandem_cylinders_expanded_v1
+
+output_dir: artifacts/tandem_fno_expanded_v1
+
+model:
+  latent_channels: 48
+  num_fno_layers: 5
+  num_fno_modes: [32, 32]
+  decoder_layers: 2
+  decoder_layer_size: 128
+
+training:
+  epochs: 80
+  batch_size: 128
+  workers: 4
+  gpu_memory_fraction: 0.85
+  learning_rate: 2.0e-4
+  seed: 20261001
+  smoke: false

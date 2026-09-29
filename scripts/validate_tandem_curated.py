@@ -11,7 +11,6 @@ import h5py
 import numpy as np
 
 
-EXPECTED_COUNTS = {"train": 15, "validation": 3, "test": 3}
 EXPECTED_SHAPES = {
     "state": (801, 3, 128, 256),
     "mask": (801, 1, 128, 256),
@@ -31,11 +30,17 @@ def main() -> None:
         type=Path,
         default=Path("artifacts/tandem_cylinders/curated_validation.json"),
     )
+    parser.add_argument("--max-abs-omega", type=float,
+                        help="override the action bound recorded in manifest.json")
     args = parser.parse_args()
 
     manifest = json.loads((args.data / "manifest.json").read_text(encoding="utf-8"))
     recorded_stats = json.loads((args.data / "normalization.json").read_text(encoding="utf-8"))
-    assert manifest["trajectory_counts"] == EXPECTED_COUNTS
+    expected_counts = manifest["trajectory_counts"]
+    assert set(expected_counts) == {"train", "validation", "test"}
+    max_abs_omega = float(
+        args.max_abs_omega if args.max_abs_omega is not None else manifest.get("max_abs_omega", 1.0)
+    )
     assert recorded_stats["computed_from"] == "train split only"
 
     state_sum = np.zeros(3, dtype=np.float64)
@@ -46,7 +51,7 @@ def main() -> None:
     force_count = 0
     cases = []
 
-    for split, expected_count in EXPECTED_COUNTS.items():
+    for split, expected_count in expected_counts.items():
         paths = sorted((args.data / split).glob("*.h5"))
         assert len(paths) == expected_count, (split, len(paths), expected_count)
         for path in paths:
@@ -67,7 +72,7 @@ def main() -> None:
                 assert np.isfinite(state).all()
                 assert np.isfinite(omega).all()
                 assert np.isfinite(force).all()
-                assert np.max(np.abs(omega)) <= 1.000001
+                assert np.max(np.abs(omega)) <= max_abs_omega + 1.0e-6
 
                 counts = mask.sum(axis=(1, 2))
                 pressure_sums = (state[:, 2] * mask).sum(axis=(1, 2), dtype=np.float64)
@@ -120,8 +125,9 @@ def main() -> None:
 
     report = {
         "status": "CURATED_DATASET_OK",
-        "trajectory_counts": EXPECTED_COUNTS,
+        "trajectory_counts": expected_counts,
         "trajectory_total": len(cases),
+        "max_abs_omega": max_abs_omega,
         "recomputed_normalization": recomputed,
         "cases": cases,
     }

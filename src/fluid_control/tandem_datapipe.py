@@ -25,6 +25,10 @@ class TandemWindowDataset(DatasetBase):
         if not self.paths:
             raise FileNotFoundError(f"no curated trajectories for split={split}: {self.root}")
         self.stats = json.loads((self.root / "normalization.json").read_text(encoding="utf-8"))
+        manifest = json.loads((self.root / "manifest.json").read_text(encoding="utf-8"))
+        self.action_scale = float(manifest.get("max_abs_omega", 1.0))
+        if self.action_scale <= 0.0:
+            raise ValueError(f"invalid max_abs_omega in {self.root / 'manifest.json'}")
         self.state_mean = torch.tensor(self.stats["state_mean"], dtype=torch.float32)[:, None, None]
         self.state_std = torch.tensor(self.stats["state_std"], dtype=torch.float32)[:, None, None]
         self.force_mean = torch.tensor(self.stats["force_mean"], dtype=torch.float32)
@@ -60,8 +64,8 @@ class TandemWindowDataset(DatasetBase):
         state *= mask
         next_state *= mask
         height, width = mask.shape[-2:]
-        omega_now = current["omega"].float().reshape(1, 1, 1).expand(1, height, width)
-        omega_next = following["omega"].float().reshape(1, 1, 1).expand(1, height, width)
+        omega_now = (current["omega"].float() / self.action_scale).reshape(1, 1, 1).expand(1, height, width)
+        omega_next = (following["omega"].float() / self.action_scale).reshape(1, 1, 1).expand(1, height, width)
         inputs = torch.cat([state, mask, omega_now, omega_next], dim=0)
         force = (following["force"].float()[2:4] - self.force_mean) / self.force_std
         sample = TensorDict({
@@ -115,7 +119,9 @@ class TandemRolloutDataset(TandemWindowDataset):
         states = torch.stack([frame["state"].float() for frame in frames])
         normalized = (states - self.state_mean[None]) / self.state_std[None]
         normalized *= mask[None]
-        omega = torch.stack([frame["omega"].float().reshape(1) for frame in frames])
+        omega = torch.stack(
+            [frame["omega"].float().reshape(1) / self.action_scale for frame in frames]
+        )
         forces = torch.stack([frame["force"].float()[2:4] for frame in frames[1:]])
         forces = (forces - self.force_mean[None]) / self.force_std[None]
 
