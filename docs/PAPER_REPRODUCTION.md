@@ -62,3 +62,15 @@ F. Zhao, Y. Zhou, F. Ren, H. Tang, and Z. Wang, “Mitigating the lift of a circ
 参考论文报告在 `L/D=5` 下经 800 个 PPO episode 将升力脉动降低 98%，跨间距直接泛化时降低 75%–80%，使用 POD 优化传感器后跨间距降低超过 88%。当前阶段未训练 PPO、未执行闭环 CFD 回放，也未覆盖多个圆心距，因此这些控制指标尚未复现。PhysicsNeMo FNO 的 rollout 误差属于本项目新增的代理模型指标，不能与论文的升力抑制百分比直接比较。
 
 现有动作域内的 PhysicsNeMo 代理训练、严格测试和可视化已经完成。后续闭环阶段需要先扩展高转速数据，再单独复现传感器观测、控制目标、PPO 或其他控制器、动作约束及独立 CFD 回放，最后与论文的升力抑制结果进行同指标比较。
+
+## PhysicsNeMo 复现入口
+
+完整可执行 recipe 见 [`train_recipe.md`](../train_recipe.md)，顺序为：OpenFOAM 结果导出、PhysicsNeMo Curator `VTKSource` 与 `Mesh.sample_data_at_points`、HDF5 数据集、PhysicsNeMo DataPipe、单步 FNO、10 步自回归微调、独立 test rollout、基线对照及 ParaView VTK 导出。训练配置分别位于 `conf/tandem_fno.yaml` 和 `conf/tandem_fno_rollout.yaml`。
+
+可审计实现集中在以下文件：
+
+- `scripts/curate_tandem_cfd.py`：Curator Source、Filter、Sink 流水线；
+- `src/fluid_control/tandem_datapipe.py`：PhysicsNeMo `HDF5Reader`、`DatasetBase` 和 `TensorDict`；
+- `scripts/train_tandem_fno.py` 与 `scripts/train_tandem_fno_rollout.py`：PhysicsNeMo FNO、DistributedManager、StaticCapture、LaunchLogger 和 checkpoint；
+- `scripts/evaluate_tandem_fno.py`：独立轨迹的 1/10/50/100 步严格评估；
+- `scripts/export_tandem_prediction_vtk.py`：冻结 checkpoint 的 ParaView 预测场导出。

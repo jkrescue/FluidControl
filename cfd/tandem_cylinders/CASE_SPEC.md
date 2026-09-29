@@ -314,9 +314,9 @@ DataPipe 审计得到 12,000/2,400/2,400 个 train/validation/test 窗口。输�
 
 10 步自回归微调从 Epoch 50 模型初始化，teacher forcing 在前 10 Epoch 由 0.5 降至 0，共训练 20 Epoch。最佳 checkpoint 为 Epoch 20；验证集 10 步平均流场 MAE 为 `0.00225494`，末端流场 MAE 为 `0.00366929`，平均/末端后柱受力 MAE 为 `0.00582447/0.00749916`。GPU0/1 峰值显存为 52,002/52,178 MiB，训练退出码为 0。
 
-### 9.4 独立测试轨迹 rollout
+### 9.4 单步基线初始 rollout
 
-冻结 Epoch 50 checkpoint 在 3 条独立测试轨迹上完成 1、10、50 步 rollout。所有片段均保持数值稳定，无失败片段。
+冻结 Epoch 50 checkpoint 在 3 条独立测试轨迹上完成初始 1、10、50 步 rollout。所有片段均保持数值稳定，无失败片段。该结果保留为第一版验收记录；最终模型对照见下一段固定步长的严格评估。
 
 | 步数 | 片段数 | 场 MAE | 相对 persistence 改善 | 后柱受力 MAE | 相对 persistence 改善 |
 | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -324,7 +324,7 @@ DataPipe 审计得到 12,000/2,400/2,400 个 train/validation/test 窗口。输�
 | 10 | 240 | 0.0047165 | 94.30% | 0.0131261 | 97.90% |
 | 50 | 48 | 0.0160685 | 84.52% | 0.0489211 | 93.97% |
 
-评估生成 27 张 `u/v/p` Ground Truth、Prediction 和 Absolute Error 对比图。动态测试轨迹的高频误差随 rollout 累积；难度最高的 `dynamic_test_01` 在 50 步时，场 MAE 为 0.0218156，后柱受力 MAE 为 0.0760545。
+初始评估生成 27 张 `u/v/p` Ground Truth、Prediction 和 Absolute Error 对比图。动态测试轨迹的高频误差随 rollout 累积；难度最高的 `dynamic_test_01` 在 50 步时，场 MAE 为 0.0218156，后柱受力 MAE 为 0.0760545。
 
 上述结果表明第一阶段动作条件代理模型通过既定测试，不代表闭环控制效果已经得到验证。
 
@@ -338,6 +338,12 @@ DataPipe 审计得到 12,000/2,400/2,400 个 train/validation/test 窗口。输�
 | 100 | 0.02922517 | -24.97% | 0.07109247 | -26.68% |
 
 所有严格测试窗口保持稳定。恒定 `omega=+0.5` 工况的 100 步受力误差增加 17.34%，两条动态测试轨迹分别改善 30.56% 和 32.45%。评估生成 36 张物理单位流场真值、预测和绝对误差对比图。
+
+### 9.5 ParaView 流场导出
+
+OpenFOAM 原生流场已按 7 个工况、5 个物理时刻打包为 35 个 `.vtu`，恒定转速覆盖 `omega=-1、-0.5、0、0.5、1`，并包含两条动态测试轨迹。多步模型在 3 条独立 test 轨迹上从 frame 100 自回归 100 步，按 step 1 和每 10 步输出 33 个 `.vtr`。
+
+预测 VTK 在同一规则网格内保存真值、预测和绝对误差的 `U/p`，并保存掩码、转速、时间及后柱真实/预测 `Cd/Cl`。全部 68 个 VTK 数据文件已由 PyVista 回读，结果为 `PARAVIEW_VTK_EXPORT_OK`。生成及检查命令见 [`train_recipe.md`](../../train_recipe.md) 第 11 节。
 
 ## 10. 适用范围与后续扩展
 
@@ -380,6 +386,8 @@ DataPipe 审计得到 12,000/2,400/2,400 个 train/validation/test 窗口。输�
 | `artifacts/tandem_fno_rollout/baseline_comparison.json` | 单步基线与多步模型对照 |
 | `artifacts/tandem_fno_rollout/rollout_visualizations/` | 36 张多步模型流场对比图 |
 | `artifacts/tandem_fno_rollout/EVIDENCE_SHA256SUMS` | 最佳模型、配置、指标和 36 张图片的 SHA-256 清单 |
+| `artifacts/tandem_paraview/` | OpenFOAM 原生场和 PhysicsNeMo 预测的 ParaView 时间序列 |
+| `artifacts/tandem_paraview/validation.json` | 68 个 VTK 数据文件的回读检查结果 |
 | `artifacts/tandem_fno/stage1_release/` | 第一阶段冻结清单与 SHA-256 校验 |
 
 ## 12. 源代码索引
@@ -403,6 +411,9 @@ DataPipe 审计得到 12,000/2,400/2,400 个 train/validation/test 窗口。输�
 | `../../scripts/train_tandem_fno_rollout.py` | 10 步自回归微调 |
 | `../../scripts/compare_rollout_evaluations.py` | 单步基线与多步模型误差对照 |
 | `../../scripts/audit_tandem_actions.py` | 动作幅值与变化率覆盖审计 |
+| `../../scripts/package_tandem_cfd_vtk.py` | 代表性 OpenFOAM VTK 时间序列打包 |
+| `../../scripts/export_tandem_prediction_vtk.py` | PhysicsNeMo 预测场 VTK 导出 |
+| `../../scripts/validate_tandem_vtk_export.py` | CFD 与预测 VTK 回读检查 |
 | `../../scripts/control_tandem_mpc.py` | 代理模型 MPC 原型 |
 | `../../conf/tandem_fno.yaml` | FNO 配置 |
 | `../../conf/tandem_fno_rollout.yaml` | 多步微调配置 |

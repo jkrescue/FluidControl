@@ -469,7 +469,7 @@ OUTPUT_DIR=artifacts/tandem_fno_rollout \
 
 ## 10. 测试集滚动预测
 
-正式训练完成后执行：
+以下命令保留了最初冻结单步模型时采用的 1/10/50 步评估，用于追溯第一版验收结果：
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 .venv/bin/python scripts/evaluate_tandem_fno.py \
@@ -486,7 +486,7 @@ python3 -m json.tool artifacts/tandem_fno/evaluation.json | less
 find artifacts/tandem_fno/rollout_visualizations -name '*.png' -type f | sort
 ```
 
-报告逐条测试轨迹给出 1、10、50 步滚动场 MAE、后圆柱 `Cd/Cl` MAE、最大预测场幅值和非有限值检查，并同时给出“保持初始状态不变”的 persistence 基线。评估显式使用 FP32，因为当前 PhysicsNeMo FNO metadata 不支持 GPU AMP。每条 test 轨迹、每个 horizon 默认选择起始、中间、末尾三个 rollout，生成 `u/v/p` 的 Ground Truth、Prediction 和 Absolute Error 三列对比图；3 条 test 轨迹预计共生成 27 张 PNG。图标题包含起点、horizon、动作变化及真实/预测 `Cd/Cl`，文件路径同时写入 evaluation JSON。第一阶段至少要求模型在测试轨迹上稳定完成滚动预测，并在主要 horizon 上优于 persistence。训练成功本身不代表闭环控制已验证；闭环动作优化和 CFD 回放属于下一阶段。
+该初始评估逐条测试轨迹给出 1、10、50 步滚动场 MAE、后圆柱 `Cd/Cl` MAE、最大预测场幅值和非有限值检查，并同时给出 persistence 基线。每条轨迹、每个 horizon 选择三个 rollout，共生成 27 张 PNG。最终模型比较使用下述固定 5 帧起点间隔和 100 步 horizon 的严格评估。
 
 **独立 test rollout：已通过。**Epoch 50 checkpoint 完成全部 3 条 test 轨迹、1/10/50 步评估，`evaluation_exit=0`；共检查 2,400/240/48 个片段，所有 horizon 均 `stable=true`、`failed_segments=0`。汇总结果如下：
 
@@ -498,16 +498,36 @@ find artifacts/tandem_fno/rollout_visualizations -name '*.png' -type f | sort
 
 27/27 张 PNG 已生成。视觉抽查显示恒定转速轨迹在 50 步仍较好复现尾流；动态动作轨迹保留主要涡结构和相位，但出现累积的高频纹理误差。最难的 `dynamic_test_01` 在 50 步的场 MAE 为 0.0218156、后柱力 MAE 为 0.0760545，其中 `Cl` MAE 为 0.0949183。结果满足第一阶段代理模型门槛，但未来闭环不应把长时间纯开环代理 rollout 当作真实系统；应采用有限预测窗口并用新观测持续校正状态。
 
-为提高统计覆盖率，模型优化对照使用固定 5 帧起点间隔，并增加 100 步评估：
+为提高统计覆盖率，模型优化对照使用固定 5 帧起点间隔，并增加 100 步评估。基线和多步模型必须使用完全相同的参数：
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 .venv/bin/python scripts/evaluate_tandem_fno.py \
+  --data data/curated/tandem_cylinders \
+  --config conf/tandem_fno.yaml \
   --checkpoint-dir artifacts/tandem_fno/best \
   --output artifacts/tandem_fno/evaluation_dense.json \
+  --visualization-dir artifacts/tandem_fno/rollout_visualizations_dense \
   --horizons 1 10 50 100 \
   --segment-stride 5 \
   --evaluation-batch-size 8 \
   --visualizations-per-horizon 0
+
+CUDA_VISIBLE_DEVICES=0 .venv/bin/python scripts/evaluate_tandem_fno.py \
+  --data data/curated/tandem_cylinders \
+  --config conf/tandem_fno.yaml \
+  --checkpoint-dir artifacts/tandem_fno_rollout/best \
+  --output artifacts/tandem_fno_rollout/evaluation_dense.json \
+  --visualization-dir artifacts/tandem_fno_rollout/rollout_visualizations \
+  --horizons 1 10 50 100 \
+  --segment-stride 5 \
+  --evaluation-batch-size 8 \
+  --visualizations-per-horizon 3
+
+python3 scripts/compare_rollout_evaluations.py \
+  artifacts/tandem_fno/evaluation_dense.json \
+  artifacts/tandem_fno_rollout/evaluation_dense.json \
+  --output artifacts/tandem_fno_rollout/baseline_comparison.json \
+  --markdown artifacts/tandem_fno_rollout/baseline_comparison.md
 ```
 
 基线检查了 480/477/453/423 个窗口，1/10/50/100 步流场 MAE 分别为 `0.00061045`、`0.00471497`、`0.01596130`、`0.03894886`，全部保持数值稳定。多步微调模型使用完全相同的命令参数评估，并通过 `scripts/compare_rollout_evaluations.py` 生成逐 horizon 和逐工况对照。
@@ -516,7 +536,41 @@ CUDA_VISIBLE_DEVICES=0 .venv/bin/python scripts/evaluate_tandem_fno.py \
 
 参考论文的物理设置、无控制统计、控制目标和当前复现边界见 `docs/PAPER_REPRODUCTION.md`。
 
-## 11. 产物与审计位置
+## 11. ParaView VTK 导出
+
+### 11.1 OpenFOAM 原生流场
+
+下列命令从已有 `foamToVTK` 输出中选择 7 个工况，每个工况保留 `t=80、100、120、140、160` 五个时刻。恒定转速覆盖 `omega=-1、-0.5、0、0.5、1`，另包含两条动态测试轨迹。
+
+```bash
+.venv-curator/bin/python scripts/package_tandem_cfd_vtk.py \
+  --output artifacts/tandem_paraview/cfd
+```
+
+每个工况目录生成一个 `.pvd` 时间序列和五个 OpenFOAM 原生 `.vtu`；字段为 `U` 和 `p`。
+
+### 11.2 PhysicsNeMo 预测流场
+
+预测导出加载多步微调 Epoch 20 checkpoint，从 3 条独立 test 轨迹的 frame 100 开始执行 100 步自回归，在 step 1 和每 10 步写出一个二进制 VTK RectilinearGrid：
+
+```bash
+PYTHONPATH=src CUDA_VISIBLE_DEVICES=0 \
+  .venv-curator/bin/python scripts/export_tandem_prediction_vtk.py \
+  --data data/curated/tandem_cylinders \
+  --config conf/tandem_fno.yaml \
+  --checkpoint-dir artifacts/tandem_fno_rollout/best \
+  --output artifacts/tandem_paraview/prediction \
+  --split test --start 100 --steps 100 --write-every 10 --include-steps 1
+
+.venv-curator/bin/python scripts/validate_tandem_vtk_export.py \
+  artifacts/tandem_paraview
+```
+
+每个 `.vtr` 同时包含 `ground_truth_U/p`、`prediction_U/p`、`absolute_error_U/p` 和 `valid_mask`。物理时间、转速及真实/预测后柱 `Cd/Cl` 保存在 Field Data；每个轨迹目录的 `.pvd` 可直接在 ParaView 中播放。
+
+2026-09-29 的实际导出包含 35 个 CFD `.vtu` 和 33 个预测 `.vtr`。全部 68 个数据文件已由 PyVista 回读，字段、点数和有限值检查通过，状态为 `PARAVIEW_VTK_EXPORT_OK`。Mac 副本位于 `results/tandem_paraview_20260929/`，压缩包为 `results/tandem_paraview_20260929.tar.gz`，SHA-256 为 `95fd50e5c1b9451fb19c7a01e056274c6392448c5efffa71effd2d56cecedc3a`。
+
+## 12. 产物与审计位置
 
 | 产物 | 路径 |
 | --- | --- |
@@ -534,5 +588,7 @@ CUDA_VISIBLE_DEVICES=0 .venv/bin/python scripts/evaluate_tandem_fno.py \
 | 模型误差对照 | `artifacts/tandem_fno_rollout/baseline_comparison.json` |
 | 多步流场可视化 | `artifacts/tandem_fno_rollout/rollout_visualizations/` |
 | 多步结果校验和 | `artifacts/tandem_fno_rollout/EVIDENCE_SHA256SUMS` |
+| ParaView CFD 与预测结果 | `artifacts/tandem_paraview/` |
+| ParaView 导出检查 | `artifacts/tandem_paraview/validation.json` |
 
 所有命令都从原始数值文件生成可复查产物。不要只保留终端截图；保留日志、JSON、固定提交号、原始算例配置和 checkpoint。
