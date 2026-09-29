@@ -1,0 +1,497 @@
+# 串列双圆柱第一阶段训练操作手册
+
+更新时间：2026-09-29
+远程项目：`~/workspace/fluid_control`
+
+本文给出从 OpenFOAM 原始结果、PhysicsNeMo Curator、PhysicsNeMo Datapipe 到 FNO 训练和测试的完整可执行流程。训练阶段由项目负责人手动执行。每一步先检查预期产物，再进入下一步；脚本默认拒绝覆盖已有结果。
+
+## 0. 长期系统目标与当前阶段位置
+
+长期目标是建立面向不同来流速度的实时在线闭环控制系统：根据流动观测在线选择后圆柱转速，以降低阻力、抑制升力波动或尾流涡脱落，并在加入结构动力学后研究减振。当前 FNO 是动作条件动力学代理，只负责预测“给定状态和转速后，下一时刻会发生什么”，不负责选择动作。
+
+当前完整链路在闭环系统中的位置为：
+
+```text
+传感器/流场 -> 状态估计 -> 控制器 -> omega
+                              |
+                              v
+                    PhysicsNeMo FNO 代理
+                              |
+                              v
+                     下一状态与 Cd/Cl
+```
+
+当前数据只覆盖 `U∞=1、Re=100、L/D=5`，且模型使用完整流场输入。跨来流闭环控制需要新增多 `U∞/Re` CFD 数据并把来流作为条件；真实在线应用还需要稀疏传感器状态估计。闭环策略必须回到独立 OpenFOAM 中回放验证。候选控制指标、约束和分阶段路线详见 `cfd/tandem_cylinders/CASE_SPEC.md` 第 1.1 节。本阶段继续完成代理模型训练和独立 test rollout，不在当前步骤实现控制器。
+
+第一阶段现已完成并冻结。第二阶段的第一版目标、动作约束、MPC horizon、代理内冒烟和 OpenFOAM 闭环验收规则记录在 `closed_loop_control_spec.md`。代理内 MPC 使用 `conf/tandem_mpc.yaml` 和 `scripts/control_tandem_mpc.py`，所有结果必须标记为 surrogate-only，不能代替 CFD 回放。
+
+## 1. 固定的软件和数据边界
+
+### 1.1 软件
+
+| 环节 | 工具 | 当前固定版本或来源 |
+| --- | --- | --- |
+| CFD | OpenCFD OpenFOAM v2512 | `opencfd/openfoam-default@sha256:33fb575aa9980d2bc42fd58c75ae6698c489293ba30c991380fe3f899c622f319` |
+| 数据整理 | PhysicsNeMo Curator | NVIDIA 官方仓库提交 `86533e581b3550326d89e97cb4d4126e7061b416`；当前为 beta API；单独使用 Python 3.12 |
+| Datapipe 与模型 | NVIDIA PhysicsNeMo | `HDF5Reader`、`DatasetBase`、`TensorDict`、PhysicsNeMo `DataLoader` 和 FNO；远程为 2.2.2 |
+| 深度学习 | PyTorch/CUDA | 远程 `.venv` 当前为 `torch 2.14.0+cu130` |
+| 模型 | PhysicsNeMo FNO | `physicsnemo.models.fno.FNO` |
+| 配置 | Hydra / OmegaConf | `conf/tandem_fno.yaml`，运行时保存 resolved config |
+| 设备与分布式 | PhysicsNeMo DistributedManager | 单 GPU 和 `torchrun` 多 GPU 使用同一入口 |
+| 训练封装 | PhysicsNeMo StaticCapture | FP32 梯度更新和梯度裁剪；当前 FNO metadata 不支持 GPU AMP |
+| 指标日志 | PhysicsNeMo LaunchLogger / PythonLogger | minibatch、epoch、validation 指标及文件日志 |
+| Checkpoint | PhysicsNeMo checkpoint utilities | `save_checkpoint` / `load_checkpoint`，模型为 `.mdlus` |
+
+上游代码核对基于 NVIDIA PhysicsNeMo 官方仓库提交 `426f7552da4b4fa675e404e8a4f437e27681b668`。项目实际训练使用上表所列已安装版本，版本检查结果要随训练日志保存。
+
+本链路对照 NVIDIA 官方 `examples/cfd/darcy_fno` 的训练结构实现。2026-09-29 已在 <WSL_USER> 的 `.venv` 中只读核验以下 PhysicsNeMo 2.2.2 API 可导入且参数匹配：`FNO`、`DistributedManager`、`StaticCaptureTraining`、`StaticCaptureEvaluateNoGrad`、`LaunchLogger`、`PythonLogger`、`save_checkpoint` 和 `load_checkpoint`。核验只检查接口，没有启动模型训练。
+
+完整数据和训练链路为：
+
+```text
+OpenFOAM 原始 U/p、力、探针和 omega(t)
+  -> foamToVTK 数值格式转换
+  -> PhysicsNeMo Curator Source -> Filter -> Sink
+  -> 分轨迹 HDF5、manifest、train-only normalization
+  -> PhysicsNeMo HDF5Reader -> DatasetBase -> TensorDict -> DataLoader
+  -> Hydra 配置 + DistributedManager
+  -> PhysicsNeMo FNO
+  -> StaticCaptureTraining / StaticCaptureEvaluateNoGrad
+  -> LaunchLogger + PhysicsNeMo checkpoints
+  -> 独立 test 轨迹滚动评估
+```
+
+### 1.2 第一阶段数据
+
+统一使用 `Re=100`、`L/D=5`、二维不可压缩串列双圆柱。前圆柱固定，后圆柱施加无量纲角速度 `omega`。每条轨迹使用 `t=80..160`，场输出间隔 `0.1`，因此有 801 帧和 800 个相邻时间步样本。
+
+| 划分 | 动态轨迹 | 恒定转速轨迹 | 合计轨迹 | 一步样本 |
+| --- | ---: | ---: | ---: | ---: |
+| train | 12 | 3：`-1, 0, +1` | 15 | 12,000 |
+| validation | 2 | 1：`-0.5` | 3 | 2,400 |
+| test | 2 | 1：`+0.5` | 3 | 2,400 |
+
+动态训练轨迹包含 8 条随机分段线性转速和 4 条多正弦转速；验证集使用训练中未出现的四分之一档位与独立多正弦；测试集使用独立四分之一档位与 chirp。整个轨迹只属于一个划分，禁止随机拆散相邻帧。
+
+## 2. 登录、定位和版本记录
+
+在本机终端执行：
+
+```bash
+ssh <SSH_HOST>
+wsl.exe -d Ubuntu-24.04
+cd ~/workspace/fluid_control
+```
+
+记录运行环境：
+
+```bash
+mkdir -p artifacts/tandem_fno
+{
+  date --iso-8601=seconds
+  uname -a
+  nvidia-smi
+  .venv/bin/python --version
+  .venv/bin/python - <<'PY'
+import physicsnemo, torch
+print("physicsnemo", physicsnemo.__version__)
+print("torch", torch.__version__)
+print("cuda_available", torch.cuda.is_available())
+print("gpu", torch.cuda.get_device_name(0) if torch.cuda.is_available() else None)
+from physicsnemo.distributed import DistributedManager
+from physicsnemo.models.fno import FNO
+from physicsnemo.utils import StaticCaptureTraining, load_checkpoint, save_checkpoint
+from physicsnemo.utils.logging import LaunchLogger
+print("physicsnemo_runtime_components", "ok")
+PY
+} |& tee artifacts/tandem_fno/environment.log
+```
+
+## 3. Gate A：确认 CFD 完整且网格检查合格
+
+先查看求解器是否仍在运行：
+
+```bash
+cd cfd/tandem_cylinders
+ps -eo pid,lstart,etimes,%cpu,%mem,cmd | grep pimpleFoam | grep -v grep || true
+tail -n 8 dynamic_batch.log
+```
+
+所有动态轨迹结束后运行只读检查：
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 validate_dynamic_dataset.py \
+  --workers 4 \
+  --write ../../artifacts/tandem_cylinders/dynamic_dataset_manifest.json \
+  | tee ../../artifacts/tandem_cylinders/dynamic_dataset_validation.log
+```
+
+必须看到 16 条动态轨迹均通过，并满足：每条 16,000 个求解步、801 个 `U/p` 场、16,000 个前柱力、16,000 个后柱力和 16,000 个 32 点探针样本，日志含 `End`，且没有 NaN/Inf。
+
+中等网格旋转算例完成后比较 `omega=+1` 的粗网格和中等网格：
+
+```bash
+python3 compare_convergence.py control_small_p100 control_grid_p100_medium \
+  | tee ../../artifacts/tandem_cylinders/rotation_grid_comparison.json
+cd ../..
+```
+
+训练前门槛：前后圆柱 `Cd_mean`、`Cl_rms`、主要频率的相对差异原则上均不超过 3%。如果超过，不进入 Curator，先补网格或时间步验证。
+
+## 4. Gate B：把 OpenFOAM 场导出成 VTK
+
+`foamToVTK` 只做格式转换，不生成或修改物理解。它读取每个原始时间目录的 `U` 和 `p`，输出二进制 `internal.vtu`，供 Curator 读取。
+
+单轨迹冒烟测试已经完成：`dynamic_train_00` 在 36.36 秒内导出 801 个快照，目录约 2.2 GiB，日志正常结束且未检出 fatal/error。批量导出时跳过该轨迹，避免脚本的防覆盖检查中止任务。
+
+完整批量导出也已完成：21/21 条轨迹均为 801 个 VTK 快照，自动检查退出码为 0，总计约 45 GiB。逐轨迹计数位于 `artifacts/tandem_cylinders/vtk_counts.txt`，批量日志位于 `artifacts/tandem_cylinders/vtk_export.log`。
+
+创建固定的 21 条轨迹清单：
+
+```bash
+cat > /tmp/tandem_cases.txt <<'EOF'
+dynamic_train_00
+dynamic_train_01
+dynamic_train_02
+dynamic_train_03
+dynamic_train_04
+dynamic_train_05
+dynamic_train_06
+dynamic_train_07
+dynamic_train_08
+dynamic_train_09
+dynamic_train_10
+dynamic_train_11
+dynamic_validation_00
+dynamic_validation_01
+dynamic_test_00
+dynamic_test_01
+control_small_m100
+control_small_z000
+control_small_p100
+control_small_m050
+control_small_p050
+EOF
+
+while read -r name; do
+  vtk="cfd/tandem_cylinders/cases/$name/VTK_curator"
+  if [[ -d "$vtk" ]]; then
+    count=$(find "$vtk" -name internal.vtu -type f | wc -l)
+    [[ "$count" == 801 ]] || { echo "$name existing VTK count is $count" >&2; exit 1; }
+    echo "Reusing validated VTK: $name" >&2
+  else
+    echo "$name"
+  fi
+done < /tmp/tandem_cases.txt > /tmp/tandem_cases_to_export.txt
+
+xargs -a /tmp/tandem_cases_to_export.txt -n1 -P2 \
+  bash scripts/export_tandem_vtk.sh \
+  |& tee artifacts/tandem_cylinders/vtk_export.log
+```
+
+逐条确认均为 801 个文件：
+
+```bash
+while read -r name; do
+  count=$(find "cfd/tandem_cylinders/cases/$name/VTK_curator" \
+    -name internal.vtu -type f | wc -l)
+  printf '%-30s %s\n' "$name" "$count"
+done < /tmp/tandem_cases.txt | tee artifacts/tandem_cylinders/vtk_counts.txt
+
+awk '$2 != 801 {bad=1} END {exit bad}' \
+  artifacts/tandem_cylinders/vtk_counts.txt
+```
+
+若某次导出中断，先阅读对应的 `cases/<name>/log.foamToVTK_curator`。确认输出无用后，手动删除该算例的 `VTK_curator` 和日志再重跑；脚本不会自动覆盖证据。
+
+## 5. 安装独立的 PhysicsNeMo Curator 环境
+
+Curator 当前未装在训练 `.venv` 中，并且从源码构建需要 Rust。以下命令把工具链、源码和虚拟环境都放在项目目录内，不修改训练环境：
+
+2026-09-29 预检结果：Git 2.43.0、uv 0.12.5 和 Python 3.11 可用；系统起初没有 `rustc/cargo`、Curator 源码或 `.venv-curator`。官方仓库 HEAD 为固定提交 `86533e581b3550326d89e97cb4d4126e7061b416`，项目盘剩余约 397 GiB。首次按仓库元数据的 `Python >=3.11` 创建环境后，安装成功但导入失败：`core/base.py` 使用 `class Source[T](ABC)`，这是 Python 3.12 的 PEP 695 语法。为保持 NVIDIA 源码原样、不打私有补丁，Curator 环境改用 Python 3.12；PhysicsNeMo 训练 `.venv` 仍保持 Python 3.11。随后实测 `uv python find 3.12` 返回 `/usr/bin/python3.12`，版本为 Python 3.12.3。失败环境已保留为 `.venv-curator-py311-failed`（Python 3.11.16），新 `.venv-curator` 已用 Python 3.12.3 创建完成。
+
+2026-09-29 基础安装实测：源码远端为 `https://github.com/NVIDIA/physicsnemo-curator.git`，工作树干净，HEAD 与固定提交完全一致；项目内工具链为 Rust/Cargo 1.98.1。Curator 0.1.0 基础包已成功构建并安装到 Python 3.12.3 的 `.venv-curator`，安装退出码为 0。依赖实测包括 NumPy 2.5.3、h5py 3.16.0、PyVista 0.49.0 和 VTK 9.7.1；完整安装日志保存为 `artifacts/tandem_cylinders/curator_install_py312.log`。采用官方 `VTKSource` 前继续安装仓库定义的 `mesh` extra，并将其中的 PhysicsNeMo 固定为与训练环境一致的 2.2.2。
+
+导入验证也已通过：`Source`、`Filter`、`Sink` 和 `run_pipeline` 均从已安装的 `physicsnemo_curator` 成功加载，输出 `CURATOR_IMPORT_OK` 且退出码为 0。验证日志保存为 `artifacts/tandem_cylinders/curator_import_py312.log`。
+
+```bash
+cd ~/workspace/fluid_control
+mkdir -p .tools
+export RUSTUP_HOME="$PWD/.tools/rustup"
+export CARGO_HOME="$PWD/.tools/cargo"
+
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+  | sh -s -- -y --no-modify-path --profile minimal
+export PATH="$CARGO_HOME/bin:$PATH"
+
+uv venv .venv-curator --python 3.12
+git clone https://github.com/NVIDIA/physicsnemo-curator.git \
+  .tools/physicsnemo-curator
+git -C .tools/physicsnemo-curator checkout \
+  86533e581b3550326d89e97cb4d4126e7061b416
+
+uv pip install --python .venv-curator/bin/python \
+  --no-sources-package nvidia-physicsnemo \
+  "./.tools/physicsnemo-curator[mesh]" \
+  "nvidia-physicsnemo==2.2.2" h5py numpy
+```
+
+首次补装 `mesh` extra 时未加 `--no-sources-package`，Curator 仓库的 `[tool.uv.sources]` 将 `nvidia-physicsnemo` 改指 GitHub HEAD，因而与显式版本 `2.2.2` 冲突，解析退出码为 1且未安装任何包。训练环境元数据确认其现有 `nvidia-physicsnemo 2.2.2` 来自软件包索引（`direct_url=None`）。修正命令仅忽略该包的 Git 源覆盖，保留官方 extra 和版本一致性；失败日志保存在 `artifacts/tandem_cylinders/curator_mesh_extra_install.log`。
+
+随后使用 `--no-sources` 已成功绕过 Git 源覆盖，但官方 `mesh` extra 的传递依赖仍声明已弃用的 PyPI 占位包 `sklearn==0.0.post12`，该包默认拒绝构建，安装退出码为 1。按该包错误信息提供的兼容方式，仅在安装命令中设置 `SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True`；这不会修改 NVIDIA 或项目源码。失败日志保存在 `artifacts/tandem_cylinders/curator_mesh_extra_install_retry2.log`。
+
+第三次安装已通过：`mesh` extra 共解析 134 个包、安装 97 个包，退出码为 0。核心实测版本为 `nvidia-physicsnemo 2.2.2`、Torch 2.14.0、TensorDict 0.14.2、PyArrow 25.0.1、Warp 1.17.0；Curator 仍为固定源码提交构建的 0.1.0。成功日志保存在 `artifacts/tandem_cylinders/curator_mesh_extra_install_retry3.log`。
+
+验证导入和提交号：
+
+```bash
+git -C .tools/physicsnemo-curator rev-parse HEAD
+.venv-curator/bin/python - <<'PY'
+import h5py, numpy, pyvista
+import physicsnemo_curator
+from physicsnemo.mesh import Mesh
+from physicsnemo_curator.domains.mesh.sources.vtk import VTKSource
+from physicsnemo_curator.run import run_pipeline
+print("curator_import_ok", physicsnemo_curator.__file__)
+print("h5py", h5py.__version__)
+print("numpy", numpy.__version__)
+print("pyvista", pyvista.__version__)
+print("Mesh/VTKSource", Mesh, VTKSource)
+PY
+```
+
+若机器已经具有可用的 `cargo`，可跳过 rustup 安装，仅保留 `export PATH`、建环境、固定提交和安装步骤。
+
+## 6. Gate C：运行 Curator
+
+项目 Curator 脚本以 NVIDIA 已有能力为主体，只为本实验补充轨迹分组、标签对齐和质量门槛：
+
+```text
+TandemTrajectorySource
+  └─ 官方 Curator VTKSource
+       └─ 官方 PhysicsNeMo Mesh.sample_data_at_points
+  -> NumericalQualityFilter
+  -> TrajectoryHDF5Sink
+  -> 官方 Curator run_pipeline
+```
+
+- VTK 读取：使用 Curator 官方 `physicsnemo_curator.domains.mesh.sources.vtk.VTKSource`，只加载 `U/p`。
+- 网格采样：使用官方 `physicsnemo.mesh.Mesh.sample_data_at_points`，把非结构场采样到固定 `256×128` 网格；范围为 `x=[8,25]`、`y=[4,11]`。
+- 项目 Source 适配器：只负责把 801 个官方 Mesh 帧组成一条轨迹，并对齐本工况的动作、力和时间。
+- Filter：检查帧数、数组形状、有限数、有效区域覆盖率和动作范围。
+- Sink：每条轨迹写一个压缩 HDF5；训练集、验证集和测试集分别落盘。
+- 压力：每帧在有效流体区域减去空间均值，消除不可压压力的任意常数。
+- 归一化：只用 train 划分计算均值和标准差，避免验证集和测试集泄漏。
+
+2026-09-29 接口核验：代表性 `internal.vtu` 含 39,336 个点、19,290 个单元，point/cell 数据都含 `p/U`，field data 含 `TimeValue=80.0`；远端 PhysicsNeMo 2.2.2 已确认提供 `Mesh.sample_data_at_points`。因此脚本不再直接调用 `pyvista.read/grid.sample`。
+
+官方单帧链路实测已通过：`VTKSource` 发现 801 个文件；首帧转换为 `physicsnemo.mesh.Mesh` 后为 39,336 个点和 115,740 个四面体单元，point/cell `p/U` 与 global `TimeValue` 均存在。在 `64×32` 规则网格上调用 `Mesh.sample_data_at_points` 得到 `U=(2048,3)`、`p=(2048,)`，有效点 2,024/2,048，覆盖率 0.98828125；输出 `OFFICIAL_VTK_MESH_API_OK` 且退出码为 0。日志为 `artifacts/tandem_cylinders/curator_official_vtk_api_check.log`。
+
+先对一条轨迹做 smoke test：
+
+```bash
+rm -rf data/curated/tandem_smoke
+.venv-curator/bin/python scripts/curate_tandem_cfd.py \
+  --cases-root cfd/tandem_cylinders/cases \
+  --output data/curated/tandem_smoke \
+  --nx 256 --ny 128 --limit 1 \
+  |& tee artifacts/tandem_cylinders/curator_smoke.log
+```
+
+2026-09-29 冒烟运行实测已完成：官方链路处理 `dynamic_test_00` 的 801/801 帧，Curator 写出 1 条轨迹，退出状态为 0。墙钟时间 4 分 21.06 秒，CPU 利用率 1919%，峰值常驻内存 2,332,712 KiB（约 2.22 GiB），swap 为 0。Curator 的 `0/1` 表示整条轨迹尚未交给 Sink；逐帧日志从 1 推进到 801，Sink 完成后变为 `1/1 (100%)`。日志位于 `artifacts/tandem_cylinders/curator_smoke.log`。
+
+检查 smoke HDF5：
+
+```bash
+.venv-curator/bin/python - <<'PY'
+from pathlib import Path
+import h5py
+p = next(Path("data/curated/tandem_smoke").rglob("*.h5"))
+with h5py.File(p, "r") as f:
+    print(p)
+    for key in f:
+        print(key, f[key].shape, f[key].dtype)
+PY
+```
+
+HDF5 冒烟质量检查已通过：`state=(801,3,128,256)`、`mask=(801,1,128,256)`、`omega=(801,1)`、`force=(801,4)`，字段类型与压缩设置符合定义；时间从 80.0 严格递增到 160.0。mask 仅含 0/1，有效覆盖率为 0.9869384765625；动作范围为 `[-0.75,0.75]`，力数据全部有限；逐帧最大有效区域压力均值绝对值为 `1.6456821227265347e-09`，无效区域状态最大绝对值为 0。输出 `SMOKE_HDF5_OK`，退出码为 0；日志为 `artifacts/tandem_cylinders/curator_smoke_hdf5_check.log`。
+
+预期 `state=(801,3,128,256)`、`mask=(801,1,128,256)`、`omega=(801,1)`、`force=(801,4)`、`time=(801,1)`。通过后运行完整 21 条轨迹：
+
+```bash
+rm -rf data/curated/tandem_cylinders
+.venv-curator/bin/python scripts/curate_tandem_cfd.py \
+  --cases-root cfd/tandem_cylinders/cases \
+  --output data/curated/tandem_cylinders \
+  --nx 256 --ny 128 \
+  |& tee artifacts/tandem_cylinders/curator_full.log
+```
+
+确认 manifest：
+
+```bash
+.venv-curator/bin/python -m json.tool \
+  data/curated/tandem_cylinders/manifest.json
+.venv-curator/bin/python -m json.tool \
+  data/curated/tandem_cylinders/normalization.json
+find data/curated/tandem_cylinders -name '*.h5' -type f | sort
+du -sh data/curated/tandem_cylinders
+```
+
+预期计数为 train 15、validation 3、test 3。
+
+2026-09-29 完整执行结果：Curator 21/21 完成，退出码 0，墙钟时间 1:18:48，峰值常驻内存 2,620,552 KiB，swap 为 0。输出 21 个 HDF5、总计 5.5 GiB，划分为 train/validation/test = 15/3/3。独立脚本 `scripts/validate_tandem_curated.py` 随后逐文件检查形状、时间轴、有限数、掩码、压力零均值和无效区，并重新计算 train-only normalization；结果 `CURATED_DATASET_OK`，退出码 0。证据为 `curator_full.log`、`curated_validation.log` 和 `curated_validation.json`。
+
+## 7. Gate D：验证 PhysicsNeMo Datapipe
+
+安装本项目本身，使训练脚本能导入 `fluid_control.tandem_datapipe`：
+
+```bash
+uv pip install --python .venv/bin/python -e .
+```
+
+`TandemWindowDataset` 继承官方 `physicsnemo.datapipes.DatasetBase`，内部使用 `HDF5Reader` 懒读取当前帧和下一帧，并返回 `TensorDict` 与样本 metadata。训练使用官方 `physicsnemo.datapipes.DataLoader` 完成采样、批处理和预取。随后使用 PhysicsNeMo `DistributedManager` 选择设备、`StaticCaptureTraining` 和 `StaticCaptureEvaluateNoGrad` 封装训练与验证、`LaunchLogger` 记录指标，并使用 `save_checkpoint/load_checkpoint` 保存和恢复模型及优化器状态。每个样本为：
+
+- 输入 `x[6,128,256]`：标准化 `u,v,p`、有效掩码、当前 `omega_t`、下一时刻 `omega_t+1`；
+- 场标签 `delta[3,128,256]`：下一帧减当前帧；
+- 力标签 `force[2]`：下一时刻后圆柱 `Cd,Cl`；
+- 划分边界：窗口不跨轨迹。
+
+执行检查：
+
+```bash
+.venv/bin/python - <<'PY'
+from fluid_control.tandem_datapipe import TandemWindowDataset
+for split, expected in (("train", 12000), ("validation", 2400), ("test", 2400)):
+    ds = TandemWindowDataset("data/curated/tandem_cylinders", split)
+    sample, metadata = ds[0]
+    print(split, len(ds), {k: tuple(v.shape) for k, v in sample.items()})
+    print("metadata", metadata)
+    assert len(ds) == expected
+    assert sample["x"].shape == (6, 128, 256)
+    assert sample["delta"].shape == (3, 128, 256)
+    assert sample["force"].shape == (2,)
+    assert all(v.isfinite().all() for v in sample.values())
+    ds.close()
+PY
+```
+
+2026-09-29 实测结果：官方 `DatasetBase`、`HDF5Reader`、`DataLoader` 链路通过。数据长度为 train 12,000、validation 2,400、test 2,400；连续三个 batch 均为 `x=(4,6,128,256)`、`delta=(4,3,128,256)`、`force=(4,2)`、`mask=(4,1,128,256)`、`time=(4,1)`，全部为有限数。输出 `PHYSICSNEMO_DATAPIPE_OK`，退出码 0；日志为 `artifacts/tandem_cylinders/datapipe_validation.log`。
+
+## 8. Gate E：训练前 smoke test
+
+使用 GPU 0/1 跑 1 个 epoch 和抽稀样本。每个进程的 CUDA allocator 上限为显卡总显存的 0.75，并每 5 秒记录实际显存，确保每卡至少保留 15 GiB：
+
+```bash
+bash scripts/run_tandem_fno_smoke.sh
+```
+
+首次尝试通过断开式 SSH 后台启动，`torchrun` 收到 SIGHUP，尚未进入有效训练便以退出码 1 结束；GPU 回到空闲，无数据或 checkpoint 损坏。该问题属于启动方式，不是模型或数据错误；失败日志保留在 `artifacts/tandem_fno_smoke_sighup_20260929_092040/`。后续在用户 tmux 前台执行上述脚本。
+
+第二次由用户在 tmux 前台执行，两个 rank 均在 `DistributedManager.initialize()` 的 NCCL process-group 初始化阶段失败：NCCL 2.30.7 报 `Cuda failure 999 'unknown error'`，退出码 1。该次仍未进入模型构建或训练；随后出现的 `Process group cannot be None` 是初始化失败后的清理异常。先运行 `scripts/diagnose_tandem_gpus.py` 核验两卡独立 CUDA 和 peer access，再决定 NCCL transport 参数；不直接降级成单 GPU。
+
+GPU 诊断结果：驱动 596.72，PyTorch 2.14.0+cu130，CUDA 13.0，NCCL 2.30.7；GPU 0/1 均可独立完成 CUDA 矩阵乘法。但 WSL 的 `nvidia-smi topo -m` 无法生成拓扑矩阵，且 `torch.cuda.can_device_access_peer` 对 0→1 和 1→0 均返回 false。输出 `CUDA_DEVICE_CHECK_OK`、退出码 0；日志为 `artifacts/tandem_cylinders/gpu_diagnostic.log`。因此下一步先用 `NCCL_P2P_DISABLE=1` 做最小双 rank all-reduce 测试。
+
+仅设置 `NCCL_P2P_DISABLE=1` 仍出现 CUDA 999。第一组可工作的回退配置同时关闭 P2P、SHM、IB 和 cuMem device/host allocation，并指定 `NCCL_SOCKET_IFNAME=lo`；NCCL 两个 rank 经内置 `NET/Socket` 完成 all-reduce，两侧结果均为 3.0。日志为 `nccl_socket_check.log` 与 `nccl_socket.*.log`。
+
+为避免长期使用较慢的 loopback Socket，随后进行逐项消融测试：保持 `NCCL_P2P_DISABLE=1`、`NCCL_IB_DISABLE=1`、`NCCL_CUMEM_ENABLE=0` 和 `NCCL_CUMEM_HOST_ENABLE=0`，把 `NCCL_SHM_DISABLE` 改为 `0`。2026-09-29 实测两个 rank 初始化成功，4 个通信通道均明确记录为 `via SHM/direct`，all-reduce 两侧结果均为 3.0，输出 `NCCL_ALL_REDUCE_OK`，退出码 0。由此确认 CUDA 999 的关键触发条件不是传统 SHM，而是当前 WSL 映射下不可用的 GPU P2P 和 NCCL cuMem 路径。训练启动脚本现采用 SHM 配置；Socket 仅保留为已验证的故障回退。验证日志为 `artifacts/tandem_cylinders/nccl_shm_check.log`。
+
+当前训练环境变量为：
+
+```bash
+export NCCL_P2P_DISABLE=1
+export NCCL_SHM_DISABLE=0
+export NCCL_IB_DISABLE=1
+export NCCL_CUMEM_ENABLE=0
+export NCCL_CUMEM_HOST_ENABLE=0
+export NCCL_SOCKET_IFNAME=lo
+```
+
+修复后的双卡训练冒烟测试已于 2026-09-29 通过。1 个 epoch 的训练 loss 为 `0.2025793`；验证集物理单位场 MAE 为 `0.00336758`、RMSE 为 `0.00516719`，归一化力系数 MAE 为 `0.746278`；训练 epoch 用时 `8.36 s`、`88.90 ms/iter`，退出码 0。PhysicsNeMo 模型、训练状态、最佳 checkpoint、完整配置、runtime metadata 和 history 均已生成并通过 JSON/非空文件审计，输出 `SMOKE_TRAINING_ARTIFACTS_OK`。checkpoint 保存已限制为 rank 0，避免两个进程并发覆盖同一文件。GPU 0/1 实测最大占用分别为 1,726/1,858 MiB，最低剩余分别为 70,714/70,582 MiB，满足每卡至少保留 15 GiB 的约束。
+
+同配置单卡对照使用 batch size 8，训练为 `69.71 ms/iter`、约 `114.8 samples/s`；双卡每 rank batch size 8、全局 batch size 16，约 `180.0 samples/s`。双卡 SHM 相对单卡吞吐提升约 1.57 倍，并行效率约 78.4%，因此正式训练继续使用 GPU 0/1。该结果只说明 SHM 对本任务有实际收益，不能等同于原生 Linux 中可用 PCIe/NVLink P2P 时的 NCCL 性能。单卡对照日志位于 `artifacts/tandem_fno_smoke_single/train.log`，最终双卡冒烟日志位于 `artifacts/tandem_fno_smoke/train.log`。
+
+正式训练最初以每 rank batch size 8 启动并稳定收敛。根据项目负责人对完成速度和最终精度的取舍，后续从现有 checkpoint 恢复时改为每 rank batch size 64、全局 batch size 128，并把每进程显存比例上限改为 0.85，理论上每张 72 GB GPU 至少保留约 10.8 GiB。恢复时沿用 checkpoint 中的优化器和余弦学习率状态，不按 batch 比例放大学习率，以降低中途切换 batch 带来的不稳定风险。最终精度必须以独立 test rollout 为准。
+
+验收：进程返回码为 0，损失为有限数，并生成：
+
+```bash
+find artifacts/tandem_fno_smoke -maxdepth 2 -type f -printf '%P\n' | sort
+python3 -m json.tool artifacts/tandem_fno_smoke/training_history.json
+```
+
+应能看到 `resolved_config.yaml`、`physicsnemo.log`、`checkpoints/*.mdlus`、`best/*.mdlus` 和相应的 `checkpoint.*.pt`。`.mdlus` 是 PhysicsNeMo 模型 checkpoint；`.pt` 保存 epoch、优化器、scheduler、AMP capture 状态和 metadata。重复相同命令时，`load_checkpoint` 会从最新 epoch 恢复。
+
+如显存不足，首先把 `--batch-size 8` 改为 `4`；如 DataLoader worker 报错，把 `--workers 4` 改为 `0`。将改动记入日志。
+
+## 9. 正式训练
+
+默认模型配置保存在 `conf/tandem_fno.yaml`：二维 FNO，输入 6 通道，输出 5 通道，4 个 Fourier 层，隐通道 32，模态数 `24×24`。前三个输出学习标准化场增量，后两个输出经流体掩码空间平均后学习后圆柱标准化 `Cd/Cl`。损失为场增量 MSE 加 `0.2 ×` 力系数 MSE；优化器 AdamW，学习率 `2e-4`，50 epochs，余弦退火。训练由 PhysicsNeMo `StaticCaptureTraining` 管理并使用梯度裁剪。PhysicsNeMo 2.2.2 的 FNO metadata 将 GPU AMP 标记为不支持，冒烟测试中框架自动关闭了 bf16；因此正式配置显式使用 FP32，避免请求无效 AMP，同时保持框架行为可复现。
+
+模型选择依据：本阶段数据是同一几何上的固定二维规则网格，目标是学习带旋转动作条件的时空流场算子，因此采用 PhysicsNeMo FNO。MeshGraphNet 更适合保留非结构网格的任务，SFNO 针对球面，均不如 FNO 直接匹配当前表示。FNO 是第一阶段基线选择；是否优于其他候选必须以后续同划分对照实验判断。
+
+正式执行入口为：
+
+```bash
+bash scripts/run_tandem_fno_train.sh
+```
+
+脚本固定使用 GPU 0/1 和经验证的 NCCL SHM 配置，调用 `torchrun --nproc_per_node=2`。当前每 rank batch size 为 64，全局 batch size 为 128；重复执行时通过 PhysicsNeMo `load_checkpoint` 从最新 epoch 恢复，并在覆盖 runtime 配置前自动归档上一阶段日志。
+
+另开终端查看运行：
+
+```bash
+watch -n 2 nvidia-smi
+tail -f artifacts/tandem_fno_train.log
+```
+
+每个 epoch 都由 `LaunchLogger` 输出 train loss、验证集场 MAE/RMSE 和后柱力系数的标准化 MAE。完整恢复点位于 `checkpoints/`；验证集物理单位场 MAE 改善时，使用 PhysicsNeMo checkpoint 格式写入 `best/`。
+
+**正式训练结果：已通过。**50/50 epochs 完成，`formal_training_exit=0`，无残留训练进程。Epoch 50 同时是验证场 MAE 最佳 checkpoint：train loss `3.0743371e-05`、场 MAE `5.3888804e-04`、场 RMSE `7.9748279e-04`、归一化后柱力 MAE `8.5806989e-03`。后柱力 MAE 的单独最低值出现在 Epoch 42，为 `8.4354119e-03`；当前 `best/` 按主要指标场 MAE选择 Epoch 50。恢复后的 batch 64 阶段用时 14:56.58，峰值 CPU 常驻内存约 3.30 GiB、swap 为 0。runtime metadata 记录双 GPU、显存比例上限 0.85 和理论保留 10.754 GiB/卡。
+
+## 10. 测试集滚动预测
+
+正式训练完成后执行：
+
+```bash
+CUDA_VISIBLE_DEVICES=0 .venv/bin/python scripts/evaluate_tandem_fno.py \
+  --data data/curated/tandem_cylinders \
+  --config conf/tandem_fno.yaml \
+  --checkpoint-dir artifacts/tandem_fno/best \
+  --output artifacts/tandem_fno/evaluation.json \
+  --visualization-dir artifacts/tandem_fno/rollout_visualizations \
+  --visualizations-per-horizon 3 \
+  --split test --horizons 1 10 50 \
+  |& tee artifacts/tandem_fno_evaluate.log
+
+python3 -m json.tool artifacts/tandem_fno/evaluation.json | less
+find artifacts/tandem_fno/rollout_visualizations -name '*.png' -type f | sort
+```
+
+报告逐条测试轨迹给出 1、10、50 步滚动场 MAE、后圆柱 `Cd/Cl` MAE、最大预测场幅值和非有限值检查，并同时给出“保持初始状态不变”的 persistence 基线。评估显式使用 FP32，因为当前 PhysicsNeMo FNO metadata 不支持 GPU AMP。每条 test 轨迹、每个 horizon 默认选择起始、中间、末尾三个 rollout，生成 `u/v/p` 的 Ground Truth、Prediction 和 Absolute Error 三列对比图；3 条 test 轨迹预计共生成 27 张 PNG。图标题包含起点、horizon、动作变化及真实/预测 `Cd/Cl`，文件路径同时写入 evaluation JSON。第一阶段至少要求模型在测试轨迹上稳定完成滚动预测，并在主要 horizon 上优于 persistence。训练成功本身不代表闭环控制已验证；闭环动作优化和 CFD 回放属于下一阶段。
+
+**独立 test rollout：已通过。**Epoch 50 checkpoint 完成全部 3 条 test 轨迹、1/10/50 步评估，`evaluation_exit=0`；共检查 2,400/240/48 个片段，所有 horizon 均 `stable=true`、`failed_segments=0`。汇总结果如下：
+
+| horizon | 场 MAE | persistence 场 MAE | 场误差降低 | 后柱力 MAE | persistence 力 MAE | 力误差降低 |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 0.0006102 | 0.0087487 | 93.03% | 0.0052400 | 0.0664161 | 92.11% |
+| 10 | 0.0047165 | 0.0827404 | 94.30% | 0.0131261 | 0.6244206 | 97.90% |
+| 50 | 0.0160685 | 0.1038332 | 84.52% | 0.0489211 | 0.8106566 | 93.97% |
+
+27/27 张 PNG 已生成。视觉抽查显示恒定转速轨迹在 50 步仍较好复现尾流；动态动作轨迹保留主要涡结构和相位，但出现累积的高频纹理误差。最难的 `dynamic_test_01` 在 50 步的场 MAE 为 0.0218156、后柱力 MAE 为 0.0760545，其中 `Cl` MAE 为 0.0949183。结果满足第一阶段代理模型门槛，但未来闭环不应把长时间纯开环代理 rollout 当作真实系统；应采用有限预测窗口并用新观测持续校正状态。
+
+## 11. 产物与审计位置
+
+| 产物 | 路径 |
+| --- | --- |
+| 原始 OpenFOAM 场、力和探针 | `cfd/tandem_cylinders/cases/<case>/` |
+| CFD 动态数据校验 | `artifacts/tandem_cylinders/dynamic_dataset_manifest.json` |
+| 旋转工况网格比较 | `artifacts/tandem_cylinders/rotation_grid_comparison.json` |
+| VTK 转换日志 | `artifacts/tandem_cylinders/vtk_export.log` |
+| Curator 日志 | `artifacts/tandem_cylinders/curator_*.log` |
+| Curator HDF5、manifest、归一化 | `data/curated/tandem_cylinders/` |
+| 环境记录 | `artifacts/tandem_fno/environment.log` |
+| 最佳 checkpoint 与训练历史 | `artifacts/tandem_fno/best/`、`training_history.json` |
+| 测试结果 | `artifacts/tandem_fno/evaluation.json` |
+
+所有命令都从原始数值文件生成可复查产物。不要只保留终端截图；保留日志、JSON、固定提交号、原始算例配置和 checkpoint。

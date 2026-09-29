@@ -1,0 +1,39 @@
+defaults:
+  - _self_
+
+data:
+  root: data/curated/tandem_cylinders
+  prefetch_factor: 2
+  num_streams: 4
+
+output_dir: artifacts/tandem_fno
+
+model:
+  in_channels: 6
+  out_channels: 5
+  latent_channels: 32
+  num_fno_layers: 4
+  num_fno_modes: [24, 24]
+  decoder_layers: 2
+  decoder_layer_size: 64
+  padding: 8
+  coord_features: true
+
+training:
+  epochs: 50
+  batch_size: 8
+  workers: 4
+  gpu_memory_fraction: 0.85
+  learning_rate: 2.0e-4
+  weight_decay: 1.0e-4
+  force_loss_weight: 0.2
+  gradient_clip_norm: 1.0
+  seed: 20260929
+  smoke: false
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: .
+  output_subdir: null
