@@ -11,7 +11,7 @@
 | 项目 | 实际设置 |
 | --- | --- |
 | 求解器 | OpenCFD OpenFOAM v2512，`pimpleFoam`，二维层流不可压缩求解 |
-| 容器 | `opencfd/openfoam-default@sha256:33fb575aa9980d2bc42fd58c75ae6698c489293ba30c991380fe3f899c622f319` |
+| 容器 | `opencfd/openfoam-default@sha256:33fb575aa9980d2bc42fd58c75ae698c489293ba30c991380fe3f899c622f319` |
 | 隔离 | `--network none`、只读根文件系统、非 root、每任务 4 CPU/8 GiB、无 GPU |
 | 无量纲量 | `D=1、U∞=1、ρ=1、ν=0.01`，因此 `Re=100` |
 | 计算域 | `30D×15D`；前柱中心 `(10,7.5)`，后柱中心 `(15,7.5)` |

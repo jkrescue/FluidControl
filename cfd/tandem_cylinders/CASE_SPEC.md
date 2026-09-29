@@ -13,6 +13,7 @@
 | 环节 | 状态 |
 | --- | --- |
 | 无控制及旋转代表工况网格验证 | 通过 |
+| 高转速 `q=±2、±2.5` 数值验证 | 通过；`q=±2.5` 为网格门槛边缘 |
 | 恒定转速 CFD 轨迹 | 5/5 通过 |
 | 动态转速 CFD 轨迹 | 16/16 通过 |
 | VTK 导出 | 21/21 通过 |
@@ -76,7 +77,7 @@ q = omega D / (2 U∞) = omega / 2
 | --- | --- |
 | 软件 | OpenCFD OpenFOAM v2512 |
 | 求解器 | `pimpleFoam` |
-| 容器镜像 | `opencfd/openfoam-default@sha256:33fb575aa9980d2bc42fd58c75ae6698c489293ba30c991380fe3f899c622f319` |
+| 容器镜像 | `opencfd/openfoam-default@sha256:33fb575aa9980d2bc42fd58c75ae698c489293ba30c991380fe3f899c622f319` |
 | 容器限制 | 禁止网络、只读根文件系统、非 root、4 CPU、8 GiB 内存、无 GPU |
 | 时间格式 | 二阶 `backward` |
 | 时间步 | `Δt=0.005D/U∞` |
@@ -181,6 +182,23 @@ Zhao 等（*Ocean Engineering*, 2024, 118138）在 `Re=100、L/D=5` 下报告后
 | +1.0 | +0.50 | 0.813922 | -1.003043 | 1.516647 |
 
 正负转速产生近似反对称平均升力。恒定旋转降低平均阻力，但在当前范围内提高 `Cl RMS`。该结果验证了旋转边界条件，没有构成论文闭环升力抑制结果；闭环策略需要根据流动相位动态调整转速。
+
+### 6.6 高转速数值验证
+
+为扩展论文相关动作域，从静止基线 `t=80` 重启了 `q=±2、±2.5`（`omega=±4、±5`）恒定旋转算例。全部短试验均正常到达 `t=100`，日志包含 `End`，受力有限，粗网格 `Δt=0.005` 的最大 Courant 数分别约为 0.42 和 0.49。
+
+`q=±2.5` 的时间步检查采用粗网格，并比较 `Δt=0.005` 与 `0.0025`。在 `t=90..100` 内，减半时间步后两侧后柱 `Cl RMS` 分别变化 0.45% 和 0.33%，最大 Courant 数降至约 0.245。因此粗网格批量数据继续采用 `Δt=0.005`。
+
+空间检查将粗、中网格均以 `Δt=0.0025` 延长至 `t=160`，统计窗为 `t=120..160`：
+
+| `q` | 粗网格 `Cl RMS` | 中网格 `Cl RMS` | 相对差异 | 粗/中网格主频 |
+| ---: | ---: | ---: | ---: | ---: |
+| -2.5 | 6.973804 | 7.186560 | 3.051% | 0.174989 / 0.174989 |
+| +2.5 | 6.953958 | 7.143287 | 2.723% | 0.174989 / 0.174989 |
+
+两侧 `Cl RMS` 网格差的平均值为 2.887%，最大值为 3.051%。中等网格下正负转速的 `Cl RMS` 幅值差为 0.604%，表明统计窗已得到良好的符号对称性。平均阻力接近零，其相对差异对分母敏感；粗、中网格的阻力标准差差异分别为 3.418% 和 2.637%。
+
+该结果处于 3% 门槛边缘。扩展数据采用以下多保真策略：粗网格 `Δt=0.005` 用于批量训练轨迹；中等网格 `Δt=0.0025` 作为高转速独立数值验证及最终控制策略 CFD 回放环境。不同网格样本不得在缺少网格标识的情况下混入同一训练数据集。
 
 ## 7. 数据集设计
 
@@ -372,12 +390,12 @@ Mac 端另保留完整连续序列：`dynamic_train_00.vtm.series` 包含 801 �
 
 现有数据不覆盖跨雷诺数、跨圆心距、跨几何、三维湍流、电机真实功耗、结构疲劳寿命及工程安全认证。跨来流速度研究需要增加多雷诺数 CFD 轨迹，并将 `U∞/Re` 作为模型条件。闭环控制结论需要通过独立 OpenFOAM 回放或实验验证，并同时报告控制收益、动作约束、控制代价和鲁棒性。
 
-参考论文允许的无量纲表面速度比为 `[-6,6]`，收敛策略的代表范围约为 `[-2.21,2.07]`；当前数据仅覆盖 `[-0.5,0.5]`。因此现有代理不能用于论文全动作域内的闭环结论。进入同指标控制复现前，需要先补充更高转速 CFD、重新验证时间步与旋转工况网格，并扩展代理训练数据。
+参考论文允许的无量纲表面速度比为 `[-6,6]`，收敛策略的代表范围约为 `[-2.21,2.07]`；当前已训练代理仍只覆盖 `[-0.5,0.5]`。高转速 CFD 数值门槛已验证到 `q=±2.5`，但这些试验尚未加入代理训练集。因此现有代理不能用于论文动作域内的闭环结论。
 
 后续按以下顺序执行：
 
-1. 对 `q=±1、±2、±2.5` 的恒定旋转工况进行高转速稳定性、时间步和网格验证；
-2. 在通过验证的动作域生成动态 train/validation/test 轨迹，并保证训练集覆盖测试动作变化率；
+1. 在已通过数值验证的 `q∈[-2.5,2.5]` 范围生成动态 train/validation/test 轨迹，并保证训练集覆盖测试动作变化率；
+2. 使用中等网格 `Δt=0.0025` 保留高转速独立验证轨迹，不与粗网格训练样本直接混合；
 3. 重新执行 Curator、DataPipe、FNO 单步训练、多步微调及分动作区间评估；
 4. 再实现论文的 32 探针观测、控制代价和 PPO，并在独立 OpenFOAM 中闭环回放；
 5. 使用升力抑制率、阻力、动作代价和稳定性与论文进行同指标比较。
@@ -390,6 +408,9 @@ Mac 端另保留完整连续序列：`dynamic_train_00.vtm.series` 包含 801 �
 | `artifacts/tandem_cylinders/action_coverage.json` | 各划分动作幅值与变化率覆盖审计 |
 | `artifacts/tandem_cylinders/control_small_z000_stats.json` | 无控制后柱受力统计及论文数值对照依据 |
 | `artifacts/tandem_cylinders/rotation_grid_comparison.json` | 旋转代表工况的粗、中网格比较 |
+| `artifacts/tandem_cylinders/high_rotation_pilots_dt005.json` | `q=±2、±2.5` 粗网格短时稳定性检查 |
+| `artifacts/tandem_cylinders/high_rotation_pilots_dt0025.json` | `q=±2.5` 时间步减半检查 |
+| `artifacts/tandem_cylinders/high_rotation_grid_comparison.json` | `q=±2.5` 长时间窗粗、中网格比较 |
 | `artifacts/tandem_cylinders/vtk_export.log` | 全量 VTK 导出日志 |
 | `artifacts/tandem_cylinders/vtk_counts.txt` | 21 条轨迹的 VTK 帧数检查 |
 | `artifacts/tandem_cylinders/curator_official_vtk_api_check.log` | 官方 VTKSource 与 Mesh API 检查，标记 `OFFICIAL_VTK_MESH_API_OK` |
@@ -423,6 +444,11 @@ Mac 端另保留完整连续序列：`dynamic_train_00.vtm.series` 包含 801 �
 | `make_small_control_dataset.py` | 5 条恒定转速算例生成 |
 | `make_dynamic_control_dataset.py` | 16 条动态动作算例生成 |
 | `make_rotation_grid_check.py` | `omega=+1` 中等网格算例生成 |
+| `make_high_rotation_pilots.py` | 高转速粗/中网格及时间步试验生成 |
+| `run_high_rotation_pilot.sh` | 防覆盖的高转速试验执行入口 |
+| `extend_high_rotation_pilot.sh` | `q=±2.5` 算例长时间窗续算入口 |
+| `analyze_high_rotation_pilots.py` | 稳定性、Courant 数、受力和主频统计 |
+| `compare_high_rotation_pilots.py` | 高转速粗、中网格统计比较 |
 | `run_openfoam.sh` | 固定容器环境下的 OpenFOAM 执行入口 |
 | `validate_small_dataset.py` | 恒定转速轨迹校验 |
 | `validate_dynamic_dataset.py` | 动态轨迹校验与 manifest 生成 |

@@ -23,7 +23,7 @@
 
 当前数据只覆盖 `U∞=1、Re=100、L/D=5`，且模型使用完整流场输入。跨来流闭环控制需要新增多 `U∞/Re` CFD 数据并把来流作为条件；真实在线应用还需要稀疏传感器状态估计。闭环策略必须回到独立 OpenFOAM 中回放验证。适用范围和扩展条件见 `cfd/tandem_cylinders/CASE_SPEC.md` 第 10 节。本阶段继续完成代理模型训练和独立 test rollout，不在当前步骤实现控制器。
 
-现有动作域内的多步训练、独立测试和论文物理基线对照已经完成。当前下一步是验证并扩展高转速 CFD 动作域；扩展代理通过独立测试后，再进入论文闭环控制复现。已有控制草案保存在 `closed_loop_control_spec.md`。
+现有动作域内的多步训练、独立测试和论文物理基线对照已经完成。高转速 CFD 数值门槛已验证到 `q=±2.5`；当前下一步是生成扩展动态数据并重训代理。扩展代理通过独立测试后，再进入论文闭环控制复现。已有控制草案保存在 `closed_loop_control_spec.md`。
 
 ## 1. 固定的软件和数据边界
 
@@ -31,7 +31,7 @@
 
 | 环节 | 工具 | 当前固定版本或来源 |
 | --- | --- | --- |
-| CFD | OpenCFD OpenFOAM v2512 | `opencfd/openfoam-default@sha256:33fb575aa9980d2bc42fd58c75ae6698c489293ba30c991380fe3f899c622f319` |
+| CFD | OpenCFD OpenFOAM v2512 | `opencfd/openfoam-default@sha256:33fb575aa9980d2bc42fd58c75ae698c489293ba30c991380fe3f899c622f319` |
 | 数据整理 | PhysicsNeMo Curator | NVIDIA 官方仓库提交 `86533e581b3550326d89e97cb4d4126e7061b416`；当前为 beta API；单独使用 Python 3.12 |
 | Datapipe 与模型 | NVIDIA PhysicsNeMo | `HDF5Reader`、`DatasetBase`、`TensorDict`、PhysicsNeMo `DataLoader` 和 FNO；远程为 2.2.2 |
 | 深度学习 | PyTorch/CUDA | 远程 `.venv` 当前为 `torch 2.14.0+cu130` |
@@ -137,6 +137,58 @@ cd ../..
 ```
 
 训练前门槛：前后圆柱 `Cd_mean`、`Cl_rms`、主要频率的相对差异原则上均不超过 3%。如果超过，不进入 Curator，先补网格或时间步验证。
+
+### 3.1 高转速动作域验证
+
+以下命令创建并运行 `q=±2、±2.5` 稳定性试验，以及 `q=±2.5` 的时间步和网格试验。脚本拒绝覆盖已存在的算例或日志。
+
+```bash
+cd cfd/tandem_cylinders
+
+python3 make_high_rotation_pilots.py
+
+for name in \
+  high_rotation_qm200_dt005 high_rotation_qp200_dt005 \
+  high_rotation_qm250_dt005 high_rotation_qp250_dt005 \
+  high_rotation_qm250_dt0025 high_rotation_qp250_dt0025 \
+  high_rotation_qm250_medium_dt0025 high_rotation_qp250_medium_dt0025
+do
+  bash run_high_rotation_pilot.sh "$name"
+done
+```
+
+将 `q=±2.5` 的粗、中网格 `Δt=0.0025` 算例续算至 `t=160`：
+
+```bash
+for name in \
+  high_rotation_qm250_dt0025 high_rotation_qp250_dt0025 \
+  high_rotation_qm250_medium_dt0025 high_rotation_qp250_medium_dt0025
+do
+  bash extend_high_rotation_pilot.sh "$name"
+done
+```
+
+使用相同长统计窗生成粗、中网格报告并比较：
+
+```bash
+python3 analyze_high_rotation_pilots.py \
+  high_rotation_qm250_dt0025 high_rotation_qp250_dt0025 \
+  --window-start 120 --window-end 160 \
+  --output ../../artifacts/tandem_cylinders/high_rotation_coarse_long_window.json
+
+python3 analyze_high_rotation_pilots.py \
+  high_rotation_qm250_medium_dt0025 high_rotation_qp250_medium_dt0025 \
+  --window-start 120 --window-end 160 \
+  --output ../../artifacts/tandem_cylinders/high_rotation_medium_long_window.json
+
+python3 compare_high_rotation_pilots.py \
+  ../../artifacts/tandem_cylinders/high_rotation_coarse_long_window.json \
+  ../../artifacts/tandem_cylinders/high_rotation_medium_long_window.json \
+  --output ../../artifacts/tandem_cylinders/high_rotation_grid_comparison.json
+cd ../..
+```
+
+2026-09-29 实测结果：全部试验正常结束且数值有限；时间步减半后的 `Cl RMS` 变化为 0.33%–0.45%；`t=120..160` 的粗、中网格主频相同，`Cl RMS` 网格差为 2.723%–3.051%。扩展训练数据采用粗网格 `Δt=0.005`，中等网格 `Δt=0.0025` 仅用于独立数值验证和最终控制策略回放。
 
 ## 4. Gate B：把 OpenFOAM 场导出成 VTK
 
@@ -579,6 +631,9 @@ PYTHONPATH=src CUDA_VISIBLE_DEVICES=0 \
 | 原始 OpenFOAM 场、力和探针 | `cfd/tandem_cylinders/cases/<case>/` |
 | CFD 动态数据校验 | `artifacts/tandem_cylinders/dynamic_dataset_manifest.json` |
 | 旋转工况网格比较 | `artifacts/tandem_cylinders/rotation_grid_comparison.json` |
+| 高转速短时稳定性 | `artifacts/tandem_cylinders/high_rotation_pilots_dt005.json` |
+| 高转速时间步检查 | `artifacts/tandem_cylinders/high_rotation_pilots_dt0025.json` |
+| 高转速长窗网格比较 | `artifacts/tandem_cylinders/high_rotation_grid_comparison.json` |
 | VTK 转换日志 | `artifacts/tandem_cylinders/vtk_export.log` |
 | Curator 日志 | `artifacts/tandem_cylinders/curator_*.log` |
 | Curator HDF5、manifest、归一化 | `data/curated/tandem_cylinders/` |
