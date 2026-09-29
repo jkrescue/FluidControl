@@ -79,6 +79,11 @@ def main() -> None:
         default=Path("artifacts/tandem_fno/rollout_visualizations"),
     )
     parser.add_argument("--visualizations-per-horizon", type=int, default=3)
+    parser.add_argument(
+        "--segment-stride", type=int, default=None,
+        help="rollout start stride; defaults to the horizon for backward compatibility",
+    )
+    parser.add_argument("--evaluation-batch-size", type=int, default=8)
     args = parser.parse_args()
 
     DistributedManager.initialize()
@@ -110,6 +115,8 @@ def main() -> None:
         "checkpoint_epoch": epoch,
         "checkpoint_dir": str(args.checkpoint_dir),
         "checkpoint_metadata": metadata,
+        "segment_stride": args.segment_stride,
+        "evaluation_batch_size": args.evaluation_batch_size,
         "cases": [],
     }
     for path in sorted((args.data / args.split).glob("*.h5")):
@@ -125,12 +132,16 @@ def main() -> None:
         case_report = {"case": path.stem, "horizons": {}, "visualizations": []}
         for horizon in args.horizons:
             model_errors = []
+            channel_errors = []
             persistence_errors = []
             force_errors = []
             persistence_force_errors = []
             channel_max_abs = torch.zeros(3, device=dist.device)
             failed_segments = 0
-            segment_starts = list(range(0, len(state) - horizon, horizon))
+            segment_stride = args.segment_stride or horizon
+            if segment_stride < 1:
+                raise ValueError(f"segment stride must be positive, got {segment_stride}")
+            segment_starts = list(range(0, len(state) - horizon, segment_stride))
             visualization_count = min(args.visualizations_per_horizon, len(segment_starts))
             visualization_starts = {
                 segment_starts[index]
@@ -138,15 +149,17 @@ def main() -> None:
                     0, len(segment_starts) - 1, visualization_count, dtype=int
                 )
             }
-            for start in segment_starts:
-                predicted = normalized[start : start + 1]
-                active_mask = mask[start : start + 1]
+            for batch_offset in range(0, len(segment_starts), args.evaluation_batch_size):
+                starts = segment_starts[batch_offset : batch_offset + args.evaluation_batch_size]
+                start_indices = torch.tensor(starts, dtype=torch.long, device=dist.device)
+                predicted = normalized[start_indices]
+                active_mask = mask[start_indices]
                 height, width = active_mask.shape[-2:]
                 predicted_force_normalized = None
-                segment_failed = False
-                for step in range(start, start + horizon):
-                    omega_now = omega[step].reshape(1, 1, 1, 1).expand(1, 1, height, width)
-                    omega_next = omega[step + 1].reshape(1, 1, 1, 1).expand(1, 1, height, width)
+                for offset in range(horizon):
+                    step_indices = start_indices + offset
+                    omega_now = omega[step_indices].reshape(-1, 1, 1, 1).expand(-1, 1, height, width)
+                    omega_next = omega[step_indices + 1].reshape(-1, 1, 1, 1).expand(-1, 1, height, width)
                     inputs = torch.cat([predicted, active_mask, omega_now, omega_next], dim=1)
                     with torch.no_grad():
                         raw = network(inputs)
@@ -155,31 +168,40 @@ def main() -> None:
                             (raw[:, 3:5] * active_mask).sum(dim=(-2, -1))
                             / active_mask.sum(dim=(-2, -1)).clamp_min(1)
                         )
-                    if not torch.isfinite(predicted).all() or not torch.isfinite(
-                        predicted_force_normalized
-                    ).all():
-                        failed_segments += 1
-                        segment_failed = True
-                        break
-                if segment_failed or predicted_force_normalized is None:
+                if predicted_force_normalized is None:
                     continue
-                target = normalized[start + horizon : start + horizon + 1]
+                finite = torch.isfinite(predicted).flatten(1).all(dim=1)
+                finite &= torch.isfinite(predicted_force_normalized).all(dim=1)
+                failed_segments += int((~finite).sum())
+                if not finite.any():
+                    continue
+                target_indices = start_indices + horizon
+                target = normalized[target_indices]
                 physical_error = (predicted - target) * state_std
-                persistence_error = (normalized[start : start + 1] - target) * state_std
-                denom = active_mask.sum().clamp_min(1) * 3
-                model_errors.append(float((physical_error.abs() * active_mask).sum() / denom))
-                persistence_errors.append(float((persistence_error.abs() * active_mask).sum() / denom))
-                predicted_force = predicted_force_normalized[0] * force_std + force_mean
-                force_errors.append((predicted_force - rear_force[start + horizon]).abs().cpu().numpy())
-                persistence_force_errors.append(
-                    (rear_force[start] - rear_force[start + horizon]).abs().cpu().numpy()
+                persistence_error = (normalized[start_indices] - target) * state_std
+                point_count = active_mask.sum(dim=(1, 2, 3)).clamp_min(1)
+                model_mae = (physical_error.abs() * active_mask).sum(dim=(1, 2, 3)) / (point_count * 3)
+                channel_mae = (physical_error.abs() * active_mask).sum(dim=(2, 3)) / point_count[:, None]
+                persistence_mae = (
+                    (persistence_error.abs() * active_mask).sum(dim=(1, 2, 3))
+                    / (point_count * 3)
                 )
+                predicted_force = predicted_force_normalized * force_std + force_mean
+                force_error = (predicted_force - rear_force[target_indices]).abs()
+                persistence_force_error = (rear_force[start_indices] - rear_force[target_indices]).abs()
+                model_errors.extend(model_mae[finite].cpu().tolist())
+                channel_errors.extend(channel_mae[finite].cpu().tolist())
+                persistence_errors.extend(persistence_mae[finite].cpu().tolist())
+                force_errors.extend(force_error[finite].cpu().tolist())
+                persistence_force_errors.extend(persistence_force_error[finite].cpu().tolist())
                 predicted_physical = (predicted * state_std + state_mean) * active_mask
                 channel_max_abs = torch.maximum(
                     channel_max_abs,
-                    predicted_physical.abs().amax(dim=(0, 2, 3)),
+                    predicted_physical[finite].abs().amax(dim=(0, 2, 3)),
                 )
-                if start in visualization_starts:
+                for local_index, start in enumerate(starts):
+                    if start not in visualization_starts or not bool(finite[local_index]):
+                        continue
                     figure_path = (
                         args.visualization_dir
                         / path.stem
@@ -190,14 +212,14 @@ def main() -> None:
                         f"omega={float(omega[start]):.3f}->{float(omega[start + horizon]):.3f} | "
                         f"GT Cd/Cl=({float(rear_force[start + horizon, 0]):.4f}, "
                         f"{float(rear_force[start + horizon, 1]):.4f}) | "
-                        f"Pred Cd/Cl=({float(predicted_force[0]):.4f}, "
-                        f"{float(predicted_force[1]):.4f})"
+                        f"Pred Cd/Cl=({float(predicted_force[local_index, 0]):.4f}, "
+                        f"{float(predicted_force[local_index, 1]):.4f})"
                     )
                     save_rollout_figure(
                         figure_path,
                         state[start + horizon].detach().cpu().numpy(),
-                        predicted_physical[0].detach().cpu().numpy(),
-                        active_mask[0, 0].bool().detach().cpu().numpy(),
+                        predicted_physical[local_index].detach().cpu().numpy(),
+                        active_mask[local_index, 0].bool().detach().cpu().numpy(),
                         (float(x[0]), float(x[-1]), float(y[0]), float(y[-1])),
                         title,
                     )
@@ -208,9 +230,13 @@ def main() -> None:
                         "path": str(figure_path),
                     })
             force_errors_array = np.asarray(force_errors)
+            channel_errors_array = np.asarray(channel_errors)
             persistence_force_array = np.asarray(persistence_force_errors)
             case_report["horizons"][str(horizon)] = {
                 "state_mae_physical_units": float(np.mean(model_errors)) if model_errors else None,
+                "state_channel_mae_u_v_p": (
+                    channel_errors_array.mean(axis=0).tolist() if len(channel_errors_array) else None
+                ),
                 "persistence_state_mae_physical_units": (
                     float(np.mean(persistence_errors)) if persistence_errors else None
                 ),
@@ -230,6 +256,7 @@ def main() -> None:
                 "failed_segments": failed_segments,
                 "max_abs_predicted_u_v_p": [float(value) for value in channel_max_abs.cpu()],
                 "segments": len(model_errors),
+                "segment_stride": segment_stride,
             }
         report["cases"].append(case_report)
 
@@ -249,6 +276,9 @@ def main() -> None:
             metric: float(np.mean([row[metric] for row in rows if row[metric] is not None]))
             for metric in aggregate_keys
         }
+        report["summary"][key]["state_channel_mae_u_v_p"] = np.mean(
+            [row["state_channel_mae_u_v_p"] for row in rows], axis=0
+        ).tolist()
         report["summary"][key].update({
             "stable": all(row["stable"] for row in rows),
             "failed_segments": sum(row["failed_segments"] for row in rows),

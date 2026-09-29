@@ -4,7 +4,7 @@
 
 本项目面向串列双圆柱流动控制，使用 OpenFOAM 生成 CFD 数据，并基于 NVIDIA PhysicsNeMo 完成数据处理、FNO 流场预测及闭环控制验证。
 
-第一阶段已完成 CFD 数据生成、Curator 转换、DataPipe 校验、FNO 训练和独立测试。第二阶段将基于冻结模型开展在线闭环控制研究。
+第一阶段已完成 CFD 数据生成、Curator 转换、DataPipe 校验、FNO 单步与多步训练及独立测试。闭环研究将在扩展高转速动作数据后开展。
 
 ## 技术流程
 
@@ -33,6 +33,7 @@ OpenFOAM CFD
 
 - [训练操作手册](train_recipe.md)
 - [CFD 工况说明](cfd/tandem_cylinders/CASE_SPEC.md)
+- [论文复现对照](docs/PAPER_REPRODUCTION.md)
 - [闭环控制方案](closed_loop_control_spec.md)
 
 项目代码安装命令：

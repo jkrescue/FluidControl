@@ -1,0 +1,24 @@
+defaults:
+  - tandem_fno
+  - _self_
+
+output_dir: artifacts/tandem_fno_rollout
+
+training:
+  epochs: 20
+  batch_size: 64
+  workers: 4
+  learning_rate: 5.0e-5
+  weight_decay: 1.0e-4
+  force_loss_weight: 0.2
+  selection_force_weight: 0.1
+  rollout_steps: 10
+  rollout_discount: 1.0
+  teacher_forcing_start: 0.5
+  teacher_forcing_end: 0.0
+  teacher_forcing_epochs: 10
+  initial_checkpoint: artifacts/tandem_fno/best
+  validation_stride: 10
+  max_train_batches: null
+  max_validation_batches: null
+  smoke: false

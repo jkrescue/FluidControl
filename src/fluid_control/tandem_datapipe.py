@@ -86,3 +86,51 @@ class TandemWindowDataset(DatasetBase):
 
     def __del__(self) -> None:
         self.close()
+
+
+class TandemRolloutDataset(TandemWindowDataset):
+    """PhysicsNeMo dataset that returns contiguous autoregressive windows."""
+
+    def __init__(self, root: str | Path, split: str, rollout_steps: int,
+                 stride: int = 1, num_workers: int = 2) -> None:
+        if rollout_steps < 1:
+            raise ValueError(f"rollout_steps must be positive, got {rollout_steps}")
+        super().__init__(root, split, stride=1, num_workers=num_workers)
+        self.rollout_steps = int(rollout_steps)
+        self.index = []
+        for file_index, path in enumerate(self.paths):
+            with h5py.File(path, "r") as handle:
+                count = len(handle["state"])
+            self.index.extend(
+                (file_index, step)
+                for step in range(0, count - self.rollout_steps, stride)
+            )
+
+    def _load(self, index: int) -> tuple[TensorDict, dict]:
+        file_index, step = self.index[index]
+        reader = self._reader(file_index)
+        frames = [reader[offset][0] for offset in range(step, step + self.rollout_steps + 1)]
+        mask = frames[0]["mask"].float()
+
+        states = torch.stack([frame["state"].float() for frame in frames])
+        normalized = (states - self.state_mean[None]) / self.state_std[None]
+        normalized *= mask[None]
+        omega = torch.stack([frame["omega"].float().reshape(1) for frame in frames])
+        forces = torch.stack([frame["force"].float()[2:4] for frame in frames[1:]])
+        forces = (forces - self.force_mean[None]) / self.force_std[None]
+
+        sample = TensorDict({
+            "state": normalized[0],
+            "target_state": normalized[1:],
+            "omega": omega,
+            "target_force": forces,
+            "mask": mask,
+            "time": frames[0]["time"].float(),
+        }, batch_size=[])
+        metadata = {
+            "case": self.paths[file_index].stem,
+            "step": step,
+            "rollout_steps": self.rollout_steps,
+            "split": self.split,
+        }
+        return sample, metadata

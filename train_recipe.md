@@ -21,9 +21,9 @@
                      下一状态与 Cd/Cl
 ```
 
-当前数据只覆盖 `U∞=1、Re=100、L/D=5`，且模型使用完整流场输入。跨来流闭环控制需要新增多 `U∞/Re` CFD 数据并把来流作为条件；真实在线应用还需要稀疏传感器状态估计。闭环策略必须回到独立 OpenFOAM 中回放验证。候选控制指标、约束和分阶段路线详见 `cfd/tandem_cylinders/CASE_SPEC.md` 第 1.1 节。本阶段继续完成代理模型训练和独立 test rollout，不在当前步骤实现控制器。
+当前数据只覆盖 `U∞=1、Re=100、L/D=5`，且模型使用完整流场输入。跨来流闭环控制需要新增多 `U∞/Re` CFD 数据并把来流作为条件；真实在线应用还需要稀疏传感器状态估计。闭环策略必须回到独立 OpenFOAM 中回放验证。适用范围和扩展条件见 `cfd/tandem_cylinders/CASE_SPEC.md` 第 10 节。本阶段继续完成代理模型训练和独立 test rollout，不在当前步骤实现控制器。
 
-第一阶段现已完成并冻结。第二阶段的第一版目标、动作约束、MPC horizon、代理内冒烟和 OpenFOAM 闭环验收规则记录在 `closed_loop_control_spec.md`。代理内 MPC 使用 `conf/tandem_mpc.yaml` 和 `scripts/control_tandem_mpc.py`，所有结果必须标记为 surrogate-only，不能代替 CFD 回放。
+当前工作先完成代理模型的多步训练、独立测试和论文复现对照。闭环控制在这些结果冻结后开展；已有控制草案保存在 `closed_loop_control_spec.md`，不属于本轮验收范围。
 
 ## 1. 固定的软件和数据边界
 
@@ -407,6 +407,8 @@ export NCCL_CUMEM_HOST_ENABLE=0
 export NCCL_SOCKET_IFNAME=lo
 ```
 
+正式多步训练前曾出现 WSL `getpwuid` 和 `/etc/default/locale` I/O 错误。检查确认 `ext4.vhdx` 所在 D 盘仅剩约 30 MiB；释放宿主空间后 WSL 正常启动，工程、HDF5 和 checkpoint 均可读取，内核日志未出现新的 ext4 I/O 错误。为避免训练检查点继续扩展 VHDX，`artifacts/` 已逐文件核对后迁至 `<WINDOWS_DATA_DRIVE>:\WSLData\fluid_control\artifacts`，Linux 原路径保留符号链接；HDF5 训练数据继续位于 ext4。该事件属于宿主存储容量问题，不是模型或 PhysicsNeMo 故障。
+
 修复后的双卡训练冒烟测试已于 2026-09-29 通过。1 个 epoch 的训练 loss 为 `0.2025793`；验证集物理单位场 MAE 为 `0.00336758`、RMSE 为 `0.00516719`，归一化力系数 MAE 为 `0.746278`；训练 epoch 用时 `8.36 s`、`88.90 ms/iter`，退出码 0。PhysicsNeMo 模型、训练状态、最佳 checkpoint、完整配置、runtime metadata 和 history 均已生成并通过 JSON/非空文件审计，输出 `SMOKE_TRAINING_ARTIFACTS_OK`。checkpoint 保存已限制为 rank 0，避免两个进程并发覆盖同一文件。GPU 0/1 实测最大占用分别为 1,726/1,858 MiB，最低剩余分别为 70,714/70,582 MiB，满足每卡至少保留 15 GiB 的约束。
 
 同配置单卡对照使用 batch size 8，训练为 `69.71 ms/iter`、约 `114.8 samples/s`；双卡每 rank batch size 8、全局 batch size 16，约 `180.0 samples/s`。双卡 SHM 相对单卡吞吐提升约 1.57 倍，并行效率约 78.4%，因此正式训练继续使用 GPU 0/1。该结果只说明 SHM 对本任务有实际收益，不能等同于原生 Linux 中可用 PCIe/NVLink P2P 时的 NCCL 性能。单卡对照日志位于 `artifacts/tandem_fno_smoke_single/train.log`，最终双卡冒烟日志位于 `artifacts/tandem_fno_smoke/train.log`。
@@ -449,6 +451,22 @@ tail -f artifacts/tandem_fno_train.log
 
 **正式训练结果：已通过。**50/50 epochs 完成，`formal_training_exit=0`，无残留训练进程。Epoch 50 同时是验证场 MAE 最佳 checkpoint：train loss `3.0743371e-05`、场 MAE `5.3888804e-04`、场 RMSE `7.9748279e-04`、归一化后柱力 MAE `8.5806989e-03`。后柱力 MAE 的单独最低值出现在 Epoch 42，为 `8.4354119e-03`；当前 `best/` 按主要指标场 MAE选择 Epoch 50。恢复后的 batch 64 阶段用时 14:56.58，峰值 CPU 常驻内存约 3.30 GiB、swap 为 0。runtime metadata 记录双 GPU、显存比例上限 0.85 和理论保留 10.754 GiB/卡。
 
+### 9.1 多步 rollout 微调
+
+单步模型在长 rollout 中存在累积误差。`TandemRolloutDataset` 继续使用 PhysicsNeMo `DatasetBase` 和 `HDF5Reader`，但每个样本返回连续 10 步状态、动作和后柱受力。`scripts/train_tandem_fno_rollout.py` 从 Epoch 50 模型初始化，以 10 步自回归损失进行微调；teacher forcing 在前 10 Epoch 从 0.5 线性降为 0，随后完全使用模型自身状态。模型、分布式管理、训练封装、日志与 checkpoint 均继续使用 PhysicsNeMo API。
+
+完整 10 步显存探测得到：每 rank batch 64 时，GPU0/1 峰值约为 51.4/51.6 GiB，每卡剩余约 20.8 GiB。因此正式运行采用全局 batch 128：
+
+```bash
+OUTPUT_DIR=artifacts/tandem_fno_rollout \
+  bash scripts/run_tandem_fno_rollout.sh \
+  training.batch_size=64 training.workers=4
+```
+
+配置位于 `conf/tandem_fno_rollout.yaml`。最佳模型按“10 步末端流场 MAE + `0.1 ×` 末端后柱受力 MAE”选择，原单步模型和多步模型保存在不同目录。
+
+**多步微调结果：已通过。**20/20 Epoch 完成，退出码为 0，最佳 checkpoint 为 Epoch 20。验证集 10 步平均/末端流场 MAE 为 `0.00225494/0.00366929`，平均/末端后柱受力 MAE 为 `0.00582447/0.00749916`。墙钟时间为 1:13:36，GPU0/1 峰值显存为 52,002/52,178 MiB，最低剩余显存为 20,438/20,262 MiB。
+
 ## 10. 测试集滚动预测
 
 正式训练完成后执行：
@@ -480,6 +498,24 @@ find artifacts/tandem_fno/rollout_visualizations -name '*.png' -type f | sort
 
 27/27 张 PNG 已生成。视觉抽查显示恒定转速轨迹在 50 步仍较好复现尾流；动态动作轨迹保留主要涡结构和相位，但出现累积的高频纹理误差。最难的 `dynamic_test_01` 在 50 步的场 MAE 为 0.0218156、后柱力 MAE 为 0.0760545，其中 `Cl` MAE 为 0.0949183。结果满足第一阶段代理模型门槛，但未来闭环不应把长时间纯开环代理 rollout 当作真实系统；应采用有限预测窗口并用新观测持续校正状态。
 
+为提高统计覆盖率，模型优化对照使用固定 5 帧起点间隔，并增加 100 步评估：
+
+```bash
+CUDA_VISIBLE_DEVICES=0 .venv/bin/python scripts/evaluate_tandem_fno.py \
+  --checkpoint-dir artifacts/tandem_fno/best \
+  --output artifacts/tandem_fno/evaluation_dense.json \
+  --horizons 1 10 50 100 \
+  --segment-stride 5 \
+  --evaluation-batch-size 8 \
+  --visualizations-per-horizon 0
+```
+
+基线检查了 480/477/453/423 个窗口，1/10/50/100 步流场 MAE 分别为 `0.00061045`、`0.00471497`、`0.01596130`、`0.03894886`，全部保持数值稳定。多步微调模型使用完全相同的命令参数评估，并通过 `scripts/compare_rollout_evaluations.py` 生成逐 horizon 和逐工况对照。
+
+多步模型采用相同测试窗口完成评估，全部 1,833 个窗口稳定。相对单步基线，10/50/100 步流场 MAE 分别降低 9.47%/16.80%/24.97%，后柱受力 MAE 分别降低 38.37%/29.35%/26.68%。1 步受力 MAE 增加 0.81%；恒定 `omega=+0.5` 工况的 100 步受力 MAE 增加 17.34%，但两条动态轨迹在同一指标上改善 30.56% 和 32.45%。最终评估生成 36 张 `u/v/p` Ground Truth、Prediction 和 Absolute Error 对比图。
+
+参考论文的物理设置、无控制统计、控制目标和当前复现边界见 `docs/PAPER_REPRODUCTION.md`。
+
 ## 11. 产物与审计位置
 
 | 产物 | 路径 |
@@ -493,5 +529,9 @@ find artifacts/tandem_fno/rollout_visualizations -name '*.png' -type f | sort
 | 环境记录 | `artifacts/tandem_fno/environment.log` |
 | 最佳 checkpoint 与训练历史 | `artifacts/tandem_fno/best/`、`training_history.json` |
 | 测试结果 | `artifacts/tandem_fno/evaluation.json` |
+| 多步最佳 checkpoint 与训练历史 | `artifacts/tandem_fno_rollout/best/`、`training_history.json` |
+| 严格基线与多步评估 | `artifacts/tandem_fno/evaluation_dense.json`、`artifacts/tandem_fno_rollout/evaluation_dense.json` |
+| 模型误差对照 | `artifacts/tandem_fno_rollout/baseline_comparison.json` |
+| 多步流场可视化 | `artifacts/tandem_fno_rollout/rollout_visualizations/` |
 
 所有命令都从原始数值文件生成可复查产物。不要只保留终端截图；保留日志、JSON、固定提交号、原始算例配置和 checkpoint。

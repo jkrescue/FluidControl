@@ -19,7 +19,8 @@
 | Curator HDF5 数据集 | 21/21 通过 |
 | PhysicsNeMo DataPipe | 通过 |
 | PhysicsNeMo FNO 训练 | 50/50 Epoch 完成 |
-| 独立测试轨迹 rollout | 1、10、50 步均稳定 |
+| 10 步 rollout 微调 | 20/20 Epoch 完成 |
+| 独立测试轨迹 rollout | 1、10、50、100 步均稳定 |
 
 ## 2. 研究对象与阶段目标
 
@@ -155,6 +156,18 @@ q = omega D / (2 U∞) = omega / 2
 
 探针最大绝对差为：时间均值 `u=0.02451、v=0.00673`，RMS `u=0.02399、v=0.01367`。主要受力统计差异均低于 3%。完整结果保存在 `artifacts/tandem_cylinders/rotation_grid_comparison.json`。
 
+### 6.4 参考论文无控制工况
+
+Zhao 等（*Ocean Engineering*, 2024, 118138）在 `Re=100、L/D=5` 下报告后圆柱平均 `Cd=0.91`、平均 `|Cl|=1.07`、最大 `|Cl|=1.69`。OpenFOAM 无控制工况在 `t=80..160` 的结果如下。
+
+| 后圆柱统计量 | 参考论文 | OpenFOAM | 相对差异 |
+| --- | ---: | ---: | ---: |
+| 平均 `Cd` | 0.91 | 0.909245 | 0.083% |
+| 平均 `|Cl|` | 1.07 | 1.069066 | 0.087% |
+| 最大 `|Cl|` | 1.69 | 1.647281 | 2.528% |
+
+该结果支持代表性无控制流动的一致性。论文使用 CUDA 加速 D2Q9 MRT 多块 LBM，本项目使用 OpenFOAM 有限体积法，因此属于独立数值复现。完整对照与控制阶段边界见[论文复现对照](../../docs/PAPER_REPRODUCTION.md)。
+
 ## 7. 数据集设计
 
 ### 7.1 恒定转速轨迹
@@ -183,6 +196,8 @@ q = omega D / (2 U∞) = omega / 2
 | test | 1 | 幅值和频率随时间变化的 chirp |
 
 动作采用 OpenFOAM `Function1 table` 线性插值，范围为 `[-1,1]`。每条轨迹覆盖 `t=80..160`，包含 16,000 个求解步、801 个场快照和 800 个相邻帧对。
+
+动作覆盖审计显示，训练集最大 `|domega/dt|=0.5`；`dynamic_test_01` chirp 的最大值为 0.7624，高出 52.5%。全部 test 动作间隔中有 5% 超出训练变化率上限，该轨迹用于检验变化率外推，不作为训练数据。
 
 16 条动态轨迹汇总如下：
 
@@ -264,6 +279,7 @@ HDF5 单轨迹结构如下：
 | `nvidia-physicsnemo==2.2.2` 解析冲突 | Curator 的 uv source 指向 PhysicsNeMo GitHub HEAD | 安装时使用 `--no-sources-package nvidia-physicsnemo` |
 | `sklearn==0.0.post12` 构建被拒绝 | 传递依赖使用弃用占位包 | 安装期间设置 `SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True` |
 | WSL 双 GPU NCCL 报错 `Cuda failure 999` | GPU P2P 不可用，默认传输初始化失败 | 关闭 P2P、IB 和 cuMem device/host allocation，保留 SHM 通信 |
+| WSL 启动时报 `getpwuid` 与 I/O 错误 | 承载 `ext4.vhdx` 的宿主 D 盘空间耗尽 | 无损迁移 Windows 缓存目录并保留目录联接；训练产物迁至 C 盘，CFD/HDF5 仍保留在 ext4 |
 
 Curator 安装与验证日志位于：
 
@@ -296,6 +312,8 @@ DataPipe 审计得到 12,000/2,400/2,400 个 train/validation/test 窗口。输�
 
 正式训练从 checkpoint 恢复后采用每 rank batch size 64、全局 batch size 128，并保留 optimizer 和 scheduler 状态。
 
+10 步自回归微调从 Epoch 50 模型初始化，teacher forcing 在前 10 Epoch 由 0.5 降至 0，共训练 20 Epoch。最佳 checkpoint 为 Epoch 20；验证集 10 步平均流场 MAE 为 `0.00225494`，末端流场 MAE 为 `0.00366929`，平均/末端后柱受力 MAE 为 `0.00582447/0.00749916`。GPU0/1 峰值显存为 52,002/52,178 MiB，训练退出码为 0。
+
 ### 9.4 独立测试轨迹 rollout
 
 冻结 Epoch 50 checkpoint 在 3 条独立测试轨迹上完成 1、10、50 步 rollout。所有片段均保持数值稳定，无失败片段。
@@ -310,6 +328,17 @@ DataPipe 审计得到 12,000/2,400/2,400 个 train/validation/test 窗口。输�
 
 上述结果表明第一阶段动作条件代理模型通过既定测试，不代表闭环控制效果已经得到验证。
 
+采用固定 5 帧起点间隔的严格对照进一步检查了 1/10/50/100 步，共 480/477/453/423 个窗口。多步模型相对单步基线的结果如下。
+
+| 步数 | 流场 MAE | 流场变化 | 后柱受力 MAE | 受力变化 |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 0.00057276 | -6.17% | 0.00546587 | +0.81% |
+| 10 | 0.00426863 | -9.47% | 0.00807204 | -38.37% |
+| 50 | 0.01327908 | -16.80% | 0.03627153 | -29.35% |
+| 100 | 0.02922517 | -24.97% | 0.07109247 | -26.68% |
+
+所有严格测试窗口保持稳定。恒定 `omega=+0.5` 工况的 100 步受力误差增加 17.34%，两条动态测试轨迹分别改善 30.56% 和 32.45%。评估生成 36 张物理单位流场真值、预测和绝对误差对比图。
+
 ## 10. 适用范围与后续扩展
 
 现有数据适用于：
@@ -321,11 +350,15 @@ DataPipe 审计得到 12,000/2,400/2,400 个 train/validation/test 窗口。输�
 
 现有数据不覆盖跨雷诺数、跨圆心距、跨几何、三维湍流、电机真实功耗、结构疲劳寿命及工程安全认证。跨来流速度研究需要增加多雷诺数 CFD 轨迹，并将 `U∞/Re` 作为模型条件。闭环控制结论需要通过独立 OpenFOAM 回放或实验验证，并同时报告控制收益、动作约束、控制代价和鲁棒性。
 
+参考论文允许的无量纲表面速度比为 `[-6,6]`，收敛策略的代表范围约为 `[-2.21,2.07]`；当前数据仅覆盖 `[-0.5,0.5]`。因此现有代理不能用于论文全动作域内的闭环结论。进入同指标控制复现前，需要先补充更高转速 CFD、重新验证时间步与旋转工况网格，并扩展代理训练数据。
+
 ## 11. 产物与证据索引
 
 | 产物或日志 | 内容 |
 | --- | --- |
 | `artifacts/tandem_cylinders/dynamic_dataset_manifest.json` | 16 条动态轨迹的质量检查清单 |
+| `artifacts/tandem_cylinders/action_coverage.json` | 各划分动作幅值与变化率覆盖审计 |
+| `artifacts/tandem_cylinders/control_small_z000_stats.json` | 无控制后柱受力统计及论文数值对照依据 |
 | `artifacts/tandem_cylinders/rotation_grid_comparison.json` | 旋转代表工况的粗、中网格比较 |
 | `artifacts/tandem_cylinders/vtk_export.log` | 全量 VTK 导出日志 |
 | `artifacts/tandem_cylinders/vtk_counts.txt` | 21 条轨迹的 VTK 帧数检查 |
@@ -342,6 +375,10 @@ DataPipe 审计得到 12,000/2,400/2,400 个 train/validation/test 窗口。输�
 | `artifacts/tandem_fno/training_history.json` | 逐 Epoch 训练与验证指标 |
 | `artifacts/tandem_fno/evaluation.json` | 独立测试轨迹 rollout 结果 |
 | `artifacts/tandem_fno/rollout_visualizations/` | 27 张流场对比图 |
+| `artifacts/tandem_fno_rollout/best/` | 10 步微调最佳 PhysicsNeMo checkpoint |
+| `artifacts/tandem_fno_rollout/evaluation_dense.json` | 多步模型严格 test rollout 结果 |
+| `artifacts/tandem_fno_rollout/baseline_comparison.json` | 单步基线与多步模型对照 |
+| `artifacts/tandem_fno_rollout/rollout_visualizations/` | 36 张多步模型流场对比图 |
 | `artifacts/tandem_fno/stage1_release/` | 第一阶段冻结清单与 SHA-256 校验 |
 
 ## 12. 源代码索引
@@ -362,8 +399,12 @@ DataPipe 审计得到 12,000/2,400/2,400 个 train/validation/test 窗口。输�
 | `../../src/fluid_control/tandem_datapipe.py` | PhysicsNeMo DataPipe |
 | `../../scripts/train_tandem_fno.py` | FNO 训练 |
 | `../../scripts/evaluate_tandem_fno.py` | 独立测试与可视化 |
+| `../../scripts/train_tandem_fno_rollout.py` | 10 步自回归微调 |
+| `../../scripts/compare_rollout_evaluations.py` | 单步基线与多步模型误差对照 |
+| `../../scripts/audit_tandem_actions.py` | 动作幅值与变化率覆盖审计 |
 | `../../scripts/control_tandem_mpc.py` | 代理模型 MPC 原型 |
 | `../../conf/tandem_fno.yaml` | FNO 配置 |
+| `../../conf/tandem_fno_rollout.yaml` | 多步微调配置 |
 | `../../conf/tandem_mpc.yaml` | MPC 配置 |
 | `../../train_recipe.md` | 环境配置与完整执行命令 |
 | `../../closed_loop_control_spec.md` | 第二阶段闭环控制规范 |

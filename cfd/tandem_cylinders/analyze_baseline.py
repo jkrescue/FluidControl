@@ -60,9 +60,11 @@ def window_stats(rows: list[tuple[float, float, float]], begin: float, end: floa
         "samples": len(part),
         "cd_mean": statistics.mean(drag),
         "cl_mean": cl_mean,
+        "cl_abs_mean": statistics.mean(abs(v) for v in lift),
         "cl_rms": cl_rms,
         "cl_min": min(lift),
         "cl_max": max(lift),
+        "cl_abs_max": max(abs(v) for v in lift),
         "period_count": len(periods),
         "st_zero_crossing": 1 / statistics.median(periods) if periods else None,
     }
