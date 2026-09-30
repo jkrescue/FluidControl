@@ -46,7 +46,7 @@ canvas { display:block; width:100%; height:280px; }
 </head>
 <body><main>
 <header><div><h1>PhysicsNeMo 训练监控</h1><div class="sub">每 3 秒自动更新</div></div>
-<label>运行阶段 <select id="run"><option value="one_step">单步 FNO</option><option value="rollout">Rollout 微调</option></select></label></header>
+<label>运行阶段 <select id="run"><option value="one_step">单步 FNO</option><option value="rollout">Rollout 微调</option><option value="no_tf">无 Teacher Forcing 对照</option></select></label></header>
 <section class="stats" aria-live="polite">
  <div class="stat"><span>当前 Epoch</span><strong id="epoch">—</strong></div>
  <div class="stat"><span>训练 Loss</span><strong id="loss">—</strong></div>
@@ -68,7 +68,8 @@ canvas { display:block; width:100%; height:280px; }
 const runSelect=document.getElementById('run');
 const specs={
  one_step:[['train_loss','训练 Loss',true],['state_mae_physical_units','验证场 MAE',false],['state_rmse_physical_units','验证场 RMSE',false],['force_mae_normalized','验证力系数 MAE（标准化）',false]],
- rollout:[['train_loss','课程训练 Loss（Epoch 1–15 难度递增）',true],['teacher_forcing_ratio','Teacher Forcing 比例',false],['selection_score','固定自由 Rollout 验证指标',false],['rollout_state_mae','Rollout 场 MAE',false],['terminal_state_mae','末步场 MAE',false],['terminal_force_mae','末步力系数 MAE',false]]
+ rollout:[['train_loss','课程训练 Loss（Epoch 1–15 难度递增）',true],['teacher_forcing_ratio','Teacher Forcing 比例',false],['selection_score','固定自由 Rollout 验证指标',false],['rollout_state_mae','Rollout 场 MAE',false],['terminal_state_mae','末步场 MAE',false],['terminal_force_mae','末步力系数 MAE',false]],
+ no_tf:[['train_loss','固定纯 Rollout 训练 Loss',true],['teacher_forcing_ratio','Teacher Forcing 比例',false],['selection_score','固定自由 Rollout 验证指标',false],['rollout_state_mae','Rollout 场 MAE',false],['terminal_state_mae','末步场 MAE',false],['terminal_force_mae','末步力系数 MAE',false]]
 };
 const requestedRun=new URLSearchParams(window.location.search).get('run');
 if(Object.prototype.hasOwnProperty.call(specs,requestedRun))runSelect.value=requestedRun;
@@ -100,6 +101,8 @@ async function refresh(){
   document.querySelectorAll('.plot').forEach((plot,index)=>plot.style.display=index<cfg.length?'block':'none');
   document.getElementById('explanation').textContent=run==='rollout'
    ? 'Epoch 1–15 的 Teacher Forcing 从 0.5 降至 0，训练输入逐步减少真实状态提示，因此训练 Loss 的难度在变化。Epoch 16–30 为固定的纯自由 Rollout，可直接比较；选择指标与验证 MAE 始终使用自由 Rollout。'
+   : run==='no_tf'
+   ? 'Teacher Forcing 全程为 0，所有 Epoch 的训练 Loss 对应相同的纯自由 Rollout 目标，可以直接横向比较。'
    : '单步训练的目标保持固定，可直接比较各 Epoch 的训练 Loss 与验证误差。';
   cfg.forEach((s,i)=>{document.getElementById('title-'+i).textContent=s[1];draw(document.getElementById('chart-'+i),rows,...s)});
   const last=rows.at(-1);document.getElementById('epoch').textContent=last?.epoch??'—';document.getElementById('loss').textContent=fmt(last?.train_loss);
@@ -130,6 +133,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             relative = {
                 "one_step": "artifacts/tandem_fno_expanded_v1/training_history.json",
                 "rollout": "artifacts/tandem_fno_rollout_expanded_v1/training_history.json",
+                "no_tf": "artifacts/tandem_fno_rollout_no_tf_v1/training_history.json",
             }.get(run)
             if relative is None:
                 self.send_bytes(b'{"error":"unknown run"}', "application/json", 400)

@@ -3,6 +3,7 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 output_dir="${OUTPUT_DIR:-artifacts/tandem_fno_rollout_expanded_v1}"
+config_name="${CONFIG_NAME:-tandem_fno_rollout_expanded}"
 batch_size="${BATCH_SIZE:-16}"
 smoke="${SMOKE:-false}"
 mkdir -p "$output_dir"
@@ -40,7 +41,7 @@ fi
 
 set +e
 /usr/bin/time -v .venv/bin/torchrun --standalone --nproc_per_node=2 \
-    scripts/train_tandem_fno_rollout.py --config-name tandem_fno_rollout_expanded \
+    scripts/train_tandem_fno_rollout.py --config-name "$config_name" \
     "${overrides[@]}" "$@" 2>&1 | tee -a "$output_dir/train.log"
 code=${PIPESTATUS[0]}
 set -e

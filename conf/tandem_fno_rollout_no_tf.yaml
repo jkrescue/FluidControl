@@ -1,0 +1,10 @@
+defaults:
+  - tandem_fno_rollout_expanded
+  - _self_
+
+output_dir: artifacts/tandem_fno_rollout_no_tf_v1
+
+training:
+  teacher_forcing_start: 0.0
+  teacher_forcing_end: 0.0
+  teacher_forcing_epochs: 1
