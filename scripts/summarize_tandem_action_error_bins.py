@@ -52,7 +52,7 @@ def main() -> None:
             "max_abs_omega_bins": omega_bins,
             "max_abs_domega_dt_bins": rate_bins,
         }
-        for label, bins in (("max |omega|", omega_bins), ("max |domega/dt|", rate_bins)):
+        for label, bins in (("max abs(omega)", omega_bins), ("max abs(domega/dt)", rate_bins)):
             for row in bins:
                 low, high = row["range"]
                 field = "-" if row[ERROR_KEYS[0]] is None else f"{row[ERROR_KEYS[0]]:.8g}"

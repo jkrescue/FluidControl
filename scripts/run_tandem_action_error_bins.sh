@@ -15,6 +15,7 @@ CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src .venv/bin/python scripts/evaluate_tandem_f
     --output "$output/evaluation.json" \
     --visualization-dir "$output/unused_visualizations" \
     --horizons 1 10 50 100 \
+    --segment-stride 5 \
     --visualizations-per-horizon 0 \
     --action-mode observed \
     --segment-metrics-output "$output/segments.json"
