@@ -37,6 +37,8 @@ select { padding:7px 10px; border:1px solid var(--grid); border-radius:6px;
 .plots { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
 .plot { background:var(--panel); padding:12px; border-radius:8px; min-width:0; }
 .plot h2 { margin:0 0 7px; font-size:14px; font-weight:600; }
+.note { margin:14px 0; padding:11px 14px; border-left:4px solid var(--warn);
+  border-radius:6px; background:var(--panel); color:var(--muted); }
 canvas { display:block; width:100%; height:280px; }
 #status { margin-top:14px; color:var(--muted); font-variant-numeric:tabular-nums; }
 @media(max-width:760px) { body{padding:14px}.stats{grid-template-columns:repeat(2,1fr)}.plots{grid-template-columns:1fr} }
@@ -51,11 +53,14 @@ canvas { display:block; width:100%; height:280px; }
  <div class="stat"><span id="best-label">最佳验证 MAE</span><strong id="best">—</strong></div>
  <div class="stat"><span>记录更新时间</span><strong id="updated" style="font-size:15px">—</strong></div>
 </section>
+<div class="note" id="explanation"></div>
 <section class="plots">
  <div class="plot"><h2 id="title-0"></h2><canvas id="chart-0" role="img"></canvas></div>
  <div class="plot"><h2 id="title-1"></h2><canvas id="chart-1" role="img"></canvas></div>
  <div class="plot"><h2 id="title-2"></h2><canvas id="chart-2" role="img"></canvas></div>
  <div class="plot"><h2 id="title-3"></h2><canvas id="chart-3" role="img"></canvas></div>
+ <div class="plot"><h2 id="title-4"></h2><canvas id="chart-4" role="img"></canvas></div>
+ <div class="plot"><h2 id="title-5"></h2><canvas id="chart-5" role="img"></canvas></div>
 </section>
 <div id="status" aria-live="polite">等待训练记录……</div>
 </main>
@@ -63,7 +68,7 @@ canvas { display:block; width:100%; height:280px; }
 const runSelect=document.getElementById('run');
 const specs={
  one_step:[['train_loss','训练 Loss',true],['state_mae_physical_units','验证场 MAE',false],['state_rmse_physical_units','验证场 RMSE',false],['force_mae_normalized','验证力系数 MAE（标准化）',false]],
- rollout:[['train_loss','训练 Loss',true],['rollout_state_mae','Rollout 场 MAE',false],['terminal_state_mae','末步场 MAE',false],['terminal_force_mae','末步力系数 MAE',false]]
+ rollout:[['train_loss','课程训练 Loss（Epoch 1–15 难度递增）',true],['teacher_forcing_ratio','Teacher Forcing 比例',false],['selection_score','固定自由 Rollout 验证指标',false],['rollout_state_mae','Rollout 场 MAE',false],['terminal_state_mae','末步场 MAE',false],['terminal_force_mae','末步力系数 MAE',false]]
 };
 const requestedRun=new URLSearchParams(window.location.search).get('run');
 if(Object.prototype.hasOwnProperty.call(specs,requestedRun))runSelect.value=requestedRun;
@@ -92,6 +97,10 @@ async function refresh(){
  try{
   const res=await fetch('/api/history?run='+encodeURIComponent(run),{cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);
   const payload=await res.json(),rows=payload.history||[],cfg=specs[run];
+  document.querySelectorAll('.plot').forEach((plot,index)=>plot.style.display=index<cfg.length?'block':'none');
+  document.getElementById('explanation').textContent=run==='rollout'
+   ? 'Epoch 1–15 的 Teacher Forcing 从 0.5 降至 0，训练输入逐步减少真实状态提示，因此训练 Loss 的难度在变化。Epoch 16–30 为固定的纯自由 Rollout，可直接比较；选择指标与验证 MAE 始终使用自由 Rollout。'
+   : '单步训练的目标保持固定，可直接比较各 Epoch 的训练 Loss 与验证误差。';
   cfg.forEach((s,i)=>{document.getElementById('title-'+i).textContent=s[1];draw(document.getElementById('chart-'+i),rows,...s)});
   const last=rows.at(-1);document.getElementById('epoch').textContent=last?.epoch??'—';document.getElementById('loss').textContent=fmt(last?.train_loss);
   const bestKey=run==='one_step'?'state_mae_physical_units':'selection_score';const values=rows.map(r=>+r[bestKey]).filter(Number.isFinite);
