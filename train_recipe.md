@@ -731,3 +731,15 @@ bash scripts/run_tandem_action_error_bins.sh
 ```
 
 结果保存在 `artifacts/tandem_fno_rollout_no_tf_v1/action_error_bins/`。100 步高幅值分桶 `max |omega|∈[4,5)` 包含 224 个窗口，流场和受力 MAE 相对 `[2,3)` 分桶分别增加 64.61% 和 166.67%。50 步快速动作分桶 `max |domega/dt|∈[4,6)` 包含 59 个窗口，相对 `[0,1)` 分桶分别增加 122.86% 和 239.73%。后续控制器需要对这些区域施加不确定性检查，不能仅依靠动作硬边界。
+
+## 15. 代理不确定性校准
+
+第一版校准使用无 teacher forcing、课程式 teacher forcing 和单步 checkpoint 构成异构委员会。阈值只在 validation 上确定，test 仅用于冻结评估：
+
+```bash
+bash scripts/run_tandem_uncertainty_calibration.sh
+```
+
+10/50步 test 的流场分歧与真实误差秩相关为 `0.950/0.889`。validation 的90%分歧阈值在 test 上保留 `85.63%/84.54%` 的流场窗口，被标记窗口的真实流场误差为可信窗口的 `2.18/2.17` 倍。受力分歧秩相关为 `0.327/0.328`，但被标记窗口受力误差仍达到可信窗口的 `4.30/1.99` 倍。结果位于 `artifacts/tandem_fno_rollout_no_tf_v1/uncertainty_calibration/report.json`。
+
+该方法用于判断模型分歧能否作为门控信号，不解释为严格的概率置信区间。论文级不确定性需要补充相同训练目标、不同随机种子的深度集成，并在未见 `Re/L/D` 工况上重新校准。
