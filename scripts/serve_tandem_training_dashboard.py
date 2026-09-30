@@ -65,6 +65,8 @@ const specs={
  one_step:[['train_loss','训练 Loss',true],['state_mae_physical_units','验证场 MAE',false],['state_rmse_physical_units','验证场 RMSE',false],['force_mae_normalized','验证力系数 MAE（标准化）',false]],
  rollout:[['train_loss','训练 Loss',true],['rollout_state_mae','Rollout 场 MAE',false],['terminal_state_mae','末步场 MAE',false],['terminal_force_mae','末步力系数 MAE',false]]
 };
+const requestedRun=new URLSearchParams(window.location.search).get('run');
+if(Object.prototype.hasOwnProperty.call(specs,requestedRun))runSelect.value=requestedRun;
 function css(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim()}
 function fmt(v){if(v===undefined||v===null||!Number.isFinite(+v))return '—';v=+v;return v===0?'0':(Math.abs(v)<.001||Math.abs(v)>=1000?v.toExponential(3):v.toFixed(6))}
 function draw(canvas, rows, key, label, logScale){
