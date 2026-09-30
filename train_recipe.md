@@ -1,6 +1,6 @@
 # 串列双圆柱第一阶段训练操作手册
 
-更新时间：2026-09-29
+更新时间：2026-09-30
 远程项目：`~/workspace/fluid_control`
 
 本文给出从 OpenFOAM 原始结果、PhysicsNeMo Curator、PhysicsNeMo Datapipe 到 FNO 训练和测试的完整可执行流程。每一步先检查预期产物，再进入下一步；脚本默认拒绝覆盖已有结果。
@@ -649,3 +649,43 @@ PYTHONPATH=src CUDA_VISIBLE_DEVICES=0 \
 | ParaView 导出检查 | `artifacts/tandem_paraview/validation.json` |
 
 所有命令都从原始数值文件生成可复查产物。不要只保留终端截图；保留日志、JSON、固定提交号、原始算例配置和 checkpoint。
+
+## 13. 扩展动作域数据与重新训练
+
+扩展数据用于提高论文相关转速范围内的代理精度，物理条件仍为 `Re=100、L/D=5、U∞=1`。后圆柱角速度扩展为 `omega∈[-5,5]`，对应表面速度比 `q∈[-2.5,2.5]`。32 条轨迹均从无控制解 `t=80` 重启，使用粗网格 19,290 单元、`Δt=0.005`，保存 `t=80..160` 的 801 个流场快照。
+
+| 划分 | 轨迹数 | 动作类型 | 一步样本数 |
+| --- | ---: | --- | ---: |
+| train | 24 | 随机 ramp、multisine、chirp、边界保持 | 19,200 |
+| validation | 4 | 独立参数与相位组合 | 3,200 |
+| test | 4 | 独立参数与相位组合 | 3,200 |
+
+全部 32 条 OpenFOAM 轨迹正常到达 `t=160`，Curator 生成 24/4/4 个 HDF5，完整数据审计返回 `CURATED_DATASET_OK`。训练集最大 `|domega/dt|=6.666668`，validation/test 最大值均为 `6.666668`，没有动作变化率超出训练覆盖。原始时间目录和 VTK 采用四工况流式处理，在 HDF5 校验通过后清理可再生文件，避免 WSL 虚拟磁盘再次占满宿主 D 盘。
+
+扩展模型配置位于 `conf/tandem_fno_expanded.yaml`：输入仍为当前标准化 `u/v/p`、有效域 mask、当前与下一时刻动作，共 6 通道；输出为三通道场增量和后柱 `Cd/Cl`，共 5 通道。PhysicsNeMo FNO 使用 48 个隐通道、5 个 Fourier 层、`32×32` 模态及 128 宽度解码器，共 47,222,525 个可训练参数。动作在 DataPipe 中除以数据 manifest 的 `max_abs_omega=5`，物理单位动作仍保存在 HDF5 和评估报告中。
+
+双 GPU 冒烟从每 rank batch 224 开始并一次通过，因此正式训练采用每 rank 224、全局 batch 448、FP32、AdamW、初始学习率 `2e-4`、余弦退火和 80 Epoch。GPU0/1 截至 Epoch 27 的峰值显存为 43,350/43,526 MiB，最低剩余为 29,090/28,914 MiB，利用率均达到 100%。该设置满足显存保留约束；显存低于上限是模型实际计算图所需，并不通过无意义缓存强行占满。
+
+训练在 Epoch 19 checkpoint 完整写出后被终端中断，随后通过 PhysicsNeMo `load_checkpoint` 恢复模型、优化器和 scheduler，并从 Epoch 20 继续。中断未造成数据或 checkpoint 损坏。
+
+截至 2026-09-30 10:20 的 Epoch 27 快照如下；这些是训练进行中的诊断值，最终模型以完成 80 Epoch 后的最佳验证 checkpoint 和独立 test rollout 为准。
+
+| 指标 | Epoch 1 | Epoch 27 | 相对下降 |
+| --- | ---: | ---: | ---: |
+| train loss | 0.203610 | 0.0004880 | 99.76% |
+| 验证场 MAE | 0.0071696 | 0.0028186 | 60.69% |
+| 验证场 RMSE | 0.0119896 | 0.0043028 | 64.11% |
+| 验证受力 MAE（标准化） | 0.799182 | 0.0268695 | 96.64% |
+
+![扩展动作域 FNO 训练曲线（Epoch 27 快照）](docs/assets/expanded-training-curves-progress.png)
+
+当前曲线没有出现发散：train loss 连续下降；验证场 MAE 仅在早期出现两次小幅回升，Epoch 5 后持续下降；验证场 RMSE 仅一次早期回升；受力 MAE 连续下降。训练误差和验证误差同时改善，尚未出现持续性的训练下降而验证恶化，因此当前没有过拟合证据。验证场误差在后半段下降速度减慢，继续执行余弦退火仍有必要；是否得到更好的长期模型必须由 1/10/50/100 步独立 test rollout 判断，不能只根据一步曲线决定。
+
+实时曲线由以下命令提供，浏览器每 3 秒重新读取 `training_history.json`：
+
+```bash
+.venv/bin/python scripts/serve_tandem_training_dashboard.py \
+  --root . --host 0.0.0.0 --port 8765
+```
+
+完整自动入口为 `scripts/run_expanded_training_pipeline.sh`。它依次执行全数据校验、PhysicsNeMo DataPipe 检查、batch 冒烟、80 Epoch 单步训练、独立测试、10 步 rollout 微调和最终模型对照。扩展训练证据位于 `artifacts/tandem_fno_expanded_v1/`、`artifacts/tandem_fno_rollout_expanded_v1/` 和 `artifacts/tandem_cylinders/expanded_*`。

@@ -1,6 +1,6 @@
 # 串列双圆柱流动控制 CFD 工况与数据说明
 
-更新日期：2026-09-29
+更新日期：2026-09-30
 
 ## 1. 文档范围
 
@@ -22,6 +22,9 @@
 | PhysicsNeMo FNO 训练 | 50/50 Epoch 完成 |
 | 10 步 rollout 微调 | 20/20 Epoch 完成 |
 | 独立测试轨迹 rollout | 1、10、50、100 步均稳定 |
+| 扩展动作域 CFD | 32/32 通过，`omega∈[-5,5]` |
+| 扩展 Curator HDF5 / DataPipe | 32/32 及 24/4/4 划分通过 |
+| 扩展 PhysicsNeMo FNO | 80 Epoch 训练进行中 |
 
 ## 2. 研究对象与阶段目标
 
@@ -69,7 +72,7 @@
 q = omega D / (2 U∞) = omega / 2
 ```
 
-第一阶段动作范围 `omega∈[-1,1]`，对应 `q∈[-0.5,0.5]`。
+第一版数据动作范围为 `omega∈[-1,1]`，对应 `q∈[-0.5,0.5]`。扩展数据采用 `omega∈[-5,5]`，对应 `q∈[-2.5,2.5]`。
 
 ## 4. 求解器与数值设置
 
@@ -257,6 +260,12 @@ Zhao 等（*Ocean Engineering*, 2024, 118138）在 `Re=100、L/D=5` 下报告后
 | test | 3 | 801 | 800 | 2,400 |
 | 合计 | 21 | 16,821 | 16,800 | 16,800 |
 
+### 7.4 扩展动作域数据
+
+扩展数据由 32 条完整轨迹组成，按 24/4/4 划分为 train/validation/test。动作覆盖随机分段 ramp、多正弦、chirp 和边界保持，范围为 `omega∈[-5,5]`；三种划分的最大 `|domega/dt|` 均不超过训练集上限 `6.666668`。每条轨迹包含 16,000 个 CFD 时间步、801 个场快照和 800 个相邻帧对，总计 25,632 个快照和 25,600 个一步样本。
+
+全部算例使用 19,290 单元粗网格和 `Δt=0.005`，正常结束于 `t=160`，场、受力与探针数据均为有限值。高转速中等网格数据只用于独立数值验证，不与粗网格训练样本混合。Curator 结果位于 `data/curated/tandem_cylinders_expanded_v1/`，manifest 记录 `max_abs_omega=5`。
+
 ## 8. PhysicsNeMo 数据与训练链路
 
 | 阶段 | NVIDIA 组件 | 项目实现 |
@@ -379,6 +388,23 @@ OpenFOAM 原生流场已按 7 个工况、5 个物理时刻打包为 35 个 `.vt
 
 Mac 端另保留完整连续序列：`dynamic_train_00.vtm.series` 包含 801 个训练 CFD 时刻，三条预测 `.pvd` 各包含 100 个连续 rollout VTU。上述四个入口已使用 ParaView 6.1.0 直接打开，时间轴和字段检查通过。
 
+### 9.6 扩展动作域 FNO 训练
+
+扩展模型使用 PhysicsNeMo FNO，配置为 48 个隐通道、5 个 Fourier 层、`32×32` 模态和 128 宽度解码器，共 47,222,525 个参数。训练采用 GPU0/1、FP32、每 rank batch 224、全局 batch 448、AdamW、初始学习率 `2e-4`、余弦退火和 80 Epoch。WSL 环境关闭不可用的 P2P、IB 和 NCCL cuMem 路径，保留已验证的 SHM 通信。
+
+Epoch 19 checkpoint 完成后训练曾被终端信号中断；PhysicsNeMo `load_checkpoint` 已恢复模型、优化器和 scheduler，并从 Epoch 20 继续。Epoch 27 的进行中快照如下。
+
+| 指标 | Epoch 1 | Epoch 27 | 相对下降 |
+| --- | ---: | ---: | ---: |
+| train loss | 0.203610 | 0.0004880 | 99.76% |
+| 验证场 MAE | 0.0071696 | 0.0028186 | 60.69% |
+| 验证场 RMSE | 0.0119896 | 0.0043028 | 64.11% |
+| 验证受力 MAE（标准化） | 0.799182 | 0.0268695 | 96.64% |
+
+![扩展动作域 FNO 训练曲线（Epoch 27 快照）](../../docs/assets/expanded-training-curves-progress.png)
+
+训练 loss 和验证受力误差保持连续下降，验证场 MAE/RMSE 只在早期出现小幅波动，尚未观察到验证误差持续反弹。该曲线支持训练过程稳定，但不能单独证明长期 rollout 精度；模型验收仍以训练结束后的独立 test 轨迹 1/10/50/100 步误差、稳定性和 persistence 对照为准。
+
 ## 10. 适用范围与后续扩展
 
 现有数据适用于：
@@ -390,14 +416,14 @@ Mac 端另保留完整连续序列：`dynamic_train_00.vtm.series` 包含 801 �
 
 现有数据不覆盖跨雷诺数、跨圆心距、跨几何、三维湍流、电机真实功耗、结构疲劳寿命及工程安全认证。跨来流速度研究需要增加多雷诺数 CFD 轨迹，并将 `U∞/Re` 作为模型条件。闭环控制结论需要通过独立 OpenFOAM 回放或实验验证，并同时报告控制收益、动作约束、控制代价和鲁棒性。
 
-参考论文允许的无量纲表面速度比为 `[-6,6]`，收敛策略的代表范围约为 `[-2.21,2.07]`；当前已训练代理仍只覆盖 `[-0.5,0.5]`。高转速 CFD 数值门槛已验证到 `q=±2.5`，但这些试验尚未加入代理训练集。因此现有代理不能用于论文动作域内的闭环结论。
+参考论文允许的无量纲表面速度比为 `[-6,6]`，收敛策略的代表范围约为 `[-2.21,2.07]`。扩展数据已经覆盖 `q∈[-2.5,2.5]`，包含论文代表动作范围，但仍未覆盖论文允许的完整 `[-6,6]` 上限。扩展代理正在训练；在独立 test rollout 和中等网格 CFD 回放完成前，不能据此给出论文动作域内的闭环控制结论。
 
 后续按以下顺序执行：
 
-1. 在已通过数值验证的 `q∈[-2.5,2.5]` 范围生成动态 train/validation/test 轨迹，并保证训练集覆盖测试动作变化率；
-2. 使用中等网格 `Δt=0.0025` 保留高转速独立验证轨迹，不与粗网格训练样本直接混合；
-3. 重新执行 Curator、DataPipe、FNO 单步训练、多步微调及分动作区间评估；
-4. 再实现论文的 32 探针观测、控制代价和 PPO，并在独立 OpenFOAM 中闭环回放；
+1. 完成扩展 FNO 的 80 Epoch 单步训练、10 步微调和分动作区间测试；
+2. 使用中等网格 `Δt=0.0025` 对候选高转速动作进行独立回放；
+3. 实现论文的 32 探针观测、控制代价和连续动作控制器；
+4. 在独立 OpenFOAM 中闭环回放；
 5. 使用升力抑制率、阻力、动作代价和稳定性与论文进行同指标比较。
 
 ## 11. 产物与证据索引
@@ -434,6 +460,11 @@ Mac 端另保留完整连续序列：`dynamic_train_00.vtm.series` 包含 801 �
 | `artifacts/tandem_paraview/` | OpenFOAM 原生场和 PhysicsNeMo 预测的 ParaView 时间序列 |
 | `artifacts/tandem_paraview/validation.json` | 68 个 VTK 数据文件的回读检查结果 |
 | `artifacts/tandem_fno/stage1_release/` | 第一阶段冻结清单与 SHA-256 校验 |
+| `data/curated/tandem_cylinders_expanded_v1/` | 24/4/4 扩展动作域 Curator HDF5 |
+| `artifacts/tandem_cylinders/expanded_curated_validation.json` | 扩展 HDF5 全量审计 |
+| `artifacts/tandem_cylinders/expanded_datapipe_validation.json` | 扩展 PhysicsNeMo DataPipe 审计 |
+| `artifacts/tandem_fno_expanded_v1/` | 扩展单步模型、checkpoint、history 和评估 |
+| `artifacts/tandem_fno_rollout_expanded_v1/` | 扩展模型 10 步微调与对照 |
 
 ## 12. 源代码索引
 
