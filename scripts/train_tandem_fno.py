@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import random
+import re
 from pathlib import Path
 
 import hydra
@@ -53,6 +54,23 @@ def reduce_totals(values: torch.Tensor, dist: DistributedManager) -> torch.Tenso
     if dist.distributed:
         torch.distributed.all_reduce(values, op=torch.distributed.ReduceOp.SUM)
     return values
+
+
+def prune_checkpoint_dir(directory: Path, keep_last: int = 2) -> None:
+    """Retain only the newest complete PhysicsNeMo checkpoint generations."""
+    if keep_last < 1 or not directory.exists():
+        return
+    pattern = re.compile(r"^(?:checkpoint|.+)\.0\.(\d+)\.(?:pt|mdlus)$")
+    by_epoch: dict[int, list[Path]] = {}
+    for path in directory.iterdir():
+        match = pattern.match(path.name)
+        if match:
+            by_epoch.setdefault(int(match.group(1)), []).append(path)
+    retained = set(sorted(by_epoch)[-keep_last:])
+    for epoch, paths in by_epoch.items():
+        if epoch not in retained:
+            for path in paths:
+                path.unlink()
 
 
 def validation_metrics(forward_eval, loader: DataLoader, device: torch.device,
@@ -218,8 +236,11 @@ def main(cfg: DictConfig) -> None:
 
         scheduler.step()
         score = metrics["state_mae_physical_units"]
-        improved = score < best
-        best = min(best, score)
+        checkpoint_interval = max(int(cfg.training.get("checkpoint_interval", 5)), 1)
+        save_now = epoch % checkpoint_interval == 0 or epoch == epochs
+        improved = save_now and score < best
+        if save_now:
+            best = min(best, score)
         checkpoint_metadata = {
             "best_validation_state_mae": best,
             "validation": metrics,
@@ -227,7 +248,7 @@ def main(cfg: DictConfig) -> None:
             "action_scale": train.action_scale,
             "model_config": OmegaConf.to_container(cfg.model, resolve=True),
         }
-        if dist.rank == 0:
+        if dist.rank == 0 and save_now:
             save_checkpoint(
                 checkpoint_dir, models=network, optimizer=optimizer, scheduler=scheduler,
                 epoch=epoch, metadata=checkpoint_metadata,
@@ -237,6 +258,13 @@ def main(cfg: DictConfig) -> None:
                     best_dir, models=network, optimizer=optimizer, scheduler=scheduler,
                     epoch=epoch, metadata=checkpoint_metadata,
                 )
+            keep_last = int(cfg.training.get("checkpoint_keep_last", 2))
+            prune_checkpoint_dir(checkpoint_dir, keep_last)
+            if improved:
+                prune_checkpoint_dir(
+                    best_dir, int(cfg.training.get("best_checkpoint_keep_last", 1))
+                )
+        if dist.rank == 0:
             row = {"epoch": epoch, "train_loss": train_loss, **metrics}
             history.append(row)
             history_path.write_text(json.dumps(history, indent=2) + "\n", encoding="utf-8")

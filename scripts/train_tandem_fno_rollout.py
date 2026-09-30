@@ -25,7 +25,7 @@ from physicsnemo.utils.logging import LaunchLogger, PythonLogger
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DistributedSampler
 
-from train_tandem_fno import build_model, predict, reduce_totals
+from train_tandem_fno import build_model, predict, prune_checkpoint_dir, reduce_totals
 
 
 def rollout(
@@ -264,8 +264,11 @@ def main(cfg: DictConfig) -> None:
 
         scheduler.step()
         score = metrics["terminal_state_mae"] + float(cfg.training.selection_force_weight) * metrics["terminal_force_mae"]
-        improved = score < best
-        best = min(best, score)
+        checkpoint_interval = max(int(cfg.training.get("checkpoint_interval", 5)), 1)
+        save_now = epoch % checkpoint_interval == 0 or epoch == epochs
+        improved = save_now and score < best
+        if save_now:
+            best = min(best, score)
         checkpoint_metadata = {
             "best_rollout_score": best,
             "validation": metrics,
@@ -275,7 +278,7 @@ def main(cfg: DictConfig) -> None:
             "action_scale": train.action_scale,
             "model_config": OmegaConf.to_container(cfg.model, resolve=True),
         }
-        if dist.rank == 0:
+        if dist.rank == 0 and save_now:
             save_checkpoint(
                 checkpoint_dir, models=network, optimizer=optimizer, scheduler=scheduler,
                 epoch=epoch, metadata=checkpoint_metadata,
@@ -285,6 +288,13 @@ def main(cfg: DictConfig) -> None:
                     best_dir, models=network, optimizer=optimizer, scheduler=scheduler,
                     epoch=epoch, metadata=checkpoint_metadata,
                 )
+            keep_last = int(cfg.training.get("checkpoint_keep_last", 2))
+            prune_checkpoint_dir(checkpoint_dir, keep_last)
+            if improved:
+                prune_checkpoint_dir(
+                    best_dir, int(cfg.training.get("best_checkpoint_keep_last", 1))
+                )
+        if dist.rank == 0:
             row = {
                 "epoch": epoch, "train_loss": train_loss,
                 "teacher_forcing_ratio": current_teacher_forcing,

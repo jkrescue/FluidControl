@@ -20,6 +20,9 @@ model:
   coord_features: true
 
 training:
+  checkpoint_interval: 10
+  checkpoint_keep_last: 3
+  best_checkpoint_keep_last: 1
   epochs: 50
   batch_size: 8
   workers: 4

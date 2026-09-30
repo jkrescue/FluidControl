@@ -44,6 +44,7 @@ tune_one_step_batch() {
         if OUTPUT_DIR="$output" BATCH_SIZE="$batch" SMOKE=true \
             bash scripts/run_tandem_fno_expanded.sh; then
             echo "$batch" >"$evidence/expanded_one_step_batch_size.txt"
+            rm -rf "$output/checkpoints" "$output/best"
             echo "[$(timestamp)] Selected one-step per-GPU batch $batch"
             return
         fi
@@ -62,6 +63,7 @@ tune_rollout_batch() {
             bash scripts/run_tandem_fno_rollout_expanded.sh \
                 training.max_train_batches=2 training.max_validation_batches=2; then
             echo "$batch" >"$evidence/expanded_rollout_batch_size.txt"
+            rm -rf "$output/checkpoints" "$output/best"
             echo "[$(timestamp)] Selected rollout per-GPU batch $batch"
             return
         fi
