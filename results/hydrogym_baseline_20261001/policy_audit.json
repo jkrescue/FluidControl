@@ -1,0 +1,64 @@
+{
+  "environment": {
+    "flow": "RotaryCylinder",
+    "reynolds": 100.0,
+    "mesh": "medium",
+    "dt": 0.01,
+    "observation": "50 pressure probes",
+    "reward": "-dt * Cd"
+  },
+  "policies": {
+    "zero": {
+      "steps": 200,
+      "analysis_steps": 150,
+      "warmup_steps": 50,
+      "reward_sum": -2.2063886550422795,
+      "reward_mean": -0.014709257700281864,
+      "cd_mean": 1.4709257700281861,
+      "cd_std": 0.006934293909729047,
+      "cl_mean": 0.2195542417350534,
+      "cl_rms": 0.24608213389143635,
+      "cl_std": 0.11114113350469557,
+      "action_rms": 0.0,
+      "action_energy_mean": 0.0,
+      "max_abs_action": 0.0,
+      "finite": true
+    },
+    "random": {
+      "steps": 200,
+      "analysis_steps": 150,
+      "warmup_steps": 50,
+      "reward_sum": -2.2033748771389554,
+      "reward_mean": -0.014689165847593036,
+      "cd_mean": 1.4689165847593033,
+      "cd_std": 0.007108697515719474,
+      "cl_mean": 0.22251164900264583,
+      "cl_rms": 0.25322844234709496,
+      "cl_std": 0.12088511104209379,
+      "action_rms": 0.23740492940310798,
+      "action_energy_mean": 0.056361100504894686,
+      "max_abs_action": 0.6064900160012037,
+      "finite": true,
+      "cd_change_vs_zero_percent": -0.13659324690764585,
+      "cl_rms_change_vs_zero_percent": 2.9040338453873105
+    },
+    "ppo_smoke": {
+      "steps": 200,
+      "analysis_steps": 150,
+      "warmup_steps": 50,
+      "reward_sum": -2.2106128400191665,
+      "reward_mean": -0.01473741893346111,
+      "cd_mean": 1.4737418901532087,
+      "cd_std": 0.00761878829868014,
+      "cl_mean": 0.2406075952520132,
+      "cl_rms": 0.26430538884045485,
+      "cl_std": 0.109386121958626,
+      "action_rms": 0.0676204186157278,
+      "action_energy_mean": 0.004572521013766268,
+      "max_abs_action": 0.11603508120011745,
+      "finite": true,
+      "cd_change_vs_zero_percent": 0.19145222569378895,
+      "cl_rms_change_vs_zero_percent": 7.405354732927516
+    }
+  }
+}

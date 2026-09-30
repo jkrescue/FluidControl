@@ -175,17 +175,19 @@ HydroGym 原生旋转圆柱环境用于验证训练代码和外部基准，不�
 
 异构 checkpoint 委员会在 validation 上确定90%阈值，在独立 test 上得到10/50步流场分歧与真实误差秩相关 `0.950/0.889`；被标记窗口的流场误差为可信窗口的 `2.18/2.17` 倍。受力分歧秩相关仅约 `0.33`，但标记窗口的受力误差仍为可信窗口的 `4.30/1.99` 倍。该委员会可用于第一版门控诊断；正式概率不确定性仍需要同目标、不同随机种子的深度集成。
 
-HydroGym 阶段已于 2026-10-01 启动，官方源码固定在 commit `4ab9854dea3d84e38a59c25e0f5835a00cf8225f`，首先复跑 Firedrake `Re=100` 旋转圆柱环境与 PPO 基准。
+HydroGym 阶段已于 2026-10-01 启动，官方源码固定在 commit `4ab9854dea3d84e38a59c25e0f5835a00cf8225f`。Firedrake `Re=100` 旋转圆柱环境 smoke 与 256 步 PPO 链路验证已经完成，均正常退出。环境使用官方 `FlowEnv`、`RotaryCylinder`、`SemiImplicitBDF` 和 Stable-Baselines3 示例；结果见 `results/hydrogym_baseline_20261001/README.md`。
 
 ### 阶段 B：HydroGym 基准与环境适配
 
-1. 固定 HydroGym commit 和官方 GPU 容器；
+1. 固定 HydroGym commit 和 Firedrake 容器；
 2. 复跑官方旋转圆柱 PPO 示例，记录 reward、物理指标和成本；
 3. 实现串列双圆柱的 Gymnasium 薄适配层；
 4. 用同一策略 API 切换 PhysicsNeMo 与 OpenFOAM 后端；
 5. 用随机动作验证两个后端的单位、时间步、动作符号和 reward 分量。
 
 门槛：相同动作序列可在两个后端完整回放；日志中每项 reward 都能还原为物理量。
+
+截至 2026-10-01，前两项的软件链路验证已经完成。PPO smoke 使用 50 个压力探针，完成 256 个环境步和 4 次 rollout，约 55 秒；最终 `explained_variance=0.787`。等长 200 步物理审计显示，冻结 PPO 相比零动作的平均 `Cd` 增加 0.19%，`Cl RMS` 增加 7.41%，因此没有控制收益。HydroGym 当前默认 reward 仅为 `-dt × Cd`，没有升力波动和控制能耗项；正式训练前需要先定义与论文目标一致且可逐项审计的 reward。
 
 ### 阶段 C：控制基线
 
@@ -233,15 +235,16 @@ HydroGym 的 L4DC 2025 论文已将平台定位为流体控制强化学习基准
 
 ## 8. 近期执行顺序
 
-当前不立即大规模启动 RL。先完成以下工作：
+当前不立即大规模启动 RL。按以下顺序推进：
 
-1. 完成正在运行的无 teacher forcing 消融，并冻结代理版本；
-2. 执行动作敏感性与不确定性校准；
-3. 固定 HydroGym 版本，复跑官方旋转圆柱 PPO 基准；
-4. 实现 PhysicsNeMo/OpenFOAM 双后端环境适配和 reward 审计；
-5. 先做 MPC，再做 PPO/SAC；
-6. 所有候选策略回到独立中网格 OpenFOAM 回放；
-7. 仅根据策略访问分布补充 CFD 数据；
-8. 基础闭环通过后扩展跨来流、跨间距和稀疏传感器实验。
+1. 冻结已完成的无 teacher forcing 代理版本；
+2. 保留已完成的动作敏感性与不确定性校准作为安全门槛；
+3. 以已通过的 HydroGym 旋转圆柱 smoke/PPO 链路为接口基线；
+4. 完成零动作、随机动作和冻结策略的 reward 与物理量审计；
+5. 实现 PhysicsNeMo/OpenFOAM 双后端环境适配和 reward 审计；
+6. 先做 MPC，再做 PPO/SAC；
+7. 所有候选策略回到独立中网格 OpenFOAM 回放；
+8. 仅根据策略访问分布补充 CFD 数据；
+9. 基础闭环通过后扩展跨来流、跨间距和稀疏传感器实验。
 
 这一顺序可避免在代理仍可能忽略动作或低估长期误差时投入大量 RL 计算，也能让后续每一步直接服务于论文中的可检验假设。

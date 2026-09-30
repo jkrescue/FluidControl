@@ -743,3 +743,31 @@ bash scripts/run_tandem_uncertainty_calibration.sh
 10/50步 test 的流场分歧与真实误差秩相关为 `0.950/0.889`。validation 的90%分歧阈值在 test 上保留 `85.63%/84.54%` 的流场窗口，被标记窗口的真实流场误差为可信窗口的 `2.18/2.17` 倍。受力分歧秩相关为 `0.327/0.328`，但被标记窗口受力误差仍达到可信窗口的 `4.30/1.99` 倍。结果位于 `artifacts/tandem_fno_rollout_no_tf_v1/uncertainty_calibration/report.json`。
 
 该方法用于判断模型分歧能否作为门控信号，不解释为严格的概率置信区间。论文级不确定性需要补充相同训练目标、不同随机种子的深度集成，并在未见 `Re/L/D` 工况上重新校准。
+
+## 16. HydroGym Firedrake 基准
+
+HydroGym 官方源码固定在 commit `4ab9854dea3d84e38a59c25e0f5835a00cf8225f`。使用项目提供的最小 Firedrake 镜像，避免下载包含全部 GPU/HPC 后端的大型镜像：
+
+```bash
+bash scripts/setup_hydrogym_firedrake.sh
+```
+
+构建脚本调用 HydroGym 官方 `scripts/bootstrap_firedrake.sh`。基础 Firedrake 镜像内的 PETSc 扩展按 NumPy 1.x 和 mpi4py 3.1.5 编译，因此镜像保留原 mpi4py 构建并固定 NumPy 1.24.4。导入检查必须输出 `HYDROGYM_FIREDRAKE_IMAGE_OK`。
+
+运行官方旋转圆柱环境 smoke：
+
+```bash
+bash scripts/run_hydrogym_rotary_smoke.sh \
+  |& tee artifacts/hydrogym/rotary_smoke.log
+```
+
+预期完成 3 个动作步并生成 PVD、checkpoint 和探针日志。已执行结果为退出码 0，环境配置为 `Re=100`、medium 网格、`dt=0.01`。
+
+运行短 PPO 链路验证：
+
+```bash
+bash scripts/run_hydrogym_rotary_ppo_smoke.sh \
+  |& tee artifacts/hydrogym/rotary_ppo_smoke.log
+```
+
+已执行结果完成 256 个环境步和 4 次 rollout，耗时约 55 秒，最终 `explained_variance=0.787`、`value_loss=0.102`，模型与 `VecNormalize` 统计均已保存。200 步物理审计中，PPO 相比零动作的平均 `Cd` 增加 0.19%，`Cl RMS` 增加 7.41%；随机动作的平均 `Cd` 降低 0.14%，但 `Cl RMS` 增加 2.90%。审计跨度短于一个典型涡脱落周期，只用于验证方向和量纲。HydroGym 默认 reward 仅为 `-dt × Cd`，正式任务必须补充滑动窗口升力波动和控制能耗，并在多个涡脱落周期上评估。
