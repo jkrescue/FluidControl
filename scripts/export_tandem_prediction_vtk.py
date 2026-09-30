@@ -11,11 +11,17 @@ import h5py
 import numpy as np
 import pyvista as pv
 import torch
-from omegaconf import OmegaConf
+from hydra import compose, initialize_config_dir
 from physicsnemo.distributed import DistributedManager
 from physicsnemo.utils import load_checkpoint
 
 from train_tandem_fno import build_model
+
+
+def load_composed_config(path: Path):
+    """Resolve the same Hydra defaults tree used during training."""
+    with initialize_config_dir(config_dir=str(path.parent.resolve()), version_base="1.3"):
+        return compose(config_name=path.stem)
 
 
 def write_pvd(path: Path, records: list[dict]) -> None:
@@ -83,7 +89,7 @@ def main() -> None:
     dist = DistributedManager()
     if dist.distributed or dist.rank != 0:
         raise RuntimeError("VTK export must run as one process")
-    cfg = OmegaConf.load(args.config)
+    cfg = load_composed_config(args.config)
     network = build_model(cfg).to(dist.device)
     metadata: dict = {}
     epoch = load_checkpoint(

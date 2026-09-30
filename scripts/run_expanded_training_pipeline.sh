@@ -70,13 +70,36 @@ tune_rollout_batch() {
     exit 1
 }
 
-wait_for_finalize
-run_dataset_gates
-tune_one_step_batch
-one_step_batch="$(cat "$evidence/expanded_one_step_batch_size.txt")"
-echo "[$(timestamp)] Starting formal one-step PhysicsNeMo FNO training"
-OUTPUT_DIR=artifacts/tandem_fno_expanded_v1 BATCH_SIZE="$one_step_batch" SMOKE=false \
-    bash scripts/run_tandem_fno_expanded.sh
+if [[ "${RESUME_AFTER_ONE_STEP:-false}" == "true" ]]; then
+    echo "[$(timestamp)] Resuming after completed one-step training; preserving completed data gates"
+else
+    wait_for_finalize
+    run_dataset_gates
+fi
+one_step_epoch="$(python3 - <<'PY'
+import json
+from pathlib import Path
+
+path = Path("artifacts/tandem_fno_expanded_v1/training_history.json")
+epochs = []
+if path.exists():
+    try:
+        records = json.loads(path.read_text(encoding="utf-8"))
+        epochs.extend(int(record["epoch"]) for record in records)
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+        pass
+print(max(epochs, default=0))
+PY
+)"
+if [[ "$one_step_epoch" -ge 80 && -d artifacts/tandem_fno_expanded_v1/best ]]; then
+    echo "[$(timestamp)] One-step training already completed at epoch $one_step_epoch; preserving checkpoints"
+else
+    tune_one_step_batch
+    one_step_batch="$(cat "$evidence/expanded_one_step_batch_size.txt")"
+    echo "[$(timestamp)] Starting formal one-step PhysicsNeMo FNO training"
+    OUTPUT_DIR=artifacts/tandem_fno_expanded_v1 BATCH_SIZE="$one_step_batch" SMOKE=false \
+        bash scripts/run_tandem_fno_expanded.sh
+fi
 
 echo "[$(timestamp)] Evaluating formal one-step model"
 CUDA_VISIBLE_DEVICES=0 PYTHONPATH=src .venv/bin/python scripts/evaluate_tandem_fno.py \

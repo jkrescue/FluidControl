@@ -11,7 +11,7 @@ import h5py
 import matplotlib
 import numpy as np
 import torch
-from omegaconf import OmegaConf
+from hydra import compose, initialize_config_dir
 from physicsnemo.distributed import DistributedManager
 from physicsnemo.utils import load_checkpoint
 
@@ -19,6 +19,12 @@ from train_tandem_fno import build_model
 
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt  # noqa: E402
+
+
+def load_composed_config(path: Path):
+    """Resolve the Hydra defaults tree used by the training entry point."""
+    with initialize_config_dir(config_dir=str(path.parent.resolve()), version_base="1.3"):
+        return compose(config_name=path.stem)
 
 
 def save_rollout_figure(
@@ -90,7 +96,7 @@ def main() -> None:
     dist = DistributedManager()
     if dist.distributed and dist.rank != 0:
         raise RuntimeError("evaluation is a single-rank post-training step; run with python, not torchrun")
-    cfg = OmegaConf.load(args.config)
+    cfg = load_composed_config(args.config)
     if dist.cuda:
         torch.cuda.set_per_process_memory_fraction(
             float(cfg.training.gpu_memory_fraction), device=dist.device
