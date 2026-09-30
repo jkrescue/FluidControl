@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 set -u
 
+: "${SSH_HOST:?Set SSH_HOST to the remote SSH alias or hostname}"
+: "${REMOTE_PROJECT_DIR:?Set REMOTE_PROJECT_DIR to the WSL fluid_control project path}"
+WSL_DISTRO="${WSL_DISTRO:-Ubuntu-24.04}"
+
 while true; do
   clear
-  ssh <SSH_HOST> wsl.exe -d Ubuntu-24.04 -- bash <<'REMOTE'
-cd ~/workspace/fluid_control
+  ssh "$SSH_HOST" wsl.exe -d "$WSL_DISTRO" -- bash -s -- "$REMOTE_PROJECT_DIR" <<'REMOTE'
+cd "$1"
 printf 'PhysicsNeMo remote pipeline monitor\n'
 printf 'time: %s\n\n' "$(date --iso-8601=seconds)"
 

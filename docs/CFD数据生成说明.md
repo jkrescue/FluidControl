@@ -75,7 +75,7 @@
 重现当前**开发数据**的命令：
 
 ```bash
-cd '~/workspace/fluid_control'
+cd ~/workspace/fluid_control
 CUDA_VISIBLE_DEVICES=0 .venv/bin/python scripts/generate_dataset.py \
   --out artifacts/cfd_dataset.npz --count 48 --batch 8 \
   --nx 256 --ny 128 --dt 0.005 --steps 3600 --average-start 2000

@@ -44,7 +44,7 @@
 
 上游代码核对基于 NVIDIA PhysicsNeMo 官方仓库提交 `426f7552da4b4fa675e404e8a4f437e27681b668`。项目实际训练使用上表所列已安装版本，版本检查结果要随训练日志保存。
 
-本链路对照 NVIDIA 官方 `examples/cfd/darcy_fno` 的训练结构实现。2026-09-29 已在 <WSL_USER> 的 `.venv` 中只读核验以下 PhysicsNeMo 2.2.2 API 可导入且参数匹配：`FNO`、`DistributedManager`、`StaticCaptureTraining`、`StaticCaptureEvaluateNoGrad`、`LaunchLogger`、`PythonLogger`、`save_checkpoint` 和 `load_checkpoint`。核验只检查接口，没有启动模型训练。
+本链路对照 NVIDIA 官方 `examples/cfd/darcy_fno` 的训练结构实现。2026-09-29 已在远程训练环境的 `.venv` 中只读核验以下 PhysicsNeMo 2.2.2 API 可导入且参数匹配：`FNO`、`DistributedManager`、`StaticCaptureTraining`、`StaticCaptureEvaluateNoGrad`、`LaunchLogger`、`PythonLogger`、`save_checkpoint` 和 `load_checkpoint`。核验只检查接口，没有启动模型训练。
 
 完整数据和训练链路为：
 
@@ -459,7 +459,7 @@ export NCCL_CUMEM_HOST_ENABLE=0
 export NCCL_SOCKET_IFNAME=lo
 ```
 
-正式多步训练前曾出现 WSL `getpwuid` 和 `/etc/default/locale` I/O 错误。检查确认 `ext4.vhdx` 所在 D 盘仅剩约 30 MiB；释放宿主空间后 WSL 正常启动，工程、HDF5 和 checkpoint 均可读取，内核日志未出现新的 ext4 I/O 错误。为避免训练检查点继续扩展 VHDX，`artifacts/` 已逐文件核对后迁至 `<WINDOWS_DATA_DRIVE>:\WSLData\fluid_control\artifacts`，Linux 原路径保留符号链接；HDF5 训练数据继续位于 ext4。该事件属于宿主存储容量问题，不是模型或 PhysicsNeMo 故障。
+正式多步训练前曾出现 WSL `getpwuid` 和 `/etc/default/locale` I/O 错误。检查确认 `ext4.vhdx` 所在宿主盘仅剩约 30 MiB；释放宿主空间后 WSL 正常启动，工程、HDF5 和 checkpoint 均可读取，内核日志未出现新的 ext4 I/O 错误。为避免训练检查点继续扩展 VHDX，`artifacts/` 已逐文件核对后迁至 `<WINDOWS_DATA_DRIVE>:\WSLData\fluid_control\artifacts`，Linux 原路径保留符号链接；HDF5 训练数据继续位于 ext4。该事件属于宿主存储容量问题，不是模型或 PhysicsNeMo 故障。
 
 修复后的双卡训练冒烟测试已于 2026-09-29 通过。1 个 epoch 的训练 loss 为 `0.2025793`；验证集物理单位场 MAE 为 `0.00336758`、RMSE 为 `0.00516719`，归一化力系数 MAE 为 `0.746278`；训练 epoch 用时 `8.36 s`、`88.90 ms/iter`，退出码 0。PhysicsNeMo 模型、训练状态、最佳 checkpoint、完整配置、runtime metadata 和 history 均已生成并通过 JSON/非空文件审计，输出 `SMOKE_TRAINING_ARTIFACTS_OK`。checkpoint 保存已限制为 rank 0，避免两个进程并发覆盖同一文件。GPU 0/1 实测最大占用分别为 1,726/1,858 MiB，最低剩余分别为 70,714/70,582 MiB，满足每卡至少保留 15 GiB 的约束。
 
