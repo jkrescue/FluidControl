@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -14,8 +15,21 @@ from tensordict import TensorDict
 
 
 def main() -> None:
-    root = Path("data/curated/tandem_cylinders")
-    expected_lengths = {"train": 12000, "validation": 2400, "test": 2400}
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--data", type=Path, default=Path("data/curated/tandem_cylinders"))
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("artifacts/tandem_cylinders/datapipe_validation.json"),
+    )
+    args = parser.parse_args()
+    root = args.data
+    manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+    pairs = int(manifest["pairs_per_trajectory"])
+    expected_lengths = {
+        split: int(count) * pairs
+        for split, count in manifest["trajectory_counts"].items()
+    }
     report = {"official_components": {}, "splits": {}}
 
     report["official_components"] = {
@@ -69,8 +83,8 @@ def main() -> None:
     for dataset in datasets.values():
         dataset.close()
 
-    output = Path("artifacts/tandem_cylinders/datapipe_validation.json")
-    output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))
     print("PHYSICSNEMO_DATAPIPE_OK")
 

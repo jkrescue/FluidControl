@@ -54,7 +54,9 @@ def load_coefficients(path: Path) -> np.ndarray:
     return result
 
 
-def case_records(cases_root: Path, profile: str) -> list[dict[str, Any]]:
+def case_records(
+    cases_root: Path, profile: str, selected_names: set[str] | None = None
+) -> list[dict[str, Any]]:
     records = []
     pattern = "dynamic_*" if profile == "stage1" else "expanded_*"
     for case in sorted(cases_root.glob(pattern)):
@@ -69,6 +71,12 @@ def case_records(cases_root: Path, profile: str) -> list[dict[str, Any]]:
     actual = {split: sum(record["split"] == split for record in records) for split in expected}
     if actual != expected:
         raise ValueError(f"unexpected trajectory split counts: {actual}, expected {expected}")
+    if selected_names is not None:
+        available = {record["name"] for record in records}
+        missing = selected_names - available
+        if missing:
+            raise ValueError(f"selected cases are not part of {profile}: {sorted(missing)}")
+        records = [record for record in records if record["name"] in selected_names]
     return records
 
 
@@ -87,10 +95,11 @@ class TandemTrajectorySource(Source[dict[str, Any]]):
     def params(cls) -> list[Param]:
         return [Param(name="cases_root", description="OpenFOAM cases directory", type=str)]
 
-    def __init__(self, cases_root: Path, nx: int, ny: int, profile: str = "stage1") -> None:
+    def __init__(self, cases_root: Path, nx: int, ny: int, profile: str = "stage1",
+                 selected_names: set[str] | None = None) -> None:
         self.cases_root = cases_root
         self.profile = profile
-        self.records = case_records(cases_root, profile)
+        self.records = case_records(cases_root, profile, selected_names)
         self.nx = nx
         self.ny = ny
         self.x = np.linspace(8.0, 25.0, nx, dtype=np.float32)
@@ -307,15 +316,61 @@ def main() -> None:
     parser.add_argument("--jobs", type=int, default=1,
                         help="Curator workers; use process_pool when greater than one")
     parser.add_argument("--backend", choices=("sequential", "process_pool"), default="sequential")
+    parser.add_argument("--cases", nargs="+", help="curate only these profile cases")
+    parser.add_argument("--defer-finalize", action="store_true",
+                        help="write selected HDF5 files without normalization or manifest")
+    parser.add_argument("--finalize-only", action="store_true",
+                        help="write normalization and manifest after all HDF5 files exist")
     args = parser.parse_args()
     if args.jobs < 1:
         parser.error("--jobs must be at least 1")
     if args.backend == "sequential" and args.jobs != 1:
         parser.error("the sequential backend requires --jobs 1")
-    if args.output.exists() and any(args.output.iterdir()):
+    if args.finalize_only and (args.cases or args.limit or args.defer_finalize):
+        parser.error("--finalize-only cannot be combined with --cases, --limit, or --defer-finalize")
+    incremental = bool(args.cases and args.defer_finalize)
+    if args.output.exists() and any(args.output.iterdir()) and not (incremental or args.finalize_only):
         raise FileExistsError(f"refusing to overwrite non-empty output directory: {args.output}")
 
-    source = TandemTrajectorySource(args.cases_root.resolve(), args.nx, args.ny, args.profile)
+    if args.finalize_only:
+        expected = PROFILE_COUNTS[args.profile]
+        actual = {
+            split: len(list((args.output / split).glob("*.h5")))
+            for split in ("train", "validation", "test")
+        }
+        if actual != expected:
+            raise ValueError(f"cannot finalize incomplete dataset: {actual}, expected {expected}")
+        stats = normalization(args.output)
+        (args.output / "normalization.json").write_text(
+            json.dumps(stats, indent=2) + "\n", encoding="utf-8"
+        )
+        manifest = {
+            "schema_version": 1,
+            "profile": args.profile,
+            "trajectory_counts": actual,
+            "frames_per_trajectory": 801,
+            "pairs_per_trajectory": 800,
+            "grid": {"nx": args.nx, "ny": args.ny, "x_range": [8, 25], "y_range": [4, 11]},
+            "fields": ["u", "v", "gauge_pressure", "valid_mask", "rear_omega", "front_cd_cl", "rear_cd_cl"],
+            "pressure_preprocessing": "subtract valid-domain spatial mean independently at every frame",
+            "normalization": "normalization.json, train split only",
+            "max_abs_omega": PROFILE_ACTION_LIMITS[args.profile],
+            "curator_pipeline": [
+                "TandemTrajectorySource[VTKSource + Mesh.sample_data_at_points]",
+                "NumericalQualityFilter",
+                "TrajectoryHDF5Sink",
+            ],
+        }
+        (args.output / "manifest.json").write_text(
+            json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+        )
+        print(json.dumps(manifest, indent=2))
+        return
+
+    source = TandemTrajectorySource(
+        args.cases_root.resolve(), args.nx, args.ny, args.profile,
+        set(args.cases) if args.cases else None,
+    )
     pipeline = source.filter(NumericalQualityFilter(PROFILE_ACTION_LIMITS[args.profile])).write(
         TrajectoryHDF5Sink(args.output.resolve())
     )
@@ -325,8 +380,8 @@ def main() -> None:
     )
     if any(not paths for paths in results):
         raise RuntimeError("Curator pipeline returned one or more empty sink results")
-    if args.limit:
-        print(f"Curator smoke run wrote {len(results)} trajectory file(s); normalization deferred")
+    if args.limit or args.defer_finalize:
+        print(f"Curator wrote {len(results)} trajectory file(s); normalization deferred")
         return
 
     stats = normalization(args.output)
