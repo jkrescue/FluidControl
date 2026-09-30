@@ -35,6 +35,7 @@ OpenFOAM CFD
 - [CFD 工况说明](cfd/tandem_cylinders/CASE_SPEC.md)
 - [论文复现对照](docs/PAPER_REPRODUCTION.md)
 - [闭环控制方案](closed_loop_control_spec.md)
+- [PhysicsNeMo–HydroGym 研究路线](docs/HYDROGYM_RESEARCH_ROADMAP.md)
 
 项目代码安装命令：
 
