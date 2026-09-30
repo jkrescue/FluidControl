@@ -100,6 +100,10 @@ def main() -> None:
         "--action-seed", type=int, default=20260930,
         help="deterministic seed used by --action-mode shuffle",
     )
+    parser.add_argument(
+        "--segment-metrics-output", type=Path, default=None,
+        help="optional JSON file with per-segment errors and action statistics",
+    )
     args = parser.parse_args()
 
     DistributedManager.initialize()
@@ -140,12 +144,14 @@ def main() -> None:
         "action_seed": args.action_seed,
         "cases": [],
     }
+    segment_records = []
     for case_index, path in enumerate(sorted((args.data / args.split).glob("*.h5"))):
         with h5py.File(path, "r") as handle:
             state = torch.from_numpy(handle["state"][:]).to(dist.device)
             mask = torch.from_numpy(handle["mask"][:]).float().to(dist.device)
             omega = torch.from_numpy(handle["omega"][:]).float().to(dist.device)
             rear_force = torch.from_numpy(handle["force"][:, 2:4]).float().to(dist.device)
+            time = torch.from_numpy(handle["time"][:]).float().to(dist.device)
             x = np.asarray(handle["x"][:])
             y = np.asarray(handle["y"][:])
         normalized = (state - state_mean) / state_std
@@ -228,6 +234,26 @@ def main() -> None:
                 persistence_errors.extend(persistence_mae[finite].cpu().tolist())
                 force_errors.extend(force_error[finite].cpu().tolist())
                 persistence_force_errors.extend(persistence_force_error[finite].cpu().tolist())
+                if args.segment_metrics_output is not None:
+                    for local_index, start in enumerate(starts):
+                        if not bool(finite[local_index]):
+                            continue
+                        action_window = omega[start : start + horizon + 1, 0]
+                        time_window = time[start : start + horizon + 1, 0]
+                        action_rate = torch.diff(action_window) / torch.diff(time_window)
+                        segment_records.append({
+                            "case": path.stem,
+                            "horizon": horizon,
+                            "start": start,
+                            "mean_abs_omega": float(action_window.abs().mean()),
+                            "max_abs_omega": float(action_window.abs().max()),
+                            "mean_abs_domega_dt": float(action_rate.abs().mean()),
+                            "max_abs_domega_dt": float(action_rate.abs().max()),
+                            "state_mae_physical_units": float(model_mae[local_index]),
+                            "rear_force_mae": float(force_error[local_index].mean()),
+                            "rear_cd_mae": float(force_error[local_index, 0]),
+                            "rear_cl_mae": float(force_error[local_index, 1]),
+                        })
                 predicted_physical = (predicted * state_std + state_mean) * active_mask
                 channel_max_abs = torch.maximum(
                     channel_max_abs,
@@ -321,6 +347,16 @@ def main() -> None:
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    if args.segment_metrics_output is not None:
+        args.segment_metrics_output.parent.mkdir(parents=True, exist_ok=True)
+        args.segment_metrics_output.write_text(
+            json.dumps({
+                "action_mode": args.action_mode,
+                "split": args.split,
+                "segments": segment_records,
+            }, indent=2) + "\n",
+            encoding="utf-8",
+        )
     print(json.dumps(report, indent=2))
 
 
