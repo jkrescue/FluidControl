@@ -38,8 +38,8 @@ def main() -> None:
     parser.add_argument("--initial-omega", type=float, default=0.0)
     args = parser.parse_args()
 
-    if not args.case_name.startswith("mpc_replay_"):
-        parser.error("case_name must begin with mpc_replay_")
+    if not args.case_name.startswith(("mpc_replay_", "mpc_feedback_")):
+        parser.error("case_name must begin with mpc_replay_ or mpc_feedback_")
     actions = load_actions(args.actions)
     points = [(args.start_time, args.initial_omega)] + [
         (args.start_time + index * args.control_interval, value)
@@ -74,7 +74,11 @@ def main() -> None:
 
     metadata = {
         "case": args.case_name,
-        "purpose": "OpenFOAM replay of a frozen surrogate MPC action sequence",
+        "purpose": (
+            "OpenFOAM state-feedback case initialized from an MPC action CSV"
+            if args.case_name.startswith("mpc_feedback_")
+            else "OpenFOAM replay of a frozen surrogate MPC action sequence"
+        ),
         "source_restart_case": SOURCE_CASE.name,
         "source_restart_time": args.start_time,
         "end_time": end_time,
