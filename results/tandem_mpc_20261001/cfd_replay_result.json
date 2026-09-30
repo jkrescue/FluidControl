@@ -1,0 +1,65 @@
+{
+  "case": "mpc_replay_scaled_v2",
+  "status": "independent_openfoam_action_replay",
+  "control_is_closed_loop": false,
+  "action_count": 100,
+  "action_range": [
+    -0.6686756014823914,
+    0.3572833240032196
+  ],
+  "max_abs_delta_omega": 0.03300642967224121,
+  "solver_steps": 2000,
+  "courant_mean_max": 0.035631371,
+  "courant_absolute_max": 0.244951707,
+  "windows": [
+    {
+      "window": [
+        80.0,
+        90.0
+      ],
+      "controlled": {
+        "samples": 2000,
+        "rear_cd_mean": 0.9498417919682499,
+        "rear_cl_mean": 0.3573288503665765,
+        "rear_cl_rms": 1.0390832548044826,
+        "finite": true
+      },
+      "zero_rotation_baseline": {
+        "samples": 2000,
+        "rear_cd_mean": 0.91527706545125,
+        "rear_cl_mean": 0.22698760451335198,
+        "rear_cl_rms": 1.1607937330234315,
+        "finite": true
+      },
+      "relative_change_percent": {
+        "rear_cd_mean": 3.7764222246690737,
+        "rear_cl_rms": -10.485108142506839
+      }
+    },
+    {
+      "window": [
+        82.0,
+        90.0
+      ],
+      "controlled": {
+        "samples": 1600,
+        "rear_cd_mean": 0.9830342570496251,
+        "rear_cl_mean": 0.10264468898128311,
+        "rear_cl_rms": 0.9277488645633258,
+        "finite": true
+      },
+      "zero_rotation_baseline": {
+        "samples": 1600,
+        "rear_cd_mean": 0.9341853840945624,
+        "rear_cl_mean": -0.055495242943122525,
+        "rear_cl_rms": 1.0995360785664292,
+        "finite": true
+      },
+      "relative_change_percent": {
+        "rear_cd_mean": 5.229034171028957,
+        "rear_cl_rms": -15.62360866112541
+      }
+    }
+  ],
+  "note": "The action sequence is frozen before CFD; this validates replay transfer, not state-feedback closure."
+}

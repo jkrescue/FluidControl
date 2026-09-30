@@ -771,3 +771,51 @@ bash scripts/run_hydrogym_rotary_ppo_smoke.sh \
 ```
 
 已执行结果完成 256 个环境步和 4 次 rollout，耗时约 55 秒，最终 `explained_variance=0.787`、`value_loss=0.102`，模型与 `VecNormalize` 统计均已保存。200 步物理审计中，PPO 相比零动作的平均 `Cd` 增加 0.19%，`Cl RMS` 增加 7.41%；随机动作的平均 `Cd` 降低 0.14%，但 `Cl RMS` 增加 2.90%。审计跨度短于一个典型涡脱落周期，只用于验证方向和量纲。HydroGym 默认 reward 仅为 `-dt × Cd`，正式任务必须补充滑动窗口升力波动和控制能耗，并在多个涡脱落周期上评估。
+
+## 17. PhysicsNeMo MPC 与 OpenFOAM 回放
+
+MPC 加载扩展数据、无 teacher forcing 的 Epoch 30 checkpoint。训练配置通过 Hydra defaults 完整组合后再构建 PhysicsNeMo FNO；每个控制周期通过冻结 FNO 执行可微多步 rollout，并用 Adam 优化后圆柱转速序列，只应用第一个动作。物理转速按训练 DataPipe 的相同规则除以数据 manifest 的 `max_abs_omega=5` 后进入 FNO，运行结果中的 `action_scale` 必须为 5.0。
+
+先执行三步链路检查：
+
+```bash
+bash scripts/run_tandem_mpc.sh --smoke
+```
+
+冻结候选配置的 100 步命令为：
+
+```bash
+OUTPUT_DIR=artifacts/tandem_mpc_sweep/balanced30 \
+bash scripts/run_tandem_mpc.sh \
+  --override output_dir=artifacts/tandem_mpc_sweep/balanced30 \
+  --override control.horizon=30 \
+  --override control.optimization_iterations=15 \
+  --override control.delta_omega_max=0.04 \
+  --override control.omega_min=-0.75 \
+  --override control.omega_max=0.75 \
+  --override objective.cd_weight=1.0 \
+  --override objective.action_weight=0.05 \
+  --override objective.rate_weight=0.03
+```
+
+尺度修正后的候选配置在 5 个不同 test 初始状态上将代理模型的后柱 `Cl RMS` 降低 4.14%–15.44%，平均降低 9.47%；`Cd mean` 增加 5.18%–9.69%，平均增加 6.66%。单 GPU 每个控制步平均约 2.1 秒。把优化学习率从 0.08 提高到 0.4 后，动作长期饱和且 `Cl RMS` 增加 12.79%，因此被拒绝。
+
+首次实现遗漏了扩展数据动作尺度，代码审查发现后重新执行全部代理和 CFD 结果。旧动作及其 CFD 结果只保存在 `results/tandem_mpc_20261001/legacy_unscaled/` 用于审计，不参与最终统计。
+
+将冻结动作写入 OpenFOAM 的 `rotatingWallVelocity` table，并从匹配的无控制 `t=80` 状态回放：
+
+```bash
+python3 cfd/tandem_cylinders/make_mpc_replay_case.py \
+  artifacts/tandem_mpc_sweep/balanced30/timeseries.csv \
+  mpc_replay_balanced30_v1
+
+bash cfd/tandem_cylinders/run_mpc_replay_case.sh \
+  mpc_replay_balanced30_v1
+
+.venv/bin/python cfd/tandem_cylinders/analyze_mpc_replay.py \
+  mpc_replay_balanced30_v1 \
+  --output artifacts/tandem_mpc_sweep/cfd_replay_result.json \
+  --plot artifacts/tandem_mpc_sweep/cfd_replay_timeseries.png
+```
+
+OpenFOAM 共完成 2000 步，最大 Courant 数为 0.245。相对匹配的零转速 CFD，`t=80..90` 的后柱 `Cl RMS` 降低 10.49%、`Cd mean` 增加 3.78%；去除 `t=80..82` 过渡段后，`Cl RMS` 降低 15.62%、`Cd mean` 增加 5.23%。该结果是冻结动作回放，验证了 surrogate-to-CFD 的升力抑制方向并量化了阻力代价，但没有在 CFD 推进过程中根据新状态重算动作。结果与图位于 `results/tandem_mpc_20261001/`。

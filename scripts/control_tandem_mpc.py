@@ -13,6 +13,7 @@ import h5py
 import matplotlib
 import numpy as np
 import torch
+from hydra import compose, initialize_config_dir
 from omegaconf import OmegaConf
 from physicsnemo.distributed import DistributedManager
 from physicsnemo.utils import load_checkpoint
@@ -23,11 +24,19 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt  # noqa: E402
 
 
-def model_step(network, state, mask, omega_now, omega_next, force_mean, force_std):
+def load_composed_config(path: Path):
+    """Resolve the Hydra defaults tree used by the training entry point."""
+    with initialize_config_dir(config_dir=str(path.parent.resolve()), version_base="1.3"):
+        return compose(config_name=path.stem)
+
+
+def model_step(
+    network, state, mask, omega_now, omega_next, action_scale, force_mean, force_std
+):
     """Advance one normalized state and return physical rear Cd/Cl."""
     height, width = mask.shape[-2:]
-    now = omega_now.reshape(1, 1, 1, 1).expand(1, 1, height, width)
-    following = omega_next.reshape(1, 1, 1, 1).expand(1, 1, height, width)
+    now = (omega_now / action_scale).reshape(1, 1, 1, 1).expand(1, 1, height, width)
+    following = (omega_next / action_scale).reshape(1, 1, 1, 1).expand(1, 1, height, width)
     raw = network(torch.cat((state, mask, now, following), dim=1))
     next_state = (state + raw[:, :3]) * mask
     normalized_force = (
@@ -47,7 +56,9 @@ def bounded_actions(parameters, current, cfg):
     return actions, torch.cat((actions[:1] - current, actions[1:] - actions[:-1]))
 
 
-def optimize_actions(network, state, mask, current_omega, force_mean, force_std, cfg, objective):
+def optimize_actions(
+    network, state, mask, current_omega, action_scale, force_mean, force_std, cfg, objective
+):
     parameters = torch.zeros(int(cfg.horizon), device=state.device, requires_grad=True)
     optimizer = torch.optim.Adam([parameters], lr=float(cfg.optimization_learning_rate))
     last_components = None
@@ -59,7 +70,7 @@ def optimize_actions(network, state, mask, current_omega, force_mean, force_std,
         forces = []
         for action in actions:
             predicted, force = model_step(
-                network, predicted, mask, previous, action, force_mean, force_std
+                network, predicted, mask, previous, action, action_scale, force_mean, force_std
             )
             forces.append(force)
             previous = action
@@ -82,13 +93,15 @@ def optimize_actions(network, state, mask, current_omega, force_mean, force_std,
     return actions.detach(), [float(value.detach()) for value in last_components]
 
 
-def simulate_zero_control(network, initial, mask, steps, force_mean, force_std):
+def simulate_zero_control(network, initial, mask, steps, action_scale, force_mean, force_std):
     state = initial.clone()
     zero = torch.zeros((), device=state.device)
     forces = []
     with torch.no_grad():
         for _ in range(steps):
-            state, force = model_step(network, state, mask, zero, zero, force_mean, force_std)
+            state, force = model_step(
+                network, state, mask, zero, zero, action_scale, force_mean, force_std
+            )
             forces.append(force.cpu().numpy())
     return np.asarray(forces), state
 
@@ -157,16 +170,22 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=Path("conf/tandem_mpc.yaml"))
     parser.add_argument("--smoke", action="store_true")
+    parser.add_argument(
+        "--override", action="append", default=[], metavar="KEY=VALUE",
+        help="Override one config value; may be repeated.",
+    )
     args = parser.parse_args()
     cfg = OmegaConf.load(args.config)
     if args.smoke:
         cfg.control.steps = 3
         cfg.control.optimization_iterations = 2
         cfg.output_dir = "artifacts/tandem_mpc_smoke"
+    if args.override:
+        cfg = OmegaConf.merge(cfg, OmegaConf.from_dotlist(args.override))
 
     DistributedManager.initialize()
     dist = DistributedManager()
-    model_cfg = OmegaConf.load(cfg.model_config)
+    model_cfg = load_composed_config(Path(cfg.model_config))
     if dist.cuda:
         torch.cuda.set_per_process_memory_fraction(
             float(model_cfg.training.gpu_memory_fraction), device=dist.device
@@ -185,6 +204,10 @@ def main():
     if len(candidates) != 1:
         raise FileNotFoundError(f"expected one HDF5 for {cfg.case}, found {candidates}")
     stats = json.loads((data_root / "normalization.json").read_text())
+    data_manifest = json.loads((data_root / "manifest.json").read_text())
+    action_scale = float(data_manifest.get("max_abs_omega", 1.0))
+    if not np.isfinite(action_scale) or action_scale <= 0:
+        raise ValueError(f"invalid max_abs_omega in data manifest: {action_scale}")
     state_mean = torch.tensor(stats["state_mean"], device=dist.device)[:, None, None]
     state_std = torch.tensor(stats["state_std"], device=dist.device)[:, None, None]
     force_mean = torch.tensor(stats["force_mean"], device=dist.device)
@@ -200,7 +223,7 @@ def main():
 
     steps = int(cfg.control.steps)
     baseline_force, baseline_state = simulate_zero_control(
-        network, initial, mask, steps, force_mean, force_std
+        network, initial, mask, steps, action_scale, force_mean, force_std
     )
     state = initial.clone()
     current_omega = initial_omega
@@ -209,15 +232,16 @@ def main():
     for control_step in range(steps):
         tick = time.perf_counter()
         actions, components = optimize_actions(
-            network, state, mask, current_omega, force_mean, force_std,
+            network, state, mask, current_omega, action_scale, force_mean, force_std,
             cfg.control, cfg.objective,
         )
         next_omega = actions[0]
         with torch.no_grad():
             state, force = model_step(
-                network, state, mask, current_omega, next_omega, force_mean, force_std
+                network, state, mask, current_omega, next_omega, action_scale,
+                force_mean, force_std,
             )
-        rows.append({
+        row = {
             "step": control_step + 1,
             "omega": float(next_omega),
             "delta_omega": float(next_omega - current_omega),
@@ -229,7 +253,9 @@ def main():
             "action_cost": components[3],
             "rate_cost": components[4],
             "optimization_seconds": time.perf_counter() - tick,
-        })
+        }
+        rows.append(row)
+        print(json.dumps({"event": "control_step", **row}), flush=True)
         current_omega = next_omega
         if not torch.isfinite(state).all() or not torch.isfinite(force).all():
             raise FloatingPointError(f"non-finite surrogate state at control step {control_step + 1}")
@@ -242,6 +268,8 @@ def main():
         writer.writerows(rows)
     controlled_force = np.asarray([[row["rear_cd"], row["rear_cl"]] for row in rows])
     omega = np.asarray([row["omega"] for row in rows])
+    controlled_summary = summarize(controlled_force, omega, float(initial_omega))
+    baseline_summary = summarize(baseline_force, np.zeros(steps))
     result = {
         "status": "surrogate_only",
         "checkpoint_epoch": epoch,
@@ -249,8 +277,17 @@ def main():
         "initial_step": int(cfg.initial_step),
         "control_steps": steps,
         "horizon": int(cfg.control.horizon),
-        "controlled": summarize(controlled_force, omega, float(initial_omega)),
-        "zero_control_baseline": summarize(baseline_force, np.zeros(steps)),
+        "action_scale": action_scale,
+        "controlled": controlled_summary,
+        "zero_control_baseline": baseline_summary,
+        "relative_change_percent": {
+            "rear_cd_mean": 100.0 * (
+                controlled_summary["rear_cd_mean"] / baseline_summary["rear_cd_mean"] - 1.0
+            ),
+            "rear_cl_rms": 100.0 * (
+                controlled_summary["rear_cl_rms"] / baseline_summary["rear_cl_rms"] - 1.0
+            ),
+        },
         "constraint_checks": {
             "omega_within_bounds": bool(np.max(np.abs(omega)) <= float(cfg.control.omega_max) + 1e-6),
             "rate_within_bounds": bool(np.max(np.abs(np.diff(np.r_[float(initial_omega), omega]))) <= float(cfg.control.delta_omega_max) + 1e-6),

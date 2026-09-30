@@ -1,0 +1,61 @@
+{
+  "status": "surrogate_only",
+  "checkpoint_epoch": 30,
+  "case": "expanded_test_02",
+  "initial_step": 263,
+  "control_steps": 100,
+  "horizon": 30,
+  "action_scale": 5.0,
+  "controlled": {
+    "rear_cd_mean": 0.9316514599323272,
+    "rear_cl_mean": 0.25752958200871945,
+    "rear_cl_rms": 1.4553048059035636,
+    "omega_rms": 0.33183791640976534,
+    "omega_abs_max": 0.636853039264679,
+    "delta_omega_abs_max": 0.0327448844909668
+  },
+  "zero_control_baseline": {
+    "rear_cd_mean": 0.885755181312561,
+    "rear_cl_mean": 0.08746078610420227,
+    "rear_cl_rms": 1.5181947946548462,
+    "omega_rms": 0.0,
+    "omega_abs_max": 0.0,
+    "delta_omega_abs_max": 0.0
+  },
+  "relative_change_percent": {
+    "rear_cd_mean": 5.1815986615799,
+    "rear_cl_rms": -4.142418942068648
+  },
+  "constraint_checks": {
+    "omega_within_bounds": true,
+    "rate_within_bounds": true
+  },
+  "elapsed_seconds": 210.41597380899975,
+  "mean_optimization_seconds": 2.1032426089600404,
+  "config": {
+    "model_config": "conf/tandem_fno_expanded.yaml",
+    "checkpoint_dir": "artifacts/tandem_fno_rollout_no_tf_v1/best",
+    "data_root": "data/curated/tandem_cylinders_expanded_v1",
+    "case": "expanded_test_02",
+    "initial_step": 263,
+    "output_dir": "artifacts/tandem_mpc_corrected/state02",
+    "control": {
+      "steps": 100,
+      "horizon": 30,
+      "optimization_iterations": 15,
+      "optimization_learning_rate": 0.08,
+      "delta_omega_max": 0.04,
+      "omega_min": -0.75,
+      "omega_max": 0.75
+    },
+    "objective": {
+      "cl_scale": 1.179130881137893,
+      "cd_scale": 0.9093911419349365,
+      "cl_weight": 1.0,
+      "cd_weight": 1.0,
+      "action_weight": 0.05,
+      "rate_weight": 0.03
+    }
+  },
+  "note": "Surrogate-only feasibility result; not OpenFOAM or experimental validation."
+}

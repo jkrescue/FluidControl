@@ -1,23 +1,23 @@
-model_config: conf/tandem_fno.yaml
-checkpoint_dir: artifacts/tandem_fno/best
-data_root: data/curated/tandem_cylinders
-case: dynamic_test_00
+model_config: conf/tandem_fno_expanded.yaml
+checkpoint_dir: artifacts/tandem_fno_rollout_no_tf_v1/best
+data_root: data/curated/tandem_cylinders_expanded_v1
+case: expanded_test_00
 initial_step: 0
 output_dir: artifacts/tandem_mpc
 
 control:
   steps: 100
-  horizon: 10
-  optimization_iterations: 30
+  horizon: 30
+  optimization_iterations: 15
   optimization_learning_rate: 0.08
-  delta_omega_max: 0.05
-  omega_min: -1.0
-  omega_max: 1.0
+  delta_omega_max: 0.04
+  omega_min: -0.75
+  omega_max: 0.75
 
 objective:
   cl_scale: 1.179130881137893
   cd_scale: 0.9093911419349365
   cl_weight: 1.0
-  cd_weight: 0.2
-  action_weight: 0.02
-  rate_weight: 0.02
+  cd_weight: 1.0
+  action_weight: 0.05
+  rate_weight: 0.03
