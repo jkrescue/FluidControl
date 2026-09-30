@@ -90,6 +90,16 @@ def main() -> None:
         help="rollout start stride; defaults to the horizon for backward compatibility",
     )
     parser.add_argument("--evaluation-batch-size", type=int, default=8)
+    parser.add_argument(
+        "--action-mode",
+        choices=("observed", "zero", "sign_flip", "shuffle"),
+        default="observed",
+        help="action input used during rollout; non-observed modes diagnose action conditioning",
+    )
+    parser.add_argument(
+        "--action-seed", type=int, default=20260930,
+        help="deterministic seed used by --action-mode shuffle",
+    )
     args = parser.parse_args()
 
     DistributedManager.initialize()
@@ -126,9 +136,11 @@ def main() -> None:
         "segment_stride": args.segment_stride,
         "evaluation_batch_size": args.evaluation_batch_size,
         "action_scale": action_scale,
+        "action_mode": args.action_mode,
+        "action_seed": args.action_seed,
         "cases": [],
     }
-    for path in sorted((args.data / args.split).glob("*.h5")):
+    for case_index, path in enumerate(sorted((args.data / args.split).glob("*.h5"))):
         with h5py.File(path, "r") as handle:
             state = torch.from_numpy(handle["state"][:]).to(dist.device)
             mask = torch.from_numpy(handle["mask"][:]).float().to(dist.device)
@@ -138,7 +150,19 @@ def main() -> None:
             y = np.asarray(handle["y"][:])
         normalized = (state - state_mean) / state_std
         normalized *= mask
-        model_omega = omega / action_scale
+        observed_model_omega = omega / action_scale
+        if args.action_mode == "observed":
+            model_omega = observed_model_omega
+        elif args.action_mode == "zero":
+            model_omega = torch.zeros_like(observed_model_omega)
+        elif args.action_mode == "sign_flip":
+            model_omega = -observed_model_omega
+        else:
+            rng = np.random.default_rng(args.action_seed + case_index)
+            permutation = torch.as_tensor(
+                rng.permutation(len(observed_model_omega)), device=dist.device
+            )
+            model_omega = observed_model_omega[permutation]
         case_report = {"case": path.stem, "horizons": {}, "visualizations": []}
         for horizon in args.horizons:
             model_errors = []
