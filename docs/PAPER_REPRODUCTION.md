@@ -95,9 +95,22 @@ F. Zhao, Y. Zhou, F. Ren, H. Tang, and Z. Wang, “Mitigating the lift of a circ
 
 扩展数据覆盖 `omega∈[-5,5]`，即 `q∈[-2.5,2.5]`，包括 24 条训练、4 条验证和 4 条测试轨迹。动作由随机 ramp、多正弦、chirp 和边界保持组成；训练集覆盖 validation/test 的最大动作变化率。32 条 CFD、25,632 个流场快照、Curator HDF5 和 PhysicsNeMo DataPipe 均已通过质量检查。
 
-扩展 PhysicsNeMo FNO 含 47,222,525 个参数，采用双 GPU、全局 batch 448 和 80 Epoch。Epoch 27 的进行中快照中，train loss 相对 Epoch 1 下降 99.76%，验证场 MAE/RMSE 分别下降 60.69%/64.11%，验证受力 MAE下降 96.64%。训练与验证指标总体同步改善，当前未出现持续验证退化。该结果只表明优化过程稳定，论文复现结论仍需等待独立 test 的 1/10/50/100 步 rollout 和中等网格回放。
+扩展 PhysicsNeMo FNO 含 47,222,525 个参数，采用双 GPU、全局 batch 448 完成 80 Epoch 单步训练，并分别执行带课程式 teacher forcing 和完全自由 rollout 的 30 Epoch 多步微调。无 teacher forcing 的最佳模型位于 Epoch 30，训练 loss 为 `0.00093595`，验证 rollout 场 MAE 为 `0.00435224`，验证 rollout 受力 MAE 为 `0.02301245`。
 
-![扩展动作域 FNO 训练曲线（Epoch 27 快照）](assets/expanded-training-curves-progress.png)
+独立 test 的无 teacher forcing 模型结果如下。全部窗口稳定，失败窗口为 0。
+
+| Rollout | 流场 MAE | 后柱受力 MAE | 相对 teacher forcing 流场变化 | 相对 teacher forcing 受力变化 |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 0.00108605 | 0.0342814 | -6.41% | +2.95% |
+| 10 | 0.00811312 | 0.0428153 | -10.04% | -5.85% |
+| 50 | 0.0202451 | 0.110876 | -15.03% | -21.43% |
+| 100 | 0.0307753 | 0.176541 | -19.40% | -18.72% |
+
+自由 rollout 训练改善了闭环关注的 10–100 步误差，同时使单步受力 MAE 增加 2.95%。因此后续控制使用无 teacher forcing Epoch 30 作为候选动力学代理，并保留 teacher forcing 模型作为消融基线。
+
+动作条件敏感性测试将测试轨迹的转速输入分别置零、反号和按时间打乱。100 步流场 MAE 相对真实动作分别增加 190.52%、386.74% 和 211.85%；后柱受力 MAE 分别增加 746.57%、1433.23% 和 789.35%。10 与 50 步也出现一致的大幅退化，证明模型确实使用转速条件预测后续流场和受力。该测试只证明动作条件有效；闭环收益仍需由独立 OpenFOAM 回放确认。
+
+![扩展动作域 FNO 训练曲线](assets/expanded-training-curves-progress.png)
 
 ## 下一阶段
 

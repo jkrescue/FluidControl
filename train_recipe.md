@@ -689,3 +689,37 @@ PYTHONPATH=src CUDA_VISIBLE_DEVICES=0 \
 ```
 
 完整自动入口为 `scripts/run_expanded_training_pipeline.sh`。它依次执行全数据校验、PhysicsNeMo DataPipe 检查、batch 冒烟、80 Epoch 单步训练、独立测试、10 步 rollout 微调和最终模型对照。扩展训练证据位于 `artifacts/tandem_fno_expanded_v1/`、`artifacts/tandem_fno_rollout_expanded_v1/` 和 `artifacts/tandem_cylinders/expanded_*`。
+
+## 14. 无 teacher forcing 与动作条件审计
+
+为避免课程式 teacher forcing 在训练早期使用真实中间场造成部署差距，使用相同数据、初始模型、优化器、随机种子和 10 步损失执行完全自由 rollout 消融：
+
+```bash
+bash scripts/run_no_tf_ablation_pipeline.sh
+```
+
+该流程训练 30 Epoch，只在 Epoch 10、20、30 保存 checkpoint，然后自动执行 1/10/50/100 步独立 test 和模型对照。最终状态为 `NO_TF_ABLATION_PIPELINE_OK`，最佳模型是 `artifacts/tandem_fno_rollout_no_tf_v1/best/FNO.0.30.mdlus`。
+
+无 teacher forcing 相对课程式 teacher forcing 的结果为：
+
+| Rollout | 流场 MAE | 流场变化 | 后柱受力 MAE | 受力变化 |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 0.00108605 | -6.41% | 0.0342814 | +2.95% |
+| 10 | 0.00811312 | -10.04% | 0.0428153 | -5.85% |
+| 50 | 0.0202451 | -15.03% | 0.110876 | -21.43% |
+| 100 | 0.0307753 | -19.40% | 0.176541 | -18.72% |
+
+随后执行动作条件审计：
+
+```bash
+bash scripts/run_tandem_action_sensitivity.sh
+```
+
+脚本使用同一个冻结 checkpoint 和 test 轨迹，仅替换模型收到的 `omega`：真实动作、全零、反号和固定种子时间打乱。主要结果位于：
+
+```text
+artifacts/tandem_fno_rollout_no_tf_v1/action_sensitivity/summary.json
+artifacts/tandem_fno_rollout_no_tf_v1/action_sensitivity/summary.md
+```
+
+在 100 步测试中，转速置零、反号和打乱使流场 MAE 分别增加 190.52%、386.74% 和 211.85%，使后柱受力 MAE 分别增加 746.57%、1433.23% 和 789.35%。这表明模型的动作通道对预测有实质影响。该结论不等价于闭环控制有效；控制策略仍需回到未参与训练的 OpenFOAM 环境验证。
