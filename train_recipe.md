@@ -723,3 +723,11 @@ artifacts/tandem_fno_rollout_no_tf_v1/action_sensitivity/summary.md
 ```
 
 在 100 步测试中，转速置零、反号和打乱使流场 MAE 分别增加 190.52%、386.74% 和 211.85%，使后柱受力 MAE 分别增加 746.57%、1433.23% 和 789.35%。这表明模型的动作通道对预测有实质影响。该结论不等价于闭环控制有效；控制策略仍需回到未参与训练的 OpenFOAM 环境验证。
+
+动作范围分桶使用统一的 5 帧起点间隔，避免长 horizon 样本过少：
+
+```bash
+bash scripts/run_tandem_action_error_bins.sh
+```
+
+结果保存在 `artifacts/tandem_fno_rollout_no_tf_v1/action_error_bins/`。100 步高幅值分桶 `max |omega|∈[4,5)` 包含 224 个窗口，流场和受力 MAE 相对 `[2,3)` 分桶分别增加 64.61% 和 166.67%。50 步快速动作分桶 `max |domega/dt|∈[4,6)` 包含 59 个窗口，相对 `[0,1)` 分桶分别增加 122.86% 和 239.73%。后续控制器需要对这些区域施加不确定性检查，不能仅依靠动作硬边界。
