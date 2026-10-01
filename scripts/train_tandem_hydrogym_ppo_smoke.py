@@ -22,6 +22,7 @@ from train_tandem_fno import build_model
 def make_env(
     *, data: Path, split: str, case: str, frame: int,
     network: torch.nn.Module, epoch: int, episode_steps: int,
+    device: torch.device | str = "cpu",
 ):
     raw = FlowEnv({
         "flow": TandemSurrogateFlow,
@@ -31,7 +32,7 @@ def make_env(
             "case": case,
             "frame": frame,
             "network": network,
-            "device": "cpu",
+            "device": device,
             "checkpoint_epoch": epoch,
             "max_delta_omega": 0.5,
         },

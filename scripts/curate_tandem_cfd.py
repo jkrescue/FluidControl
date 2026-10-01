@@ -393,6 +393,8 @@ def normalization(output_dir: Path) -> dict[str, Any]:
     state_sum = np.zeros(3, dtype=np.float64)
     state_sq = np.zeros(3, dtype=np.float64)
     state_count = np.zeros(3, dtype=np.int64)
+    state_min = np.full(3, np.inf, dtype=np.float64)
+    state_max = np.full(3, -np.inf, dtype=np.float64)
     force_sum = np.zeros(2, dtype=np.float64)
     force_sq = np.zeros(2, dtype=np.float64)
     force_count = 0
@@ -407,6 +409,8 @@ def normalization(output_dir: Path) -> dict[str, Any]:
                     dtype=np.float64
                 )
                 state_count[channel] += len(values)
+                state_min[channel] = min(state_min[channel], values.min())
+                state_max[channel] = max(state_max[channel], values.max())
             force = handle["force"][:, 2:4]
             force_sum += force.sum(axis=0, dtype=np.float64)
             force_sq += np.square(force, dtype=np.float64).sum(axis=0, dtype=np.float64)
@@ -415,10 +419,16 @@ def normalization(output_dir: Path) -> dict[str, Any]:
     force_mean = force_sum / force_count
     state_std = np.sqrt(np.maximum(state_sq / state_count - state_mean**2, 1e-12))
     force_std = np.sqrt(np.maximum(force_sq / force_count - force_mean**2, 1e-12))
+    state_abs_normalized_max = np.maximum(
+        np.abs(state_min - state_mean), np.abs(state_max - state_mean)
+    ) / state_std
     return {
         "state_channels": ["u", "v", "gauge_pressure"],
         "state_mean": state_mean.tolist(),
         "state_std": state_std.tolist(),
+        "state_abs_normalized_channel_max_train": state_abs_normalized_max.tolist(),
+        "state_abs_normalized_max_train": float(state_abs_normalized_max.max()),
+        "state_support_computed_from": "exact train split valid cells",
         "force_channels": ["rear_cd", "rear_cl"],
         "force_mean": force_mean.tolist(),
         "force_std": force_std.tolist(),

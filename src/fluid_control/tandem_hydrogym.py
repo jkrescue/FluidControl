@@ -70,6 +70,12 @@ class TandemSurrogateFlow(PDEBase):
         self.state_std = torch.tensor(
             stats["state_std"], dtype=torch.float32, device=self.device
         )[:, None, None]
+        self.training_state_bound = float(stats["state_abs_normalized_max_train"])
+        if not np.isfinite(self.training_state_bound) or self.training_state_bound <= 0:
+            raise ValueError("invalid train-split normalized state support")
+        # The numerical-divergence guard must cover every real train state.
+        # A fixed 20 threshold rejected 4.9% of valid train frames.
+        self.max_abs_normalized_state_guard = 1.25 * self.training_state_bound
         self.force_mean = np.asarray(stats["force_mean"], dtype=np.float32)
         self.force_std = np.asarray(stats["force_std"], dtype=np.float32)
         if np.any(self.force_std <= 0) or torch.any(self.state_std <= 0):
@@ -127,6 +133,7 @@ class TandemSurrogateFlow(PDEBase):
             "omega": initial_omega,
             "force": initial_force,
         }
+        self.initial_state_bound = float(self.initial_state["field"].abs().amax())
         self._probe_indices = self._build_probe_indices()
         self.requested_action = initial_omega
         self.applied_delta = 0.0
@@ -283,9 +290,14 @@ class TandemFNOStepper(TransientSolver):
 class TandemRewardAudit(gym.Wrapper):
     """Report every physical reward term and applied action from official FlowEnv."""
 
-    def __init__(self, env, max_abs_normalized_state: float = 20.0):
+    def __init__(self, env, max_abs_normalized_state: float | None = None):
         super().__init__(env)
-        self.max_abs_normalized_state = float(max_abs_normalized_state)
+        flow: TandemSurrogateFlow = env.flow
+        selected = (
+            flow.max_abs_normalized_state_guard
+            if max_abs_normalized_state is None else max_abs_normalized_state
+        )
+        self.max_abs_normalized_state = float(selected)
         if not np.isfinite(self.max_abs_normalized_state) or self.max_abs_normalized_state <= 0:
             raise ValueError("max_abs_normalized_state must be positive and finite")
 
@@ -316,6 +328,9 @@ class TandemRewardAudit(gym.Wrapper):
             applied_delta_omega=float(flow.applied_delta),
             rate_limited=bool(flow.rate_limited),
             max_abs_normalized_state=state_bound,
+            max_abs_normalized_state_guard=self.max_abs_normalized_state,
+            training_state_bound=flow.training_state_bound,
+            initial_state_bound=flow.initial_state_bound,
             checkpoint_epoch=flow.checkpoint_epoch,
             source_case=flow.case_path.stem,
             initial_force_source=flow.initial_force_source,

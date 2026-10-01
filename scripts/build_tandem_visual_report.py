@@ -32,8 +32,14 @@ def main() -> None:
         raise ValueError("the expected held-out surrogate gate is not present")
     if len(history) != 20 or len(observed["cases"]) != 4:
         raise ValueError("expected 20 training epochs and four independent held-out cases")
-    audit_path = project / "artifacts/hydrogym/tandem_ppo_pilot_20epoch_spark/audit.json"
+    guarded_run = project / "artifacts/hydrogym/tandem_ppo_pilot_20epoch_spark_guarded"
+    legacy_run = project / "artifacts/hydrogym/tandem_ppo_pilot_20epoch_spark"
+    audit_path = guarded_run / "audit.json"
+    if not audit_path.exists():
+        audit_path = legacy_run / "audit.json"
     audit = read_json(audit_path) if audit_path.exists() else None
+    checkpoint_path = audit_path.parent / "checkpoint_evaluations.json"
+    checkpoints = read_json(checkpoint_path) if checkpoint_path.exists() else None
     output.mkdir(parents=True, exist_ok=True)
     assets = output / "assets"
     assets.mkdir(exist_ok=True)
@@ -54,12 +60,15 @@ def main() -> None:
         "figures": figure_index,
         "gate": gate,
         "audit": audit,
+        "checkpoints": checkpoints,
         "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
     }
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     if audit:
         evaluated = sum(row["status"] == "evaluated" for row in audit["evaluations"])
-        ppo_status = f"PPO 代理环境评估 {evaluated}/24 组完成；审计状态：{audit['status']}。不能宣称稳定或减阻。"
+        test_mean = audit.get("summary", {}).get("test", {}).get("reward_change_mean")
+        benefit = "尚无平均奖励改善" if test_mean is not None and test_mean <= 0 else "出现候选平均奖励改善"
+        ppo_status = f"PPO 代理环境评估 {evaluated}/24 组完成；{benefit}，仍不能宣称真实 CFD 减阻。"
     else:
         ppo_status = "PPO 已训练并保存策略；24 组代理环境评估仍在运行。"
     page = r'''<!doctype html>
@@ -90,7 +99,7 @@ footer{border-top:1px solid #304157;margin-top:40px;padding-top:15px;color:#90a4
 <div class="grid"><div class="metric"><small>训练轮数</small><strong>20 epochs</strong><small>PhysicsNeMo 2.2.2 官方 FNO</small></div><div class="metric"><small>独立测试轨迹</small><strong>4 cases</strong><small>每个预测步长 64 段</small></div><div class="metric"><small>10 步流场 MAE</small><strong id="mae10"></strong><small>真实 CFD 对照；物理量单位</small></div></div>
 <section id="flow"><div class="headrow"><div><h2>真实流场 · 预测 · 绝对误差</h2><p class="sub">每张图的三列分别来自真实 OpenFOAM 场、20 轮 FNO 预测、逐点绝对误差；三行依次为 u、v、p。</p></div><div class="controls"><label>测试轨迹 <select id="case"></select></label><label>预测步长 <select id="horizon"><option value="1">1 步</option><option value="10" selected>10 步</option><option value="50">50 步</option></select></label></div></div><div class="figurewrap"><img id="flowImage" class="figure" alt="真实 CFD、FNO 预测和绝对误差的九宫格流场图"></div><p id="figureCaption" class="caption"></p></section>
 <section id="model"><h2>模型训练与独立测试</h2><div class="pair"><div><h3>20 轮验证集流场 MAE</h3><svg id="trainChart" class="chart" viewBox="0 0 580 290" role="img" aria-label="20 轮验证集流场平均绝对误差曲线"></svg><p class="caption">来自逐轮 <code>training_history.json</code>，不是人为平滑曲线。</p></div><div><h3>多步预测误差</h3><svg id="errorChart" class="chart" viewBox="0 0 580 290" role="img" aria-label="1、10、50 步预测的平均绝对误差"></svg><p class="caption">4 条独立测试轨迹，每个步长 64 段。图中包含真实动作、错误的零动作输入和状态保持基线。</p></div></div><div class="tablewrap"><table><thead><tr><th>预测步长</th><th>真实动作输入 MAE</th><th>错误零动作输入 MAE</th><th>状态保持基线 MAE</th><th>后圆柱力 MAE</th></tr></thead><tbody id="metricRows"></tbody></table></div><p class="note">50 步后圆柱力 MAE 已达 0.5921；虽然模型优于此处的基线，长期滚动误差仍不可忽略，不能直接用作闭环控制收益证据。</p></section>
-<section id="rl"><h2>HydroGym 强化学习：实际记录</h2><p id="rlLead" class="sub"></p><div id="rlContent"></div><p class="note">训练和评估环境是冻结 FNO 驱动的 HydroGym 代理环境。表中的“0 步”是零动作基线，并非未训练的随机策略；“512 步”是训练后的策略。真实 OpenFOAM 闭环回放需要单独验证。当前试验没有保存中间 PPO 参数快照，因此不会伪造 32/128/256 步的迭代曲线。</p></section>
+<section id="rl"><h2>HydroGym 强化学习：实际记录</h2><p id="rlLead" class="sub"></p><div id="checkpointPanel" hidden><h3>独立面板奖励随 PPO 迭代变化</h3><svg id="ppoChart" class="chart" viewBox="0 0 1160 300" role="img" aria-label="0 到 512 个 PPO 环境步的独立面板平均奖励曲线"></svg><p class="caption">0、128、256、384、512 步均为实际保存的策略快照；固定面板包含 4 条验证和 4 条测试轨迹的 frame 100，每组滚动 16 步。</p></div><div id="rlContent"></div><p class="note">训练和评估环境是冻结 FNO 驱动的 HydroGym 代理环境。最终表格比较的是“请求转速回到 0”的限速基线与训练后策略，并非未训练随机策略。真实 OpenFOAM 闭环回放需要单独验证。</p></section>
 <section id="provenance"><h2>数据来源与科学边界</h2><p>流场图片源自本项目 OpenFOAM 串列双圆柱仿真数据集 <code>data/curated/tandem_cylinders_expanded_independent_v2</code> 的独立测试轨迹，由 <code>heldout_evaluation.json</code> 对应的评估脚本导出。不是港理工大学实验数据，也不是合成或手绘场图。</p><p>FNO 权重：<code>artifacts/tandem_fno_expanded_spark_20epoch/best</code>。表格、曲线和控制门槛分别来自训练历史、三种 held-out 评估 JSON 和 <code>control_readiness.json</code>。PPO 数据仅在 <code>audit.json</code> 形成后加入。</p><p class="sub">同几何离线泛化、代理模型控制与真实 CFD 闭环是三种不同的证据层级。这里仍处于前两层；中等网格收敛性验证也正在计算中。</p></section>
 <footer>页面与 PNG 均可离线查看；原始仿真和训练仍在 DGX Spark 的 <code>~/workspace/fluid_control/physicsnemo_control</code>。页面生成脚本：<code>scripts/build_tandem_visual_report.py</code>。</footer>
 </main><script id="report-data" type="application/json">__DATA__</script><script>
@@ -115,9 +124,10 @@ function base(svg,maxY,xlabels){const L=67,R=18,T=22,B=49,W=580,H=290,plotW=W-L-
  series.forEach(([name,color,src],si)=>{keys.forEach((k,i)=>{const v=si===2?src[k].persistence_state_mae_physical_units:src[k].state_mae_physical_units;const x=p.L+([.13,.5,.87][i]*p.plotW)+(si-1)*15,y=p.T+(1-v/max)*p.plotH;el('rect',{x:x-5,y,width:10,height:p.T+p.plotH-y,fill:color},svg)});el('rect',{x:90+si*160,y:12,width:11,height:11,fill:color},svg);txt(svg,107+si*160,22,name)})
 }
 for(const k of ['1','10','50']){const a=d.summary[k],z=d.zero_summary[k],tr=document.createElement('tr');[k,a.state_mae_physical_units.toFixed(4),z.state_mae_physical_units.toFixed(4),a.persistence_state_mae_physical_units.toFixed(4),a.rear_force_mae.toFixed(4)].forEach((v,i)=>{const c=document.createElement('td');c.textContent=v;if(i)c.className='num';tr.append(c)});document.getElementById('metricRows').append(tr)}
+if(d.checkpoints){document.getElementById('checkpointPanel').hidden=false;const svg=document.getElementById('ppoChart'),vals=d.checkpoints.map(x=>x.reward_sum_mean),steps=d.checkpoints.map(x=>x.timesteps),L=78,R=28,T=25,B=50,W=1160,H=300,pw=W-L-R,ph=H-T-B,lo=Math.min(...vals),hi=Math.max(...vals),pad=Math.max((hi-lo)*.25,.0001),y0=lo-pad,y1=hi+pad;for(let i=0;i<=4;i++){const y=T+ph*i/4,v=y1-(y1-y0)*i/4;el('line',{x1:L,y1:y,x2:W-R,y2:y,class:'gridline'},svg);txt(svg,L-9,y+5,v.toFixed(4),'end')}const pts=vals.map((v,i)=>`${L+i/(vals.length-1)*pw},${T+(y1-v)/(y1-y0)*ph}`).join(' ');el('polyline',{points:pts,fill:'none',stroke:'#64d9bd','stroke-width':3,'stroke-linejoin':'round'},svg);vals.forEach((v,i)=>{const x=L+i/(vals.length-1)*pw,y=T+(y1-v)/(y1-y0)*ph;el('circle',{cx:x,cy:y,r:5,fill:'#64d9bd'},svg);txt(svg,x,H-17,String(steps[i]),'middle');txt(svg,x,y-10,v.toFixed(4),'middle')})}
 const lead=document.getElementById('rlLead'),content=document.getElementById('rlContent');
 if(!d.audit){lead.textContent='512 个 PPO 环境步已完成、策略已保存；跨验证集和测试集的 24 组对照仍在运行。';content.innerHTML='<p class="status">目前只有训练完成和策略落盘的证据，尚无完成的跨案例奖励对照。页面将在评估 JSON 产生后重新生成。</p>'}
-else{const a=d.audit,valid=a.evaluations.filter(r=>r.status==='evaluated'),test=valid.filter(r=>r.split==='test'),mean=(rows,key)=>rows.reduce((s,r)=>s+r[key],0)/rows.length;lead.textContent=`PPO ${a.ppo_timesteps} 环境步、${a.episode_steps} 步/回合。${valid.length}/24 组代理环境评估完成；${24-valid.length} 组失败。测试组平均奖励差 ${mean(test,'reward_change').toFixed(4)}，没有整体改善证据。`;let h='<div class="status"><strong class="bad">未通过稳定性审计：</strong>测试轨迹 expanded_test_00 / 第 400 帧提前终止。所有下表结果都只是冻结代理环境结果，不能当作真实 CFD 闭环收益。</div><div class="tablewrap"><table><thead><tr><th>分组</th><th>案例 / 起点</th><th>0 步：零动作奖励</th><th>512 步：PPO 奖励</th><th>奖励差</th><th>平均 Cd 差</th><th>状态</th></tr></thead><tbody>';for(const row of a.evaluations){let good=row.status==='evaluated';h+=`<tr><td>${row.split}</td><td>${row.case} / ${row.initial_frame}</td><td class="num">${good?row.zero.reward_sum.toFixed(3):'—'}</td><td class="num">${good?row.policy.reward_sum.toFixed(3):'—'}</td><td class="num">${good?row.reward_change.toFixed(3):'—'}</td><td class="num">${good?row.cd_mean_change.toFixed(3):'—'}</td><td class="${good?(row.reward_change>0?'good':'warn'):'bad'}">${good?(row.reward_change>0?'奖励改善':'未改善'):'评估失败'}</td></tr>`}h+='</tbody></table></div>';content.innerHTML=h}
+else{const a=d.audit,valid=a.evaluations.filter(r=>r.status==='evaluated'),test=valid.filter(r=>r.split==='test'),mean=(rows,key)=>rows.reduce((s,r)=>s+r[key],0)/rows.length,stable=valid.length===24,testMean=mean(test,'reward_change');lead.textContent=`PPO ${a.ppo_timesteps} 环境步、${a.episode_steps} 步/回合。${valid.length}/24 组代理环境评估完成；测试组平均奖励差 ${testMean.toFixed(4)}，${testMean>0?'出现候选改善':'没有整体改善证据'}。`;let h=`<div class="status"><strong class="${stable?'good':'bad'}">${stable?'稳定性审计通过：':'稳定性审计未通过：'}</strong>${stable?'24 组均完整滚动，但平均奖励没有改善，暂不进入真实 CFD 闭环收益验证。':'存在提前终止或失败组。'}所有下表结果都只是冻结代理环境结果。</div><div class="tablewrap"><table><thead><tr><th>分组</th><th>案例 / 起点</th><th>零请求奖励</th><th>512 步 PPO 奖励</th><th>奖励差</th><th>平均 Cd 差</th><th>状态</th></tr></thead><tbody>`;for(const row of a.evaluations){let good=row.status==='evaluated';h+=`<tr><td>${row.split}</td><td>${row.case} / ${row.initial_frame}</td><td class="num">${good?row.zero.reward_sum.toFixed(3):'—'}</td><td class="num">${good?row.policy.reward_sum.toFixed(3):'—'}</td><td class="num">${good?row.reward_change.toFixed(3):'—'}</td><td class="num">${good?row.cd_mean_change.toFixed(3):'—'}</td><td class="${good?(row.reward_change>0?'good':'warn'):'bad'}">${good?(row.reward_change>0?'奖励改善':'未改善'):'评估失败'}</td></tr>`}h+='</tbody></table></div>';content.innerHTML=h}
 </script></body></html>'''
     page = page.replace("__DATA__", payload).replace("__PPO_STATUS__", json.dumps(ppo_status, ensure_ascii=False))
     (output / "index.html").write_text(page, encoding="utf-8")
