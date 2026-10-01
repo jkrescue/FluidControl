@@ -1,0 +1,191 @@
+{
+  "reference": "observed",
+  "modes": {
+    "observed": {
+      "1": {
+        "state_mae_physical_units": {
+          "value": 0.004084650336153572,
+          "relative_change": 0.0
+        },
+        "rear_force_mae": {
+          "value": 0.12813138656201772,
+          "relative_change": 0.0
+        },
+        "rear_cd_mae": {
+          "value": 0.10242609126726165,
+          "relative_change": 0.0
+        },
+        "rear_cl_mae": {
+          "value": 0.1538366818567738,
+          "relative_change": 0.0
+        },
+        "stable": true,
+        "failed_segments": 0
+      },
+      "10": {
+        "state_mae_physical_units": {
+          "value": 0.03681972049525939,
+          "relative_change": 0.0
+        },
+        "rear_force_mae": {
+          "value": 0.2016116023005452,
+          "relative_change": 0.0
+        },
+        "rear_cd_mae": {
+          "value": 0.1638534419471398,
+          "relative_change": 0.0
+        },
+        "rear_cl_mae": {
+          "value": 0.2393697626539506,
+          "relative_change": 0.0
+        },
+        "stable": true,
+        "failed_segments": 0
+      },
+      "50": {
+        "state_mae_physical_units": {
+          "value": 0.1289008114254102,
+          "relative_change": 0.0
+        },
+        "rear_force_mae": {
+          "value": 0.8648404181003571,
+          "relative_change": 0.0
+        },
+        "rear_cd_mae": {
+          "value": 0.6984366613905877,
+          "relative_change": 0.0
+        },
+        "rear_cl_mae": {
+          "value": 1.0312441748101264,
+          "relative_change": 0.0
+        },
+        "stable": true,
+        "failed_segments": 0
+      }
+    },
+    "zero": {
+      "1": {
+        "state_mae_physical_units": {
+          "value": 0.004171069602307398,
+          "relative_change": 0.021157078095258575
+        },
+        "rear_force_mae": {
+          "value": 0.3058529254049063,
+          "relative_change": 1.3870257991539674
+        },
+        "rear_cd_mae": {
+          "value": 0.22937813494354486,
+          "relative_change": 1.2394502426635192
+        },
+        "rear_cl_mae": {
+          "value": 0.3823277158662677,
+          "relative_change": 1.4852831668731996
+        },
+        "stable": true,
+        "failed_segments": 0
+      },
+      "10": {
+        "state_mae_physical_units": {
+          "value": 0.03741643694229424,
+          "relative_change": 0.016206436089369003
+        },
+        "rear_force_mae": {
+          "value": 0.4807513477280736,
+          "relative_change": 1.384542071201889
+        },
+        "rear_cd_mae": {
+          "value": 0.30074360966682434,
+          "relative_change": 0.8354427352453555
+        },
+        "rear_cl_mae": {
+          "value": 0.6607590857893229,
+          "relative_change": 1.7604116679706183
+        },
+        "stable": true,
+        "failed_segments": 0
+      },
+      "50": {
+        "state_mae_physical_units": {
+          "value": 0.12831387238111347,
+          "relative_change": -0.004553416210544059
+        },
+        "rear_force_mae": {
+          "value": 1.5532756787724793,
+          "relative_change": 0.7960257710714851
+        },
+        "rear_cd_mae": {
+          "value": 0.9651045468635857,
+          "relative_change": 0.3818068268954584
+        },
+        "rear_cl_mae": {
+          "value": 2.141446810681373,
+          "relative_change": 1.076566212920095
+        },
+        "stable": true,
+        "failed_segments": 0
+      }
+    },
+    "sign_flip": {
+      "1": {
+        "state_mae_physical_units": {
+          "value": 0.004772296222654404,
+          "relative_change": 0.16834877649487456
+        },
+        "rear_force_mae": {
+          "value": 0.5982410240685567,
+          "relative_change": 3.668965505801329
+        },
+        "rear_cd_mae": {
+          "value": 0.45025283261202276,
+          "relative_change": 3.395880259036465
+        },
+        "rear_cl_mae": {
+          "value": 0.7462292155250907,
+          "relative_change": 3.85078855392793
+        },
+        "stable": true,
+        "failed_segments": 0
+      },
+      "10": {
+        "state_mae_physical_units": {
+          "value": 0.042506172438152134,
+          "relative_change": 0.15444038863969345
+        },
+        "rear_force_mae": {
+          "value": 0.8706059728283435,
+          "relative_change": 3.318233489015772
+        },
+        "rear_cd_mae": {
+          "value": 0.5707341004163027,
+          "relative_change": 2.483198727069922
+        },
+        "rear_cl_mae": {
+          "value": 1.1704778452403843,
+          "relative_change": 3.8898316657167245
+        },
+        "stable": true,
+        "failed_segments": 0
+      },
+      "50": {
+        "state_mae_physical_units": {
+          "value": 0.14637645543552935,
+          "relative_change": 0.13557435222377645
+        },
+        "rear_force_mae": {
+          "value": 2.1604699643794447,
+          "relative_change": 1.4981140094319012
+        },
+        "rear_cd_mae": {
+          "value": 1.1461773486807942,
+          "relative_change": 0.6410612615877791
+        },
+        "rear_cl_mae": {
+          "value": 3.174762580078095,
+          "relative_change": 2.0785750432603756
+        },
+        "stable": true,
+        "failed_segments": 0
+      }
+    }
+  }
+}
