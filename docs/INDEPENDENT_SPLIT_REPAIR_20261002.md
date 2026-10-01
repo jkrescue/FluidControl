@@ -42,3 +42,5 @@ python3 scripts/audit_raw_cfd_control_response.py --output docs/results/expanded
 32 条真实 OpenFOAM 轨迹的 HDF5 已完成：24 条训练、4 条验证、4 条测试，均为 801 帧。新增 `expanded_validation_04`、`expanded_test_04` 与原始动作/力标签对齐，最大动作绝对误差 `1.59e-7`，最大力系数绝对误差 `4.77e-7`。全量检查返回 `CURATED_DATASET_OK`；跨划分签名审计返回 `SPLIT_INTEGRITY_OK`、重复组为空；32 条共同起点与非零响应粗筛返回 `CONTROLLED_CFD_RESPONSE_AUDIT_OK`。归一化仅从未改变的 24 条训练轨迹重算，其 JSON SHA-256 与原始 v1 训练归一化相同：`ceaffa8cbe1a4d3372c45ea95125b410148a78aa1216586b9c2cbd281d699ba2`。
 
 结构化验收结果在 Spark 项目 `artifacts/tandem_cylinders/` 下并已同步 GitLab：`expanded_independent_v2_curated_validation.json`（SHA-256 `62611ef01dae49cd355d0d9efaf51f3800a1c4203002a18e7f99a239139699a7`）、`expanded_independent_v2_split_integrity.json`（`80dae6a31a68deb66e790f42186a12883f4369a1b947b273139cffdea172f32f`）、`expanded_independent_v2_control_response.json`（`090f6d4b2b6ba9469c9c4c494e6d34ef4a4f6f946ab7c1c06af78e1777d01dcf`）。这些门禁允许开始代理训练，但并不证明预测精度、控制收益或新物理条件泛化；训练和留出评估仍需单独验收。
+
+留出动作强度的边界：训练 24 条的采样转速 RMS 范围为 `1.887..3.536`；新增验证/测试两条分别为 `3.595/3.623`，比训练最大 RMS 高约 `1.7%/2.5%`。其瞬时 `|omega|<=5` 和最大变化率仍落在训练范围内，但按整段 RMS 看属于轻微分布外动作日程。若留出误差偏大，须同时考虑这个强度差异；不能把此测试描述为对动作统计完全同分布的评估。
