@@ -152,11 +152,11 @@ def main(cfg: DictConfig) -> None:
 
     smoke = bool(cfg.training.smoke)
     train = TandemWindowDataset(
-        cfg.data.root, "train", stride=8 if smoke else 1,
+        cfg.data.root, "train", stride=int(cfg.training.get("smoke_train_stride", 8)) if smoke else 1,
         num_workers=cfg.training.workers,
     )
     validation = TandemWindowDataset(
-        cfg.data.root, "validation", stride=16 if smoke else 2,
+        cfg.data.root, "validation", stride=int(cfg.training.get("smoke_validation_stride", 16)) if smoke else 2,
         num_workers=cfg.training.workers,
     )
     train_sampler = DistributedSampler(train, shuffle=True, seed=cfg.training.seed) if dist.distributed else None

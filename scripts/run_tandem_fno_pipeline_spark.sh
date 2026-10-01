@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Wait for the validated real CFD dataset, then exercise the official PhysicsNeMo path.
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+cd "${root}"
+curator_log="artifacts/tandem_cylinders/expanded_spark_curator.log"
+dataset="data/curated/tandem_cylinders_expanded_v1"
+audit="artifacts/tandem_cylinders/expanded_datapipe_validation_spark.json"
+
+while ! rg -q '^EXPANDED_SPARK_CURATOR_OK$' "${curator_log}" 2>/dev/null; do
+    if ! tmux has-session -t fluid-control-curator-full 2>/dev/null; then
+        echo "Curator stopped before completing the full dataset" >&2
+        exit 1
+    fi
+    sleep 60
+done
+[[ -s "${dataset}/manifest.json" && -s "${dataset}/normalization.json" ]] || exit 1
+free_gib="$(df -BG --output=avail "${root}" | tail -n 1 | tr -dc '0-9')"
+if (( free_gib < 150 )); then
+    echo "Only ${free_gib} GiB disk free; refusing to train" >&2
+    exit 75
+fi
+
+docker run --rm --network none --cpus 4 --memory 16g \
+    --user "$(id -u):$(id -g)" --env HOME=/tmp \
+    --env PYTHONPATH=/workspace/src \
+    --mount "type=bind,src=${root},dst=/workspace" \
+    --workdir /workspace fluid-control-physicsnemo:2.2.2 \
+    python -u scripts/validate_tandem_datapipe.py \
+      --data "${dataset}" --output "${audit}"
+[[ -s "${audit}" ]] || exit 1
+
+SMOKE=true BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_smoke \
+    bash scripts/run_tandem_fno_spark.sh 2>&1 |
+    tee artifacts/tandem_cylinders/expanded_fno_smoke_spark.log
+[[ -s artifacts/tandem_fno_expanded_spark_smoke/training_history.json ]] || exit 1
+echo PHYSICSNEMO_SPARK_SMOKE_OK
+
+EPOCHS=5 BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_5epoch \
+    bash scripts/run_tandem_fno_spark.sh 2>&1 |
+    tee artifacts/tandem_cylinders/expanded_fno_5epoch_spark.log
+echo PHYSICSNEMO_SPARK_5EPOCH_OK
