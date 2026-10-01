@@ -50,3 +50,5 @@ Spark 自动衔接由 `scripts/build_independent_expanded_v2_spark.sh` 等待原
 三种动作输入的 1/10/50 步场与后柱力误差还将由现有 `scripts/summarize_tandem_action_sensitivity.py` 汇总为 `artifacts/tandem_fno_expanded_spark_5epoch/action_sensitivity_summary.json` 和同名 Markdown 表。只有观察到实际动作输入相对错误动作更可靠，才可考虑后续代理控制实验；仅有这张表仍不足以证明 CFD 控制收益。
 
 此文档记录的是运行方案及内存守护测试；原始 32 条 CFD 和两条替代留出 CFD 已通过数值质检，但独立 v2 的全量 Curator HDF5 仍在整理，不得宣称 FNO 已训练完成。
+
+原仓库保留的双 GPU `torchrun`、旧版 `.venv`、旧数据划分的训练/消融/MPC Shell 入口只供原机器溯源；它们在 DGX Spark（aarch64）启动时会在创建输出或占用 GPU 前以退出码 2 拒绝执行。当前 Spark 应使用本页的 GPU0 容器入口与独立 v2 数据门禁，不能用旧入口绕过 20 GiB 守护。

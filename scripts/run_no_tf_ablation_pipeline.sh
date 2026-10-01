@@ -3,6 +3,10 @@ set -euo pipefail
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 cd "$project_root"
+if [[ "$(uname -m)" == aarch64 ]]; then
+    echo "Legacy host/GPU runner disabled on DGX Spark; see docs/SPARK_GPU_TRAINING.md" >&2
+    exit 2
+fi
 
 output="artifacts/tandem_fno_rollout_no_tf_v1"
 data="data/curated/tandem_cylinders_expanded_v1"

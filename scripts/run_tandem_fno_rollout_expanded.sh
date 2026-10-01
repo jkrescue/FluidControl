@@ -2,6 +2,10 @@
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
+if [[ "$(uname -m)" == aarch64 ]]; then
+    echo "Legacy host/GPU runner disabled on DGX Spark; see docs/SPARK_GPU_TRAINING.md" >&2
+    exit 2
+fi
 output_dir="${OUTPUT_DIR:-artifacts/tandem_fno_rollout_expanded_v1}"
 config_name="${CONFIG_NAME:-tandem_fno_rollout_expanded}"
 batch_size="${BATCH_SIZE:-16}"
