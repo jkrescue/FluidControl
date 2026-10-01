@@ -36,5 +36,5 @@ docker run --rm --network none --gpus 'device=0' --cpus 8 --memory 64g \
     --workdir /workspace "${image}" \
     python -u scripts/spark_gpu_guard.py \
       --min-free-gib 20 --allocator-fraction "${fraction}" --margin-gib 4 -- \
-      torchrun --standalone --nproc_per_node=1 scripts/train_tandem_fno.py \
+      python -u scripts/train_tandem_fno.py \
       --config-name tandem_fno_expanded "${overrides[@]}" "$@"

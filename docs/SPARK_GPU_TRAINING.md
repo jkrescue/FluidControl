@@ -12,10 +12,13 @@ BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_v1 \
 ```
 
 - 使用固定的 `fluid-control-physicsnemo:2.2.2` 派生容器，仅暴露 GPU 0；`--network none`、`--memory 64g`，不改主机 Python 环境。现有 PhysicsNeMo 官方 `FNO`、`HDF5Reader`、`DataLoader` 与训练辅助 API 保持原样；模型结构不因迁移而改变。
-- 单进程 `torchrun`，批量默认为 4；PyTorch allocator fraction 固定为 0.20，按 GPU 报告总量约 121.69 GiB 算上限约 24.34 GiB。这个限制只覆盖 PyTorch 缓存分配器，不是对所有 CUDA 分配的硬上限。
+- 单进程 `python`，批量默认为 4；PyTorch allocator fraction 固定为 0.20，按 GPU 报告总量约 121.69 GiB 算上限约 24.34 GiB。这个限制只覆盖 PyTorch 缓存分配器，不是对所有 CUDA 分配的硬上限。
 - `spark_gpu_guard.py` 运行前要求 `MemAvailable >= 20 GiB + allocator 上限 + 4 GiB`，并每 5 秒检查一次；低于 20 GiB 时向整组训练进程发 SIGTERM，必要时 SIGKILL。该时间间隔内的瞬时波动不能绝对排除，正式训练还须观察日志。
 - Spark 是 CPU/GPU 共享 DRAM 的 UMA，没有独立“显存”指标。`nvidia-smi` 显示 N/A 是预期行为。实测 CFD 写盘时 Linux page cache 超过 100 GiB，`cudaMemGetInfo` 仅显示约 8 GiB free，但 `MemAvailable` 约 113 GiB。依据 [NVIDIA DGX Spark Porting Guide](https://docs.nvidia.com/dgx/dgx-spark-porting-guide/optimization.html) 的说明，前者未计入可回收 OS 内存；本守护程序同时记录两者、用 `MemAvailable` 判断共享内存余量，不清理其他进程缓存。
 - `SMOKE=true` 仅表示原训练脚本的一轮低密度抽样与验证，不代表控制收益或正式训练达标。正式判定需看独立验证/测试集的误差、rollout 稳定性以及与零动作 CFD 基线的物理指标对照。
+
+启动预检发现：`torchrun --standalone` 在隔离容器 `--network none` 下持续尝试解析容器主机名，无法进入训练；改用静态回环地址虽进入进程，但单卡 NCCL 初始化报 CUDA OOM。两次均为小型预检，没有训练或改写数据。
+因此 GPU 0 启动器改用 PhysicsNeMo 官方 `DistributedManager.initialize()` 支持的单进程 `python` 路径，不建立无意义的单卡 NCCL 通信。已在同一容器和 20 GiB 余量守护下验证 `rank=0`、`world_size=1`、`cuda:0` 及 CUDA 分配；完整 FNO 训练仍待全量数据质检。
 
 在完整归一化数据就绪前，`scripts/validate_tandem_fno_real_frame_spark.py` 已用首条真实 CFD HDF5 的 4 个相邻时间窗做官方 47,222,525 参数 FNO 的 GPU 0 前向/反向验收：输出 `[4,5,128,256]`，损失和梯度均有限值，CUDA 峰值 allocated 0.859 GiB、reserved 1.004 GiB。此脚本**不执行优化器更新**、使用未归一化原场，打印的损失不是模型精度。
 
