@@ -1,0 +1,168 @@
+{
+  "hydrogym_commit": "4ab9854dea3d84e38a59c25e0f5835a00cf8225f",
+  "checkpoint_revision": "cf5ef6748443ae72e9647f398487e98d421a7243",
+  "environment": "Firedrake RotaryCylinder Re100 medium 50 pressure probes",
+  "training_checkpoints": [
+    "cylinder_Re-100_Mesh-medium_DT-0.01_00000570.ckpt"
+  ],
+  "heldout_checkpoints": [
+    "cylinder_Re-100_Mesh-medium_DT-0.01_00001080.ckpt",
+    "cylinder_Re-100_Mesh-medium_DT-0.01_00001110.ckpt",
+    "cylinder_Re-100_Mesh-medium_DT-0.01_00001140.ckpt",
+    "cylinder_Re-100_Mesh-medium_DT-0.01_00001170.ckpt",
+    "cylinder_Re-100_Mesh-medium_DT-0.01_00001199.ckpt"
+  ],
+  "reward_weights": {
+    "drag": 1.0,
+    "lift_square": 0.2,
+    "action_square": 0.01,
+    "action_delta_square": 0.001
+  },
+  "training_timesteps": 8192,
+  "eval_steps": 600,
+  "warmup_steps": 100,
+  "summaries": [
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001080.ckpt",
+      "policy": "zero",
+      "steps": 600,
+      "analysis_steps": 500,
+      "cd_mean": 1.4837723359353683,
+      "cl_rms": 0.25878480370811524,
+      "action_rms": 0.0,
+      "physical_reward_mean": -0.01497166250861418,
+      "finite": true
+    },
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001080.ckpt",
+      "policy": "ppo",
+      "steps": 600,
+      "analysis_steps": 500,
+      "cd_mean": 1.543034753157457,
+      "cl_rms": 0.39634093849663615,
+      "action_rms": 0.3046621470272339,
+      "physical_reward_mean": -0.015753801959315333,
+      "finite": true
+    },
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001110.ckpt",
+      "policy": "zero",
+      "steps": 600,
+      "analysis_steps": 500,
+      "cd_mean": 1.4845225501581512,
+      "cl_rms": 0.26197486673641057,
+      "action_rms": 0.0,
+      "physical_reward_mean": -0.014982487163184633,
+      "finite": true
+    },
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001110.ckpt",
+      "policy": "ppo",
+      "steps": 600,
+      "analysis_steps": 500,
+      "cd_mean": 1.5448464431364635,
+      "cl_rms": 0.3829494096894842,
+      "action_rms": 0.29899246915414857,
+      "physical_reward_mean": -0.015750704827630992,
+      "finite": true
+    },
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001140.ckpt",
+      "policy": "zero",
+      "steps": 600,
+      "analysis_steps": 500,
+      "cd_mean": 1.4849506820444158,
+      "cl_rms": 0.25950292647034284,
+      "action_rms": 0.0,
+      "physical_reward_mean": -0.0149841903581375,
+      "finite": true
+    },
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001140.ckpt",
+      "policy": "ppo",
+      "steps": 600,
+      "analysis_steps": 500,
+      "cd_mean": 1.5459187655096776,
+      "cl_rms": 0.3698854496911537,
+      "action_rms": 0.2995944225799515,
+      "physical_reward_mean": -0.01574179404637669,
+      "finite": true
+    },
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001170.ckpt",
+      "policy": "zero",
+      "steps": 600,
+      "analysis_steps": 500,
+      "cd_mean": 1.4848873765602275,
+      "cl_rms": 0.2523314939134959,
+      "action_rms": 0.0,
+      "physical_reward_mean": -0.014976216131243511,
+      "finite": true
+    },
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001170.ckpt",
+      "policy": "ppo",
+      "steps": 600,
+      "analysis_steps": 500,
+      "cd_mean": 1.5458272547284926,
+      "cl_rms": 0.3660136150489501,
+      "action_rms": 0.30677784172107786,
+      "physical_reward_mean": -0.015735615859556535,
+      "finite": true
+    },
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001199.ckpt",
+      "policy": "zero",
+      "steps": 600,
+      "analysis_steps": 500,
+      "cd_mean": 1.4844018631205367,
+      "cl_rms": 0.2437170589190883,
+      "action_rms": 0.0,
+      "physical_reward_mean": -0.014962814640821708,
+      "finite": true
+    },
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001199.ckpt",
+      "policy": "ppo",
+      "steps": 600,
+      "analysis_steps": 500,
+      "cd_mean": 1.5475516708169734,
+      "cl_rms": 0.38824612953824345,
+      "action_rms": 0.29441357935622,
+      "physical_reward_mean": -0.015785654882724633,
+      "finite": true
+    }
+  ],
+  "paired": [
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001080.ckpt",
+      "cd_change_pct": 3.9940370760942923,
+      "cl_rms_change_pct": 53.15464154675451,
+      "reward_change": -0.0007821394507011529
+    },
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001110.ckpt",
+      "cd_change_pct": 4.063521498672129,
+      "cl_rms_change_pct": 46.177919454690965,
+      "reward_change": -0.0007682176644463589
+    },
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001140.ckpt",
+      "cd_change_pct": 4.105731200535456,
+      "cl_rms_change_pct": 42.536138116895536,
+      "reward_change": -0.0007576036882391904
+    },
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001170.ckpt",
+      "cd_change_pct": 4.104006750291966,
+      "cl_rms_change_pct": 45.052688181058606,
+      "reward_change": -0.0007593997283130236
+    },
+    {
+      "checkpoint": "cylinder_Re-100_Mesh-medium_DT-0.01_00001199.ckpt",
+      "cd_change_pct": 4.254225844454407,
+      "cl_rms_change_pct": 59.30199193284103,
+      "reward_change": -0.0008228402419029248
+    }
+  ]
+}
