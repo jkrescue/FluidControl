@@ -83,13 +83,20 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cases-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--case", choices=tuple(CASES), help="audit one finished case")
     args = parser.parse_args()
+    if args.output.exists():
+        raise FileExistsError(f"refusing to overwrite: {args.output}")
+    selected = [args.case] if args.case else list(CASES)
     cases = [
-        validate_one(args.cases_root / name, expected)
-        for name, expected in CASES.items()
+        validate_one(args.cases_root / name, CASES[name])
+        for name in selected
     ]
     report = {
-        "status": "GRID_PAIR_NUMERICAL_QC_OK_NOT_CONVERGENCE",
+        "status": (
+            "GRID_CASE_NUMERICAL_QC_OK_NOT_CONVERGENCE" if args.case
+            else "GRID_PAIR_NUMERICAL_QC_OK_NOT_CONVERGENCE"
+        ),
         "source": "matched OpenFOAM v2512 pimpleFoam constant omega=+1",
         "time_window_for_comparison": [80, 160],
         "cases": cases,
@@ -97,7 +104,7 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))
-    print("GRID_PAIR_NUMERICAL_QC_OK")
+    print("GRID_CASE_NUMERICAL_QC_OK" if args.case else "GRID_PAIR_NUMERICAL_QC_OK")
 
 
 if __name__ == "__main__":
