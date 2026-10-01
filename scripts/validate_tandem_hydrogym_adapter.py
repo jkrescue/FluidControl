@@ -16,7 +16,7 @@ from physicsnemo.utils import load_checkpoint
 from evaluate_tandem_fno import load_composed_config
 from fluid_control.tandem_hydrogym import TandemFNOStepper, TandemRewardAudit, TandemSurrogateFlow
 from train_tandem_fno import build_model
-from validate_tandem_probe_mapping import raw_probe_rows
+from fluid_control.openfoam_observation import observation_at
 
 
 def main() -> None:
@@ -66,22 +66,8 @@ def main() -> None:
         json.loads((raw_case / "case_config.json").read_text())["action_points"],
         dtype=np.float64,
     )
-    raw_probes = raw_probe_rows(
-        raw_case / "postProcessing/wakeProbes/80/U", {raw_time}
-    )[raw_time].reshape(-1)
-    force_table = np.loadtxt(
-        raw_case / "postProcessing/forceRear/80/coefficient.dat",
-        comments="#", usecols=(0, 1, 4),
-    )
-    force_match = np.flatnonzero(
-        np.isclose(force_table[:, 0], raw_time, atol=1e-6, rtol=0)
-    )
-    if len(force_match) != 1:
-        raise ValueError("expected one original OpenFOAM force sample")
-    raw_initial_obs = np.concatenate((
-        raw_probes, force_table[force_match[0], 1:],
-        [float(np.interp(raw_time, points[:, 0], points[:, 1]))],
-    ))
+    raw_omega = float(np.interp(raw_time, points[:, 0], points[:, 1]))
+    raw_initial_obs, raw_sources = observation_at(raw_case, raw_time, raw_omega)
     raw_observation_error = np.abs(
         raw_initial_obs - np.asarray(initial_obs, dtype=np.float64)
     )
@@ -165,6 +151,7 @@ def main() -> None:
             "force_max_abs_error": float(raw_observation_error[64:66].max()),
             "omega_abs_error": float(raw_observation_error[66]),
         },
+        "raw_openfoam_sources": raw_sources,
         "source": "real Curator HDF5 frame; FNO prediction is surrogate-only",
     }
     if args.output is not None:
