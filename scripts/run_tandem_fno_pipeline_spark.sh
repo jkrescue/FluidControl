@@ -16,6 +16,12 @@ while ! rg -q '^EXPANDED_SPARK_CURATOR_OK$' "${curator_log}" 2>/dev/null; do
     sleep 60
 done
 [[ -s "${dataset}/manifest.json" && -s "${dataset}/normalization.json" ]] || exit 1
+mapfile -t names < <(python3 cfd/tandem_cylinders/make_expanded_control_dataset.py --list)
+[[ "${#names[@]}" -eq 32 ]] || exit 1
+.venv-curator-py312/bin/python scripts/validate_expanded_curated_cases.py \
+    --data "${dataset}" --cases-root cfd/tandem_cylinders/cases "${names[@]}"
+echo EXPANDED_LABEL_AUDIT_OK
+
 free_gib="$(df -BG --output=avail "${root}" | tail -n 1 | tr -dc '0-9')"
 if (( free_gib < 150 )); then
     echo "Only ${free_gib} GiB disk free; refusing to train" >&2

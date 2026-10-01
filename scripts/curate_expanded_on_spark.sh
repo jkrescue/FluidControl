@@ -51,7 +51,8 @@ if (( ${#pending[@]} )); then
         --output "${output}" --nx 256 --ny 128 \
         --cases "${pending[@]}" --defer-finalize --jobs 4 --backend process_pool
 fi
-"${python}" scripts/validate_expanded_curated_cases.py --data "${output}" "${names[@]}"
+"${python}" scripts/validate_expanded_curated_cases.py \
+    --data "${output}" --cases-root cfd/tandem_cylinders/cases "${names[@]}"
 "${python}" scripts/curate_tandem_cfd.py \
     --profile expanded_v1 --output "${output}" --nx 256 --ny 128 --finalize-only
 "${python}" scripts/validate_tandem_curated.py \
