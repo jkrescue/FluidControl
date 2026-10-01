@@ -6,6 +6,7 @@ This is a surrogate environment, not an OpenFOAM or official HydroGym CFD solver
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 import h5py
@@ -14,6 +15,7 @@ import numpy as np
 import torch
 from hydrogym import PDEBase, TransientSolver
 
+from .openfoam_observation import observation_at
 
 class TandemSurrogateFlow(PDEBase):
     """Expose one real CFD restart frame and FNO state through HydroGym's PDE API."""
@@ -87,10 +89,35 @@ class TandemSurrogateFlow(PDEBase):
             initial_omega = float(handle["omega"][self.frame, 0])
             initial_force = np.asarray(handle["force"][self.frame, 2:4], dtype=np.float32)
             self.initial_cfd_time = float(handle["time"][self.frame, 0])
-        if physical.shape[0] != 3 or self.mask.shape != physical.shape[1:]:
-            # Curator mask is normally [1,H,W], checked below instead.
-            if self.mask.shape != (1, *physical.shape[1:]):
-                raise ValueError("unexpected curated state/mask dimensions")
+        self.initial_force_source = "curated_hdf5"
+        if self.frame == 0:
+            # The expanded CFD run starts at the copied t=80 state, but its
+            # force function object first writes at t=80.005. The curated
+            # frame-0 force is therefore a nearest-time sample, not t=80.
+            case_root = Path(__file__).resolve().parents[2] / "cfd" / "tandem_cylinders" / "cases"
+            case_config = json.loads(
+                (case_root / case / "case_config.json").read_text(encoding="utf-8")
+            )
+            if (
+                case_config.get("source_restart_case") != "tandem_backward_dt005"
+                or not math.isclose(
+                    float(case_config["source_restart_time"]),
+                    self.initial_cfd_time,
+                    abs_tol=1e-8,
+                )
+                or not math.isclose(initial_omega, 0.0, abs_tol=1e-8)
+            ):
+                raise ValueError("frame-0 CFD restart provenance mismatch")
+            source_case = case_root / case_config["source_restart_case"]
+            raw_initial, _ = observation_at(source_case, self.initial_cfd_time, 0.0)
+            initial_force = raw_initial[64:66].copy()
+            self.initial_force_source = "raw_openfoam_source_restart_t80"
+        if (
+            physical.ndim != 3
+            or physical.shape[0] != 3
+            or self.mask.shape != (1, *physical.shape[1:])
+        ):
+            raise ValueError("unexpected curated state/mask dimensions")
         if not np.all(np.diff(self.x) > 0) or not np.all(np.diff(self.y) > 0):
             raise ValueError("curated coordinates must increase")
         if not np.isfinite(initial_omega) or abs(initial_omega) > self.MAX_CONTROL + 1e-5:
@@ -291,6 +318,7 @@ class TandemRewardAudit(gym.Wrapper):
             max_abs_normalized_state=state_bound,
             checkpoint_epoch=flow.checkpoint_epoch,
             source_case=flow.case_path.stem,
+            initial_force_source=flow.initial_force_source,
             initial_frame=flow.frame,
             backend="physicsnemo_fno_surrogate_not_cfd",
         )

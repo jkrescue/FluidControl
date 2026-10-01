@@ -15,8 +15,9 @@ from train_tandem_fno import build_model
 from train_tandem_hydrogym_ppo_smoke import evaluate_episode, make_env
 
 
-VALIDATION = tuple(f"expanded_validation_{index:02d}" for index in range(4))
-TEST = tuple(f"expanded_test_{index:02d}" for index in range(4))
+INDEPENDENT_IDS = (0, 1, 2, 4)
+VALIDATION = tuple(f"expanded_validation_{index:02d}" for index in INDEPENDENT_IDS)
+TEST = tuple(f"expanded_test_{index:02d}" for index in INDEPENDENT_IDS)
 
 
 def main() -> None:

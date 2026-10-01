@@ -259,6 +259,22 @@ class TandemTrajectorySource(Source[dict[str, Any]]):
             raw = load_coefficients(
                 case / "postProcessing" / object_name / force_root / "coefficient.dat"
             )
+            if times_array[0] < raw[0, 0] - 1e-8:
+                source_name = record["config"].get("source_restart_case")
+                if force_root != "80" or source_name != "tandem_backward_dt005":
+                    raise ValueError(f"{record['name']}: missing exact force restart provenance")
+                source = load_coefficients(
+                    case.parent / source_name / "postProcessing"
+                    / object_name / "0" / "coefficient.dat"
+                )
+                matches = np.flatnonzero(
+                    np.isclose(source[:, 0], times_array[0], rtol=0, atol=1e-8)
+                )
+                if len(matches) != 1:
+                    raise ValueError(f"{record['name']}: no unique source force at restart")
+                raw = np.concatenate((source[matches], raw), axis=0)
+            if times_array[0] < raw[0, 0] - 1e-8 or times_array[-1] > raw[-1, 0] + 1e-8:
+                raise ValueError(f"{record['name']}: force series does not cover field times")
             aligned.extend(
                 [np.interp(times_array, raw[:, 0], raw[:, column]) for column in (1, 2)]
             )

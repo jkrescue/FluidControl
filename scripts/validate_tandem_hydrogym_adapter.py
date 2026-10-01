@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 import json
 from pathlib import Path
 
@@ -60,13 +61,26 @@ def main() -> None:
     }))
     initial_obs, _ = env.reset()
     flow = env.env.flow
+    expected_force_source = (
+        "raw_openfoam_source_restart_t80" if args.frame == 0 else "curated_hdf5"
+    )
+    if flow.initial_force_source != expected_force_source:
+        raise AssertionError("HydroGym initial force provenance mismatch")
     raw_case = Path("cfd/tandem_cylinders/cases") / args.case
     raw_time = round(flow.initial_cfd_time, 6)
+    case_config = json.loads((raw_case / "case_config.json").read_text())
     points = np.asarray(
-        json.loads((raw_case / "case_config.json").read_text())["action_points"],
+        case_config["action_points"],
         dtype=np.float64,
     )
     raw_omega = float(np.interp(raw_time, points[:, 0], points[:, 1]))
+    if math.isclose(raw_time, float(case_config["source_restart_time"]), abs_tol=1e-8):
+        source_name = case_config["source_restart_case"]
+        if source_name != "tandem_backward_dt005":
+            raise ValueError("unexpected CFD restart provenance")
+        raw_case = raw_case.parent / source_name
+        if not math.isclose(raw_omega, 0.0, abs_tol=1e-8):
+            raise ValueError("nonzero action at the nominal zero-rotation restart")
     raw_initial_obs, raw_sources = observation_at(raw_case, raw_time, raw_omega)
     raw_observation_error = np.abs(
         raw_initial_obs - np.asarray(initial_obs, dtype=np.float64)
@@ -76,7 +90,11 @@ def main() -> None:
     if (raw_observation_error[:64].max() > 0.02
             or raw_observation_error[64:66].max() > 1e-4
             or raw_observation_error[66] > 1e-5):
-        raise AssertionError("HydroGym reset observation differs from original CFD")
+        raise AssertionError(
+            "HydroGym reset observation differs from original CFD: "
+            f"probe={raw_observation_error[:64].max()}, "
+            f"force={raw_observation_error[64:66].max()}, omega={raw_observation_error[66]}"
+        )
     initial_field = flow.q.clone()
     mask = flow.mask
     height, width = mask.shape[-2:]
@@ -138,6 +156,7 @@ def main() -> None:
         "case": args.case,
         "frame": args.frame,
         "checkpoint_epoch": epoch,
+        "initial_force_source": flow.initial_force_source,
         "max_abs_state_difference": state_error,
         "reward_components_sum_difference": abs(sum(reward_components) - reward),
         "rate_limit_activated": bool(limited_info["rate_limited"]),

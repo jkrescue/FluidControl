@@ -1,0 +1,31 @@
+{
+  "status": "TANDEM_HYDROGYM_PARITY_OK",
+  "case": "expanded_validation_00",
+  "frame": 0,
+  "checkpoint_epoch": 5,
+  "initial_force_source": "raw_openfoam_source_restart_t80",
+  "max_abs_state_difference": 0.0,
+  "reward_components_sum_difference": 0.0,
+  "rate_limit_activated": true,
+  "max_abs_force_difference": 0.0,
+  "out_of_support_action_rejected": true,
+  "reward_sum_difference": 0.0,
+  "reset_observation_difference": 0.0,
+  "observation_width": 67,
+  "raw_openfoam_observation_parity": {
+    "probe_max_abs_error": 0.0011132359504699707,
+    "force_max_abs_error": 0.0,
+    "omega_abs_error": 0.0
+  },
+  "raw_openfoam_sources": {
+    "time": 80.0,
+    "probe_sources": [
+      "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/wakeProbes/0/U"
+    ],
+    "force_sources": [
+      "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat"
+    ],
+    "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+  },
+  "source": "real Curator HDF5 frame; FNO prediction is surrogate-only"
+}
