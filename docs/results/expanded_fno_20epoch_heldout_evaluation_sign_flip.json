@@ -1,0 +1,374 @@
+{
+  "split": "test",
+  "checkpoint_epoch": 20,
+  "checkpoint_dir": "/workspace/artifacts/tandem_fno_expanded_spark_20epoch/best",
+  "checkpoint_metadata": {
+    "best_validation_state_mae": 0.002223185611395363,
+    "validation": {
+      "state_mae_physical_units": 0.002223185611395363,
+      "state_rmse_physical_units": 0.0035292555298200466,
+      "force_mae_normalized": 0.03313254715874791
+    },
+    "data_root": "/workspace/data/curated/tandem_cylinders_expanded_independent_v2",
+    "action_scale": 5.0,
+    "model_config": {
+      "in_channels": 6,
+      "out_channels": 5,
+      "latent_channels": 48,
+      "num_fno_layers": 5,
+      "num_fno_modes": [
+        32,
+        32
+      ],
+      "decoder_layers": 2,
+      "decoder_layer_size": 128,
+      "padding": 8,
+      "coord_features": true
+    }
+  },
+  "segment_stride": 50,
+  "evaluation_batch_size": 4,
+  "action_scale": 5.0,
+  "action_mode": "sign_flip",
+  "action_seed": 20260930,
+  "cases": [
+    {
+      "case": "expanded_test_00",
+      "horizons": {
+        "1": {
+          "state_mae_physical_units": 0.0030445513912127353,
+          "state_channel_mae_u_v_p": [
+            0.0030847284360788763,
+            0.0033438718237448484,
+            0.002705053808313096
+          ],
+          "persistence_state_mae_physical_units": 0.008404014515690506,
+          "rear_force_mae": 0.4793845899403095,
+          "rear_cd_mae": 0.44173555821180344,
+          "rear_cl_mae": 0.5170336216688156,
+          "persistence_rear_force_mae": 0.09873155097011477,
+          "stable": true,
+          "failed_segments": 0,
+          "max_abs_predicted_u_v_p": [
+            2.4713029861450195,
+            1.9956713914871216,
+            3.2743470668792725
+          ],
+          "segments": 16,
+          "segment_stride": 50
+        },
+        "10": {
+          "state_mae_physical_units": 0.025458822841756046,
+          "state_channel_mae_u_v_p": [
+            0.026335756352636963,
+            0.027617752260994166,
+            0.022422959678806365
+          ],
+          "persistence_state_mae_physical_units": 0.07938324194401503,
+          "rear_force_mae": 0.6438678139820695,
+          "rear_cd_mae": 0.3727969005703926,
+          "rear_cl_mae": 0.9149387273937464,
+          "persistence_rear_force_mae": 1.0396972876042128,
+          "stable": true,
+          "failed_segments": 0,
+          "max_abs_predicted_u_v_p": [
+            1.8243708610534668,
+            1.561618447303772,
+            2.505875587463379
+          ],
+          "segments": 16,
+          "segment_stride": 50
+        },
+        "50": {
+          "state_mae_physical_units": 0.08976688841357827,
+          "state_channel_mae_u_v_p": [
+            0.0916295275092125,
+            0.09496575174853206,
+            0.08270538179203868
+          ],
+          "persistence_state_mae_physical_units": 0.14686872670426965,
+          "rear_force_mae": 2.2627925109118223,
+          "rear_cd_mae": 1.4032400846481323,
+          "rear_cl_mae": 3.1223449371755123,
+          "persistence_rear_force_mae": 1.8289244212210178,
+          "stable": true,
+          "failed_segments": 0,
+          "max_abs_predicted_u_v_p": [
+            2.1179096698760986,
+            2.358394145965576,
+            2.196256637573242
+          ],
+          "segments": 16,
+          "segment_stride": 50
+        }
+      },
+      "visualizations": []
+    },
+    {
+      "case": "expanded_test_01",
+      "horizons": {
+        "1": {
+          "state_mae_physical_units": 0.002549718374211807,
+          "state_channel_mae_u_v_p": [
+            0.0026663046373869292,
+            0.00284031342016533,
+            0.002142536966857733
+          ],
+          "persistence_state_mae_physical_units": 0.00866781480726786,
+          "rear_force_mae": 0.26719436468556523,
+          "rear_cd_mae": 0.19700902234762907,
+          "rear_cl_mae": 0.3373797070235014,
+          "persistence_rear_force_mae": 0.0765677411109209,
+          "stable": true,
+          "failed_segments": 0,
+          "max_abs_predicted_u_v_p": [
+            1.7535980939865112,
+            1.646837830543518,
+            2.233243942260742
+          ],
+          "segments": 16,
+          "segment_stride": 50
+        },
+        "10": {
+          "state_mae_physical_units": 0.02270334865897894,
+          "state_channel_mae_u_v_p": [
+            0.02331493777455762,
+            0.02389329014113173,
+            0.02090181823587045
+          ],
+          "persistence_state_mae_physical_units": 0.0821710187010467,
+          "rear_force_mae": 0.5751902358606458,
+          "rear_cd_mae": 0.30832706205546856,
+          "rear_cl_mae": 0.842053409665823,
+          "persistence_rear_force_mae": 0.7495313482359052,
+          "stable": true,
+          "failed_segments": 0,
+          "max_abs_predicted_u_v_p": [
+            1.8563282489776611,
+            1.4068294763565063,
+            1.7181426286697388
+          ],
+          "segments": 16,
+          "segment_stride": 50
+        },
+        "50": {
+          "state_mae_physical_units": 0.0915401412639767,
+          "state_channel_mae_u_v_p": [
+            0.0945086358115077,
+            0.09838151233270764,
+            0.0817302733194083
+          ],
+          "persistence_state_mae_physical_units": 0.1621351344510913,
+          "rear_force_mae": 2.1150685222819448,
+          "rear_cd_mae": 1.0398762412369251,
+          "rear_cl_mae": 3.1902608033269644,
+          "persistence_rear_force_mae": 1.7181249652057886,
+          "stable": true,
+          "failed_segments": 0,
+          "max_abs_predicted_u_v_p": [
+            2.2849535942077637,
+            1.6783876419067383,
+            1.744730830192566
+          ],
+          "segments": 16,
+          "segment_stride": 50
+        }
+      },
+      "visualizations": []
+    },
+    {
+      "case": "expanded_test_02",
+      "horizons": {
+        "1": {
+          "state_mae_physical_units": 0.003465669447905384,
+          "state_channel_mae_u_v_p": [
+            0.003448540563113056,
+            0.003847479405521881,
+            0.003100988429650897
+          ],
+          "persistence_state_mae_physical_units": 0.010176967713050544,
+          "rear_force_mae": 0.3451256500557065,
+          "rear_cd_mae": 0.26702277921140194,
+          "rear_cl_mae": 0.42322852090001106,
+          "persistence_rear_force_mae": 0.10543715069070458,
+          "stable": true,
+          "failed_segments": 0,
+          "max_abs_predicted_u_v_p": [
+            1.8058321475982666,
+            1.876697063446045,
+            2.3483545780181885
+          ],
+          "segments": 16,
+          "segment_stride": 50
+        },
+        "10": {
+          "state_mae_physical_units": 0.029750235727988183,
+          "state_channel_mae_u_v_p": [
+            0.029474560578819364,
+            0.03205615998012945,
+            0.027719987934688106
+          ],
+          "persistence_state_mae_physical_units": 0.09638779237866402,
+          "rear_force_mae": 0.7147273952141404,
+          "rear_cd_mae": 0.5376483052968979,
+          "rear_cl_mae": 0.8918064851313829,
+          "persistence_rear_force_mae": 0.9293658891692758,
+          "stable": true,
+          "failed_segments": 0,
+          "max_abs_predicted_u_v_p": [
+            1.8811196088790894,
+            2.098808765411377,
+            1.9451316595077515
+          ],
+          "segments": 16,
+          "segment_stride": 50
+        },
+        "50": {
+          "state_mae_physical_units": 0.10377642861567438,
+          "state_channel_mae_u_v_p": [
+            0.10975300380960107,
+            0.11345463409088552,
+            0.08812164945993572
+          ],
+          "persistence_state_mae_physical_units": 0.2005646713078022,
+          "rear_force_mae": 1.6308973878622055,
+          "rear_cd_mae": 0.9455580487847328,
+          "rear_cl_mae": 2.316236726939678,
+          "persistence_rear_force_mae": 1.992893761023879,
+          "stable": true,
+          "failed_segments": 0,
+          "max_abs_predicted_u_v_p": [
+            2.593663215637207,
+            3.136913776397705,
+            1.9998825788497925
+          ],
+          "segments": 16,
+          "segment_stride": 50
+        }
+      },
+      "visualizations": []
+    },
+    {
+      "case": "expanded_test_04",
+      "horizons": {
+        "1": {
+          "state_mae_physical_units": 0.004682488732214551,
+          "state_channel_mae_u_v_p": [
+            0.00468213082785951,
+            0.00506765246973373,
+            0.004297682778997114
+          ],
+          "persistence_state_mae_physical_units": 0.008642928791232407,
+          "rear_force_mae": 0.7134910207241774,
+          "rear_cd_mae": 0.5671230219304562,
+          "rear_cl_mae": 0.8598590195178986,
+          "persistence_rear_force_mae": 0.11869972106069326,
+          "stable": true,
+          "failed_segments": 0,
+          "max_abs_predicted_u_v_p": [
+            2.6120128631591797,
+            2.2960877418518066,
+            3.960953950881958
+          ],
+          "segments": 16,
+          "segment_stride": 50
+        },
+        "10": {
+          "state_mae_physical_units": 0.04183104957337491,
+          "state_channel_mae_u_v_p": [
+            0.04172871174523607,
+            0.043704804324079305,
+            0.04005963233066723
+          ],
+          "persistence_state_mae_physical_units": 0.08119012089446187,
+          "rear_force_mae": 1.231410683132708,
+          "rear_cd_mae": 0.8892554566264153,
+          "rear_cl_mae": 1.573565909639001,
+          "persistence_rear_force_mae": 1.152133977971971,
+          "stable": true,
+          "failed_segments": 0,
+          "max_abs_predicted_u_v_p": [
+            2.1188697814941406,
+            1.9072625637054443,
+            3.1404812335968018
+          ],
+          "segments": 16,
+          "segment_stride": 50
+        },
+        "50": {
+          "state_mae_physical_units": 0.15907275618519634,
+          "state_channel_mae_u_v_p": [
+            0.1610997379757464,
+            0.17774798721075058,
+            0.13837053417228162
+          ],
+          "persistence_state_mae_physical_units": 0.16204298892989755,
+          "rear_force_mae": 3.2251431765034795,
+          "rear_cd_mae": 1.5073063988238573,
+          "rear_cl_mae": 4.942979954183102,
+          "persistence_rear_force_mae": 2.3869487987831235,
+          "stable": true,
+          "failed_segments": 0,
+          "max_abs_predicted_u_v_p": [
+            2.950277328491211,
+            2.9478251934051514,
+            2.791120767593384
+          ],
+          "segments": 16,
+          "segment_stride": 50
+        }
+      },
+      "visualizations": []
+    }
+  ],
+  "summary": {
+    "1": {
+      "state_mae_physical_units": 0.0034356069863861194,
+      "persistence_state_mae_physical_units": 0.008972931456810329,
+      "rear_force_mae": 0.45129890635143965,
+      "rear_cd_mae": 0.36822259542532265,
+      "rear_cl_mae": 0.5343752172775567,
+      "persistence_rear_force_mae": 0.09985904095810838,
+      "state_channel_mae_u_v_p": [
+        0.003470426116109593,
+        0.0037748292797914473,
+        0.00306156549595471
+      ],
+      "stable": true,
+      "failed_segments": 0,
+      "segments": 64
+    },
+    "10": {
+      "state_mae_physical_units": 0.02993586420052452,
+      "persistence_state_mae_physical_units": 0.0847830434795469,
+      "rear_force_mae": 0.7912990320473909,
+      "rear_cd_mae": 0.5270069311372936,
+      "rear_cl_mae": 1.0555911329574883,
+      "persistence_rear_force_mae": 0.9676821257453412,
+      "state_channel_mae_u_v_p": [
+        0.030213491612812504,
+        0.03181800167658366,
+        0.027776099545008037
+      ],
+      "stable": true,
+      "failed_segments": 0,
+      "segments": 64
+    },
+    "50": {
+      "state_mae_physical_units": 0.11103905361960642,
+      "persistence_state_mae_physical_units": 0.16790288034826517,
+      "rear_force_mae": 2.308475399389863,
+      "rear_cd_mae": 1.223995193373412,
+      "rear_cl_mae": 3.392955605406314,
+      "persistence_rear_force_mae": 1.9817229865584522,
+      "state_channel_mae_u_v_p": [
+        0.11424772627651691,
+        0.12113747134571895,
+        0.09773195968591608
+      ],
+      "stable": true,
+      "failed_segments": 0,
+      "segments": 64
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "status": "CANDIDATE_SURROGATE_SCREEN_PASS",
+  "scientific_scope": "offline_same_geometry_heldout_screen_not_control_benefit",
+  "checkpoint_epoch": 20,
+  "heldout_cases": [
+    "expanded_test_00",
+    "expanded_test_01",
+    "expanded_test_02",
+    "expanded_test_04"
+  ],
+  "checks": {
+    "1step_field_vs_persistence": {
+      "passed": true,
+      "mae": 0.002459689410898136,
+      "reference_mae": 0.008972931456810329
+    },
+    "1step_force_vs_persistence": {
+      "passed": true,
+      "mae": 0.07055470798513852,
+      "reference_mae": 0.09985904095810838
+    },
+    "1step_force_action_sensitivity": {
+      "passed": true,
+      "mae": 0.07055470798513852,
+      "zero_input_mae": 0.221425179974176
+    },
+    "10step_field_vs_persistence": {
+      "passed": true,
+      "mae": 0.021562113797699567,
+      "reference_mae": 0.0847830434795469
+    },
+    "10step_force_vs_persistence": {
+      "passed": true,
+      "mae": 0.1176505220355466,
+      "reference_mae": 0.9676821257453412
+    },
+    "10step_force_action_sensitivity": {
+      "passed": true,
+      "mae": 0.1176505220355466,
+      "zero_input_mae": 0.4154829877661541
+    },
+    "50step_field_vs_persistence": {
+      "passed": true,
+      "mae": 0.07284645771142095,
+      "reference_mae": 0.16790288034826517
+    },
+    "50step_force_vs_persistence": {
+      "passed": true,
+      "mae": 0.5921029254095629,
+      "reference_mae": 1.9817229865584522
+    },
+    "50step_force_action_sensitivity": {
+      "passed": true,
+      "mae": 0.5921029254095629,
+      "zero_input_mae": 1.5186119871214032
+    },
+    "50step_field_action_sensitivity": {
+      "passed": true,
+      "mae": 0.07284645771142095,
+      "zero_input_mae": 0.08468613610602915
+    }
+  }
+}
