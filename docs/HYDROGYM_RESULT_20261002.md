@@ -35,6 +35,9 @@ DGX Spark 的隔离 ARM64/Firedrake 容器已完成官方 HydroGym `RotaryCylind
 | 单相位、种子 43 | 0.00536 | 0.63669 | 0.01719 |
 | 两相位、种子 42 | 0.00559 | 0.74275 | 0.01133 |
 
+用各次回放的 5 个相位、每相位后 500 步拆分奖励：单相位种子 42 的每步增量为阻力项 +0.0000211、升力项 +0.0001013、动作项 -0.0000271（变化率项近零）。
+种子 43 与两相位种子 42 的阻力项分别为 -0.0006093、-0.0004803，主导总奖励恶化。唯一正收益主要来自升力波动抑制，不能据此宣称稳健减阻。
+
 种子 43 的五组阻力都增大约 3.99%–4.25%，升力 RMS 都增大约 42.5%–59.3%。其审计清单见 `docs/results/hydrogym_rotary_seed43_v1_audit.json`，Spark 原始输出见 `artifacts/hydrogym/rotary_physical_seed43_v1/`；模型 SHA-256 为 `94fc99f74dabf1d996e75883ab8b76a50f1a6902de74689b3098ec8d9fb8ab4f`。
 
 另用两个独立的官方 FlowEnv 重启相位训练同一 PPO（8192 步、种子 42），并用相同 5 组零控制基线复测。5/5 组的阻力、升力 RMS 和奖励均变差；6,000 行逐步奖励分解的最大误差仍为 0，所有指标有限值。审计清单见 `docs/results/hydrogym_rotary_two_phase_seed42_v1_audit.json`，Spark 原始输出见 `artifacts/hydrogym/rotary_two_phase_seed42_v1/`；模型 SHA-256 为 `5e2d0944062fb4e3a5a3bcec6c6625ab64fe2bef66af245140e1c9a86085ad5c`。**三次同预算训练中只有一次改善，当前 PPO 策略不满足稳健控制验收**；多相位本身也不是已验证修复。
