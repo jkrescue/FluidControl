@@ -1,0 +1,9 @@
+[
+  {
+    "epoch": 1,
+    "train_loss": 0.19234603270888329,
+    "state_mae_physical_units": 0.010485646081349206,
+    "state_rmse_physical_units": 0.016142133321959393,
+    "force_mae_normalized": 0.7810394287109375
+  }
+]
