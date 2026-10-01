@@ -41,3 +41,7 @@ EPOCHS=5 BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_5epoch \
     bash scripts/run_tandem_fno_spark.sh 2>&1 |
     tee artifacts/tandem_cylinders/expanded_fno_5epoch_spark.log
 echo PHYSICSNEMO_SPARK_5EPOCH_OK
+
+bash scripts/run_tandem_fno_eval_spark.sh 2>&1 |
+    tee artifacts/tandem_cylinders/expanded_fno_heldout_spark.log
+echo PHYSICSNEMO_SPARK_HELDOUT_OK

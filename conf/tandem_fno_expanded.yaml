@@ -18,7 +18,7 @@ training:
   epochs: 80
   batch_size: 128
   workers: 4
-  gpu_memory_fraction: 0.85
+  gpu_memory_fraction: 0.20
   learning_rate: 2.0e-4
   seed: 20261001
   smoke: false
