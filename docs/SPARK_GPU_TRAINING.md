@@ -20,7 +20,9 @@ BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_v1 \
 启动预检发现：`torchrun --standalone` 在隔离容器 `--network none` 下持续尝试解析容器主机名，无法进入训练；改用静态回环地址虽进入进程，但单卡 NCCL 初始化报 CUDA OOM。两次均为小型预检，没有训练或改写数据。
 因此 GPU 0 启动器改用 PhysicsNeMo 官方 `DistributedManager.initialize()` 支持的单进程 `python` 路径，不建立无意义的单卡 NCCL 通信。已在同一容器和 20 GiB 余量守护下验证 `rank=0`、`world_size=1`、`cuda:0` 及 CUDA 分配；完整 FNO 训练仍待全量数据质检。
 
-在完整归一化数据就绪前，`scripts/validate_tandem_fno_real_frame_spark.py` 已用首条真实 CFD HDF5 的 4 个相邻时间窗做官方 47,222,525 参数 FNO 的 GPU 0 前向/反向验收：输出 `[4,5,128,256]`，损失和梯度均有限值，CUDA 峰值 allocated 0.859 GiB、reserved 1.004 GiB。此脚本**不执行优化器更新**、使用未归一化原场，打印的损失不是模型精度。
+在完整归一化数据就绪前，`scripts/validate_tandem_fno_real_frame_spark.py` 已用首条真实 CFD HDF5 的 4 个相邻时间窗做官方 47,222,525 参数 FNO 的 GPU 0 前向/反向验收：输出 `[4,5,128,256]`，损失和梯度均有限值，CUDA 峰值 allocated 0.859 GiB、reserved 1.004 GiB。默认模式**不执行优化器更新**、使用未归一化原场，打印的损失不是模型精度。
+
+同一脚本新增可选 `--optimizer-step --batch-size 4` 预检，在真实 CFD HDF5 上完成一次内存中的 AdamW 参数更新，并逐项检查更新后参数有限值。隔离容器内 GPU 0 实测 CUDA 峰值 allocated 0.949 GiB、reserved 1.180 GiB，守护启动前 `MemAvailable` 109.133 GiB；未写 checkpoint，也不代表已完成训练或证明模型精度。
 
 Spark 自动衔接脚本 `scripts/run_tandem_fno_pipeline_spark.sh` 等待 Curator 完整质检标记，然后在同一项目内做官方 HDF5Reader/DataLoader 验证、一次抽样冒烟（训练轨迹步长 80、验证步长 160）、5 epoch 实数据先导训练，以及留出测试集 1/10/50 步 rollout 评估。每一步失败就停止，训练与评估都不绕过 20 GiB 内存余量守护。80 epoch 完整训练要在先导模型和测试集评估后决定；不把冒烟指标当物理结论。
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Check the official PhysicsNeMo FNO CUDA backward pass on real CFD windows.
 
-This is a runtime test only: raw fields are not normalized, no optimizer step is
-taken, and its loss is not a model-quality metric.
+This is a runtime test only: raw fields are not normalized. By default no
+optimizer step is taken; --optimizer-step checks one unsaved AdamW update.
+Its loss is never a model-quality metric.
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ def main() -> None:
         default=Path("data/curated/tandem_cylinders_expanded_v1/train/expanded_train_00.h5"),
     )
     parser.add_argument("--batch-size", type=int, default=4)
+    parser.add_argument("--optimizer-step", action="store_true")
     args = parser.parse_args()
     if args.batch_size < 1 or not torch.cuda.is_available():
         parser.error("positive batch size and CUDA device 0 are required")
@@ -64,6 +66,15 @@ def main() -> None:
         for parameter in model.parameters() if parameter.grad is not None
     ):
         raise FloatingPointError("non-finite loss or FNO gradient")
+    if args.optimizer_step:
+        optimizer = torch.optim.AdamW(
+            model.parameters(), lr=float(cfg.training.learning_rate),
+            weight_decay=float(cfg.training.weight_decay)
+        )
+        optimizer.step()
+        torch.cuda.synchronize(0)
+        if not all(torch.isfinite(parameter).all() for parameter in model.parameters()):
+            raise FloatingPointError("non-finite FNO parameter after AdamW step")
     report = {
         "case": args.case.name,
         "batch_size": args.batch_size,
@@ -72,11 +83,14 @@ def main() -> None:
         "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
         "output_shape": list(output.shape),
         "raw_field_smoke_loss_not_quality_metric": float(loss.detach()),
+        "optimizer_step_in_memory_only": args.optimizer_step,
         "cuda_peak_allocated_gib": torch.cuda.max_memory_allocated(0) / 1024**3,
         "cuda_peak_reserved_gib": torch.cuda.max_memory_reserved(0) / 1024**3,
     }
     print(json.dumps(report), flush=True)
-    print("REAL_CFD_PHYSICSNEMO_FNO_BACKWARD_OK", flush=True)
+    marker = ("REAL_CFD_PHYSICSNEMO_FNO_ADAMW_STEP_OK" if args.optimizer_step
+              else "REAL_CFD_PHYSICSNEMO_FNO_BACKWARD_OK")
+    print(marker, flush=True)
 
 
 if __name__ == "__main__":
