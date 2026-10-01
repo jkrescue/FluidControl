@@ -2,6 +2,8 @@
 
 更新日期：2026-10-01
 
+迁移注记（2026-10-02）：下文阶段 A/C 的 FNO checkpoint、代理误差和 MPC 控制数字是旧机器的历史实验，checkpoint 未迁入 DGX Spark，**不能当作当前 Spark 模型性能或当前可运行控制器**。Spark 已重新生成 32 条真实受控 OpenFOAM 轨迹，Curator 正在整理数据；PhysicsNeMo 训练与留出评估尚待全量质检后启动；现时 HydroGym 单圆柱结果以 `docs/HYDROGYM_RESULT_20261002.md` 为准。
+
 ## 1. 研究定位
 
 本项目下一阶段研究串列双圆柱尾流的实时闭环控制。核心问题不是单独训练一个 PPO 策略，而是研究如何让数据驱动代理模型安全、可靠地参与高保真 CFD 闭环控制。
