@@ -66,7 +66,13 @@ def case_records(
 ) -> list[dict[str, Any]]:
     records = []
     pattern = "dynamic_*" if profile == "stage1" else "expanded_*"
+    excluded = {
+        "expanded_v1": {"expanded_validation_04", "expanded_test_04"},
+        "expanded_independent_v2": {"expanded_validation_03", "expanded_test_03"},
+    }.get(profile, set())
     for case in sorted(cases_root.glob(pattern)):
+        if case.name in excluded:
+            continue
         config = json.loads((case / "case_config.json").read_text(encoding="utf-8"))
         records.append({"name": case.name, "split": config["split"], "config": config})
     if profile == "stage1":
