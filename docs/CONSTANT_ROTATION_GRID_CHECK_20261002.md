@@ -8,4 +8,4 @@
 
 求解器镜像固定为 `opencfd/openfoam-default@sha256:33fb575aa9980d2bc42fd58c75ae698c489293ba30c991380fe3f899c622f319`，每次容器 `--network none --read-only --cpus 4 --memory 8g`，不改宿主环境。启动前要求项目磁盘可用至少300 GiB、主机 `MemAvailable` 至少40 GiB；GPU0 训练另由5秒轮询守护保持至少20 GiB可用统一内存。
 
-验收顺序：两条求解必须均达到 `t=160`、`checkMesh` 显示 Mesh OK、数值日志无异常且力/探针序列完整，再运行 `compare_convergence.py control_small_p100 control_grid_p100_medium`。若任一指标的网格差异大，不能称粗网格结果定量收敛；即使本恒定转速工况接近，也不能推断所有时变动作日程或闭环轨迹收敛。最终比较 JSON 与数值 QC 结果将在计算完成后另行同步，不在此预填虚构结果。
+验收顺序：两条求解必须均达到 `t=160`、`checkMesh` 显示 Mesh OK、数值日志无异常且力/探针序列完整，再运行 `validate_constant_rotation_grid_pair.py` 形成独立数值 QC，最后运行 `compare_convergence.py control_small_p100 control_grid_p100_medium`。数值 QC 会检查各32,000步、Courant数、连续性、粗/中网格分别1,600/80个全场快照、32探针、前后柱力系数和 `t=160` 后柱壁面速度。若任一指标的网格差异大，不能称粗网格结果定量收敛；即使本恒定转速工况接近，也不能推断所有时变动作日程或闭环轨迹收敛。最终比较 JSON 与数值 QC 结果将在计算完成后另行同步，不在此预填虚构结果。
