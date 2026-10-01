@@ -101,3 +101,15 @@ def main() -> None:
     group.add_argument("--evaluation", type=Path)
     parser.add_argument("--min-epoch", type=int, default=1)
     parser.add_argument("--action-mode", choices=("observed", "zero", "sign_flip"), default="observed")
+    args = parser.parse_args()
+    if args.min_epoch < 1:
+        parser.error("--min-epoch must be positive")
+    if args.training_history is not None:
+        result = verify_training(args.training_history, args.min_epoch)
+    else:
+        result = verify_evaluation(args.evaluation, args.action_mode)
+    print(json.dumps({"status": "FNO_STAGE_OK", **result}, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()
