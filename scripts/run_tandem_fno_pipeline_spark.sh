@@ -25,6 +25,10 @@ echo EXPANDED_LABEL_AUDIT_OK
     --data "${dataset}" --expected-count 32 \
     --output artifacts/tandem_cylinders/expanded_control_response_spark.json
 echo EXPANDED_PHYSICAL_RESPONSE_AUDIT_OK
+python3 scripts/audit_tandem_split_integrity.py \
+    --data "${dataset}" --cases-root cfd/tandem_cylinders/cases \
+    --output artifacts/tandem_cylinders/expanded_split_integrity_spark.json
+echo EXPANDED_SPLIT_INTEGRITY_OK
 
 free_gib="$(df -BG --output=avail "${root}" | tail -n 1 | tr -dc '0-9')"
 if (( free_gib < 150 )); then
