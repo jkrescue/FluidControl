@@ -1,0 +1,34 @@
+{
+  "status": "TANDEM_PROBE_MAPPING_OK",
+  "case": "expanded_test_04",
+  "split": "test",
+  "source": "real OpenFOAM wakeProbes vs Curator HDF5 bilinear interpolation",
+  "max_abs_error_threshold": 0.02,
+  "max_observed_abs_error": 0.004497616365891577,
+  "comparisons": [
+    {
+      "frame": 100,
+      "time": 90.0,
+      "mean_abs_error": 0.00024452718493324496,
+      "max_abs_error": 0.0021355754854301967,
+      "u_mean_abs_error": 0.00034879068402982223,
+      "v_mean_abs_error": 0.00014026368583666774
+    },
+    {
+      "frame": 400,
+      "time": 120.0,
+      "mean_abs_error": 0.000256882759721108,
+      "max_abs_error": 0.004497616365891577,
+      "u_mean_abs_error": 0.00044343893250280327,
+      "v_mean_abs_error": 7.032658693941277e-05
+    },
+    {
+      "frame": 800,
+      "time": 160.0,
+      "mean_abs_error": 0.00010745045057280979,
+      "max_abs_error": 0.0010068237481740128,
+      "u_mean_abs_error": 0.0001354601404509343,
+      "v_mean_abs_error": 7.944076069468526e-05
+    }
+  ]
+}

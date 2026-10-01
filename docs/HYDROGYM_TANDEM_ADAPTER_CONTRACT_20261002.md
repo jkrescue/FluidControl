@@ -1,6 +1,6 @@
 # 串列双圆柱 PhysicsNeMo–HydroGym 适配契约（2026-10-02）
 
-本文件规定下一步的软件接口与验收门槛；**适配层和双圆柱 RL 尚未完成**。当前可用的官方组件是 PhysicsNeMo 2.2.2 FNO/检查点 API、HydroGym commit `4ab9854dea3d84e38a59c25e0f5835a00cf8225f` 的 `PDEBase`、`TransientSolver`、`FlowEnv`，以及 SB3 2.7.1。两套库已在派生容器 `fluid-control-physicsnemo-hydrogym:2.2.2-4ab9854` 同时导入；构建脚本为 `scripts/setup_physicsnemo_hydrogym_spark.sh`。不修改宿主 Python/CUDA 环境。
+本文件规定软件接口与验收门槛；**薄适配层已实现并通过单步验收，但双圆柱 RL 和 OpenFOAM 闭环尚未完成**。当前可用的官方组件是 PhysicsNeMo 2.2.2 FNO/检查点 API、HydroGym commit `4ab9854dea3d84e38a59c25e0f5835a00cf8225f` 的 `PDEBase`、`TransientSolver`、`FlowEnv`，以及 SB3 2.7.1。两套库已在派生容器 `fluid-control-physicsnemo-hydrogym:2.2.2-4ab9854` 同时导入；构建脚本为 `scripts/setup_physicsnemo_hydrogym_spark.sh`。不修改宿主 Python/CUDA 环境。
 
 ## 薄适配层的真实边界
 
@@ -19,3 +19,9 @@ HydroGym 官方 `FlowEnv` 按 `flow=PDEBase`、`solver=TransientSolver` 组合�
 3. 用有限步随机/零动作做软件链路烟雾测试，检查官方 `FlowEnv` 返回的 observation/reward/terminated/truncated/info，约束零违反、所有值有限。长时域若离开训练分布或代理发散应显式终止，不允许悄悄继续累计虚假 reward。
 4. 代理 PPO/SAC 至少多个种子，与零动作、开环和已有 MPC 作相同评价；只把代理结果称为候选策略。当前 5-epoch 代理的 1 步力 MAE 比保持力基线差，需先看 20-epoch 的独立留出结果，再决定长时域代理训练的可信窗口。
 5. 冻结候选策略后，按同一观测、控制周期和动作约束接 OpenFOAM 状态反馈接口，跨多个涡脱落周期与独立初始相位比较后柱 `Cd_mean`、`Cl_rms`、能耗及约束。只有真实 CFD 回放通过，才声称双圆柱闭环控制收益；之后再做中网格检验。
+
+## 已执行的软件和物理输入验收
+
+`src/fluid_control/tandem_hydrogym.py` 实现了官方 HydroGym 核心类的最小子类与可审计 Gymnasium 包装器。使用真实验证集帧、5-epoch PhysicsNeMo 检查点执行 `scripts/validate_tandem_hydrogym_adapter.py`，适配层与原 FNO 评估计算的单步流场/受力差、奖励分量求和差、重置观测差均为 0；限速生效，范围外动作被拒绝。这是接口和数值等价烟雾测试，不能推断长时域代理可信或控制收益。
+
+`scripts/validate_tandem_probe_mapping.py` 对比真实 OpenFOAM `wakeProbes` 与 Curator HDF5 插值，在 `expanded_validation_00` 和 `expanded_test_04` 的 `t=90/120/160` 共六组时刻上最大单分量误差分别为 `0.004206/0.004498`，均低于当前 `0.02` 的验收阈值。这验证观测位置和尺度；不是代理预测误差指标。结构化结果见 `docs/results/tandem_hydrogym_adapter_parity.json`、`tandem_probe_mapping_validation_00.json`、`tandem_probe_mapping_test_04.json`。
