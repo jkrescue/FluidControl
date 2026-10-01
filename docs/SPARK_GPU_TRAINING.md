@@ -26,6 +26,17 @@ BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_v1 \
 
 进一步以 `--capture-step --batch-size 4` 使用容器中实际安装的 PhysicsNeMo 2.2.2 官方 `StaticCaptureTraining`（`use_graphs=False`、`use_amp=False`、梯度裁剪）在相同真实 CFD 数据上完成一次内存中的更新，参数确实变化且保持有限值，守护退出码 0。GPU 0 峰值 allocated 0.949 GiB、reserved 1.180 GiB；启动时 `MemAvailable` 108.818 GiB。日志保存在 Spark 项目 `artifacts/tandem_cylinders/expanded_fno_capture_preflight_spark.log`；未写模型 checkpoint，不能视作先导模型精度。
 
+同一真实 CFD 轨迹上，对官方 `StaticCaptureTraining` 单次更新计时（已排除容器启动，未含 DataPipe I/O）；所有测量均在 GPU 0、同一 20 GiB 余量守护和 0.20 allocator fraction 下通过：
+
+| batch | 单步秒数 | CUDA reserved 峰值 GiB | 估算样本/秒 |
+| ---: | ---: | ---: | ---: |
+| 4 | 0.201 | 1.180 | 19.9 |
+| 16 | 0.401 | 3.148 | 39.9 |
+| 32 | 0.618 | 6.037 | 51.8 |
+| 64 | 1.142 | 11.908 | 56.0 |
+
+据此，自动流水线的抽样冒烟与 5 epoch 先导训练暂选 `BATCH_SIZE=64`，而手动启动器仍保留保守默认值 4。单步数字不是端到端吞吐或模型精度，正式运行需继续监控 DataPipe、峰值内存和验证误差。
+
 Spark 自动衔接脚本 `scripts/run_tandem_fno_pipeline_spark.sh` 等待 Curator 完整质检标记，然后在同一项目内做官方 HDF5Reader/DataLoader 验证、一次抽样冒烟（训练轨迹步长 80、验证步长 160）、5 epoch 实数据先导训练，以及留出测试集 1/10/50 步 rollout 评估。每一步失败就停止，训练与评估都不绕过 20 GiB 内存余量守护。80 epoch 完整训练要在先导模型和测试集评估后决定；不把冒烟指标当物理结论。
 
 流水线的阶段标记只在 `scripts/validate_tandem_fno_stage.py` 通过后打印：检查冒烟/先导训练 epoch 连续且指标有限，留出集必须包含 4 条真实 CFD 测试轨迹的 1/10/50 步稳定预测，并计算相对于持久性预测基线的场误差比值。比值只是诊断，不把先导训练的有限误差自动判为合格控制策略；物理收益仍需独立 CFD 回放。

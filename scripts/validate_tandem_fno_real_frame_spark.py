@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 
 import h5py
@@ -88,7 +89,11 @@ def main() -> None:
                 return (((predicted[:, :3] - target_delta).square() * mask).sum()
                         / (mask.sum().clamp_min(1) * 3))
 
+            torch.cuda.synchronize(0)
+            started = time.perf_counter()
             capture_loss = training_step(x, y_target, valid_mask)
+            torch.cuda.synchronize(0)
+            capture_step_seconds = time.perf_counter() - started
             if not torch.isfinite(capture_loss) or torch.equal(before, first_parameter):
                 raise FloatingPointError("non-finite or unchanged FNO after official capture step")
         else:
@@ -105,6 +110,7 @@ def main() -> None:
         "output_shape": list(output.shape),
         "raw_field_smoke_loss_not_quality_metric": float(loss.detach()),
         "optimizer_step_in_memory_only": args.optimizer_step or args.capture_step,
+        "capture_step_seconds": capture_step_seconds if args.capture_step else None,
         "physicsnemo_static_capture_step": args.capture_step,
         "cuda_peak_allocated_gib": torch.cuda.max_memory_allocated(0) / 1024**3,
         "cuda_peak_reserved_gib": torch.cuda.max_memory_reserved(0) / 1024**3,

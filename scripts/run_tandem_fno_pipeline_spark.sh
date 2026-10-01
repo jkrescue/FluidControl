@@ -37,7 +37,7 @@ docker run --rm --network none --cpus 4 --memory 16g \
       --data "${dataset}" --output "${audit}"
 [[ -s "${audit}" ]] || exit 1
 
-SMOKE=true BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_smoke \
+SMOKE=true BATCH_SIZE=64 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_smoke \
     bash scripts/run_tandem_fno_spark.sh 2>&1 |
     tee artifacts/tandem_cylinders/expanded_fno_smoke_spark.log
 [[ -s artifacts/tandem_fno_expanded_spark_smoke/training_history.json ]] || exit 1
@@ -45,7 +45,7 @@ python3 scripts/validate_tandem_fno_stage.py --training-history artifacts/tandem
 
 echo PHYSICSNEMO_SPARK_SMOKE_OK
 
-EPOCHS=5 BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_5epoch \
+EPOCHS=5 BATCH_SIZE=64 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_5epoch \
     bash scripts/run_tandem_fno_spark.sh 2>&1 |
     tee artifacts/tandem_cylinders/expanded_fno_5epoch_spark.log
 python3 scripts/validate_tandem_fno_stage.py --training-history artifacts/tandem_fno_expanded_spark_5epoch/training_history.json --min-epoch 5
