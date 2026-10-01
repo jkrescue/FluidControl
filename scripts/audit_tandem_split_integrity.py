@@ -10,6 +10,9 @@ from collections import defaultdict
 from pathlib import Path
 
 
+EXPECTED_COUNTS = {"train": 24, "validation": 4, "test": 4}
+
+
 def signature(config: dict) -> str:
     """Identify runs with the same initial field, physics, and boundary action."""
     fields = (
@@ -44,13 +47,19 @@ def audit(data: Path, cases_root: Path) -> dict:
             rows.append(row)
             by_signature[row["signature"]].append(row)
     duplicates = [group for group in by_signature.values() if len(group) > 1]
+    counts = {
+        split: sum(row["split"] == split for row in rows)
+        for split in EXPECTED_COUNTS
+    }
+    status = (
+        "DUPLICATE_TRAJECTORIES" if duplicates else
+        "INCOMPLETE_SPLIT" if counts != EXPECTED_COUNTS else "SPLIT_INTEGRITY_OK"
+    )
     return {
-        "status": "SPLIT_INTEGRITY_OK" if not duplicates else "DUPLICATE_TRAJECTORIES",
+        "status": status,
         "trajectory_count": len(rows),
-        "split_counts": {
-            split: sum(row["split"] == split for row in rows)
-            for split in ("train", "validation", "test")
-        },
+        "split_counts": counts,
+        "expected_counts": EXPECTED_COUNTS,
         "duplicate_groups": duplicates,
         "cases": rows,
     }
@@ -68,7 +77,7 @@ def main() -> None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(result, encoding="utf-8")
     print(result, end="")
-    if report["duplicate_groups"]:
+    if report["status"] != "SPLIT_INTEGRITY_OK":
         raise SystemExit(2)
 
 
