@@ -21,4 +21,6 @@ BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_v1 \
 
 Spark 自动衔接脚本 `scripts/run_tandem_fno_pipeline_spark.sh` 等待 Curator 完整质检标记，然后在同一项目内做官方 HDF5Reader/DataLoader 验证、一次抽样冒烟（训练轨迹步长 80、验证步长 160）、5 epoch 实数据先导训练，以及留出测试集 1/10/50 步 rollout 评估。每一步失败就停止，训练与评估都不绕过 20 GiB 内存余量守护。80 epoch 完整训练要在先导模型和测试集评估后决定；不把冒烟指标当物理结论。
 
+进入 DataPipe 前，流水线会对全部 32 条 HDF5 逐帧检查，并将转速及前后柱 Cd/Cl 对齐到原始 OpenFOAM 动作表和 `coefficient.dat`；只有完整原始标签审计通过才放行训练。
+
 此文档记录的是运行方案及内存守护测试；32 条 CFD 已通过数值质检，但全量 Curator HDF5 仍在整理，不得宣称 FNO 已训练完成。
