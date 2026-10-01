@@ -1,6 +1,6 @@
 # DGX Spark 单 GPU 训练入口（2026-10-02）
 
-目标数据是 OpenFOAM 生成的串联双圆柱扩展版真实 CFD 轨迹；该入口不替代 HydroGym 的单圆柱强化学习基准。仅在 `data/curated/tandem_cylinders_expanded_v1/manifest.json` 完成并通过数据质检之后运行。
+目标数据是 OpenFOAM 生成的串联双圆柱真实 CFD 轨迹；该入口不替代 HydroGym 的单圆柱强化学习基准。仅在修复重复动作轨迹后的 `data/curated/tandem_cylinders_expanded_independent_v2/manifest.json` 完成并通过全量数据、原始标签及跨划分唯一性质检之后运行。原始 `expanded_v1` 保留作溯源，不作为独立留出测试集。
 
 ```bash
 # DGX Spark 上，在 /workspace/fluid_control 内
@@ -13,7 +13,7 @@ BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_v1 \
 
 - 使用固定的 `fluid-control-physicsnemo:2.2.2` 派生容器，仅暴露 GPU 0；`--network none`、`--memory 64g`，不改主机 Python 环境。现有 PhysicsNeMo 官方 `FNO`、`HDF5Reader`、`DataLoader` 与训练辅助 API 保持原样；模型结构不因迁移而改变。
 - 单进程 `python`，批量默认为 4；PyTorch allocator fraction 固定为 0.20，按 GPU 报告总量约 121.69 GiB 算上限约 24.34 GiB。这个限制只覆盖 PyTorch 缓存分配器，不是对所有 CUDA 分配的硬上限。
-- `spark_gpu_guard.py` 运行前要求 `MemAvailable >= 20 GiB + allocator 上限 + 4 GiB`，并每 5 秒检查一次；低于 20 GiB 时向整组训练进程发 SIGTERM，必要时 SIGKILL。该时间间隔内的瞬时波动不能绝对排除，正式训练还须观察日志。
+- `spark_gpu_guard.py` 运行前要求 `MemAvailable >= 20 GiB + allocator 上限 + 4 GiB`，并每 5 秒检查一次；低于 20 GiB 时向整组训练进程发 SIGTERM，必要时 SIGKILL。正常退出会记录 `gpu_guard_complete`，含最低观测可用内存、采样数和退出码，供训练后复核。该时间间隔内的瞬时波动不能绝对排除，正式训练还须观察日志。
 - Spark 是 CPU/GPU 共享 DRAM 的 UMA，没有独立“显存”指标。`nvidia-smi` 显示 N/A 是预期行为。实测 CFD 写盘时 Linux page cache 超过 100 GiB，`cudaMemGetInfo` 仅显示约 8 GiB free，但 `MemAvailable` 约 113 GiB。依据 [NVIDIA DGX Spark Porting Guide](https://docs.nvidia.com/dgx/dgx-spark-porting-guide/optimization.html) 的说明，前者未计入可回收 OS 内存；本守护程序同时记录两者、用 `MemAvailable` 判断共享内存余量，不清理其他进程缓存。
 - `SMOKE=true` 仅表示原训练脚本的一轮低密度抽样与验证，不代表控制收益或正式训练达标。正式判定需看独立验证/测试集的误差、rollout 稳定性以及与零动作 CFD 基线的物理指标对照。
 
@@ -37,7 +37,7 @@ BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_v1 \
 
 据此，自动流水线的抽样冒烟与 5 epoch 先导训练暂选 `BATCH_SIZE=64`，而手动启动器仍保留保守默认值 4。单步数字不是端到端吞吐或模型精度，正式运行需继续监控 DataPipe、峰值内存和验证误差。
 
-Spark 自动衔接脚本 `scripts/run_tandem_fno_pipeline_spark.sh` 等待 Curator 完整质检标记，然后在同一项目内做官方 HDF5Reader/DataLoader 验证、一次抽样冒烟（训练轨迹步长 80、验证步长 160）、5 epoch 实数据先导训练，以及留出测试集 1/10/50 步 rollout 评估。每一步失败就停止，训练与评估都不绕过 20 GiB 内存余量守护。80 epoch 完整训练要在先导模型和测试集评估后决定；不把冒烟指标当物理结论。
+Spark 自动衔接由 `scripts/build_independent_expanded_v2_spark.sh` 等待原始 Curator 与两条替代 OpenFOAM 工况完成，构建并质检无重复轨迹的 v2 数据集，随后才调用 `scripts/run_tandem_fno_pipeline_spark.sh`。后者做官方 HDF5Reader/DataLoader 验证、一次抽样冒烟（训练轨迹步长 80、验证步长 160）、5 epoch 实数据先导训练，以及留出测试集 1/10/50 步 rollout 评估。每一步失败就停止，训练与评估都不绕过 20 GiB 内存余量守护。80 epoch 完整训练要在先导模型和测试集评估后决定；不把冒烟指标当物理结论。
 
 流水线的阶段标记只在 `scripts/validate_tandem_fno_stage.py` 通过后打印：检查冒烟/先导训练 epoch 连续且指标有限，留出集必须包含 4 条真实 CFD 测试轨迹的 1/10/50 步稳定预测，并计算相对于持久性预测基线的场误差比值。比值只是诊断，不把先导训练的有限误差自动判为合格控制策略；物理收益仍需独立 CFD 回放。
 
@@ -49,4 +49,4 @@ Spark 自动衔接脚本 `scripts/run_tandem_fno_pipeline_spark.sh` 等待 Curat
 
 三种动作输入的 1/10/50 步场与后柱力误差还将由现有 `scripts/summarize_tandem_action_sensitivity.py` 汇总为 `artifacts/tandem_fno_expanded_spark_5epoch/action_sensitivity_summary.json` 和同名 Markdown 表。只有观察到实际动作输入相对错误动作更可靠，才可考虑后续代理控制实验；仅有这张表仍不足以证明 CFD 控制收益。
 
-此文档记录的是运行方案及内存守护测试；32 条 CFD 已通过数值质检，但全量 Curator HDF5 仍在整理，不得宣称 FNO 已训练完成。
+此文档记录的是运行方案及内存守护测试；原始 32 条 CFD 和两条替代留出 CFD 已通过数值质检，但独立 v2 的全量 Curator HDF5 仍在整理，不得宣称 FNO 已训练完成。

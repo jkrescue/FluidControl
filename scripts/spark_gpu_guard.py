@@ -69,6 +69,9 @@ def main() -> int:
         print("GPU guard: insufficient initial reclaimable memory", file=sys.stderr, flush=True)
         return 75
 
+    min_available = available
+    min_cuda_free = free
+    samples = 1
     process = subprocess.Popen(command, start_new_session=True)
     stop_requested = False
 
@@ -84,6 +87,9 @@ def main() -> int:
             return 143
         free, _ = free_memory()
         available = mem_available()
+        min_available = min(min_available, available)
+        min_cuda_free = min(min_cuda_free, free)
+        samples += 1
         if available < args.min_free_gib * GIB:
             print(json.dumps({"event": "gpu_floor_violation",
                               "cuda_free_gib": free / GIB, "mem_available_gib": available / GIB}),
@@ -91,6 +97,15 @@ def main() -> int:
             terminate_group(process)
             return 75
         time.sleep(args.poll_seconds)
+    print(json.dumps({
+        "event": "gpu_guard_complete",
+        "exit_code": int(process.returncode),
+        "memory_samples": samples,
+        "min_observed_mem_available_gib": min_available / GIB,
+        "min_observed_cuda_free_gib": min_cuda_free / GIB,
+        "poll_seconds": args.poll_seconds,
+        "min_required_mem_available_gib": args.min_free_gib,
+    }), flush=True)
     return int(process.returncode)
 
 
