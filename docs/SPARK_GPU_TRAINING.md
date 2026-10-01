@@ -52,3 +52,5 @@ Spark 自动衔接由 `scripts/build_independent_expanded_v2_spark.sh` 等待原
 此文档记录的是运行方案及内存守护测试；原始 32 条 CFD 和两条替代留出 CFD 已通过数值质检，但独立 v2 的全量 Curator HDF5 仍在整理，不得宣称 FNO 已训练完成。
 
 原仓库保留的双 GPU `torchrun`、旧版 `.venv`、旧数据划分的训练/消融/MPC Shell 入口只供原机器溯源；它们在 DGX Spark（aarch64）启动时会在创建输出或占用 GPU 前以退出码 2 拒绝执行。当前 Spark 应使用本页的 GPU0 容器入口与独立 v2 数据门禁，不能用旧入口绕过 20 GiB 守护。
+
+软件 I/O 预检（2026-10-02 04:38 CST）：在隔离 PhysicsNeMo 2.2.2 容器、无 GPU 和无网络条件下，仅用原始 v1 的真实 HDF5 检验官方 `DatasetBase`、`HDF5Reader`、`DataLoader` 接口，3 个批次均读取成功，返回 `PHYSICSNEMO_DATAPIPE_OK`；训练/验证/测试窗口数分别为 19,200/3,200/3,200。结果清单为 `artifacts/tandem_cylinders/expanded_v1_datapipe_software_preflight.json`（SHA-256 `6bd02440149a66325e3dddad0df919e28c2cc8f5a2f5493ead27d2982ded734f`）。此项只验证 I/O 软件链路，v1 留出划分仍有重复，GPU 训练仍只能使用通过全部门禁后的独立 v2。

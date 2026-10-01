@@ -1,0 +1,188 @@
+{
+  "official_components": {
+    "dataset_base": "physicsnemo.datapipes.protocols.DatasetBase",
+    "hdf5_reader": "physicsnemo.datapipes.readers.hdf5.HDF5Reader",
+    "data_loader": "physicsnemo.datapipes.dataloader.DataLoader"
+  },
+  "splits": {
+    "train": {
+      "length": 19200,
+      "sample_shapes": {
+        "x": [
+          6,
+          128,
+          256
+        ],
+        "delta": [
+          3,
+          128,
+          256
+        ],
+        "force": [
+          2
+        ],
+        "mask": [
+          1,
+          128,
+          256
+        ],
+        "time": [
+          1
+        ]
+      },
+      "metadata": {
+        "case": "expanded_train_00",
+        "step": 0,
+        "split": "train"
+      }
+    },
+    "validation": {
+      "length": 3200,
+      "sample_shapes": {
+        "x": [
+          6,
+          128,
+          256
+        ],
+        "delta": [
+          3,
+          128,
+          256
+        ],
+        "force": [
+          2
+        ],
+        "mask": [
+          1,
+          128,
+          256
+        ],
+        "time": [
+          1
+        ]
+      },
+      "metadata": {
+        "case": "expanded_validation_00",
+        "step": 0,
+        "split": "validation"
+      }
+    },
+    "test": {
+      "length": 3200,
+      "sample_shapes": {
+        "x": [
+          6,
+          128,
+          256
+        ],
+        "delta": [
+          3,
+          128,
+          256
+        ],
+        "force": [
+          2
+        ],
+        "mask": [
+          1,
+          128,
+          256
+        ],
+        "time": [
+          1
+        ]
+      },
+      "metadata": {
+        "case": "expanded_test_00",
+        "step": 0,
+        "split": "test"
+      }
+    }
+  },
+  "official_dataloader_batches": [
+    {
+      "x": [
+        4,
+        6,
+        128,
+        256
+      ],
+      "delta": [
+        4,
+        3,
+        128,
+        256
+      ],
+      "force": [
+        4,
+        2
+      ],
+      "mask": [
+        4,
+        1,
+        128,
+        256
+      ],
+      "time": [
+        4,
+        1
+      ]
+    },
+    {
+      "x": [
+        4,
+        6,
+        128,
+        256
+      ],
+      "delta": [
+        4,
+        3,
+        128,
+        256
+      ],
+      "force": [
+        4,
+        2
+      ],
+      "mask": [
+        4,
+        1,
+        128,
+        256
+      ],
+      "time": [
+        4,
+        1
+      ]
+    },
+    {
+      "x": [
+        4,
+        6,
+        128,
+        256
+      ],
+      "delta": [
+        4,
+        3,
+        128,
+        256
+      ],
+      "force": [
+        4,
+        2
+      ],
+      "mask": [
+        4,
+        1,
+        128,
+        256
+      ],
+      "time": [
+        4,
+        1
+      ]
+    }
+  ]
+}
