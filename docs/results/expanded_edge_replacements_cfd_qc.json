@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "dataset": "tandem_cylinder_dynamic_rotation_expanded_v1",
+  "source": "independent OpenFOAM v2512 CFD",
+  "geometry": "two equal-diameter tandem cylinders at Re=100 and L/D=5; rear cylinder rotates",
+  "time_window": [
+    80.0,
+    160.0
+  ],
+  "field_interval": 0.1,
+  "omega_limit": [
+    -5.0,
+    5.0
+  ],
+  "surface_speed_ratio_limit": [
+    -2.5,
+    2.5
+  ],
+  "split_max_abs_domega_dt": {
+    "validation": 6.666666666666667,
+    "test": 6.666666666666667
+  },
+  "cases": [
+    {
+      "case": "expanded_validation_04",
+      "split": "validation",
+      "schedule_kind": "edge_hold_permuted",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 6.666666666666667
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.488001875,
+        "max_abs_global_continuity_per_step": 3.18295357e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_test_04",
+      "split": "test",
+      "schedule_kind": "edge_hold_permuted",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 6.666666666666667
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.497018305,
+        "max_abs_global_continuity_per_step": 2.68265386e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    }
+  ],
+  "splits": {
+    "train": [],
+    "validation": [
+      "expanded_validation_04"
+    ],
+    "test": [
+      "expanded_test_04"
+    ]
+  },
+  "limitations": [
+    "all training trajectories use the 19,290-cell coarse grid",
+    "high-rotation medium-grid cases remain independent numerical validation",
+    "all trajectories share Re=100, L/D=5, and one geometry"
+  ]
+}
