@@ -5,14 +5,14 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 cd "${root}"
 image="fluid-control-physicsnemo:2.2.2"
-output="${OUTPUT_DIR:-artifacts/tandem_fno_expanded_spark_v1}"
+output="${OUTPUT_DIR:-artifacts/tandem_fno_expanded_spark_v2}"
 batch_size="${BATCH_SIZE:-4}"
 smoke="${SMOKE:-false}"
 fraction="0.20"
 [[ "${output}" == /* ]] || output="${root}/${output}"
 [[ "${output}" == "${root}/"* ]] || { echo "Output must be inside project" >&2; exit 1; }
 [[ -s data/curated/tandem_cylinders_expanded_independent_v2/manifest.json ]] || {
-    echo "Curated expanded-v1 manifest is not yet ready" >&2; exit 1;
+    echo "Curated independent-v2 manifest is not yet ready" >&2; exit 1;
 }
 docker image inspect "${image}" >/dev/null
 mkdir -p "${output}"

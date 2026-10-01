@@ -7,7 +7,7 @@
 SMOKE=true BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_smoke \
   bash scripts/run_tandem_fno_spark.sh
 # 冒烟和数据审计通过后，另起正式目录；默认扩展配置为 80 epoch
-BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_v1 \
+BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_v2 \
   bash scripts/run_tandem_fno_spark.sh
 ```
 
