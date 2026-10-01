@@ -51,3 +51,9 @@ echo PHYSICSNEMO_SPARK_5EPOCH_OK
 bash scripts/run_tandem_fno_eval_spark.sh 2>&1 |
     tee artifacts/tandem_cylinders/expanded_fno_heldout_spark.log
 echo PHYSICSNEMO_SPARK_HELDOUT_OK
+
+ACTION_MODE=zero VISUALIZATIONS_PER_HORIZON=0 bash scripts/run_tandem_fno_eval_spark.sh 2>&1 |
+    tee artifacts/tandem_cylinders/expanded_fno_action_zero_spark.log
+ACTION_MODE=sign_flip VISUALIZATIONS_PER_HORIZON=0 bash scripts/run_tandem_fno_eval_spark.sh 2>&1 |
+    tee artifacts/tandem_cylinders/expanded_fno_action_sign_flip_spark.log
+echo PHYSICSNEMO_SPARK_ACTION_ABLATIONS_OK
