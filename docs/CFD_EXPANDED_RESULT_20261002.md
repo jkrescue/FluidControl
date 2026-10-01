@@ -9,3 +9,5 @@ DGX Spark 上的 OpenFOAM v2512 ARM64 隔离容器已完成 `tandem_cylinder_dyn
 原始 OpenFOAM 场数据留在 `cfd/tandem_cylinders/cases/`，当前约 69 GiB，不进入 GitLab。Curator 正在用官方 VTKSource/PhysicsNeMo Mesh 流程导出和整理全场到 HDF5；首条 801 帧 HDF5 已通过逐帧有效值/掩码质检。**全量 Curator、PhysicsNeMo DataPipe、FNO 训练和留出测试尚未完成**；下一阶段流水线会等待全量质检标记，按顺序执行，不会把本 CFD 数值 QC 误写成代理模型性能。
 
 进度快照（2026-10-02 02:50 CST）：Curator 已形成 **17/32 条**完整 HDF5。新增 `expanded_train_09..12` 四条均有 801 帧，通过逐帧有限值/掩码检查，且转速、前后柱 Cd/Cl 与原始 OpenFOAM 文件逐点对齐；该批最大转速误差 `2.29e-7`、最大力系数误差 `2.38e-7`（HDF5 float32 舍入量级）。其余数据仍在整理，FNO 训练未启动。
+
+物理响应粗筛（17 条已完成 HDF5，2026-10-02 03:00 CST）：全部从同一无控制 `t=80` 场重启，后柱初始 `Cd/Cl` 与原始无控制时间序列的绝对差最大仅 `0.000506/0.007536`；在 `t>=120` 的后半窗，逐时刻平均绝对差的最小值为 `Cd 0.415`、`Cl 1.289`，且各条动作 RMS 为 `1.887..3.365`。可复查脚本为 `scripts/audit_curated_control_response.py`，完整 32 条会在训练前再次验收。该差异只排查动作未生效或复制数据，不是阻力/升力改善，更不是闭环控制收益。

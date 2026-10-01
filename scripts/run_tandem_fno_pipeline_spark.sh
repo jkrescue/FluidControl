@@ -21,6 +21,10 @@ mapfile -t names < <(python3 cfd/tandem_cylinders/make_expanded_control_dataset.
 .venv-curator-py312/bin/python scripts/validate_expanded_curated_cases.py \
     --data "${dataset}" --cases-root cfd/tandem_cylinders/cases "${names[@]}"
 echo EXPANDED_LABEL_AUDIT_OK
+.venv-curator-py312/bin/python scripts/audit_curated_control_response.py \
+    --data "${dataset}" --expected-count 32 \
+    --output artifacts/tandem_cylinders/expanded_control_response_spark.json
+echo EXPANDED_PHYSICAL_RESPONSE_AUDIT_OK
 
 free_gib="$(df -BG --output=avail "${root}" | tail -n 1 | tr -dc '0-9')"
 if (( free_gib < 150 )); then
