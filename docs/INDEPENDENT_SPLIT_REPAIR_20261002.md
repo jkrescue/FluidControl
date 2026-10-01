@@ -36,3 +36,9 @@ python3 scripts/audit_raw_cfd_control_response.py --output docs/results/expanded
 ```
 
 原始 `postProcessing/forceRear/80/coefficient.dat` 的 16,000 个时间步还通过共同起点/非退化响应粗筛：验证/测试两条在首个时间步的后柱 `|ΔCd|/|ΔCl|` 分别为 `6.99e-6/2.24e-5`、`6.0e-9/3.72e-8`；相对同一无控制基线，`t>=120` 后半窗的逐时刻平均绝对差分别为 `Cd 0.674, Cl 2.416` 和 `Cd 1.114, Cl 4.417`。这只说明新动作在真实求解中产生了非零响应，不是受控性能优于无控制的证据。
+
+## 独立 v2 全量数据验收（2026-10-02 04:56 CST）
+
+32 条真实 OpenFOAM 轨迹的 HDF5 已完成：24 条训练、4 条验证、4 条测试，均为 801 帧。新增 `expanded_validation_04`、`expanded_test_04` 与原始动作/力标签对齐，最大动作绝对误差 `1.59e-7`，最大力系数绝对误差 `4.77e-7`。全量检查返回 `CURATED_DATASET_OK`；跨划分签名审计返回 `SPLIT_INTEGRITY_OK`、重复组为空；32 条共同起点与非零响应粗筛返回 `CONTROLLED_CFD_RESPONSE_AUDIT_OK`。归一化仅从未改变的 24 条训练轨迹重算，其 JSON SHA-256 与原始 v1 训练归一化相同：`ceaffa8cbe1a4d3372c45ea95125b410148a78aa1216586b9c2cbd281d699ba2`。
+
+结构化验收结果在 Spark 项目 `artifacts/tandem_cylinders/` 下并已同步 GitLab：`expanded_independent_v2_curated_validation.json`（SHA-256 `62611ef01dae49cd355d0d9efaf51f3800a1c4203002a18e7f99a239139699a7`）、`expanded_independent_v2_split_integrity.json`（`80dae6a31a68deb66e790f42186a12883f4369a1b947b273139cffdea172f32f`）、`expanded_independent_v2_control_response.json`（`090f6d4b2b6ba9469c9c4c494e6d34ef4a4f6f946ab7c1c06af78e1777d01dcf`）。这些门禁允许开始代理训练，但并不证明预测精度、控制收益或新物理条件泛化；训练和留出评估仍需单独验收。
