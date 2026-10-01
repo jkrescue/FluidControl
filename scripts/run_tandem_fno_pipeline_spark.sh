@@ -5,7 +5,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 cd "${root}"
 curator_log="artifacts/tandem_cylinders/expanded_spark_curator.log"
-dataset="data/curated/tandem_cylinders_expanded_v1"
+dataset="data/curated/tandem_cylinders_expanded_independent_v2"
 audit="artifacts/tandem_cylinders/expanded_datapipe_validation_spark.json"
 
 while ! rg -q '^EXPANDED_SPARK_CURATOR_OK$' "${curator_log}" 2>/dev/null; do
@@ -16,7 +16,11 @@ while ! rg -q '^EXPANDED_SPARK_CURATOR_OK$' "${curator_log}" 2>/dev/null; do
     sleep 60
 done
 [[ -s "${dataset}/manifest.json" && -s "${dataset}/normalization.json" ]] || exit 1
-mapfile -t names < <(python3 cfd/tandem_cylinders/make_expanded_control_dataset.py --list)
+mapfile -t names < <(
+    find "${dataset}/train" "${dataset}/validation" "${dataset}/test" \
+        -maxdepth 1 -type f -name '*.h5' -printf '%f\n' |
+        sed 's/\.h5$//' | sort
+)
 [[ "${#names[@]}" -eq 32 ]] || exit 1
 .venv-curator-py312/bin/python scripts/validate_expanded_curated_cases.py \
     --data "${dataset}" --cases-root cfd/tandem_cylinders/cases "${names[@]}"

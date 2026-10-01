@@ -27,7 +27,7 @@ docker run --rm --network none --gpus 'device=0' --cpus 8 --memory 64g \
     python -u scripts/spark_gpu_guard.py \
       --min-free-gib 20 --allocator-fraction 0.20 --margin-gib 4 -- \
       python -u scripts/evaluate_tandem_fno.py \
-        --data data/curated/tandem_cylinders_expanded_v1 \
+        --data data/curated/tandem_cylinders_expanded_independent_v2 \
         --config conf/tandem_fno_expanded.yaml \
         --checkpoint-dir "/workspace/${model_dir#${root}/}/best" \
         --output "/workspace/${model_dir#${root}/}/heldout_evaluation${result_suffix}.json" \

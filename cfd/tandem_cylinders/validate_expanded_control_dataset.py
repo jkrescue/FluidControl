@@ -9,7 +9,13 @@ import math
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-from analyze_baseline import ROOT, field_health, load_coefficients, log_health, probe_health
+from analyze_baseline import (
+    ROOT,
+    field_health,
+    load_coefficients,
+    log_health,
+    probe_health,
+)
 from make_expanded_control_dataset import (
     END_TIME,
     OMEGA_LIMIT,
@@ -19,6 +25,9 @@ from make_expanded_control_dataset import (
 )
 
 
+from make_expanded_edge_replacements import REPLACEMENTS
+
+
 def validate_case(name: str) -> dict:
     case = ROOT / "cases" / name
     config = json.loads((case / "case_config.json").read_text(encoding="utf-8"))
@@ -26,20 +35,29 @@ def validate_case(name: str) -> dict:
     expected_steps = round((END_TIME - START_TIME) / config["delta_t"])
     if not solver["solver_ended_cleanly"] or solver["steps"] != expected_steps:
         raise ValueError(f"incomplete solver run: {name}: {solver}")
-    if solver["max_courant"] >= 1.0 or solver["max_abs_global_continuity_per_step"] >= 1.0e-5:
+    if (
+        solver["max_courant"] >= 1.0
+        or solver["max_abs_global_continuity_per_step"] >= 1.0e-5
+    ):
         raise ValueError(f"numerical health failed: {name}: {solver}")
 
     fields = field_health(case)
-    if fields["snapshot_count"] != 801 or not math.isclose(fields["last_time"], END_TIME):
+    if fields["snapshot_count"] != 801 or not math.isclose(
+        fields["last_time"], END_TIME
+    ):
         raise ValueError(f"incomplete fields: {name}: {fields}")
 
     probes = probe_health(case / "postProcessing" / "wakeProbes" / "80" / "U")
-    if probes["samples"] != expected_steps or not math.isclose(probes["last_time"], END_TIME):
+    if probes["samples"] != expected_steps or not math.isclose(
+        probes["last_time"], END_TIME
+    ):
         raise ValueError(f"incomplete probes: {name}: {probes}")
 
     force_samples = {}
     for label in ("Front", "Rear"):
-        rows = load_coefficients(case / "postProcessing" / f"force{label}" / "80" / "coefficient.dat")
+        rows = load_coefficients(
+            case / "postProcessing" / f"force{label}" / "80" / "coefficient.dat"
+        )
         if len(rows) != expected_steps or not math.isclose(rows[-1][0], END_TIME):
             raise ValueError(f"incomplete force series: {name}/{label}")
         force_samples[label.lower()] = len(rows)
@@ -65,13 +83,17 @@ def validate_case(name: str) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("names", nargs="*", help="validate selected cases; default validates all")
-    parser.add_argument("--write", type=Path, help="write JSON manifest after validation")
+    parser.add_argument(
+        "names", nargs="*", help="validate selected cases; default validates all"
+    )
+    parser.add_argument(
+        "--write", type=Path, help="write JSON manifest after validation"
+    )
     parser.add_argument("--workers", type=int, default=4)
     args = parser.parse_args()
     if args.workers < 1:
         parser.error("--workers must be at least 1")
-    known = {spec.name for spec in SCHEDULES}
+    known = {spec.name for spec in (*SCHEDULES, *REPLACEMENTS)}
     unknown = set(args.names) - known
     if unknown:
         parser.error(f"unknown expanded cases: {', '.join(sorted(unknown))}")
@@ -84,14 +106,20 @@ def main() -> None:
 
     split_rates = {}
     for split in ("train", "validation", "test"):
-        values = [case["action"]["max_abs_domega_dt"] for case in cases if case["split"] == split]
+        values = [
+            case["action"]["max_abs_domega_dt"]
+            for case in cases
+            if case["split"] == split
+        ]
         if values:
             split_rates[split] = max(values)
     if set(split_rates) == {"train", "validation", "test"} and (
         split_rates["validation"] > split_rates["train"] + 1.0e-9
         or split_rates["test"] > split_rates["train"] + 1.0e-9
     ):
-        raise ValueError(f"validation/test action-rate coverage exceeds training: {split_rates}")
+        raise ValueError(
+            f"validation/test action-rate coverage exceeds training: {split_rates}"
+        )
 
     manifest = {
         "schema_version": 1,

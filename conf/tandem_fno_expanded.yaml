@@ -3,7 +3,7 @@ defaults:
   - _self_
 
 data:
-  root: data/curated/tandem_cylinders_expanded_v1
+  root: data/curated/tandem_cylinders_expanded_independent_v2
 
 output_dir: artifacts/tandem_fno_expanded_v1
 

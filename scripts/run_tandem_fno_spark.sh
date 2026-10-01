@@ -11,14 +11,14 @@ smoke="${SMOKE:-false}"
 fraction="0.20"
 [[ "${output}" == /* ]] || output="${root}/${output}"
 [[ "${output}" == "${root}/"* ]] || { echo "Output must be inside project" >&2; exit 1; }
-[[ -s data/curated/tandem_cylinders_expanded_v1/manifest.json ]] || {
+[[ -s data/curated/tandem_cylinders_expanded_independent_v2/manifest.json ]] || {
     echo "Curated expanded-v1 manifest is not yet ready" >&2; exit 1;
 }
 docker image inspect "${image}" >/dev/null
 mkdir -p "${output}"
 
 overrides=(
-    "data.root=/workspace/data/curated/tandem_cylinders_expanded_v1"
+    "data.root=/workspace/data/curated/tandem_cylinders_expanded_independent_v2"
     "output_dir=/workspace/${output#${root}/}"
     "training.batch_size=${batch_size}"
     "training.gpu_memory_fraction=${fraction}"

@@ -37,12 +37,26 @@ class Schedule:
 
 
 SCHEDULES = tuple(
-    [Schedule(f"expanded_train_{i:02d}", "train", "random_ramp", 2026100100 + i) for i in range(10)]
-    + [Schedule(f"expanded_train_{i:02d}", "train", "multisine", 2026100100 + i) for i in range(10, 16)]
-    + [Schedule(f"expanded_train_{i:02d}", "train", "chirp", 2026100100 + i) for i in range(16, 20)]
-    + [Schedule(f"expanded_train_{i:02d}", "train", "edge_hold", 2026100100 + i) for i in range(20, 24)]
+    [
+        Schedule(f"expanded_train_{i:02d}", "train", "random_ramp", 2026100100 + i)
+        for i in range(10)
+    ]
     + [
-        Schedule("expanded_validation_00", "validation", "interstitial_ramp", 2026100200),
+        Schedule(f"expanded_train_{i:02d}", "train", "multisine", 2026100100 + i)
+        for i in range(10, 16)
+    ]
+    + [
+        Schedule(f"expanded_train_{i:02d}", "train", "chirp", 2026100100 + i)
+        for i in range(16, 20)
+    ]
+    + [
+        Schedule(f"expanded_train_{i:02d}", "train", "edge_hold", 2026100100 + i)
+        for i in range(20, 24)
+    ]
+    + [
+        Schedule(
+            "expanded_validation_00", "validation", "interstitial_ramp", 2026100200
+        ),
         Schedule("expanded_validation_01", "validation", "multisine", 2026100201),
         Schedule("expanded_validation_02", "validation", "chirp", 2026100202),
         Schedule("expanded_validation_03", "validation", "edge_hold", 2026100203),
@@ -54,7 +68,9 @@ SCHEDULES = tuple(
 )
 
 
-def random_ramp(seed: int, levels: tuple[float, ...], spacing: float) -> list[tuple[float, float]]:
+def random_ramp(
+    seed: int, levels: tuple[float, ...], spacing: float
+) -> list[tuple[float, float]]:
     rng = random.Random(seed)
     points = [(START_TIME, 0.0)]
     previous = 0.0
@@ -105,7 +121,10 @@ def chirp(seed: int) -> list[tuple[float, float]]:
     while time <= END_TIME + 1.0e-9:
         tau = time - START_TIME
         fraction = tau / duration
-        cycles = start_frequency * tau + 0.5 * (end_frequency - start_frequency) * tau * fraction
+        cycles = (
+            start_frequency * tau
+            + 0.5 * (end_frequency - start_frequency) * tau * fraction
+        )
         amplitude = start_amplitude + (end_amplitude - start_amplitude) * fraction
         omega = amplitude * math.sin(2.0 * math.pi * cycles + phase)
         omega *= min(tau / 2.0, 1.0)
@@ -122,8 +141,10 @@ EDGE_SEQUENCES = (
 )
 
 
-def edge_hold(seed: int) -> list[tuple[float, float]]:
-    sequence = EDGE_SEQUENCES[seed % len(EDGE_SEQUENCES)]
+def edge_hold(seed: int, *, permuted: bool = False) -> list[tuple[float, float]]:
+    sequence = list(EDGE_SEQUENCES[seed % len(EDGE_SEQUENCES)])
+    if permuted:
+        random.Random(seed).shuffle(sequence)
     block = (END_TIME - START_TIME) / len(sequence)
     transition = 1.5
     points = [(START_TIME, 0.0)]
@@ -140,15 +161,21 @@ def edge_hold(seed: int) -> list[tuple[float, float]]:
 
 def schedule_points(spec: Schedule) -> list[tuple[float, float]]:
     if spec.kind == "random_ramp":
-        return random_ramp(spec.seed, tuple(float(value) for value in range(-5, 6)), 5.0)
+        return random_ramp(
+            spec.seed, tuple(float(value) for value in range(-5, 6)), 5.0
+        )
     if spec.kind == "interstitial_ramp":
-        return random_ramp(spec.seed, (-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5), 5.0)
+        return random_ramp(
+            spec.seed, (-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5), 5.0
+        )
     if spec.kind == "multisine":
         return multisine(spec.seed)
     if spec.kind == "chirp":
         return chirp(spec.seed)
     if spec.kind == "edge_hold":
         return edge_hold(spec.seed)
+    if spec.kind == "edge_hold_permuted":
+        return edge_hold(spec.seed, permuted=True)
     raise ValueError(spec.kind)
 
 
@@ -166,15 +193,22 @@ def schedule_metrics(points: list[tuple[float, float]]) -> dict[str, float]:
 
 def validate_schedules() -> dict:
     report: dict[str, dict] = {}
-    split_rates: dict[str, list[float]] = {split: [] for split in ("train", "validation", "test")}
+    split_rates: dict[str, list[float]] = {
+        split: [] for split in ("train", "validation", "test")
+    }
     for spec in SCHEDULES:
         points = schedule_points(spec)
         if points[0][0] != START_TIME or points[-1][0] != END_TIME:
             raise ValueError(f"{spec.name}: action table does not span the trajectory")
-        if any(time_1 <= time_0 for (time_0, _), (time_1, _) in zip(points, points[1:])):
+        if any(
+            time_1 <= time_0 for (time_0, _), (time_1, _) in zip(points, points[1:])
+        ):
             raise ValueError(f"{spec.name}: action times are not strictly increasing")
         metrics = schedule_metrics(points)
-        if max(abs(metrics["omega_min"]), abs(metrics["omega_max"])) > OMEGA_LIMIT + 1.0e-9:
+        if (
+            max(abs(metrics["omega_min"]), abs(metrics["omega_max"]))
+            > OMEGA_LIMIT + 1.0e-9
+        ):
             raise ValueError(f"{spec.name}: action exceeds omega limit")
         report[spec.name] = {"split": spec.split, "kind": spec.kind, **metrics}
         split_rates[spec.split].append(metrics["max_abs_domega_dt"])
@@ -184,13 +218,20 @@ def validate_schedules() -> dict:
             raise ValueError(f"{split} action rate exceeds training coverage")
     return {
         "cases": report,
-        "split_counts": {split: sum(spec.split == split for spec in SCHEDULES) for split in split_rates},
-        "split_max_abs_domega_dt": {split: max(values) for split, values in split_rates.items()},
+        "split_counts": {
+            split: sum(spec.split == split for spec in SCHEDULES)
+            for split in split_rates
+        },
+        "split_max_abs_domega_dt": {
+            split: max(values) for split, values in split_rates.items()
+        },
     }
 
 
 def foam_table(points: list[tuple[float, float]]) -> str:
-    rows = "\n".join(f"            ({time:.10g} {omega:.10g})" for time, omega in points)
+    rows = "\n".join(
+        f"            ({time:.10g} {omega:.10g})" for time, omega in points
+    )
     return f"table\n        (\n{rows}\n        )"
 
 
@@ -240,7 +281,9 @@ def generate(spec: Schedule) -> Path:
     control_path = case / "system" / "controlDict"
     control = control_path.read_text(encoding="utf-8")
     control = replace_once(control, "startTime 0;", "startTime 80;", control_path)
-    control = replace_once(control, "writeInterval 2;", "writeInterval 0.1;", control_path)
+    control = replace_once(
+        control, "writeInterval 2;", "writeInterval 0.1;", control_path
+    )
     control_path.write_text(control, encoding="utf-8")
 
     metadata = {
@@ -256,7 +299,10 @@ def generate(spec: Schedule) -> Path:
         "reynolds_number": 100,
         "kinematic_viscosity": 0.01,
         "rear_angular_velocity_limit": [-OMEGA_LIMIT, OMEGA_LIMIT],
-        "rear_angular_velocity_range": [min(value for _, value in points), max(value for _, value in points)],
+        "rear_angular_velocity_range": [
+            min(value for _, value in points),
+            max(value for _, value in points),
+        ],
         "rear_surface_speed_ratio_limit": [-OMEGA_LIMIT / 2.0, OMEGA_LIMIT / 2.0],
         "rear_surface_speed_ratio_definition": "q=omega*D/(2*U_inf)=omega/2 for D=U_inf=1",
         "action_interpolation": "OpenFOAM Function1 scalar table, linear interpolation",
@@ -273,15 +319,25 @@ def generate(spec: Schedule) -> Path:
         "wake_velocity_probes": 32,
         "limitations": "coarse-grid training data; medium-grid high-rotation cases are independent validation",
     }
-    (case / "case_config.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+    (case / "case_config.json").write_text(
+        json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
+    )
     return case
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("names", nargs="*", help="case names; default creates all schedules")
-    parser.add_argument("--list", action="store_true", help="print selected case names without creating cases")
-    parser.add_argument("--audit", type=Path, help="write the deterministic pre-simulation action audit")
+    parser.add_argument(
+        "names", nargs="*", help="case names; default creates all schedules"
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="print selected case names without creating cases",
+    )
+    parser.add_argument(
+        "--audit", type=Path, help="write the deterministic pre-simulation action audit"
+    )
     args = parser.parse_args()
     audit = validate_schedules()
     if args.audit:
