@@ -15,7 +15,7 @@
 
 日志分别保留四个奖励分项、`Cd`、`Cl`、请求和执行动作。256 步软件烟雾测试后的 5 个未见 checkpoint × 2 策略 × 30 步回放，共 300 行；所有指标有限值，逐行四项和与奖励差值为 0。短策略在多数相位降低阻力不到 0.1%，但增大 `Cl RMS`，**不能声称控制有效**。详见忽略目录 `artifacts/hydrogym/physical_reward_smoke_single/audit.json`。
 
-正式训练由 `scripts/run_hydrogym_rotary_spark.sh` 调用 8,192 个 PPO 步，容器限制 4 CPU/8 GiB、无 GPU，结束后对末尾 5 个未见 checkpoint 分别执行零控制与冻结策略的 600 步配对评估，前 100 步不计入指标。训练启动时结果尚未产生。
+正式训练由 `scripts/run_hydrogym_rotary_spark.sh` 调用 8,192 个 PPO 步，容器限制 4 CPU/8 GiB、无 GPU，结束后对末尾 5 个未见 checkpoint 分别执行零控制与冻结策略的 600 步配对评估，前 100 步不计入指标。训练和审计均已完成，逐组结果及局限见 `docs/HYDROGYM_RESULT_20261002.md`。
 
 HydroGym 官方 JAX Kolmogorov 示例默认 `reward_alpha=0`，其默认奖励仅惩罚动作且每步谱求解成本很高；该默认示例不适合用来论证流动控制效果，已终止这条无效试跑。Spark 上的 HydroGym 基准仍是单个旋转圆柱，**不等于本项目串列双圆柱工况**；双圆柱代理和 OpenFOAM 闭环验证按原路线继续。
 
