@@ -7,3 +7,5 @@ DGX Spark 上的 OpenFOAM v2512 ARM64 隔离容器已完成 `tandem_cylinder_dyn
 主 QC 清单保存在 Spark `artifacts/tandem_cylinders/expanded_v1_cfd_qc.json`，同一小型清单已同步到 `docs/results/expanded_v1_cfd_qc.json`（SHA-256 `cd57df304df3a844a119e1689a653544f72e5fcc2fd89bde82dc11e3e7cb6972`）。32 条均通过数值检查：最小快照数 801，最大 Courant 数 0.476685879，最大单步全局连续性残差 7.32518077e-12；每条求解器正常结束且动作未越界。检查器还验证了尾时刻、探针和前后柱力系数样本数，以及验证/测试动作变化率未超出训练覆盖范围。
 
 原始 OpenFOAM 场数据留在 `cfd/tandem_cylinders/cases/`，当前约 69 GiB，不进入 GitLab。Curator 正在用官方 VTKSource/PhysicsNeMo Mesh 流程导出和整理全场到 HDF5；首条 801 帧 HDF5 已通过逐帧有效值/掩码质检。**全量 Curator、PhysicsNeMo DataPipe、FNO 训练和留出测试尚未完成**；下一阶段流水线会等待全量质检标记，按顺序执行，不会把本 CFD 数值 QC 误写成代理模型性能。
+
+进度快照（2026-10-02 02:50 CST）：Curator 已形成 **17/32 条**完整 HDF5。新增 `expanded_train_09..12` 四条均有 801 帧，通过逐帧有限值/掩码检查，且转速、前后柱 Cd/Cl 与原始 OpenFOAM 文件逐点对齐；该批最大转速误差 `2.29e-7`、最大力系数误差 `2.38e-7`（HDF5 float32 舍入量级）。其余数据仍在整理，FNO 训练未启动。
