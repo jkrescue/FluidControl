@@ -23,3 +23,14 @@ bash scripts/build_independent_expanded_v2_spark.sh
 进度（2026-10-02 03:39 CST）：两条替代 OpenFOAM 求解均正常完成 16,000 步、801 帧，并由同一个原始 CFD 数值 QC 脚本通过。验证/测试两条的最大 Courant 数分别为 `0.488001875/0.497018305`，最大全局连续性单步误差分别为 `3.18295357e-12/2.68265386e-12`。原始 Curator 仍在整理数据，独立 v2 数据集和 FNO 结果尚未完成。只有日志出现 `EXPANDED_INDEPENDENT_V2_OK` 且审计输出 `SPLIT_INTEGRITY_OK`，才把新划分视为可训练；只有后续真实测试集结果通过阶段门禁，才报告代理性能。动作条件代理的反事实动作消融仍只是模型诊断，不能代替 OpenFOAM 闭环验证。
 
 两条替代工况的逐项数值 QC 清单已同步为 `docs/results/expanded_edge_replacements_cfd_qc.json`，SHA-256：`4c66f991ece12be42ae49cd94b21224e3a46945e61f553335750f679436bde27`。此清单只证明 CFD 求解数值检查，不证明代理或控制收益。
+
+
+原始 CFD 力响应粗筛可由以下命令复核；结构化结果保存在
+`docs/results/expanded_edge_replacements_raw_response.json`，SHA-256：
+`ee719b4c88f537c92bed230f9cfbe36a0c695d5ab4e995dd3932d85e455cc649`。
+
+```bash
+python3 scripts/audit_raw_cfd_control_response.py --output docs/results/expanded_edge_replacements_raw_response.json expanded_validation_04 expanded_test_04
+```
+
+原始 `postProcessing/forceRear/80/coefficient.dat` 的 16,000 个时间步还通过共同起点/非退化响应粗筛：验证/测试两条在首个时间步的后柱 `|ΔCd|/|ΔCl|` 分别为 `6.99e-6/2.24e-5`、`6.0e-9/3.72e-8`；相对同一无控制基线，`t>=120` 后半窗的逐时刻平均绝对差分别为 `Cd 0.674, Cl 2.416` 和 `Cd 1.114, Cl 4.417`。这只说明新动作在真实求解中产生了非零响应，不是受控性能优于无控制的证据。

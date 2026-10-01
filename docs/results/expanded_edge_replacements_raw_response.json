@@ -1,0 +1,25 @@
+{
+  "status": "RAW_CFD_CONTROL_RESPONSE_AUDIT_OK",
+  "baseline": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat",
+  "late_window": "t >= 120.0 D/U_inf",
+  "interpretation": "Common-start and nonzero response sanity check only; absolute deviation is not a control benefit or causal effect estimate.",
+  "case_count": 2,
+  "cases": [
+    {
+      "case": "expanded_validation_04",
+      "sample_count": 16000,
+      "initial_abs_cd_difference": 6.991000000011738e-06,
+      "initial_abs_cl_difference": 2.2442000000011397e-05,
+      "late_mean_abs_cd_difference": 0.6735116634180837,
+      "late_mean_abs_cl_difference": 2.4161069445894574
+    },
+    {
+      "case": "expanded_test_04",
+      "sample_count": 16000,
+      "initial_abs_cd_difference": 5.999999830308411e-09,
+      "initial_abs_cl_difference": 3.719999996931733e-08,
+      "late_mean_abs_cd_difference": 1.1136455918479842,
+      "late_mean_abs_cl_difference": 4.4174723080385085
+    }
+  ]
+}
