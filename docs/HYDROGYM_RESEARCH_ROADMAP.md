@@ -2,7 +2,7 @@
 
 更新日期：2026-10-01
 
-迁移注记（2026-10-02）：下文阶段 A/C 的 FNO checkpoint、代理误差和 MPC 控制数字是旧机器的历史实验，checkpoint 未迁入 DGX Spark，**不能当作当前 Spark 模型性能或当前可运行控制器**。Spark 已重新生成 32 条真实受控 OpenFOAM 轨迹，Curator 正在整理数据；PhysicsNeMo 训练与留出评估尚待全量质检后启动；现时 HydroGym 单圆柱结果以 `docs/HYDROGYM_RESULT_20261002.md` 为准。
+迁移注记（2026-10-02）：下文阶段 A/C 的 FNO checkpoint、代理误差和 MPC 控制数字是旧机器的历史实验，checkpoint 未迁入 DGX Spark，**不能当作当前 Spark 模型性能或当前可运行控制器**。Spark 已重新生成 32 条真实受控 OpenFOAM 轨迹、完成独立 v2 划分与 Curator/DataPipe 验收，并完成 PhysicsNeMo FNO 5-epoch 留出测试（见 `docs/PHYSICSNEMO_FNO_5EPOCH_RESULT_20261002.md`）；20-epoch 延长训练正在进行。新代理尚未通过 OpenFOAM 闭环验证，不能沿用旧机器 MPC 结论；现时 HydroGym 单圆柱结果以 `docs/HYDROGYM_RESULT_20261002.md` 为准。
 
 ## 1. 研究定位
 

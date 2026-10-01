@@ -1,0 +1,12 @@
+FROM fluid-control-physicsnemo:2.2.2
+
+# Keep the pinned PhysicsNeMo CUDA/Torch stack unchanged. HydroGym's core
+# FlowEnv needs Gymnasium; Stable-Baselines3 supplies the official RL API.
+RUN python -m pip install --no-cache-dir --no-deps \
+    farama-notifications==0.0.4 \
+    gymnasium==1.2.3 \
+    stable-baselines3==2.7.1
+
+WORKDIR /workspace
+LABEL org.opencontainers.image.revision.physicsnemo="2.2.2" \
+      org.opencontainers.image.revision.hydrogym="4ab9854dea3d84e38a59c25e0f5835a00cf8225f"

@@ -4,7 +4,7 @@
 
 本文件记录固定 `Re=100、L/D=5` 的第一版 MPC 验证规范。面向 HydroGym、强化学习、多保真校正、跨工况泛化和论文实验的完整研究设计见[PhysicsNeMo–HydroGym 闭环流动控制研究路线](docs/HYDROGYM_RESEARCH_ROADMAP.md)。
 
-迁移注记（2026-10-02）：下文冻结 FNO checkpoint 与 MPC 数字来自旧机器的历史验证；checkpoint 未恢复到 DGX Spark，因此**不代表当前 Spark 已具备可运行的串列双圆柱闭环控制器**。新机器正用 32 条重新求解的真实 CFD 轨迹整理数据，后续将训练代理，须重新通过独立测试与 OpenFOAM 回放后才能恢复控制结论。
+迁移注记（2026-10-02）：下文冻结 FNO checkpoint 与 MPC 数字来自旧机器的历史验证；checkpoint 未恢复到 DGX Spark，因此**不代表当前 Spark 已具备可运行的串列双圆柱闭环控制器**。Spark 已用 32 条真实 OpenFOAM 轨迹完成独立 v2 划分和 PhysicsNeMo FNO 5-epoch 试训及留出评估，详见 `docs/PHYSICSNEMO_FNO_5EPOCH_RESULT_20261002.md`。目前 1 步力预测仍比保持力基线差；只有更充分训练和新的 OpenFOAM 闭环回放通过后，才能恢复当前机器上的控制结论。
 
 ## 1. 阶段目标
 
