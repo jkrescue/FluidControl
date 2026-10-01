@@ -19,3 +19,5 @@ DGX Spark 上的 OpenFOAM v2512 ARM64 隔离容器已完成 `tandem_cylinder_dyn
 进度快照（2026-10-02 03:42 CST）：Curator 已形成 **25/32 条**完整 HDF5。新增 `expanded_train_17..20` 四条各 801 帧，逐帧场/掩码、原始动作和前后柱 Cd/Cl 标签均通过质检；该批最大动作误差 `2.38e-7`、最大力系数误差 `4.52e-7`，均为 float32 舍入量级。累计 25 条的无控制共同起点与后半窗响应粗筛通过，最小后半窗平均绝对差仍为 `Cd 0.415`、`Cl 1.289`。此项只确认动作生效和数据非复制，不表示性能改善；独立 v2 划分和 FNO 训练尚未完成。
 
 进度快照（2026-10-02 04:07 CST）：Curator 已形成 **29/32 条**完整 HDF5。新增 `expanded_train_21..23` 和 `expanded_validation_00` 各 801 帧，逐帧场/掩码、原始动作和前后柱 Cd/Cl 标签均通过质检；该批最大动作误差 `1.91e-7`、最大力系数误差 `4.61e-7`。累计 29 条的共同起点及后半窗非零响应粗筛通过，最小后半窗平均绝对差为 `Cd 0.415`、`Cl 1.289`。最后三条原始验证轨迹正在整理，独立 v2 与 FNO 训练仍未完成。
+
+进度快照（2026-10-02 04:32 CST）：原始 32/32 条 HDF5（每条 801 帧）已全部落盘。32 条 HDF5 与 OpenFOAM 原始动作/前后柱力标签逐项对齐检查通过（`EXPANDED_CURATED_CASES_OK count=32`）；全场有限值、掩码、压力均值与仅训练集归一化检查通过（`CURATED_DATASET_OK`）；32 条共同起点与非零响应粗筛亦通过（`CONTROLLED_CFD_RESPONSE_AUDIT_OK`，后半窗最小平均绝对差 `Cd 0.415`、`Cl 1.289`）。对应原始记录位于 Spark 的 `artifacts/tandem_cylinders/expanded_spark_curator.log`、`expanded_curated_validation_spark.json`、`expanded_control_response_full32.json`。原始 v1 的验证/测试重复问题仍然存在，不能用于独立留出性能声明；正在等待独立 v2 修复及后续 FNO 训练。
