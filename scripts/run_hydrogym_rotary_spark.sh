@@ -10,6 +10,7 @@ output="${1:-${root}/artifacts/hydrogym/rotary_physical_v1}"
 timesteps="${2:-8192}"
 eval_steps="${3:-600}"
 warmup="${4:-100}"
+seed="${SEED:-42}"
 
 [[ "${output}" == /* ]] || output="${root}/${output}"
 [[ -d "${cache}" ]] || { echo "Missing public HydroGym checkpoint cache" >&2; exit 1; }
@@ -29,4 +30,5 @@ docker run --rm --network none --cpus 4 --memory 8g \
     --mount "type=bind,src=${output},dst=/work/output" \
     "${image}" python3 -u /work/train.py \
       --cache /work/cache --output /work/output \
-      --timesteps "${timesteps}" --eval-steps "${eval_steps}" --warmup "${warmup}"
+      --timesteps "${timesteps}" --eval-steps "${eval_steps}" --warmup "${warmup}" \
+      --seed "${seed}"
