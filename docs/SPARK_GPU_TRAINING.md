@@ -26,6 +26,8 @@ BATCH_SIZE=4 OUTPUT_DIR=artifacts/tandem_fno_expanded_spark_v1 \
 
 Spark 自动衔接脚本 `scripts/run_tandem_fno_pipeline_spark.sh` 等待 Curator 完整质检标记，然后在同一项目内做官方 HDF5Reader/DataLoader 验证、一次抽样冒烟（训练轨迹步长 80、验证步长 160）、5 epoch 实数据先导训练，以及留出测试集 1/10/50 步 rollout 评估。每一步失败就停止，训练与评估都不绕过 20 GiB 内存余量守护。80 epoch 完整训练要在先导模型和测试集评估后决定；不把冒烟指标当物理结论。
 
+流水线的阶段标记只在 `scripts/validate_tandem_fno_stage.py` 通过后打印：检查冒烟/先导训练 epoch 连续且指标有限，留出集必须包含 4 条真实 CFD 测试轨迹的 1/10/50 步稳定预测，并计算相对于持久性预测基线的场误差比值。比值只是诊断，不把先导训练的有限误差自动判为合格控制策略；物理收益仍需独立 CFD 回放。
+
 进入 DataPipe 前，流水线会对全部 32 条 HDF5 逐帧检查，并将转速及前后柱 Cd/Cl 对齐到原始 OpenFOAM 动作表和 `coefficient.dat`；只有完整原始标签审计通过才放行训练。
 
 先导模型还会在同一留出 CFD 流场上比较实际转速、零转速和符号翻转转速输入的 1/10/50 步误差，作为动作条件响应诊断。零/翻转输入没有对应的新 CFD 真值，只是代理模型输入消融，不能把误差差异当成物理控制收益。
