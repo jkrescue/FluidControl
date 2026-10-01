@@ -1,0 +1,1095 @@
+{
+  "schema_version": 1,
+  "dataset": "tandem_cylinder_dynamic_rotation_expanded_v1",
+  "source": "independent OpenFOAM v2512 CFD",
+  "geometry": "two equal-diameter tandem cylinders at Re=100 and L/D=5; rear cylinder rotates",
+  "time_window": [
+    80.0,
+    160.0
+  ],
+  "field_interval": 0.1,
+  "omega_limit": [
+    -5.0,
+    5.0
+  ],
+  "surface_speed_ratio_limit": [
+    -2.5,
+    2.5
+  ],
+  "split_max_abs_domega_dt": {
+    "train": 6.666666666666667,
+    "validation": 6.666666666666667,
+    "test": 6.666666666666667
+  },
+  "cases": [
+    {
+      "case": "expanded_train_00",
+      "split": "train",
+      "schedule_kind": "random_ramp",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 1.6
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.423060136,
+        "max_abs_global_continuity_per_step": 1.69408327e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_01",
+      "split": "train",
+      "schedule_kind": "random_ramp",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 2.0
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.403354777,
+        "max_abs_global_continuity_per_step": 2.17842201e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_02",
+      "split": "train",
+      "schedule_kind": "random_ramp",
+      "action": {
+        "omega_min": -4.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 1.4
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.37796156,
+        "max_abs_global_continuity_per_step": 1.63332456e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_03",
+      "split": "train",
+      "schedule_kind": "random_ramp",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 1.6
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.398910077,
+        "max_abs_global_continuity_per_step": 1.87329851e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_04",
+      "split": "train",
+      "schedule_kind": "random_ramp",
+      "action": {
+        "omega_min": -4.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 1.0
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.452375856,
+        "max_abs_global_continuity_per_step": 1.50416409e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_05",
+      "split": "train",
+      "schedule_kind": "random_ramp",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 1.8
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.422360791,
+        "max_abs_global_continuity_per_step": 1.73433825e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_06",
+      "split": "train",
+      "schedule_kind": "random_ramp",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 2.0
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.451114922,
+        "max_abs_global_continuity_per_step": 1.95309508e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_07",
+      "split": "train",
+      "schedule_kind": "random_ramp",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 2.0
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.43297091,
+        "max_abs_global_continuity_per_step": 1.95037331e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_08",
+      "split": "train",
+      "schedule_kind": "random_ramp",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 3.0,
+        "max_abs_domega_dt": 1.4
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.365491288,
+        "max_abs_global_continuity_per_step": 1.70842688e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_09",
+      "split": "train",
+      "schedule_kind": "random_ramp",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 1.4
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.377016685,
+        "max_abs_global_continuity_per_step": 1.71411869e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_10",
+      "split": "train",
+      "schedule_kind": "multisine",
+      "action": {
+        "omega_min": -3.4389263251766438,
+        "omega_max": 2.2833473049305635,
+        "max_abs_domega_dt": 1.309054614743686
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.322397094,
+        "max_abs_global_continuity_per_step": 1.61730746e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_11",
+      "split": "train",
+      "schedule_kind": "multisine",
+      "action": {
+        "omega_min": -3.9540795772511803,
+        "omega_max": 4.07888774090702,
+        "max_abs_domega_dt": 1.8863688997474415
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.334050085,
+        "max_abs_global_continuity_per_step": 2.01027933e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_12",
+      "split": "train",
+      "schedule_kind": "multisine",
+      "action": {
+        "omega_min": -4.223991098116757,
+        "omega_max": 4.275641853756623,
+        "max_abs_domega_dt": 2.220152309146369
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.334157843,
+        "max_abs_global_continuity_per_step": 2.03487285e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_13",
+      "split": "train",
+      "schedule_kind": "multisine",
+      "action": {
+        "omega_min": -3.7817625075293497,
+        "omega_max": 2.7983364022266652,
+        "max_abs_domega_dt": 1.9601576937357548
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.321076513,
+        "max_abs_global_continuity_per_step": 2.54946166e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_14",
+      "split": "train",
+      "schedule_kind": "multisine",
+      "action": {
+        "omega_min": -3.9659423558009204,
+        "omega_max": 3.8725374731097766,
+        "max_abs_domega_dt": 1.7587316600659597
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.340747748,
+        "max_abs_global_continuity_per_step": 1.94733225e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_15",
+      "split": "train",
+      "schedule_kind": "multisine",
+      "action": {
+        "omega_min": -3.646611166715558,
+        "omega_max": 3.7758357917054814,
+        "max_abs_domega_dt": 2.007692022697373
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.331890574,
+        "max_abs_global_continuity_per_step": 1.96539419e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_16",
+      "split": "train",
+      "schedule_kind": "chirp",
+      "action": {
+        "omega_min": -4.4291370449921885,
+        "omega_max": 4.4718437578112455,
+        "max_abs_domega_dt": 5.313172047463867
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.311020265,
+        "max_abs_global_continuity_per_step": 3.84521359e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_17",
+      "split": "train",
+      "schedule_kind": "chirp",
+      "action": {
+        "omega_min": -4.69760389680809,
+        "omega_max": 4.812102959150683,
+        "max_abs_domega_dt": 5.466584017837803
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.319227442,
+        "max_abs_global_continuity_per_step": 3.43103427e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_18",
+      "split": "train",
+      "schedule_kind": "chirp",
+      "action": {
+        "omega_min": -4.6417597185403165,
+        "omega_max": 4.74083000937305,
+        "max_abs_domega_dt": 5.735580016416074
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.315484095,
+        "max_abs_global_continuity_per_step": 2.14848317e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_19",
+      "split": "train",
+      "schedule_kind": "chirp",
+      "action": {
+        "omega_min": -4.67866778228612,
+        "omega_max": 4.583901866448765,
+        "max_abs_domega_dt": 4.714604752384526
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.350831988,
+        "max_abs_global_continuity_per_step": 3.53404121e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_20",
+      "split": "train",
+      "schedule_kind": "edge_hold",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 6.666666666666667
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.476685879,
+        "max_abs_global_continuity_per_step": 7.32518077e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_21",
+      "split": "train",
+      "schedule_kind": "edge_hold",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 6.666666666666667
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.472057548,
+        "max_abs_global_continuity_per_step": 6.14586271e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_22",
+      "split": "train",
+      "schedule_kind": "edge_hold",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 6.666666666666667
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.471229886,
+        "max_abs_global_continuity_per_step": 4.26658598e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_train_23",
+      "split": "train",
+      "schedule_kind": "edge_hold",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 6.666666666666667
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.44702233,
+        "max_abs_global_continuity_per_step": 6.85276986e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_validation_00",
+      "split": "validation",
+      "schedule_kind": "interstitial_ramp",
+      "action": {
+        "omega_min": -4.5,
+        "omega_max": 4.5,
+        "max_abs_domega_dt": 1.6
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.414134654,
+        "max_abs_global_continuity_per_step": 1.84804551e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_validation_01",
+      "split": "validation",
+      "schedule_kind": "multisine",
+      "action": {
+        "omega_min": -3.5344598496739925,
+        "omega_max": 3.402579318390977,
+        "max_abs_domega_dt": 1.4933060089919297
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.305281061,
+        "max_abs_global_continuity_per_step": 1.79647043e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_validation_02",
+      "split": "validation",
+      "schedule_kind": "chirp",
+      "action": {
+        "omega_min": -4.454123889716016,
+        "omega_max": 4.539230580678784,
+        "max_abs_domega_dt": 4.38709313016987
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.323663414,
+        "max_abs_global_continuity_per_step": 3.28761938e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_validation_03",
+      "split": "validation",
+      "schedule_kind": "edge_hold",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 6.666666666666667
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.44702233,
+        "max_abs_global_continuity_per_step": 6.85276986e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_test_00",
+      "split": "test",
+      "schedule_kind": "interstitial_ramp",
+      "action": {
+        "omega_min": -4.5,
+        "omega_max": 4.5,
+        "max_abs_domega_dt": 1.4
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.399629846,
+        "max_abs_global_continuity_per_step": 1.90505079e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_test_01",
+      "split": "test",
+      "schedule_kind": "multisine",
+      "action": {
+        "omega_min": -3.9992424961083826,
+        "omega_max": 4.038226837086184,
+        "max_abs_domega_dt": 1.8266217818270216
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.339927424,
+        "max_abs_global_continuity_per_step": 2.30548321e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_test_02",
+      "split": "test",
+      "schedule_kind": "chirp",
+      "action": {
+        "omega_min": -4.590038752224123,
+        "omega_max": 4.513416847131621,
+        "max_abs_domega_dt": 4.705014675955884
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.323662947,
+        "max_abs_global_continuity_per_step": 3.15513511e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    },
+    {
+      "case": "expanded_test_03",
+      "split": "test",
+      "schedule_kind": "edge_hold",
+      "action": {
+        "omega_min": -5.0,
+        "omega_max": 5.0,
+        "max_abs_domega_dt": 6.666666666666667
+      },
+      "solver": {
+        "steps": 16000,
+        "max_courant": 0.44702233,
+        "max_abs_global_continuity_per_step": 6.85276986e-12,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 801,
+        "first_time": 80.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 16000,
+      "force_samples": {
+        "front": 16000,
+        "rear": 16000
+      },
+      "status": "passed_numerical_QC_on_validated_coarse_grid"
+    }
+  ],
+  "splits": {
+    "train": [
+      "expanded_train_00",
+      "expanded_train_01",
+      "expanded_train_02",
+      "expanded_train_03",
+      "expanded_train_04",
+      "expanded_train_05",
+      "expanded_train_06",
+      "expanded_train_07",
+      "expanded_train_08",
+      "expanded_train_09",
+      "expanded_train_10",
+      "expanded_train_11",
+      "expanded_train_12",
+      "expanded_train_13",
+      "expanded_train_14",
+      "expanded_train_15",
+      "expanded_train_16",
+      "expanded_train_17",
+      "expanded_train_18",
+      "expanded_train_19",
+      "expanded_train_20",
+      "expanded_train_21",
+      "expanded_train_22",
+      "expanded_train_23"
+    ],
+    "validation": [
+      "expanded_validation_00",
+      "expanded_validation_01",
+      "expanded_validation_02",
+      "expanded_validation_03"
+    ],
+    "test": [
+      "expanded_test_00",
+      "expanded_test_01",
+      "expanded_test_02",
+      "expanded_test_03"
+    ]
+  },
+  "limitations": [
+    "all training trajectories use the 19,290-cell coarse grid",
+    "high-rotation medium-grid cases remain independent numerical validation",
+    "all trajectories share Re=100, L/D=5, and one geometry"
+  ]
+}
