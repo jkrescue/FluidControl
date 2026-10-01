@@ -118,10 +118,18 @@ class SaveEvery(BaseCallback):
         return True
 
 
+def training_paths(paths: list[Path], count: int) -> list[Path]:
+    """Use separate official FlowEnv instances at fixed training restart phases."""
+    indices = np.linspace(0, 12, count, dtype=int)
+    return [paths[int(index)] for index in indices]
+
+
 def train(args: argparse.Namespace, paths: list[Path]) -> None:
-    train_paths = [paths[0]]
+    train_paths = training_paths(paths, args.train_phases)
     env = VecNormalize(
-        DummyVecEnv([lambda: Monitor(make_env(train_paths, args))]),
+        DummyVecEnv([
+            lambda path=path: Monitor(make_env([path], args)) for path in train_paths
+        ]),
         norm_obs=True,
         norm_reward=True,
         clip_obs=10.0,
@@ -132,7 +140,7 @@ def train(args: argparse.Namespace, paths: list[Path]) -> None:
         seed=args.seed,
         device="cpu",
         verbose=1,
-        n_steps=256,
+        n_steps=256 // args.train_phases,
         batch_size=64,
         learning_rate=3e-4,
         gamma=0.99,
@@ -215,6 +223,7 @@ def main() -> None:
     parser.add_argument("--eval-steps", type=int, default=600)
     parser.add_argument("--warmup", type=int, default=100)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--train-phases", type=int, choices=(1, 2, 4), default=1)
     parser.add_argument("--lift-weight", type=float, default=0.2)
     parser.add_argument("--action-weight", type=float, default=0.01)
     parser.add_argument("--rate-weight", type=float, default=0.001)
@@ -258,7 +267,8 @@ def main() -> None:
         "hydrogym_commit": "4ab9854dea3d84e38a59c25e0f5835a00cf8225f",
         "checkpoint_revision": HF_REVISION,
         "environment": "Firedrake RotaryCylinder Re100 medium 50 pressure probes",
-        "training_checkpoints": [paths[0].name],
+        "training_checkpoints": [path.name for path in training_paths(paths, args.train_phases)],
+        "seed": args.seed,
         "heldout_checkpoints": [path.name for path in paths[-5:]],
         "reward_weights": {
             "drag": 1.0,

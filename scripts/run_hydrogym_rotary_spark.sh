@@ -11,6 +11,7 @@ timesteps="${2:-8192}"
 eval_steps="${3:-600}"
 warmup="${4:-100}"
 seed="${SEED:-42}"
+train_phases="${TRAIN_PHASES:-1}"
 
 [[ "${output}" == /* ]] || output="${root}/${output}"
 [[ -d "${cache}" ]] || { echo "Missing public HydroGym checkpoint cache" >&2; exit 1; }
@@ -31,4 +32,4 @@ docker run --rm --network none --cpus 4 --memory 8g \
     "${image}" python3 -u /work/train.py \
       --cache /work/cache --output /work/output \
       --timesteps "${timesteps}" --eval-steps "${eval_steps}" --warmup "${warmup}" \
-      --seed "${seed}"
+      --seed "${seed}" --train-phases "${train_phases}"
