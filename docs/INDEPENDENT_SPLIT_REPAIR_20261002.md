@@ -4,6 +4,8 @@
 
 原始 `expanded_v1` 的 32 条 OpenFOAM 轨迹已经完成 CFD 求解，但动作日程中的 `edge_hold(seed)` 只使用 `seed % 4` 选择四条固定序列。对 32 份 `case_config.json` 的动作表、初始重启场、几何和求解配置做 SHA-256 审计，`expanded_train_23`、`expanded_validation_03`、`expanded_test_03` 的签名完全一致：`8734694e9145bde613be0e5b587cbb6d47d0d0751dfaa5299f879b9679c71aba`。它们不能作为相互独立的训练、验证、测试轨迹，原始 24/4/4 划分不用于最终 FNO 留出性能声明。
 
+这里的“独立留出”仅指动作日程和完整轨迹签名不在训练/验证/测试之间重复；所有工况仍共享同一 Re、L/D、网格和 `t=80` 初始重启场。因此后续测试仅检验固定物理设置下对未见动作日程的泛化，不能证明对新初始条件、雷诺数、圆柱间距或网格的泛化，更不能单凭代理误差证明闭环控制收益。
+
 ## 修复方案与可复现代码
 
 `cfd/tandem_cylinders/make_expanded_edge_replacements.py` 生成两个新的真实 CFD 工况：`expanded_validation_04`、`expanded_test_04`。它们仍从同一个已验证的 `t=80` OpenFOAM 重启场出发，保持 Re=100、L/D=5、`dt=0.005`、`t=80..160`、801 帧和后柱 `|omega|<=5`；但各自使用不同且未在原始 32 条中出现的确定性置换 `edge_hold` 动作表。预仿真审计还要求其最大 `|domega/dt|` 不超过训练集的 6.6667。求解仍使用隔离 OpenFOAM v2512 容器，并要求常规数值 QC、原始力/动作标签对齐和 Curator 全场 QC。
