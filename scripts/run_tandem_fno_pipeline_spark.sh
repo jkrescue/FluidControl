@@ -66,4 +66,11 @@ ACTION_MODE=sign_flip VISUALIZATIONS_PER_HORIZON=0 bash scripts/run_tandem_fno_e
     tee artifacts/tandem_cylinders/expanded_fno_action_sign_flip_spark.log
 python3 scripts/validate_tandem_fno_stage.py --evaluation artifacts/tandem_fno_expanded_spark_5epoch/heldout_evaluation_zero.json --action-mode zero
 python3 scripts/validate_tandem_fno_stage.py --evaluation artifacts/tandem_fno_expanded_spark_5epoch/heldout_evaluation_sign_flip.json --action-mode sign_flip
+python3 scripts/summarize_tandem_action_sensitivity.py \
+    artifacts/tandem_fno_expanded_spark_5epoch/heldout_evaluation.json \
+    artifacts/tandem_fno_expanded_spark_5epoch/heldout_evaluation_zero.json \
+    artifacts/tandem_fno_expanded_spark_5epoch/heldout_evaluation_sign_flip.json \
+    --output artifacts/tandem_fno_expanded_spark_5epoch/action_sensitivity_summary.json \
+    --markdown artifacts/tandem_fno_expanded_spark_5epoch/action_sensitivity_summary.md
+echo PHYSICSNEMO_SPARK_ACTION_SUMMARY_OK
 echo PHYSICSNEMO_SPARK_ACTION_ABLATIONS_OK

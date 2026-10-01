@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Summarize counterfactual-action rollout errors against observed actions."""
+"""Summarize altered-action-input diagnostics against observed CFD actions."""
 
 from __future__ import annotations
 

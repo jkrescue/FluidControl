@@ -47,4 +47,6 @@ Spark 自动衔接脚本 `scripts/run_tandem_fno_pipeline_spark.sh` 等待 Curat
 
 先导模型还会在同一留出 CFD 流场上比较实际转速、零转速和符号翻转转速输入的 1/10/50 步误差，作为动作条件响应诊断。零/翻转输入没有对应的新 CFD 真值，只是代理模型输入消融，不能把误差差异当成物理控制收益。
 
+三种动作输入的 1/10/50 步场与后柱力误差还将由现有 `scripts/summarize_tandem_action_sensitivity.py` 汇总为 `artifacts/tandem_fno_expanded_spark_5epoch/action_sensitivity_summary.json` 和同名 Markdown 表。只有观察到实际动作输入相对错误动作更可靠，才可考虑后续代理控制实验；仅有这张表仍不足以证明 CFD 控制收益。
+
 此文档记录的是运行方案及内存守护测试；32 条 CFD 已通过数值质检，但全量 Curator HDF5 仍在整理，不得宣称 FNO 已训练完成。
