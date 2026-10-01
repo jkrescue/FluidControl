@@ -827,16 +827,17 @@ OpenFOAM 共完成 2000 步，最大 Courant 数为 0.245。相对匹配的零�
 三步检查命令：
 
 ```bash
-bash scripts/run_tandem_cfd_feedback.sh --smoke
+STEPS=3 \
+OUTPUT_DIR=artifacts/tandem_mpc_feedback_smoke \
+bash scripts/run_tandem_cfd_feedback.sh mpc_feedback_smoke
 ```
 
 100 步状态反馈命令：
 
 ```bash
-bash scripts/run_tandem_cfd_feedback.sh \
-  --case-name mpc_feedback_scaled_v1 \
-  --steps 100 \
-  --output-dir artifacts/tandem_mpc_feedback_scaled_v1
+STEPS=100 \
+OUTPUT_DIR=artifacts/tandem_mpc_feedback_scaled_v1 \
+bash scripts/run_tandem_cfd_feedback.sh mpc_feedback_scaled_v1
 ```
 
 分析命令：
