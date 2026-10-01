@@ -16,6 +16,7 @@ from physicsnemo.utils import load_checkpoint
 from evaluate_tandem_fno import load_composed_config
 from fluid_control.tandem_hydrogym import TandemFNOStepper, TandemRewardAudit, TandemSurrogateFlow
 from train_tandem_fno import build_model
+from validate_tandem_probe_mapping import raw_probe_rows
 
 
 def main() -> None:
@@ -59,6 +60,37 @@ def main() -> None:
     }))
     initial_obs, _ = env.reset()
     flow = env.env.flow
+    raw_case = Path("cfd/tandem_cylinders/cases") / args.case
+    raw_time = round(flow.initial_cfd_time, 6)
+    points = np.asarray(
+        json.loads((raw_case / "case_config.json").read_text())["action_points"],
+        dtype=np.float64,
+    )
+    raw_probes = raw_probe_rows(
+        raw_case / "postProcessing/wakeProbes/80/U", {raw_time}
+    )[raw_time].reshape(-1)
+    force_table = np.loadtxt(
+        raw_case / "postProcessing/forceRear/80/coefficient.dat",
+        comments="#", usecols=(0, 1, 4),
+    )
+    force_match = np.flatnonzero(
+        np.isclose(force_table[:, 0], raw_time, atol=1e-6, rtol=0)
+    )
+    if len(force_match) != 1:
+        raise ValueError("expected one original OpenFOAM force sample")
+    raw_initial_obs = np.concatenate((
+        raw_probes, force_table[force_match[0], 1:],
+        [float(np.interp(raw_time, points[:, 0], points[:, 1]))],
+    ))
+    raw_observation_error = np.abs(
+        raw_initial_obs - np.asarray(initial_obs, dtype=np.float64)
+    )
+    if raw_observation_error.shape != (67,) or not np.isfinite(raw_observation_error).all():
+        raise ValueError("invalid original CFD vs HydroGym observation")
+    if (raw_observation_error[:64].max() > 0.02
+            or raw_observation_error[64:66].max() > 1e-4
+            or raw_observation_error[66] > 1e-5):
+        raise AssertionError("HydroGym reset observation differs from original CFD")
     initial_field = flow.q.clone()
     mask = flow.mask
     height, width = mask.shape[-2:]
@@ -128,6 +160,11 @@ def main() -> None:
         "reward_sum_difference": reward_error,
         "reset_observation_difference": reset_error,
         "observation_width": len(observation),
+        "raw_openfoam_observation_parity": {
+            "probe_max_abs_error": float(raw_observation_error[:64].max()),
+            "force_max_abs_error": float(raw_observation_error[64:66].max()),
+            "omega_abs_error": float(raw_observation_error[66]),
+        },
         "source": "real Curator HDF5 frame; FNO prediction is surrogate-only",
     }
     if args.output is not None:
