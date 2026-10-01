@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 from collections.abc import Generator, Iterator
 from pathlib import Path
 from typing import Any, ClassVar
@@ -23,6 +22,7 @@ import torch
 from physicsnemo_curator.core.base import Filter, Param, Sink, Source
 from physicsnemo_curator.domains.mesh.sources.vtk import VTKSource
 from physicsnemo_curator.run import run_pipeline
+from physicsnemo.mesh.spatial import BVH
 
 
 CONSTANT_SPLITS = {
@@ -138,6 +138,9 @@ class TandemTrajectorySource(Source[dict[str, Any]]):
         frames = []
         masks = []
         times = []
+        bvh = None
+        reference_points = None
+        reference_cells = None
         for frame_index in range(len(vtk_source)):
             mesh = next(vtk_source[frame_index])
             if "TimeValue" not in mesh.global_data.keys():
@@ -146,7 +149,18 @@ class TandemTrajectorySource(Source[dict[str, Any]]):
                 )
             time = float(mesh.global_data["TimeValue"].reshape(-1)[0].item())
             query_points = self.query_points.to(dtype=mesh.points.dtype, device=mesh.points.device)
-            sampled = mesh.sample_data_at_points(query_points, data_source="points")
+            if bvh is None:
+                reference_points = mesh.points
+                reference_cells = mesh.cells
+                bvh = BVH.from_mesh(mesh)
+            elif not (
+                torch.equal(mesh.points, reference_points)
+                and torch.equal(mesh.cells, reference_cells)
+            ):
+                raise ValueError(f"{record['name']}: moving or reordered VTK mesh at frame {frame_index}")
+            sampled = mesh.sample_data_at_points(
+                query_points, data_source="points", bvh=bvh
+            )
             if "U" not in sampled.keys() or "p" not in sampled.keys():
                 raise ValueError(
                     f"{record['name']}:{vtk_source.relative_path(frame_index)} has no sampled U/p"

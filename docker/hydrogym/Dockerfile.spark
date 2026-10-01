@@ -1,0 +1,15 @@
+FROM firedrakeproject/firedrake-vanilla-default@sha256:b276f7252ca072742b3aa3461b376894c74a7b2fe135590c0485ae96e5bbd442
+
+# All changes stay inside the derived ARM64 image; preserve the host and base image.
+COPY . /opt/hydrogym
+# The rotary-cylinder benchmark ships a fixed medium.msh, so the optional
+# gmsh Python package (no ARM64 wheel) is not required for this image.
+RUN python3 -m pip install --break-system-packages --no-cache-dir \
+      --index-url https://download.pytorch.org/whl/cpu 'torch==2.6.0+cpu'
+RUN python3 -m pip install --break-system-packages --no-cache-dir \
+      '/opt/hydrogym' 'psutil>=7.2.2' \
+      'stable-baselines3==2.7.1' 'tensorboard==2.20.0' 'torch==2.6.0'
+
+WORKDIR /opt/hydrogym/examples/firedrake/getting_started
+LABEL org.opencontainers.image.source="https://github.com/dynamicslab/hydrogym" \
+      org.opencontainers.image.revision="4ab9854dea3d84e38a59c25e0f5835a00cf8225f"
