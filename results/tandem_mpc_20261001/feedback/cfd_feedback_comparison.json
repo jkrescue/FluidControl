@@ -1,0 +1,65 @@
+{
+  "case": "mpc_feedback_scaled_v1",
+  "status": "independent_openfoam_state_feedback",
+  "control_is_closed_loop": true,
+  "action_count": 100,
+  "action_range": [
+    -0.6554371118545532,
+    0.37048378586769104
+  ],
+  "max_abs_delta_omega": 0.032964617013931274,
+  "solver_steps": 2000,
+  "courant_mean_max": 0.0356290908,
+  "courant_absolute_max": 0.244934291,
+  "windows": [
+    {
+      "window": [
+        80.0,
+        90.0
+      ],
+      "controlled": {
+        "samples": 2000,
+        "rear_cd_mean": 0.9497185743949501,
+        "rear_cl_mean": 0.34767335774917824,
+        "rear_cl_rms": 1.0371079009249182,
+        "finite": true
+      },
+      "zero_rotation_baseline": {
+        "samples": 2000,
+        "rear_cd_mean": 0.91527706545125,
+        "rear_cl_mean": 0.22698760451335198,
+        "rear_cl_rms": 1.1607937330234315,
+        "finite": true
+      },
+      "relative_change_percent": {
+        "rear_cd_mean": 3.7629598996583358,
+        "rear_cl_rms": -10.655280828951252
+      }
+    },
+    {
+      "window": [
+        82.0,
+        90.0
+      ],
+      "controlled": {
+        "samples": 1600,
+        "rear_cd_mean": 0.9828523469569376,
+        "rear_cl_mean": 0.09060272366747288,
+        "rear_cl_rms": 0.9250249536749403,
+        "finite": true
+      },
+      "zero_rotation_baseline": {
+        "samples": 1600,
+        "rear_cd_mean": 0.9341853840945624,
+        "rear_cl_mean": -0.055495242943122525,
+        "rear_cl_rms": 1.0995360785664292,
+        "finite": true
+      },
+      "relative_change_percent": {
+        "rear_cd_mean": 5.209561580707511,
+        "rear_cl_rms": -15.8713414041871
+      }
+    }
+  ],
+  "note": "Each action is recomputed from the latest OpenFOAM state with the PhysicsNeMo surrogate."
+}

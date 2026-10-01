@@ -1,0 +1,15 @@
+{
+  "status": "openfoam_state_feedback",
+  "checkpoint_epoch": 30,
+  "action_scale": 5.0,
+  "case": "mpc_feedback_scaled_v1",
+  "steps": 100,
+  "start_time": 80.0,
+  "end_time": 89.99999999999943,
+  "omega_rms": 0.3315495176067069,
+  "omega_abs_max": 0.6554371118545532,
+  "delta_omega_abs_max": 0.032964617013931274,
+  "elapsed_seconds": 1047.882731406,
+  "mean_mpc_seconds": 2.1914901481099878,
+  "mean_step_seconds": 10.474509597789984
+}

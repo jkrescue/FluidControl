@@ -50,22 +50,30 @@ def write_plot(path: Path, controlled: np.ndarray, baseline: np.ndarray, config:
     end = float(config["end_time"])
     controlled = controlled[(controlled[:, 0] > start) & (controlled[:, 0] <= end + 1.0e-9)]
     baseline = baseline[(baseline[:, 0] > start) & (baseline[:, 0] <= end + 1.0e-9)]
-    points = np.asarray(config["action_points"], dtype=np.float64)
+    is_feedback = config.get("control_mode") == "state_feedback"
+    points = np.asarray(
+        config.get("feedback_action_points", config["action_points"]), dtype=np.float64
+    )
     omega = np.interp(controlled[:, 0], points[:, 0], points[:, 1])
 
     figure, axes = plt.subplots(3, 1, figsize=(12, 9), sharex=True, constrained_layout=True)
-    axes[0].plot(controlled[:, 0], controlled[:, 1], label="MPC action replay", linewidth=1)
+    control_label = "MPC state feedback" if is_feedback else "MPC action replay"
+    axes[0].plot(controlled[:, 0], controlled[:, 1], label=control_label, linewidth=1)
     axes[0].plot(baseline[:, 0], baseline[:, 1], label="zero rotation", linewidth=1, alpha=0.8)
     axes[0].set_ylabel("Rear Cd")
     axes[0].legend()
-    axes[1].plot(controlled[:, 0], controlled[:, 4], label="MPC action replay", linewidth=1)
+    axes[1].plot(controlled[:, 0], controlled[:, 4], label=control_label, linewidth=1)
     axes[1].plot(baseline[:, 0], baseline[:, 4], label="zero rotation", linewidth=1, alpha=0.8)
     axes[1].set_ylabel("Rear Cl")
     axes[1].legend()
     axes[2].plot(controlled[:, 0], omega, color="tab:green", linewidth=1.2)
     axes[2].set_ylabel("omega")
     axes[2].set_xlabel("Nondimensional time")
-    figure.suptitle("OpenFOAM replay of frozen PhysicsNeMo MPC actions")
+    figure.suptitle(
+        "OpenFOAM state feedback with PhysicsNeMo MPC"
+        if is_feedback
+        else "OpenFOAM replay of frozen PhysicsNeMo MPC actions"
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(path, dpi=160)
     plt.close(figure)
@@ -80,7 +88,12 @@ def main() -> None:
 
     case = CASES / args.case_name
     config = json.loads((case / "case_config.json").read_text(encoding="utf-8"))
-    log = (case / "log.pimpleFoam").read_text(encoding="utf-8", errors="replace")
+    log_paths = sorted(case.glob("log.pimpleFoam*"))
+    if not log_paths:
+        raise FileNotFoundError(f"no pimpleFoam log in {case}")
+    log = "\n".join(
+        path.read_text(encoding="utf-8", errors="replace") for path in log_paths
+    )
     if not re.search(r"^End\s*$", log, re.MULTILINE):
         raise ValueError("controlled solver log did not reach End")
     if re.search(r"FOAM FATAL|segmentation fault|core dumped|\bnan\b|\binf\b", log, re.I):
@@ -113,18 +126,29 @@ def main() -> None:
             r"Courant Number mean: ([0-9.eE+-]+) max: ([0-9.eE+-]+)", log
         )
     ]
+    is_feedback = config.get("control_mode") == "state_feedback"
+    points = config.get("feedback_action_points", config["action_points"])
+    actions = np.asarray([point[1] for point in points[1:]], dtype=np.float64)
     report = {
         "case": args.case_name,
-        "status": "independent_openfoam_action_replay",
-        "control_is_closed_loop": False,
-        "action_count": config["action_count"],
-        "action_range": config["rear_angular_velocity_range"],
-        "max_abs_delta_omega": config["max_abs_delta_omega"],
+        "status": (
+            "independent_openfoam_state_feedback"
+            if is_feedback
+            else "independent_openfoam_action_replay"
+        ),
+        "control_is_closed_loop": is_feedback,
+        "action_count": len(actions),
+        "action_range": [float(actions.min()), float(actions.max())],
+        "max_abs_delta_omega": float(np.max(np.abs(np.diff([0.0, *actions])))),
         "solver_steps": len(re.findall(r"^Time = ", log, re.MULTILINE)),
         "courant_mean_max": max(value[0] for value in courant),
         "courant_absolute_max": max(value[1] for value in courant),
         "windows": windows,
-        "note": "The action sequence is frozen before CFD; this validates replay transfer, not state-feedback closure.",
+        "note": (
+            "Each action is recomputed from the latest OpenFOAM state with the PhysicsNeMo surrogate."
+            if is_feedback
+            else "The action sequence is frozen before CFD; this validates replay transfer, not state-feedback closure."
+        ),
     }
     output = json.dumps(report, indent=2) + "\n"
     if args.output:

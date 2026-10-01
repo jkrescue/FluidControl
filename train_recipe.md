@@ -1,6 +1,6 @@
 # 串列双圆柱第一阶段训练操作手册
 
-更新时间：2026-09-30
+更新时间：2026-10-01
 远程项目：`~/workspace/fluid_control`
 
 本文给出从 OpenFOAM 原始结果、PhysicsNeMo Curator、PhysicsNeMo Datapipe 到 FNO 训练和测试的完整可执行流程。每一步先检查预期产物，再进入下一步；脚本默认拒绝覆盖已有结果。
@@ -21,9 +21,9 @@
                      下一状态与 Cd/Cl
 ```
 
-当前数据只覆盖 `U∞=1、Re=100、L/D=5`，且模型使用完整流场输入。跨来流闭环控制需要新增多 `U∞/Re` CFD 数据并把来流作为条件；真实在线应用还需要稀疏传感器状态估计。闭环策略必须回到独立 OpenFOAM 中回放验证。适用范围和扩展条件见 `cfd/tandem_cylinders/CASE_SPEC.md` 第 10 节。本阶段继续完成代理模型训练和独立 test rollout，不在当前步骤实现控制器。
+当前数据只覆盖 `U∞=1、Re=100、L/D=5`，且模型使用完整流场输入。跨来流闭环控制需要新增多 `U∞/Re` CFD 数据并把来流作为条件；真实在线应用还需要稀疏传感器状态估计。适用范围和扩展条件见 `cfd/tandem_cylinders/CASE_SPEC.md` 第 10 节。
 
-现有动作域内的多步训练、独立测试和论文物理基线对照已经完成。高转速 CFD 数值门槛已验证到 `q=±2.5`；当前下一步是生成扩展动态数据并重训代理。扩展代理通过独立测试后，再进入论文闭环控制复现。已有控制草案保存在 `closed_loop_control_spec.md`。
+扩展动作域多步训练、独立测试、论文物理基线和 100 步 OpenFOAM 状态反馈均已完成。高转速 CFD 数值门槛已验证到 `q=±2.5`。下一步扩大反馈时间窗与初始相位，并执行中等网格验证和论文的 32 探针 PPO 基线。控制规范见 `closed_loop_control_spec.md`。
 
 ## 1. 固定的软件和数据边界
 
@@ -819,3 +819,35 @@ bash cfd/tandem_cylinders/run_mpc_replay_case.sh \
 ```
 
 OpenFOAM 共完成 2000 步，最大 Courant 数为 0.245。相对匹配的零转速 CFD，`t=80..90` 的后柱 `Cl RMS` 降低 10.49%、`Cd mean` 增加 3.78%；去除 `t=80..82` 过渡段后，`Cl RMS` 降低 15.62%、`Cd mean` 增加 5.23%。该结果是冻结动作回放，验证了 surrogate-to-CFD 的升力抑制方向并量化了阻力代价，但没有在 CFD 推进过程中根据新状态重算动作。结果与图位于 `results/tandem_mpc_20261001/`。
+
+## 18. OpenFOAM 状态反馈闭环
+
+状态反馈脚本每个周期执行以下步骤：调用 `pimpleFoam` 推进 20 个 `Δt=0.005` 时间步，使用 `foamToVTK` 导出最新场，通过 Curator `VTKSource` 读取网格并以 PhysicsNeMo `Mesh.sample_data_at_points` 采样到 FNO 网格，执行受约束 MPC，再更新后圆柱 `rotatingWallVelocity`。模型、归一化、目标函数和动作约束与第 17 节保持一致。
+
+三步检查命令：
+
+```bash
+bash scripts/run_tandem_cfd_feedback.sh --smoke
+```
+
+100 步状态反馈命令：
+
+```bash
+bash scripts/run_tandem_cfd_feedback.sh \
+  --case-name mpc_feedback_scaled_v1 \
+  --steps 100 \
+  --output-dir artifacts/tandem_mpc_feedback_scaled_v1
+```
+
+分析命令：
+
+```bash
+.venv/bin/python cfd/tandem_cylinders/analyze_mpc_replay.py \
+  mpc_feedback_scaled_v1 \
+  --output artifacts/tandem_mpc_feedback_scaled_v1/cfd_feedback_comparison.json \
+  --plot artifacts/tandem_mpc_feedback_scaled_v1/cfd_feedback_timeseries.png
+```
+
+100 个反馈步和 2000 个求解步均正常完成，最大 Courant 数为 0.245。动作范围为 `[-0.6554,0.3705]`，最大单步变化为 0.0330，满足 `|omega|≤0.75` 和 `|Delta omega|≤0.04`。完整 `t=80..90` 窗口的后柱 `Cl RMS` 降低 10.66%、`Cd mean` 增加 3.76%；去除 `t=80..82` 过渡段后分别降低 15.87% 和增加 5.21%。单次 MPC 平均耗时 2.19 秒，包含 CFD、VTK 转换和状态采样的完整反馈步平均耗时 10.47 秒。
+
+结果保存在 `results/tandem_mpc_20261001/feedback/`。该运行证明 PhysicsNeMo 代理已经进入真实 OpenFOAM 状态反馈环路。当前统计窗仍不足两个完整涡脱落周期，后续结论需要长窗、独立初始相位和中等网格复核。

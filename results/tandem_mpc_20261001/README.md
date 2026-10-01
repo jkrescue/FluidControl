@@ -36,6 +36,17 @@
 
 CFD 与代理都显示升力波动下降和平均阻力上升，方向与量级一致。该试验是预先冻结动作的高保真回放，不是根据 CFD 新状态重新计算动作的闭环控制。
 
+## OpenFOAM 状态反馈闭环
+
+控制器从相同的 `t=80` 无控制流场启动。每隔 `0.1 D/U∞` 执行一次完整闭环：推进 20 个 OpenFOAM 时间步、导出最新场、通过 Curator `VTKSource` 和 PhysicsNeMo `Mesh` 采样、使用冻结 FNO 执行 MPC，再把新转速写回旋转壁面。100 个控制步和 2000 个求解步全部完成，最大 Courant 数为 0.245，动作约束零违反。
+
+| 统计窗口 | `Cl RMS` 变化 | `Cd mean` 变化 |
+| --- | ---: | ---: |
+| `t=80–90` | -10.66% | +3.76% |
+| `t=82–90` | -15.87% | +5.21% |
+
+实际动作范围为 `[-0.6554, 0.3705]`，最大单步变化为 `0.0330`。单次 MPC 平均耗时 2.19 秒，包含 OpenFOAM 推进、场转换和采样的完整控制步平均耗时 10.47 秒。该结果证明状态反馈链路和升力抑制方向成立，同时显示当前权重下存在明确的阻力代价。统计窗口仍不足两个完整涡脱落周期，因此下一项物理门槛是扩大时间跨度并覆盖独立初始相位。
+
 ## 动作尺度审计
 
 初次实现沿用了第一阶段 `max_abs_omega=1` 的假设，遗漏了扩展数据的动作尺度 5。代码审查发现后已修正并重新执行全部代理和 CFD 结果。旧动作序列及其 CFD 结果保存在 `legacy_unscaled/`，只用于审计，未纳入上表和最终结论。
@@ -47,3 +58,7 @@ CFD 与代理都显示升力波动下降和平均阻力上升，方向与量级�
 - `cfd_replay_timeseries.png`：CFD 与零转速基线对照；
 - `surrogate_timeseries.png`、`surrogate_final_fields.png`：代理模型结果；
 - `surrogate/*.json`：参数消融和独立初始状态结果。
+- `feedback/timeseries.csv`：100 步真实状态反馈历史；
+- `feedback/cfd_feedback_comparison.json`：闭环 CFD 与零转速基线统计；
+- `feedback/cfd_feedback_timeseries.png`：闭环受力和转速时间序列；
+- `feedback/result.json`、`feedback/run.log`：运行摘要与逐步日志。

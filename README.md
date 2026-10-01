@@ -4,7 +4,7 @@
 
 本项目面向串列双圆柱流动控制，使用 OpenFOAM 生成 CFD 数据，并基于 NVIDIA PhysicsNeMo 完成数据处理和 FNO 流场预测。
 
-第一阶段已完成 CFD 数据生成、Curator 转换、DataPipe 校验、FNO 单步与多步训练、独立测试及 ParaView 数据导出。闭环研究将在扩展高转速动作数据后开展。
+已完成 CFD 数据生成、Curator 转换、DataPipe 校验、扩展动作域 FNO 训练、独立测试及 ParaView 数据导出。PhysicsNeMo MPC 已接入 OpenFOAM 状态反馈闭环，并完成首个 100 控制步物理验证。
 
 ## 技术流程
 
