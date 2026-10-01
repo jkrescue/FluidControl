@@ -1,0 +1,1079 @@
+{
+  "status": "REAL_CFD_PPO_FEEDBACK_PILOT_COMPLETED",
+  "scientific_status": "short_feedback_diagnostic_not_long_horizon_control_benefit",
+  "case": "probe_feedback_ppo_multistart_8192_32step_01",
+  "policy_run": "/workspace/fluid_control/artifacts/hydrogym/tandem_ppo_multistart_8192_spark",
+  "policy_audit": "/workspace/fluid_control/artifacts/hydrogym/tandem_ppo_multistart_8192_spark/audit_deduplicated.json",
+  "physicsnemo_checkpoint_epoch": 20,
+  "hydrogym_commit": "4ab9854dea3d84e38a59c25e0f5835a00cf8225f",
+  "initial_observation_sources": {
+    "time": 80.0,
+    "probe_sources": [
+      "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/wakeProbes/0/U"
+    ],
+    "force_sources": [
+      "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat"
+    ],
+    "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+  },
+  "steps": 32,
+  "mean_objective_difference_from_zero": 0.003854552525020434,
+  "rows": [
+    {
+      "step": 1,
+      "start_time": 80.0,
+      "end_time": 80.1,
+      "requested_omega": 0.10359785705804825,
+      "applied_omega": 0.10359785705804825,
+      "previous_omega": 0.0,
+      "rate_limited": false,
+      "rear_cd": 1.0452324151992798,
+      "rear_cl": 0.825676441192627,
+      "zero_reference_rear_cd": 1.0455151796340942,
+      "zero_reference_rear_cl": 0.8284733891487122,
+      "instantaneous_objective": 1.1816987899832414,
+      "zero_reference_instantaneous_objective": 1.182788810939605,
+      "max_abs_probe_difference_from_zero": 2.4996697902679443e-06,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.241091644,
+        "max_abs_global_continuity_per_step": 3.40449686e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 80.1,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/80/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/80/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.10359785705804825, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 2,
+      "start_time": 80.1,
+      "end_time": 80.2,
+      "requested_omega": 0.09689486026763916,
+      "applied_omega": 0.09689486026763916,
+      "previous_omega": 0.10359785705804825,
+      "rate_limited": false,
+      "rear_cd": 1.021220088005066,
+      "rear_cl": 0.9567053318023682,
+      "zero_reference_rear_cd": 1.0213679075241089,
+      "zero_reference_rear_cl": 0.963721752166748,
+      "instantaneous_objective": 1.2043710374545107,
+      "zero_reference_instantaneous_objective": 1.2071198306439783,
+      "max_abs_probe_difference_from_zero": 1.1146068572998047e-05,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.242033781,
+        "max_abs_global_continuity_per_step": 3.5015225e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 80.2,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/80.1/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/80.1/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.09689486026763916, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 3,
+      "start_time": 80.2,
+      "end_time": 80.3,
+      "requested_omega": 0.09175819158554077,
+      "applied_omega": 0.09175819158554077,
+      "previous_omega": 0.09689486026763916,
+      "rate_limited": false,
+      "rear_cd": 0.9927710294723511,
+      "rear_cl": 1.077544093132019,
+      "zero_reference_rear_cd": 0.9919244050979614,
+      "zero_reference_rear_cl": 1.0874388217926025,
+      "instantaneous_objective": 1.2250755060436878,
+      "zero_reference_instantaneous_objective": 1.228429043326298,
+      "max_abs_probe_difference_from_zero": 2.5838613510131836e-05,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.242761177,
+        "max_abs_global_continuity_per_step": 2.96310184e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 80.3,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/80.2/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/80.2/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.09175819158554077, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 4,
+      "start_time": 80.3,
+      "end_time": 80.4,
+      "requested_omega": 0.08577325195074081,
+      "applied_omega": 0.08577325195074081,
+      "previous_omega": 0.09175819158554077,
+      "rate_limited": false,
+      "rear_cd": 0.9592524170875549,
+      "rear_cl": 1.1882619857788086,
+      "zero_reference_rear_cd": 0.9569197297096252,
+      "zero_reference_rear_cl": 1.2002512216567993,
+      "instantaneous_objective": 1.241719332783959,
+      "zero_reference_instantaneous_objective": 1.245040328727353,
+      "max_abs_probe_difference_from_zero": 4.5865774154663086e-05,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.243270377,
+        "max_abs_global_continuity_per_step": 3.1613375e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 80.4,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/80.3/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/80.3/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.08577325195074081, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 5,
+      "start_time": 80.4,
+      "end_time": 80.5,
+      "requested_omega": 0.07919187843799591,
+      "applied_omega": 0.07919187843799591,
+      "previous_omega": 0.08577325195074081,
+      "rate_limited": false,
+      "rear_cd": 0.9248837232589722,
+      "rear_cl": 1.2853412628173828,
+      "zero_reference_rear_cd": 0.9207596778869629,
+      "zero_reference_rear_cl": 1.2990660667419434,
+      "instantaneous_objective": 1.2553669124897517,
+      "zero_reference_instantaneous_objective": 1.2582742070390396,
+      "max_abs_probe_difference_from_zero": 7.027387619018555e-05,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.243535476,
+        "max_abs_global_continuity_per_step": 3.1242574e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 80.5,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/80.4/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/80.4/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.07919187843799591, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 6,
+      "start_time": 80.5,
+      "end_time": 80.6,
+      "requested_omega": 0.07207813113927841,
+      "applied_omega": 0.07207813113927841,
+      "previous_omega": 0.07919187843799591,
+      "rate_limited": false,
+      "rear_cd": 0.8883344531059265,
+      "rear_cl": 1.3707026243209839,
+      "zero_reference_rear_cd": 0.8822140097618103,
+      "zero_reference_rear_cl": 1.3857476711273193,
+      "instantaneous_objective": 1.2641515931452987,
+      "zero_reference_instantaneous_objective": 1.2662733313687682,
+      "max_abs_probe_difference_from_zero": 9.939074516296387e-05,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.243571365,
+        "max_abs_global_continuity_per_step": 3.2519892e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 80.6,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/80.5/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/80.5/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.07207813113927841, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 7,
+      "start_time": 80.6,
+      "end_time": 80.7,
+      "requested_omega": 0.06456393003463745,
+      "applied_omega": 0.06456393003463745,
+      "previous_omega": 0.07207813113927841,
+      "rate_limited": false,
+      "rear_cd": 0.8521536588668823,
+      "rear_cl": 1.4427869319915771,
+      "zero_reference_rear_cd": 0.8442456722259521,
+      "zero_reference_rear_cl": 1.4586621522903442,
+      "instantaneous_objective": 1.2685222265658493,
+      "zero_reference_instantaneous_objective": 1.269784727130812,
+      "max_abs_probe_difference_from_zero": 0.00013235211372375488,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.243544438,
+        "max_abs_global_continuity_per_step": 3.70145543e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 80.7,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/80.6/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/80.6/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.06456393003463745, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 8,
+      "start_time": 80.7,
+      "end_time": 80.8,
+      "requested_omega": 0.05673148110508919,
+      "applied_omega": 0.05673148110508919,
+      "previous_omega": 0.06456393003463745,
+      "rate_limited": false,
+      "rear_cd": 0.8186579346656799,
+      "rear_cl": 1.5020617246627808,
+      "zero_reference_rear_cd": 0.8091639876365662,
+      "zero_reference_rear_cl": 1.518798828125,
+      "instantaneous_objective": 1.2699280655618055,
+      "zero_reference_instantaneous_objective": 1.2705139636993408,
+      "max_abs_probe_difference_from_zero": 0.0001697242259979248,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.243306896,
+        "max_abs_global_continuity_per_step": 2.56560798e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 80.8,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/80.7/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/80.7/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.05673148110508919, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 9,
+      "start_time": 80.8,
+      "end_time": 80.9,
+      "requested_omega": 0.048769768327474594,
+      "applied_omega": 0.048769768327474594,
+      "previous_omega": 0.05673148110508919,
+      "rate_limited": false,
+      "rear_cd": 0.7897849678993225,
+      "rear_cl": 1.5472404956817627,
+      "zero_reference_rear_cd": 0.7785741090774536,
+      "zero_reference_rear_cl": 1.5648064613342285,
+      "instantaneous_objective": 1.2685994464867294,
+      "zero_reference_instantaneous_objective": 1.2682979613641236,
+      "max_abs_probe_difference_from_zero": 0.00021255016326904297,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.242800862,
+        "max_abs_global_continuity_per_step": 2.34816999e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 80.9,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/80.8/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/80.8/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.048769768327474594, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 10,
+      "start_time": 80.9,
+      "end_time": 81.0,
+      "requested_omega": 0.0409039743244648,
+      "applied_omega": 0.0409039743244648,
+      "previous_omega": 0.048769768327474594,
+      "rate_limited": false,
+      "rear_cd": 0.7661798000335693,
+      "rear_cl": 1.577545166015625,
+      "zero_reference_rear_cd": 0.7534456849098206,
+      "zero_reference_rear_cl": 1.5959526300430298,
+      "instantaneous_objective": 1.263926343419293,
+      "zero_reference_instantaneous_objective": 1.2628586443780734,
+      "max_abs_probe_difference_from_zero": 0.000260084867477417,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.242036687,
+        "max_abs_global_continuity_per_step": 2.60446519e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 81.0,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/80.9/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/80.9/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.0409039743244648, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 11,
+      "start_time": 81.0,
+      "end_time": 81.1,
+      "requested_omega": 0.03337232396006584,
+      "applied_omega": 0.03337232396006584,
+      "previous_omega": 0.0409039743244648,
+      "rate_limited": false,
+      "rear_cd": 0.7494031190872192,
+      "rear_cl": 1.5937068462371826,
+      "zero_reference_rear_cd": 0.735632061958313,
+      "zero_reference_rear_cl": 1.6125048398971558,
+      "instantaneous_objective": 1.257394615281695,
+      "zero_reference_instantaneous_objective": 1.2556664336966634,
+      "max_abs_probe_difference_from_zero": 0.00031304359436035156,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.241016347,
+        "max_abs_global_continuity_per_step": 2.26410569e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 81.1,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/81/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/81/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.03337232396006584, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 12,
+      "start_time": 81.1,
+      "end_time": 81.2,
+      "requested_omega": 0.026404934003949165,
+      "applied_omega": 0.026404934003949165,
+      "previous_omega": 0.03337232396006584,
+      "rate_limited": false,
+      "rear_cd": 0.7406727075576782,
+      "rear_cl": 1.594290852546692,
+      "zero_reference_rear_cd": 0.725696861743927,
+      "zero_reference_rear_cl": 1.614079236984253,
+      "instantaneous_objective": 1.2490323928104101,
+      "zero_reference_instantaneous_objective": 1.2467472183966608,
+      "max_abs_probe_difference_from_zero": 0.00037160515785217285,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.239727552,
+        "max_abs_global_continuity_per_step": 3.2795605e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 81.2,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/81.1/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/81.1/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.026404934003949165, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 13,
+      "start_time": 81.2,
+      "end_time": 81.3,
+      "requested_omega": 0.02009897120296955,
+      "applied_omega": 0.02009897120296955,
+      "previous_omega": 0.026404934003949165,
+      "rate_limited": false,
+      "rear_cd": 0.7385335564613342,
+      "rear_cl": 1.579295039176941,
+      "zero_reference_rear_cd": 0.7225939631462097,
+      "zero_reference_rear_cl": 1.5999935865402222,
+      "instantaneous_objective": 1.2373722000667147,
+      "zero_reference_instantaneous_objective": 1.2345898585401784,
+      "max_abs_probe_difference_from_zero": 0.0004360973834991455,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.238179477,
+        "max_abs_global_continuity_per_step": 2.75319077e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 81.3,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/81.2/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/81.2/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.02009897120296955, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 14,
+      "start_time": 81.3,
+      "end_time": 81.4,
+      "requested_omega": 0.014480422250926495,
+      "applied_omega": 0.014480422250926495,
+      "previous_omega": 0.02009897120296955,
+      "rate_limited": false,
+      "rear_cd": 0.7436917424201965,
+      "rear_cl": 1.549757480621338,
+      "zero_reference_rear_cd": 0.7267670035362244,
+      "zero_reference_rear_cl": 1.5716230869293213,
+      "instantaneous_objective": 1.2240435205629339,
+      "zero_reference_instantaneous_objective": 1.2207668290100742,
+      "max_abs_probe_difference_from_zero": 0.0005064904689788818,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.236381854,
+        "max_abs_global_continuity_per_step": 3.92819748e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 81.4,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/81.3/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/81.3/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.014480422250926495, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 15,
+      "start_time": 81.4,
+      "end_time": 81.5,
+      "requested_omega": 0.009530493058264256,
+      "applied_omega": 0.009530493058264256,
+      "previous_omega": 0.014480422250926495,
+      "rate_limited": false,
+      "rear_cd": 0.755914032459259,
+      "rear_cl": 1.5045303106307983,
+      "zero_reference_rear_cd": 0.738510251045227,
+      "zero_reference_rear_cl": 1.5269275903701782,
+      "instantaneous_objective": 1.2086372563853987,
+      "zero_reference_instantaneous_objective": 1.204811824291963,
+      "max_abs_probe_difference_from_zero": 0.0005877315998077393,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.23435285,
+        "max_abs_global_continuity_per_step": 3.33200604e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 81.5,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/81.4/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/81.4/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.009530493058264256, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 16,
+      "start_time": 81.5,
+      "end_time": 81.6,
+      "requested_omega": 0.005144611932337284,
+      "applied_omega": 0.005144611932337284,
+      "previous_omega": 0.009530493058264256,
+      "rate_limited": false,
+      "rear_cd": 0.7743291854858398,
+      "rear_cl": 1.4462605714797974,
+      "zero_reference_rear_cd": 0.7566499710083008,
+      "zero_reference_rear_cl": 1.469454050064087,
+      "instantaneous_objective": 1.1926633975155265,
+      "zero_reference_instantaneous_objective": 1.1885090120582504,
+      "max_abs_probe_difference_from_zero": 0.0006938576698303223,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.232101087,
+        "max_abs_global_continuity_per_step": 4.36999118e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 81.6,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/81.5/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/81.5/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.005144611932337284, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 17,
+      "start_time": 81.6,
+      "end_time": 81.7,
+      "requested_omega": 0.0012787182349711657,
+      "applied_omega": 0.0012787182349711657,
+      "previous_omega": 0.005144611932337284,
+      "rate_limited": false,
+      "rear_cd": 0.7977365255355835,
+      "rear_cl": 1.3728218078613281,
+      "zero_reference_rear_cd": 0.7801172733306885,
+      "zero_reference_rear_cl": 1.396324872970581,
+      "instantaneous_objective": 1.17466450005985,
+      "zero_reference_instantaneous_objective": 1.1700619035059503,
+      "max_abs_probe_difference_from_zero": 0.0008089542388916016,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.229627107,
+        "max_abs_global_continuity_per_step": 6.16903673e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 81.7,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/81.6/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/81.6/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": 0.0012787182349711657, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 18,
+      "start_time": 81.7,
+      "end_time": 81.8,
+      "requested_omega": -0.0021730612497776747,
+      "applied_omega": -0.0021730612497776747,
+      "previous_omega": 0.0012787182349711657,
+      "rate_limited": false,
+      "rear_cd": 0.8244957327842712,
+      "rear_cl": 1.285072684288025,
+      "zero_reference_rear_cd": 0.8068142533302307,
+      "zero_reference_rear_cl": 1.3096305131912231,
+      "instantaneous_objective": 1.1547781527016507,
+      "zero_reference_instantaneous_objective": 1.149840669546532,
+      "max_abs_probe_difference_from_zero": 0.000928342342376709,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.226968832,
+        "max_abs_global_continuity_per_step": 4.66101665e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 81.8,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/81.7/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/81.7/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.0021730612497776747, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 19,
+      "start_time": 81.8,
+      "end_time": 81.9,
+      "requested_omega": -0.0052438536658883095,
+      "applied_omega": -0.0052438536658883095,
+      "previous_omega": -0.0021730612497776747,
+      "rate_limited": false,
+      "rear_cd": 0.8554232120513916,
+      "rear_cl": 1.1842479705810547,
+      "zero_reference_rear_cd": 0.8380242586135864,
+      "zero_reference_rear_cl": 1.2089375257492065,
+      "instantaneous_objective": 1.1359121476262397,
+      "zero_reference_instantaneous_objective": 1.130330246846509,
+      "max_abs_probe_difference_from_zero": 0.001047968864440918,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.224131569,
+        "max_abs_global_continuity_per_step": 5.56912293e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 81.9,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/81.8/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/81.8/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.0052438536658883095, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 20,
+      "start_time": 81.9,
+      "end_time": 82.0,
+      "requested_omega": -0.00794536154717207,
+      "applied_omega": -0.00794536154717207,
+      "previous_omega": -0.0052438536658883095,
+      "rate_limited": false,
+      "rear_cd": 0.8878340721130371,
+      "rear_cl": 1.0698766708374023,
+      "zero_reference_rear_cd": 0.8710640668869019,
+      "zero_reference_rear_cl": 1.0956525802612305,
+      "instantaneous_objective": 1.1167619288593078,
+      "zero_reference_instantaneous_objective": 1.1111549822135203,
+      "max_abs_probe_difference_from_zero": 0.0011583566665649414,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.221158033,
+        "max_abs_global_continuity_per_step": 4.79907509e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 82.0,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/81.9/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/81.9/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.00794536154717207, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 21,
+      "start_time": 82.0,
+      "end_time": 82.1,
+      "requested_omega": -0.010300525464117527,
+      "applied_omega": -0.010300525464117527,
+      "previous_omega": -0.00794536154717207,
+      "rate_limited": false,
+      "rear_cd": 0.9202728271484375,
+      "rear_cl": 0.943968653678894,
+      "zero_reference_rear_cd": 0.9043866991996765,
+      "zero_reference_rear_cl": 0.9692245125770569,
+      "instantaneous_objective": 1.0984892575291516,
+      "zero_reference_instantaneous_objective": 1.0922659303557232,
+      "max_abs_probe_difference_from_zero": 0.0012711882591247559,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.219386971,
+        "max_abs_global_continuity_per_step": 2.97439177e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 82.1,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/82/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/82/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.010300525464117527, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 22,
+      "start_time": 82.1,
+      "end_time": 82.2,
+      "requested_omega": -0.012303872965276241,
+      "applied_omega": -0.012303872965276241,
+      "previous_omega": -0.010300525464117527,
+      "rate_limited": false,
+      "rear_cd": 0.9539806246757507,
+      "rear_cl": 0.8063017725944519,
+      "zero_reference_rear_cd": 0.9392471313476562,
+      "zero_reference_rear_cl": 0.8316459059715271,
+      "instantaneous_objective": 1.0840066522398424,
+      "zero_reference_instantaneous_objective": 1.0775741139314967,
+      "max_abs_probe_difference_from_zero": 0.0013718008995056152,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.222021811,
+        "max_abs_global_continuity_per_step": 3.70985068e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 82.2,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/82.1/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/82.1/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.012303872965276241, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 23,
+      "start_time": 82.2,
+      "end_time": 82.3,
+      "requested_omega": -0.014011167921125889,
+      "applied_omega": -0.014011167921125889,
+      "previous_omega": -0.012303872965276241,
+      "rate_limited": false,
+      "rear_cd": 0.9846575260162354,
+      "rear_cl": 0.6592276692390442,
+      "zero_reference_rear_cd": 0.9709988832473755,
+      "zero_reference_rear_cl": 0.6838614344596863,
+      "instantaneous_objective": 1.071575716037425,
+      "zero_reference_instantaneous_objective": 1.0645321755556274,
+      "max_abs_probe_difference_from_zero": 0.001454085111618042,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.224569764,
+        "max_abs_global_continuity_per_step": 4.00745348e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 82.3,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/82.2/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/82.2/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.014011167921125889, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 24,
+      "start_time": 82.3,
+      "end_time": 82.4,
+      "requested_omega": -0.015455483458936214,
+      "applied_omega": -0.015455483458936214,
+      "previous_omega": -0.014011167921125889,
+      "rate_limited": false,
+      "rear_cd": 1.0136749744415283,
+      "rear_cl": 0.5029356479644775,
+      "zero_reference_rear_cd": 1.0014535188674927,
+      "zero_reference_rear_cl": 0.5271622538566589,
+      "instantaneous_objective": 1.064266218445955,
+      "zero_reference_instantaneous_objective": 1.0570335272457392,
+      "max_abs_probe_difference_from_zero": 0.0015216171741485596,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.227013086,
+        "max_abs_global_continuity_per_step": 2.49107867e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 82.4,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/82.3/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/82.3/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.015455483458936214, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 25,
+      "start_time": 82.4,
+      "end_time": 82.5,
+      "requested_omega": -0.01673472858965397,
+      "applied_omega": -0.01673472858965397,
+      "previous_omega": -0.015455483458936214,
+      "rate_limited": false,
+      "rear_cd": 1.0401643514633179,
+      "rear_cl": 0.3398091793060303,
+      "zero_reference_rear_cd": 1.028558373451233,
+      "zero_reference_rear_cl": 0.36315450072288513,
+      "instantaneous_objective": 1.0632612092793232,
+      "zero_reference_instantaneous_objective": 1.0549346117302905,
+      "max_abs_probe_difference_from_zero": 0.0015704631805419922,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.229344728,
+        "max_abs_global_continuity_per_step": 2.77582921e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 82.5,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/82.4/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/82.4/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.01673472858965397, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 26,
+      "start_time": 82.5,
+      "end_time": 82.6,
+      "requested_omega": -0.01791197806596756,
+      "applied_omega": -0.01791197806596756,
+      "previous_omega": -0.01673472858965397,
+      "rate_limited": false,
+      "rear_cd": 1.0616002082824707,
+      "rear_cl": 0.1725364625453949,
+      "zero_reference_rear_cd": 1.0515109300613403,
+      "zero_reference_rear_cl": 0.19461360573768616,
+      "instantaneous_objective": 1.067557184239505,
+      "zero_reference_instantaneous_objective": 1.059085821168985,
+      "max_abs_probe_difference_from_zero": 0.0016082227230072021,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.231550734,
+        "max_abs_global_continuity_per_step": 5.84233507e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 82.6,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/82.5/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/82.5/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.01791197806596756, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 27,
+      "start_time": 82.6,
+      "end_time": 82.7,
+      "requested_omega": -0.01903926208615303,
+      "applied_omega": -0.01903926208615303,
+      "previous_omega": -0.01791197806596756,
+      "rate_limited": false,
+      "rear_cd": 1.0782424211502075,
+      "rear_cl": 0.0023815364111214876,
+      "zero_reference_rear_cd": 1.0683804750442505,
+      "zero_reference_rear_cl": 0.022834818810224533,
+      "instantaneous_objective": 1.0782471816991201,
+      "zero_reference_instantaneous_objective": 1.0684847608342696,
+      "max_abs_probe_difference_from_zero": 0.0016330480575561523,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.233620381,
+        "max_abs_global_continuity_per_step": 3.42705371e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 82.7,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/82.6/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/82.6/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.01903926208615303, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 28,
+      "start_time": 82.7,
+      "end_time": 82.8,
+      "requested_omega": -0.020161021500825882,
+      "applied_omega": -0.020161021500825882,
+      "previous_omega": -0.01903926208615303,
+      "rate_limited": false,
+      "rear_cd": 1.0893263816833496,
+      "rear_cl": -0.167822003364563,
+      "zero_reference_rear_cd": 1.0813121795654297,
+      "zero_reference_rear_cl": -0.1485346257686615,
+      "instantaneous_objective": 1.0949632925722323,
+      "zero_reference_instantaneous_objective": 1.085724686575877,
+      "max_abs_probe_difference_from_zero": 0.0016680359840393066,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.235543639,
+        "max_abs_global_continuity_per_step": 4.33509187e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 82.8,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/82.7/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/82.7/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.020161021500825882, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 29,
+      "start_time": 82.8,
+      "end_time": 82.9,
+      "requested_omega": -0.021253677085042,
+      "applied_omega": -0.021253677085042,
+      "previous_omega": -0.020161021500825882,
+      "rate_limited": false,
+      "rear_cd": 1.093142032623291,
+      "rear_cl": -0.33514145016670227,
+      "zero_reference_rear_cd": 1.0854381322860718,
+      "zero_reference_rear_cl": -0.3184041976928711,
+      "instantaneous_objective": 1.1156105093290518,
+      "zero_reference_instantaneous_objective": 1.10571437890776,
+      "max_abs_probe_difference_from_zero": 0.0019434690475463867,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.237306213,
+        "max_abs_global_continuity_per_step": 3.39504595e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 82.9,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/82.8/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/82.8/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.021253677085042, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 30,
+      "start_time": 82.9,
+      "end_time": 83.0,
+      "requested_omega": -0.022251727059483528,
+      "applied_omega": -0.022251727059483528,
+      "previous_omega": -0.021253677085042,
+      "rate_limited": false,
+      "rear_cd": 1.0909156799316406,
+      "rear_cl": -0.498228520154953,
+      "zero_reference_rear_cd": 1.0843181610107422,
+      "zero_reference_rear_cl": -0.4827960729598999,
+      "instantaneous_objective": 1.1405669639804745,
+      "zero_reference_instantaneous_objective": 1.1309365706238423,
+      "max_abs_probe_difference_from_zero": 0.0022491514682769775,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.238898998,
+        "max_abs_global_continuity_per_step": 6.11243545e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 83.0,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/82.9/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/82.9/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.022251727059483528, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 31,
+      "start_time": 83.0,
+      "end_time": 83.1,
+      "requested_omega": -0.023101340979337692,
+      "applied_omega": -0.023101340979337692,
+      "previous_omega": -0.022251727059483528,
+      "rate_limited": false,
+      "rear_cd": 1.0819100141525269,
+      "rear_cl": -0.6547129154205322,
+      "zero_reference_rear_cd": 1.0755542516708374,
+      "zero_reference_rear_cl": -0.6414615511894226,
+      "instantaneous_objective": 1.1676451519176119,
+      "zero_reference_instantaneous_objective": 1.1578488360017054,
+      "max_abs_probe_difference_from_zero": 0.0025978684425354004,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.24031284,
+        "max_abs_global_continuity_per_step": 4.26887534e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 83.1,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/83/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/83/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.023101340979337692, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    },
+    {
+      "step": 32,
+      "start_time": 83.1,
+      "end_time": 83.2,
+      "requested_omega": -0.02372649870812893,
+      "applied_omega": -0.02372649870812893,
+      "previous_omega": -0.023101340979337692,
+      "rate_limited": false,
+      "rear_cd": 1.0651525259017944,
+      "rear_cl": -0.8022582530975342,
+      "zero_reference_rear_cd": 1.0600919723510742,
+      "zero_reference_rear_cl": -0.791383683681488,
+      "instantaneous_objective": 1.1938818166926477,
+      "zero_reference_instantaneous_objective": 1.1853495993105305,
+      "max_abs_probe_difference_from_zero": 0.002887636423110962,
+      "solver": {
+        "steps": 20,
+        "max_courant": 0.241532175,
+        "max_abs_global_continuity_per_step": 4.52789078e-13,
+        "solver_ended_cleanly": true
+      },
+      "observation_sources": {
+        "time": 83.2,
+        "probe_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/wakeProbes/83.1/U"
+        ],
+        "force_sources": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/probe_feedback_ppo_multistart_8192_32step_01/postProcessing/forceRear/83.1/coefficient.dat"
+        ],
+        "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega"
+      },
+      "policy_marker": "POLICY_ACTION_JSON={\"requested_omega\": -0.02372649870812893, \"observation_channels\": 67, \"deterministic\": true, \"policy_backend\": \"stable_baselines3_ppo_cpu\"}"
+    }
+  ]
+}

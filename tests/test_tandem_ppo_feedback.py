@@ -10,7 +10,13 @@ from unittest.mock import patch
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from run_tandem_ppo_cfd_feedback import PROJECT, infer_action, objective  # noqa: E402
+from run_tandem_ppo_cfd_feedback import (  # noqa: E402
+    HYDROGYM_COMMIT,
+    PROJECT,
+    infer_action,
+    objective,
+    validate_policy_audit,
+)
 
 
 class PPOFeedbackBoundaryTests(unittest.TestCase):
@@ -45,6 +51,38 @@ class PPOFeedbackBoundaryTests(unittest.TestCase):
 
     def test_objective_matches_hydrogym_weights(self) -> None:
         self.assertAlmostEqual(objective(1.0, 2.0, 0.5, -0.5), 1.80275)
+
+    @staticmethod
+    def passing_audit(t80_reward: float = 0.01) -> dict:
+        return {
+            "status": "SURROGATE_RL_PILOT_EVALUATED",
+            "physicsnemo_checkpoint_epoch": 20,
+            "hydrogym_commit": HYDROGYM_COMMIT,
+            "summary_weighting": "common_t80_frame0_counted_once_per_split",
+            "training_environments": 8,
+            "summary": {
+                split: {
+                    "unique_initial_states": 9,
+                    "reward_change_mean": 0.02,
+                    "positive_reward_initial_states": 7,
+                }
+                for split in ("validation", "test")
+            },
+            "evaluations": [
+                {"split": split, "case": f"expanded_{split}_00", "initial_frame": 0,
+                 "reward_change": t80_reward}
+                for split in ("validation", "test")
+            ],
+        }
+
+    def test_policy_audit_requires_positive_shared_t80_start(self) -> None:
+        with self.assertRaisesRegex(ValueError, "t=80-specific"):
+            validate_policy_audit(self.passing_audit(t80_reward=-0.003))
+
+    def test_policy_audit_accepts_broad_and_t80_gates(self) -> None:
+        result = validate_policy_audit(self.passing_audit())
+        self.assertEqual(result["shared_t80_rows"], 2)
+        self.assertEqual(result["shared_t80_reward_change"], 0.01)
 
 
 if __name__ == "__main__":

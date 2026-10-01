@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import argparse
 import json
+from functools import partial
 from pathlib import Path
 
 import torch
 from physicsnemo.utils import load_checkpoint
 from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import DummyVecEnv
 
 from evaluate_tandem_fno import load_composed_config
 from train_tandem_fno import build_model
@@ -18,6 +20,45 @@ from train_tandem_hydrogym_ppo_smoke import evaluate_episode, make_env
 INDEPENDENT_IDS = (0, 1, 2, 4)
 VALIDATION = tuple(f"expanded_validation_{index:02d}" for index in INDEPENDENT_IDS)
 TEST = tuple(f"expanded_test_{index:02d}" for index in INDEPENDENT_IDS)
+TRAIN_STARTS = (
+    ("expanded_train_00", 100),
+    ("expanded_train_03", 200),
+    ("expanded_train_06", 300),
+    ("expanded_train_09", 400),
+    ("expanded_train_12", 500),
+    ("expanded_train_15", 600),
+    ("expanded_train_18", 700),
+    ("expanded_train_21", 250),
+)
+
+
+def summarize_evaluations(audits: list[dict]) -> dict:
+    summary = {}
+    for split in ("validation", "test"):
+        raw = [row for row in audits if row["split"] == split]
+        common = [row for row in raw if row["initial_frame"] == 0]
+        if len(common) != len(INDEPENDENT_IDS):
+            raise ValueError(f"{split} must contain four common frame-0 evaluations")
+        keys = ("reward_change", "cd_mean_change", "cl_rms_change")
+        for key in keys:
+            if max(row[key] for row in common) - min(row[key] for row in common) > 1e-7:
+                raise ValueError(f"{split} frame-0 {key} is not a shared restart")
+        unique = [common[0]] + [row for row in raw if row["initial_frame"] != 0]
+        summary[split] = {
+            "raw_evaluations": len(raw),
+            "unique_initial_states": len(unique),
+            "unique_cases": len(set(row["case"] for row in raw)),
+            "initial_frames": [0, 100, 400],
+            "common_frame0_deduplicated": True,
+            "reward_change_mean": sum(row["reward_change"] for row in unique) / len(unique),
+            "positive_reward_initial_states": sum(
+                row["reward_change"] > 0 for row in unique
+            ),
+            "cd_mean_change_mean": sum(row["cd_mean_change"] for row in unique) / len(unique),
+            "cl_rms_change_mean": sum(row["cl_rms_change"] for row in unique) / len(unique),
+            "raw_reward_change_mean": sum(row["reward_change"] for row in raw) / len(raw),
+        }
+    return summary
 
 
 def main() -> None:
@@ -27,23 +68,28 @@ def main() -> None:
     parser.add_argument("--checkpoint-dir", type=Path, required=True)
     parser.add_argument("--readiness", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--timesteps", type=int, default=512)
+    parser.add_argument("--timesteps", type=int, default=8192)
     parser.add_argument("--episode-steps", type=int, default=32)
-    parser.add_argument("--checkpoint-interval", type=int, default=128)
+    parser.add_argument("--checkpoint-interval", type=int, default=2048)
     parser.add_argument("--checkpoint-eval-steps", type=int, default=16)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--gpu-memory-fraction", type=float, default=0.20)
     parser.add_argument("--seed", type=int, default=20261002)
     args = parser.parse_args()
-    if args.timesteps < 256 or args.timesteps % 32 or args.episode_steps < 16:
-        parser.error("timesteps must be a multiple of 32 and >=256; episode-steps >=16")
+    rollout_batch = 32 * len(TRAIN_STARTS)
     if (
-        args.checkpoint_interval < 32
-        or args.checkpoint_interval % 32
+        args.timesteps < 2048
+        or args.timesteps % rollout_batch
+        or args.episode_steps < 16
+    ):
+        parser.error("timesteps must be >=2048 and divisible by the 256-step rollout")
+    if (
+        args.checkpoint_interval < rollout_batch
+        or args.checkpoint_interval % rollout_batch
         or args.timesteps % args.checkpoint_interval
         or args.checkpoint_eval_steps < 2
     ):
-        parser.error("checkpoint interval must divide timesteps and be a multiple of 32")
+        parser.error("checkpoint interval must divide timesteps and the rollout batch")
     device = torch.device(args.device)
     if device.type == "cuda":
         if not torch.cuda.is_available() or device.index not in (None, 0):
@@ -60,10 +106,11 @@ def main() -> None:
     gate = json.loads(args.readiness.read_text(encoding="utf-8"))
     if gate.get("status") != "CANDIDATE_SURROGATE_SCREEN_PASS" or gate.get("checkpoint_epoch") != 20:
         raise ValueError("20-epoch independent held-out surrogate gate has not passed")
-    cases = (("train", "expanded_train_00"),) + tuple(
+    evaluation_cases = tuple(
         (split, case) for split, group in (("validation", VALIDATION), ("test", TEST)) for case in group
     )
-    for split, case in cases:
+    required_cases = tuple(("train", case) for case, _ in TRAIN_STARTS) + evaluation_cases
+    for split, case in required_cases:
         if not (args.data / split / f"{case}.h5").is_file():
             raise FileNotFoundError(f"missing real CFD start: {split}/{case}")
     torch.set_num_threads(2)
@@ -72,16 +119,27 @@ def main() -> None:
     epoch = load_checkpoint(args.checkpoint_dir, models=network, device=device)
     if epoch != 20:
         raise ValueError(f"checkpoint epoch {epoch} does not match gate")
-    train_env = make_env(
-        data=args.data, split="train", case="expanded_train_00",
-        frame=0, network=network, epoch=epoch, episode_steps=args.episode_steps,
-        device=device,
+    train_env = DummyVecEnv([
+        partial(
+            make_env,
+            data=args.data,
+            split="train",
+            case=case,
+            frame=frame,
+            network=network,
+            epoch=epoch,
+            episode_steps=args.episode_steps,
+            device=device,
+        )
+        for case, frame in TRAIN_STARTS
+    ])
+    training_state_bound = float(
+        train_env.envs[0].env.env.flow.training_state_bound
     )
-    training_state_bound = float(train_env.env.env.flow.training_state_bound)
-    state_divergence_guard = float(train_env.env.max_abs_normalized_state)
+    state_divergence_guard = float(train_env.envs[0].env.max_abs_normalized_state)
     model = PPO(
         "MlpPolicy", train_env, seed=args.seed, device=device,
-        n_steps=32, batch_size=32, n_epochs=2,
+        n_steps=32, batch_size=256, n_epochs=4,
         learning_rate=3e-4, gamma=0.99, verbose=0,
     )
     output.mkdir(parents=True)
@@ -155,7 +213,7 @@ def main() -> None:
     audits = []
     # Frame 0 is the common t=80 restart in every trajectory; later frames
     # test independent CFD histories, not eight duplicates of the same state.
-    for split, case in cases[1:]:
+    for split, case in evaluation_cases:
         for frame in (0, 100, 400):
             env = make_env(
                 data=args.data, split=split, case=case, frame=frame,
@@ -207,19 +265,7 @@ def main() -> None:
                     "policy_status": policy_status, "policy_error": policy_error,
                 })
     all_evaluated = all(row["status"] == "evaluated" for row in audits)
-    summary = {}
-    if all_evaluated:
-        for split in ("validation", "test"):
-            group = [row for row in audits if row["split"] == split]
-            summary[split] = {
-                "evaluations": len(group),
-                "unique_cases": len(set(row["case"] for row in group)),
-                "initial_frames": [0, 100, 400],
-                "reward_change_mean": sum(row["reward_change"] for row in group) / len(group),
-                "positive_reward_cases": sum(row["reward_change"] > 0 for row in group),
-                "cd_mean_change_mean": sum(row["cd_mean_change"] for row in group) / len(group),
-                "cl_rms_change_mean": sum(row["cl_rms_change"] for row in group) / len(group),
-            }
+    summary = summarize_evaluations(audits) if all_evaluated else {}
     report = {
         "status": "SURROGATE_RL_PILOT_EVALUATED" if all_evaluated else "SURROGATE_RL_PILOT_EVALUATION_FAILED",
         "scientific_status": "frozen_fno_hydrogym_surrogate_only_not_real_cfd_control",
@@ -230,8 +276,10 @@ def main() -> None:
         "gpu_memory_fraction": args.gpu_memory_fraction if device.type == "cuda" else None,
         "readiness_gate": str(args.readiness),
         "hydrogym_commit": "4ab9854dea3d84e38a59c25e0f5835a00cf8225f",
-        "training_case": "expanded_train_00",
-        "initial_frame": 0,
+        "training_starts": [
+            {"case": case, "initial_frame": frame} for case, frame in TRAIN_STARTS
+        ],
+        "training_environments": len(TRAIN_STARTS),
         "ppo_timesteps": args.timesteps,
         "checkpoint_interval": args.checkpoint_interval,
         "checkpoint_evaluations": "checkpoint_evaluations.json",

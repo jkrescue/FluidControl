@@ -7,7 +7,7 @@ cd "${root}"
 image="fluid-control-physicsnemo-hydrogym:2.2.2-4ab9854"
 model_dir="artifacts/tandem_fno_expanded_spark_20epoch"
 readiness="${READINESS_REPORT:-${model_dir}/control_readiness.json}"
-output="${OUTPUT_DIR:-artifacts/hydrogym/tandem_ppo_pilot_20epoch_spark_guarded}"
+output="${OUTPUT_DIR:-artifacts/hydrogym/tandem_ppo_multistart_8192_spark}"
 log="${output}.log"
 fraction="0.20"
 [[ "${output}" == artifacts/hydrogym/* && "${output}" != *..* ]] || { echo "Output must stay under artifacts/hydrogym" >&2; exit 2; }
@@ -37,7 +37,7 @@ docker run --rm --network none --gpus 'device=0' --cpus 6 --memory 64g \
         --config conf/tandem_fno_expanded.yaml \
         --checkpoint-dir "${model_dir}/best" \
         --readiness "${readiness}" \
-        --output "${output}" --timesteps 512 --episode-steps 32 \
-        --checkpoint-interval 128 --checkpoint-eval-steps 16 \
+        --output "${output}" --timesteps 8192 --episode-steps 32 \
+        --checkpoint-interval 2048 --checkpoint-eval-steps 16 \
         --device cuda:0 --gpu-memory-fraction "${fraction}" \
     2>&1 | tee "${log}"

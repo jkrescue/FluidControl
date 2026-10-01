@@ -66,6 +66,48 @@ def objective(cd: float, cl: float, omega: float, delta: float) -> float:
     return cd + 0.2 * cl * cl + 0.01 * omega * omega + 0.001 * delta * delta
 
 
+def validate_policy_audit(audit: dict) -> dict:
+    """Fail closed unless both broad and t=80-specific surrogate gates pass."""
+    if audit.get("status") != "SURROGATE_RL_PILOT_EVALUATED" or audit.get("physicsnemo_checkpoint_epoch") != 20:
+        raise ValueError("PPO pilot audit is absent or failed")
+    if audit.get("hydrogym_commit") != HYDROGYM_COMMIT:
+        raise ValueError("PPO pilot HydroGym version mismatch")
+    if (
+        audit.get("summary_weighting") != "common_t80_frame0_counted_once_per_split"
+        or audit.get("training_environments", 0) < 4
+    ):
+        raise ValueError("multi-start PPO evidence or independent-start weighting is absent")
+    for split in ("validation", "test"):
+        summary = audit.get("summary", {}).get(split, {})
+        if (
+            summary.get("unique_initial_states") != 9
+            or summary.get("reward_change_mean", 0) <= 0
+            or summary.get("positive_reward_initial_states", 0) < 6
+        ):
+            raise ValueError(f"{split} surrogate benefit gate has not passed")
+
+    # All expanded trajectories share the real OpenFOAM t=80 restart at frame 0.
+    # A mean over diverse starts cannot justify executing a policy from this one
+    # physical restart, so require its own positive held-out surrogate result.
+    common = [
+        row for row in audit.get("evaluations", [])
+        if row.get("split") in {"validation", "test"} and row.get("initial_frame") == 0
+    ]
+    if len(common) < 2:
+        raise ValueError("independent t=80 surrogate evaluation is absent")
+    reward_changes = np.asarray([row.get("reward_change", math.nan) for row in common], dtype=float)
+    if not np.isfinite(reward_changes).all() or not np.allclose(
+        reward_changes, reward_changes[0], rtol=0, atol=1e-10
+    ):
+        raise ValueError("shared t=80 surrogate evaluations are inconsistent")
+    if reward_changes[0] <= 0:
+        raise ValueError("t=80-specific surrogate benefit gate has not passed")
+    return {
+        "shared_t80_rows": len(common),
+        "shared_t80_reward_change": float(reward_changes[0]),
+    }
+
+
 def run(case_name: str, policy_run: Path, readiness: Path, output: Path) -> dict:
     if not case_name.startswith("probe_feedback_ppo_") or "/" in case_name:
         raise ValueError("case name must begin probe_feedback_ppo_")
@@ -85,11 +127,11 @@ def run(case_name: str, policy_run: Path, readiness: Path, output: Path) -> dict
     policy_run = policy_run.resolve()
     if not policy_run.is_relative_to(PROJECT / "artifacts" / "hydrogym"):
         raise ValueError("policy must be under project artifacts/hydrogym")
-    audit = json.loads((policy_run / "audit.json").read_text(encoding="utf-8"))
-    if audit.get("status") != "SURROGATE_RL_PILOT_EVALUATED" or audit.get("physicsnemo_checkpoint_epoch") != 20:
-        raise ValueError("PPO pilot audit is absent or failed")
-    if audit.get("hydrogym_commit") != HYDROGYM_COMMIT:
-        raise ValueError("PPO pilot HydroGym version mismatch")
+    audit_path = policy_run / "audit_independent.json"
+    if not audit_path.is_file():
+        raise FileNotFoundError("deduplicated independent-start PPO audit is required")
+    audit = json.loads(audit_path.read_text(encoding="utf-8"))
+    policy_gate = validate_policy_audit(audit)
     gate = json.loads(readiness.read_text(encoding="utf-8"))
     if gate.get("status") != "CANDIDATE_SURROGATE_SCREEN_PASS" or gate.get("checkpoint_epoch") != 20:
         raise ValueError("independent surrogate gate has not passed")
@@ -173,6 +215,8 @@ def run(case_name: str, policy_run: Path, readiness: Path, output: Path) -> dict
         "scientific_status": "short_feedback_diagnostic_not_long_horizon_control_benefit",
         "case": case_name,
         "policy_run": str(policy_run),
+        "policy_audit": str(audit_path),
+        "policy_gate": policy_gate,
         "physicsnemo_checkpoint_epoch": 20,
         "hydrogym_commit": HYDROGYM_COMMIT,
         "initial_observation_sources": initial_sources,
