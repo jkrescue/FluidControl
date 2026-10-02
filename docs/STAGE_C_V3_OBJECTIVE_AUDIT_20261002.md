@@ -35,6 +35,16 @@ the original OpenFOAM files returned front Cd `1.39119339` and rear Cd
 The old 67-channel rear-only reader remains unchanged. This fixes online
 observation provenance without rewriting inherited training HDF5.
 
+The read-only 69-channel parity audit now checks original OpenFOAM against
+Curator HDF5 at validation case 00 frames 100/400/800 and fresh test case 05
+frames 0/100/400/800. All seven comparisons passed the pre-existing
+probe `0.02`, force `1e-4`, and action `1e-5` tolerances. The largest
+probe discrepancy was `0.0042061`; front/rear force and action discrepancies
+were exactly zero in these rows. The reports are
+`artifacts/tandem_cylinders/observation_69d_validation00_v3.json` and
+`artifacts/tandem_cylinders/observation_69d_test05_v3.json` on the primary.
+This validates channel order and data provenance, not closed-loop benefit.
+
 Reproduce the CPU-only audit in the pinned PhysicsNeMo 2.2.2 container with
 `scripts/audit_tandem_control_objective.py --data
 data/curated/tandem_cylinders_gate_b_aug_v3` and then
