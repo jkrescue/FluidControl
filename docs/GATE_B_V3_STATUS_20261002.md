@@ -133,8 +133,12 @@ The primary ten-step model's **complete** Gate-B audit has since returned
 independent-phase 100-step NRMSE 10.564%, both above the frozen 10% limit.
 It passed the finite-rollout, persistence and action-sensitivity checks;
 only the two NRMSE checks failed. The independent-phase result is close,
-but no threshold was rounded or relaxed. A separate legacy-four comparison
-is still finishing. CEM/PPO remains gated.
+but no threshold was rounded or relaxed. CEM/PPO remains gated.
+
+The primary ten-step finalizer then finished its separate comparisons:
+legacy four-case 100-step NRMSE 21.205%, fresh untouched test 05 alone
+23.675%, and formal five-case 21.699%. The new fifth case does not create
+the gap to the 10% limit; both old and fresh cases remain above it.
 
 The worker 20-step ablation's epoch-5 checkpoint was evaluated **only on
 validation** while epoch 6–10 training continues. Its 100-step total-drag
