@@ -107,3 +107,23 @@ frozen evaluations and the separate legacy-four comparison. The legacy-four
 100-step NRMSE is 64.122%; fresh untouched test 05 alone is 79.226%.
 Neither the new fifth case nor a changed test composition explains the
 failure. The formal five-case result remains 67.143% and failed.
+
+## Primary ten-step replication and rear-drag loss ablation
+
+The independent primary seed-20261002 ten-step fine-tune completed ten
+epochs. Its observed-action frozen five-case 100-step **preliminary** NRMSE
+is 21.699%, improved from its one-step parent's 28.773% but still above
+the locked 10% maximum; the complete action/phase Gate-B suite continues.
+Its separate validation-split 100-step NRMSE is 18.927% (1/10/50-step:
+2.350% / 3.870% / 11.460%). Thus this seed has substantially better
+long-horizon behavior than worker seed-20261005, but still has a real
+validation as well as test deficit.
+
+Using the validation-only rear-force diagnosis, a controlled loss ablation
+was prepared on the **same official PhysicsNeMo FNO architecture**: normalized
+force-channel loss weights `[1, 1, 4, 1]` for front Cd/Cl and rear Cd/Cl.
+The frozen test data and Gate-B thresholds are unchanged. Three unit tests,
+Hydra composition and an isolated one-batch GPU smoke passed in the pinned
+2.2.2 container. A ten-epoch run initialized from the primary ten-step best
+checkpoint has started under its own artifact directory; its eventual
+result is pending, not a control-benefit claim.
