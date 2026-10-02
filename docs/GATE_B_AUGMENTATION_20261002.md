@@ -81,6 +81,12 @@ reports `legacy_initial_force_error` for each inherited case. No raw or HDF5
 file is silently edited. This affects 32 of 28,035 total frames and must be
 reported with any scientific evaluation using v3.
 
+The train-only normalization was recomputed, not copied from v2. For example,
+the rear-cylinder lift coefficient standard deviation changes from 2.6351
+(v2) to 2.8054 (v3). Thus a v2 checkpoint must not be evaluated against v3
+normalized tensors without an explicit, tested adaptation; the first v3 FNO
+run starts from scratch.
+
 After `GATE_B_AUG_V3_CURATED_OK`, the guarded
 `scripts/advance_after_gate_b_aug_v3.sh` runs one full training epoch as a
 technical smoke test and then trains the official seven-output PhysicsNeMo

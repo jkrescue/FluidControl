@@ -7,6 +7,7 @@ cd "${root}"
 image="${PHYSICSNEMO_IMAGE:-fluid-control-physicsnemo:2.2.2}"
 output_dir="${OUTPUT_DIR:-artifacts/tandem_fno_total_drag_rollout_seed20261003}"
 data_root="${DATA_ROOT:-data/curated/tandem_cylinders_expanded_independent_v2}"
+initial_checkpoint="${INITIAL_CHECKPOINT:-artifacts/tandem_fno_total_drag_spark_30epoch/best}"
 epochs="${EPOCHS:-10}"
 batch_size="${BATCH_SIZE:-4}"
 rollout_steps="${ROLLOUT_STEPS:-10}"
@@ -17,8 +18,8 @@ seed="${SEED:-20261003}"
     echo "This runner is restricted to the ARM64 DGX Spark workers" >&2
     exit 2
 }
-[[ "${output_dir}" != /* && "${data_root}" != /* ]] || {
-    echo "Output and data paths must be project-relative" >&2
+[[ "${output_dir}" != /* && "${data_root}" != /* && "${initial_checkpoint}" != /* ]] || {
+    echo "Output, data and checkpoint paths must be project-relative" >&2
     exit 2
 }
 [[ "${epochs}" =~ ^[1-9][0-9]*$ && "${batch_size}" =~ ^[1-9][0-9]*$ \
@@ -34,8 +35,8 @@ seed="${SEED:-20261003}"
     echo "Missing curated train/validation data: ${data_root}" >&2
     exit 2
 }
-[[ -d artifacts/tandem_fno_total_drag_spark_30epoch/best ]] || {
-    echo "Missing initial epoch-30 checkpoint" >&2
+[[ -d "${initial_checkpoint}" ]] || {
+    echo "Missing initial checkpoint: ${initial_checkpoint}" >&2
     exit 2
 }
 docker image inspect "${image}" >/dev/null
@@ -49,6 +50,7 @@ overrides=(
     "training.rollout_steps=${rollout_steps}"
     "training.smoke=${smoke}"
     "training.seed=${seed}"
+    "training.initial_checkpoint=${initial_checkpoint}"
     "training.gpu_memory_fraction=0.20"
     "data.num_streams=1"
 )
