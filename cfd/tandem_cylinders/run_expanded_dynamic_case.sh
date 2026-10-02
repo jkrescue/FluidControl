@@ -4,8 +4,8 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 name="${1:-}"
 case "$name" in
-    expanded_train_0[0-9]|expanded_train_1[0-9]|expanded_train_2[0-3]|expanded_validation_0[0-4]|expanded_test_0[0-4]) ;;
-    *) echo 'Usage: run_expanded_dynamic_case.sh <expanded_train_00..23|expanded_validation_00..04|expanded_test_00..04>' >&2; exit 2 ;;
+    expanded_train_0[0-9]|expanded_train_1[0-9]|expanded_train_2[0-5]|expanded_validation_0[0-4]|expanded_test_0[0-5]) ;;
+    *) echo 'Usage: run_expanded_dynamic_case.sh <expanded_train_00..25|expanded_validation_00..04|expanded_test_00..05>' >&2; exit 2 ;;
 esac
 
 target="${root}/cases/${name}"

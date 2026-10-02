@@ -26,6 +26,7 @@ from make_expanded_control_dataset import (
 
 
 from make_expanded_edge_replacements import REPLACEMENTS
+from make_gate_b_augmentation import CASES as GATE_B_AUGMENTATION_CASES
 
 
 def validate_case(name: str) -> dict:
@@ -93,7 +94,7 @@ def main() -> None:
     args = parser.parse_args()
     if args.workers < 1:
         parser.error("--workers must be at least 1")
-    known = {spec.name for spec in (*SCHEDULES, *REPLACEMENTS)}
+    known = {spec.name for spec in (*SCHEDULES, *REPLACEMENTS, *GATE_B_AUGMENTATION_CASES)}
     unknown = set(args.names) - known
     if unknown:
         parser.error(f"unknown expanded cases: {', '.join(sorted(unknown))}")

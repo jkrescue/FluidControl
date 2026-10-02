@@ -11,6 +11,7 @@ epochs="${EPOCHS:-10}"
 batch_size="${BATCH_SIZE:-4}"
 rollout_steps="${ROLLOUT_STEPS:-10}"
 smoke="${SMOKE:-false}"
+seed="${SEED:-20261003}"
 
 [[ "$(uname -m)" == "aarch64" ]] || {
     echo "This runner is restricted to the ARM64 DGX Spark workers" >&2
@@ -21,8 +22,8 @@ smoke="${SMOKE:-false}"
     exit 2
 }
 [[ "${epochs}" =~ ^[1-9][0-9]*$ && "${batch_size}" =~ ^[1-9][0-9]*$ \
-    && "${rollout_steps}" =~ ^[1-9][0-9]*$ ]] || {
-    echo "Epochs, batch size and rollout steps must be positive integers" >&2
+    && "${rollout_steps}" =~ ^[1-9][0-9]*$ && "${seed}" =~ ^[1-9][0-9]*$ ]] || {
+    echo "Epochs, batch size, rollout steps and seed must be positive integers" >&2
     exit 2
 }
 [[ "${smoke}" == "true" || "${smoke}" == "false" ]] || {
@@ -47,6 +48,7 @@ overrides=(
     "training.batch_size=${batch_size}"
     "training.rollout_steps=${rollout_steps}"
     "training.smoke=${smoke}"
+    "training.seed=${seed}"
     "training.gpu_memory_fraction=0.20"
     "data.num_streams=1"
 )
