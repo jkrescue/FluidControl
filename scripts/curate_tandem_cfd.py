@@ -38,6 +38,7 @@ PROFILE_COUNTS = {
     "expanded_v1": {"train": 24, "validation": 4, "test": 4},
     "expanded_with_replacements": {"train": 24, "validation": 5, "test": 5},
     "expanded_independent_v2": {"train": 24, "validation": 4, "test": 4},
+    "gate_b_aug_v3": {"train": 26, "validation": 4, "test": 5},
     "phase_v1": {"train": 2, "validation": 1, "test": 1},
 }
 PROFILE_ACTION_LIMITS = {
@@ -45,6 +46,7 @@ PROFILE_ACTION_LIMITS = {
     "expanded_v1": 5.0,
     "expanded_with_replacements": 5.0,
     "expanded_independent_v2": 5.0,
+    "gate_b_aug_v3": 5.0,
     "phase_v1": 5.0,
 }
 PROFILE_FRAME_COUNTS = {
@@ -52,6 +54,7 @@ PROFILE_FRAME_COUNTS = {
     "expanded_v1": 801,
     "expanded_with_replacements": 801,
     "expanded_independent_v2": 801,
+    "gate_b_aug_v3": 801,
     "phase_v1": 241,
 }
 
@@ -80,9 +83,12 @@ def case_records(
         pattern = "phase_*"
     else:
         pattern = "expanded_*"
+    augmentation = {"expanded_train_24", "expanded_train_25", "expanded_test_05"}
     excluded = {
-        "expanded_v1": {"expanded_validation_04", "expanded_test_04"},
-        "expanded_independent_v2": {"expanded_validation_03", "expanded_test_03"},
+        "expanded_v1": {"expanded_validation_04", "expanded_test_04"} | augmentation,
+        "expanded_with_replacements": augmentation,
+        "expanded_independent_v2": {"expanded_validation_03", "expanded_test_03"} | augmentation,
+        "gate_b_aug_v3": {"expanded_validation_03", "expanded_test_03"},
     }.get(profile, set())
     for case in sorted(cases_root.glob(pattern)):
         if case.name in excluded:

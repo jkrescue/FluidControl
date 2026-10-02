@@ -18,6 +18,10 @@ to the primary node (`127.0.0.1:8766` on both ends), then open
 `http://127.0.0.1:8766/` in Chrome. The page polls every five seconds; the
 server samples each node every ten seconds. Raw samples are appended to
 `artifacts/monitor/live_resource_samples.jsonl` on the primary node.
+The node cards show the currently detected OpenFOAM, Curator, FNO evaluation,
+FNO training, or CEM process. A zero GPU percentage while Curator/OpenFOAM is
+active is expected because these tasks principally use the CPU. The second
+seed's completed epoch is parsed from its actual worker training log.
 
 ## Interpretation
 

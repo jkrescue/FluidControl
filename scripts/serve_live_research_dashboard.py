@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import threading
 import time
@@ -26,7 +27,10 @@ HOST_COMMAND = (
     "awk '/^cpu /{print}' /proc/stat; "
     "awk '/^MemTotal:|^MemAvailable:/{print}' /proc/meminfo; "
     "nvidia-smi --query-gpu=utilization.gpu,temperature.gpu,power.draw "
-    "--format=csv,noheader,nounits"
+    "--format=csv,noheader,nounits; "
+    "printf '__TASKS__\\n'; ps -eo comm=,args=; "
+    "printf '__EPOCH__\\n'; "
+    "grep -o '\"epoch\": [0-9]*' /tmp/fluid_control_multistep_seed20261004.log 2>/dev/null | tail -n 1 || true"
 )
 PAGE = r'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -39,7 +43,7 @@ h1{font-size:25px;margin:0}h2{font-size:19px;margin:30px 0 11px}h3{font-size:15p
 .stamp{color:#9aafc4;font-size:13px}.banner{padding:14px 16px;margin:20px 0;border-left:4px solid #edae61;background:#172438;line-height:1.5}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.card{background:#152237;border:1px solid #2a3d53;border-radius:8px;padding:16px;min-width:0}
 .resources{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.number{font-size:25px;font-variant-numeric:tabular-nums;font-weight:650}
-.label{font-size:12px;color:#9aafc4}.small{font-size:12px;color:#a9bdd0}.good{color:#79d5a3}.bad{color:#f69d97}
+.label{font-size:12px;color:#9aafc4}.small{font-size:12px;color:#a9bdd0}.good{color:#79d5a3}.bad{color:#f69d97}.task{margin:11px 0;color:#e5eff9;font-weight:600}
 svg{width:100%;height:180px;background:#101b2b;border:1px solid #25374b;border-radius:5px}.tall{height:235px}
 .legend{display:flex;gap:15px;flex-wrap:wrap;font-size:12px;color:#bed0df;margin:6px 0}.sw{display:inline-block;width:11px;height:3px;vertical-align:middle;margin-right:5px}
 select{background:#152237;color:#e5eff9;border:1px solid #42617f;padding:7px;border-radius:5px}
@@ -48,17 +52,17 @@ img{width:100%;height:auto;background:white;border-radius:4px}.row{display:flex;
 .summary b{font-size:19px;display:block;margin:3px 0}.foot{margin-top:35px;border-top:1px solid #2a3d53;padding-top:13px;font-size:12px;color:#9aafc4}
 @media(max-width:750px){.grid,.resources,.summary{grid-template-columns:1fr}main{padding:16px}}
 </style></head><body><main>
-<div class="top"><div><h1>串列双圆柱 · 实时科研监控</h1><div class="muted">OpenFOAM 数据 → PhysicsNeMo 代理 → HydroGym 控制</div></div><div class="stamp" id="clock">连接中…</div></div>
+<div class="top"><div><h1>串列双圆柱流动控制 · 实时进展</h1><div class="muted">目标：降低两圆柱总阻力，同时约束升力波动</div></div><div class="stamp" id="clock">连接中…</div></div>
 <div class="banner" id="decision">读取阶段判定…</div>
-<div class="summary"><div class="card"><span class="label">当前阶段</span><b id="stage">—</b><span class="small">按预设门槛推进</span></div><div class="card"><span class="label">训练</span><b id="epoch">—</b><span class="small">正式多步 FNO</span></div><div class="card"><span class="label">测试总阻力 NRMSE</span><b id="heldout">—</b><span class="small">100 步，门槛 ≤10%</span></div><div class="card"><span class="label">独立相位 NRMSE</span><b id="independent">—</b><span class="small">100 步，门槛 ≤10%</span></div></div>
-<h2>主从节点资源 · 每 10 秒采样</h2><div class="grid">
-<div class="card"><h3>主节点 · USER · SPARK_HOST</h3><div class="resources"><div><div class="label">GPU 利用率</div><div class="number" id="primary-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="primary-cpu">—</div></div><div><div class="label">统一内存可用</div><div class="number" id="primary-mem">—</div></div></div><div class="small" id="primary-more"></div><svg id="primary-chart" role="img" aria-label="主节点 GPU 与 CPU 利用率历史"></svg></div>
-<div class="card"><h3>计算节点 · nvidia · WORKER_HOST</h3><div class="resources"><div><div class="label">GPU 利用率</div><div class="number" id="worker-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="worker-cpu">—</div></div><div><div class="label">统一内存可用</div><div class="number" id="worker-mem">—</div></div></div><div class="small" id="worker-more"></div><svg id="worker-chart" role="img" aria-label="计算节点 GPU 与 CPU 利用率历史"></svg></div>
-</div><div class="legend"><span><i class="sw" style="background:#60c9fb"></i>GPU</span><span><i class="sw" style="background:#e9ae68"></i>CPU</span><span>GB10 使用统一内存；nvidia-smi 不报告独立显存占用，安全约束看可用内存 ≥20 GiB。</span></div>
-<h2>训练与评估</h2><div class="grid"><div class="card"><h3>10 轮多步训练：验证自由 rollout 误差</h3><svg class="tall" id="train-chart" role="img" aria-label="多步训练验证误差"></svg><div class="small">蓝：终点流场 MAE；橙：终点受力 MAE。真实训练历史，无插值。</div></div><div class="card"><h3>真实 CFD 保留工况：总阻力预测误差</h3><svg class="tall" id="error-chart" role="img" aria-label="不同预测步长的总阻力误差"></svg><div class="small">蓝：标准测试；绿：独立相位。纵轴 NRMSE；虚线为 10% 门槛。</div></div></div>
-<h2>真实流场与预测</h2><div class="card"><div class="row"><div class="small" id="figure-label">读取图片…</div><div><select id="case"><option value="expanded_test_00">测试 00</option><option value="expanded_test_01">测试 01</option><option value="expanded_test_02">测试 02</option><option value="expanded_test_04">测试 04</option></select> <select id="horizon"><option value="001">1 步</option><option value="010">10 步</option><option value="050">50 步</option><option value="100" selected>100 步</option></select></div></div><img id="flow" alt="真实 OpenFOAM 流场、FNO 预测、误差对照"></div>
-<h2>控制研究阶段</h2><div class="grid"><div class="card"><h3>CEM-MPC</h3><div id="cem">—</div></div><div class="card"><h3>HydroGym PPO</h3><div id="ppo">—</div></div></div>
-<div class="foot">页面实时读取主 Spark 的原始实验文件；图像由模型评估脚本产生。资源样本保存在主节点 artifacts/monitor。图中预测准确度不代表已获得 CFD 闭环减阻。</div>
+<div class="summary"><div class="card"><span class="label">OpenFOAM CFD</span><b id="cfd-progress">—</b><span class="small" id="cfd-sub">新增 2 条训练、1 条独立测试轨迹</span></div><div class="card"><span class="label">PhysicsNeMo FNO</span><b id="epoch">—</b><span class="small" id="second-seed">第二随机种子：读取中</span></div><div class="card"><span class="label">100 步总阻力预测误差</span><b id="heldout">—</b><span class="small">真实 CFD 测试；目标 ≤10%</span></div><div class="card"><span class="label">HydroGym / PPO</span><b id="hydro-status">—</b><span class="small">等待可信代理和 CEM 控制筛选</span></div></div>
+<h2>两台 DGX Spark · 当前任务与算力</h2><div class="grid">
+<div class="card"><h3>主节点 · SPARK_HOST</h3><div class="task" id="primary-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="primary-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="primary-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="primary-mem">—</div></div></div><svg id="primary-chart" role="img" aria-label="主节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="primary-more"></div></div>
+<div class="card"><h3>计算节点 · WORKER_HOST</h3><div class="task" id="worker-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="worker-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="worker-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="worker-mem">—</div></div></div><svg id="worker-chart" role="img" aria-label="计算节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="worker-more"></div></div>
+</div><div class="legend"><span><i class="sw" style="background:#60c9fb"></i>GPU</span><span><i class="sw" style="background:#e9ae68"></i>CPU</span><span>GB10 采用统一内存；训练保护线：至少剩余 20 GiB。</span></div>
+<h2>FNO 训练和推理结果</h2><div class="grid"><div class="card"><h3>训练轮次 → 10 步预测误差</h3><svg class="tall" id="train-chart" role="img" aria-label="多步训练验证误差"></svg><div class="small">蓝：流场平均绝对误差；橙：四个受力系数平均绝对误差。数值来自验证数据。</div></div><div class="card"><h3>推理步数 → 总阻力预测误差</h3><svg class="tall" id="error-chart" role="img" aria-label="不同预测步长的总阻力误差"></svg><div class="small">蓝：4 条真实 CFD 测试轨迹；绿：独立初始相位；红：10% 门槛。</div></div></div>
+<h2>真实流场 / FNO 预测 / 误差</h2><div class="card"><div class="row"><div class="small" id="figure-label">读取图片…</div><div><select id="case"><option value="expanded_test_00">测试 00</option><option value="expanded_test_01">测试 01</option><option value="expanded_test_02">测试 02</option><option value="expanded_test_04">测试 04</option></select> <select id="horizon"><option value="001">1 步</option><option value="010">10 步</option><option value="050">50 步</option><option value="100" selected>100 步</option></select></div></div><img id="flow" alt="真实 OpenFOAM 流场、FNO 预测、误差对照"></div>
+<h2>HydroGym 闭环控制</h2><div class="card"><div id="cem">—</div><div class="small" id="ppo">—</div></div>
+<div class="foot">图表读取原始训练与评估记录。真实 CFD 控制收益仍须通过相位匹配的 OpenFOAM 回放验证。</div>
 </main><script>
 const $=x=>document.getElementById(x);let latest=null;
 function pct(x){return Number.isFinite(x)?(x*100).toFixed(2)+'%':'—'}
@@ -74,19 +78,24 @@ function resources(name,items){let last=items.at(-1);if(!last)return;
  if(last.error){$(name+'-more').textContent='采样失败：'+last.error;return}
  $(name+'-gpu').textContent=num(last.gpu,0)+'%';$(name+'-cpu').textContent=num(last.cpu,0)+'%';$(name+'-mem').textContent=num(last.mem_available_gib,1)+' GiB';
  $(name+'-mem').className='number '+(last.mem_available_gib>=20?'good':'bad');
- $(name+'-more').textContent=`${last.time} · GPU ${num(last.temp_c,0)}°C / ${num(last.power_w,1)} W · 保留 ${num(last.mem_available_gib,1)} GiB`;
+ $(name+'-task').textContent=last.tasks?.length?`${last.tasks.join('、')} ${last.task_count>1?'×'+last.task_count:''}`:'当前无计算任务';
+ $(name+'-more').textContent=`采样时间 ${last.time} · GPU ${num(last.temp_c,0)}°C`;
  plot(name+'-chart',[{values:items.map(x=>x.gpu),color:'#60c9fb'},{values:items.map(x=>x.cpu),color:'#e9ae68'}])}
 function figure(){if(!latest)return;let key=$('case').value+'/'+$('horizon').value;let found=latest.figures[key];if(found){$('flow').src=found.path+'?v='+found.version;$('flow').hidden=false;$('figure-label').textContent=found.label}else{$('flow').hidden=true;$('figure-label').textContent='该工况暂无导出的对照图'}}
 function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' · 页面每 5 秒更新';let a=d.audit,c=a?.checks||{};
  let b=c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse,i=c.independent_phase_full_period_total_drag_nrmse?.total_drag_nrmse;
- $('heldout').textContent=pct(b);$('independent').textContent=pct(i);$('heldout').className=Number.isFinite(b)&&b<=.1?'good':'bad';
- $('stage').textContent=a?.status==='GATE_B_PASS'?'阶段 C':'阶段 B';$('epoch').textContent=d.history.length+'/10 epochs';
- $('decision').textContent=a?.status==='GATE_B_PASS'?'阶段 B 已通过。正在核对阶段 C 的控制实验。':`阶段 B 未通过：标准测试 100 步总阻力 NRMSE ${pct(b)}，高于预设 10% 门槛。多步训练和独立评估已完成；需要改进代理模型后再开展 CEM 与当前目标 PPO。`;
+ $('heldout').textContent=pct(b);$('heldout').className=Number.isFinite(b)&&b<=.1?'good':'bad';
+ $('epoch').textContent=d.history.length+'/10 轮';$('hydro-status').textContent=d.cem?'CEM 已完成':'尚未启动';
+ let finished=d.cfd.filter(x=>x.status==='complete').length,average=d.cfd.reduce((s,x)=>s+x.percent,0)/Math.max(1,d.cfd.length);
+ $('cfd-progress').textContent=`${finished}/3 CFD 完成`;
+ $('cfd-sub').textContent=`Curator：${d.curator.done}/3 条完成，当前 ${d.curator.latest_frame}/801 帧`;
+ $('second-seed').textContent=`第二随机种子：${d.resources.worker.at(-1)?.second_seed_epoch||0}/10 轮`;
+ $('decision').textContent=a?.status==='GATE_B_PASS'?'FNO 已达到预定精度，可以进入 CEM 控制筛选。':`当前 FNO：100 步总阻力预测误差 ${pct(b)}，超过 10% 目标；独立初始相位 ${pct(i)}。正在补充真实 CFD 并做第二随机种子训练。CEM 与 PPO 仍等待模型精度达标。`;
  resources('primary',d.resources.primary);resources('worker',d.resources.worker);
  plot('train-chart',[{values:d.history.map(x=>x.terminal_state_mae),color:'#60c9fb'},{values:d.history.map(x=>x.terminal_force_mae),color:'#e9ae68'}],.05);
  let steps=['1','10','50','100'];plot('error-chart',[{values:steps.map(x=>d.evaluations.heldout?.[x]?.total_drag_nrmse),color:'#60c9fb'},{values:steps.map(x=>d.evaluations.independent?.[x]?.total_drag_nrmse),color:'#79d5a3'},{values:steps.map(()=>.1),color:'#d77979'}],.2);
- $('cem').textContent=d.cem?'CEM 结果已生成；需查看完整审计。':'本次 CEM 已被阶段 B 门槛阻止，未启动。';
- $('ppo').textContent=d.ppo?'当前目标 PPO 有新记录；需查看完整审计。':'当前总阻力目标的 PPO 尚未启动。旧目标的探索性 PPO 记录不计入当前结果。';figure()}
+ $('cem').textContent=d.cem?'CEM 控制筛选已完成，结果待审计。':`CEM：等待 FNO 的 100 步总阻力误差降至 10% 以下。新增 CFD 平均求解进度 ${num(average,0)}%。`;
+ $('ppo').textContent=d.ppo?'HydroGym PPO 有当前目标的新记录。':'HydroGym PPO：尚未启动；须先通过 FNO 与 CEM 阶段。';figure()}
 async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);render(await r.json())}catch(e){$('clock').textContent='连接失败：'+e.message}}
 $('case').onchange=figure;$('horizon').onchange=figure;window.onresize=()=>{if(latest)render(latest)};refresh();setInterval(refresh,5000);
 </script></body></html>'''
@@ -112,7 +121,58 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
     usage = None if previous is None or total == previous[0] else 100 * (1 - (idle - previous[1]) / (total - previous[0]))
     memory = {parts[0].rstrip(":"): int(parts[1]) for line in lines[1:3] if (parts := line.split())}
     gpu = [float(x.strip()) for x in lines[3].split(",")]
-    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2}, (total, idle)
+    task_start = lines.index("__TASKS__")
+    epoch_start = lines.index("__EPOCH__")
+    active = []
+    for line in lines[task_start + 1 : epoch_start]:
+        fields = line.split(None, 1)
+        if len(fields) != 2:
+            continue
+        command, args = fields
+        if command == "pimpleFoam":
+            active.append("OpenFOAM CFD")
+        elif command in ("python", "python3") and "spark_gpu_guard.py" not in args:
+            if "train_tandem_fno_rollout.py" in args:
+                active.append("PhysicsNeMo FNO 训练")
+            elif "evaluate_tandem_fno.py" in args:
+                active.append("PhysicsNeMo FNO 推理评估")
+            elif "screen_tandem_cem_mpc.py" in args:
+                active.append("CEM 控制筛选")
+            elif "curate_tandem_cfd.py" in args:
+                active.append("PhysicsNeMo Curator 数据整理")
+    epoch_match = re.search(r'"epoch": (\d+)', "\n".join(lines[epoch_start + 1 :]))
+    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": int(epoch_match.group(1)) if epoch_match else 0}, (total, idle)
+
+
+def _cfd_progress(root: Path) -> list[dict]:
+    rows = []
+    for name in ("expanded_train_24", "expanded_train_25", "expanded_test_05"):
+        path = root / "cfd/tandem_cylinders/cases" / name / "log.pimpleFoam"
+        if not path.exists():
+            rows.append({"case": name, "status": "pending", "percent": 0.0})
+            continue
+        with path.open("rb") as stream:
+            stream.seek(0, 2)
+            stream.seek(max(0, stream.tell() - 16384))
+            tail = stream.read().decode("utf-8", errors="replace")
+        times = re.findall(r"^Time = ([0-9.]+)$", tail, flags=re.MULTILINE)
+        percent = min(100.0, max(0.0, (float(times[-1]) - 80.0) / 80.0 * 100)) if times else 0.0
+        completed = bool(re.search(r"^End$", tail, flags=re.MULTILINE))
+        rows.append({"case": name, "status": "complete" if completed else "running", "percent": 100.0 if completed else percent})
+    return rows
+
+
+def _curator_progress(root: Path) -> dict:
+    path = root / "artifacts/tandem_cylinders/gate_b_aug_v3_curator.log"
+    if not path.exists():
+        return {"done": 0, "latest_frame": 0, "complete": False}
+    with path.open("rb") as stream:
+        stream.seek(0, 2)
+        stream.seek(max(0, stream.tell() - 32768))
+        tail = stream.read().decode("utf-8", errors="replace")
+    rows = re.findall(r"Progress: (\d+)/3", tail)
+    frames = re.findall(r"sampled (\d+)/801 VTK frames", tail)
+    return {"done": max((int(value) for value in rows), default=0), "latest_frame": max((int(value) for value in frames), default=0), "complete": "GATE_B_AUG_V3_CURATED_OK" in tail}
 
 
 class Sampler:
@@ -181,7 +241,7 @@ class Handler(BaseHTTPRequestHandler):
                         figures[f"{case}/{horizon}"] = {"path": f"/figure/current/{case}/{horizon}.png", "version": int(current.stat().st_mtime), "label": "当前 10 轮多步 FNO · 真实 CFD / 预测 / 绝对误差"}
                     elif previous.exists():
                         figures[f"{case}/{horizon}"] = {"path": f"/figure/previous/{case}/{horizon}.png", "version": int(previous.stat().st_mtime), "label": "上一版单步 FNO · 真实 CFD / 预测 / 绝对误差（当前模型图待生成）"}
-            data = {"server_time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "audit": audit, "history": history, "evaluations": {"heldout": heldout.get("summary", {}), "independent": independent.get("summary", {})}, "resources": samples, "figures": figures, "cem": (self.root / "artifacts/distributed_runs/gateb_multistep_20261002/formal/CEM_STAGE_C_COMPLETE").exists(), "ppo": False}
+            data = {"server_time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "audit": audit, "history": history, "evaluations": {"heldout": heldout.get("summary", {}), "independent": independent.get("summary", {})}, "resources": samples, "cfd": _cfd_progress(self.root), "curator": _curator_progress(self.root), "figures": figures, "cem": (self.root / "artifacts/distributed_runs/gateb_multistep_20261002/formal/CEM_STAGE_C_COMPLETE").exists(), "ppo": False}
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
 
