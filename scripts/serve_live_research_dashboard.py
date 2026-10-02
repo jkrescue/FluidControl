@@ -31,7 +31,9 @@ HOST_COMMAND = (
     "--format=csv,noheader,nounits; "
     "printf '__TASKS__\\n'; ps -eo comm=,args=; "
     "printf '__EPOCH__\\n'; "
-    "grep -F '{\"epoch\":' /tmp/fluid_control_multistep_seed20261004.log 2>/dev/null | tail -n 1 || true"
+    "grep -F '{\"epoch\":' /tmp/fluid_control_multistep_seed20261004.log 2>/dev/null | tail -n 1 || true; "
+    "printf '__V3_WORKER_EPOCH__\\n'; "
+    "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/tandem_fno_gate_b_aug_v3_seed20261005_30epoch/training_history.json 2>/dev/null || true"
 )
 PAGE = r'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -60,8 +62,8 @@ img{width:100%;height:auto;background:white;border-radius:4px}.row{display:flex;
 <div class="card"><h3>主节点 · SPARK_HOST</h3><div class="task" id="primary-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="primary-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="primary-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="primary-mem">—</div></div></div><svg id="primary-chart" role="img" aria-label="主节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="primary-more"></div></div>
 <div class="card"><h3>计算节点 · WORKER_HOST</h3><div class="task" id="worker-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="worker-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="worker-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="worker-mem">—</div></div></div><svg id="worker-chart" role="img" aria-label="计算节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="worker-more"></div></div>
 </div><div class="legend"><span><i class="sw" style="background:#60c9fb"></i>GPU</span><span><i class="sw" style="background:#e9ae68"></i>CPU</span><span>GB10 采用统一内存；训练保护线：至少剩余 20 GiB。</span></div>
-<h2>FNO 训练和推理结果</h2><div class="grid"><div class="card"><h3>训练轮次 → 10 步预测误差</h3><svg class="tall" id="train-chart" role="img" aria-label="多步训练验证误差"></svg><div class="small">蓝：流场平均绝对误差；橙：四个受力系数平均绝对误差。数值来自验证数据。</div></div><div class="card"><h3>推理步数 → 总阻力预测误差</h3><svg class="tall" id="error-chart" role="img" aria-label="不同预测步长的总阻力误差"></svg><div class="small">蓝：4 条真实 CFD 测试轨迹；绿：独立初始相位；红：10% 门槛。</div></div></div>
-<div class="small" id="infer-speed" style="margin-top:8px">正在读取 FNO 推理耗时…</div>
+<h2>FNO 训练和推理结果</h2><div class="grid"><div class="card"><h3>旧数据多步 FNO：训练轮次 → 10 步预测误差</h3><svg class="tall" id="train-chart" role="img" aria-label="多步训练验证误差"></svg><div class="small">蓝：流场平均绝对误差；橙：四个受力系数平均绝对误差。数值来自验证数据。</div></div><div class="card"><h3>推理步数 → 总阻力预测误差</h3><svg class="tall" id="error-chart" role="img" aria-label="不同预测步长的总阻力误差"></svg><div class="small">蓝：4 条真实 CFD 测试轨迹；绿：独立初始相位；红：10% 门槛。</div></div></div>
+<div class="small" id="v3-metrics" style="margin-top:8px">正在读取新数据 FNO 训练指标…</div><div class="small" id="infer-speed" style="margin-top:4px">正在读取 FNO 推理耗时…</div>
 <h2>真实流场 / FNO 预测 / 误差</h2><div class="card"><div class="row"><div class="small" id="figure-label">读取图片…</div><div><select id="case"><option value="expanded_test_00">测试 00</option><option value="expanded_test_01">测试 01</option><option value="expanded_test_02">测试 02</option><option value="expanded_test_04">测试 04</option></select> <select id="horizon"><option value="001">1 步</option><option value="010">10 步</option><option value="050">50 步</option><option value="100" selected>100 步</option></select></div></div><img id="flow" alt="真实 OpenFOAM 流场、FNO 预测、误差对照"></div>
 <h2>HydroGym 闭环控制</h2><div class="card"><div id="cem">—</div><div class="small" id="ppo">—</div></div>
 <div class="foot">图表读取原始训练与评估记录。真实 CFD 控制收益仍须通过相位匹配的 OpenFOAM 回放验证。</div>
@@ -87,15 +89,16 @@ function figure(){if(!latest)return;let key=$('case').value+'/'+$('horizon').val
 function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' · 页面每 5 秒更新';let a=d.audit,c=a?.checks||{};
  let b=c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse,i=c.independent_phase_full_period_total_drag_nrmse?.total_drag_nrmse;
  $('heldout').textContent=pct(b);$('heldout').className=Number.isFinite(b)&&b<=.1?'good':'bad';
- $('epoch').textContent=d.v3_training.length?`v3 ${d.v3_training.length}/30 轮`:`已评估 ${d.history.length}/10 轮`;$('hydro-status').textContent=d.cem?'CEM 已完成':'尚未启动';
+ $('epoch').textContent=`主节点 v3 ${d.v3_training.length}/30 轮`;$('hydro-status').textContent=d.cem?'CEM 已完成':'尚未启动';
  let finished=d.cfd.filter(x=>x.status==='complete').length,average=d.cfd.reduce((s,x)=>s+x.percent,0)/Math.max(1,d.cfd.length);
  $('cfd-progress').textContent=`${finished}/3 CFD 完成`;
  $('cfd-sub').textContent=d.curator.complete?'Curator：35 条轨迹已完成数据验收':`Curator：${d.curator.done}/3 条新增轨迹已采样，当前 ${d.curator.latest_frame}/801 帧`;
- let worker=d.resources.worker.at(-1)||{},second=d.second_seed?.summary?.['100']?.total_drag_nrmse;$('second-seed').textContent=`第二随机种子：${worker.second_seed_epoch||0}/10 轮 · 100 步总阻力误差 ${pct(second)}${Number.isFinite(second)?'（初评）':''}`;
+ let worker=d.resources.worker.at(-1)||{},second=d.second_seed?.summary?.['100']?.total_drag_nrmse;$('second-seed').textContent=`计算节点 v3 ${worker.v3_worker_epoch||0}/30 轮；旧数据第二种子 100 步误差 ${pct(second)}${Number.isFinite(second)?'（初评）':''}`;
  $('decision').textContent=a?.status==='GATE_B_PASS'?'FNO 已达到预定精度，可以进入 CEM 控制筛选。':`当前 FNO：100 步总阻力预测误差 ${pct(b)}，超过 10% 目标；独立初始相位 ${pct(i)}。正在补充真实 CFD 并做第二随机种子训练。CEM 与 PPO 仍等待模型精度达标。`;
  resources('primary',d.resources.primary);resources('worker',d.resources.worker);
  plot('train-chart',[{values:d.history.map(x=>x.terminal_state_mae),color:'#60c9fb'},{values:d.history.map(x=>x.terminal_force_mae),color:'#e9ae68'}],.05);
  let steps=['1','10','50','100'];plot('error-chart',[{values:steps.map(x=>d.evaluations.heldout?.[x]?.total_drag_nrmse),color:'#60c9fb'},{values:steps.map(x=>d.evaluations.independent?.[x]?.total_drag_nrmse),color:'#79d5a3'},{values:steps.map(()=>.1),color:'#d77979'}],.2);
+ let current=d.v3_training.at(-1);$('v3-metrics').textContent=current?`新数据 FNO（主节点）第 ${current.epoch} 轮：训练损失 ${num(current.train_loss,4)}；验证流场误差 ${num(current.state_mae_physical_units,4)}；验证受力误差（归一化）${num(current.force_mae_normalized,4)}。`:'新数据 FNO：正式训练已启动，首轮指标尚未产生。';
  $('infer-speed').textContent=d.benchmark?.status==='FNO_REAL_CFD_INFERENCE_BENCHMARK_OK'?`真实 CFD 输入、单条轨迹：FNO 单步中位 ${num(d.benchmark.step_median_ms,2)} ms；连续 100 步 ${num(d.benchmark.rollout_100_step_seconds,2)} s。仅模型前向，不含 CFD 或控制通信。`:'FNO 推理耗时尚未测量。';
  $('cem').textContent=d.cem?'CEM 控制筛选已完成，结果待审计。':`CEM：等待 FNO 的 100 步总阻力误差降至 10% 以下。新增 CFD 平均求解进度 ${num(average,0)}%。`;
  $('ppo').textContent=d.ppo?'HydroGym PPO 有当前目标的新记录。':'HydroGym PPO：尚未启动；须先通过 FNO 与 CEM 阶段。';figure()}
@@ -126,6 +129,7 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
     gpu = [float(x.strip()) for x in lines[3].split(",")]
     task_start = lines.index("__TASKS__")
     epoch_start = lines.index("__EPOCH__")
+    v3_start = lines.index("__V3_WORKER_EPOCH__")
     active = []
     for line in lines[task_start + 1 : epoch_start]:
         fields = line.split(None, 1)
@@ -153,7 +157,8 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
             second_seed = {}
     except (IndexError, ValueError):
         second_seed = {}
-    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae")}, (total, idle)
+    v3_epoch = int(lines[v3_start + 1]) if len(lines) > v3_start + 1 and lines[v3_start + 1].isdigit() else 0
+    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae"), "v3_worker_epoch": v3_epoch}, (total, idle)
 
 
 def _cfd_progress(root: Path) -> list[dict]:
