@@ -35,6 +35,11 @@ used as a target or comparator for our system-total-drag outcome.
    sparse-observation/action contract, not on the older rear-cylinder reward.
    A candidate must improve independent validation/test surrogate starts and
    the exact shared `t=80` physical restart before real-CFD replay.
+   The causal lift/drag reward needs one 6.15-time-unit shedding window before
+   its physical terms activate. At `dt=0.1`, an old 32-step episode lasts only
+   3.2 units and would optimize actuation penalties alone. The adapter now
+   rejects Stage-C episodes shorter than 1.5 shedding periods; a 100-step
+   episode satisfies this guard and matches the Gate-B rollout horizon.
 4. Real OpenFOAM feedback: freeze the policy, run paired phase-matched
    zero-action and controlled trajectories, and report time-averaged physical
    metrics and solver checks. A short integration smoke proves wiring only;

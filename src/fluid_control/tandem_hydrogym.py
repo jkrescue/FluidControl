@@ -415,6 +415,15 @@ class TandemRewardAudit(gym.Wrapper):
     def __init__(self, env, max_abs_normalized_state: float | None = None):
         super().__init__(env)
         flow: TandemSurrogateFlow = env.flow
+        if flow.reward_mode == "stage_c_total_drag":
+            episode_duration = float(env.max_steps) * float(env.solver.dt)
+            minimum_duration = 1.5 * flow.shedding_period
+            if episode_duration + 1e-8 < minimum_duration:
+                raise ValueError(
+                    "Stage-C episode must cover at least 1.5 shedding periods "
+                    f"({episode_duration:.3f} < {minimum_duration:.3f}); "
+                    "otherwise PPO sees no useful full-window drag reward"
+                )
         selected = (
             flow.max_abs_normalized_state_guard
             if max_abs_normalized_state is None
