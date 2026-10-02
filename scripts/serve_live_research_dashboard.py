@@ -25,6 +25,7 @@ SECOND_RUN = Path("artifacts/distributed_runs/gateb_multistep_seed20261004_20261
 V3_WORKER_RUN = Path("artifacts/distributed_runs/gateb_aug_v3_seed20261005_20261002/formal/tandem_fno_gate_b_aug_v3_seed20261005_30epoch")
 V3_ROLLOUT_RUN = Path("artifacts/distributed_runs/gateb_aug_v3_rollout_seed20261005_20261002/formal/tandem_fno_gate_b_aug_v3_rollout_seed20261005_10epoch")
 V3_PRIMARY_ROLLOUT_RUN = Path("artifacts/tandem_fno_gate_b_aug_v3_rollout_seed20261002_10epoch")
+V3_H20_RUN = Path("artifacts/distributed_runs/gateb_aug_v3_rollout_h20_seed20261005_20261002/formal/tandem_fno_gate_b_aug_v3_rollout_h20_seed20261005_10epoch")
 OLD = Path("artifacts/tandem_fno_total_drag_spark_30epoch")
 SAMPLE_FILE = Path("artifacts/monitor/live_resource_samples.jsonl")
 HOST_COMMAND = (
@@ -38,7 +39,9 @@ HOST_COMMAND = (
     "printf '__V3_WORKER_EPOCH__\\n'; "
     "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/tandem_fno_gate_b_aug_v3_seed20261005_30epoch/training_history.json 2>/dev/null || true; "
     "printf '__V3_ROLLOUT_EPOCH__\\n'; "
-    "grep -F '{\"epoch\":' /tmp/fluid_control_v3_rollout_seed20261005.log 2>/dev/null | tail -n 1 || true"
+    "grep -F '{\"epoch\":' /tmp/fluid_control_v3_rollout_seed20261005.log 2>/dev/null | tail -n 1 || true; "
+    "printf '__V3_H20_EPOCH__\\n'; "
+    "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/tandem_fno_gate_b_aug_v3_rollout_h20_seed20261005_10epoch/training_history.json 2>/dev/null || true"
 )
 PAGE = r'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -92,8 +95,8 @@ function resources(name,items){let last=items.at(-1);if(!last)return;
  $(name+'-more').textContent=`采样时间 ${last.time} · GPU ${num(last.temp_c,0)}°C`;
  plot(name+'-chart',[{values:items.map(x=>x.gpu),color:'#60c9fb'},{values:items.map(x=>x.cpu),color:'#e9ae68'}])}
 function figure(){if(!latest)return;let key=$('case').value+'/'+$('horizon').value;let found=latest.figures[key];if(found){$('flow').src=found.path+'?v='+found.version;$('flow').hidden=false;$('figure-label').textContent=found.label}else{$('flow').hidden=true;$('figure-label').textContent='该工况暂无导出的对照图'}}
-function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' · 页面每 5 秒更新';let audited=d.v3_primary_rollout_audit||d.v3_rollout_audit||d.v3_audit||d.v3_worker_audit,a=audited||d.audit,c=a?.checks||{};
- let observed=d.v3_primary_rollout_observed||d.v3_rollout_observed||d.v3_observed||d.v3_worker_observed,preliminary=observed?.summary?.['100']?.total_drag_nrmse;
+function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' · 页面每 5 秒更新';let candidates=[{audit:d.v3_h20_audit,observed:d.v3_h20_observed},{audit:d.v3_primary_rollout_audit,observed:d.v3_primary_rollout_observed},{audit:d.v3_rollout_audit,observed:d.v3_rollout_observed},{audit:d.v3_audit,observed:d.v3_observed},{audit:d.v3_worker_audit,observed:d.v3_worker_observed}];let picked=candidates.find(x=>x.audit?.status==='GATE_B_PASS')||candidates.find(x=>x.audit);let audited=picked?.audit,a=audited||d.audit,c=a?.checks||{};
+ let observed=picked?.observed||d.v3_h20_observed||d.v3_primary_rollout_observed||d.v3_rollout_observed||d.v3_observed||d.v3_worker_observed,preliminary=observed?.summary?.['100']?.total_drag_nrmse;
  let b=audited?c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse:(Number.isFinite(preliminary)?preliminary:c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse),i=c.independent_phase_full_period_total_drag_nrmse?.total_drag_nrmse;
  $('heldout').textContent=pct(b);$('heldout').className=audited&&Number.isFinite(b)&&b<=.1?'good':Number.isFinite(b)&&b>.1?'bad':'';
  $('epoch').textContent=`主节点：单步 ${d.v3_training.length}/30，多步 ${d.v3_primary_rollout_history.length}/10 轮`;$('hydro-status').textContent=d.cem?'CEM 已完成':'当前目标待 Gate B';
@@ -101,12 +104,12 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  let finished=d.cfd.filter(x=>x.status==='complete').length,average=d.cfd.reduce((s,x)=>s+x.percent,0)/Math.max(1,d.cfd.length);
  $('cfd-progress').textContent=`${finished}/3 CFD 完成`;
  $('cfd-sub').textContent=d.curator.complete?'Curator：35 条轨迹已完成数据验收':`Curator：${d.curator.done}/3 条新增轨迹已采样，当前 ${d.curator.latest_frame}/801 帧`;
- let worker=d.resources.worker.at(-1)||{};$('second-seed').textContent=`计算节点：v3 单步 ${worker.v3_worker_epoch||0}/30，多步 ${worker.v3_rollout_epoch||0}/10 轮`;
+ let worker=d.resources.worker.at(-1)||{};$('second-seed').textContent=`计算节点：单步 ${worker.v3_worker_epoch||0}/30，10 步 ${worker.v3_rollout_epoch||0}/10，20 步 ${worker.v3_h20_epoch||0}/10 轮`;
  $('heldout-scope').textContent=audited?'v3 五条 CFD 测试，完整审计；目标 ≤10%':Number.isFinite(preliminary)?'v3 五条 CFD 测试初评，完整审计中':'旧数据四条 CFD 测试；目标 ≤10%';
  $('decision').textContent=audited&&a.status==='GATE_B_PASS'?`FNO 已通过冻结的 100 步总阻力门槛（${pct(b)}）；下一步做 CEM 控制筛选，再用真实 CFD 验证。`:audited?`v3 模型五工况 100 步总阻力误差 ${pct(b)}，未达到 10%；多步候选仍在训练或审计。CEM 与 PPO 暂不启动。`:Number.isFinite(preliminary)?`v3 单步 FNO 的 100 步五工况初评为 ${pct(b)}；动作扰动与独立相位审计未完成。多步训练进行中，CEM/PPO 暂不启动。`:`旧数据模型 100 步误差 ${pct(b)}，未达到 10%；v3 FNO 正在完成独立测试。CEM 与 PPO 暂不启动。`;
  resources('primary',d.resources.primary);resources('worker',d.resources.worker);
  plot('train-chart',[{values:d.history.map(x=>x.terminal_state_mae),color:'#60c9fb'},{values:d.history.map(x=>x.terminal_force_mae),color:'#e9ae68'}],.05);
- let steps=['1','10','50','100'],v3series=[{result:d.v3_observed,color:'#60c9fb',label:'主节点单步'},{result:d.v3_worker_observed,color:'#79d5a3',label:'计算节点单步'},{result:d.v3_primary_rollout_observed,color:'#dc95e4',label:'主节点多步'},{result:d.v3_rollout_observed,color:'#e9ae68',label:'计算节点多步'}].filter(x=>x.result?.summary);
+ let steps=['1','10','50','100'],v3series=[{result:d.v3_observed,color:'#60c9fb',label:'主节点单步'},{result:d.v3_worker_observed,color:'#79d5a3',label:'计算节点单步'},{result:d.v3_primary_rollout_observed,color:'#dc95e4',label:'主节点 10 步训练'},{result:d.v3_rollout_observed,color:'#e9ae68',label:'计算节点 10 步训练'},{result:d.v3_h20_observed,color:'#f49ab8',label:'计算节点 20 步训练'}].filter(x=>x.result?.summary);
  if(v3series.length){let series=v3series.map(x=>({values:steps.map(h=>x.result.summary[h]?.total_drag_nrmse),color:x.color}));let top=Math.max(.2,...series.flatMap(x=>x.values.filter(Number.isFinite)));series.push({values:steps.map(()=>.1),color:'#d77979'});plot('error-chart',series,Math.ceil(top*10)/10);$('error-title').textContent='v3 真实 CFD：递推步数 → 总阻力误差';$('error-legend').textContent=v3series.map(x=>x.label).join('、')+'；红线：10% 门槛。模型结果需以完整审计为准。'}
  else{plot('error-chart',[{values:steps.map(x=>d.evaluations.heldout?.[x]?.total_drag_nrmse),color:'#60c9fb'},{values:steps.map(x=>d.evaluations.independent?.[x]?.total_drag_nrmse),color:'#79d5a3'},{values:steps.map(()=>.1),color:'#d77979'}],.2);$('error-title').textContent='旧数据多步 FNO：递推步数 → 总阻力误差';$('error-legend').textContent='蓝：旧数据 4 条 CFD 测试；绿：独立初始相位；红：10% 门槛。'}
  let current=d.v3_training.at(-1);$('v3-metrics').textContent=current?`新数据 FNO（主节点）第 ${current.epoch} 轮：训练损失 ${num(current.train_loss,4)}；验证流场误差 ${num(current.state_mae_physical_units,4)}；验证受力误差（归一化）${num(current.force_mae_normalized,4)}。`:'新数据 FNO：正式训练已启动，首轮指标尚未产生。';
@@ -142,6 +145,7 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
     epoch_start = lines.index("__EPOCH__")
     v3_start = lines.index("__V3_WORKER_EPOCH__")
     rollout_start = lines.index("__V3_ROLLOUT_EPOCH__")
+    h20_start = lines.index("__V3_H20_EPOCH__")
     active = []
     for line in lines[task_start + 1 : epoch_start]:
         fields = line.split(None, 1)
@@ -175,7 +179,8 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
         rollout_epoch = int(rollout["epoch"])
     except (IndexError, ValueError, KeyError, TypeError):
         rollout_epoch = 0
-    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae"), "v3_worker_epoch": v3_epoch, "v3_rollout_epoch": rollout_epoch}, (total, idle)
+    h20_epoch = int(lines[h20_start + 1]) if len(lines) > h20_start + 1 and lines[h20_start + 1].isdigit() else 0
+    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae"), "v3_worker_epoch": v3_epoch, "v3_rollout_epoch": rollout_epoch, "v3_h20_epoch": h20_epoch}, (total, idle)
 
 
 def _cfd_progress(root: Path) -> list[dict]:
@@ -296,7 +301,7 @@ class Handler(BaseHTTPRequestHandler):
                         figures[f"{case}/{horizon}"] = {"path": f"/figure/current/{case}/{horizon}.png", "version": int(current.stat().st_mtime), "label": "当前 10 轮多步 FNO · 真实 CFD / 预测 / 绝对误差"}
                     elif previous.exists():
                         figures[f"{case}/{horizon}"] = {"path": f"/figure/previous/{case}/{horizon}.png", "version": int(previous.stat().st_mtime), "label": "上一版单步 FNO · 真实 CFD / 预测 / 绝对误差（当前模型图待生成）"}
-            data = {"server_time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "watchdog": _read_json(self.root / "artifacts/monitor/research_window_20261002/latest.json", None), "audit": audit, "v3_audit": _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/gate_b_audit.json", None), "v3_worker_audit": _read_json(self.root / V3_WORKER_RUN / "gate_b_audit.json", None), "v3_primary_rollout_audit": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "gate_b_audit.json", None), "v3_rollout_audit": _read_json(self.root / V3_ROLLOUT_RUN / "gate_b_audit.json", None), "v3_observed": _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/heldout_evaluation.json", None), "v3_worker_observed": _read_json(self.root / V3_WORKER_RUN / "heldout_evaluation.json", None), "v3_primary_rollout_observed": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "heldout_evaluation.json", None), "v3_rollout_observed": _read_json(self.root / V3_ROLLOUT_RUN / "heldout_evaluation.json", None), "history": history, "v3_training": v3_training, "v3_primary_rollout_history": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "training_history.json", []), "second_seed": _read_json(self.root / SECOND_RUN / "heldout_evaluation.json", None), "evaluations": {"heldout": heldout.get("summary", {}), "independent": independent.get("summary", {})}, "resources": samples, "cfd": _cfd_progress(self.root), "curator": _curator_progress(self.root), "benchmark": _read_json(self.root / "artifacts/monitor/fno_inference_benchmark_seed20261003.json", None), "figures": figures, "cem": (self.root / "artifacts/distributed_runs/gateb_multistep_20261002/formal/CEM_STAGE_C_COMPLETE").exists(), "ppo": False}
+            data = {"server_time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "watchdog": _read_json(self.root / "artifacts/monitor/research_window_20261002/latest.json", None), "audit": audit, "v3_audit": _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/gate_b_audit.json", None), "v3_worker_audit": _read_json(self.root / V3_WORKER_RUN / "gate_b_audit.json", None), "v3_primary_rollout_audit": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "gate_b_audit.json", None), "v3_rollout_audit": _read_json(self.root / V3_ROLLOUT_RUN / "gate_b_audit.json", None), "v3_h20_audit": _read_json(self.root / V3_H20_RUN / "gate_b_audit.json", None), "v3_observed": _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/heldout_evaluation.json", None), "v3_worker_observed": _read_json(self.root / V3_WORKER_RUN / "heldout_evaluation.json", None), "v3_primary_rollout_observed": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "heldout_evaluation.json", None), "v3_rollout_observed": _read_json(self.root / V3_ROLLOUT_RUN / "heldout_evaluation.json", None), "v3_h20_observed": _read_json(self.root / V3_H20_RUN / "heldout_evaluation.json", None), "history": history, "v3_training": v3_training, "v3_primary_rollout_history": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "training_history.json", []), "second_seed": _read_json(self.root / SECOND_RUN / "heldout_evaluation.json", None), "evaluations": {"heldout": heldout.get("summary", {}), "independent": independent.get("summary", {})}, "resources": samples, "cfd": _cfd_progress(self.root), "curator": _curator_progress(self.root), "benchmark": _read_json(self.root / "artifacts/monitor/fno_inference_benchmark_seed20261003.json", None), "figures": figures, "cem": (self.root / "artifacts/distributed_runs/gateb_multistep_20261002/formal/CEM_STAGE_C_COMPLETE").exists(), "ppo": False}
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
 
