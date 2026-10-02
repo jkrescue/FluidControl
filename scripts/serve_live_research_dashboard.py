@@ -96,7 +96,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  let observed=d.v3_primary_rollout_observed||d.v3_rollout_observed||d.v3_observed||d.v3_worker_observed,preliminary=observed?.summary?.['100']?.total_drag_nrmse;
  let b=audited?c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse:(Number.isFinite(preliminary)?preliminary:c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse),i=c.independent_phase_full_period_total_drag_nrmse?.total_drag_nrmse;
  $('heldout').textContent=pct(b);$('heldout').className=audited&&Number.isFinite(b)&&b<=.1?'good':Number.isFinite(b)&&b>.1?'bad':'';
- $('epoch').textContent=`主节点：单步 ${d.v3_training.length}/30，多步 ${d.v3_primary_rollout_history.length}/10 轮`;$('hydro-status').textContent=d.cem?'CEM 已完成':'尚未启动';
+ $('epoch').textContent=`主节点：单步 ${d.v3_training.length}/30，多步 ${d.v3_primary_rollout_history.length}/10 轮`;$('hydro-status').textContent=d.cem?'CEM 已完成':'当前目标待 Gate B';
  let watch=d.watchdog||{}, hours=Number.isFinite(watch.seconds_remaining)?(watch.seconds_remaining/3600).toFixed(1):'—';$('watchdog').textContent=`七小时验收窗口剩余 ${hours} 小时 · 监控采样 ${watch.timestamp_utc||'待启动'} · 告警 ${watch.alerts?.length?watch.alerts.join('、'):'无'}`;$('watchdog').className='small '+(watch.alerts?.length?'bad':'good');
  let finished=d.cfd.filter(x=>x.status==='complete').length,average=d.cfd.reduce((s,x)=>s+x.percent,0)/Math.max(1,d.cfd.length);
  $('cfd-progress').textContent=`${finished}/3 CFD 完成`;
@@ -112,7 +112,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  let current=d.v3_training.at(-1);$('v3-metrics').textContent=current?`新数据 FNO（主节点）第 ${current.epoch} 轮：训练损失 ${num(current.train_loss,4)}；验证流场误差 ${num(current.state_mae_physical_units,4)}；验证受力误差（归一化）${num(current.force_mae_normalized,4)}。`:'新数据 FNO：正式训练已启动，首轮指标尚未产生。';
  $('infer-speed').textContent=d.benchmark?.status==='FNO_REAL_CFD_INFERENCE_BENCHMARK_OK'?`旧数据多步 FNO、真实 CFD 输入：单步中位 ${num(d.benchmark.step_median_ms,2)} ms；连续 100 步 ${num(d.benchmark.rollout_100_step_seconds,2)} s。仅模型前向，不含 CFD 或控制通信。`:'FNO 推理耗时尚未测量。';
  $('cem').textContent=d.cem?'CEM 控制筛选已完成，结果待审计。':`CEM：等待 FNO 的 100 步总阻力误差降至 10% 以下。新增 CFD 平均求解进度 ${num(average,0)}%。`;
- $('ppo').textContent=d.ppo?'HydroGym PPO 有当前目标的新记录。':'HydroGym PPO：尚未启动；须先通过 FNO 与 CEM 阶段。';figure()}
+ $('ppo').textContent=d.ppo?'HydroGym PPO 有当前目标的新记录。':'当前总阻力目标的 HydroGym PPO 尚未启动。历史末柱目标的 PPO 曾完成 32 步真实 CFD 闭环，但目标差 +0.003855（更差），不能视为当前控制收益。';figure()}
 async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);render(await r.json())}catch(e){$('clock').textContent='连接失败：'+e.message}}
 $('case').onchange=figure;$('horizon').onchange=figure;window.onresize=()=>{if(latest)render(latest)};refresh();setInterval(refresh,5000);
 </script></body></html>'''
