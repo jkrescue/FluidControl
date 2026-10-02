@@ -9,9 +9,11 @@ output="${OUTPUT_DIR:-artifacts/tandem_fno_gate_b_aug_v3_30epoch}"
 audit="artifacts/tandem_cylinders/gate_b_aug_v3_split_integrity.json"
 epochs="${EPOCHS:-30}"
 batch_size="${BATCH_SIZE:-64}"
+seed="${SEED:-20261002}"
 
-[[ "${epochs}" =~ ^[1-9][0-9]*$ && "${batch_size}" =~ ^[1-9][0-9]*$ ]] || {
-    echo "EPOCHS and BATCH_SIZE must be positive integers" >&2; exit 2;
+[[ "${epochs}" =~ ^[1-9][0-9]*$ && "${batch_size}" =~ ^[1-9][0-9]*$ \
+   && "${seed}" =~ ^[1-9][0-9]*$ ]] || {
+    echo "EPOCHS, BATCH_SIZE and SEED must be positive integers" >&2; exit 2;
 }
 [[ "${output}" != /* && "${output}" == artifacts/* ]] || {
     echo "OUTPUT_DIR must be project-relative under artifacts/" >&2; exit 2;
@@ -41,7 +43,8 @@ mkdir -p "${output}"
 
 exec docker run --rm --network none --gpus 'device=0' --cpus 8 --memory 64g \
     --shm-size 2g --user "$(id -u):$(id -g)" \
-    --env HOME=/tmp --env PYTHONPATH=/workspace/src:/workspace/scripts \
+    --env HOME=/tmp --env "USER=$(id -un)" --env "LOGNAME=$(id -un)" \
+    --env PYTHONPATH=/workspace/src:/workspace/scripts \
     --env OMP_NUM_THREADS=4 \
     --mount "type=bind,src=${root},dst=/workspace" \
     --workdir /workspace fluid-control-physicsnemo:2.2.2 \
@@ -51,4 +54,5 @@ exec docker run --rm --network none --gpus 'device=0' --cpus 8 --memory 64g \
         --config-name tandem_fno_total_drag \
         "data.root=${data_root}" "output_dir=${output}" \
         "training.epochs=${epochs}" "training.batch_size=${batch_size}" \
+        "training.seed=${seed}" \
         "training.gpu_memory_fraction=0.20" "data.num_streams=1"
