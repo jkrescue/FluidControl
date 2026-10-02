@@ -93,3 +93,11 @@ and the independent-phase 50/100-step persistence checks (five failed
 checks total). The test-only preliminary result above has therefore been
 superseded by a full failed audit. This does not select or reject the
 still-running primary-seed model; the seeds remain separate replications.
+
+On the validation split at 100 steps, rear-cylinder drag MAE is 1.0318,
+versus front-cylinder drag MAE 0.0143; the combined drag MAE is 1.0211.
+The error is concentrated in the controlled rear wake/force channel, while
+the front-cylinder contribution remains comparatively stable. The model's
+validation total-drag MAE only narrowly beats persistence (1.0211 versus
+1.0685), so an apparent gain in short-horizon force accuracy cannot yet
+support reliable control optimization.
