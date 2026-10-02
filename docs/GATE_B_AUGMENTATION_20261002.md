@@ -71,3 +71,13 @@ The primary GPU remains subject to the same 20 GiB unified-memory floor and
 0.20 per-process CUDA allocator cap. The smoke/formal logs and completion
 markers are placed in `artifacts/tandem_cylinders/`; the selected model lives
 under `artifacts/tandem_fno_gate_b_aug_v3_30epoch/`.
+
+After formal one-step training, `scripts/evaluate_gate_b_aug_v3_onestep_spark.sh`
+runs the unchanged 1/10/50/100-step observed, zero-action, sign-flipped and
+shuffled-action panels on all **five** v3 test histories. It also evaluates the
+independent shedding-phase case using v3 train-only normalization and writes
+the fail-closed Gate-B audit. A separate observed-action evaluation on the
+original four-case test cohort permits like-for-like comparison with v2.
+`gate_b_v3_comparison.json` reports the five-case aggregate, original four-case
+aggregate and fresh test 05 individually; a favorable original four-case
+result alone cannot be treated as fresh independent validation.
