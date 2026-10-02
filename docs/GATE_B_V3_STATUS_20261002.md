@@ -76,3 +76,11 @@ worker. A separate validation-split 100-step diagnostic is running to test
 whether the failure is generic autoregressive drift. Active-learning CFD
 acquisition remains conditional: this preliminary all-case drift does not
 yet justify generating additional OpenFOAM trajectories.
+
+The independent **validation**-split diagnostic then completed with
+100-step total-drag NRMSE 50.950% (1/10/50-step: 1.406% / 4.977% /
+22.688%). Its deterioration across rollout length parallels the frozen
+test trend, so the present evidence supports autoregressive instability
+rather than a test-only coverage gap. The active-learning branch is on hold
+while the predeclared longer-rollout ablation runs; no extra CFD labels were
+generated, and this validation result does not relax Gate B.
