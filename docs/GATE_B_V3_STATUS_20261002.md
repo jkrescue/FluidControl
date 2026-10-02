@@ -177,3 +177,22 @@ pinned PhysicsNeMo 2.2.2 container. The new config saves each validation
 epoch, avoiding the first worker run's five-epoch checkpoint spacing. Only
 train/validation data are on the worker; a supervised finalizer will copy
 the final model back to the primary Spark for the unchanged frozen audit.
+
+The rear-drag-weighted ten-epoch run has completed successfully without
+breaching its 20 GiB available-memory guard. Its validation-selected final
+checkpoint improved the *predeclared* 100-step validation total-drag NRMSE
+from 18.927% (same-seed parent) to 16.714%; rear-cylinder Cd MAE improved
+from 0.3985 to 0.3578. The validation-first finalizer therefore proceeds
+to the frozen five-case and independent-phase Gate-B tests. This is a
+validation result, not yet a held-out pass or a physical drag-reduction claim.
+
+For the worker seed-20261005 twenty-step checkpoint, the first held-out
+five-case 100-step evaluation returned total-drag NRMSE 45.192%. This
+improves its ten-step predecessor's 67.143% but is still far above the
+frozen 10% limit; the remaining action and phase controls continue. All
+five individual cases exceed 10%, so this result alone does not justify
+an active-learning CFD acquisition targeted at one case. PhysicsNeMo's
+official active-learning query/label machinery remains a *conditional*
+option, with OpenFOAM providing real labels and a random-acquisition
+control, only after train/validation coverage analysis identifies a
+specific correctable gap; frozen test cases must never drive acquisition.
