@@ -54,7 +54,9 @@ def rollout(
                 + (1.0 - teacher_forcing_ratio) * predicted
             )
         omega_now = omega[:, step].reshape(-1, 1, 1, 1).expand(-1, 1, height, width)
-        omega_next = omega[:, step + 1].reshape(-1, 1, 1, 1).expand(-1, 1, height, width)
+        omega_next = (
+            omega[:, step + 1].reshape(-1, 1, 1, 1).expand(-1, 1, height, width)
+        )
         inputs = torch.cat([predicted, mask, omega_now, omega_next], dim=1)
         delta, force = predict(network, inputs, mask)
         predicted = (predicted + delta) * mask
@@ -86,7 +88,9 @@ def main(cfg: DictConfig) -> None:
     best_dir = output / "best"
     if dist.rank == 0:
         output.mkdir(parents=True, exist_ok=True)
-        (output / "resolved_config.yaml").write_text(OmegaConf.to_yaml(cfg), encoding="utf-8")
+        (output / "resolved_config.yaml").write_text(
+            OmegaConf.to_yaml(cfg), encoding="utf-8"
+        )
         runtime = {
             "world_size": dist.world_size,
             "device_name": device_properties.name,
@@ -97,8 +101,12 @@ def main(cfg: DictConfig) -> None:
             "nccl_environment": {
                 key: os.environ.get(key)
                 for key in (
-                    "NCCL_P2P_DISABLE", "NCCL_SHM_DISABLE", "NCCL_IB_DISABLE",
-                    "NCCL_CUMEM_ENABLE", "NCCL_CUMEM_HOST_ENABLE", "NCCL_SOCKET_IFNAME",
+                    "NCCL_P2P_DISABLE",
+                    "NCCL_SHM_DISABLE",
+                    "NCCL_IB_DISABLE",
+                    "NCCL_CUMEM_ENABLE",
+                    "NCCL_CUMEM_HOST_ENABLE",
+                    "NCCL_SOCKET_IFNAME",
                 )
             },
         }
@@ -125,18 +133,29 @@ def main(cfg: DictConfig) -> None:
     if int(cfg.model.out_channels) != 3 + len(force_indices):
         raise ValueError("model.out_channels must equal 3 + number of force targets")
     train = TandemRolloutDataset(
-        cfg.data.root, "train", rollout_steps,
-        stride=32 if smoke else 1, num_workers=cfg.training.workers,
+        cfg.data.root,
+        "train",
+        rollout_steps,
+        stride=32 if smoke else int(cfg.training.get("train_stride", 1)),
+        num_workers=cfg.training.workers,
         force_indices=force_indices,
     )
     validation = TandemRolloutDataset(
-        cfg.data.root, "validation", rollout_steps,
+        cfg.data.root,
+        "validation",
+        rollout_steps,
         stride=64 if smoke else int(cfg.training.validation_stride),
         num_workers=cfg.training.workers,
         force_indices=force_indices,
     )
-    train_sampler = DistributedSampler(train, shuffle=True, seed=cfg.training.seed) if dist.distributed else None
-    validation_sampler = DistributedSampler(validation, shuffle=False) if dist.distributed else None
+    train_sampler = (
+        DistributedSampler(train, shuffle=True, seed=cfg.training.seed)
+        if dist.distributed
+        else None
+    )
+    validation_sampler = (
+        DistributedSampler(validation, shuffle=False) if dist.distributed else None
+    )
     loader_args = {
         "batch_size": int(cfg.training.batch_size),
         "prefetch_factor": int(cfg.data.prefetch_factor),
@@ -144,8 +163,12 @@ def main(cfg: DictConfig) -> None:
         "use_streams": True,
         "seed": int(cfg.training.seed),
     }
-    train_loader = DataLoader(train, shuffle=train_sampler is None, sampler=train_sampler, **loader_args)
-    validation_loader = DataLoader(validation, shuffle=False, sampler=validation_sampler, **loader_args)
+    train_loader = DataLoader(
+        train, shuffle=train_sampler is None, sampler=train_sampler, **loader_args
+    )
+    validation_loader = DataLoader(
+        validation, shuffle=False, sampler=validation_sampler, **loader_args
+    )
 
     network: torch.nn.Module = build_model(cfg).to(dist.device)
     if dist.distributed:
@@ -157,7 +180,9 @@ def main(cfg: DictConfig) -> None:
             find_unused_parameters=dist.find_unused_parameters,
         )
     optimizer = torch.optim.AdamW(
-        network.parameters(), lr=cfg.training.learning_rate, weight_decay=cfg.training.weight_decay
+        network.parameters(),
+        lr=cfg.training.learning_rate,
+        weight_decay=cfg.training.weight_decay,
     )
     epochs = 1 if smoke else int(cfg.training.epochs)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
@@ -165,8 +190,12 @@ def main(cfg: DictConfig) -> None:
     current_teacher_forcing = 0.0
 
     @StaticCaptureTraining(
-        model=network, optim=optimizer, logger=pylog, use_graphs=False,
-        use_amp=False, gradient_clip_norm=cfg.training.gradient_clip_norm,
+        model=network,
+        optim=optimizer,
+        logger=pylog,
+        use_graphs=False,
+        use_amp=False,
+        gradient_clip_norm=cfg.training.gradient_clip_norm,
         label="tandem_fno_rollout_train",
     )
     def forward_train(state, target_state, omega, target_force, mask):
@@ -179,17 +208,19 @@ def main(cfg: DictConfig) -> None:
             torch.arange(steps, device=state.device, dtype=state.dtype),
         )
         weights = weights / weights.sum()
-        field_by_step = (
-            ((predicted_state - target_state).square() * mask[:, None]).sum(dim=(2, 3, 4))
-            / (mask.sum(dim=(1, 2, 3)).clamp_min(1)[:, None] * 3)
-        )
+        field_by_step = ((predicted_state - target_state).square() * mask[:, None]).sum(
+            dim=(2, 3, 4)
+        ) / (mask.sum(dim=(1, 2, 3)).clamp_min(1)[:, None] * 3)
         force_by_step = (predicted_force - target_force).square().mean(dim=2)
         field_loss = (field_by_step * weights[None]).sum(dim=1).mean()
         force_loss = (force_by_step * weights[None]).sum(dim=1).mean()
         return field_loss + float(cfg.training.force_loss_weight) * force_loss
 
     @StaticCaptureEvaluateNoGrad(
-        model=network, logger=pylog, use_graphs=False, use_amp=False,
+        model=network,
+        logger=pylog,
+        use_graphs=False,
+        use_amp=False,
         label="tandem_fno_rollout_eval",
     )
     def forward_eval(state, mask, omega):
@@ -197,23 +228,38 @@ def main(cfg: DictConfig) -> None:
 
     metadata: dict = {}
     loaded_epoch = load_checkpoint(
-        checkpoint_dir, models=network, optimizer=optimizer, scheduler=scheduler,
-        metadata_dict=metadata, device=dist.device,
+        checkpoint_dir,
+        models=network,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        metadata_dict=metadata,
+        device=dist.device,
     )
     initialized_from = None
     if loaded_epoch == 0 and str(cfg.training.initial_checkpoint):
         initial_metadata: dict = {}
         initial_epoch = load_checkpoint(
-            Path(cfg.training.initial_checkpoint), models=network,
-            metadata_dict=initial_metadata, device=dist.device,
+            Path(cfg.training.initial_checkpoint),
+            models=network,
+            metadata_dict=initial_metadata,
+            device=dist.device,
         )
         if initial_epoch == 0:
-            raise FileNotFoundError(f"initial checkpoint not found: {cfg.training.initial_checkpoint}")
-        initialized_from = {"path": str(cfg.training.initial_checkpoint), "epoch": initial_epoch}
+            raise FileNotFoundError(
+                f"initial checkpoint not found: {cfg.training.initial_checkpoint}"
+            )
+        initialized_from = {
+            "path": str(cfg.training.initial_checkpoint),
+            "epoch": initial_epoch,
+        }
 
     best = float(metadata.get("best_rollout_score", "inf"))
     history_path = output / "training_history.json"
-    history = json.loads(history_path.read_text()) if dist.rank == 0 and history_path.exists() else []
+    history = (
+        json.loads(history_path.read_text())
+        if dist.rank == 0 and history_path.exists()
+        else []
+    )
     state_std = train.state_std.to(dist.device)[None, None]
     force_std = train.force_std.to(dist.device)[None, None]
 
@@ -223,23 +269,35 @@ def main(cfg: DictConfig) -> None:
             train_sampler.set_epoch(epoch)
         totals = torch.zeros(2, dtype=torch.float64, device=dist.device)
         max_train_batches = cfg.training.get("max_train_batches")
-        train_batches = min(len(train_loader), int(max_train_batches)) if max_train_batches else len(train_loader)
+        train_batches = (
+            min(len(train_loader), int(max_train_batches))
+            if max_train_batches
+            else len(train_loader)
+        )
         with LaunchLogger("train", epoch=epoch, num_mini_batch=train_batches) as logger:
             for batch_index, batch in enumerate(train_loader):
                 if max_train_batches and batch_index >= int(max_train_batches):
                     break
-                batch = {key: value.to(dist.device, non_blocking=True) for key, value in batch.items()}
+                batch = {
+                    key: value.to(dist.device, non_blocking=True)
+                    for key, value in batch.items()
+                }
                 loss = forward_train(
-                    batch["state"], batch["target_state"], batch["omega"],
-                    batch["target_force"], batch["mask"],
+                    batch["state"],
+                    batch["target_state"],
+                    batch["omega"],
+                    batch["target_force"],
+                    batch["mask"],
                 )
                 logger.log_minibatch({"loss": loss.detach()})
                 totals[0] += loss.detach().double()
                 totals[1] += 1
-            logger.log_epoch({
-                "learning_rate": optimizer.param_groups[0]["lr"],
-                "teacher_forcing_ratio": current_teacher_forcing,
-            })
+            logger.log_epoch(
+                {
+                    "learning_rate": optimizer.param_groups[0]["lr"],
+                    "teacher_forcing_ratio": current_teacher_forcing,
+                }
+            )
         totals = reduce_totals(totals, dist).cpu()
         train_loss = float(totals[0] / totals[1])
 
@@ -247,18 +305,27 @@ def main(cfg: DictConfig) -> None:
         max_validation_batches = cfg.training.get("max_validation_batches")
         with LaunchLogger("validation", epoch=epoch) as logger:
             for batch_index, batch in enumerate(validation_loader):
-                if max_validation_batches and batch_index >= int(max_validation_batches):
+                if max_validation_batches and batch_index >= int(
+                    max_validation_batches
+                ):
                     break
-                batch = {key: value.to(dist.device, non_blocking=True) for key, value in batch.items()}
+                batch = {
+                    key: value.to(dist.device, non_blocking=True)
+                    for key, value in batch.items()
+                }
                 predicted_state, predicted_force = forward_eval(
                     batch["state"], batch["mask"], batch["omega"]
                 )
                 state_error = (predicted_state - batch["target_state"]) * state_std
                 force_error = (predicted_force - batch["target_force"]) * force_std
                 denom = batch["mask"].sum() * 3
-                validation_totals[0] += (state_error.abs() * batch["mask"][:, None]).sum().double()
+                validation_totals[0] += (
+                    (state_error.abs() * batch["mask"][:, None]).sum().double()
+                )
                 validation_totals[1] += (denom * predicted_state.shape[1]).double()
-                validation_totals[2] += (state_error[:, -1].abs() * batch["mask"]).sum().double()
+                validation_totals[2] += (
+                    (state_error[:, -1].abs() * batch["mask"]).sum().double()
+                )
                 validation_totals[3] += denom.double()
                 validation_totals[4] += force_error.abs().sum().double()
                 validation_totals[5] += force_error.numel()
@@ -267,14 +334,21 @@ def main(cfg: DictConfig) -> None:
             validation_totals = reduce_totals(validation_totals, dist).cpu()
             metrics = {
                 "rollout_state_mae": float(validation_totals[0] / validation_totals[1]),
-                "terminal_state_mae": float(validation_totals[2] / validation_totals[3]),
+                "terminal_state_mae": float(
+                    validation_totals[2] / validation_totals[3]
+                ),
                 "rollout_force_mae": float(validation_totals[4] / validation_totals[5]),
-                "terminal_force_mae": float(validation_totals[6] / validation_totals[7]),
+                "terminal_force_mae": float(
+                    validation_totals[6] / validation_totals[7]
+                ),
             }
             logger.log_epoch(metrics)
 
         scheduler.step()
-        score = metrics["terminal_state_mae"] + float(cfg.training.selection_force_weight) * metrics["terminal_force_mae"]
+        score = (
+            metrics["terminal_state_mae"]
+            + float(cfg.training.selection_force_weight) * metrics["terminal_force_mae"]
+        )
         checkpoint_interval = max(int(cfg.training.get("checkpoint_interval", 5)), 1)
         save_now = epoch % checkpoint_interval == 0 or epoch == epochs
         improved = save_now and score < best
@@ -293,13 +367,21 @@ def main(cfg: DictConfig) -> None:
         }
         if dist.rank == 0 and save_now:
             save_checkpoint(
-                checkpoint_dir, models=network, optimizer=optimizer, scheduler=scheduler,
-                epoch=epoch, metadata=checkpoint_metadata,
+                checkpoint_dir,
+                models=network,
+                optimizer=optimizer,
+                scheduler=scheduler,
+                epoch=epoch,
+                metadata=checkpoint_metadata,
             )
             if improved:
                 save_checkpoint(
-                    best_dir, models=network, optimizer=optimizer, scheduler=scheduler,
-                    epoch=epoch, metadata=checkpoint_metadata,
+                    best_dir,
+                    models=network,
+                    optimizer=optimizer,
+                    scheduler=scheduler,
+                    epoch=epoch,
+                    metadata=checkpoint_metadata,
                 )
             keep_last = int(cfg.training.get("checkpoint_keep_last", 2))
             prune_checkpoint_dir(checkpoint_dir, keep_last)
@@ -309,12 +391,16 @@ def main(cfg: DictConfig) -> None:
                 )
         if dist.rank == 0:
             row = {
-                "epoch": epoch, "train_loss": train_loss,
+                "epoch": epoch,
+                "train_loss": train_loss,
                 "teacher_forcing_ratio": current_teacher_forcing,
-                "selection_score": score, **metrics,
+                "selection_score": score,
+                **metrics,
             }
             history.append(row)
-            history_path.write_text(json.dumps(history, indent=2) + "\n", encoding="utf-8")
+            history_path.write_text(
+                json.dumps(history, indent=2) + "\n", encoding="utf-8"
+            )
             print(json.dumps(row), flush=True)
 
     train.close()

@@ -1,0 +1,26 @@
+defaults:
+  - tandem_fno_total_drag
+  - _self_
+
+output_dir: artifacts/tandem_fno_total_drag_rollout_seed20261003
+
+training:
+  epochs: 10
+  batch_size: 4
+  workers: 4
+  learning_rate: 2.0e-5
+  weight_decay: 1.0e-4
+  force_loss_weight: 0.2
+  selection_force_weight: 0.1
+  rollout_steps: 10
+  rollout_discount: 1.0
+  teacher_forcing_start: 0.5
+  teacher_forcing_end: 0.0
+  teacher_forcing_epochs: 5
+  initial_checkpoint: artifacts/tandem_fno_total_drag_spark_30epoch/best
+  train_stride: 10
+  validation_stride: 25
+  max_train_batches: null
+  max_validation_batches: null
+  seed: 20261003
+  smoke: false

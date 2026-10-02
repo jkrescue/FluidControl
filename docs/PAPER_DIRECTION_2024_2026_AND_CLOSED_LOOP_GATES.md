@@ -2,6 +2,10 @@
 
 Date: 2026-10-02
 
+The authoritative physical objective and change-control rule are maintained in
+[`RESEARCH_OBJECTIVE.md`](RESEARCH_OBJECTIVE.md). If a later implementation note
+conflicts with that file, the canonical objective takes precedence.
+
 ## Executive decision
 
 The publishable direction is not simply “PPO on a surrogate.” It is a gated,
@@ -203,17 +207,23 @@ checkpoint is insufficient.
   architecture was introduced.
 - A seven-output smoke train, checkpoint reload, held-out rollout and total-drag
   evaluation have passed on GPU0 under the 20 GiB reserve guard.
-- The 30-epoch total-drag training run is the current Gate-A experiment. HydroGym
-  reward migration remains intentionally paused until its 1/10/50/100-step held-out
-  results are available.
+- The 30-epoch total-drag training run completed successfully with an official
+  PhysicsNeMo 2.2.2 FNO. The epoch-30 validation field MAE is `0.00126526` and the
+  normalized four-force MAE is `0.0330082`.
+- Observed, zero, sign-flipped, shuffled-action and independent-phase 1/10/50/100
+  evaluations completed without a failed rollout segment. A fail-closed Gate-B
+  audit now computes total-drag NRMSE at the full-period proxy horizon before
+  authorizing CEM-MPC or routing to multi-step fine-tuning.
+- HydroGym PPO remains intentionally paused. This prevents a policy from exploiting
+  a surrogate before its control-horizon fidelity has passed the fixed threshold.
 
 ## Immediate next actions
 
-1. Finish the seven-output FNO run and publish held-out 1/10/50/100-step metrics.
+1. Publish the fail-closed Gate-B NRMSE audit for the completed epoch-30 checkpoint.
 2. If total-drag error fails at the shedding-period horizon, fine-tune with
-   multi-step loss before any new PPO run.
-3. Update the HydroGym adapter from rear-only instantaneous drag to the normalized
-   running-window system objective, preserving per-term audit output.
-4. Run a short policy screen, then a frozen-policy long OpenFOAM comparison.
+   multi-step loss on the isolated second DGX Spark before any new PPO run.
+3. If Gate B passes, run CEM-MPC first using the already-audited normalized
+   running-window system objective and per-term reward ledger.
+4. Run a frozen-policy long OpenFOAM comparison before making a control claim.
 5. Generate policy-guided CFD only where the held-out/action-stratified audit shows
    insufficient support.

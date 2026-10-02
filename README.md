@@ -31,6 +31,7 @@ OpenFOAM CFD
 
 完整环境配置、执行命令和验收标准见以下文档：
 
+- [不可静默变更的研究目标](docs/RESEARCH_OBJECTIVE.md)
 - [训练操作手册](train_recipe.md)
 - [CFD 工况说明](cfd/tandem_cylinders/CASE_SPEC.md)
 - [论文复现对照](docs/PAPER_REPRODUCTION.md)
