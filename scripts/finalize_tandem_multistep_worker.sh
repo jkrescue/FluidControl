@@ -12,6 +12,8 @@ destination="${DESTINATION:-artifacts/distributed_runs/gateb_multistep_20261002/
 poll_seconds="${POLL_SECONDS:-60}"
 remote_log="${REMOTE_LOG:-/tmp/fluid_control_multistep_formal.log}"
 expected_epochs="${EXPECTED_EPOCHS:-10}"
+evaluation_data="${EVALUATION_DATA:-data/curated/tandem_cylinders_expanded_independent_v2}"
+normalization_data="${NORMALIZATION_DATA:-data/curated/tandem_cylinders_expanded_independent_v2}"
 
 [[ "${destination}" != /* && "${run_name}" =~ ^[a-zA-Z0-9_.-]+$ ]] || {
     echo "Destination must be project-relative and run name must be safe" >&2
@@ -22,6 +24,10 @@ expected_epochs="${EXPECTED_EPOCHS:-10}"
     && "${remote_log}" == /tmp/fluid_control_*.log ]] || {
     echo "Remote PID, poll interval, expected epochs, or runner log is invalid" >&2
     exit 2
+}
+[[ "${evaluation_data}" == data/curated/* && "${normalization_data}" == data/curated/* \
+    && -d "${evaluation_data}/test" && -s "${normalization_data}/normalization.json" ]] || {
+    echo "Evaluation data or train-only normalization is missing" >&2; exit 2;
 }
 
 mkdir -p "${destination}"
@@ -74,12 +80,14 @@ for file in "${model}"/best/*.mdlus "${model}/training_history.json"; do
     echo "TRANSFER_SHA256_OK ${relative} ${local_sha}"
 done
 for mode in observed zero sign_flip shuffle; do
-    MODEL_DIR="${model}" ACTION_MODE="${mode}" VISUALIZATIONS_PER_HORIZON=0 \
+    MODEL_DIR="${model}" EVALUATION_DATA="${evaluation_data}" \
+    NORMALIZATION_DATA="${normalization_data}" \
+    ACTION_MODE="${mode}" VISUALIZATIONS_PER_HORIZON=0 \
         bash scripts/run_tandem_fno_total_drag_eval_spark.sh
 done
 MODEL_DIR="${model}" \
 EVALUATION_DATA=data/curated/tandem_cylinders_phase_v1 \
-NORMALIZATION_DATA=data/curated/tandem_cylinders_expanded_independent_v2 \
+NORMALIZATION_DATA="${normalization_data}" \
 EVALUATION_LABEL=phase_independent ACTION_MODE=observed \
 VISUALIZATIONS_PER_HORIZON=0 \
     bash scripts/run_tandem_fno_total_drag_eval_spark.sh
@@ -92,6 +100,33 @@ python3 scripts/audit_tandem_gate_b.py \
     --independent "${model}/heldout_evaluation_phase_independent.json" \
     --output "${model}/gate_b_audit.json" \
     --markdown "${model}/gate_b_audit.md"
+
+if [[ "${evaluation_data}" == data/curated/tandem_cylinders_gate_b_aug_v3 ]]; then
+    MODEL_DIR="${model}" \
+    EVALUATION_DATA=data/curated/tandem_cylinders_expanded_independent_v2 \
+    NORMALIZATION_DATA="${normalization_data}" \
+    EVALUATION_LABEL=legacy_four ACTION_MODE=observed VISUALIZATIONS_PER_HORIZON=0 \
+        bash scripts/run_tandem_fno_total_drag_eval_spark.sh
+    python3 - "${model}" <<'PY'
+import json,sys
+from pathlib import Path
+model=Path(sys.argv[1])
+audit=json.loads((model/'gate_b_audit.json').read_text())
+fresh=json.loads((model/'heldout_evaluation.json').read_text())
+legacy=json.loads((model/'heldout_evaluation_legacy_four.json').read_text())
+cases={row['case']:row['horizons']['100']['total_drag_nrmse'] for row in fresh['cases']}
+if len(cases)!=5 or 'expanded_test_05' not in cases:
+    raise SystemExit('Fresh independent test case 05 is missing')
+report={'gate_status':audit['status'],
+        'formal_five_case_100step_nrmse':fresh['summary']['100']['total_drag_nrmse'],
+        'legacy_four_case_100step_nrmse':legacy['summary']['100']['total_drag_nrmse'],
+        'fresh_test_05_100step_nrmse':cases['expanded_test_05'],
+        'case_100step_nrmse':cases,
+        'interpretation':'surrogate accuracy only; no CFD control-benefit claim'}
+(model/'gate_b_v3_comparison.json').write_text(json.dumps(report,indent=2)+'\n')
+print(json.dumps(report))
+PY
+fi
 
 touch "${complete_marker}"
 echo "FINALIZE_OK $(date -Is)"
