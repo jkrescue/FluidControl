@@ -21,6 +21,7 @@ from urllib.parse import urlparse
 
 
 RUN = Path("artifacts/distributed_runs/gateb_multistep_20261002/formal/tandem_fno_total_drag_rollout_seed20261003")
+SECOND_RUN = Path("artifacts/distributed_runs/gateb_multistep_seed20261004_20261002/formal/tandem_fno_total_drag_rollout_seed20261004")
 OLD = Path("artifacts/tandem_fno_total_drag_spark_30epoch")
 SAMPLE_FILE = Path("artifacts/monitor/live_resource_samples.jsonl")
 HOST_COMMAND = (
@@ -90,7 +91,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  let finished=d.cfd.filter(x=>x.status==='complete').length,average=d.cfd.reduce((s,x)=>s+x.percent,0)/Math.max(1,d.cfd.length);
  $('cfd-progress').textContent=`${finished}/3 CFD 完成`;
  $('cfd-sub').textContent=d.curator.complete?'Curator：35 条轨迹已完成数据验收':`Curator：${d.curator.done}/3 条新增轨迹已采样，当前 ${d.curator.latest_frame}/801 帧`;
- let worker=d.resources.worker.at(-1)||{};$('second-seed').textContent=`第二随机种子：${worker.second_seed_epoch||0}/10 轮 · 10 步验证受力误差 ${num(worker.second_seed_force_mae,4)}`;
+ let worker=d.resources.worker.at(-1)||{},second=d.second_seed?.summary?.['100']?.total_drag_nrmse;$('second-seed').textContent=`第二随机种子：${worker.second_seed_epoch||0}/10 轮 · 100 步总阻力误差 ${pct(second)}${Number.isFinite(second)?'（初评）':''}`;
  $('decision').textContent=a?.status==='GATE_B_PASS'?'FNO 已达到预定精度，可以进入 CEM 控制筛选。':`当前 FNO：100 步总阻力预测误差 ${pct(b)}，超过 10% 目标；独立初始相位 ${pct(i)}。正在补充真实 CFD 并做第二随机种子训练。CEM 与 PPO 仍等待模型精度达标。`;
  resources('primary',d.resources.primary);resources('worker',d.resources.worker);
  plot('train-chart',[{values:d.history.map(x=>x.terminal_state_mae),color:'#60c9fb'},{values:d.history.map(x=>x.terminal_force_mae),color:'#e9ae68'}],.05);
@@ -268,7 +269,7 @@ class Handler(BaseHTTPRequestHandler):
                         figures[f"{case}/{horizon}"] = {"path": f"/figure/current/{case}/{horizon}.png", "version": int(current.stat().st_mtime), "label": "当前 10 轮多步 FNO · 真实 CFD / 预测 / 绝对误差"}
                     elif previous.exists():
                         figures[f"{case}/{horizon}"] = {"path": f"/figure/previous/{case}/{horizon}.png", "version": int(previous.stat().st_mtime), "label": "上一版单步 FNO · 真实 CFD / 预测 / 绝对误差（当前模型图待生成）"}
-            data = {"server_time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "audit": audit, "history": history, "v3_training": v3_training, "evaluations": {"heldout": heldout.get("summary", {}), "independent": independent.get("summary", {})}, "resources": samples, "cfd": _cfd_progress(self.root), "curator": _curator_progress(self.root), "benchmark": _read_json(self.root / "artifacts/monitor/fno_inference_benchmark_seed20261003.json", None), "figures": figures, "cem": (self.root / "artifacts/distributed_runs/gateb_multistep_20261002/formal/CEM_STAGE_C_COMPLETE").exists(), "ppo": False}
+            data = {"server_time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "audit": audit, "history": history, "v3_training": v3_training, "second_seed": _read_json(self.root / SECOND_RUN / "heldout_evaluation.json", None), "evaluations": {"heldout": heldout.get("summary", {}), "independent": independent.get("summary", {})}, "resources": samples, "cfd": _cfd_progress(self.root), "curator": _curator_progress(self.root), "benchmark": _read_json(self.root / "artifacts/monitor/fno_inference_benchmark_seed20261003.json", None), "figures": figures, "cem": (self.root / "artifacts/distributed_runs/gateb_multistep_20261002/formal/CEM_STAGE_C_COMPLETE").exists(), "ppo": False}
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
 
