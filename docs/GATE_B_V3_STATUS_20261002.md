@@ -151,3 +151,13 @@ with the official runner's `USER`/`LOGNAME` environment succeeded.
 Both logs and the result were copied checksum-identically to
 `artifacts/distributed_runs/gateb_aug_v3_h20_epoch5_validation_20261002/`
 on the primary Spark. No worker test data were used.
+
+The rear-drag-weighted ablation's epoch-5 checkpoint was also evaluated on
+validation only. Its 100-step total-drag NRMSE is 21.634%, versus 18.927%
+for its same-seed parent; rear-cylinder Cd MAE is 0.4407 versus 0.3985.
+Thus increased rear-Cd loss weighting has **not** improved the midcourse
+governing validation horizon or rear-force error. The predeclared ten-epoch
+training continues, and its validation-first finalizer will withhold frozen
+test evaluation unless the final validation-selected checkpoint beats the
+parent's 100-step validation NRMSE. No frozen test result was used to tune
+the weight.
