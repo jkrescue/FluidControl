@@ -60,3 +60,27 @@ The live dashboard at `scripts/serve_live_research_dashboard.py` shows the
 formal curves, this gate, current-model CFD comparison images and both Spark
 nodes' CPU/GPU activity. Its monitoring instructions are in
 `docs/LIVE_DASHBOARD_20261002.md`.
+
+## Second-seed replication (completed 2026-10-02)
+
+A separate ten-epoch rollout run used seed `20261004` on the same audited v2
+training/validation split and the same official PhysicsNeMo FNO. Its best
+checkpoint is epoch 10. The worker GPU guard recorded minimum system
+`MemAvailable` of 106.64 GiB. The model and logs were copied back to the
+primary Spark with SHA-256 verification. All 42 frozen Gate-B checks were
+evaluated; the only failure was the unchanged 100-step standard-holdout
+total-drag NRMSE threshold:
+
+| Rollout seed | Four-case holdout 100-step NRMSE | Independent phase | Gate |
+| --- | ---: | ---: | --- |
+| 20261003 | 13.56% | 7.90% | fail |
+| 20261004 | 13.56% | 7.49% | fail |
+
+For seed `20261004`, case `expanded_test_04` remains the dominant error at
+28.06% (other cases: 7.48%, 11.54%, 7.18%). Thus changing the random seed
+did not resolve the strong-rotation coverage problem. Neither seed authorizes
+CEM or HydroGym PPO for the current total-drag objective. The canonical
+second-seed report is under
+`artifacts/distributed_runs/gateb_multistep_seed20261004_20261002/formal/`.
+The next frozen test is the augmented v3 dataset with 26 train, 4 validation
+and 5 test CFD trajectories, including the untouched `expanded_test_05`.
