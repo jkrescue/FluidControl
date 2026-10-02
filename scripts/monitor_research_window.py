@@ -23,7 +23,10 @@ HOST_PROBE = (
     "awk '/^MemAvailable:/ {print $2}' /proc/meminfo; "
     "nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits | head -1; "
     "ps -eo args | grep -E 'train_tandem_fno_rollout.py|evaluate_tandem_fno.py|train_tandem_hydrogym_ppo_pilot.py' "
-    "| grep -v grep | wc -l"
+    "| grep -v grep | wc -l; "
+    "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/"
+    "tandem_fno_gate_b_aug_v3_rollout_seed20261005_10epoch/"
+    "training_history.json 2>/dev/null || echo 0"
 )
 
 
@@ -37,13 +40,14 @@ def probe(worker: bool) -> dict:
         if result.returncode:
             raise RuntimeError(result.stderr.strip() or f"exit {result.returncode}")
         lines = result.stdout.strip().splitlines()
-        if len(lines) != 3:
+        if len(lines) != 4:
             raise ValueError(f"unexpected host probe: {lines!r}")
         return {
             "reachable": True,
             "mem_available_gib": round(int(lines[0]) / 1024**2, 2),
             "gpu_utilization_pct": int(lines[1].strip().split()[0]),
             "training_or_evaluation_processes": int(lines[2]),
+            "worker_multistep_epoch": int(lines[3]),
         }
     except (OSError, subprocess.SubprocessError, RuntimeError, ValueError) as exc:
         return {"reachable": False, "error": str(exc)[:300]}
@@ -96,6 +100,22 @@ def sample(deadline: datetime) -> dict:
     for name, audit in audits.items():
         if audit["state"] == "invalid":
             alerts.append(f"{name}_audit_invalid")
+    primary_epoch = training_epoch(
+        "artifacts/tandem_fno_gate_b_aug_v3_rollout_seed20261002_10epoch/training_history.json"
+    )
+    worker_epoch = worker.get("worker_multistep_epoch")
+    if primary["reachable"] and primary_epoch is not None and primary_epoch < 10:
+        if primary["training_or_evaluation_processes"] == 0:
+            alerts.append("primary_multistep_stopped_before_epoch_10")
+    if worker["reachable"] and worker_epoch is not None and worker_epoch < 10:
+        if worker["training_or_evaluation_processes"] == 0:
+            alerts.append("worker_multistep_stopped_before_epoch_10")
+    for marker, name in (
+        ("artifacts/tandem_cylinders/GATE_B_AUG_V3_ROLLOUT_SEED20261002_FAILED", "primary_rollout_pipeline_failed"),
+        ("artifacts/distributed_runs/gateb_aug_v3_rollout_seed20261005_20261002/formal/MULTISTEP_GATE_B_FAILED", "worker_rollout_finalizer_failed"),
+    ):
+        if (ROOT / marker).exists():
+            alerts.append(name)
     return {
         "timestamp_utc": now.isoformat(timespec="seconds"),
         "deadline_utc": deadline.isoformat(timespec="seconds"),
@@ -103,12 +123,8 @@ def sample(deadline: datetime) -> dict:
         "primary": primary,
         "worker": worker,
         "audits": audits,
-        "primary_multistep_epoch": training_epoch(
-            "artifacts/tandem_fno_gate_b_aug_v3_rollout_seed20261002_10epoch/training_history.json"
-        ),
-        "worker_multistep_epoch": training_epoch(
-            "artifacts/distributed_runs/gateb_aug_v3_rollout_seed20261005_20261002/formal/tandem_fno_gate_b_aug_v3_rollout_seed20261005_10epoch/training_history.json"
-        ),
+        "primary_multistep_epoch": primary_epoch,
+        "worker_multistep_epoch": worker_epoch,
         "alerts": alerts,
     }
 
