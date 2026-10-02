@@ -1,6 +1,8 @@
 # 串列双圆柱 PhysicsNeMo–HydroGym 适配契约（2026-10-02）
 
-本文件规定软件接口与验收门槛；**薄适配层已实现并通过单步验收，但双圆柱 RL 和 OpenFOAM 闭环尚未完成**。当前可用的官方组件是 PhysicsNeMo 2.2.2 FNO/检查点 API、HydroGym commit `4ab9854dea3d84e38a59c25e0f5835a00cf8225f` 的 `PDEBase`、`TransientSolver`、`FlowEnv`，以及 SB3 2.7.1。两套库已在派生容器 `fluid-control-physicsnemo-hydrogym:2.2.2-4ab9854` 同时导入；构建脚本为 `scripts/setup_physicsnemo_hydrogym_spark.sh`。不修改宿主 Python/CUDA 环境。
+本文件记录早期薄适配层的软件接口与验收门槛；当时已通过单步验收，双圆柱 RL 和 OpenFOAM 闭环尚未完成。使用的官方组件是 PhysicsNeMo 2.2.2 FNO/检查点 API、HydroGym commit `4ab9854dea3d84e38a59c25e0f5835a00cf8225f` 的 `PDEBase`、`TransientSolver`、`FlowEnv`，以及 SB3 2.7.1。两套库已在派生容器 `fluid-control-physicsnemo-hydrogym:2.2.2-4ab9854` 同时导入；构建脚本为 `scripts/setup_physicsnemo_hydrogym_spark.sh`。不修改宿主 Python/CUDA 环境。
+
+2026-10-02 更新：上文是**早期 67 维、末柱 Cd/Cl 奖励契约的历史表述**。该路径后来完成了 PPO 和 32 步真实 OpenFOAM 反馈，但物理目标变差，见 `docs/PPO_REAL_OPENFOAM_FEEDBACK_PILOT.md`。当前论文主线已锁定“两柱总阻力为主、两柱升力作保护”的 Stage-C 目标：新 FNO 输出四个受力系数，HydroGym 观测为 64 个探针速度 + 前后柱四个受力系数 + 转速，共 69 维；奖励使用 `src/fluid_control/stage_c_objective.py` 的完整脱落周期窗口。原 67 维代码与下文旧指标只用于历史复现，**不能作为当前总阻力控制结果**。Stage-C 进入 PPO 前仍须通过冻结的 v3 Gate B；现有两组 30 轮单步模型都未通过。
 
 ## 薄适配层的真实边界
 
