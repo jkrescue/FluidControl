@@ -106,3 +106,18 @@ original four-case test cohort permits like-for-like comparison with v2.
 `gate_b_v3_comparison.json` reports the five-case aggregate, original four-case
 aggregate and fresh test 05 individually; a favorable original four-case
 result alone cannot be treated as fresh independent validation.
+
+## Independent compute-node replication
+
+The second DGX Spark receives only the 26 train and 4 validation HDF5 files,
+plus the v3 train-only normalization and split audit. Existing v2 files are
+hard-linked on that temporary compute node; the two new train files and
+normalization were verified against the primary with SHA-256. The five-case
+test split is **not** transferred. The same PhysicsNeMo 2.2.2 container,
+model code and configuration are used with a separate random seed
+`20261005`. Its one-epoch technical check passed; a 30-epoch independent run
+is scheduled by `scripts/advance_gate_b_aug_v3_worker_seed20261005.sh`.
+After the worker finishes, `scripts/finalize_gate_b_aug_v3_worker_seed20261005.sh`
+retrieves and checksum-verifies the model, then performs all five frozen
+Gate-B evaluations on the primary where the test split remains. No v3
+surrogate accuracy or drag reduction is claimed before that audit finishes.
