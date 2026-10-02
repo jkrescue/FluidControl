@@ -1,0 +1,70 @@
+{
+  "status": "GRID_PAIR_NUMERICAL_QC_OK_NOT_CONVERGENCE",
+  "source": "matched OpenFOAM v2512 pimpleFoam constant omega=+1",
+  "time_window_for_comparison": [
+    80,
+    160
+  ],
+  "cases": [
+    {
+      "case": "control_small_p100",
+      "mesh_cells": 19290,
+      "solver": {
+        "steps": 32000,
+        "max_courant": 0.270463281,
+        "max_abs_global_continuity_per_step": 8.34759243e-09,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 1600,
+        "first_time": 0.1,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 32000,
+      "force_samples": {
+        "front": 32000,
+        "rear": 32000
+      },
+      "rear_wall_speed_at_t160": {
+        "min": 0.4997323464880149,
+        "max": 0.4997605678834327,
+        "faces": 96
+      }
+    },
+    {
+      "case": "control_grid_p100_medium",
+      "mesh_cells": 77160,
+      "solver": {
+        "steps": 32000,
+        "max_courant": 0.527314795,
+        "max_abs_global_continuity_per_step": 7.8265168e-09,
+        "solver_ended_cleanly": true
+      },
+      "fields": {
+        "snapshot_count": 80,
+        "first_time": 2.0,
+        "last_time": 160.0,
+        "fields": [
+          "U",
+          "p"
+        ],
+        "text_nonfinite_check": "passed"
+      },
+      "probe_samples": 32000,
+      "force_samples": {
+        "front": 32000,
+        "rear": 32000
+      },
+      "rear_wall_speed_at_t160": {
+        "min": 0.4999330820825205,
+        "max": 0.4999624526933242,
+        "faces": 192
+      }
+    }
+  ]
+}

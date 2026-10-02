@@ -17,6 +17,8 @@ WINDOW = (80.0, 160.0)
 CASES = ("tandem_baseline", "tandem_dt005", "tandem_medium_dt005",
          "tandem_backward_dt005", "tandem_medium_backward_dt005",
          "control_small_p100", "control_grid_p100_medium")
+
+
 def probe_moments(path: Path) -> dict:
     count = 0
     sums = [[0.0, 0.0] for _ in range(32)]
@@ -54,6 +56,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("reference", choices=CASES)
     parser.add_argument("candidate", choices=CASES)
+    parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.reference == args.candidate:
         parser.error("choose different cases")
@@ -80,7 +83,13 @@ def main() -> None:
         for quantity in ("mean", "rms")
     }
     report["probe_samples"] = [p["samples"] for p in probes]
-    print(json.dumps(report, indent=2))
+    payload = json.dumps(report, indent=2) + "\n"
+    if args.output is not None:
+        if args.output.exists():
+            raise FileExistsError(f"refusing to overwrite: {args.output}")
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(payload, encoding="utf-8")
+    print(payload, end="")
 
 
 if __name__ == "__main__":
