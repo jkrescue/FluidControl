@@ -61,3 +61,13 @@ All trajectories share one geometry, Reynolds number, coarse mesh and source
 restart, so this augmentation tests unseen *control histories* within the
 same physical setup. It is not an experimental dataset or evidence of
 geometry/mesh generalization or achieved drag reduction.
+
+After `GATE_B_AUG_V3_CURATED_OK`, the guarded
+`scripts/advance_after_gate_b_aug_v3.sh` runs one full training epoch as a
+technical smoke test and then trains the official seven-output PhysicsNeMo
+FNO for 30 epochs from scratch on the recomputed v3 normalization. This avoids
+silently loading a checkpoint trained under the earlier v2 normalization.
+The primary GPU remains subject to the same 20 GiB unified-memory floor and
+0.20 per-process CUDA allocator cap. The smoke/formal logs and completion
+markers are placed in `artifacts/tandem_cylinders/`; the selected model lives
+under `artifacts/tandem_fno_gate_b_aug_v3_30epoch/`.

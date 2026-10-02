@@ -86,7 +86,7 @@ function figure(){if(!latest)return;let key=$('case').value+'/'+$('horizon').val
 function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' · 页面每 5 秒更新';let a=d.audit,c=a?.checks||{};
  let b=c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse,i=c.independent_phase_full_period_total_drag_nrmse?.total_drag_nrmse;
  $('heldout').textContent=pct(b);$('heldout').className=Number.isFinite(b)&&b<=.1?'good':'bad';
- $('epoch').textContent=d.history.length+'/10 轮';$('hydro-status').textContent=d.cem?'CEM 已完成':'尚未启动';
+ $('epoch').textContent=d.v3_training.length?`v3 ${d.v3_training.length}/30 轮`:`已评估 ${d.history.length}/10 轮`;$('hydro-status').textContent=d.cem?'CEM 已完成':'尚未启动';
  let finished=d.cfd.filter(x=>x.status==='complete').length,average=d.cfd.reduce((s,x)=>s+x.percent,0)/Math.max(1,d.cfd.length);
  $('cfd-progress').textContent=`${finished}/3 CFD 完成`;
  $('cfd-sub').textContent=`Curator：${d.curator.done}/3 条完成，当前 ${d.curator.latest_frame}/801 帧`;
@@ -136,6 +136,8 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
         elif command in ("python", "python3") and "spark_gpu_guard.py" not in args:
             if "train_tandem_fno_rollout.py" in args:
                 active.append("PhysicsNeMo FNO 训练")
+            elif "train_tandem_fno.py" in args:
+                active.append("PhysicsNeMo FNO 新数据训练")
             elif "evaluate_tandem_fno.py" in args:
                 active.append("PhysicsNeMo FNO 推理评估")
             elif "screen_tandem_cem_mpc.py" in args:
@@ -229,6 +231,7 @@ class Handler(BaseHTTPRequestHandler):
             run = self.root / RUN
             audit = _read_json(run / "gate_b_audit.json", None)
             history = _read_json(run / "training_history.json", [])
+            v3_training = _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/training_history.json", [])
             heldout = _read_json(run / "heldout_evaluation.json", {})
             independent = _read_json(run / "heldout_evaluation_phase_independent.json", {})
             with self.sampler.lock:
@@ -243,7 +246,7 @@ class Handler(BaseHTTPRequestHandler):
                         figures[f"{case}/{horizon}"] = {"path": f"/figure/current/{case}/{horizon}.png", "version": int(current.stat().st_mtime), "label": "当前 10 轮多步 FNO · 真实 CFD / 预测 / 绝对误差"}
                     elif previous.exists():
                         figures[f"{case}/{horizon}"] = {"path": f"/figure/previous/{case}/{horizon}.png", "version": int(previous.stat().st_mtime), "label": "上一版单步 FNO · 真实 CFD / 预测 / 绝对误差（当前模型图待生成）"}
-            data = {"server_time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "audit": audit, "history": history, "evaluations": {"heldout": heldout.get("summary", {}), "independent": independent.get("summary", {})}, "resources": samples, "cfd": _cfd_progress(self.root), "curator": _curator_progress(self.root), "benchmark": _read_json(self.root / "artifacts/monitor/fno_inference_benchmark_seed20261003.json", None), "figures": figures, "cem": (self.root / "artifacts/distributed_runs/gateb_multistep_20261002/formal/CEM_STAGE_C_COMPLETE").exists(), "ppo": False}
+            data = {"server_time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "audit": audit, "history": history, "v3_training": v3_training, "evaluations": {"heldout": heldout.get("summary", {}), "independent": independent.get("summary", {})}, "resources": samples, "cfd": _cfd_progress(self.root), "curator": _curator_progress(self.root), "benchmark": _read_json(self.root / "artifacts/monitor/fno_inference_benchmark_seed20261003.json", None), "figures": figures, "cem": (self.root / "artifacts/distributed_runs/gateb_multistep_20261002/formal/CEM_STAGE_C_COMPLETE").exists(), "ppo": False}
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
 
