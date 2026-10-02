@@ -5,6 +5,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 cd "${root}"
 image="${PHYSICSNEMO_IMAGE:-fluid-control-physicsnemo:2.2.2}"
+config_name="${ROLLOUT_CONFIG_NAME:-tandem_fno_total_drag_rollout}"
 output_dir="${OUTPUT_DIR:-artifacts/tandem_fno_total_drag_rollout_seed20261003}"
 data_root="${DATA_ROOT:-data/curated/tandem_cylinders_expanded_independent_v2}"
 initial_checkpoint="${INITIAL_CHECKPOINT:-artifacts/tandem_fno_total_drag_spark_30epoch/best}"
@@ -16,6 +17,10 @@ seed="${SEED:-20261003}"
 
 [[ "$(uname -m)" == "aarch64" ]] || {
     echo "This runner is restricted to the ARM64 DGX Spark workers" >&2
+    exit 2
+}
+[[ "${config_name}" =~ ^[a-zA-Z0-9_]+$ && -f "conf/${config_name}.yaml" ]] || {
+    echo "Invalid or missing rollout config: ${config_name}" >&2
     exit 2
 }
 [[ "${output_dir}" != /* && "${data_root}" != /* && "${initial_checkpoint}" != /* ]] || {
@@ -71,5 +76,5 @@ exec docker run --rm --network none --gpus 'device=0' --cpus 8 --memory 64g \
     python -u scripts/spark_gpu_guard.py \
       --min-free-gib 20 --allocator-fraction 0.20 --margin-gib 4 -- \
       python -u scripts/train_tandem_fno_rollout.py \
-        --config-name tandem_fno_total_drag_rollout \
+        --config-name "${config_name}" \
         "${overrides[@]}"

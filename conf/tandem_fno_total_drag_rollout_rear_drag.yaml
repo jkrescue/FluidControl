@@ -1,0 +1,9 @@
+defaults:
+  - tandem_fno_total_drag_rollout
+  - _self_
+
+# Validation-only diagnosis found that 100-step drag error is dominated by
+# the rear-cylinder force. This is a loss ablation on the same official FNO,
+# not a new model or a change to the frozen Gate-B evaluation.
+training:
+  force_channel_weights: [1.0, 1.0, 4.0, 1.0]

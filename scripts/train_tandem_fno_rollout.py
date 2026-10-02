@@ -73,6 +73,25 @@ def teacher_forcing_ratio(cfg: DictConfig, epoch: int) -> float:
     return start + fraction * (end - start)
 
 
+def force_channel_weights(
+    cfg: DictConfig, force_indices: tuple[int, ...] | list[int], device: torch.device
+) -> torch.Tensor:
+    """Validate optional objective-focused weights without changing the FNO model."""
+    configured = cfg.training.get("force_channel_weights")
+    values = (
+        np.ones(len(force_indices), dtype=np.float64)
+        if configured is None
+        else np.asarray(list(configured), dtype=np.float64)
+    )
+    if (
+        values.shape != (len(force_indices),)
+        or not np.isfinite(values).all()
+        or np.any(values <= 0)
+    ):
+        raise ValueError("force_channel_weights must be one positive finite value per force channel")
+    return torch.as_tensor(values / values.sum(), dtype=torch.float32, device=device)
+
+
 @hydra.main(version_base="1.3", config_path="../conf", config_name="tandem_fno_rollout")
 def main(cfg: DictConfig) -> None:
     DistributedManager.initialize()
@@ -132,6 +151,7 @@ def main(cfg: DictConfig) -> None:
     force_indices = configured_force_indices(cfg)
     if int(cfg.model.out_channels) != 3 + len(force_indices):
         raise ValueError("model.out_channels must equal 3 + number of force targets")
+    channel_weights = force_channel_weights(cfg, force_indices, dist.device)
     train = TandemRolloutDataset(
         cfg.data.root,
         "train",
@@ -211,7 +231,10 @@ def main(cfg: DictConfig) -> None:
         field_by_step = ((predicted_state - target_state).square() * mask[:, None]).sum(
             dim=(2, 3, 4)
         ) / (mask.sum(dim=(1, 2, 3)).clamp_min(1)[:, None] * 3)
-        force_by_step = (predicted_force - target_force).square().mean(dim=2)
+        force_by_step = (
+            (predicted_force - target_force).square()
+            * channel_weights[None, None]
+        ).sum(dim=2)
         field_loss = (field_by_step * weights[None]).sum(dim=1).mean()
         force_loss = (force_by_step * weights[None]).sum(dim=1).mean()
         return field_loss + float(cfg.training.force_loss_weight) * force_loss
@@ -363,6 +386,7 @@ def main(cfg: DictConfig) -> None:
             "action_scale": train.action_scale,
             "force_channels": list(train.force_channels),
             "force_indices": list(train.force_indices),
+            "force_channel_weights": channel_weights.detach().cpu().tolist(),
             "model_config": OmegaConf.to_container(cfg.model, resolve=True),
         }
         if dist.rank == 0 and save_now:
