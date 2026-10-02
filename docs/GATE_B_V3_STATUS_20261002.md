@@ -161,3 +161,19 @@ training continues, and its validation-first finalizer will withhold frozen
 test evaluation unless the final validation-selected checkpoint beats the
 parent's 100-step validation NRMSE. No frozen test result was used to tune
 the weight.
+
+The worker seed-20261005 20-step ablation finished ten epochs with a
+validation-selected epoch-10 checkpoint (20-step selection score 0.032043;
+minimum observed available unified memory 95.925 GiB). Its checksum-verified
+weights are back on the primary Spark, where the frozen Gate-B suite is now
+running. No scientific conclusion follows from the 20-step selection score
+alone; the separate epoch-5 validation 100-step result was 54.725%.
+
+A further predeclared replication has started on the compute-only worker:
+the better **primary seed-20261002** ten-step checkpoint initializes a
+20-step, ten-epoch FNO fine-tune. The 541 MiB source checkpoint was copied
+with matching SHA-256 checksums and loaded successfully in the worker's
+pinned PhysicsNeMo 2.2.2 container. The new config saves each validation
+epoch, avoiding the first worker run's five-epoch checkpoint spacing. Only
+train/validation data are on the worker; a supervised finalizer will copy
+the final model back to the primary Spark for the unchanged frozen audit.
