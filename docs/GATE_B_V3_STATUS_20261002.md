@@ -84,3 +84,12 @@ test trend, so the present evidence supports autoregressive instability
 rather than a test-only coverage gap. The active-learning branch is on hold
 while the predeclared longer-rollout ablation runs; no extra CFD labels were
 generated, and this validation result does not relax Gate B.
+
+The worker ten-step model's **complete** frozen Gate-B audit subsequently
+returned `GATE_B_NEEDS_MULTISTEP_RETRAINING`. Its five-case 100-step NRMSE
+is 67.143% and independent-phase NRMSE is 94.889%, both versus the locked
+10% maximum. It also failed the 100-step observed-action persistence check
+and the independent-phase 50/100-step persistence checks (five failed
+checks total). The test-only preliminary result above has therefore been
+superseded by a full failed audit. This does not select or reject the
+still-running primary-seed model; the seeds remain separate replications.
