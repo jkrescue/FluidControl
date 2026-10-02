@@ -131,6 +131,7 @@ def sample(deadline: datetime) -> dict:
         ("artifacts/tandem_cylinders/GATE_B_AUG_V3_ROLLOUT_SEED20261002_FAILED", "primary_rollout_pipeline_failed"),
         ("artifacts/distributed_runs/gateb_aug_v3_rollout_seed20261005_20261002/formal/MULTISTEP_GATE_B_FAILED", "worker_rollout_finalizer_failed"),
         ("artifacts/distributed_runs/gateb_aug_v3_rollout_h20_seed20261005_20261002/formal/MULTISTEP_GATE_B_FAILED", "worker_h20_finalizer_failed"),
+        ("artifacts/tandem_cylinders/GATE_B_AUG_V3_REAR_DRAG_FINALIZE_FAILED", "rear_drag_finalizer_failed"),
     ):
         if (ROOT / marker).exists():
             alerts.append(name)
