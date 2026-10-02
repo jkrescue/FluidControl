@@ -18,6 +18,11 @@ import torch
 from hydrogym import PDEBase, TransientSolver
 
 from .openfoam_observation import observation_at
+from .stage_c_objective import (
+    stage_c_cost_components,
+    stage_c_force_ledger,
+    validate_stage_c_baseline,
+)
 
 
 class TandemSurrogateFlow(PDEBase):
@@ -73,7 +78,7 @@ class TandemSurrogateFlow(PDEBase):
         self.shedding_period = float(shedding_period)
         if not np.isfinite(self.shedding_period) or self.shedding_period <= 0:
             raise ValueError("shedding_period must be positive and finite")
-        self.phase_baseline = self._validate_phase_baseline(phase_baseline)
+        self.phase_baseline = validate_stage_c_baseline(phase_baseline)
         if self.reward_mode == "stage_c_total_drag" and self.phase_baseline is None:
             raise ValueError("stage_c_total_drag requires an audited phase_baseline")
 
@@ -195,26 +200,6 @@ class TandemSurrogateFlow(PDEBase):
         self._reward_history: deque[tuple[float, np.ndarray]] = deque()
         super().__init__()
 
-    @staticmethod
-    def _validate_phase_baseline(
-        baseline: Mapping[str, float | str] | None,
-    ) -> dict[str, float | str] | None:
-        if baseline is None:
-            return None
-        required = ("total_drag", "front_lift_rms", "rear_lift_rms", "source")
-        missing = [key for key in required if key not in baseline]
-        if missing:
-            raise ValueError(f"phase_baseline missing keys: {missing}")
-        result: dict[str, float | str] = {"source": str(baseline["source"])}
-        if not result["source"]:
-            raise ValueError("phase_baseline source must be nonempty")
-        for key in required[:3]:
-            value = float(baseline[key])
-            if not np.isfinite(value) or value <= 0:
-                raise ValueError(f"phase_baseline {key} must be positive and finite")
-            result[key] = value
-        return result
-
     @property
     def num_inputs(self) -> int:
         return 1
@@ -304,25 +289,13 @@ class TandemSurrogateFlow(PDEBase):
     def objective_terms(self) -> dict[str, float]:
         if self.reward_mode == "stage_c_total_drag":
             ledger = self.stage_c_ledger()
-            if not ledger["window_ready"]:
-                drag_cost = 0.0
-                rear_lift_cost = 0.0
-                front_lift_cost = 0.0
-            else:
-                drag_cost = -float(np.clip(ledger["drag_improvement"], -1.0, 1.0))
-                rear_lift_cost = (
-                    0.10 * max(0.0, float(ledger["rear_lift_ratio"]) - 1.0) ** 2
-                )
-                front_lift_cost = (
-                    0.05 * max(0.0, float(ledger["front_lift_ratio"]) - 1.0) ** 2
-                )
-            return {
-                "total_drag": drag_cost,
-                "rear_lift_excess": rear_lift_cost,
-                "front_lift_excess": front_lift_cost,
-                "actuation": 0.01 * (self.omega / self.MAX_CONTROL) ** 2,
-                "rate": 0.01 * (self.applied_delta / self.max_delta_omega) ** 2,
-            }
+            return stage_c_cost_components(
+                ledger,
+                omega=self.omega,
+                delta_omega=self.applied_delta,
+                action_scale=self.MAX_CONTROL,
+                max_delta_omega=self.max_delta_omega,
+            )
         cd, cl = map(float, self.force[-2:])
         w_cd, w_cl, w_u, w_rate = self.weights
         return {
@@ -352,28 +325,14 @@ class TandemSurrogateFlow(PDEBase):
         times = np.asarray([item[0] for item in self._reward_history], dtype=np.float64)
         forces = np.stack([item[1] for item in self._reward_history])
         coverage = float(times[-1] - times[0])
-        total_drag = float(np.mean(forces[:, 0] + forces[:, 2]))
-        front_lift_rms = float(np.sqrt(np.mean(np.square(forces[:, 1]))))
-        rear_lift_rms = float(np.sqrt(np.mean(np.square(forces[:, 3]))))
-        baseline_drag = float(self.phase_baseline["total_drag"])
-        baseline_front = float(self.phase_baseline["front_lift_rms"])
-        baseline_rear = float(self.phase_baseline["rear_lift_rms"])
+        force_ledger = stage_c_force_ledger(forces, self.phase_baseline)
         return {
             "reward_mode": self.reward_mode,
-            "baseline_source": str(self.phase_baseline["source"]),
             "window_seconds": self.shedding_period,
             "window_coverage": coverage,
             "window_samples": len(self._reward_history),
             "window_ready": coverage >= self.shedding_period - 1e-8,
-            "total_drag": total_drag,
-            "front_lift_rms": front_lift_rms,
-            "rear_lift_rms": rear_lift_rms,
-            "baseline_total_drag": baseline_drag,
-            "baseline_front_lift_rms": baseline_front,
-            "baseline_rear_lift_rms": baseline_rear,
-            "drag_improvement": 1.0 - total_drag / baseline_drag,
-            "front_lift_ratio": front_lift_rms / baseline_front,
-            "rear_lift_ratio": rear_lift_rms / baseline_rear,
+            **force_ledger,
             "normalized_action": self.omega / self.MAX_CONTROL,
             "normalized_action_delta": self.applied_delta / self.max_delta_omega,
         }
