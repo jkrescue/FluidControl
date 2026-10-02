@@ -10,13 +10,17 @@ remote_root="${REMOTE_ROOT:-/tmp/fluid_control_gateb_20261002}"
 run_name="${RUN_NAME:-tandem_fno_total_drag_rollout_seed20261003}"
 destination="${DESTINATION:-artifacts/distributed_runs/gateb_multistep_20261002/formal}"
 poll_seconds="${POLL_SECONDS:-60}"
+remote_log="${REMOTE_LOG:-/tmp/fluid_control_multistep_formal.log}"
+expected_epochs="${EXPECTED_EPOCHS:-10}"
 
 [[ "${destination}" != /* && "${run_name}" =~ ^[a-zA-Z0-9_.-]+$ ]] || {
     echo "Destination must be project-relative and run name must be safe" >&2
     exit 2
 }
-[[ "${remote_pid}" =~ ^[1-9][0-9]*$ && "${poll_seconds}" =~ ^[1-9][0-9]*$ ]] || {
-    echo "Remote PID and poll interval must be positive integers" >&2
+[[ "${remote_pid}" =~ ^[1-9][0-9]*$ && "${poll_seconds}" =~ ^[1-9][0-9]*$ \
+    && "${expected_epochs}" =~ ^[1-9][0-9]*$ \
+    && "${remote_log}" == /tmp/fluid_control_*.log ]] || {
+    echo "Remote PID, poll interval, expected epochs, or runner log is invalid" >&2
     exit 2
 }
 
@@ -48,15 +52,27 @@ rsync -a \
     "${worker}:${remote_root}/artifacts/${run_name}" \
     "${destination}/"
 rsync -a \
-    "${worker}:/tmp/fluid_control_multistep_formal.log" \
+    "${worker}:${remote_log}" \
     "${destination}/runner.log"
 
 grep -q '"event": "gpu_guard_complete", "exit_code": 0' \
     "${destination}/runner.log"
-jq -e 'length == 10 and .[-1].epoch == 10' \
+jq -e --argjson epochs "${expected_epochs}" \
+    'length == $epochs and .[-1].epoch == $epochs' \
     "${destination}/${run_name}/training_history.json" >/dev/null
 
 model="${destination}/${run_name}"
+for file in "${model}"/best/*.mdlus "${model}/training_history.json"; do
+    [[ -f "${file}" ]] || { echo "Missing transferred model or history: ${file}" >&2; exit 1; }
+    relative="${file#"${model}/"}"
+    remote_sha="$(ssh -o BatchMode=yes "${worker}" \
+        "sha256sum '${remote_root}/artifacts/${run_name}/${relative}'" | awk '{print $1}')"
+    local_sha="$(sha256sum "${file}" | awk '{print $1}')"
+    [[ -n "${remote_sha}" && "${remote_sha}" == "${local_sha}" ]] || {
+        echo "Worker-to-primary checksum mismatch: ${relative}" >&2; exit 1;
+    }
+    echo "TRANSFER_SHA256_OK ${relative} ${local_sha}"
+done
 for mode in observed zero sign_flip shuffle; do
     MODEL_DIR="${model}" ACTION_MODE="${mode}" VISUALIZATIONS_PER_HORIZON=0 \
         bash scripts/run_tandem_fno_total_drag_eval_spark.sh
