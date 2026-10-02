@@ -1,0 +1,23 @@
+model_config: conf/tandem_fno_total_drag.yaml
+checkpoint_dir: artifacts/distributed_runs/gateb_multistep_20261002/formal/tandem_fno_total_drag_rollout_seed20261003/best
+gate_b_audit: artifacts/distributed_runs/gateb_multistep_20261002/formal/tandem_fno_total_drag_rollout_seed20261003/gate_b_audit.json
+data_root: data/curated/tandem_cylinders_expanded_independent_v2
+baseline_manifest: artifacts/tandem_cylinders/stage_c_phase_baselines_20261002.json
+case_key: expanded_independent_v2/test/expanded_test_00
+case: expanded_test_00
+split: test
+frame: 0
+output: artifacts/tandem_cem_stage_c/screen_expanded_test_00.json
+
+control:
+  horizon: 62
+  population_size: 64
+  elite_fraction: 0.125
+  iterations: 5
+  omega_abs_max: 1.0
+  max_delta_omega: 0.16
+  initial_std: 0.5
+  min_std: 0.01
+  update_rate: 0.7
+  rollout_batch_size: 8
+  seed: 20261003

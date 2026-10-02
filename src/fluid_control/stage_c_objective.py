@@ -92,3 +92,64 @@ def stage_c_cost_components(
         "actuation": 0.01 * (omega / action_scale) ** 2,
         "rate": 0.01 * (delta_omega / max_delta_omega) ** 2,
     }
+
+
+def stage_c_sequence_costs(
+    forces: np.ndarray,
+    actions: np.ndarray,
+    *,
+    current_omega: float,
+    baseline: Mapping[str, float | str],
+    action_scale: float,
+    max_delta_omega: float,
+) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    """Vectorize the locked full-window objective for CEM action sequences.
+
+    ``forces`` must follow ``front_cd, front_cl, rear_cd, rear_cl`` and have
+    shape ``(population, horizon, 4)``. The physical terms are computed once
+    over the complete planning window; actuation and slew penalties are means
+    over that same window.
+    """
+    checked = validate_stage_c_baseline(baseline)
+    if checked is None:
+        raise ValueError("stage_c_sequence_costs requires a baseline")
+    predicted = np.asarray(forces, dtype=np.float64)
+    control = np.asarray(actions, dtype=np.float64)
+    if predicted.ndim != 3 or predicted.shape[2] != 4:
+        raise ValueError("forces must have shape (population, horizon, 4)")
+    if control.shape != predicted.shape[:2] or control.shape[1] < 1:
+        raise ValueError("actions must match the force population and horizon")
+    if not np.isfinite(predicted).all() or not np.isfinite(control).all():
+        raise FloatingPointError("sequence objective inputs must be finite")
+    if not np.isfinite(current_omega):
+        raise ValueError("current_omega must be finite")
+    if not np.isfinite(action_scale) or action_scale <= 0.0:
+        raise ValueError("action_scale must be positive and finite")
+    if not np.isfinite(max_delta_omega) or max_delta_omega <= 0.0:
+        raise ValueError("max_delta_omega must be positive and finite")
+
+    total_drag = np.mean(predicted[:, :, 0] + predicted[:, :, 2], axis=1)
+    front_lift_rms = np.sqrt(np.mean(np.square(predicted[:, :, 1]), axis=1))
+    rear_lift_rms = np.sqrt(np.mean(np.square(predicted[:, :, 3]), axis=1))
+    drag_improvement = 1.0 - total_drag / float(checked["total_drag"])
+    front_lift_ratio = front_lift_rms / float(checked["front_lift_rms"])
+    rear_lift_ratio = rear_lift_rms / float(checked["rear_lift_rms"])
+    deltas = np.diff(
+        np.concatenate(
+            (
+                np.full((control.shape[0], 1), float(current_omega)),
+                control,
+            ),
+            axis=1,
+        ),
+        axis=1,
+    )
+    components = {
+        "total_drag": -np.clip(drag_improvement, -1.0, 1.0),
+        "rear_lift_excess": 0.10 * np.square(np.maximum(rear_lift_ratio - 1.0, 0.0)),
+        "front_lift_excess": 0.05 * np.square(np.maximum(front_lift_ratio - 1.0, 0.0)),
+        "actuation": 0.01 * np.mean(np.square(control / action_scale), axis=1),
+        "rate": 0.01 * np.mean(np.square(deltas / max_delta_omega), axis=1),
+    }
+    total = np.sum(np.stack(tuple(components.values()), axis=1), axis=1)
+    return total, components
