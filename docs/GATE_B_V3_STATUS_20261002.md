@@ -101,3 +101,9 @@ the front-cylinder contribution remains comparatively stable. The model's
 validation total-drag MAE only narrowly beats persistence (1.0211 versus
 1.0685), so an apparent gain in short-horizon force accuracy cannot yet
 support reliable control optimization.
+
+The worker ten-step finalizer has now completed all transfers, checksums,
+frozen evaluations and the separate legacy-four comparison. The legacy-four
+100-step NRMSE is 64.122%; fresh untouched test 05 alone is 79.226%.
+Neither the new fifth case nor a changed test composition explains the
+failure. The formal five-case result remains 67.143% and failed.
