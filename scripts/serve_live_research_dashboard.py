@@ -30,7 +30,7 @@ HOST_COMMAND = (
     "--format=csv,noheader,nounits; "
     "printf '__TASKS__\\n'; ps -eo comm=,args=; "
     "printf '__EPOCH__\\n'; "
-    "grep -o '\"epoch\": [0-9]*' /tmp/fluid_control_multistep_seed20261004.log 2>/dev/null | tail -n 1 || true"
+    "grep '^{' /tmp/fluid_control_multistep_seed20261004.log 2>/dev/null | tail -n 1 || true"
 )
 PAGE = r'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -90,7 +90,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  let finished=d.cfd.filter(x=>x.status==='complete').length,average=d.cfd.reduce((s,x)=>s+x.percent,0)/Math.max(1,d.cfd.length);
  $('cfd-progress').textContent=`${finished}/3 CFD 完成`;
  $('cfd-sub').textContent=d.curator.complete?'Curator：35 条轨迹已完成数据验收':`Curator：${d.curator.done}/3 条新增轨迹已采样，当前 ${d.curator.latest_frame}/801 帧`;
- $('second-seed').textContent=`第二随机种子：${d.resources.worker.at(-1)?.second_seed_epoch||0}/10 轮`;
+ let worker=d.resources.worker.at(-1)||{};$('second-seed').textContent=`第二随机种子：${worker.second_seed_epoch||0}/10 轮 · 10 步验证受力误差 ${num(worker.second_seed_force_mae,4)}`;
  $('decision').textContent=a?.status==='GATE_B_PASS'?'FNO 已达到预定精度，可以进入 CEM 控制筛选。':`当前 FNO：100 步总阻力预测误差 ${pct(b)}，超过 10% 目标；独立初始相位 ${pct(i)}。正在补充真实 CFD 并做第二随机种子训练。CEM 与 PPO 仍等待模型精度达标。`;
  resources('primary',d.resources.primary);resources('worker',d.resources.worker);
  plot('train-chart',[{values:d.history.map(x=>x.terminal_state_mae),color:'#60c9fb'},{values:d.history.map(x=>x.terminal_force_mae),color:'#e9ae68'}],.05);
@@ -144,8 +144,13 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
                 active.append("CEM 控制筛选")
             elif "curate_tandem_cfd.py" in args:
                 active.append("PhysicsNeMo Curator 数据整理")
-    epoch_match = re.search(r'"epoch": (\d+)', "\n".join(lines[epoch_start + 1 :]))
-    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": int(epoch_match.group(1)) if epoch_match else 0}, (total, idle)
+    try:
+        second_seed = json.loads(lines[epoch_start + 1])
+        if not isinstance(second_seed, dict) or not isinstance(second_seed.get("epoch"), int):
+            second_seed = {}
+    except (IndexError, ValueError):
+        second_seed = {}
+    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae")}, (total, idle)
 
 
 def _cfd_progress(root: Path) -> list[dict]:
@@ -175,7 +180,13 @@ def _curator_progress(root: Path) -> dict:
     for name, value in re.findall(r"^(expanded_(?:train_24|train_25|test_05)): sampled (\d+)/801 VTK frames", log, flags=re.MULTILINE):
         frames[name] = max(frames[name], int(value))
     pending = [value for value in frames.values() if 0 < value < 801]
-    return {"done": sum(value >= 801 for value in frames.values()), "latest_frame": min(pending) if pending else 0, "complete": "GATE_B_AUG_V3_CURATED_OK" in log}
+    manifest = _read_json(root / "data/curated/tandem_cylinders_gate_b_aug_v3/manifest.json", {})
+    split = _read_json(root / "artifacts/tandem_cylinders/gate_b_aug_v3_split_integrity.json", {})
+    response = _read_json(root / "artifacts/tandem_cylinders/gate_b_aug_v3_control_response.json", {})
+    complete = (manifest.get("trajectory_counts") == {"train": 26, "validation": 4, "test": 5}
+                and split.get("status") == "SPLIT_INTEGRITY_OK"
+                and response.get("status") == "CONTROLLED_CFD_RESPONSE_AUDIT_OK")
+    return {"done": sum(value >= 801 for value in frames.values()), "latest_frame": min(pending) if pending else 0, "complete": complete}
 
 
 class Sampler:

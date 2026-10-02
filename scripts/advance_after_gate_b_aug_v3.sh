@@ -4,13 +4,16 @@ set -eEuo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 cd "${root}"
-curator_pid="${CURATOR_PID:?CURATOR_PID is required}"
+curator_pid="${CURATOR_PID:-}"
 poll_seconds="${POLL_SECONDS:-30}"
-[[ "${curator_pid}" =~ ^[1-9][0-9]*$ && "${poll_seconds}" =~ ^[1-9][0-9]*$ ]] || {
-    echo "CURATOR_PID and POLL_SECONDS must be positive integers" >&2; exit 2;
+[[ "${poll_seconds}" =~ ^[1-9][0-9]*$ ]] || {
+    echo "POLL_SECONDS must be a positive integer" >&2; exit 2;
 }
 log_dir="artifacts/tandem_cylinders"
 curator_log="${log_dir}/gate_b_aug_v3_curator.log"
+data_root="data/curated/tandem_cylinders_gate_b_aug_v3"
+split_audit="${log_dir}/gate_b_aug_v3_split_integrity.json"
+response_audit="${log_dir}/gate_b_aug_v3_control_response.json"
 failed_marker="${log_dir}/GATE_B_AUG_V3_ONE_STEP_FAILED"
 complete_marker="${log_dir}/GATE_B_AUG_V3_ONE_STEP_COMPLETE"
 on_error() {
@@ -22,7 +25,16 @@ on_error() {
 }
 trap on_error ERR
 
-while ! rg -q '^GATE_B_AUG_V3_CURATED_OK$' "${curator_log}" 2>/dev/null; do
+data_ready() {
+    [[ -s "${data_root}/manifest.json" && -s "${split_audit}" && -s "${response_audit}" ]] || return 1
+    jq -e '.profile == "gate_b_aug_v3" and .trajectory_counts == {"train":26,"validation":4,"test":5}' "${data_root}/manifest.json" >/dev/null &&
+    jq -e '.status == "SPLIT_INTEGRITY_OK" and .split_counts == {"train":26,"validation":4,"test":5}' "${split_audit}" >/dev/null &&
+    jq -e '.status == "CONTROLLED_CFD_RESPONSE_AUDIT_OK" and .trajectory_count == 35' "${response_audit}" >/dev/null
+}
+while ! data_ready; do
+    [[ "${curator_pid}" =~ ^[1-9][0-9]*$ ]] || {
+        echo "CURATOR_PID is required while waiting for data validation" >&2; exit 2;
+    }
     if ! kill -0 "${curator_pid}" 2>/dev/null; then
         echo "Curator process ended without the required data marker" >&2
         exit 1

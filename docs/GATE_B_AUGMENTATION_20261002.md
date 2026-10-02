@@ -62,6 +62,25 @@ restart, so this augmentation tests unseen *control histories* within the
 same physical setup. It is not an experimental dataset or evidence of
 geometry/mesh generalization or achieved drag reduction.
 
+### Restart-boundary force-label provenance
+
+The first full-dataset parity check caught a validator error: for the three
+new restart cases the exact force label at `t=80` comes from the source
+OpenFOAM case, because the restarted `coefficient.dat` begins at `t=80.005`.
+The validator now joins that single source row before interpolation. The new
+cases pass the unchanged `1e-5` force-label tolerance, with maximum error
+below `4.8e-7` across all 801 frames.
+
+The 32 inherited v2 HDF5 files use a different historical convention: their
+first `t=80` force label equals the first restarted sample at `t=80.005`, not
+the exact source-case force at `t=80`. This is a **known first-frame label
+offset**, not a CFD field error. The v3 validation accepts it only when that
+label matches the first raw restart sample within `1e-5`; the other 800 frames
+must match the exact raw OpenFOAM interpolation within `1e-5`. The validator
+reports `legacy_initial_force_error` for each inherited case. No raw or HDF5
+file is silently edited. This affects 32 of 28,035 total frames and must be
+reported with any scientific evaluation using v3.
+
 After `GATE_B_AUG_V3_CURATED_OK`, the guarded
 `scripts/advance_after_gate_b_aug_v3.sh` runs one full training epoch as a
 technical smoke test and then trains the official seven-output PhysicsNeMo
