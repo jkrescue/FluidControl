@@ -29,6 +29,9 @@ HOST_PROBE = (
     "training_history.json 2>/dev/null || echo 0; "
     "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/"
     "tandem_fno_gate_b_aug_v3_rollout_h20_seed20261005_10epoch/"
+    "training_history.json 2>/dev/null || echo 0; "
+    "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/"
+    "tandem_fno_gate_b_aug_v3_rollout_h20_seed20261002_dense_10epoch/"
     "training_history.json 2>/dev/null || echo 0"
 )
 
@@ -43,7 +46,7 @@ def probe(worker: bool) -> dict:
         if result.returncode:
             raise RuntimeError(result.stderr.strip() or f"exit {result.returncode}")
         lines = result.stdout.strip().splitlines()
-        if len(lines) != 5:
+        if len(lines) != 6:
             raise ValueError(f"unexpected host probe: {lines!r}")
         return {
             "reachable": True,
@@ -52,6 +55,7 @@ def probe(worker: bool) -> dict:
             "training_or_evaluation_processes": int(lines[2]),
             "worker_multistep_epoch": int(lines[3]),
             "worker_h20_epoch": int(lines[4]),
+            "worker_primary_seed_h20_epoch": int(lines[5]),
         }
     except (OSError, subprocess.SubprocessError, RuntimeError, ValueError) as exc:
         return {"reachable": False, "error": str(exc)[:300]}
@@ -95,6 +99,7 @@ def sample(deadline: datetime) -> dict:
         "primary_multistep": read_audit("artifacts/tandem_fno_gate_b_aug_v3_rollout_seed20261002_10epoch/gate_b_audit.json"),
         "worker_multistep": read_audit("artifacts/distributed_runs/gateb_aug_v3_rollout_seed20261005_20261002/formal/tandem_fno_gate_b_aug_v3_rollout_seed20261005_10epoch/gate_b_audit.json"),
         "rear_drag_weighted": read_audit("artifacts/tandem_fno_gate_b_aug_v3_rear_drag_seed20261007_10epoch/gate_b_audit.json"),
+        "primary_seed_h20": read_audit("artifacts/distributed_runs/gateb_aug_v3_rollout_h20_seed20261002_dense_20261002/formal/tandem_fno_gate_b_aug_v3_rollout_h20_seed20261002_dense_10epoch/gate_b_audit.json"),
     }
     alerts = []
     for name, host in (("primary", primary), ("worker", worker)):
@@ -113,6 +118,7 @@ def sample(deadline: datetime) -> dict:
     )
     worker_epoch = worker.get("worker_multistep_epoch")
     worker_h20_epoch = worker.get("worker_h20_epoch")
+    worker_primary_seed_h20_epoch = worker.get("worker_primary_seed_h20_epoch")
     if primary["reachable"] and primary_epoch is not None and primary_epoch < 10:
         if primary["training_or_evaluation_processes"] == 0:
             alerts.append("primary_multistep_stopped_before_epoch_10")
@@ -127,11 +133,16 @@ def sample(deadline: datetime) -> dict:
         if (ROOT / "artifacts/distributed_runs/gateb_aug_v3_rollout_h20_preflight_20261002/runner.log").exists() \
             and worker["training_or_evaluation_processes"] == 0:
             alerts.append("worker_h20_stopped_before_epoch_10")
+    if worker["reachable"] and worker_primary_seed_h20_epoch is not None and worker_primary_seed_h20_epoch < 10:
+        if (ROOT / "artifacts/tandem_cylinders/gate_b_aug_v3_rollout_h20_seed20261002_dense_finalize.log").exists() \
+            and worker["training_or_evaluation_processes"] == 0:
+            alerts.append("worker_primary_seed_h20_stopped_before_epoch_10")
     for marker, name in (
         ("artifacts/tandem_cylinders/GATE_B_AUG_V3_ROLLOUT_SEED20261002_FAILED", "primary_rollout_pipeline_failed"),
         ("artifacts/distributed_runs/gateb_aug_v3_rollout_seed20261005_20261002/formal/MULTISTEP_GATE_B_FAILED", "worker_rollout_finalizer_failed"),
         ("artifacts/distributed_runs/gateb_aug_v3_rollout_h20_seed20261005_20261002/formal/MULTISTEP_GATE_B_FAILED", "worker_h20_finalizer_failed"),
         ("artifacts/tandem_cylinders/GATE_B_AUG_V3_REAR_DRAG_FINALIZE_FAILED", "rear_drag_finalizer_failed"),
+        ("artifacts/distributed_runs/gateb_aug_v3_rollout_h20_seed20261002_dense_20261002/formal/MULTISTEP_GATE_B_FAILED", "primary_seed_h20_finalizer_failed"),
     ):
         if (ROOT / marker).exists():
             alerts.append(name)
@@ -146,6 +157,7 @@ def sample(deadline: datetime) -> dict:
         "rear_drag_weighted_epoch": rear_weighted_epoch,
         "worker_multistep_epoch": worker_epoch,
         "worker_h20_epoch": worker_h20_epoch,
+        "worker_primary_seed_h20_epoch": worker_primary_seed_h20_epoch,
         "alerts": alerts,
     }
 
