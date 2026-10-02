@@ -1,0 +1,76 @@
+
+========================
+== NVIDIA PhysicsNeMo ==
+========================
+
+NVIDIA Release 26.06 (build 54894683)
+PhysicsNeMo PyPi Version 2.2.2 (Git Commit: 7e08f49)
+Container image Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright (c) 2014-2024 Facebook Inc.
+Copyright (c) 2011-2014 Idiap Research Institute (Ronan Collobert)
+Copyright (c) 2012-2014 Deepmind Technologies    (Koray Kavukcuoglu)
+Copyright (c) 2011-2012 NEC Laboratories America (Koray Kavukcuoglu)
+Copyright (c) 2011-2013 NYU                      (Clement Farabet)
+Copyright (c) 2006-2010 NEC Laboratories America (Ronan Collobert, Leon Bottou, Iain Melvin, Jason Weston)
+Copyright (c) 2006      Idiap Research Institute (Samy Bengio)
+Copyright (c) 2001-2004 Idiap Research Institute (Ronan Collobert, Samy Bengio, Johnny Mariethoz)
+Copyright (c) 2015      Google Inc.
+Copyright (c) 2015      Yangqing Jia
+Copyright (c) 2013-2016 The Caffe contributors
+All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+GOVERNING TERMS: The software and materials are governed by the NVIDIA Software License Agreement
+(found at https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-software-license-agreement/)
+and the Product-Specific Terms for NVIDIA AI Products
+(found at https://www.nvidia.com/en-us/agreements/enterprise-software/product-specific-terms-for-ai-products/).
+
+NOTE: CUDA Forward Compatibility mode ENABLED.
+  Using CUDA 13.3 driver version 610.43.02 with kernel driver version 580.126.09.
+  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details.
+
+{"event": "gpu_preflight", "cuda_free_gib": 18.961368560791016, "mem_available_gib": 114.51366424560547, "total_gib": 121.69016647338867, "allocator_cap_gib": 24.338033294677736, "required_available_gib": 48.338033294677736, "command": ["python", "-u", "scripts/audit_tandem_ppo_checkpoint.py", "--data", "data/curated/tandem_cylinders_expanded_independent_v2", "--config", "conf/tandem_fno_expanded.yaml", "--checkpoint-dir", "artifacts/tandem_fno_expanded_spark_20epoch/best", "--policy", "artifacts/hydrogym/tandem_ppo_multistart_8192_spark/checkpoints/ppo_004096.zip", "--horizon", "32", "--device", "cuda:0", "--output", "artifacts/hydrogym/tandem_ppo_multistart_8192_spark/audit_checkpoint_004096.json"]}
+`DistributedManager` not initialized already. Initializing now, but this might lead to unexpected errors
+/usr/local/lib/python3.12/dist-packages/physicsnemo/distributed/manager.py:415: UserWarning: Could not initialize using ENV, SLURM or OPENMPI methods. Assuming this is a single process job
+  warn(
+/usr/local/lib/python3.12/dist-packages/stable_baselines3/common/on_policy_algorithm.py:150: UserWarning: You are trying to run PPO on the GPU, but it is primarily intended to run on the CPU when not using a CNN policy (you are using ActorCriticPolicy which should be a MlpPolicy). See https://github.com/DLR-RM/stable-baselines3/issues/1245 for more info. You can pass `device='cpu'` or `export CUDA_VISIBLE_DEVICES=` to force using the CPU.Note: The model will train, but the GPU utilization will be poor and the training might take longer than on CPU.
+  warnings.warn(
+{
+  "output": "/workspace/artifacts/hydrogym/tandem_ppo_multistart_8192_spark/audit_checkpoint_004096.json",
+  "summary": {
+    "validation": {
+      "raw_evaluations": 12,
+      "unique_initial_states": 9,
+      "unique_cases": 4,
+      "initial_frames": [
+        0,
+        100,
+        400
+      ],
+      "common_frame0_deduplicated": true,
+      "reward_change_mean": -0.007326002886605861,
+      "positive_reward_initial_states": 4,
+      "cd_mean_change_mean": 0.009169643744826317,
+      "cl_rms_change_mean": -0.011968990600478365,
+      "raw_reward_change_mean": -0.0038605121514789786
+    },
+    "test": {
+      "raw_evaluations": 12,
+      "unique_initial_states": 9,
+      "unique_cases": 4,
+      "initial_frames": [
+        0,
+        100,
+        400
+      ],
+      "common_frame0_deduplicated": true,
+      "reward_change_mean": 0.014158958898178507,
+      "positive_reward_initial_states": 5,
+      "cd_mean_change_mean": 0.005248139715856976,
+      "cl_rms_change_mean": -0.007378216111716117,
+      "raw_reward_change_mean": 0.012253209187109296
+    }
+  }
+}
+{"event": "gpu_guard_complete", "exit_code": 0, "memory_samples": 6, "min_observed_mem_available_gib": 112.03089904785156, "min_observed_cuda_free_gib": 16.376636505126953, "poll_seconds": 5.0, "min_required_mem_available_gib": 20.0}

@@ -30,6 +30,19 @@ TRAIN_STARTS = (
     ("expanded_train_18", 700),
     ("expanded_train_21", 250),
 )
+TARGETED_T80_TRAIN_STARTS = (
+    # Four stochastic PPO environments intentionally weight the one physical
+    # restart available for matched real-CFD replay; the other four retain
+    # distinct real CFD histories to limit single-state overfitting.
+    ("expanded_train_00", 0),
+    ("expanded_train_03", 0),
+    ("expanded_train_06", 0),
+    ("expanded_train_09", 0),
+    ("expanded_train_12", 200),
+    ("expanded_train_15", 400),
+    ("expanded_train_18", 600),
+    ("expanded_train_21", 300),
+)
 
 
 def summarize_evaluations(audits: list[dict]) -> dict:
@@ -75,8 +88,16 @@ def main() -> None:
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--gpu-memory-fraction", type=float, default=0.20)
     parser.add_argument("--seed", type=int, default=20261002)
+    parser.add_argument(
+        "--training-profile", choices=("diverse", "t80_targeted"), default="diverse"
+    )
     args = parser.parse_args()
-    rollout_batch = 32 * len(TRAIN_STARTS)
+    train_starts = (
+        TARGETED_T80_TRAIN_STARTS
+        if args.training_profile == "t80_targeted"
+        else TRAIN_STARTS
+    )
+    rollout_batch = 32 * len(train_starts)
     if (
         args.timesteps < 2048
         or args.timesteps % rollout_batch
@@ -109,7 +130,7 @@ def main() -> None:
     evaluation_cases = tuple(
         (split, case) for split, group in (("validation", VALIDATION), ("test", TEST)) for case in group
     )
-    required_cases = tuple(("train", case) for case, _ in TRAIN_STARTS) + evaluation_cases
+    required_cases = tuple(("train", case) for case, _ in train_starts) + evaluation_cases
     for split, case in required_cases:
         if not (args.data / split / f"{case}.h5").is_file():
             raise FileNotFoundError(f"missing real CFD start: {split}/{case}")
@@ -131,7 +152,7 @@ def main() -> None:
             episode_steps=args.episode_steps,
             device=device,
         )
-        for case, frame in TRAIN_STARTS
+        for case, frame in train_starts
     ])
     training_state_bound = float(
         train_env.envs[0].env.env.flow.training_state_bound
@@ -277,9 +298,10 @@ def main() -> None:
         "readiness_gate": str(args.readiness),
         "hydrogym_commit": "4ab9854dea3d84e38a59c25e0f5835a00cf8225f",
         "training_starts": [
-            {"case": case, "initial_frame": frame} for case, frame in TRAIN_STARTS
+            {"case": case, "initial_frame": frame} for case, frame in train_starts
         ],
-        "training_environments": len(TRAIN_STARTS),
+        "training_environments": len(train_starts),
+        "training_profile": args.training_profile,
         "ppo_timesteps": args.timesteps,
         "checkpoint_interval": args.checkpoint_interval,
         "checkpoint_evaluations": "checkpoint_evaluations.json",

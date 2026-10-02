@@ -1,0 +1,84 @@
+
+========================
+== NVIDIA PhysicsNeMo ==
+========================
+
+NVIDIA Release 26.06 (build 54894683)
+PhysicsNeMo PyPi Version 2.2.2 (Git Commit: 7e08f49)
+Container image Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+Copyright (c) 2014-2024 Facebook Inc.
+Copyright (c) 2011-2014 Idiap Research Institute (Ronan Collobert)
+Copyright (c) 2012-2014 Deepmind Technologies    (Koray Kavukcuoglu)
+Copyright (c) 2011-2012 NEC Laboratories America (Koray Kavukcuoglu)
+Copyright (c) 2011-2013 NYU                      (Clement Farabet)
+Copyright (c) 2006-2010 NEC Laboratories America (Ronan Collobert, Leon Bottou, Iain Melvin, Jason Weston)
+Copyright (c) 2006      Idiap Research Institute (Samy Bengio)
+Copyright (c) 2001-2004 Idiap Research Institute (Ronan Collobert, Samy Bengio, Johnny Mariethoz)
+Copyright (c) 2015      Google Inc.
+Copyright (c) 2015      Yangqing Jia
+Copyright (c) 2013-2016 The Caffe contributors
+All rights reserved.
+
+Various files include modifications (c) NVIDIA CORPORATION & AFFILIATES.  All rights reserved.
+
+GOVERNING TERMS: The software and materials are governed by the NVIDIA Software License Agreement
+(found at https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-software-license-agreement/)
+and the Product-Specific Terms for NVIDIA AI Products
+(found at https://www.nvidia.com/en-us/agreements/enterprise-software/product-specific-terms-for-ai-products/).
+
+NOTE: CUDA Forward Compatibility mode ENABLED.
+  Using CUDA 13.3 driver version 610.43.02 with kernel driver version 580.126.09.
+  See https://docs.nvidia.com/deploy/cuda-compatibility/ for details.
+
+{"event": "gpu_preflight", "cuda_free_gib": 18.918739318847656, "mem_available_gib": 114.45120620727539, "total_gib": 121.69016647338867, "allocator_cap_gib": 24.338033294677736, "required_available_gib": 48.338033294677736, "command": ["python", "-u", "scripts/evaluate_tandem_checkpoints_at_start.py", "--data", "data/curated/tandem_cylinders_expanded_independent_v2", "--config", "conf/tandem_fno_expanded.yaml", "--checkpoint-dir", "artifacts/tandem_fno_expanded_spark_20epoch/best", "--policy-run", "artifacts/hydrogym/tandem_ppo_multistart_8192_spark", "--frame", "0", "--horizon", "32", "--device", "cuda:0", "--output", "artifacts/hydrogym/tandem_ppo_multistart_8192_spark/t80_checkpoint_audit.json"]}
+`DistributedManager` not initialized already. Initializing now, but this might lead to unexpected errors
+/usr/local/lib/python3.12/dist-packages/physicsnemo/distributed/manager.py:415: UserWarning: Could not initialize using ENV, SLURM or OPENMPI methods. Assuming this is a single process job
+  warn(
+/usr/local/lib/python3.12/dist-packages/stable_baselines3/common/on_policy_algorithm.py:150: UserWarning: You are trying to run PPO on the GPU, but it is primarily intended to run on the CPU when not using a CNN policy (you are using ActorCriticPolicy which should be a MlpPolicy). See https://github.com/DLR-RM/stable-baselines3/issues/1245 for more info. You can pass `device='cpu'` or `export CUDA_VISIBLE_DEVICES=` to force using the CPU.Note: The model will train, but the GPU utilization will be poor and the training might take longer than on CPU.
+  warnings.warn(
+{
+  "output": "/workspace/artifacts/hydrogym/tandem_ppo_multistart_8192_spark/t80_checkpoint_audit.json",
+  "summary": [
+    {
+      "timesteps": 0,
+      "shared_start_rows": 2,
+      "reward_change": 0.0059170108087709394,
+      "cd_mean_change": -0.0027983281761407852,
+      "cl_rms_change": 0.0020264248346941738,
+      "passes_positive_reward_gate": true
+    },
+    {
+      "timesteps": 2048,
+      "shared_start_rows": 2,
+      "reward_change": -0.00795448501908691,
+      "cd_mean_change": 0.004012353718280792,
+      "cl_rms_change": -0.0032814723017844383,
+      "passes_positive_reward_gate": false
+    },
+    {
+      "timesteps": 4096,
+      "shared_start_rows": 2,
+      "reward_change": 0.006535960053901668,
+      "cd_mean_change": -0.0023826472461223602,
+      "cl_rms_change": 0.000710811078451723,
+      "passes_positive_reward_gate": true
+    },
+    {
+      "timesteps": 6144,
+      "shared_start_rows": 2,
+      "reward_change": -0.002843761663259947,
+      "cd_mean_change": 0.0038169920444488525,
+      "cl_rms_change": -0.006305931225395467,
+      "passes_positive_reward_gate": false
+    },
+    {
+      "timesteps": 8192,
+      "shared_start_rows": 2,
+      "reward_change": -0.0033733577759700317,
+      "cd_mean_change": 0.005610611289739609,
+      "cl_rms_change": -0.009843972753063035,
+      "passes_positive_reward_gate": false
+    }
+  ]
+}
+{"event": "gpu_guard_complete", "exit_code": 0, "memory_samples": 4, "min_observed_mem_available_gib": 111.9908332824707, "min_observed_cuda_free_gib": 16.35592269897461, "poll_seconds": 5.0, "min_required_mem_available_gib": 20.0}
