@@ -186,6 +186,16 @@ class Sampler:
         self.samples = {"primary": deque(maxlen=360), "worker": deque(maxlen=360)}
         self.previous = {"primary": None, "worker": None}
         self.lock = threading.Lock()
+        if self.path.exists():
+            with self.path.open(encoding="utf-8") as stream:
+                for line in deque(stream, maxlen=720):
+                    try:
+                        item = json.loads(line)
+                    except ValueError:
+                        continue
+                    node = item.pop("node", None)
+                    if node in self.samples:
+                        self.samples[node].append(item)
 
     def run(self):
         while True:
