@@ -94,6 +94,7 @@ def sample(deadline: datetime) -> dict:
         "worker_one_step": read_audit("artifacts/distributed_runs/gateb_aug_v3_seed20261005_20261002/formal/tandem_fno_gate_b_aug_v3_seed20261005_30epoch/gate_b_audit.json"),
         "primary_multistep": read_audit("artifacts/tandem_fno_gate_b_aug_v3_rollout_seed20261002_10epoch/gate_b_audit.json"),
         "worker_multistep": read_audit("artifacts/distributed_runs/gateb_aug_v3_rollout_seed20261005_20261002/formal/tandem_fno_gate_b_aug_v3_rollout_seed20261005_10epoch/gate_b_audit.json"),
+        "rear_drag_weighted": read_audit("artifacts/tandem_fno_gate_b_aug_v3_rear_drag_seed20261007_10epoch/gate_b_audit.json"),
     }
     alerts = []
     for name, host in (("primary", primary), ("worker", worker)):
@@ -107,11 +108,18 @@ def sample(deadline: datetime) -> dict:
     primary_epoch = training_epoch(
         "artifacts/tandem_fno_gate_b_aug_v3_rollout_seed20261002_10epoch/training_history.json"
     )
+    rear_weighted_epoch = training_epoch(
+        "artifacts/tandem_fno_gate_b_aug_v3_rear_drag_seed20261007_10epoch/training_history.json"
+    )
     worker_epoch = worker.get("worker_multistep_epoch")
     worker_h20_epoch = worker.get("worker_h20_epoch")
     if primary["reachable"] and primary_epoch is not None and primary_epoch < 10:
         if primary["training_or_evaluation_processes"] == 0:
             alerts.append("primary_multistep_stopped_before_epoch_10")
+    if primary["reachable"] and (rear_weighted_epoch is None or rear_weighted_epoch < 10):
+        if (ROOT / "artifacts/tandem_cylinders/gate_b_aug_v3_rear_drag_seed20261007.log").exists() \
+            and primary["training_or_evaluation_processes"] == 0:
+            alerts.append("rear_drag_weighted_stopped_before_epoch_10")
     if worker["reachable"] and worker_epoch is not None and worker_epoch < 10:
         if worker["training_or_evaluation_processes"] == 0:
             alerts.append("worker_multistep_stopped_before_epoch_10")
@@ -134,6 +142,7 @@ def sample(deadline: datetime) -> dict:
         "worker": worker,
         "audits": audits,
         "primary_multistep_epoch": primary_epoch,
+        "rear_drag_weighted_epoch": rear_weighted_epoch,
         "worker_multistep_epoch": worker_epoch,
         "worker_h20_epoch": worker_h20_epoch,
         "alerts": alerts,
