@@ -11,12 +11,12 @@ import h5py
 import numpy as np
 
 
-EXPECTED_SHAPES = {
-    "state": (801, 3, 128, 256),
-    "mask": (801, 1, 128, 256),
-    "omega": (801, 1),
-    "force": (801, 4),
-    "time": (801, 1),
+EXPECTED_TRAILING_SHAPES = {
+    "state": (3, 128, 256),
+    "mask": (1, 128, 256),
+    "omega": (1,),
+    "force": (4,),
+    "time": (1,),
     "x": (256,),
     "y": (128,),
 }
@@ -30,13 +30,19 @@ def main() -> None:
         type=Path,
         default=Path("artifacts/tandem_cylinders/curated_validation.json"),
     )
-    parser.add_argument("--max-abs-omega", type=float,
-                        help="override the action bound recorded in manifest.json")
+    parser.add_argument(
+        "--max-abs-omega",
+        type=float,
+        help="override the action bound recorded in manifest.json",
+    )
     args = parser.parse_args()
 
     manifest = json.loads((args.data / "manifest.json").read_text(encoding="utf-8"))
-    recorded_stats = json.loads((args.data / "normalization.json").read_text(encoding="utf-8"))
+    recorded_stats = json.loads(
+        (args.data / "normalization.json").read_text(encoding="utf-8")
+    )
     expected_counts = manifest["trajectory_counts"]
+    expected_frames = int(manifest["frames_per_trajectory"])
     assert set(expected_counts) == {"train", "validation", "test"}
     max_abs_omega = float(
         args.max_abs_omega if args.max_abs_omega is not None else manifest.get("max_abs_omega", 1.0)
@@ -56,13 +62,30 @@ def main() -> None:
         assert len(paths) == expected_count, (split, len(paths), expected_count)
         for path in paths:
             with h5py.File(path, "r") as handle:
-                for key, shape in EXPECTED_SHAPES.items():
-                    assert handle[key].shape == shape, (path, key, handle[key].shape)
+                for key, trailing_shape in EXPECTED_TRAILING_SHAPES.items():
+                    expected_shape = (
+                        (expected_frames, *trailing_shape)
+                        if key not in {"x", "y"}
+                        else trailing_shape
+                    )
+                    assert handle[key].shape == expected_shape, (
+                        path,
+                        key,
+                        handle[key].shape,
+                    )
                 assert handle.attrs["case"] == path.stem
                 assert handle.attrs["split"] == split
 
                 time = handle["time"][:, 0]
-                assert np.allclose(time, np.linspace(80.0, 160.0, 801), atol=2e-6)
+                config = json.loads(handle.attrs["config_json"])
+                start_time = float(config.get("start_time", 80.0))
+                end_time = float(config.get("end_time", 160.0))
+                assert int(config.get("expected_frames", expected_frames)) == expected_frames
+                assert np.allclose(
+                    time,
+                    np.linspace(start_time, end_time, expected_frames),
+                    atol=2e-6,
+                )
                 assert np.all(np.diff(time) > 0)
 
                 state = handle["state"][:]

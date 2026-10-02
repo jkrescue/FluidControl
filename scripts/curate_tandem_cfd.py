@@ -38,12 +38,21 @@ PROFILE_COUNTS = {
     "expanded_v1": {"train": 24, "validation": 4, "test": 4},
     "expanded_with_replacements": {"train": 24, "validation": 5, "test": 5},
     "expanded_independent_v2": {"train": 24, "validation": 4, "test": 4},
+    "phase_v1": {"train": 2, "validation": 1, "test": 1},
 }
 PROFILE_ACTION_LIMITS = {
     "stage1": 1.0,
     "expanded_v1": 5.0,
     "expanded_with_replacements": 5.0,
     "expanded_independent_v2": 5.0,
+    "phase_v1": 5.0,
+}
+PROFILE_FRAME_COUNTS = {
+    "stage1": 801,
+    "expanded_v1": 801,
+    "expanded_with_replacements": 801,
+    "expanded_independent_v2": 801,
+    "phase_v1": 241,
 }
 
 
@@ -65,7 +74,12 @@ def case_records(
     cases_root: Path, profile: str, selected_names: set[str] | None = None
 ) -> list[dict[str, Any]]:
     records = []
-    pattern = "dynamic_*" if profile == "stage1" else "expanded_*"
+    if profile == "stage1":
+        pattern = "dynamic_*"
+    elif profile == "phase_v1":
+        pattern = "phase_*"
+    else:
+        pattern = "expanded_*"
     excluded = {
         "expanded_v1": {"expanded_validation_04", "expanded_test_04"},
         "expanded_independent_v2": {"expanded_validation_03", "expanded_test_03"},
@@ -159,9 +173,15 @@ class TandemTrajectorySource(Source[dict[str, Any]]):
             for record in self.records
         ]
         for record, vtk_source in zip(self.records, self.vtk_sources, strict=True):
-            if len(vtk_source) != 801:
+            expected_frames = int(
+                record["config"].get(
+                    "expected_frames", PROFILE_FRAME_COUNTS[self.profile]
+                )
+            )
+            if len(vtk_source) != expected_frames:
                 raise ValueError(
-                    f"{record['name']}: expected 801 VTK files, found {len(vtk_source)}"
+                    f"{record['name']}: expected {expected_frames} VTK files, "
+                    f"found {len(vtk_source)}"
                 )
 
     def __len__(self) -> int:
@@ -244,16 +264,22 @@ class TandemTrajectorySource(Source[dict[str, Any]]):
         times_array = np.asarray(times, dtype=np.float64)[order]
         state_array = np.asarray(frames, dtype=np.float32)[order]
         mask_array = np.asarray(masks, dtype=np.uint8)[order]
-        if not np.allclose(times_array, np.linspace(80.0, 160.0, 801), atol=2e-6):
+        expected_frames = int(
+            record["config"].get(
+                "expected_frames", PROFILE_FRAME_COUNTS[self.profile]
+            )
+        )
+        start_time = float(record["config"].get("start_time", 80.0))
+        end_time = float(record["config"].get("end_time", 160.0))
+        expected_times = np.linspace(start_time, end_time, expected_frames)
+        if not np.allclose(times_array, expected_times, atol=2e-6):
             raise ValueError(f"{record['name']}: unexpected field time sequence")
 
         for frame, mask in zip(state_array, mask_array, strict=True):
             valid = mask[0].astype(bool)
             frame[2, valid] -= frame[2, valid].mean(dtype=np.float64)
 
-        force_root = (
-            "80" if record["name"].startswith(("dynamic_", "expanded_")) else "0"
-        )
+        force_root = f"{start_time:g}" if "source_restart_case" in record["config"] else "0"
         aligned = []
         for object_name in ("forceFront", "forceRear"):
             raw = load_coefficients(
@@ -261,7 +287,7 @@ class TandemTrajectorySource(Source[dict[str, Any]]):
             )
             if times_array[0] < raw[0, 0] - 1e-8:
                 source_name = record["config"].get("source_restart_case")
-                if force_root != "80" or source_name != "tandem_backward_dt005":
+                if not source_name:
                     raise ValueError(f"{record['name']}: missing exact force restart provenance")
                 source = load_coefficients(
                     case.parent / source_name / "postProcessing"
@@ -311,7 +337,8 @@ class NumericalQualityFilter(Filter[dict[str, Any]]):
         self, items: Generator[dict[str, Any], None, None]
     ) -> Generator[dict[str, Any], None, None]:
         for item in items:
-            if item["state"].shape[0] != 801 or item["state"].shape[1] != 3:
+            expected_frames = int(item["config"].get("expected_frames", 801))
+            if item["state"].shape[0] != expected_frames or item["state"].shape[1] != 3:
                 raise ValueError(
                     f"{item['case']}: invalid state shape {item['state'].shape}"
                 )
@@ -510,8 +537,8 @@ def main() -> None:
             "schema_version": 1,
             "profile": args.profile,
             "trajectory_counts": actual,
-            "frames_per_trajectory": 801,
-            "pairs_per_trajectory": 800,
+            "frames_per_trajectory": PROFILE_FRAME_COUNTS[args.profile],
+            "pairs_per_trajectory": PROFILE_FRAME_COUNTS[args.profile] - 1,
             "grid": {
                 "nx": args.nx,
                 "ny": args.ny,
@@ -575,8 +602,8 @@ def main() -> None:
             split: len(list((args.output / split).glob("*.h5")))
             for split in ("train", "validation", "test")
         },
-        "frames_per_trajectory": 801,
-        "pairs_per_trajectory": 800,
+        "frames_per_trajectory": PROFILE_FRAME_COUNTS[args.profile],
+        "pairs_per_trajectory": PROFILE_FRAME_COUNTS[args.profile] - 1,
         "grid": {"nx": args.nx, "ny": args.ny, "x_range": [8, 25], "y_range": [4, 11]},
         "fields": [
             "u",
