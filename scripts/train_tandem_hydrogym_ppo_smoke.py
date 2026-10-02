@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections.abc import Mapping
 from pathlib import Path
 
 import numpy as np
@@ -23,6 +24,9 @@ def make_env(
     *, data: Path, split: str, case: str, frame: int,
     network: torch.nn.Module, epoch: int, episode_steps: int,
     device: torch.device | str = "cpu",
+    reward_mode: str = "legacy_rear",
+    phase_baseline: Mapping[str, float | str] | None = None,
+    shedding_period: float = 6.15,
 ):
     raw = FlowEnv({
         "flow": TandemSurrogateFlow,
@@ -35,6 +39,9 @@ def make_env(
             "device": device,
             "checkpoint_epoch": epoch,
             "max_delta_omega": 0.5,
+            "reward_mode": reward_mode,
+            "phase_baseline": phase_baseline,
+            "shedding_period": shedding_period,
         },
         "solver": TandemFNOStepper,
         "solver_config": {"dt": 0.1},
