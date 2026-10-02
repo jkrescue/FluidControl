@@ -30,7 +30,7 @@ HOST_COMMAND = (
     "--format=csv,noheader,nounits; "
     "printf '__TASKS__\\n'; ps -eo comm=,args=; "
     "printf '__EPOCH__\\n'; "
-    "grep '^{' /tmp/fluid_control_multistep_seed20261004.log 2>/dev/null | tail -n 1 || true"
+    "grep -F '{\"epoch\":' /tmp/fluid_control_multistep_seed20261004.log 2>/dev/null | tail -n 1 || true"
 )
 PAGE = r'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -133,6 +133,8 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
         command, args = fields
         if command == "pimpleFoam":
             active.append("OpenFOAM CFD")
+        elif command == "bash" and "finalize_tandem_multistep_worker.sh" in args:
+            active.append("第二随机种子结果回传与评估")
         elif command in ("python", "python3") and "spark_gpu_guard.py" not in args:
             if "train_tandem_fno_rollout.py" in args:
                 active.append("PhysicsNeMo FNO 训练")
