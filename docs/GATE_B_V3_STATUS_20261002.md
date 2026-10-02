@@ -55,3 +55,24 @@ long-horizon error and train/validation coverage. CEM, PPO/HydroGym and
 claims of drag reduction remain gated. A future policy must additionally be
 checked by phase-matched paired OpenFOAM closed-loop runs, not by surrogate
 reward alone.
+
+## Interim rollout update, 2026-10-02 16:30 UTC
+
+The worker seed-20261005 ten-step/ten-epoch fine-tune completed with a
+validation-selected checkpoint (epoch 10, ten-step selection score 0.020547).
+Its **observed-action preliminary** frozen five-case 100-step total-drag
+NRMSE is 67.143%, versus 83.948% for its one-step parent. The five per-case
+100-step errors range from 55.597% to 79.226%, while one-step errors range
+from 0.927% to 3.470%. This pattern indicates a broad long-horizon rollout
+problem, not a single exceptional test action. The zero/sign-flip/shuffle,
+independent-phase, legacy-four and full Gate-B audits are still running; the
+67.143% figure is **not** a completed gate decision or a control benefit.
+
+The primary seed-20261002 ten-step replication is training. The worker has
+also started a predeclared 20-step/ten-epoch rollout ablation initialized
+from its ten-step best checkpoint. Its model and all final evaluations will
+be copied back to the primary Spark; no canonical data are stored on the
+worker. A separate validation-split 100-step diagnostic is running to test
+whether the failure is generic autoregressive drift. Active-learning CFD
+acquisition remains conditional: this preliminary all-case drift does not
+yet justify generating additional OpenFOAM trajectories.
