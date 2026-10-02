@@ -89,7 +89,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  $('epoch').textContent=d.v3_training.length?`v3 ${d.v3_training.length}/30 轮`:`已评估 ${d.history.length}/10 轮`;$('hydro-status').textContent=d.cem?'CEM 已完成':'尚未启动';
  let finished=d.cfd.filter(x=>x.status==='complete').length,average=d.cfd.reduce((s,x)=>s+x.percent,0)/Math.max(1,d.cfd.length);
  $('cfd-progress').textContent=`${finished}/3 CFD 完成`;
- $('cfd-sub').textContent=`Curator：${d.curator.done}/3 条完成，当前 ${d.curator.latest_frame}/801 帧`;
+ $('cfd-sub').textContent=d.curator.complete?'Curator：35 条轨迹已完成数据验收':`Curator：${d.curator.done}/3 条新增轨迹已采样，当前 ${d.curator.latest_frame}/801 帧`;
  $('second-seed').textContent=`第二随机种子：${d.resources.worker.at(-1)?.second_seed_epoch||0}/10 轮`;
  $('decision').textContent=a?.status==='GATE_B_PASS'?'FNO 已达到预定精度，可以进入 CEM 控制筛选。':`当前 FNO：100 步总阻力预测误差 ${pct(b)}，超过 10% 目标；独立初始相位 ${pct(i)}。正在补充真实 CFD 并做第二随机种子训练。CEM 与 PPO 仍等待模型精度达标。`;
  resources('primary',d.resources.primary);resources('worker',d.resources.worker);
@@ -170,13 +170,12 @@ def _curator_progress(root: Path) -> dict:
     path = root / "artifacts/tandem_cylinders/gate_b_aug_v3_curator.log"
     if not path.exists():
         return {"done": 0, "latest_frame": 0, "complete": False}
-    with path.open("rb") as stream:
-        stream.seek(0, 2)
-        stream.seek(max(0, stream.tell() - 32768))
-        tail = stream.read().decode("utf-8", errors="replace")
-    rows = re.findall(r"Progress: (\d+)/3", tail)
-    frames = re.findall(r"sampled (\d+)/801 VTK frames", tail)
-    return {"done": max((int(value) for value in rows), default=0), "latest_frame": max((int(value) for value in frames), default=0), "complete": "GATE_B_AUG_V3_CURATED_OK" in tail}
+    log = path.read_text(encoding="utf-8", errors="replace")
+    frames = {name: 0 for name in ("expanded_train_24", "expanded_train_25", "expanded_test_05")}
+    for name, value in re.findall(r"^(expanded_(?:train_24|train_25|test_05)): sampled (\d+)/801 VTK frames", log, flags=re.MULTILINE):
+        frames[name] = max(frames[name], int(value))
+    pending = [value for value in frames.values() if 0 < value < 801]
+    return {"done": sum(value >= 801 for value in frames.values()), "latest_frame": min(pending) if pending else 0, "complete": "GATE_B_AUG_V3_CURATED_OK" in log}
 
 
 class Sampler:
