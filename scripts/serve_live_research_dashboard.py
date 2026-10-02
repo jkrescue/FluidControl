@@ -66,9 +66,9 @@ img{width:100%;height:auto;background:white;border-radius:4px}.row{display:flex;
 <div class="card"><h3>主节点 · SPARK_HOST</h3><div class="task" id="primary-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="primary-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="primary-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="primary-mem">—</div></div></div><svg id="primary-chart" role="img" aria-label="主节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="primary-more"></div></div>
 <div class="card"><h3>计算节点 · WORKER_HOST</h3><div class="task" id="worker-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="worker-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="worker-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="worker-mem">—</div></div></div><svg id="worker-chart" role="img" aria-label="计算节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="worker-more"></div></div>
 </div><div class="legend"><span><i class="sw" style="background:#60c9fb"></i>GPU</span><span><i class="sw" style="background:#e9ae68"></i>CPU</span><span>GB10 采用统一内存；训练保护线：至少剩余 20 GiB。</span></div>
-<h2>FNO 训练和推理结果</h2><div class="grid"><div class="card"><h3>旧数据多步 FNO：训练轮次 → 10 步预测误差</h3><svg class="tall" id="train-chart" role="img" aria-label="多步训练验证误差"></svg><div class="small">蓝：流场平均绝对误差；橙：四个受力系数平均绝对误差。数值来自验证数据。</div></div><div class="card"><h3>旧数据多步 FNO：推理步数 → 总阻力误差</h3><svg class="tall" id="error-chart" role="img" aria-label="不同预测步长的总阻力误差"></svg><div class="small">蓝：旧数据 4 条 CFD 测试轨迹；绿：独立初始相位；红：10% 门槛。</div></div></div>
+<h2>FNO 训练和推理结果</h2><div class="grid"><div class="card"><h3>旧数据多步 FNO：训练轮次 → 10 步预测误差</h3><svg class="tall" id="train-chart" role="img" aria-label="多步训练验证误差"></svg><div class="small">蓝：流场平均绝对误差；橙：四个受力系数平均绝对误差。数值来自验证数据。</div></div><div class="card"><h3 id="error-title">递推步数 → 总阻力预测误差</h3><svg class="tall" id="error-chart" role="img" aria-label="不同预测步长的总阻力误差"></svg><div class="small" id="error-legend">读取评估结果…</div></div></div>
 <div class="small" id="v3-metrics" style="margin-top:8px">正在读取新数据 FNO 训练指标…</div><div class="small" id="infer-speed" style="margin-top:4px">正在读取 FNO 推理耗时…</div>
-<h2>真实流场 / FNO 预测 / 误差</h2><div class="card"><div class="row"><div class="small" id="figure-label">读取图片…</div><div><select id="case"><option value="expanded_test_00">测试 00</option><option value="expanded_test_01">测试 01</option><option value="expanded_test_02">测试 02</option><option value="expanded_test_04">测试 04</option></select> <select id="horizon"><option value="001">1 步</option><option value="010">10 步</option><option value="050">50 步</option><option value="100" selected>100 步</option></select></div></div><img id="flow" alt="真实 OpenFOAM 流场、FNO 预测、误差对照"></div>
+<h2>真实流场 / FNO 预测 / 误差</h2><div class="card"><div class="row"><div class="small" id="figure-label">读取图片…</div><div><select id="case"><option value="expanded_test_00">测试 00</option><option value="expanded_test_01">测试 01</option><option value="expanded_test_02">测试 02</option><option value="expanded_test_04">测试 04</option><option value="expanded_test_05">新测试 05</option></select> <select id="horizon"><option value="001">1 步</option><option value="010">10 步</option><option value="050">50 步</option><option value="100" selected>100 步</option></select></div></div><img id="flow" alt="真实 OpenFOAM 流场、FNO 预测、误差对照"></div>
 <h2>HydroGym 闭环控制</h2><div class="card"><div id="cem">—</div><div class="small" id="ppo">—</div></div>
 <div class="foot">图表读取原始训练与评估记录。真实 CFD 控制收益仍须通过相位匹配的 OpenFOAM 回放验证。</div>
 </main><script>
@@ -103,7 +103,9 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  $('decision').textContent=audited&&a.status==='GATE_B_PASS'?`FNO 已通过冻结的 100 步总阻力门槛（${pct(b)}）；下一步做 CEM 控制筛选，再用真实 CFD 验证。`:audited?`v3 模型五工况 100 步总阻力误差 ${pct(b)}，未达到 10%；多步候选仍在训练或审计。CEM 与 PPO 暂不启动。`:Number.isFinite(preliminary)?`v3 单步 FNO 的 100 步五工况初评为 ${pct(b)}；动作扰动与独立相位审计未完成。多步训练进行中，CEM/PPO 暂不启动。`:`旧数据模型 100 步误差 ${pct(b)}，未达到 10%；v3 FNO 正在完成独立测试。CEM 与 PPO 暂不启动。`;
  resources('primary',d.resources.primary);resources('worker',d.resources.worker);
  plot('train-chart',[{values:d.history.map(x=>x.terminal_state_mae),color:'#60c9fb'},{values:d.history.map(x=>x.terminal_force_mae),color:'#e9ae68'}],.05);
- let steps=['1','10','50','100'];plot('error-chart',[{values:steps.map(x=>d.evaluations.heldout?.[x]?.total_drag_nrmse),color:'#60c9fb'},{values:steps.map(x=>d.evaluations.independent?.[x]?.total_drag_nrmse),color:'#79d5a3'},{values:steps.map(()=>.1),color:'#d77979'}],.2);
+ let steps=['1','10','50','100'],v3series=[{result:d.v3_observed,color:'#60c9fb',label:'主节点单步'},{result:d.v3_worker_observed,color:'#79d5a3',label:'计算节点单步'},{result:d.v3_rollout_observed,color:'#e9ae68',label:'计算节点多步'}].filter(x=>x.result?.summary);
+ if(v3series.length){let series=v3series.map(x=>({values:steps.map(h=>x.result.summary[h]?.total_drag_nrmse),color:x.color}));let top=Math.max(.2,...series.flatMap(x=>x.values.filter(Number.isFinite)));series.push({values:steps.map(()=>.1),color:'#d77979'});plot('error-chart',series,Math.ceil(top*10)/10);$('error-title').textContent='v3 真实 CFD：递推步数 → 总阻力误差';$('error-legend').textContent=v3series.map(x=>x.label).join('、')+'；红线：10% 门槛。模型结果需以完整审计为准。'}
+ else{plot('error-chart',[{values:steps.map(x=>d.evaluations.heldout?.[x]?.total_drag_nrmse),color:'#60c9fb'},{values:steps.map(x=>d.evaluations.independent?.[x]?.total_drag_nrmse),color:'#79d5a3'},{values:steps.map(()=>.1),color:'#d77979'}],.2);$('error-title').textContent='旧数据多步 FNO：递推步数 → 总阻力误差';$('error-legend').textContent='蓝：旧数据 4 条 CFD 测试；绿：独立初始相位；红：10% 门槛。'}
  let current=d.v3_training.at(-1);$('v3-metrics').textContent=current?`新数据 FNO（主节点）第 ${current.epoch} 轮：训练损失 ${num(current.train_loss,4)}；验证流场误差 ${num(current.state_mae_physical_units,4)}；验证受力误差（归一化）${num(current.force_mae_normalized,4)}。`:'新数据 FNO：正式训练已启动，首轮指标尚未产生。';
  $('infer-speed').textContent=d.benchmark?.status==='FNO_REAL_CFD_INFERENCE_BENCHMARK_OK'?`旧数据多步 FNO、真实 CFD 输入：单步中位 ${num(d.benchmark.step_median_ms,2)} ms；连续 100 步 ${num(d.benchmark.rollout_100_step_seconds,2)} s。仅模型前向，不含 CFD 或控制通信。`:'FNO 推理耗时尚未测量。';
  $('cem').textContent=d.cem?'CEM 控制筛选已完成，结果待审计。':`CEM：等待 FNO 的 100 步总阻力误差降至 10% 以下。新增 CFD 平均求解进度 ${num(average,0)}%。`;
@@ -259,9 +261,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(PAGE.encode(), "text/html; charset=utf-8")
         if path.startswith("/figure/"):
             parts = path.removeprefix("/figure/").split("/")
-            if len(parts) != 3 or parts[0] not in ("current", "previous") or parts[1] not in ("expanded_test_00", "expanded_test_01", "expanded_test_02", "expanded_test_04") or parts[2] not in ("001.png", "010.png", "050.png", "100.png"):
+            if len(parts) != 3 or parts[0] not in ("v3", "current", "previous") or parts[1] not in ("expanded_test_00", "expanded_test_01", "expanded_test_02", "expanded_test_04", "expanded_test_05") or parts[2] not in ("001.png", "010.png", "050.png", "100.png"):
                 return self._send(b"not found", "text/plain", 404)
-            base = RUN / "heldout_figures_dashboard" if parts[0] == "current" else OLD / "heldout_figures"
+            base = (Path("artifacts/tandem_fno_gate_b_aug_v3_30epoch/heldout_figures") if parts[0] == "v3"
+                    else RUN / "heldout_figures_dashboard" if parts[0] == "current"
+                    else OLD / "heldout_figures")
             file = self.root / base / parts[1] / ("horizon_" + parts[2].removesuffix(".png") + "_start_0000.png")
             try:
                 return self._send(file.read_bytes(), "image/png")
@@ -277,12 +281,15 @@ class Handler(BaseHTTPRequestHandler):
             with self.sampler.lock:
                 samples = {k: list(v) for k, v in self.sampler.samples.items()}
             figures = {}
-            for case in ("expanded_test_00", "expanded_test_01", "expanded_test_02", "expanded_test_04"):
+            for case in ("expanded_test_00", "expanded_test_01", "expanded_test_02", "expanded_test_04", "expanded_test_05"):
                 for horizon in ("001", "010", "050", "100"):
                     filename = f"{case}/horizon_{horizon}_start_0000.png"
+                    v3 = self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/heldout_figures" / filename
                     current = run / "heldout_figures_dashboard" / filename
                     previous = self.root / OLD / "heldout_figures" / filename
-                    if current.exists():
+                    if v3.exists():
+                        figures[f"{case}/{horizon}"] = {"path": f"/figure/v3/{case}/{horizon}.png", "version": int(v3.stat().st_mtime), "label": "v3 单步 FNO · 真实 OpenFOAM CFD / 预测 / 绝对误差（初评）"}
+                    elif current.exists():
                         figures[f"{case}/{horizon}"] = {"path": f"/figure/current/{case}/{horizon}.png", "version": int(current.stat().st_mtime), "label": "当前 10 轮多步 FNO · 真实 CFD / 预测 / 绝对误差"}
                     elif previous.exists():
                         figures[f"{case}/{horizon}"] = {"path": f"/figure/previous/{case}/{horizon}.png", "version": int(previous.stat().st_mtime), "label": "上一版单步 FNO · 真实 CFD / 预测 / 绝对误差（当前模型图待生成）"}
