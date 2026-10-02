@@ -127,3 +127,15 @@ Hydra composition and an isolated one-batch GPU smoke passed in the pinned
 2.2.2 container. A ten-epoch run initialized from the primary ten-step best
 checkpoint has started under its own artifact directory; its eventual
 result is pending, not a control-benefit claim.
+
+The worker 20-step ablation's epoch-5 checkpoint was evaluated **only on
+validation** while epoch 6–10 training continues. Its 100-step total-drag
+NRMSE is 54.725% (1/10/50-step: 1.468% / 5.280% / 24.268%), versus
+50.950% for the worker's final ten-step model on the same validation split.
+Thus the midway longer-rollout checkpoint has not yet improved the
+governing horizon. The first diagnostic container attempt failed before
+inference because the worker UID has no container passwd entry; rerunning
+with the official runner's `USER`/`LOGNAME` environment succeeded.
+Both logs and the result were copied checksum-identically to
+`artifacts/distributed_runs/gateb_aug_v3_h20_epoch5_validation_20261002/`
+on the primary Spark. No worker test data were used.
