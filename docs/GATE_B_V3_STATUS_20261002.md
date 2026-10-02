@@ -128,6 +128,14 @@ Hydra composition and an isolated one-batch GPU smoke passed in the pinned
 checkpoint has started under its own artifact directory; its eventual
 result is pending, not a control-benefit claim.
 
+The primary ten-step model's **complete** Gate-B audit has since returned
+`GATE_B_NEEDS_MULTISTEP_RETRAINING`: five-case 100-step NRMSE 21.699% and
+independent-phase 100-step NRMSE 10.564%, both above the frozen 10% limit.
+It passed the finite-rollout, persistence and action-sensitivity checks;
+only the two NRMSE checks failed. The independent-phase result is close,
+but no threshold was rounded or relaxed. A separate legacy-four comparison
+is still finishing. CEM/PPO remains gated.
+
 The worker 20-step ablation's epoch-5 checkpoint was evaluated **only on
 validation** while epoch 6–10 training continues. Its 100-step total-drag
 NRMSE is 54.725% (1/10/50-step: 1.468% / 5.280% / 24.268%), versus
