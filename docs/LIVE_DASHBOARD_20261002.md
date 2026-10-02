@@ -26,6 +26,8 @@ seed's completed epoch is parsed from its actual worker training log.
 ## Interpretation
 
 - The training chart reads the formal PhysicsNeMo FNO multistep history.
+- The FNO inference line reads a synchronized, batch-one 100-step timing run
+  on a real CFD action sequence. It reports model-forward time only.
 - Gate-B values and decisions come from the immutable evaluation and audit JSON.
 - Flow images show the current multistep model if its evaluation figures exist.
   Until then the page explicitly labels the older single-step model images.

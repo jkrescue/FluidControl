@@ -47,6 +47,15 @@ PPO has not started. No surrogate-only result is interpreted as real-CFD drag
 reduction. Next work is to locate the error source, add independent real CFD
 training cases if coverage is lacking, retrain and repeat the unchanged audit.
 
+A separate batch-one timing run on a real `expanded_test_00` action sequence
+measured the official FNO's model-forward latency at 6.31 ms median per step
+and 0.639 s for 100 synchronized sequential steps on the primary GB10. The
+CUDA peak allocation was 0.528 GiB. These numbers exclude model loading,
+OpenFOAM solve time, data transfer and controller optimization; they do not
+measure end-to-end closed-loop latency. The record is
+`artifacts/monitor/fno_inference_benchmark_seed20261003.json`, produced by
+`scripts/run_tandem_fno_inference_benchmark_spark.sh`.
+
 The live dashboard at `scripts/serve_live_research_dashboard.py` shows the
 formal curves, this gate, current-model CFD comparison images and both Spark
 nodes' CPU/GPU activity. Its monitoring instructions are in
