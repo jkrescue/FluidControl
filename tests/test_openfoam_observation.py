@@ -15,6 +15,7 @@ from fluid_control.openfoam_observation import (  # noqa: E402
     _probe_file,
     _select,
     observation_at,
+    total_drag_observation_at,
 )
 
 
@@ -67,6 +68,22 @@ class OpenFOAMObservationParserTests(unittest.TestCase):
         np.testing.assert_allclose(values[:4], [1, 2, 1, 2])
         np.testing.assert_allclose(values[-3:], [0.8, -0.2, 1.5])
         self.assertEqual(metadata["probe_sources"], ["probes"])
+
+    def test_total_drag_observation_reads_both_forces_at_same_time(self) -> None:
+        legacy = np.concatenate((np.ones(64), [0.8, -0.2, 1.5])).astype(np.float32)
+        with patch(
+            "fluid_control.openfoam_observation.observation_at",
+            return_value=(legacy, {"time": 90.0}),
+        ), patch(
+            "fluid_control.openfoam_observation._select",
+            return_value=(np.array([1.2, 0.3]), ["front-force"]),
+        ) as selected:
+            values, metadata = total_drag_observation_at(Path("."), 90.0, 1.5)
+        self.assertEqual(values.shape, (69,))
+        np.testing.assert_allclose(values[64:], [1.2, 0.3, 0.8, -0.2, 1.5])
+        self.assertEqual(metadata["front_force_sources"], ["front-force"])
+        self.assertIn("front_cd,front_cl,rear_cd,rear_cl", metadata["channel_order"])
+        self.assertIn("forceFront", selected.call_args.args[1])
 
     def test_restart_samples_must_agree(self) -> None:
         case = MagicMock()

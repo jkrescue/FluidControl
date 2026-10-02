@@ -124,3 +124,28 @@ def observation_at(case: Path, target_time: float, applied_omega: float) -> tupl
         "force_sources": force_sources,
         "channel_order": "32*(u,v),rear_cd,rear_cl,applied_omega",
     }
+
+
+def total_drag_observation_at(
+    case: Path, target_time: float, applied_omega: float
+) -> tuple[np.ndarray, dict]:
+    """Read the 69-channel Stage-C observation at one exact OpenFOAM time.
+
+    The 67-channel legacy reader remains unchanged. Both cylinder forces are
+    read from the same case/time, avoiding a restart-boundary label offset.
+    """
+    legacy, provenance = observation_at(case, target_time, applied_omega)
+    front, front_sources = _select(
+        Path(case),
+        "postProcessing/forceFront/*/coefficient.dat",
+        _force_file,
+        target_time,
+    )
+    result = np.concatenate((legacy[:64], front, legacy[64:]))
+    if result.shape != (69,) or not np.isfinite(result).all():
+        raise ValueError("invalid 69-channel total-drag observation")
+    return result.astype(np.float32), {
+        **provenance,
+        "front_force_sources": front_sources,
+        "channel_order": "32*(u,v),front_cd,front_cl,rear_cd,rear_cl,applied_omega",
+    }

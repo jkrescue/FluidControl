@@ -17,7 +17,7 @@ import numpy as np
 import torch
 from hydrogym import PDEBase, TransientSolver
 
-from .openfoam_observation import observation_at
+from .openfoam_observation import observation_at, total_drag_observation_at
 from .stage_c_objective import (
     stage_c_cost_components,
     stage_c_force_ledger,
@@ -163,15 +163,16 @@ class TandemSurrogateFlow(PDEBase):
             ):
                 raise ValueError("frame-0 CFD restart provenance mismatch")
             source_case = case_root / case_config["source_restart_case"]
-            raw_initial, _ = observation_at(source_case, self.initial_cfd_time, 0.0)
             if len(self.force_channels) == 2:
+                raw_initial, _ = observation_at(source_case, self.initial_cfd_time, 0.0)
                 initial_force = raw_initial[64:66].copy()
                 self.initial_force_source = "raw_openfoam_source_restart_t80"
             else:
-                initial_force[2:4] = raw_initial[64:66]
-                self.initial_force_source = (
-                    "curated_front_raw_openfoam_rear_source_restart_t80"
+                raw_initial, _ = total_drag_observation_at(
+                    source_case, self.initial_cfd_time, 0.0
                 )
+                initial_force[:] = raw_initial[64:68]
+                self.initial_force_source = "raw_openfoam_both_cylinders_restart_t80"
         if (
             physical.ndim != 3
             or physical.shape[0] != 3

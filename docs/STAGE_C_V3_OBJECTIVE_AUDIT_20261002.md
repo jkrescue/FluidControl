@@ -27,6 +27,13 @@ physical objective; it is not transferable evidence for this Stage-C target.
 The Stage-C HydroGym adapter now rejects an episode shorter than 1.5
 shedding periods: at `dt=0.1`, the old 32-step duration is 3.2 versus the
 6.15-unit causal reward window, so it would provide no physical drag reward.
+The 69-channel Stage-C observation now reads both cylinder forces at the
+exact source `t=80` when a shared-restart frame is used. A CPU-only read of
+the original OpenFOAM files returned front Cd `1.39119339` and rear Cd
+`1.06314135`; all four force channels matched the newly curated
+`expanded_train_24` frame-0 label exactly (maximum absolute difference `0`).
+The old 67-channel rear-only reader remains unchanged. This fixes online
+observation provenance without rewriting inherited training HDF5.
 
 Reproduce the CPU-only audit in the pinned PhysicsNeMo 2.2.2 container with
 `scripts/audit_tandem_control_objective.py --data
