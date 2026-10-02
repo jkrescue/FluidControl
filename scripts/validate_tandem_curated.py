@@ -46,8 +46,8 @@ def main() -> None:
     state_sum = np.zeros(3, dtype=np.float64)
     state_sq = np.zeros(3, dtype=np.float64)
     state_count = np.zeros(3, dtype=np.int64)
-    force_sum = np.zeros(2, dtype=np.float64)
-    force_sq = np.zeros(2, dtype=np.float64)
+    all_force_sum = np.zeros(4, dtype=np.float64)
+    all_force_sq = np.zeros(4, dtype=np.float64)
     force_count = 0
     cases = []
 
@@ -89,10 +89,11 @@ def main() -> None:
                         state_sum[channel] += values.sum(dtype=np.float64)
                         state_sq[channel] += np.square(values, dtype=np.float64).sum(dtype=np.float64)
                         state_count[channel] += len(values)
-                    rear_force = force[:, 2:4]
-                    force_sum += rear_force.sum(axis=0, dtype=np.float64)
-                    force_sq += np.square(rear_force, dtype=np.float64).sum(axis=0, dtype=np.float64)
-                    force_count += len(rear_force)
+                    all_force_sum += force.sum(axis=0, dtype=np.float64)
+                    all_force_sq += np.square(force, dtype=np.float64).sum(
+                        axis=0, dtype=np.float64
+                    )
+                    force_count += len(force)
 
                 row = {
                     "case": path.stem,
@@ -108,13 +109,17 @@ def main() -> None:
 
     state_mean = state_sum / state_count
     state_std = np.sqrt(np.maximum(state_sq / state_count - state_mean**2, 1e-12))
-    force_mean = force_sum / force_count
-    force_std = np.sqrt(np.maximum(force_sq / force_count - force_mean**2, 1e-12))
+    all_force_mean = all_force_sum / force_count
+    all_force_std = np.sqrt(
+        np.maximum(all_force_sq / force_count - all_force_mean**2, 1e-12)
+    )
     recomputed = {
         "state_mean": state_mean.tolist(),
         "state_std": state_std.tolist(),
-        "force_mean": force_mean.tolist(),
-        "force_std": force_std.tolist(),
+        "force_mean": all_force_mean[2:4].tolist(),
+        "force_std": all_force_std[2:4].tolist(),
+        "all_force_mean": all_force_mean.tolist(),
+        "all_force_std": all_force_std.tolist(),
     }
     for key, values in recomputed.items():
         assert np.allclose(values, recorded_stats[key], rtol=1e-8, atol=1e-10), (

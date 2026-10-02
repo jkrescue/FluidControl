@@ -17,7 +17,7 @@ class TandemWindowDataset(DatasetBase):
     """PhysicsNeMo map dataset for action-conditioned temporal windows."""
 
     def __init__(self, root: str | Path, split: str, stride: int = 1,
-                 num_workers: int = 2) -> None:
+                 num_workers: int = 2, force_indices: tuple[int, ...] = (2, 3)) -> None:
         super().__init__(num_workers=num_workers)
         self.root = Path(root)
         self.split = split
@@ -31,8 +31,24 @@ class TandemWindowDataset(DatasetBase):
             raise ValueError(f"invalid max_abs_omega in {self.root / 'manifest.json'}")
         self.state_mean = torch.tensor(self.stats["state_mean"], dtype=torch.float32)[:, None, None]
         self.state_std = torch.tensor(self.stats["state_std"], dtype=torch.float32)[:, None, None]
-        self.force_mean = torch.tensor(self.stats["force_mean"], dtype=torch.float32)
-        self.force_std = torch.tensor(self.stats["force_std"], dtype=torch.float32)
+        self.force_indices = tuple(int(index) for index in force_indices)
+        if self.force_indices == (2, 3):
+            channels = self.stats["force_channels"]
+            mean = self.stats["force_mean"]
+            std = self.stats["force_std"]
+        elif self.force_indices == (0, 1, 2, 3):
+            channels = self.stats["all_force_channels"]
+            mean = self.stats["all_force_mean"]
+            std = self.stats["all_force_std"]
+        else:
+            raise ValueError(
+                "force_indices must be rear-only (2,3) or all-cylinder (0,1,2,3)"
+            )
+        self.force_channels = tuple(channels)
+        self.force_mean = torch.tensor(mean, dtype=torch.float32)
+        self.force_std = torch.tensor(std, dtype=torch.float32)
+        if len(self.force_channels) != len(self.force_indices):
+            raise ValueError("force normalization schema does not match force_indices")
         self.index = []
         for file_index, path in enumerate(self.paths):
             with h5py.File(path, "r") as handle:
@@ -67,7 +83,9 @@ class TandemWindowDataset(DatasetBase):
         omega_now = (current["omega"].float() / self.action_scale).reshape(1, 1, 1).expand(1, height, width)
         omega_next = (following["omega"].float() / self.action_scale).reshape(1, 1, 1).expand(1, height, width)
         inputs = torch.cat([state, mask, omega_now, omega_next], dim=0)
-        force = (following["force"].float()[2:4] - self.force_mean) / self.force_std
+        force = (
+            following["force"].float()[list(self.force_indices)] - self.force_mean
+        ) / self.force_std
         sample = TensorDict({
             "x": inputs,
             "delta": next_state - state,
@@ -96,10 +114,14 @@ class TandemRolloutDataset(TandemWindowDataset):
     """PhysicsNeMo dataset that returns contiguous autoregressive windows."""
 
     def __init__(self, root: str | Path, split: str, rollout_steps: int,
-                 stride: int = 1, num_workers: int = 2) -> None:
+                 stride: int = 1, num_workers: int = 2,
+                 force_indices: tuple[int, ...] = (2, 3)) -> None:
         if rollout_steps < 1:
             raise ValueError(f"rollout_steps must be positive, got {rollout_steps}")
-        super().__init__(root, split, stride=1, num_workers=num_workers)
+        super().__init__(
+            root, split, stride=1, num_workers=num_workers,
+            force_indices=force_indices,
+        )
         self.rollout_steps = int(rollout_steps)
         self.index = []
         for file_index, path in enumerate(self.paths):
@@ -122,7 +144,9 @@ class TandemRolloutDataset(TandemWindowDataset):
         omega = torch.stack(
             [frame["omega"].float().reshape(1) / self.action_scale for frame in frames]
         )
-        forces = torch.stack([frame["force"].float()[2:4] for frame in frames[1:]])
+        forces = torch.stack([
+            frame["force"].float()[list(self.force_indices)] for frame in frames[1:]
+        ])
         forces = (forces - self.force_mean[None]) / self.force_std[None]
 
         sample = TensorDict({

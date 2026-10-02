@@ -44,9 +44,16 @@ def build_model(cfg: DictConfig) -> FNO:
     )
 
 
+def configured_force_indices(cfg: DictConfig) -> tuple[int, ...]:
+    """Return the explicitly configured physical force columns."""
+    return tuple(int(index) for index in cfg.data.get("force_indices", (2, 3)))
+
+
 def predict(network: torch.nn.Module, x: torch.Tensor, mask: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     raw = network(x)
-    force = (raw[:, 3:5] * mask).sum(dim=(-2, -1)) / mask.sum(dim=(-2, -1)).clamp_min(1)
+    if raw.shape[1] <= 3:
+        raise ValueError("PhysicsNeMo FNO must output state plus at least one force channel")
+    force = (raw[:, 3:] * mask).sum(dim=(-2, -1)) / mask.sum(dim=(-2, -1)).clamp_min(1)
     return raw[:, :3], force
 
 
@@ -151,13 +158,16 @@ def main(cfg: DictConfig) -> None:
     torch.cuda.manual_seed_all(seed)
 
     smoke = bool(cfg.training.smoke)
+    force_indices = configured_force_indices(cfg)
+    if int(cfg.model.out_channels) != 3 + len(force_indices):
+        raise ValueError("model.out_channels must equal 3 + number of force targets")
     train = TandemWindowDataset(
         cfg.data.root, "train", stride=int(cfg.training.get("smoke_train_stride", 8)) if smoke else 1,
-        num_workers=cfg.training.workers,
+        num_workers=cfg.training.workers, force_indices=force_indices,
     )
     validation = TandemWindowDataset(
         cfg.data.root, "validation", stride=int(cfg.training.get("smoke_validation_stride", 16)) if smoke else 2,
-        num_workers=cfg.training.workers,
+        num_workers=cfg.training.workers, force_indices=force_indices,
     )
     train_sampler = DistributedSampler(train, shuffle=True, seed=cfg.training.seed) if dist.distributed else None
     validation_sampler = DistributedSampler(validation, shuffle=False) if dist.distributed else None
@@ -210,7 +220,12 @@ def main(cfg: DictConfig) -> None:
         checkpoint_dir, models=network, optimizer=optimizer, scheduler=scheduler,
         metadata_dict=metadata, device=dist.device,
     )
-    best = float(metadata.get("best_validation_state_mae", "inf"))
+    best = float(
+        metadata.get(
+            "best_selection_score",
+            metadata.get("best_validation_state_mae", "inf"),
+        )
+    )
     history_path = output / "training_history.json"
     history = json.loads(history_path.read_text()) if dist.rank == 0 and history_path.exists() else []
     state_std = train.state_std.to(dist.device)[None]
@@ -235,17 +250,24 @@ def main(cfg: DictConfig) -> None:
             logger.log_epoch(metrics)
 
         scheduler.step()
-        score = metrics["state_mae_physical_units"]
+        score = (
+            metrics["state_mae_physical_units"]
+            + float(cfg.training.get("selection_force_weight", 0.0))
+            * metrics["force_mae_normalized"]
+        )
         checkpoint_interval = max(int(cfg.training.get("checkpoint_interval", 5)), 1)
         save_now = epoch % checkpoint_interval == 0 or epoch == epochs
         improved = save_now and score < best
         if save_now:
             best = min(best, score)
         checkpoint_metadata = {
-            "best_validation_state_mae": best,
+            "best_selection_score": best,
             "validation": metrics,
             "data_root": str(Path(cfg.data.root).resolve()),
             "action_scale": train.action_scale,
+            "force_channels": list(train.force_channels),
+            "force_indices": list(train.force_indices),
+            "selection_score": score,
             "model_config": OmegaConf.to_container(cfg.model, resolve=True),
         }
         if dist.rank == 0 and save_now:
@@ -283,7 +305,7 @@ def main(cfg: DictConfig) -> None:
             ),
             flush=True,
         )
-        pylog.success(f"Training complete; best validation state MAE: {best:.6g}")
+        pylog.success(f"Training complete; best validation selection score: {best:.6g}")
     train.close()
     validation.close()
     if dist.distributed:

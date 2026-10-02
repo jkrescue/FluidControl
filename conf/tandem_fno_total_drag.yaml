@@ -1,0 +1,21 @@
+defaults:
+  - tandem_fno_expanded
+  - _self_
+
+data:
+  force_indices: [0, 1, 2, 3]
+
+output_dir: artifacts/tandem_fno_total_drag_spark
+
+model:
+  out_channels: 7
+
+training:
+  epochs: 30
+  checkpoint_interval: 5
+  checkpoint_keep_last: 2
+  best_checkpoint_keep_last: 1
+  selection_force_weight: 0.1
+  batch_size: 64
+  gpu_memory_fraction: 0.20
+  seed: 20261002

@@ -25,7 +25,13 @@ from physicsnemo.utils.logging import LaunchLogger, PythonLogger
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DistributedSampler
 
-from train_tandem_fno import build_model, predict, prune_checkpoint_dir, reduce_totals
+from train_tandem_fno import (
+    build_model,
+    configured_force_indices,
+    predict,
+    prune_checkpoint_dir,
+    reduce_totals,
+)
 
 
 def rollout(
@@ -115,14 +121,19 @@ def main(cfg: DictConfig) -> None:
 
     smoke = bool(cfg.training.smoke)
     rollout_steps = 2 if smoke else int(cfg.training.rollout_steps)
+    force_indices = configured_force_indices(cfg)
+    if int(cfg.model.out_channels) != 3 + len(force_indices):
+        raise ValueError("model.out_channels must equal 3 + number of force targets")
     train = TandemRolloutDataset(
         cfg.data.root, "train", rollout_steps,
         stride=32 if smoke else 1, num_workers=cfg.training.workers,
+        force_indices=force_indices,
     )
     validation = TandemRolloutDataset(
         cfg.data.root, "validation", rollout_steps,
         stride=64 if smoke else int(cfg.training.validation_stride),
         num_workers=cfg.training.workers,
+        force_indices=force_indices,
     )
     train_sampler = DistributedSampler(train, shuffle=True, seed=cfg.training.seed) if dist.distributed else None
     validation_sampler = DistributedSampler(validation, shuffle=False) if dist.distributed else None
@@ -276,6 +287,8 @@ def main(cfg: DictConfig) -> None:
             "teacher_forcing_ratio": current_teacher_forcing,
             "initialized_from": initialized_from,
             "action_scale": train.action_scale,
+            "force_channels": list(train.force_channels),
+            "force_indices": list(train.force_indices),
             "model_config": OmegaConf.to_container(cfg.model, resolve=True),
         }
         if dist.rank == 0 and save_now:

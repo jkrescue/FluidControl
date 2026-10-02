@@ -395,8 +395,8 @@ def normalization(output_dir: Path) -> dict[str, Any]:
     state_count = np.zeros(3, dtype=np.int64)
     state_min = np.full(3, np.inf, dtype=np.float64)
     state_max = np.full(3, -np.inf, dtype=np.float64)
-    force_sum = np.zeros(2, dtype=np.float64)
-    force_sq = np.zeros(2, dtype=np.float64)
+    all_force_sum = np.zeros(4, dtype=np.float64)
+    all_force_sq = np.zeros(4, dtype=np.float64)
     force_count = 0
     for path in sorted((output_dir / "train").glob("*.h5")):
         with h5py.File(path, "r") as handle:
@@ -411,14 +411,16 @@ def normalization(output_dir: Path) -> dict[str, Any]:
                 state_count[channel] += len(values)
                 state_min[channel] = min(state_min[channel], values.min())
                 state_max[channel] = max(state_max[channel], values.max())
-            force = handle["force"][:, 2:4]
-            force_sum += force.sum(axis=0, dtype=np.float64)
-            force_sq += np.square(force, dtype=np.float64).sum(axis=0, dtype=np.float64)
+            force = handle["force"][:]
+            all_force_sum += force.sum(axis=0, dtype=np.float64)
+            all_force_sq += np.square(force, dtype=np.float64).sum(axis=0, dtype=np.float64)
             force_count += len(force)
     state_mean = state_sum / state_count
-    force_mean = force_sum / force_count
+    all_force_mean = all_force_sum / force_count
     state_std = np.sqrt(np.maximum(state_sq / state_count - state_mean**2, 1e-12))
-    force_std = np.sqrt(np.maximum(force_sq / force_count - force_mean**2, 1e-12))
+    all_force_std = np.sqrt(
+        np.maximum(all_force_sq / force_count - all_force_mean**2, 1e-12)
+    )
     state_abs_normalized_max = np.maximum(
         np.abs(state_min - state_mean), np.abs(state_max - state_mean)
     ) / state_std
@@ -430,8 +432,11 @@ def normalization(output_dir: Path) -> dict[str, Any]:
         "state_abs_normalized_max_train": float(state_abs_normalized_max.max()),
         "state_support_computed_from": "exact train split valid cells",
         "force_channels": ["rear_cd", "rear_cl"],
-        "force_mean": force_mean.tolist(),
-        "force_std": force_std.tolist(),
+        "force_mean": all_force_mean[2:4].tolist(),
+        "force_std": all_force_std[2:4].tolist(),
+        "all_force_channels": ["front_cd", "front_cl", "rear_cd", "rear_cl"],
+        "all_force_mean": all_force_mean.tolist(),
+        "all_force_std": all_force_std.tolist(),
         "computed_from": "train split only",
     }
 
