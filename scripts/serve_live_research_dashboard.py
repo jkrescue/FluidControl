@@ -110,7 +110,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  let watch=d.watchdog||{}, hours=Number.isFinite(watch.seconds_remaining)?(watch.seconds_remaining/3600).toFixed(1):'—';$('watchdog').textContent=`持续科研监控剩余 ${hours} 小时 · 监控采样 ${watch.timestamp_utc||'待启动'} · 告警 ${watch.alerts?.length?watch.alerts.join('、'):'无'}`;$('watchdog').className='small '+(watch.alerts?.length?'bad':'good');
  let finished=d.cfd.filter(x=>x.status==='complete').length,average=d.cfd.reduce((s,x)=>s+x.percent,0)/Math.max(1,d.cfd.length);
  $('cfd-progress').textContent=`${finished}/${d.cfd.length} 配对 CFD 完成`;
- $('cfd-sub').textContent='同一初始流场下对比零转速、正/负恒转速及周期转速；原 35 条数据已验收';
+ $('cfd-sub').textContent='长窗口同初始态：零转速、正/负恒转速；短窗口四条 CFD 已完成';
  let worker=d.resources.worker.at(-1)||{};$('second-seed').textContent=`计算节点：20 步＋后柱阻力加权 ${worker.v3_h20_rear_drag_epoch||0}/10 轮；主种子 20 步 ${worker.v3_primary_seed_h20_epoch||0}/10 轮已验收`;
  $('heldout-scope').textContent=audited?`${picked.label}；v3 五条 CFD 测试，完整审计` :Number.isFinite(preliminary)?`${picked.label}；v3 五条 CFD 测试初评，完整审计中`:'旧数据四条 CFD 测试；目标 ≤10%';
  $('decision').textContent=audited&&a.status==='GATE_B_PASS'?`${picked.label}已通过冻结的 100 步总阻力门槛（${pct(b)}）；下一步做 CEM 控制筛选，再用真实 CFD 验证。`:audited?`${picked.label}五工况 100 步总阻力误差 ${pct(b)}，未达到 10%；其他候选仍在训练或审计。CEM 与 PPO 暂不启动。`:Number.isFinite(preliminary)?`${picked.label}的 100 步五工况初评为 ${pct(b)}；动作扰动与独立相位审计未完成。CEM/PPO 暂不启动。`:`旧数据模型 100 步误差 ${pct(b)}，未达到 10%；v3 FNO 正在完成独立测试。CEM 与 PPO 暂不启动。`;
@@ -196,8 +196,8 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
 
 def _cfd_progress(root: Path) -> list[dict]:
     rows = []
-    for name in ("landscape_val_zero_20261003", "landscape_val_p100_20261003",
-                 "landscape_val_m100_20261003", "landscape_val_sine_20261003"):
+    for name in ("landscape_long_val_zero_20261003", "landscape_long_val_p100_20261003",
+                 "landscape_long_val_m100_20261003"):
         path = root / "cfd/tandem_cylinders/cases" / name / "log.pimpleFoam"
         if not path.exists():
             rows.append({"case": name, "status": "pending", "percent": 0.0})
@@ -207,7 +207,7 @@ def _cfd_progress(root: Path) -> list[dict]:
             stream.seek(max(0, stream.tell() - 16384))
             tail = stream.read().decode("utf-8", errors="replace")
         times = re.findall(r"^Time = ([0-9.]+)$", tail, flags=re.MULTILINE)
-        percent = min(100.0, max(0.0, (float(times[-1]) - 80.0) / 36.0 * 100)) if times else 0.0
+        percent = min(100.0, max(0.0, (float(times[-1]) - 80.0) / 80.0 * 100)) if times else 0.0
         completed = bool(re.search(r"^End$", tail, flags=re.MULTILINE))
         rows.append({"case": name, "status": "complete" if completed else "running", "percent": 100.0 if completed else percent})
     return rows
