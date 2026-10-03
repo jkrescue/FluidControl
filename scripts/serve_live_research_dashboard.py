@@ -182,6 +182,10 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
         command, args = fields
         if command == "pimpleFoam":
             active.append("OpenFOAM CFD")
+        elif command == "foamToVTK":
+            active.append("OpenFOAM 流场导出")
+        elif command == "bash" and "build_control_gap_v4_spark.sh" in args:
+            active.append("v4 训练数据 Curator 整理与校验")
         elif command == "bash" and "finalize_tandem_multistep_worker.sh" in args:
             active.append("模型训练完成后自动回传与验收")
         elif command in ("python", "python3") and "spark_gpu_guard.py" not in args:
