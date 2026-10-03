@@ -119,8 +119,10 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("实现与测试中", page)
         self.assertIn("renderFreeAR(d)", page)
         self.assertIn("反归一化流场综合MAE / 四个力系数平均MAE", page)
-        self.assertIn("不是总Cd相对误差、减阻率", page)
+        self.assertIn("不是减阻率或正式Gate", page)
         self.assertIn("旧服务=", page)
+        self.assertIn("训练内stride100终点pooled总Cd NRMSE", page)
+        self.assertIn("不等于stride25完整评估", page)
         self.assertIn("FNO未用于奖励", page)
 
     def test_dual_node_watchdog_is_exposed_without_replacing_science_metrics(self) -> None:
