@@ -7,5 +7,6 @@ training:
   rollout_steps: 50
   validation_rollout_steps: 100
   batch_size: 4
+  gpu_memory_fraction: 0.45
   teacher_forcing_start: 0.0
   teacher_forcing_end: 0.0

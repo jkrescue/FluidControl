@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -14,6 +16,9 @@ def test_predeclaration_is_train_only_and_keeps_formal_gates():
     assert payload["training_variants"]["validation_rollout_steps"] == 100
     assert payload["training_variants"]["teacher_forcing_ratio"] == 0.0
     assert payload["parent_selection"]["mutable_best_directory_forbidden"] is True
+    assert payload["data"]["base"].endswith("full40_dev30_v1")
+    assert payload["data"]["base_manifest_sha256"].startswith("5213c7bb")
+    assert payload["training_variants"]["allocator_fraction"] == {"h20":0.25,"h50":0.45}
 
 
 def test_config_and_runner_are_immutable_parent_guarded():
@@ -32,5 +37,32 @@ def test_config_and_runner_are_immutable_parent_guarded():
     assert "DYNAMIC_TRAIN8_FNO_FINETUNE_DRY_RUN_READY" in runner
     assert "EXECUTE_REVIEWED_DYNAMIC_TRAIN8_FNO_FINETUNE" in runner
     assert "--min-free-gib 20" in runner
+    assert '--memory 90g' in runner
+    assert 'h20) config="tandem_fno_dynamic_train8_h20"; fraction=.25' in runner
+    assert 'h50) config="tandem_fno_dynamic_train8_h50"; fraction=.45' in runner
     assert 'h50) config="tandem_fno_dynamic_train8_h50"' in runner
+    assert '$(basename "$parent")" != best' in runner
+    assert '--env "USER=$(id -un)"' in runner
+    assert 'tandem_cylinders_matched_start_full40_dev30_v1' in runner
+    assert 'audit_dev30_validation_diagnostic.py' in runner
+    assert 'audit_full40_dynamic6_fno.py' in runner
+    assert '--segment-stride 1 --evaluation-batch-size 8' in runner
+    assert 'artifacts/tandem_fno_dynamic_train8_${horizon}_${run_id}' in runner
+    assert 'training.max_train_batches=1 training.max_validation_batches=1' in runner
+    assert 'tandem_cylinders_matched_start_full40_v1"' not in runner
     assert "frozen" not in " ".join(line for line in runner.splitlines() if "mount" in line)
+
+
+def test_hydra_composition_keeps_variant_memory_and_batch_contracts():
+    hydra = pytest.importorskip("hydra")
+    compose = hydra.compose
+    initialize_config_dir = hydra.initialize_config_dir
+    with initialize_config_dir(version_base=None, config_dir=str(ROOT / "conf")):
+        h20 = compose(config_name="tandem_fno_dynamic_train8_h20")
+        h50 = compose(config_name="tandem_fno_dynamic_train8_h50")
+    assert float(h20.training.gpu_memory_fraction) == 0.25
+    assert int(h20.training.rollout_steps) == 20
+    assert int(h20.training.batch_size) == 4
+    assert float(h50.training.gpu_memory_fraction) == 0.45
+    assert int(h50.training.rollout_steps) == 50
+    assert int(h50.training.batch_size) == 4

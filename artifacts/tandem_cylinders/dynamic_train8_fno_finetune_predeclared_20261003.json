@@ -3,7 +3,9 @@
   "scope": "official PhysicsNeMo FNO train-only dynamic-action augmentation; no PPO or control claim",
   "model": "physicsnemo.models.fno.FNO unchanged from full40 free-AR H20",
   "data": {
-    "base": "data/curated/tandem_cylinders_matched_start_full40_v1",
+    "base": "data/curated/tandem_cylinders_matched_start_full40_dev30_v1",
+    "base_manifest_sha256": "5213c7bb07c824c6e601636c3cfa974b80ec7c051633b0c8368a045cea41ddd2",
+    "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
     "base_train_trajectories": 20,
     "additional": "data/curated/tandem_cylinders_dynamic_train8_v1",
     "additional_train_trajectories": 8,
@@ -24,11 +26,13 @@
     "checkpoint_selection": "lowest unchanged validation H100 rollout score; never frozen and never dynamic6 waveform selection",
     "gpu": 0,
     "minimum_free_unified_memory_GiB": 20,
+    "allocator_fraction": {"h20": 0.25, "h50": 0.45},
+    "container_memory_limit_GiB": 90,
     "rule": "continue at the selected parent's training horizon; do not downgrade an H50 parent to H20"
   },
   "parent_selection": {
     "rule": "at launch choose the best already-completed A/B epoch under the same validation10 H100 protocol",
-    "required_input": "explicit immutable directory containing exactly one matching FNO.0.E.mdlus and checkpoint.0.E.pt pair",
+    "required_input": "explicit completed epoch directory (basename best forbidden) containing exactly one matching FNO.0.E.mdlus and checkpoint.0.E.pt pair",
     "launch_action": "copy both files into run/immutable_parent, verify SHA-256, chmod read-only, and train only from that copy",
     "mutable_best_directory_forbidden": true,
     "validation_or_frozen_used_to_choose_waveforms": false
@@ -38,5 +42,9 @@
     "unchanged dynamic6 validation-only H1/H10/H50/H100 and action-difference gates",
     "no PPO authorization unless all existing formal gates pass",
     "final physical benefit requires paired long-window real CFD"
+  ],
+  "post_evaluation_runtime": [
+    "validation10 uses evaluation batch size 4",
+    "dynamic6 uses independently resource-probed batch size 8, allocator fraction 0.12, stride 1"
   ]
 }
