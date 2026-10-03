@@ -196,3 +196,21 @@ official active-learning query/label machinery remains a *conditional*
 option, with OpenFOAM providing real labels and a random-acquisition
 control, only after train/validation coverage analysis identifies a
 specific correctable gap; frozen test cases must never drive acquisition.
+
+At 2026-10-03 00:48 UTC, all three final ablation audits were complete.
+The rear-Cd-weighted ten-step model reached 19.545% five-case 100-step
+NRMSE and 10.878% independent-phase NRMSE. The worker seed-20261005
+twenty-step model reached 45.192% and failed Gate B. The primary-seed
+twenty-step model is best on the frozen five-case test at 17.769%, with
+13.265% independent-phase NRMSE. All remain `GATE_B_NEEDS_MULTISTEP_RETRAINING`;
+none has been promoted to PPO or a physical closed-loop benefit claim.
+The scheduled watchdog finished at 22:45 UTC with no resource alert.
+
+Validation-only inspection of the two retained primary-seed 20-step
+checkpoints found epoch 10's 100-step total-drag NRMSE 15.522% versus
+epoch 9's 15.559%; retaining epoch 10 is consistent with the predeclared
+short-horizon selection. A combined 20-step plus rear-Cd-weighted official
+FNO fine-tune passed a GPU smoke and was launched on the compute-only node
+at 00:59 UTC on 2026-10-03. It must first beat its parent on 100-step
+validation before any frozen test evaluation. See
+`RESEARCH_VALUE_AUDIT_20261003.md` for the scientific-value correction.

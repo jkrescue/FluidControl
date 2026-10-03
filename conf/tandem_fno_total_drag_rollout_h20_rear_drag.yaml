@@ -1,0 +1,9 @@
+defaults:
+  - tandem_fno_total_drag_rollout_rear_drag
+  - _self_
+
+# Validation-motivated combination of the two improving ablations:
+# 20-step rollout and rear-Cd force weighting. Official FNO architecture,
+# training/test split, and frozen Gate-B thresholds are unchanged.
+training:
+  checkpoint_interval: 1
