@@ -131,3 +131,43 @@ The resulting `diagnostic.json` is a validation-only development artifact. It
 is never a formal Gate and cannot authorize PPO. The identical checkpoint must
 subsequently pass the dev30-to-full40 promotion identity audit and the formal
 full40 validation Gate.
+
+## Predeclared quick-screen path
+
+The optional quick-screen uses the same official PhysicsNeMo FNO architecture,
+seed, immutable train20/validation10 release, train-only normalization, batch
+sizes, and memory fractions as the formal development configurations. Its only
+training changes are ten one-step epochs and five H20 epochs, defined in
+independent inherited configuration files. The formal 30+10 configurations are
+unchanged.
+
+After the dev30 preflight reports READY, the reviewed dry runs are:
+
+```bash
+bash scripts/run_full40_dev30_quickscreen_spark.sh \
+  onestep --dry-run <one-step-run-id>
+
+FULL40_DEV30_QUICKSCREEN_ONESTEP_RUN_ID=<one-step-run-id> \
+FULL40_DEV30_QUICKSCREEN_PARENT_SHA256=<exact-64-hex-FNO-sha256> \
+  bash scripts/run_full40_dev30_quickscreen_spark.sh \
+  h20 --dry-run <h20-run-id>
+```
+
+Execution additionally requires
+`FULL40_DEV30_QUICKSCREEN_APPROVAL_TOKEN=EXECUTE_REVIEWED_DEV30_QUICKSCREEN`.
+The H20 runner refuses to start unless the sole one-step `best` model exactly
+matches the supplied parent SHA-256, and records that digest in its new output.
+Both stages refuse existing outputs and use the same frozen-blind mounts,
+pinned image, GPU0, and 20 GiB memory reserve as the full dev30 runner.
+
+This path is predeclared only as a time-bounded stage-candidate screen. Any
+H1/H10/H50/H100 result keeps the existing total-Cd, persistence, start-zero
+action-difference, ordering, and lift diagnostics unchanged: H100 pooled
+total-Cd NRMSE at most 10%, model total-Cd MAE better than persistence,
+start-zero delta-Cd MAE at most 0.023, and 100% sign and cross-action ordering
+accuracy after excluding true ties. Lift remains diagnostic because no new
+threshold is invented here. Passing them does not make this a formal Gate,
+authorize PPO, or establish physical control benefit. A candidate must still
+pass dev30-to-full40 promotion identity, formal full40 validation, and real-CFD
+acceptance. Repeated quick-screen variants may not be selected opportunistically
+on validation10.

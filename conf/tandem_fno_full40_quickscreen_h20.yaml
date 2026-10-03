@@ -1,0 +1,10 @@
+defaults:
+  - tandem_fno_full40_h20
+  - _self_
+
+# Development quick-screen only. The parent path is always overridden by the
+# guarded runner after its exact FNO SHA-256 is checked.
+output_dir: artifacts/tandem_fno_full40_dev30_quickscreen_h20
+
+training:
+  epochs: 5

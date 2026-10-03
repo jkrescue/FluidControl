@@ -1,0 +1,10 @@
+defaults:
+  - tandem_fno_full40_onestep
+  - _self_
+
+# Development quick-screen only. The official 30-epoch configuration remains
+# unchanged and is still required for the formal research path.
+output_dir: artifacts/tandem_fno_full40_dev30_quickscreen_onestep
+
+training:
+  epochs: 10
