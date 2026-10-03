@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -110,3 +112,36 @@ def test_validation_runner_never_names_frozen_split() -> None:
     assert "--split validation" in text
     assert "--horizons 1 10 50 100" in text
     assert "frozen_test" not in text
+
+
+def test_cli_summary_uses_returned_h100_force_gate(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    output = tmp_path / "gate.json"
+    result = {
+        "status": "FULL40_VALIDATION_SURROGATE_READINESS_FAIL",
+        "h100_force_gate": {"pooled_total_cd_nrmse": 0.123},
+    }
+    monkeypatch.setattr(MODULE, "audit", lambda *args: result)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            str(SCRIPT),
+            "--report", str(tmp_path / "report.json"),
+            "--segments", str(tmp_path / "segments.json"),
+            "--predeclaration", str(tmp_path / "predecl.json"),
+            "--checkpoint-dir", str(tmp_path / "checkpoint"),
+            "--data", str(tmp_path / "data"),
+            "--config", str(tmp_path / "config.yaml"),
+            "--image-id", "image",
+            "--output", str(output),
+        ],
+    )
+    MODULE.main()
+    assert json.loads(output.read_text()) == result
+    summary = json.loads(capsys.readouterr().out)
+    assert summary == {
+        "status": result["status"],
+        "pooled_total_cd_nrmse": 0.123,
+    }
