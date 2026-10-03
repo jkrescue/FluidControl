@@ -24,6 +24,10 @@ import make_matched_start_full40 as full40
 NINE_ROOT = REPO / "artifacts/matched_start_acquisition"
 NINE_AGGREGATE = NINE_ROOT / "aggregate_qc/result.json"
 NINE_RECEIPTS = NINE_ROOT / "transfer_verified"
+NINE_PREDECLARATION = (
+    REPO / "artifacts/tandem_cylinders/"
+    "matched_start_acquisition_commissioning_predeclared_20261003.json"
+)
 
 
 def sha256(path: Path) -> str:
@@ -36,6 +40,16 @@ def build_authorization(aggregate: Path = NINE_AGGREGATE) -> dict:
     if not aggregate.is_file():
         raise FileNotFoundError(f"nine-case aggregate QC is absent: {aggregate}")
     report = json.loads(aggregate.read_text(encoding="utf-8"))
+    nine_predeclaration = json.loads(NINE_PREDECLARATION.read_text(encoding="utf-8"))
+    baseline_force_sha256 = nine_predeclaration.get("baseline_force_source_sha256")
+    if not isinstance(baseline_force_sha256, dict) or set(baseline_force_sha256) != {
+        "forceFront", "forceRear"
+    }:
+        raise ValueError("nine-case predeclaration lacks exact baseline force hashes")
+    for force_name, expected_sha in baseline_force_sha256.items():
+        path = full40.SOURCE / f"postProcessing/{force_name}/0/coefficient.dat"
+        if sha256(path) != expected_sha:
+            raise ValueError(f"baseline force changed before authorization: {force_name}")
     expected_nine = sorted(
         spec.name
         for spec in specs
@@ -71,6 +85,9 @@ def build_authorization(aggregate: Path = NINE_AGGREGATE) -> dict:
         "full40_predeclaration_sha256": full40.APPROVED_PREDECLARATION_SHA256,
         "nine_case_aggregate_qc": str(aggregate.relative_to(REPO)),
         "nine_case_aggregate_qc_sha256": sha256(aggregate),
+        "nine_case_predeclaration": str(NINE_PREDECLARATION.relative_to(REPO)),
+        "nine_case_predeclaration_sha256": sha256(NINE_PREDECLARATION),
+        "baseline_force_source_sha256": baseline_force_sha256,
         "nine_raw_transfer_receipt_sha256": receipt_hashes,
         "authorized_cases": remainder,
         "maximum_parallel_cases": 4,

@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -24,6 +25,10 @@ PREDECLARATION = (
 )
 PREDECLARATION_SHA256 = "d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b"
 AUTHORIZATION_SHA256 = "REVIEW_REQUIRED_AFTER_NINE_CASE_AGGREGATE"
+AUTHORIZATION = (
+    REPO / "artifacts/tandem_cylinders/"
+    "matched_start_full40_extension_authorized_20261003.json"
+)
 STATE_FIELDS = ("U", "U_0", "p", "phi", "phi_0")
 
 
@@ -33,6 +38,36 @@ def sha256(path: Path) -> str:
         for block in iter(lambda: stream.read(1 << 20), b""):
             result.update(block)
     return result.hexdigest()
+
+
+def load_authorization(authorization_sha256: str) -> dict:
+    if len(authorization_sha256) != 64 or sha256(AUTHORIZATION) != authorization_sha256:
+        raise ValueError("extension authorization SHA-256 differs")
+    data = json.loads(AUTHORIZATION.read_text(encoding="utf-8"))
+    baseline = data.get("baseline_force_source_sha256")
+    if data.get("status") != "MATCHED_START_FULL40_EXTENSION_AUTHORIZED" or not (
+        isinstance(baseline, dict) and set(baseline) == {"forceFront", "forceRear"}
+    ):
+        raise ValueError("extension authorization content differs")
+    return data
+
+
+def parse_rear_omega_table(path: Path) -> list[list[float]]:
+    text = path.read_text(encoding="utf-8")
+    patch = re.search(r"rearCylinder\s*\{(?P<body>.*?)\n\s*\}", text, re.DOTALL)
+    if not patch:
+        raise ValueError(f"rearCylinder patch missing: {path}")
+    table = re.search(
+        r"omega\s+table\s*\((?P<rows>.*?)\)\s*;", patch.group("body"), re.DOTALL
+    )
+    if not table:
+        raise ValueError(f"rearCylinder omega table missing: {path}")
+    return [
+        [float(left), float(right)]
+        for left, right in re.findall(
+            r"\(\s*([-+0-9.eE]+)\s+([-+0-9.eE]+)\s*\)", table.group("rows")
+        )
+    ]
 
 
 def planned_cases() -> dict[str, dict]:
@@ -133,9 +168,37 @@ def local_hashes(case: Path) -> dict[str, str]:
 
 
 def audit_case(name: str, worker_manifest: Path, authorization_sha256: str) -> dict:
+    authorization = load_authorization(authorization_sha256)
     case = CASES / name
     config = json.loads((case / "case_config.json").read_text(encoding="utf-8"))
     validate_case_config(name, config, authorization_sha256)
+    actual_action = parse_rear_omega_table(
+        case / f"{config['source_restart_time']:g}" / "U"
+    )
+    if actual_action != config["action_points"]:
+        raise ValueError(f"OpenFOAM action table differs: {name}")
+    provenance = case / config["source_state_provenance_dir"]
+    actual_source = {field: sha256(provenance / field) for field in STATE_FIELDS}
+    if actual_source != config["source_state_sha256"]:
+        raise ValueError(f"source-state provenance differs: {name}")
+    staged = case / f"{config['source_restart_time']:g}"
+    for field in STATE_FIELDS:
+        if field != "U" and sha256(staged / field) != actual_source[field]:
+            raise ValueError(f"staged source state differs: {name}/{field}")
+    expected_force = authorization["baseline_force_source_sha256"]
+    if config.get("source_force_sha256") != expected_force:
+        raise ValueError(f"case baseline force contract differs: {name}")
+    for force_name, expected_sha in expected_force.items():
+        source = CASES / config["source_restart_case"]
+        path = source / f"postProcessing/{force_name}/0/coefficient.dat"
+        if sha256(path) != expected_sha:
+            raise ValueError(f"baseline force provenance differs: {force_name}")
+        source_rows = read_force_rows(source, force_name)
+        matches = np.flatnonzero(
+            np.isclose(source_rows[:, 0], float(config["start_time"]), rtol=0, atol=1e-8)
+        )
+        if len(matches) != 1:
+            raise ValueError(f"baseline force has no unique source t0: {force_name}")
     begin, end = float(config["start_time"]), float(config["end_time"])
     exact_grid(numeric_times(case), begin, end, 0.1)
     for force in ("forceFront", "forceRear"):
@@ -157,6 +220,12 @@ def audit_case(name: str, worker_manifest: Path, authorization_sha256: str) -> d
         or marker.get("solver_steps") != 16000
     ):
         raise ValueError(f"solver completion marker differs: {name}")
+    if marker.get("solver_log_sha256") != sha256(
+        case / "log.pimpleFoam.matched_start_full40"
+    ) or marker.get("solver_log_qc_sha256") != sha256(
+        case / "solver_log_qc.full40.json"
+    ):
+        raise ValueError(f"solver completion marker hashes differ: {name}")
     worker = parse_manifest(worker_manifest)
     local = local_hashes(case)
     if worker != local:
@@ -175,6 +244,46 @@ def audit_case(name: str, worker_manifest: Path, authorization_sha256: str) -> d
         "coverage": "raw OpenFOAM solver files only; VTK is not included",
         "next_required_stage": "SPARK_PINNED_FOAMTOVTK_801_FRAMES",
         "solver_health": health,
+        "source_state_sha256": actual_source,
+        "baseline_force_source_sha256": expected_force,
+    }
+
+
+def aggregate(receipt_dir: Path) -> dict:
+    planned = planned_cases()
+    rows = []
+    for name, expected in planned.items():
+        path = receipt_dir / f"{name}.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        required = {
+            "status": "FULL40_RAW_TRANSFER_VERIFIED",
+            "case": name,
+            "split": expected["split"],
+            "phase_bin": expected["phase_bin"],
+            "action_target": expected["action_target"],
+            "full40_predeclaration_sha256": PREDECLARATION_SHA256,
+            "full40_extension_authorization_sha256": AUTHORIZATION_SHA256,
+        }
+        if any(data.get(key) != value for key, value in required.items()):
+            raise ValueError(f"strict receipt differs: {name}")
+        rows.append(data)
+    counts = {
+        split: sum(row["split"] == split for row in rows)
+        for split in ("train", "validation", "frozen_test")
+    }
+    if counts != {"train": 11, "validation": 10, "frozen_test": 10}:
+        raise ValueError("remainder split counts differ")
+    for phase_bin in range(8):
+        group = [row for row in rows if row["phase_bin"] == phase_bin]
+        if group and len({json.dumps(row["source_state_sha256"], sort_keys=True) for row in group}) != 1:
+            raise ValueError(f"phase b{phase_bin:02d} source states differ")
+    return {
+        "status": "MATCHED_START_FULL40_EXTENSION_31_CASE_RAW_QC_PASS",
+        "case_count": 31,
+        "split_counts": counts,
+        "full40_predeclaration_sha256": PREDECLARATION_SHA256,
+        "full40_extension_authorization_sha256": AUTHORIZATION_SHA256,
+        "frozen_guard": "integrity QC only; no reward, drag summary, or model selection",
     }
 
 

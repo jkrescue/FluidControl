@@ -332,6 +332,33 @@ def validate_extension_authorization(specs: list[Full40Case]) -> dict:
         "worker_free_disk_gib_at_least": 100,
         "spark_free_disk_gib_at_least": 250,
     }
+    baseline_force = authorization.get("baseline_force_source_sha256")
+    if not isinstance(baseline_force, dict) or set(baseline_force) != {
+        "forceFront", "forceRear"
+    }:
+        raise ValueError("extension authorization lacks baseline force provenance")
+    for force_name, expected_sha in baseline_force.items():
+        source_path = SOURCE / f"postProcessing/{force_name}/0/coefficient.dat"
+        if sha256(source_path) != expected_sha:
+            raise ValueError(f"authorized baseline force changed: {force_name}")
+    for path_key, sha_key in (
+        ("nine_case_predeclaration", "nine_case_predeclaration_sha256"),
+        ("nine_case_aggregate_qc", "nine_case_aggregate_qc_sha256"),
+    ):
+        evidence = REPO / authorization.get(path_key, "")
+        if not evidence.is_file() or sha256(evidence) != authorization.get(sha_key):
+            raise ValueError(f"authorized nine-case evidence changed: {path_key}")
+    nine_predeclaration = json.loads(
+        (REPO / authorization["nine_case_predeclaration"]).read_text(encoding="utf-8")
+    )
+    if nine_predeclaration.get("baseline_force_source_sha256") != baseline_force:
+        raise ValueError("authorization baseline force differs from nine-case predeclaration")
+    for case, expected_sha in authorization.get(
+        "nine_raw_transfer_receipt_sha256", {}
+    ).items():
+        receipt = REPO / "artifacts/matched_start_acquisition/transfer_verified" / f"{case}.json"
+        if not receipt.is_file() or sha256(receipt) != expected_sha:
+            raise ValueError(f"authorized nine-case receipt changed: {case}")
     if (
         authorization.get("status") != "MATCHED_START_FULL40_EXTENSION_AUTHORIZED"
         or authorization.get("phase_manifest_sha256") != PHASE_MANIFEST_SHA256
@@ -348,9 +375,11 @@ def validate_extension_authorization(specs: list[Full40Case]) -> dict:
     return authorization
 
 
-def generate(spec: Full40Case) -> Path:
+def generate(spec: Full40Case, authorization: dict | None = None) -> Path:
     if spec.disposition != "planned_new_remainder_case":
         raise ValueError("the nine commissioning cases are validate-only and cannot be generated")
+    if authorization is None:
+        raise ValueError("extension authorization is required for generation")
     target = CASES / spec.name
     if target.exists():
         raise FileExistsError(f"refusing to overwrite existing case: {target}")
@@ -393,10 +422,7 @@ def generate(spec: Full40Case) -> Path:
             "source_restart_time": spec.source_time,
             "source_state_sha256": spec.source_state_sha256,
             "source_state_provenance_dir": "source_restart_provenance",
-            "source_force_sha256": {
-                force: sha256(SOURCE / f"postProcessing/{force}/0/coefficient.dat")
-                for force in ("forceFront", "forceRear")
-            },
+            "source_force_sha256": authorization["baseline_force_source_sha256"],
             "phase_manifest": str(PHASE_MANIFEST.relative_to(REPO)),
             "phase_manifest_sha256": PHASE_MANIFEST_SHA256,
             "full40_predeclaration": str(PREDECLARATION.relative_to(REPO)),
@@ -456,9 +482,9 @@ def main() -> None:
     if args.case not in by_name:
         parser.error("case is outside the frozen full40 matrix")
     validate_approved_predeclaration(manifest, specs)
-    validate_extension_authorization(specs)
+    authorization = validate_extension_authorization(specs)
     validate_existing_nine(specs)
-    print(generate(by_name[args.case]))
+    print(generate(by_name[args.case], authorization))
 
 
 if __name__ == "__main__":
