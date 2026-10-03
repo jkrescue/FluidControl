@@ -564,8 +564,8 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn('id="goal-fno"', page)
         self.assertIn('id="goal-surrogate-control"', page)
         self.assertIn("评估配置修复后的完整推理", page)
-        self.assertIn("先前是路径配置错误，不是模型训练失败", page)
-        self.assertIn("尚未产出可训练HDF", page)
+        self.assertIn("Dynamic6 正式验收 FAIL", page)
+        self.assertIn("16条真实PPO交互轨迹已通过官方DataPipe读取", page)
 
     def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
