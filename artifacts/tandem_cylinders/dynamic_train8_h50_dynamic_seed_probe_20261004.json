@@ -1,0 +1,53 @@
+{
+  "status": "DYNAMIC_TRAIN8_H50_DYNAMIC_SEED_ONE_BATCH_PROBE_PASS",
+  "scope": "one H50 training batch containing explicit train8 windows plus one independent H100 validation batch; engineering integration only",
+  "physicsnemo_image": "fluid-control-physicsnemo:2.2.2",
+  "runner_commit": "4db5e49",
+  "parent": {
+    "selection": "Worker B H50 epoch 5 under unchanged validation10 H100 selection score",
+    "model_sha256": "333a24517f74162031577bf9e37f86124bb63d05889db795ca6984b4f9c3ee2d",
+    "checkpoint_sha256": "f00f9a070fe33c703279c34c596b9ba6d673992b4594b3ac06f92af78c7a5caa"
+  },
+  "sampling_audit": {
+    "official_loader_seed": 20261004,
+    "formal_training_seed_unchanged": 20261003,
+    "combined_windows": 1368,
+    "base_index_range": [0, 759],
+    "dynamic_index_range": [760, 1367],
+    "first_batch_global_indices": [1191, 1125, 144, 1025],
+    "first_batch_sources": ["dynamic_train8", "dynamic_train8", "base_train20", "dynamic_train8"],
+    "dynamic_samples_in_first_batch": 3,
+    "sampler": "official PhysicsNeMo DataLoader RandomSampler generator derived by physicsnemo.datapipes._rng.fork_generator"
+  },
+  "data": {
+    "base_h50_windows_stride20": 760,
+    "dynamic_train8_h50_windows_stride2": 608,
+    "train8_manifest_sha256": "a0bd0e3b79d4d43ace407292c31a595d552dbd6e1a5de1fd149b1ca446f53f35",
+    "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+    "prefetch_factor": 0,
+    "frozen_access": false
+  },
+  "probe": {
+    "batch_size": 4,
+    "train_batches": 1,
+    "validation_batches": 1,
+    "train_rollout_steps": 50,
+    "validation_rollout_steps": 100,
+    "teacher_forcing_ratio": 0.0,
+    "train_loss": 0.04747644066810608,
+    "selection_score": 0.18262172919976247,
+    "terminal_total_drag_pooled_nrmse": 0.06852117526230661,
+    "rollout_total_drag_pooled_nrmse": 0.03515414227855615,
+    "forward_backward_and_reported_metrics_finite": true,
+    "exit_code": 0,
+    "min_observed_mem_available_gib": 75.43539810180664
+  },
+  "sha256": {
+    "training_history.json": "d2f7f4be20e9f64cd87e68d5f67b2206d723261f8d4a3030f4579811fae85f6f",
+    "training_data_sources.json": "f49826d971366932be7e1e8c405a4642f9f62a3d460586f58a030c96321e7066",
+    "resolved_config.yaml": "ad16b0d70e3b34cb8c899103d7eb1e5411851638e86f7b3437645756873cd171",
+    "probe_model": "bad4432e8ca5f72cf9621acc862121318a66c0fc7689612682620f03faaa76ed",
+    "probe_checkpoint": "b81a7d58b9aeeee996247e7c434223a8eb8bf637bbec163111d27b700e822f34"
+  },
+  "scientific_claim": "none; this closes the train8-sample integration gap in the earlier all-base first-batch probe and is not a surrogate-quality or control-success result"
+}

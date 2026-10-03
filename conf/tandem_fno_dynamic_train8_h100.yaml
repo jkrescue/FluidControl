@@ -2,8 +2,9 @@ defaults:
   - tandem_fno_dynamic_train8_h50
   - _self_
 
-# Same official PhysicsNeMo FNO and train-only data as H50.  Only the
-# autoregressive training horizon and conservative batch size change.
+# Same official PhysicsNeMo FNO, train-only data, loss, and TF0 contract as
+# H50.  This exploratory run changes horizon, batch size, and training length;
+# it is not a strict single-factor ablation.
 training:
   epochs: 2
   rollout_steps: 100
