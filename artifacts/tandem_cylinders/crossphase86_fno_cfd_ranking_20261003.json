@@ -1,0 +1,76 @@
+{
+  "status": "VALIDATION_ONLY_CROSSPHASE_ACTION_RANKING_DIAGNOSTIC",
+  "scope": "20-step open-loop FNO-vs-real-CFD action ranking; not closed-loop benefit, not a Gate-B replacement, and not final physical acceptance",
+  "predeclared_audit": "artifacts/tandem_cylinders/crossphase86_ranking_predeclared_20261003.json",
+  "initial_state": "data/curated/tandem_cylinders_phase_v1/validation/phase_validation_86_multisine.h5:frame0",
+  "checkpoint_dir": "artifacts/distributed_runs/gateb_aug_v3_h20_rear_drag_seed20261002_20261003/formal/tandem_fno_gate_b_aug_v3_h20_rear_drag_seed20261002_10epoch/best",
+  "checkpoint_epoch": 9,
+  "inference_device": "cpu",
+  "window": [
+    86.1,
+    88.0
+  ],
+  "horizon_steps": 20,
+  "objective": "mean system-total Cd over 20 action frames; lower is better",
+  "solver_health": {
+    "crossphase86_rank_zero_20261003": {
+      "steps": 400,
+      "max_courant": 0.244752502,
+      "max_abs_global_continuity_per_step": 6.01794582e-13,
+      "solver_ended_cleanly": true
+    },
+    "crossphase86_rank_p100_20261003": {
+      "steps": 400,
+      "max_courant": 0.244749787,
+      "max_abs_global_continuity_per_step": 9.3436039e-13,
+      "solver_ended_cleanly": true
+    },
+    "crossphase86_rank_m100_20261003": {
+      "steps": 400,
+      "max_courant": 0.24475385,
+      "max_abs_global_continuity_per_step": 5.59262537e-13,
+      "solver_ended_cleanly": true
+    }
+  },
+  "cases": [
+    {
+      "case": "crossphase86_rank_zero_20261003",
+      "target_omega": 0.0,
+      "cfd_mean_total_cd": 2.263126369075,
+      "fno_mean_total_cd": 2.2737979888916016,
+      "cfd_front_cd_mean": 1.38833611355,
+      "cfd_rear_cd_mean": 0.874790255525,
+      "cfd_rear_cl_mean": 1.303787550865,
+      "cfd_rear_cl_fluctuation_rms": 0.35314133953235716,
+      "fno_max_abs_normalized_state": 4.952976703643799
+    },
+    {
+      "case": "crossphase86_rank_p100_20261003",
+      "target_omega": 1.0,
+      "cfd_mean_total_cd": 2.4093359765000004,
+      "fno_mean_total_cd": 2.3933019638061523,
+      "cfd_front_cd_mean": 1.38660868735,
+      "cfd_rear_cd_mean": 1.0227272891499999,
+      "cfd_rear_cl_mean": 1.1377048440450002,
+      "cfd_rear_cl_fluctuation_rms": 0.27607497670575903,
+      "fno_max_abs_normalized_state": 4.817129135131836
+    },
+    {
+      "case": "crossphase86_rank_m100_20261003",
+      "target_omega": -1.0,
+      "cfd_mean_total_cd": 2.1468013760900004,
+      "fno_mean_total_cd": 2.1752078533172607,
+      "cfd_front_cd_mean": 1.3896279465999997,
+      "cfd_rear_cd_mean": 0.7571734294900001,
+      "cfd_rear_cl_mean": 1.48636256583,
+      "cfd_rear_cl_fluctuation_rms": 0.4599629261987104,
+      "fno_max_abs_normalized_state": 5.4520111083984375
+    }
+  ],
+  "pairwise_ranking_accuracy": 1.0,
+  "fno_selected_case": "crossphase86_rank_m100_20261003",
+  "cfd_best_case": "crossphase86_rank_m100_20261003",
+  "cfd_regret_of_fno_selection": 0.0,
+  "cfd_change_of_fno_selection_vs_zero_percent": -5.140013150593303,
+  "interpretation_guard": "single validation phase and only 2 D/U; lift mean is phase-biased and no drag-reduction or closed-loop claim is permitted"
+}

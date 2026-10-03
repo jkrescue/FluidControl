@@ -1,0 +1,479 @@
+{
+  "status": "PREDECLARED_BEFORE_CFD",
+  "scope": "validation-only cross-phase FNO-vs-real-CFD action ranking; not closed-loop benefit or Gate-B passage",
+  "source_restart": "tandem_backward_dt005/t=86 uncontrolled",
+  "source_u_sha256": "caf3393a152b83f5a632f2b86dcc9e4f441cff965a835f19dc0fdb7dc6d86512",
+  "source_p_sha256": "6fe8b8d54093253cccdfe20622598016b9ef9184196171896f3e2fbdf470610e",
+  "window": [
+    86.0,
+    88.0
+  ],
+  "sampled_ranking_window": [
+    86.1,
+    88.0
+  ],
+  "horizon_steps": 20,
+  "action_interval": 0.1,
+  "action_rule": "linear ramp from omega=0 to target over t=86..87, then hold",
+  "objective": "mean system-total Cd on the 20 t=86.1..88.0 action frames; lower is better",
+  "cases": {
+    "crossphase86_rank_zero_20261003": {
+      "target_omega": 0.0,
+      "action_points": [
+        [
+          86.0,
+          0.0
+        ],
+        [
+          86.1,
+          0.0
+        ],
+        [
+          86.2,
+          0.0
+        ],
+        [
+          86.3,
+          0.0
+        ],
+        [
+          86.4,
+          0.0
+        ],
+        [
+          86.5,
+          0.0
+        ],
+        [
+          86.6,
+          0.0
+        ],
+        [
+          86.7,
+          0.0
+        ],
+        [
+          86.8,
+          0.0
+        ],
+        [
+          86.9,
+          0.0
+        ],
+        [
+          87.0,
+          0.0
+        ],
+        [
+          87.1,
+          0.0
+        ],
+        [
+          87.2,
+          0.0
+        ],
+        [
+          87.3,
+          0.0
+        ],
+        [
+          87.4,
+          0.0
+        ],
+        [
+          87.5,
+          0.0
+        ],
+        [
+          87.6,
+          0.0
+        ],
+        [
+          87.7,
+          0.0
+        ],
+        [
+          87.8,
+          0.0
+        ],
+        [
+          87.9,
+          0.0
+        ],
+        [
+          88.0,
+          0.0
+        ]
+      ]
+    },
+    "crossphase86_rank_p100_20261003": {
+      "target_omega": 1.0,
+      "action_points": [
+        [
+          86.0,
+          0.0
+        ],
+        [
+          86.1,
+          0.1
+        ],
+        [
+          86.2,
+          0.2
+        ],
+        [
+          86.3,
+          0.30000000000000004
+        ],
+        [
+          86.4,
+          0.4
+        ],
+        [
+          86.5,
+          0.5
+        ],
+        [
+          86.6,
+          0.6000000000000001
+        ],
+        [
+          86.7,
+          0.7000000000000001
+        ],
+        [
+          86.8,
+          0.8
+        ],
+        [
+          86.9,
+          0.9
+        ],
+        [
+          87.0,
+          1.0
+        ],
+        [
+          87.1,
+          1.0
+        ],
+        [
+          87.2,
+          1.0
+        ],
+        [
+          87.3,
+          1.0
+        ],
+        [
+          87.4,
+          1.0
+        ],
+        [
+          87.5,
+          1.0
+        ],
+        [
+          87.6,
+          1.0
+        ],
+        [
+          87.7,
+          1.0
+        ],
+        [
+          87.8,
+          1.0
+        ],
+        [
+          87.9,
+          1.0
+        ],
+        [
+          88.0,
+          1.0
+        ]
+      ]
+    },
+    "crossphase86_rank_m100_20261003": {
+      "target_omega": -1.0,
+      "action_points": [
+        [
+          86.0,
+          -0.0
+        ],
+        [
+          86.1,
+          -0.1
+        ],
+        [
+          86.2,
+          -0.2
+        ],
+        [
+          86.3,
+          -0.30000000000000004
+        ],
+        [
+          86.4,
+          -0.4
+        ],
+        [
+          86.5,
+          -0.5
+        ],
+        [
+          86.6,
+          -0.6000000000000001
+        ],
+        [
+          86.7,
+          -0.7000000000000001
+        ],
+        [
+          86.8,
+          -0.8
+        ],
+        [
+          86.9,
+          -0.9
+        ],
+        [
+          87.0,
+          -1.0
+        ],
+        [
+          87.1,
+          -1.0
+        ],
+        [
+          87.2,
+          -1.0
+        ],
+        [
+          87.3,
+          -1.0
+        ],
+        [
+          87.4,
+          -1.0
+        ],
+        [
+          87.5,
+          -1.0
+        ],
+        [
+          87.6,
+          -1.0
+        ],
+        [
+          87.7,
+          -1.0
+        ],
+        [
+          87.8,
+          -1.0
+        ],
+        [
+          87.9,
+          -1.0
+        ],
+        [
+          88.0,
+          -1.0
+        ]
+      ]
+    }
+  },
+  "leakage_audit": {
+    "checkpoint_training_root": "data/curated/tandem_cylinders_gate_b_aug_v3/train",
+    "train_files_checked": 26,
+    "train_frames_at_physical_time_86_checked": 26,
+    "exact_initial_state_matches": 0,
+    "validation_initial_state_sha256": "80e01e94e6c3fc301eb80f389e7b7a4352f19fc3291135211a4ff661f4e5abba",
+    "candidates": [
+      {
+        "file": "expanded_train_00.h5",
+        "frame": 60,
+        "state_sha256": "2d933777412b3069337d27f9e756cbc5edc142f2d0b58e7dff9ac93baf46f171",
+        "max_abs_difference_from_validation_start": 0.45664459466934204,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_01.h5",
+        "frame": 60,
+        "state_sha256": "26a696a1be6e1d25719dbebf35518659a3dd5f2f8670d48ed4047b94a8fbbb19",
+        "max_abs_difference_from_validation_start": 0.8215643167495728,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_02.h5",
+        "frame": 60,
+        "state_sha256": "83790b78d9054e769adff9d73add6eb0c4ffffe828a6d482593da023acb9543c",
+        "max_abs_difference_from_validation_start": 0.48289230465888977,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_03.h5",
+        "frame": 60,
+        "state_sha256": "a337e709aefb68607e5e7774c8e1cdb042dee4839c1110ba13336830a241f35d",
+        "max_abs_difference_from_validation_start": 0.5477001667022705,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_04.h5",
+        "frame": 60,
+        "state_sha256": "3ca4b3959d5b6de59b7753b3fc04053cdd89fd12b8daf4948b9f6427d6540869",
+        "max_abs_difference_from_validation_start": 2.5952579975128174,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_05.h5",
+        "frame": 60,
+        "state_sha256": "f1c4a394f2922e045fe6311a77fc470b25fc0d36d4ec0c9108610055698d9bb7",
+        "max_abs_difference_from_validation_start": 0.5252630710601807,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_06.h5",
+        "frame": 60,
+        "state_sha256": "a340fe9b1f4d82a24284e15a18cc7552abab52f27acce133b24ef0e9f6f41255",
+        "max_abs_difference_from_validation_start": 1.4350285530090332,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_07.h5",
+        "frame": 60,
+        "state_sha256": "940e07afa7aa469b84d3b60e9f6f0db6dc12daac95b0ca9876f2e724e8bc40c2",
+        "max_abs_difference_from_validation_start": 1.304892659187317,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_08.h5",
+        "frame": 60,
+        "state_sha256": "7a1452605c2b54cabe2b03ade2f788132aa183d63738f88c33a2a0d61647ccb8",
+        "max_abs_difference_from_validation_start": 0.6199979186058044,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_09.h5",
+        "frame": 60,
+        "state_sha256": "4832e44dbb4dfe5994921cf511e3d3d95f5ff671ee10d01dbb466a8753e566d1",
+        "max_abs_difference_from_validation_start": 0.5033578276634216,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_10.h5",
+        "frame": 60,
+        "state_sha256": "90c7a94394e73dacf997a73f2e3e55456e9032abd207c60ba26af761749efa86",
+        "max_abs_difference_from_validation_start": 0.6930191516876221,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_11.h5",
+        "frame": 60,
+        "state_sha256": "7202db308de11e604701a70aed51d317bf8c5346610858cf4fa494c16c16e6db",
+        "max_abs_difference_from_validation_start": 1.5988192558288574,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_12.h5",
+        "frame": 60,
+        "state_sha256": "4a5bae293abe22d4acdc51116b60a309827cfc8d4e3f51dd200603d6440555c5",
+        "max_abs_difference_from_validation_start": 1.586320161819458,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_13.h5",
+        "frame": 60,
+        "state_sha256": "f3af132561dfda6d1d4ca495e91c26e8b5896ab7aaa62a2dd954faf6e690f659",
+        "max_abs_difference_from_validation_start": 0.5055627822875977,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_14.h5",
+        "frame": 60,
+        "state_sha256": "5b3829f5f8e68dba714306bf5975aea0129a21ab5862cae213be0708bdeb6006",
+        "max_abs_difference_from_validation_start": 1.1542322635650635,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_15.h5",
+        "frame": 60,
+        "state_sha256": "08619f2e116c7542fc76fb9e210cb846b75a2c945dda99ae30b1f73ed379495c",
+        "max_abs_difference_from_validation_start": 1.5114593505859375,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_16.h5",
+        "frame": 60,
+        "state_sha256": "7193975cf75c81e9fd421f2ec391f0648bbd1b011a75adf9ecf1c60ce3a4711e",
+        "max_abs_difference_from_validation_start": 0.859458327293396,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_17.h5",
+        "frame": 60,
+        "state_sha256": "dd386c356984516c82da2caf21403dbaad37f107bdc7845e17687bc7ba02c35b",
+        "max_abs_difference_from_validation_start": 0.8272761106491089,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_18.h5",
+        "frame": 60,
+        "state_sha256": "1896d06af880d896075802a5c0128618a50681762a991df134809cc0e34897c1",
+        "max_abs_difference_from_validation_start": 1.4199012517929077,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_19.h5",
+        "frame": 60,
+        "state_sha256": "424c3fc27dfa0c8edd19d034553156b0b02d292fb2d719f4f306464337d6993d",
+        "max_abs_difference_from_validation_start": 0.5776394605636597,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_20.h5",
+        "frame": 60,
+        "state_sha256": "846b2040672873a2af19d864e6117eca88946a8f115d337c6e00a344549043af",
+        "max_abs_difference_from_validation_start": 2.7324838638305664,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_21.h5",
+        "frame": 60,
+        "state_sha256": "a90e299f4c324f3cc94686073e8989a0c1ec4caa1e39f83b628b7d613998926e",
+        "max_abs_difference_from_validation_start": 4.263844013214111,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_22.h5",
+        "frame": 60,
+        "state_sha256": "52c79c055103571563bdcd93c2c45dc4b65b298e8984bdd0a93933b1bec20a63",
+        "max_abs_difference_from_validation_start": 2.3842387199401855,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_23.h5",
+        "frame": 60,
+        "state_sha256": "18747e3f15e83d568315c88199a2155b36fc5f62ab1331f9ebaa70e40b60d0a6",
+        "max_abs_difference_from_validation_start": 3.7868146896362305,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_24.h5",
+        "frame": 60,
+        "state_sha256": "48c17b42cd8a0cac4e81ea36a947a552b7dbf2cbf901cafba4ae8c285cc719d0",
+        "max_abs_difference_from_validation_start": 1.3000998497009277,
+        "exact_match": false
+      },
+      {
+        "file": "expanded_train_25.h5",
+        "frame": 60,
+        "state_sha256": "a90e299f4c324f3cc94686073e8989a0c1ec4caa1e39f83b628b7d613998926e",
+        "max_abs_difference_from_validation_start": 4.263844013214111,
+        "exact_match": false
+      }
+    ]
+  }
+}
