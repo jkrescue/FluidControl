@@ -8,6 +8,7 @@ sampler records host CPU, GPU activity, and unified-memory headroom every 10 s.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import re
@@ -79,6 +80,16 @@ FULL40_EXTENSION_ROOT = Path("artifacts/matched_start_full40_extension")
 FULL40_SCHEDULER_STATE = FULL40_EXTENSION_ROOT / "scheduler_state.json"
 FULL40_RECEIPTS = FULL40_EXTENSION_ROOT / "transfer_verified"
 FULL40_TRAIN20_PHYSICS = FULL40_EXTENSION_ROOT / "train20_physics_summary.json"
+MATCHED9_FINAL = Path(
+    "data/curated/tandem_cylinders_matched_start_commissioning_train9_v1"
+)
+FULL40_STAGING = Path("data/curated/.staging/matched_start_full40_v1")
+DEV30_RELEASE = Path(
+    "data/curated/tandem_cylinders_matched_start_full40_dev30_v1"
+)
+DEV30_QUICKSCREEN_PREFIX = "tandem_fno_full40_dev30_quickscreen_"
+DEV30_DIAGNOSTIC_PREFIX = "full40_dev30_validation_"
+CANONICAL_PPO_ROOT = Path("artifacts/hydrogym/full40_canonical_joint_v1")
 FULL40_PREDECLARATION_SHA256 = (
     "d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b"
 )
@@ -178,7 +189,7 @@ img{width:100%;height:auto;background:white;border-radius:4px}.row{display:flex;
 </style></head><body><main>
 <div class="top"><div><h1>串列双圆柱流动控制 · 实时进展</h1><div class="muted">目标：降低两圆柱总阻力，同时报告侧向载荷与动作代价</div></div><div class="stamp" id="clock">连接中…</div></div>
 <div class="banner" id="decision">读取阶段判定…</div>
-<h2>最新严格证据</h2><div class="summary"><div class="card"><span class="label">v4 验证集 · 第 100 步终点总阻力</span><b id="v4-terminal">—</b><span class="small" id="v4-terminal-detail">PhysicsNeMo FNO 对真实 CFD；冻结测试未访问</span></div><div class="card"><span class="label">v4 验证集 · 100 步窗口平均总阻力</span><b id="v4-window">—</b><span class="small" id="v4-window-detail">PhysicsNeMo FNO 对真实 CFD；等待独立窗口审计</span></div><div class="card"><span class="label">两相位交替旋转 · 真实 OpenFOAM CFD</span><b id="two-phase">—</b><span class="small" id="two-phase-detail">相位匹配零控制；不是代理预测</span></div><div class="card"><span class="label">三项联合状态</span><b id="joint-status">等待</b><span class="small" id="joint-detail">终点精度、窗口精度、两相位物理收益均须通过</span></div></div>
+<h2>旧 v4 历史严格证据（非 full40 新链）</h2><div class="summary"><div class="card"><span class="label">v4 验证集 · 第 100 步终点总阻力</span><b id="v4-terminal">—</b><span class="small" id="v4-terminal-detail">PhysicsNeMo FNO 对真实 CFD；冻结测试未访问</span></div><div class="card"><span class="label">v4 验证集 · 100 步窗口平均总阻力</span><b id="v4-window">—</b><span class="small" id="v4-window-detail">PhysicsNeMo FNO 对真实 CFD；等待独立窗口审计</span></div><div class="card"><span class="label">两相位交替旋转 · 真实 OpenFOAM CFD</span><b id="two-phase">—</b><span class="small" id="two-phase-detail">相位匹配零控制；不是代理预测</span></div><div class="card"><span class="label">旧 v4 三项联合状态</span><b id="joint-status">等待</b><span class="small" id="joint-detail">仅历史参考，不代表 full40/dev30 精度</span></div></div>
 <div class="small" id="watchdog">读取科研监控…</div>
 <div class="summary"><div class="card"><span class="label">旧 v3 冻结测试 · 第 100 步终点参考</span><b id="heldout">—</b><span class="small" id="heldout-scope">旧模型历史证据，不代表 v4</span></div><div class="card"><span class="label">PhysicsNeMo FNO</span><b id="epoch">—</b><span class="small" id="second-seed">计算节点：读取中</span></div><div class="card"><span class="label">OpenFOAM CFD</span><b id="cfd-progress">—</b><span class="small" id="cfd-sub">真实 CFD 生成与审计</span></div><div class="card"><span class="label">HydroGym / PPO</span><b id="hydro-status">—</b><span class="small">等待可信代理和真实 CFD 联合门槛</span></div></div>
 <h2>真实 CFD 收益与代理决策是否一致</h2><div class="grid"><div class="card"><h3>配对长窗口 · t=120–160</h3><div class="number" id="physical-drag">读取中…</div><div class="small" id="physical-tradeoff">—</div><div class="small" id="periodic-detail">—</div><div class="small" id="cohort-detail">—</div><div class="small" id="feedback-detail">—</div></div><div class="card"><h3>最新 FNO 与 CFD 动作排序 · 100 步</h3><div class="number" id="ranking-score">读取中…</div><div class="small" id="ranking-detail">—</div><div class="small" id="crossphase-ranking">独立相位短窗口：等待审计。</div></div></div>
@@ -190,6 +201,7 @@ img{width:100%;height:auto;background:white;border-radius:4px}.row{display:flex;
 <h2>Matched-start 九案 commissioning</h2><div class="card"><div class="row"><div><div class="number" id="matched-summary">等待真实采样…</div><div class="small">真实 OpenFOAM / RAW / VTK / HDF staging 状态；不是训练结果或控制收益。</div></div><div class="small" id="matched-resource">读取 Worker CPU / 内存与 Spark GPU…</div></div><div class="casegrid" id="matched-cases"></div><div class="small" id="matched-physics">九案开放环物理汇总：等待权威 JSON。</div><div class="small">求解 <code>End</code>、RAW_TRANSFER_VERIFIED、VTK_READY 和 staging HDF 是四个独立门槛；模型训练尚未由此 commissioning 启动，HDF 完成不等于模型已训练。</div></div>
 <h2>Matched-start 新增 31 案采集</h2><div class="card"><div class="row"><div><div class="number" id="full40-summary">等待 scheduler 状态…</div><div class="small">顺序为 train → validation → frozen test；求解完成不等于 RAW QC 通过。</div></div><div class="small" id="full40-resource">复用 Worker 真实资源采样…</div></div><div class="small" id="full40-splits">读取 split 摘要…</div><div class="casegrid" id="full40-cases"></div><div class="small">冻结测试仅显示采集与验收状态，绝不展示或用于筛选物理收益；31 案 CFD/RAW 也不代表 Curator、模型训练或精度提升。</div></div>
 <div class="card" style="margin-top:12px"><h3>Train20 固定动作物理对照 · TRAIN ONLY</h3><div class="number" id="train20-physics">等待 train20 权威 JSON…</div><div class="small" id="train20-actions">仅显示四个训练相位、同相位零动作参考。</div><div class="small" id="train20-scope">此卡不替代九案 commissioning，不读取 validation / frozen 结果，也不是泛化或闭环证据。</div></div>
+<h2>Full40 / dev30 · 数据、PhysicsNeMo 与 HydroGym 链</h2><div class="card"><div class="summary"><div class="card"><span class="label">真实 CFD 与严格 QC</span><b id="chain-raw">读取中…</b><span class="small" id="chain-raw-detail">RAW31 与九案状态分开统计</span></div><div class="card"><span class="label">开发集 HDF / immutable 发布</span><b id="chain-hdf">读取中…</b><span class="small" id="chain-release">仅 train20 + validation10；不读取冻结 HDF</span></div><div class="card"><span class="label">Quick-screen · 官方 PhysicsNeMo FNO</span><b id="chain-train">读取中…</b><span class="small" id="chain-train-detail">10 epoch one-step → 固定 parent SHA → 5 epoch H20</span></div><div class="card"><span class="label">HydroGym canonical PPO</span><b id="chain-ppo">BLOCKED</b><span class="small" id="chain-ppo-detail">等待 promotion 与正式 validation gates</span></div></div><div class="small" id="chain-validation" style="margin-top:9px">validation10 诊断尚未生成；quick-screen 不是 formal Gate。</div></div>
 <h2>FNO 训练和推理结果</h2><div class="grid"><div class="card"><h3 id="train-title">FNO：训练轮次 → 预测误差</h3><svg class="tall" id="train-chart" role="img" aria-label="多步训练验证误差"></svg><div class="small">蓝：流场平均绝对误差；橙：四个受力系数平均绝对误差。数值来自验证数据。</div></div><div class="card"><h3 id="error-title">递推步数 → 总阻力预测误差</h3><svg class="tall" id="error-chart" role="img" aria-label="不同预测步长的总阻力误差"></svg><div class="small" id="error-legend">读取评估结果…</div></div></div>
 <div class="small" id="v3-metrics" style="margin-top:8px">正在读取新数据 FNO 训练指标…</div><div class="small" id="infer-speed" style="margin-top:4px">正在读取 FNO 推理耗时…</div>
 <h2>真实流场 / FNO 预测 / 误差</h2><div class="card"><div class="row"><div class="small" id="figure-label">读取图片…</div><div><select id="case"><option value="expanded_test_00">测试 00</option><option value="expanded_test_01">测试 01</option><option value="expanded_test_02">测试 02</option><option value="expanded_test_04">测试 04</option><option value="expanded_test_05">新测试 05</option></select> <select id="horizon"><option value="001">1 步</option><option value="010">10 步</option><option value="050">50 步</option><option value="100" selected>100 步</option></select></div></div><img id="flow" alt="真实 OpenFOAM 流场、FNO 预测、误差对照"></div>
@@ -262,6 +274,12 @@ function renderTrain20Physics(d){let p=d.full40_train20_physics,s=p?.all_train_c
  $('train20-physics').textContent=`TRAIN ONLY · 联合门槛 ${s.joint_pass_count}/${s.comparison_count} 通过 · 全动作 macro 降阻 ${pct(s.macro_mean_total_drag_reduction_fraction)}`;$('train20-physics').className='number '+(s.joint_pass_count?'good':'bad');
  let minus=a.m075,plus=a.p075;$('train20-actions').textContent=`−0.75 / +0.75 macro 降阻 ${pct(minus.macro_mean_total_drag_reduction_fraction)} / ${pct(plus.macro_mean_total_drag_reduction_fraction)}；worst phase ${pct(minus.worst_drag_reduction.total_drag_reduction_fraction_positive_is_better)} / ${pct(plus.worst_drag_reduction.total_drag_reduction_fraction_positive_is_better)}；macro 平均Cl偏置比 ${num(minus.macro_mean_abs_rear_cl_bias_ratio,3)} / ${num(plus.macro_mean_abs_rear_cl_bias_ratio,3)}（门槛≤0.10）。`;
  $('train20-scope').textContent=`四个train相位、16个非零固定动作、各自同相位zero、固定末60D/U。validation/frozen结果读取=${p.scope?.validation_or_frozen_results_read?'是（异常）':'否'}；不替代九案 commissioning，不代表泛化、PPO或真实闭环收益。`;}
+function renderFull40Chain(d){let c=d.full40_development_chain||{},raw=c.raw_qc||{},hdf=c.development_hdf||{},release=c.dev30_release||{},one=c.quickscreen?.onestep||{},h20=c.quickscreen?.h20||{},diag=c.validation_diagnostic||{},ppo=c.canonical_ppo||{};
+ $('chain-raw').textContent=`RAW31 ${raw.full40_verified||0}/31 · 九案 ${raw.commissioning_qc_pass?'QC PASS':'QC待通过'}`;$('chain-raw').className=raw.full40_verified===31&&raw.commissioning_qc_pass?'good':'';$('chain-raw-detail').textContent=`新增31案严格receipt ${raw.full40_verified||0}/31；九案独立QC ${raw.commissioning_qc_pass?'已通过':'尚未通过'}。solver完成不能替代RAW/HDF QC。`;
+ $('chain-hdf').textContent=`train ${hdf.train_ready||0}/20 · validation ${hdf.validation_ready||0}/10`;$('chain-hdf').className=hdf.train_ready===20&&hdf.validation_ready===10?'good':'';$('chain-release').textContent=release.published?`dev30 immutable 已发布 · manifest ${String(release.manifest_sha256||'').slice(0,12)}…`:`Spark本机已验收HDF；dev30 BLOCKED · ${release.reason||'等待30个开发HDF'}`;
+ let om=one.last_metrics||{},hm=h20.last_metrics||{};$('chain-train').textContent=`one-step ${one.epoch||0}/10 · H20 ${h20.epoch||0}/5`;$('chain-train').className=h20.epoch===5?'good':'';$('chain-train-detail').textContent=`${one.run_id||'one-step未启动'}${Number.isFinite(om.train_loss)?` · train loss ${num(om.train_loss,5)} · val field/force ${num(om.state_mae_physical_units,4)}/${num(om.force_mae_normalized,4)}`:''}；${h20.run_id||'H20未启动'}${Number.isFinite(hm.train_loss)?` · train loss ${num(hm.train_loss,5)} · val rollout field/force ${num(hm.rollout_state_mae,4)}/${num(hm.rollout_force_mae,4)} · selection ${num(hm.selection_score,4)}`:''}。阶段候选，不是formal Gate。`;
+ let h100=diag.horizons?.['100']?.pooled_total_cd_nrmse;$('chain-validation').textContent=Number.isFinite(h100)?`dev30 validation10：H100 pooled总Cd NRMSE ${pct(h100)}；动作排序 ${pct(diag.h100_start0_action_ranking?.cross_action_ordering_accuracy)}。仅开发诊断，冻结测试未访问。`:'dev30 validation10诊断尚未生成；不以训练loss替代H100与动作排序。';
+ $('chain-ppo').textContent=ppo.started?'已启动':`BLOCKED`;$('chain-ppo').className=ppo.started?'':'bad';$('chain-ppo-detail').textContent=ppo.started?`canonical PPO已有真实run记录：${ppo.status||'状态待审计'}。`:`${ppo.status||'promotion/formal validation gates未满足'}；未训练即明确BLOCKED，不沿用旧v4 PPO。`;}
 function figure(){if(!latest)return;let key=$('case').value+'/'+$('horizon').value;let found=latest.figures[key];if(found){$('flow').src=found.path+'?v='+found.version;$('flow').hidden=false;$('figure-label').textContent=found.label}else{$('flow').hidden=true;$('figure-label').textContent='该工况暂无导出的对照图'}}
 function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' · 页面每 5 秒更新';let candidates=[{label:'20 步＋后柱阻力加权训练',audit:d.v3_h20_rear_drag_audit,observed:d.v3_h20_rear_drag_observed},{label:'主节点种子 20 步训练',audit:d.v3_primary_seed_h20_audit,observed:d.v3_primary_seed_h20_observed},{label:'主节点后圆柱加权训练',audit:d.v3_rear_weighted_audit,observed:d.v3_rear_weighted_observed},{label:'计算节点种子 20 步训练',audit:d.v3_h20_audit,observed:d.v3_h20_observed},{label:'主节点 10 步训练',audit:d.v3_primary_rollout_audit,observed:d.v3_primary_rollout_observed},{label:'计算节点 10 步训练',audit:d.v3_rollout_audit,observed:d.v3_rollout_observed},{label:'主节点单步训练',audit:d.v3_audit,observed:d.v3_observed},{label:'计算节点单步训练',audit:d.v3_worker_audit,observed:d.v3_worker_observed}];let picked=candidates.find(x=>x.audit?.status==='GATE_B_PASS')||candidates.find(x=>x.observed)||candidates.find(x=>x.audit);let audited=picked?.audit,a=audited||d.audit,c=a?.checks||{};
  let long=d.control_landscape_long?.cases||[],zero=long.find(x=>x.omega_final===0),plus=long.find(x=>x.omega_final===1),minus=long.find(x=>x.omega_final===-1);
@@ -291,6 +309,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  renderMatchedStart(d);
  renderFull40(d);
  renderTrain20Physics(d);
+ renderFull40Chain(d);
  let trainHistory=v4primary.length?v4primary:d.history;$('train-title').textContent=v4primary.length?'v4 新数据 20 步 FNO：训练轮次 → 验证误差':'旧数据多步 FNO：训练轮次 → 验证误差';plot('train-chart',[{values:trainHistory.map(x=>x.terminal_state_mae),color:'#60c9fb'},{values:trainHistory.map(x=>x.terminal_force_mae),color:'#e9ae68'}],.05);
  let steps=['1','10','50','100'],v3series=[{result:d.v3_observed,color:'#60c9fb',label:'主节点单步'},{result:d.v3_worker_observed,color:'#79d5a3',label:'计算节点单步'},{result:d.v3_primary_rollout_observed,color:'#dc95e4',label:'主节点 10 步训练'},{result:d.v3_rollout_observed,color:'#e9ae68',label:'计算节点 10 步训练'},{result:d.v3_h20_observed,color:'#f49ab8',label:'计算节点种子 20 步训练'},{result:d.v3_rear_weighted_observed,color:'#97e1e4',label:'主节点后圆柱加权训练'},{result:d.v3_primary_seed_h20_observed,color:'#dce779',label:'主节点种子 20 步训练'},{result:d.v3_h20_rear_drag_observed,color:'#e66ac7',label:'20 步＋后柱阻力加权'}].filter(x=>x.result?.summary);
  if(v3series.length){let series=v3series.map(x=>({values:steps.map(h=>x.result.summary[h]?.total_drag_nrmse),color:x.color}));let top=Math.max(.2,...series.flatMap(x=>x.values.filter(Number.isFinite)));series.push({values:steps.map(()=>.1),color:'#d77979'});plot('error-chart',series,Math.ceil(top*10)/10);$('error-title').textContent='v3 真实 CFD：递推步数 → 终点阻力误差';$('error-legend').textContent=v3series.map(x=>x.label).join('、')+'；曲线为逐工况平均，红线为10%；正式判定用上方合并误差。'}
@@ -657,6 +676,168 @@ def _full40_extension_status(root: Path) -> dict:
     }
 
 
+def _small_file_sha256(path: Path) -> str | None:
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def _latest_artifact_dir(parent: Path, prefix: str) -> Path | None:
+    try:
+        candidates = [
+            path for path in parent.glob(f"{prefix}*") if path.is_dir()
+        ]
+        return max(candidates, key=lambda path: path.stat().st_mtime, default=None)
+    except OSError:
+        return None
+
+
+def _training_stage(root: Path, stage: str, expected_epochs: int) -> dict:
+    prefix = f"{DEV30_QUICKSCREEN_PREFIX}{stage}_"
+    run = _latest_artifact_dir(root / "artifacts", prefix)
+    if run is None:
+        return {"status": "NOT_STARTED", "epoch": 0, "expected_epochs": expected_epochs}
+    history = _read_json(run / "training_history.json", [])
+    if not isinstance(history, list):
+        history = []
+    rows = [row for row in history if isinstance(row, dict)]
+    epoch = rows[-1].get("epoch", 0) if rows else 0
+    return {
+        "status": "COMPLETE" if epoch == expected_epochs else "RUNNING_OR_INCOMPLETE",
+        "run_id": run.name.removeprefix(prefix),
+        "epoch": epoch if isinstance(epoch, int) else 0,
+        "expected_epochs": expected_epochs,
+        "last_metrics": rows[-1] if rows else None,
+    }
+
+
+def _full40_development_chain(root: Path, full40: dict) -> dict:
+    """Read fixed metadata paths only; never enumerate or open frozen HDF data."""
+    extension_rows = full40.get("cases", []) if isinstance(full40, dict) else []
+    full40_verified = sum(
+        row.get("raw_qc_verified") is True
+        for row in extension_rows
+        if isinstance(row, dict)
+    )
+    nine_qc = _read_json(root / MATCHED9_FINAL / "commissioning_qc.json", None)
+    nine_pass = (
+        isinstance(nine_qc, dict)
+        and nine_qc.get("status") == "MATCHED_START_COMMISSIONING_NINE_CASE_QC_OK"
+    )
+
+    dev30_root = root / DEV30_RELEASE
+    dev30_manifest_path = dev30_root / "manifest.json"
+    dev30_manifest = _read_json(dev30_manifest_path, None)
+    published = (
+        isinstance(dev30_manifest, dict)
+        and dev30_manifest.get("profile") == "matched_start_full40_v1"
+        and dev30_manifest.get("release_kind")
+        == "immutable_development_train20_validation10"
+        and dev30_manifest.get("materialized_trajectory_counts")
+        == {"train": 20, "validation": 10}
+        and dev30_manifest.get("frozen_test_materialized") is False
+    )
+
+    train_names = list(MATCHED_START_CASES)
+    train_names.extend(
+        case for case, row in FULL40_CASES.items() if row[0] == "train"
+    )
+    validation_names = [
+        case for case, row in FULL40_CASES.items() if row[0] == "validation"
+    ]
+    if published:
+        train_ready = sum(
+            (dev30_root / "train" / f"{case}.h5").is_file()
+            for case in train_names
+        )
+        validation_ready = sum(
+            (dev30_root / "validation" / f"{case}.h5").is_file()
+            for case in validation_names
+        )
+    else:
+        train_ready = sum(
+            (root / MATCHED9_FINAL / "train" / f"{case}.h5").is_file()
+            for case in MATCHED_START_CASES
+        )
+        train_ready += sum(
+            (
+                root
+                / FULL40_STAGING
+                / case
+                / "train"
+                / f"{case}.h5"
+            ).is_file()
+            for case, row in FULL40_CASES.items()
+            if row[0] == "train"
+        )
+        validation_ready = sum(
+            (
+                root
+                / FULL40_STAGING
+                / case
+                / "validation"
+                / f"{case}.h5"
+            ).is_file()
+            for case in validation_names
+        )
+
+    diagnostic_dir = _latest_artifact_dir(
+        root / "artifacts/tandem_cylinders", DEV30_DIAGNOSTIC_PREFIX
+    )
+    diagnostic = (
+        _read_json(diagnostic_dir / "diagnostic.json", None)
+        if diagnostic_dir is not None
+        else None
+    )
+    if not isinstance(diagnostic, dict) or diagnostic.get("formal_gate") is not False:
+        diagnostic = None
+
+    ppo_run = _latest_artifact_dir(root / CANONICAL_PPO_ROOT, "run_")
+    ppo_preflight = _read_json(root / CANONICAL_PPO_ROOT / "preflight.json", None)
+    ppo_result = None
+    if ppo_run is not None:
+        for name in ("result.json", "summary.json", "training_summary.json"):
+            ppo_result = _read_json(ppo_run / name, None)
+            if isinstance(ppo_result, dict):
+                break
+    ppo_status = (
+        ppo_result.get("status")
+        if isinstance(ppo_result, dict)
+        else ppo_preflight.get("status")
+        if isinstance(ppo_preflight, dict)
+        else "BLOCKED_NOT_STARTED"
+    )
+    return {
+        "frozen_hdf_enumerated_or_opened": False,
+        "raw_qc": {
+            "full40_verified": full40_verified,
+            "full40_target": 31,
+            "commissioning_qc_pass": nine_pass,
+        },
+        "development_hdf": {
+            "train_ready": train_ready,
+            "train_target": 20,
+            "validation_ready": validation_ready,
+            "validation_target": 10,
+        },
+        "dev30_release": {
+            "published": published,
+            "reason": None if published else "IMMUTABLE_DEV30_NOT_PUBLISHED",
+            "manifest_sha256": _small_file_sha256(dev30_manifest_path),
+        },
+        "quickscreen": {
+            "onestep": _training_stage(root, "onestep", 10),
+            "h20": _training_stage(root, "h20", 5),
+        },
+        "validation_diagnostic": diagnostic,
+        "canonical_ppo": {
+            "started": ppo_run is not None,
+            "status": ppo_status,
+        },
+    }
+
+
 def _parse_host(output: str, previous: tuple[int, int] | None):
     lines = output.strip().splitlines()
     cpu = [int(x) for x in lines[0].split()[1:]]
@@ -889,6 +1070,9 @@ class Handler(BaseHTTPRequestHandler):
                 _matched_start_physics_summary(self.root)
             )
             data["full40_extension"] = _full40_extension_status(self.root)
+            data["full40_development_chain"] = _full40_development_chain(
+                self.root, data["full40_extension"]
+            )
             data["full40_train20_physics"] = _read_json(
                 self.root / FULL40_TRAIN20_PHYSICS, None
             )

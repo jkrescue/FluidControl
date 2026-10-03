@@ -67,6 +67,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
     def test_page_distinguishes_evidence_scopes(self) -> None:
         page = MODULE.PAGE
         for label in (
+            "旧 v4 历史严格证据（非 full40 新链）",
             "v4 验证集 · 第 100 步终点总阻力",
             "v4 验证集 · 100 步窗口平均总阻力",
             "两相位交替旋转 · 真实 OpenFOAM CFD",
@@ -102,6 +103,11 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("冻结测试仅显示采集与验收状态", page)
         self.assertIn("31 案 CFD/RAW 也不代表 Curator、模型训练或精度提升", page)
         self.assertIn("PPO 禁止宣称收益", page)
+        self.assertIn("Full40 / dev30 · 数据、PhysicsNeMo 与 HydroGym 链", page)
+        self.assertIn("Quick-screen · 官方 PhysicsNeMo FNO", page)
+        self.assertIn("未训练即明确BLOCKED", page)
+        self.assertIn("val rollout field/force", page)
+        self.assertIn("Spark本机已验收HDF", page)
         self.assertIn("不是上方 v4 validation 评估", SCRIPT.read_text(encoding="utf-8"))
 
     def test_dual_node_watchdog_is_exposed_without_replacing_science_metrics(self) -> None:
@@ -117,7 +123,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         ):
             self.assertIn(label, page)
         for existing in (
-            "最新严格证据",
+            "旧 v4 历史严格证据",
             "真实 CFD 收益与代理决策是否一致",
             "FNO 训练和推理结果",
             "HydroGym 闭环控制",
@@ -128,6 +134,114 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn('data["full40_train20_physics"]', SCRIPT.read_text(encoding="utf-8"))
         self.assertIn("FULL40_TRAIN20_OPEN_LOOP_PHYSICS_SUMMARY", page)
         self.assertIn("validation/frozen结果读取", page)
+
+    def test_full40_development_chain_reads_only_fixed_development_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            nine = root / MODULE.MATCHED9_FINAL
+            (nine / "train").mkdir(parents=True)
+            (nine / "commissioning_qc.json").write_text(
+                json.dumps(
+                    {"status": "MATCHED_START_COMMISSIONING_NINE_CASE_QC_OK"}
+                ),
+                encoding="utf-8",
+            )
+            for case in MODULE.MATCHED_START_CASES:
+                (nine / "train" / f"{case}.h5").touch()
+            for case, (split, _, _) in MODULE.FULL40_CASES.items():
+                if split not in {"train", "validation"}:
+                    continue
+                path = root / MODULE.FULL40_STAGING / case / split
+                path.mkdir(parents=True)
+                (path / f"{case}.h5").touch()
+
+            one = (
+                root
+                / "artifacts"
+                / f"{MODULE.DEV30_QUICKSCREEN_PREFIX}onestep_qs1"
+            )
+            h20 = (
+                root / "artifacts" / f"{MODULE.DEV30_QUICKSCREEN_PREFIX}h20_qs1"
+            )
+            one.mkdir(parents=True)
+            h20.mkdir(parents=True)
+            (one / "training_history.json").write_text(
+                json.dumps(
+                    [
+                        {"epoch": index, "force_mae_normalized": 0.1 / index}
+                        for index in range(1, 11)
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (h20 / "training_history.json").write_text(
+                json.dumps(
+                    [
+                        {"epoch": index, "selection_score": 0.05 / index}
+                        for index in range(1, 4)
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            full40 = {
+                "cases": [
+                    {"raw_qc_verified": index < 29} for index in range(31)
+                ]
+            }
+            result = MODULE._full40_development_chain(root, full40)
+        self.assertEqual(result["raw_qc"]["full40_verified"], 29)
+        self.assertTrue(result["raw_qc"]["commissioning_qc_pass"])
+        self.assertEqual(result["development_hdf"]["train_ready"], 20)
+        self.assertEqual(result["development_hdf"]["validation_ready"], 10)
+        self.assertFalse(result["dev30_release"]["published"])
+        self.assertEqual(result["quickscreen"]["onestep"]["epoch"], 10)
+        self.assertEqual(result["quickscreen"]["h20"]["epoch"], 3)
+        self.assertEqual(result["canonical_ppo"]["status"], "BLOCKED_NOT_STARTED")
+        self.assertFalse(result["frozen_hdf_enumerated_or_opened"])
+
+    def test_dev30_release_and_diagnostic_require_strict_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            release = root / MODULE.DEV30_RELEASE
+            release.mkdir(parents=True)
+            (release / "manifest.json").write_text(
+                json.dumps(
+                    {
+                        "profile": "matched_start_full40_v1",
+                        "release_kind": "immutable_development_train20_validation10",
+                        "materialized_trajectory_counts": {
+                            "train": 20,
+                            "validation": 10,
+                        },
+                        "frozen_test_materialized": False,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            diagnostic = (
+                root
+                / "artifacts/tandem_cylinders"
+                / f"{MODULE.DEV30_DIAGNOSTIC_PREFIX}qs1"
+            )
+            diagnostic.mkdir(parents=True)
+            (diagnostic / "diagnostic.json").write_text(
+                json.dumps(
+                    {
+                        "status": "DEV30_VALIDATION_DIAGNOSTIC_COMPLETE",
+                        "formal_gate": False,
+                        "horizons": {"100": {"pooled_total_cd_nrmse": 0.09}},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = MODULE._full40_development_chain(root, {"cases": []})
+        self.assertTrue(result["dev30_release"]["published"])
+        self.assertEqual(
+            result["validation_diagnostic"]["horizons"]["100"][
+                "pooled_total_cd_nrmse"
+            ],
+            0.09,
+        )
 
     def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
