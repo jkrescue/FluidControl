@@ -22,6 +22,7 @@ RAW_QC = Path("artifacts/tandem_cylinders/dynamic_train8_real_cfd_qc_20261003.js
 AUTH = Path("artifacts/tandem_cylinders/dynamic_train8_curation_authorization_20261003.json")
 VTK_RECEIPTS = Path("artifacts/tandem_cylinders/dynamic_train8_vtk_ready")
 OUTPUT = Path("data/curated/tandem_cylinders_dynamic_train8_v1")
+ENDPOINT_PROBE = Path("artifacts/tandem_cylinders/dynamic_train8_curator_endpoint_probe_20261003")
 FULL40 = Path("data/curated/tandem_cylinders_matched_start_full40_dev30_v1")
 BASE = Path("scripts/curate_low_action_phase94_validation.py")
 FORCE_SHA = {
@@ -216,7 +217,24 @@ def inject_authorized_run_window(config: dict, authorization: dict) -> dict:
     return result
 
 
-def source(base, repo: Path, name: str, config: dict):
+class EndpointView:
+    """Expose only the immutable first/last records of a Curator source."""
+
+    def __init__(self, wrapped):
+        if len(wrapped) != 201:
+            raise ValueError("endpoint probe requires exactly 201 VTK frames")
+        self.wrapped = wrapped
+
+    def __len__(self):
+        return 2
+
+    def __getitem__(self, index):
+        if index not in (0, 1):
+            raise IndexError(index)
+        return self.wrapped[0 if index == 0 else 200]
+
+
+def source(base, repo: Path, name: str, config: dict, *, endpoints_only: bool = False):
     class DynamicTrainSource(base.TandemTrajectorySource):
         def __init__(self):
             self.cases_root = repo / "cfd/tandem_cylinders/cases"
@@ -231,14 +249,15 @@ def source(base, repo: Path, name: str, config: dict):
             self.query_points = base.torch.stack(
                 [xx.reshape(-1), yy.reshape(-1), base.torch.full((self.nx * self.ny,), 0.05)], dim=1
             )
-            self.vtk_sources = [base.VTKSource(
+            vtk_source = base.VTKSource(
                 str(self.cases_root / name / "VTK_dynamic_train8"),
                 file_pattern="*/internal.vtu", manifold_dim=3,
                 point_source="vertices", backend="pyvista",
                 key_filters=[{"path_pattern": "**/internal.vtu", "mode": "include", "keys": ["U", "p"]}],
-            )]
-            if len(self.vtk_sources[0]) != 201:
+            )
+            if len(vtk_source) != 201:
                 raise ValueError(f"{name}: expected 201 VTK frames")
+            self.vtk_sources = [EndpointView(vtk_source) if endpoints_only else vtk_source]
     return DynamicTrainSource()
 
 
@@ -262,6 +281,72 @@ def curate(repo: Path, name: str) -> None:
     result = base.run_pipeline(pipe, n_jobs=1, backend="sequential", indices=None, use_tui=False)
     if len(result) != 1 or not result[0]:
         raise RuntimeError("PhysicsNeMo Curator returned no HDF")
+
+
+def endpoint_probe(repo: Path, name: str) -> dict:
+    """Exercise real first/last VTK frames through official Source/Filter/Sink."""
+    import h5py
+
+    auth = checked_authorization(repo)
+    if name not in auth["cases"]:
+        raise ValueError("probe case not authorized")
+    checked_vtk_receipt(repo, name)
+    if (repo / ENDPOINT_PROBE).exists():
+        raise FileExistsError(f"refusing overwrite: {repo / ENDPOINT_PROBE}")
+    config = inject_authorized_run_window(
+        load(repo / "cfd/tandem_cylinders/cases" / name / "case_config.json"),
+        auth["cases"][name],
+    )
+    config.update(source_force_sha256=FORCE_SHA, expected_frames=2)
+    base = base_module(repo)
+    base.validate_matched_start_source_force(repo / "cfd/tandem_cylinders/cases", name, config)
+    pipe = (
+        source(base, repo, name, config, endpoints_only=True)
+        .filter(base.NumericalQualityFilter(0.75))
+        .write(base.TrajectoryHDF5Sink(repo / ENDPOINT_PROBE, atomic_tmp=True))
+    )
+    result = base.run_pipeline(pipe, n_jobs=1, backend="sequential", indices=None, use_tui=False)
+    if len(result) != 1 or not result[0]:
+        raise RuntimeError("endpoint PhysicsNeMo Curator probe returned no HDF")
+    paths = sorted((repo / ENDPOINT_PROBE / "train").glob("*.h5"))
+    if len(paths) != 1:
+        raise ValueError("endpoint probe did not produce exactly one HDF")
+    with h5py.File(paths[0]) as handle:
+        required = {"state", "mask", "omega", "force", "time", "x", "y"}
+        if not required.issubset(handle.keys()):
+            raise ValueError("endpoint HDF schema differs")
+        if handle["state"].shape != (2, 3, 128, 256) or handle["force"].shape != (2, 4):
+            raise ValueError("endpoint HDF shape differs")
+        expected_times = np.asarray(auth["cases"][name]["run_window"], dtype=np.float64)
+        if not np.allclose(handle["time"][:, 0], expected_times, rtol=0, atol=2e-6):
+            raise ValueError("endpoint HDF time differs")
+        table = np.asarray(auth["cases"][name]["action_points"], dtype=np.float64)
+        expected_omega = np.interp(expected_times, table[:, 0], table[:, 1])
+        if not np.allclose(handle["omega"][:, 0], expected_omega, rtol=0, atol=1e-6):
+            raise ValueError("endpoint HDF action differs")
+        state = handle["state"][:]
+        mask = handle["mask"][:].astype(bool)
+        force = handle["force"][:]
+        if not np.isfinite(state).all() or not np.isfinite(force).all():
+            raise ValueError("endpoint HDF is non-finite")
+        if not set(np.unique(mask)).issubset({False, True}) or not mask.any():
+            raise ValueError("endpoint mask differs")
+        for frame, valid in zip(state, mask, strict=True):
+            if abs(float(frame[2][valid[0]].mean(dtype=np.float64))) > 2e-6:
+                raise ValueError("endpoint pressure gauge differs")
+    payload = {
+        "status": "DYNAMIC_TRAIN8_REAL_ENDPOINT_CURATOR_PROBE_PASS",
+        "scope": "first/last real VTK only; not training data",
+        "case": name,
+        "indices": [0, 200],
+        "times": expected_times.tolist(),
+        "hdf_sha256": sha256(paths[0]),
+        "authorization_sha256": sha256(repo / AUTH),
+        "vtk_receipt_sha256": sha256(repo / VTK_RECEIPTS / f"{name}.json"),
+        "official_pipeline": ["PhysicsNeMo Curator Source/Filter/Sink", "NumericalQualityFilter"],
+    }
+    exclusive(repo / ENDPOINT_PROBE / "probe_receipt.json", payload)
+    return payload
 
 
 def finalize(repo: Path) -> dict:
@@ -328,7 +413,7 @@ def finalize(repo: Path) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("authorize", "vtk-receipt", "curate", "finalize"))
+    parser.add_argument("mode", choices=("authorize", "vtk-receipt", "endpoint-probe", "curate", "finalize"))
     parser.add_argument("--repo", type=Path, default=REPO)
     parser.add_argument("--case")
     parser.add_argument("--execute", action="store_true")
@@ -345,6 +430,10 @@ def main() -> None:
         if args.case not in EXPECTED:
             raise ValueError("one declared case required")
         exclusive(repo / VTK_RECEIPTS / f"{args.case}.json", make_vtk_receipt(repo, args.case))
+    elif args.mode == "endpoint-probe":
+        if args.case not in EXPECTED:
+            raise ValueError("one declared case required")
+        print(json.dumps(endpoint_probe(repo, args.case), indent=2))
     elif args.mode == "curate":
         if args.case not in EXPECTED:
             raise ValueError("one declared case required")

@@ -1,0 +1,20 @@
+{
+  "status": "DYNAMIC_TRAIN8_REAL_ENDPOINT_CURATOR_PROBE_PASS",
+  "scope": "first/last real VTK only; not training data",
+  "case": "dynamic_train8_b00_prbs",
+  "indices": [
+    0,
+    200
+  ],
+  "times": [
+    148.0,
+    168.0
+  ],
+  "hdf_sha256": "2c9505fd702af7f5a1f6dc9addbda4bc774e21b0249ff3c35919326e88349117",
+  "authorization_sha256": "acbd967f66ff6f938cac8457deabba3ce52ba2a235ab5596fc5e0b3cfd03bb0e",
+  "vtk_receipt_sha256": "b7a0885e07605fd6ed05063693964899b3f3d1d1dffa159f5dc66f10899ccfe9",
+  "official_pipeline": [
+    "PhysicsNeMo Curator Source/Filter/Sink",
+    "NumericalQualityFilter"
+  ]
+}

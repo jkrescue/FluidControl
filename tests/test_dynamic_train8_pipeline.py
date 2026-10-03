@@ -106,6 +106,8 @@ def test_curator_uses_official_source_filter_sink_contract() -> None:
     assert "shutil.copyfile(source_normalization, temporary)" in source
     assert "sha256(target_normalization) != sha256(source_normalization)" in source
     assert "tandem_cylinders_matched_start_full40_dev30_v1" in source
+    assert "DYNAMIC_TRAIN8_REAL_ENDPOINT_CURATOR_PROBE_PASS" in source
+    assert "expected_frames=2" in source
 
 
 def test_curator_maps_authorized_window_to_base_source_contract() -> None:
@@ -119,6 +121,16 @@ def test_curator_maps_authorized_window_to_base_source_contract() -> None:
         module.inject_authorized_run_window({}, {"run_window": [168.0, 148.0]})
     with pytest.raises(ValueError, match="start and end"):
         module.inject_authorized_run_window({}, {"run_window": [148.0]})
+
+
+def test_endpoint_view_selects_only_real_first_and_last_frames() -> None:
+    module = load(CURATOR, "dynamic_train8_endpoint_view")
+    view = module.EndpointView(list(range(201)))
+    assert len(view) == 2
+    assert view[0] == 0
+    assert view[1] == 200
+    with pytest.raises(IndexError):
+        _ = view[2]
 
 
 def test_raw_audit_is_exact_eight_case_fail_closed() -> None:
