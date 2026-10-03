@@ -322,7 +322,13 @@ def validate_checkpoint(report: dict, checkpoint_dir: Path) -> dict:
     }
 
 
-def audit(report_path: Path, segments_path: Path, data: Path, checkpoint_dir: Path) -> dict:
+def audit(
+    report_path: Path,
+    segments_path: Path,
+    data: Path,
+    checkpoint_dir: Path,
+    candidate_kind: str,
+) -> dict:
     expected, release = validate_release(data)
     report = load(report_path)
     validate_report_contract(report, expected)
@@ -335,6 +341,9 @@ def audit(report_path: Path, segments_path: Path, data: Path, checkpoint_dir: Pa
         "formal_gate": False,
         "formal_gate_authorized": False,
         "ppo_authorized": False,
+        "candidate_kind": candidate_kind,
+        "stage_candidate_only": candidate_kind
+        == "dev30_quickscreen_h20_stage_candidate",
         "frozen_test_accessed_or_mounted": False,
         "horizons": horizons,
         "h100_start0_action_ranking": ranking,
@@ -356,11 +365,25 @@ def main() -> None:
     parser.add_argument("--segments", type=Path, required=True)
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--checkpoint-dir", type=Path, required=True)
+    parser.add_argument(
+        "--candidate-kind",
+        choices=(
+            "dev30_h20_development",
+            "dev30_quickscreen_h20_stage_candidate",
+        ),
+        required=True,
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.output.exists():
         raise FileExistsError(f"refusing to overwrite {args.output}")
-    result = audit(args.report, args.segments, args.data, args.checkpoint_dir)
+    result = audit(
+        args.report,
+        args.segments,
+        args.data,
+        args.checkpoint_dir,
+        args.candidate_kind,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"status": result["status"], "horizons": result["horizons"]}, indent=2))

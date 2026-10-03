@@ -15,9 +15,15 @@ output_relative="${DEV30_VALIDATION_OUTPUT:-artifacts/tandem_cylinders/full40_de
 [[ "$run_id" =~ ^[a-z0-9][a-z0-9_-]{0,63}$ ]] || {
   echo "run-id must match ^[a-z0-9][a-z0-9_-]{0,63}$" >&2; exit 2;
 }
-[[ "$checkpoint_relative" == artifacts/tandem_fno_full40_dev30_h20_*/best ]] || {
-  echo "checkpoint must be a reviewed dev30 H20 best directory" >&2; exit 2;
-}
+case "$checkpoint_relative" in
+  artifacts/tandem_fno_full40_dev30_h20_*/best)
+    candidate_kind="dev30_h20_development"
+    ;;
+  artifacts/tandem_fno_full40_dev30_quickscreen_h20_*/best)
+    candidate_kind="dev30_quickscreen_h20_stage_candidate"
+    ;;
+  *) echo "checkpoint must be a reviewed dev30 H20 or quick-screen H20 best directory" >&2; exit 2 ;;
+esac
 [[ "$output_relative" == artifacts/tandem_cylinders/full40_dev30_validation_* ]] || {
   echo "output must remain in the dedicated dev30 validation artifact root" >&2; exit 2;
 }
@@ -29,9 +35,11 @@ output_host="$root/$output_relative"
 [[ -d "$checkpoint_host" ]] || { echo "dev30 H20 checkpoint directory is missing" >&2; exit 2; }
 checkpoint_host="$(realpath -e "$checkpoint_host")"
 output_host="$(realpath -m "$output_host")"
-[[ "$checkpoint_host" == "$root"/artifacts/tandem_fno_full40_dev30_h20_*/best ]] || {
-  echo "resolved checkpoint escapes the reviewed dev30 H20 artifact root" >&2; exit 2;
-}
+case "$checkpoint_host" in
+  "$root"/artifacts/tandem_fno_full40_dev30_h20_*/best) ;;
+  "$root"/artifacts/tandem_fno_full40_dev30_quickscreen_h20_*/best) ;;
+  *) echo "resolved checkpoint escapes reviewed dev30 H20 artifact roots" >&2; exit 2 ;;
+esac
 [[ "$output_host" == "$root"/artifacts/tandem_cylinders/full40_dev30_validation_* ]] || {
   echo "resolved output escapes the dedicated dev30 validation artifact root" >&2; exit 2;
 }
@@ -43,6 +51,27 @@ python3 -c 'import json,sys; assert json.load(sys.stdin)["status"] == "FULL40_DE
 [[ "$(find "$checkpoint_host" -maxdepth 1 -name 'FNO.*.mdlus' | wc -l)" -eq 1 ]] || {
   echo "checkpoint must contain exactly one PhysicsNeMo FNO model generation" >&2; exit 2;
 }
+if [[ "$candidate_kind" == "dev30_quickscreen_h20_stage_candidate" ]]; then
+  checkpoint_run="${checkpoint_host%/best}"
+  python3 - "$checkpoint_run/training_history.json" "$checkpoint_run/resolved_config.yaml" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+import yaml
+
+history = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+config = yaml.safe_load(Path(sys.argv[2]).read_text(encoding="utf-8"))
+if [row.get("epoch") for row in history] != list(range(1, 6)):
+    raise SystemExit("quick-screen H20 candidate is not a completed five-epoch run")
+if (
+    config.get("training", {}).get("epochs") != 5
+    or config.get("training", {}).get("seed") != 20261003
+    or config.get("data", {}).get("root") != "/workspace/devdata"
+):
+    raise SystemExit("quick-screen H20 resolved config differs")
+PY
+fi
 [[ "$(docker image inspect "$image" --format '{{.Id}}')" == "$expected_image" ]] || {
   echo "PhysicsNeMo image ID mismatch" >&2; exit 2;
 }
@@ -75,6 +104,7 @@ if [[ "$mode" == "--dry-run" ]]; then
   printf 'DEV30_VALIDATION10_DIAGNOSTIC_ONLY_NO_FROZEN_NO_EXECUTION\ncommand:'
   printf ' %q' "${evaluate[@]}"
   printf '\n'
+  printf 'candidate_kind=%s formal_gate=false ppo_authorized=false\n' "$candidate_kind"
   exit 0
 fi
 [[ "$mode" == "--execute" ]] || { echo "first argument must be --dry-run or --execute" >&2; exit 2; }
@@ -87,4 +117,5 @@ python3 scripts/audit_dev30_validation_diagnostic.py \
   --report "$output_host/evaluation.json" \
   --segments "$output_host/segments.json" \
   --data "$data_host" --checkpoint-dir "$checkpoint_host" \
+  --candidate-kind "$candidate_kind" \
   --output "$output_host/diagnostic.json"

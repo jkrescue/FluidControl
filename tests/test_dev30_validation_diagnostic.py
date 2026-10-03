@@ -130,6 +130,8 @@ def test_main_refuses_existing_output(tmp_path: Path, monkeypatch: pytest.Monkey
             str(tmp_path / "data"),
             "--checkpoint-dir",
             str(tmp_path / "checkpoint"),
+            "--candidate-kind",
+            "dev30_quickscreen_h20_stage_candidate",
             "--output",
             str(output),
         ],
@@ -154,4 +156,8 @@ def test_runner_mount_policy_and_nonformal_label() -> None:
     assert "realpath -e" in text
     assert "realpath -m" in text
     assert "resolved output escapes" in text
+    assert "tandem_fno_full40_dev30_quickscreen_h20_" in text
+    assert "dev30_quickscreen_h20_stage_candidate" in text
+    assert "list(range(1, 6))" in text
+    assert "formal_gate=false ppo_authorized=false" in text
     assert "DIAGNOSTIC_ONLY" in text
