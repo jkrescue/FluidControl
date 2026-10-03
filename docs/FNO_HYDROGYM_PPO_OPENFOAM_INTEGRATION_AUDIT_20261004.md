@@ -10,7 +10,7 @@ This does not affect the separately completed CFD-only PPO result. That policy i
 
 | Interface | Actual code contract | Audit result |
 |---|---|---|
-| FNO state/action | `TandemFNOStepper` supplies 7 input channels: normalized `(u,v,gauge_pressure)`, mask, normalized `omega_now`, and `omega_next`; it expects 7 outputs for state increments plus four force channels. | Structurally compatible only when the new checkpoint uses the same resolved official PhysicsNeMo FNO architecture and four-force schema. Check the resolved config and model SHA, not the filename. |
+| FNO state/action | `TandemFNOStepper` supplies 6 input channels: normalized `(u,v,gauge_pressure)`, mask, normalized `omega_now`, and `omega_next`; it expects 7 outputs for three state increments plus four force channels. | Structurally compatible only when the new checkpoint uses the same resolved official PhysicsNeMo FNO architecture and four-force schema. Check the resolved config and model SHA, not the filename. |
 | Action ramp | The surrogate advances one `0.1 D/U` interval from `omega_now` to `omega_next`. Real feedback applies the same endpoints as a linear OpenFOAM `rotatingWallVelocity` table, with `dt=0.005` (20 solver steps). Both enforce `|omega| <= 0.75` and `|delta omega| <= 0.1` per decision. | Contract is aligned. It is still necessary to demonstrate that the FNO predicts the *effect* of signed ramps, not merely that it accepts both endpoint inputs. |
 | State normalization | Curated pressure is gauge pressure formed by subtracting the valid-domain spatial mean independently at each frame. State and force statistics are fitted on the explicit 20-case train manifest only. The adapter normalizes the initial state and autoregresses in that normalized space. | Correctly defined and SHA-bound. A new checkpoint must use the exact normalization used during its training; pressure-reference or statistics changes invalidate compatibility. |
 | 69D observation | Policy order is exactly `32*(u,v), front Cd, front Cl, rear Cd, rear Cl, applied omega`. Surrogate probes are bilinearly sampled at `x=17`, `y=6..9`; real OpenFOAM reads the same 32 probe coordinates and exact-time forces. Pressure is internal to the FNO and is not a policy observation. | Ordering and dimensions agree. Keep the existing exact-time/probe-header checks. Do not add policy observation normalization silently. |
@@ -22,7 +22,7 @@ This does not affect the separately completed CFD-only PPO result. That policy i
 
 ## Concrete blockers before a new dynamic checkpoint can enter the loop
 
-1. **Checkpoint promotion evidence:** exact model and resolved-config SHA, official PhysicsNeMo load check, 7-in/7-out schema, and immutable train-only normalization/manifest binding.
+1. **Checkpoint promotion evidence:** exact model and resolved-config SHA, official PhysicsNeMo load check, 6-in/7-out schema, and immutable train-only normalization/manifest binding.
 2. **Long-horizon dynamics:** finite output is not accuracy. Require the existing validation-only H1/H10/H50/H100 audit, especially H100 state and four-force error versus persistence, without reading frozen data for selection.
 3. **Action-effect fidelity:** require the existing dynamic signed-ramp/low-action gate to show correct force response and ranking under the intended `0.75/0.1/0.1D/U` action contract. If this fails, no surrogate PPO training or closed-loop claim is allowed.
 4. **Policy retraining:** train a new SB3 PPO against the exact accepted FNO SHA. Do not reuse either the old surrogate PPO or the validated CFD-only PPO as if environment dynamics were interchangeable.
@@ -51,4 +51,3 @@ Use: **“an SB3 PPO policy trained/evaluated through the pinned HydroGym `FlowE
 - `scripts/train_tandem_fno_rollout.py`: autoregressive update and action-endpoint conditioning.
 - `scripts/train_full40_hydrogym_ppo_canonical.py`: strict gates, SB3 PPO construction, and absence of `VecNormalize` on the surrogate track.
 - `src/fluid_control/openfoam_observation.py` and `scripts/run_full40_canonical_ppo_openfoam_feedback.py`: exact 69D real observation, pinned real-CFD timing, ramp application, and lineage validation.
-
