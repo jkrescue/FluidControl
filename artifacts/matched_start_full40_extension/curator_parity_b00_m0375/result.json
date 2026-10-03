@@ -1,0 +1,142 @@
+{
+  "case": "matched_start_acquisition_train_b00_m0375",
+  "exact_equal": {
+    "mask": true,
+    "omega": true,
+    "time": true,
+    "x": true,
+    "y": true
+  },
+  "force": {
+    "mae": 0.0,
+    "max_abs": 0.0,
+    "pass": true
+  },
+  "frames": {
+    "pass": true,
+    "spark": 801,
+    "worker": 801
+  },
+  "nature": "Spark/Worker official-Curator numerical parity; not physics validation",
+  "pass": true,
+  "shapes": {
+    "force": [
+      [
+        801,
+        4
+      ],
+      [
+        801,
+        4
+      ]
+    ],
+    "mask": [
+      [
+        801,
+        1,
+        128,
+        256
+      ],
+      [
+        801,
+        1,
+        128,
+        256
+      ]
+    ],
+    "omega": [
+      [
+        801,
+        1
+      ],
+      [
+        801,
+        1
+      ]
+    ],
+    "state": [
+      [
+        801,
+        3,
+        128,
+        256
+      ],
+      [
+        801,
+        3,
+        128,
+        256
+      ]
+    ],
+    "time": [
+      [
+        801,
+        1
+      ],
+      [
+        801,
+        1
+      ]
+    ],
+    "x": [
+      [
+        256
+      ],
+      [
+        256
+      ]
+    ],
+    "y": [
+      [
+        128
+      ],
+      [
+        128
+      ]
+    ]
+  },
+  "spark_hdf": {
+    "path": "data/curated/.staging/matched_start_full40_v1/matched_start_acquisition_train_b00_m0375/train/matched_start_acquisition_train_b00_m0375.h5",
+    "sha256": "85e5b5a60c01c8f3521d580afc68f81f501e4bc94e092a8e873a582e11fd0d82"
+  },
+  "state_valid": {
+    "channel_order": [
+      "u",
+      "v",
+      "p"
+    ],
+    "count": [
+      25904340,
+      25904340,
+      25904340
+    ],
+    "mae": [
+      1.3324135320560924e-09,
+      1.460050522894592e-10,
+      1.1781942538402254e-10
+    ],
+    "max_abs": [
+      3.5762786865234375e-07,
+      1.7881393432617188e-07,
+      1.7881393432617188e-07
+    ],
+    "pass": true
+  },
+  "thresholds": {
+    "exact": [
+      "time",
+      "omega",
+      "x",
+      "y",
+      "mask"
+    ],
+    "force_atol": 2e-06,
+    "frames": 801,
+    "state_valid_mae": 1e-06,
+    "state_valid_max_abs": 0.0001
+  },
+  "worker_hdf_copy": {
+    "path": "artifacts/matched_start_full40_extension/parity_staging/worker_matched_start_acquisition_train_b00_m0375.h5",
+    "sha256": "2147d9f2966c3328db6a092f6a5ff91d6623ec89c2e658e9a1d4c09029352843"
+  }
+}
