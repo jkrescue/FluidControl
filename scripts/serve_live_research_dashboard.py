@@ -100,7 +100,7 @@ function resources(name,items){let last=items.at(-1);if(!last)return;
  $(name+'-gpu').textContent=num(last.gpu,0)+'%';$(name+'-cpu').textContent=num(last.cpu,0)+'%';$(name+'-mem').textContent=num(last.mem_available_gib,1)+' GiB';
  $(name+'-mem').className='number '+(last.mem_available_gib>=20?'good':'bad');
  $(name+'-task').textContent=last.tasks?.length?`${last.tasks.join('、')} ${last.task_count>1?'×'+last.task_count:''}`:(name==='worker'&&last.second_seed_epoch>=10?'10 轮训练已完成；模型在主节点接受独立测试':'当前无计算任务');
- $(name+'-more').textContent=`采样时间 ${last.time} · GPU ${num(last.temp_c,0)}°C`;
+ $(name+'-more').textContent=`采样时间 ${last.time} · GPU ${num(last.temp_c,0)}°C${name==='primary'&&Number.isFinite(last.cuda_free_gib)?` · CUDA 当前可直接分配 ${num(last.cuda_free_gib,1)} GiB（不同于上方可回收内存）`:''}`;
  plot(name+'-chart',[{values:items.map(x=>x.gpu),color:'#60c9fb'},{values:items.map(x=>x.cpu),color:'#e9ae68'}])}
 function figure(){if(!latest)return;let key=$('case').value+'/'+$('horizon').value;let found=latest.figures[key];if(found){$('flow').src=found.path+'?v='+found.version;$('flow').hidden=false;$('figure-label').textContent=found.label}else{$('flow').hidden=true;$('figure-label').textContent='该工况暂无导出的对照图'}}
 function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' · 页面每 5 秒更新';let candidates=[{label:'20 步＋后柱阻力加权训练',audit:d.v3_h20_rear_drag_audit,observed:d.v3_h20_rear_drag_observed},{label:'主节点种子 20 步训练',audit:d.v3_primary_seed_h20_audit,observed:d.v3_primary_seed_h20_observed},{label:'主节点后圆柱加权训练',audit:d.v3_rear_weighted_audit,observed:d.v3_rear_weighted_observed},{label:'计算节点种子 20 步训练',audit:d.v3_h20_audit,observed:d.v3_h20_observed},{label:'主节点 10 步训练',audit:d.v3_primary_rollout_audit,observed:d.v3_primary_rollout_observed},{label:'计算节点 10 步训练',audit:d.v3_rollout_audit,observed:d.v3_rollout_observed},{label:'主节点单步训练',audit:d.v3_audit,observed:d.v3_observed},{label:'计算节点单步训练',audit:d.v3_worker_audit,observed:d.v3_worker_observed}];let picked=candidates.find(x=>x.audit?.status==='GATE_B_PASS')||candidates.find(x=>x.observed)||candidates.find(x=>x.audit);let audited=picked?.audit,a=audited||d.audit,c=a?.checks||{};
@@ -146,6 +146,18 @@ def _host_output(worker: bool) -> str:
     command = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=3", "USER@WORKER_HOST", HOST_COMMAND] if worker else ["sh", "-c", HOST_COMMAND]
     result = subprocess.run(command, capture_output=True, text=True, timeout=6, check=True)
     return result.stdout
+
+
+def _primary_cuda_free_gib() -> float | None:
+    """Sample actual immediate CUDA headroom; GB10 MemAvailable can differ."""
+    try:
+        result = subprocess.run(
+            ["python3", "-c", "import torch; print(torch.cuda.mem_get_info(0)[0]/1024**3)"],
+            capture_output=True, text=True, timeout=8, check=True,
+        )
+        return float(result.stdout.strip())
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return None
 
 
 def _parse_host(output: str, previous: tuple[int, int] | None):
@@ -248,6 +260,8 @@ class Sampler:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.samples = {"primary": deque(maxlen=360), "worker": deque(maxlen=360)}
         self.previous = {"primary": None, "worker": None}
+        self.cuda_free_gib = None
+        self.sample_count = 0
         self.lock = threading.Lock()
         if self.path.exists():
             with self.path.open(encoding="utf-8") as stream:
@@ -262,15 +276,20 @@ class Sampler:
 
     def run(self):
         while True:
+            if self.sample_count % 6 == 0:
+                self.cuda_free_gib = _primary_cuda_free_gib()
             for name in ("primary", "worker"):
                 try:
                     sample, self.previous[name] = _parse_host(_host_output(name == "worker"), self.previous[name])
                 except (OSError, subprocess.SubprocessError, ValueError, IndexError, KeyError) as exc:
                     sample = {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "error": str(exc)[:150]}
+                if name == "primary":
+                    sample["cuda_free_gib"] = self.cuda_free_gib
                 with self.lock:
                     self.samples[name].append(sample)
                 with self.path.open("a", encoding="utf-8") as stream:
                     stream.write(json.dumps({"node": name, **sample}, ensure_ascii=False) + "\n")
+            self.sample_count += 1
             time.sleep(10)
 
 
