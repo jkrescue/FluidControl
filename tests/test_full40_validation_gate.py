@@ -32,6 +32,8 @@ def fixtures():
                             "stable": True,
                             "failed_segments": 0,
                             "total_drag_rmse": 0.1,
+                            "total_drag_mae": 0.08,
+                            "persistence_total_drag_mae": 0.2,
                             "total_drag_target_rms": 2.0,
                             "front_cl_mae": 0.02,
                             "rear_cl_mae": 0.03,
@@ -74,6 +76,20 @@ def test_pooled_h100_uses_segment_weighted_sum_of_squares() -> None:
     assert result["passes_fixed_10pct_gate"] is True
     assert result["front_cl_mae"] == pytest.approx(0.02)
     assert result["rear_cl_mae"] == pytest.approx(0.03)
+    assert result["beats_persistence"] is True
+
+
+def test_checkpoint_is_bound_to_exact_single_physicsnemo_generation(tmp_path) -> None:
+    checkpoint = tmp_path / "best"
+    checkpoint.mkdir()
+    model = checkpoint / "FNO.10.0.mdlus"
+    model.write_bytes(b"fixed-full40-checkpoint")
+    report = {"checkpoint_dir": str(checkpoint), "checkpoint_epoch": 10}
+    result = MODULE.validate_checkpoint(report, checkpoint)
+    assert result["checkpoint_sha256"] == MODULE.sha256(model)
+    (checkpoint / "FNO.11.0.mdlus").write_bytes(b"second")
+    with pytest.raises(ValueError, match="exactly one"):
+        MODULE.validate_checkpoint(report, checkpoint)
 
 
 def test_action_gate_uses_only_eight_strict_start0_zero_relative_pairs() -> None:

@@ -15,12 +15,72 @@ MAX_STRICT_ZERO_RELATIVE_DELTA_CD_MAE = 0.023
 MIN_STRICT_ZERO_RELATIVE_SIGN_ACCURACY = 1.0
 MIN_STRICT_CROSS_ACTION_ORDERING_ACCURACY = 1.0
 PREDECLARATION_SHA256 = "d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b"
+PROFILE = "matched_start_full40_v1"
 ACTIONS = {"m075": -0.75, "m0375": -0.375, "zero": 0.0, "p0375": 0.375, "p075": 0.75}
 CASE = re.compile(r"matched_start_acquisition_validation_b(01|05)_(m075|m0375|zero|p0375|p075)")
 
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def validate_checkpoint(report: dict, checkpoint_dir: Path) -> dict:
+    """Bind the validation result to the exact PhysicsNeMo model generation."""
+    reported = report.get("checkpoint_dir")
+    if not isinstance(reported, str) or Path(reported).resolve() != checkpoint_dir.resolve():
+        raise ValueError("validation report checkpoint_dir differs")
+    epoch = report.get("checkpoint_epoch")
+    if not isinstance(epoch, int) or isinstance(epoch, bool) or epoch < 1:
+        raise ValueError("validation report checkpoint_epoch is invalid")
+    models = sorted(checkpoint_dir.glob("FNO.*.mdlus"))
+    if len(models) != 1:
+        raise ValueError("checkpoint must contain exactly one FNO model generation")
+    model = models[0]
+    return {
+        "checkpoint_dir": str(checkpoint_dir),
+        "checkpoint_epoch": epoch,
+        "checkpoint_model_file": model.name,
+        "checkpoint_sha256": sha256(model),
+    }
+
+
+def validate_runtime_inputs(
+    report: dict,
+    *,
+    data: Path,
+    config: Path,
+    image_id: str,
+) -> dict:
+    expected_image = "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e"
+    if image_id != expected_image:
+        raise ValueError("PhysicsNeMo image ID differs from the pinned image")
+    for key in ("evaluation_data", "normalization_data"):
+        value = report.get(key)
+        if not isinstance(value, str) or Path(value).resolve() != data.resolve():
+            raise ValueError(f"validation report {key} differs")
+    if report.get("force_channels") != ["front_cd", "front_cl", "rear_cd", "rear_cl"]:
+        raise ValueError("validation report is not the four-force model")
+    if float(report.get("action_scale", float("nan"))) != 0.75:
+        raise ValueError("validation report action scale differs")
+    if float(report.get("evaluation_action_limit", float("nan"))) != 0.75:
+        raise ValueError("validation action support differs")
+    manifest = load(data / "manifest.json")
+    if manifest.get("profile") != PROFILE or manifest.get("trajectory_counts") != {
+        "train": 20,
+        "validation": 10,
+        "frozen_test": 10,
+    }:
+        raise ValueError("full40 data manifest identity differs")
+    if float(manifest.get("max_abs_omega", float("nan"))) != 0.75:
+        raise ValueError("full40 data action scale differs")
+    return {
+        "profile": PROFILE,
+        "max_abs_omega": 0.75,
+        "data_manifest_sha256": sha256(data / "manifest.json"),
+        "normalization_sha256": sha256(data / "normalization.json"),
+        "model_config_sha256": sha256(config),
+        "physicsnemo_image_id": image_id,
+    }
 
 
 def load(path: Path) -> dict:
@@ -89,6 +149,11 @@ def pooled_h100(report: dict, expected: dict[str, tuple[str, float]]) -> dict:
                 "case": name,
                 "segments": segments,
                 "rmse": finite(metric.get("total_drag_rmse"), "total drag RMSE"),
+                "mae": finite(metric.get("total_drag_mae"), "total drag MAE"),
+                "persistence_mae": finite(
+                    metric.get("persistence_total_drag_mae"),
+                    "persistence total drag MAE",
+                ),
                 "target_rms": finite(metric.get("total_drag_target_rms"), "target RMS"),
                 "front_cl_mae": finite(metric.get("front_cl_mae"), "front Cl MAE"),
                 "rear_cl_mae": finite(metric.get("rear_cl_mae"), "rear Cl MAE"),
@@ -100,6 +165,10 @@ def pooled_h100(report: dict, expected: dict[str, tuple[str, float]]) -> dict:
     target_ss = sum(row["segments"] * row["target_rms"] ** 2 for row in rows)
     pooled = math.sqrt(error_ss / target_ss)
     count = sum(row["segments"] for row in rows)
+    model_mae = sum(row["segments"] * row["mae"] for row in rows) / count
+    persistence_mae = (
+        sum(row["segments"] * row["persistence_mae"] for row in rows) / count
+    )
     return {
         "pooled_total_cd_nrmse": pooled,
         "macro_total_cd_nrmse": sum(row["rmse"] / row["target_rms"] for row in rows) / 10,
@@ -107,6 +176,9 @@ def pooled_h100(report: dict, expected: dict[str, tuple[str, float]]) -> dict:
         "front_cl_mae": sum(row["segments"] * row["front_cl_mae"] for row in rows) / count,
         "rear_cl_mae": sum(row["segments"] * row["rear_cl_mae"] for row in rows) / count,
         "segments": count,
+        "pooled_total_drag_mae": model_mae,
+        "pooled_persistence_total_drag_mae": persistence_mae,
+        "beats_persistence": model_mae < persistence_mae,
         "passes_fixed_10pct_gate": pooled <= MAX_H100_POOLED_TOTAL_CD_NRMSE,
     }
 
@@ -211,12 +283,26 @@ def strict_start0_differences(segments: dict, expected: dict[str, tuple[str, flo
     }
 
 
-def audit(report_path: Path, segments_path: Path, predeclaration: Path) -> dict:
+def audit(
+    report_path: Path,
+    segments_path: Path,
+    predeclaration: Path,
+    checkpoint_dir: Path,
+    data: Path,
+    config: Path,
+    image_id: str,
+) -> dict:
     expected = validate_predeclaration(predeclaration)
-    force = pooled_h100(load(report_path), expected)
+    report = load(report_path)
+    force = pooled_h100(report, expected)
     action = strict_start0_differences(load(segments_path), expected)
+    checkpoint = validate_checkpoint(report, checkpoint_dir)
+    runtime = validate_runtime_inputs(
+        report, data=data, config=config, image_id=image_id
+    )
     joint = (
         force["passes_fixed_10pct_gate"]
+        and force["beats_persistence"]
         and action["passes_delta_cd_mae_gate"]
         and action["passes_sign_ranking_gate"]
         and action["passes_cross_action_ordering_gate"]
@@ -228,6 +314,8 @@ def audit(report_path: Path, segments_path: Path, predeclaration: Path) -> dict:
         "h100_force_gate": force,
         "h100_start0_action_difference": action,
         "joint_terminal_readiness": joint,
+        **checkpoint,
+        **runtime,
         "hydrogym_policy": "even joint terminal readiness permits only the next validation/window-lift study; it does not prove PPO or physical control benefit",
         "lift_interpretation": "front/rear Cl endpoint MAE is reported but has no invented pass threshold; Cl-prime <=1.05 and mean-Cl bias <=0.10 require a separate validation time-window fidelity audit and final real CFD",
         "report_sha256": sha256(report_path),
@@ -241,11 +329,23 @@ def main() -> None:
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--segments", type=Path, required=True)
     parser.add_argument("--predeclaration", type=Path, required=True)
+    parser.add_argument("--checkpoint-dir", type=Path, required=True)
+    parser.add_argument("--data", type=Path, required=True)
+    parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--image-id", required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.output.exists():
         raise FileExistsError(f"refusing to overwrite {args.output}")
-    result = audit(args.report, args.segments, args.predeclaration)
+    result = audit(
+        args.report,
+        args.segments,
+        args.predeclaration,
+        args.checkpoint_dir,
+        args.data,
+        args.config,
+        args.image_id,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"status": result["status"], **result["h100_force"]}, indent=2))

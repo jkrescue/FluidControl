@@ -54,4 +54,6 @@ mkdir -p "$output"
 python3 scripts/audit_full40_validation_gate.py \
   --report "$output/evaluation.json" --segments "$output/segments.json" \
   --predeclaration artifacts/tandem_cylinders/matched_start_full40_predeclared_20261003.json \
+  --checkpoint-dir "$checkpoint" --data "$data" \
+  --config conf/tandem_fno_full40_h20.yaml --image-id "$expected_image" \
   --output "$output/gate.json"
