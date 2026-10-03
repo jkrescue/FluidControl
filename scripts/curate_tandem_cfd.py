@@ -39,6 +39,7 @@ PROFILE_COUNTS = {
     "expanded_with_replacements": {"train": 24, "validation": 5, "test": 5},
     "expanded_independent_v2": {"train": 24, "validation": 4, "test": 4},
     "gate_b_aug_v3": {"train": 26, "validation": 4, "test": 5},
+    "control_gap_v4": {"train": 28, "validation": 4, "test": 5},
     "phase_v1": {"train": 2, "validation": 1, "test": 1},
 }
 PROFILE_ACTION_LIMITS = {
@@ -47,6 +48,7 @@ PROFILE_ACTION_LIMITS = {
     "expanded_with_replacements": 5.0,
     "expanded_independent_v2": 5.0,
     "gate_b_aug_v3": 5.0,
+    "control_gap_v4": 5.0,
     "phase_v1": 5.0,
 }
 PROFILE_FRAME_COUNTS = {
@@ -55,6 +57,7 @@ PROFILE_FRAME_COUNTS = {
     "expanded_with_replacements": 801,
     "expanded_independent_v2": 801,
     "gate_b_aug_v3": 801,
+    "control_gap_v4": 801,
     "phase_v1": 241,
 }
 
@@ -89,12 +92,20 @@ def case_records(
         "expanded_with_replacements": augmentation,
         "expanded_independent_v2": {"expanded_validation_03", "expanded_test_03"} | augmentation,
         "gate_b_aug_v3": {"expanded_validation_03", "expanded_test_03"},
+        "control_gap_v4": {"expanded_validation_03", "expanded_test_03"},
     }.get(profile, set())
     for case in sorted(cases_root.glob(pattern)):
         if case.name in excluded:
             continue
         config = json.loads((case / "case_config.json").read_text(encoding="utf-8"))
         records.append({"name": case.name, "split": config["split"], "config": config})
+    if profile == "control_gap_v4":
+        for name in ("train_signed_pulse_p_v4_20261003", "train_signed_pulse_m_v4_20261003"):
+            case = cases_root / name
+            config = json.loads((case / "case_config.json").read_text(encoding="utf-8"))
+            if config["split"] != "train" or config["dataset"] != "tandem_control_gap_targeted_train_v4":
+                raise ValueError(f"{name}: not a train-only targeted CFD case")
+            records.append({"name": name, "split": "train", "config": config})
     if profile == "stage1":
         for name, split in CONSTANT_SPLITS.items():
             case = cases_root / name

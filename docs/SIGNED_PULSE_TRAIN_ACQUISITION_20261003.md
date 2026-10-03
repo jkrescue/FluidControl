@@ -32,3 +32,22 @@ unchanged. Compare any v4 retraining against the same v3 baseline at equal
 optimization budget. A claim of active-learning sample efficiency requires
 an equal-cost random-acquisition comparator, which this pair alone does not
 provide. No surrogate or physical-control benefit is assumed in advance.
+
+## OpenFOAM milestone and v4 curation
+
+Both 16,000-step signed-pulse cases ended normally. The fail-closed source
+hash, 801-field, 16,000-front/rear-force, Courant and continuity audit passed:
+`artifacts/tandem_cylinders/signed_pulse_train_cfd_qc_20261003.json`
+(SHA-256 `c81e455a753443842aa63d9f197fbf16785186084efdb30d25515cca42f99e0b`).
+This is **raw CFD quality only**, not yet curated training data or a model
+improvement.
+
+`scripts/build_control_gap_v4_spark.sh` is the isolated next stage. It
+hard-links the unchanged v3 HDF5 files into a new
+`data/curated/tandem_cylinders_control_gap_v4` profile, exports the two new
+cases as VTK, runs the existing official PhysicsNeMo Curator
+Source→Filter→Sink pipeline, checks raw action/force label alignment,
+recomputes normalization from the 28 **training** trajectories only, and
+checks the exact 28/4/5 split. The four validation and five frozen test
+HDF5 files stay bit-identical through hard links; v3 is not overwritten.
+The manifest is written only after the required 37 files are present.

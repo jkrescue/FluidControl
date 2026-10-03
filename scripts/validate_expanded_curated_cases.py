@@ -25,6 +25,7 @@ def verify_raw_labels(name: str, case: Path, time: np.ndarray,
                       allow_legacy_initial_force: bool = False) -> dict[str, float]:
     """Cross-check saved labels against the independent OpenFOAM case files."""
     config = json.loads((case / "case_config.json").read_text(encoding="utf-8"))
+    start_time = float(config.get("start_time", 80.0))
     table = np.asarray(config["action_points"], dtype=np.float64)
     expected_omega = np.interp(time, table[:, 0], table[:, 1])
     omega_error = float(np.max(np.abs(omega - expected_omega)))
@@ -32,7 +33,7 @@ def verify_raw_labels(name: str, case: Path, time: np.ndarray,
     expected_force = []
     first_restart_force = []
     for object_name in ("forceFront", "forceRear"):
-        path = case / "postProcessing" / object_name / "80" / "coefficient.dat"
+        path = case / "postProcessing" / object_name / f"{start_time:g}" / "coefficient.dat"
         raw = np.loadtxt(path, usecols=(0, 1, 4))
         if raw.ndim != 2 or raw.shape[1] != 3 or np.any(np.diff(raw[:, 0]) <= 0):
             raise ValueError(f"{name}: invalid raw force time series in {path}")
@@ -89,6 +90,10 @@ def main() -> None:
         if len(matches) != 1:
             raise FileNotFoundError(f"expected one curated file for {name}, found {matches}")
         path = matches[0]
+        config = (json.loads((args.cases_root / name / "case_config.json").read_text(encoding="utf-8"))
+                  if args.cases_root is not None else {})
+        start_time = float(config.get("start_time", 80.0))
+        end_time = float(config.get("end_time", 160.0))
         with h5py.File(path, "r") as handle:
             for key, shape in EXPECTED.items():
                 if handle[key].shape != shape:
@@ -96,7 +101,7 @@ def main() -> None:
             time = np.asarray(handle["time"][:, 0])
             omega = np.asarray(handle["omega"][:, 0])
             force = np.asarray(handle["force"][:])
-            if not np.allclose(time, np.linspace(80.0, 160.0, 801), atol=2.0e-6):
+            if not np.allclose(time, np.linspace(start_time, end_time, 801), atol=2.0e-6):
                 raise ValueError(f"{name}: invalid time axis")
             if not np.isfinite(omega).all() or not np.isfinite(force).all():
                 raise ValueError(f"{name}: non-finite omega or force")
