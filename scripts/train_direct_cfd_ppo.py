@@ -81,8 +81,8 @@ def make_one(socket_path: str, baseline: dict, seed: int):
     return Monitor(env)
 
 
-def make_vector_env(sockets: list[str], baselines: list[dict], seed: int):
-    raw = SubprocVecEnv(
+def make_raw_vector_env(sockets: list[str], baselines: list[dict], seed: int):
+    return SubprocVecEnv(
         [
             partial(make_one, socket_path, baseline, seed + index)
             for index, (socket_path, baseline) in enumerate(
@@ -91,8 +91,11 @@ def make_vector_env(sockets: list[str], baselines: list[dict], seed: int):
         ],
         start_method="spawn",
     )
+
+
+def make_vector_env(sockets: list[str], baselines: list[dict], seed: int):
     return VecNormalize(
-        raw,
+        make_raw_vector_env(sockets, baselines, seed),
         training=True,
         norm_obs=True,
         norm_reward=True,
@@ -267,22 +270,43 @@ def execute(args) -> dict:
     baselines = [baseline_payload[phase] for phase in ("b00", "b02")]
     args.output.mkdir(parents=True, exist_ok=False)
     (args.output / "checkpoints").mkdir()
-    env = make_vector_env(args.socket, baselines, args.seed)
+    resume = args.resume_policy is not None
+    if resume != (args.resume_vecnormalize is not None):
+        raise ValueError("resume policy and VecNormalize must be supplied together")
+    if resume:
+        if args.prior_transitions <= 0:
+            raise ValueError("resume requires a positive prior transition count")
+        raw = make_raw_vector_env(args.socket, baselines, args.seed)
+        env = VecNormalize.load(str(args.resume_vecnormalize), raw)
+        env.training = True
+        env.norm_reward = True
+    else:
+        if args.prior_transitions != 0:
+            raise ValueError("a fresh run must have zero prior transitions")
+        env = make_vector_env(args.socket, baselines, args.seed)
     try:
         if args.probe_transitions:
             return run_probe(env, args.output, args.probe_transitions)
-        model = PPO(
-            "MlpPolicy",
-            env,
-            seed=args.seed,
-            device="cpu",
-            n_steps=128,
-            batch_size=64,
-            n_epochs=4,
-            learning_rate=3e-4,
-            gamma=0.99,
-            verbose=1,
-        )
+        if resume:
+            model = PPO.load(args.resume_policy, env=env, device="cpu")
+            if model.num_timesteps != args.prior_transitions:
+                raise ValueError(
+                    f"resume policy has {model.num_timesteps} transitions, "
+                    f"expected {args.prior_transitions}"
+                )
+        else:
+            model = PPO(
+                "MlpPolicy",
+                env,
+                seed=args.seed,
+                device="cpu",
+                n_steps=128,
+                batch_size=64,
+                n_epochs=4,
+                learning_rate=3e-4,
+                gamma=0.99,
+                verbose=1,
+            )
         callback = PhysicalJournalCallback(args.output)
         initial_parameters = {
             name: parameter.detach().cpu().clone()
@@ -291,11 +315,11 @@ def execute(args) -> dict:
         initial_fingerprint = parameter_fingerprint(model, initial_parameters)
         completed = 0
         update_count = 0
-        while completed < TOTAL_TIMESTEPS:
+        while completed < args.additional_timesteps:
             model.learn(
                 total_timesteps=CHECKPOINT_INTERVAL,
                 callback=callback,
-                reset_num_timesteps=(completed == 0),
+                reset_num_timesteps=(not resume and completed == 0),
             )
             completed += CHECKPOINT_INTERVAL
             update_count += 1
@@ -315,7 +339,7 @@ def execute(args) -> dict:
             }
             training_metrics["n_updates"] = int(model._n_updates)
             callback.checkpoint_after_update(
-                completed,
+                args.prior_transitions + completed,
                 update_count,
                 initial_parameters,
                 training_metrics,
@@ -326,12 +350,23 @@ def execute(args) -> dict:
         final_vec = args.output / "vecnormalize_final.pkl"
         env.save(str(final_vec))
         result = {
-            "status": "DIRECT_REAL_CFD_PPO_TRAINING_COMPLETE",
+            "status": (
+                "DIRECT_REAL_CFD_PPO_CONTINUATION_COMPLETE"
+                if resume
+                else "DIRECT_REAL_CFD_PPO_TRAINING_COMPLETE"
+            ),
             "backend": "official_hydrogym_flowenv_with_project_openfoam_adapter",
             "surrogate_used": False,
-            "timesteps": TOTAL_TIMESTEPS,
+            "prior_transitions": args.prior_transitions,
+            "new_transitions": args.additional_timesteps,
+            "cumulative_transitions": args.prior_transitions + args.additional_timesteps,
+            "resume_policy_sha256": sha256(args.resume_policy) if resume else None,
+            "resume_vecnormalize_sha256": (
+                sha256(args.resume_vecnormalize) if resume else None
+            ),
             "environment_count": ENV_COUNT,
             "episode_steps": EPISODE_STEPS,
+            "observation_dimension": 69,
             "policy": str(final_policy),
             "policy_sha256": sha256(final_policy),
             "vecnormalize": str(final_vec),
@@ -362,7 +397,13 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--probe-transitions", type=int, default=0)
+    parser.add_argument("--resume-policy", type=Path)
+    parser.add_argument("--resume-vecnormalize", type=Path)
+    parser.add_argument("--prior-transitions", type=int, default=0)
+    parser.add_argument("--additional-timesteps", type=int, default=TOTAL_TIMESTEPS)
     args = parser.parse_args()
+    if args.additional_timesteps <= 0 or args.additional_timesteps % CHECKPOINT_INTERVAL:
+        parser.error("additional timesteps must be positive and divisible by 256")
     result = execute(args)
     print(result["status"], flush=True)
 

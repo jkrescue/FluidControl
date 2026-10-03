@@ -25,6 +25,13 @@ RUNTIME_IMAGE = "fluid-control-physicsnemo-hydrogym:2.2.2-4ab9854"
 RUNTIME_IMAGE_ID = "sha256:2e45b4e1ac9553ea86aa9148455be9aae30688446039fdee6255a637603acb2c"
 HYDROGYM_COMMIT = "4ab9854dea3d84e38a59c25e0f5835a00cf8225f"
 PHASES = ("b00", "b02")
+CRITICAL_SOURCES = (
+    "src/fluid_control/direct_cfd_hydrogym.py",
+    "src/fluid_control/canonical_joint_v1.py",
+    "scripts/direct_cfd_openfoam_worker.py",
+    "scripts/train_direct_cfd_ppo.py",
+    "scripts/run_direct_cfd_ppo.py",
+)
 
 
 def sha256(path: Path) -> str:
@@ -40,6 +47,23 @@ def available_memory_gib() -> float:
         if line.startswith("MemAvailable:"):
             return int(line.split()[1]) / 1024**2
     raise RuntimeError("MemAvailable is unavailable")
+
+
+def git_provenance() -> dict:
+    commit = subprocess.check_output(
+        ["git", "-C", str(PROJECT), "rev-parse", "HEAD"], text=True
+    ).strip()
+    dirty = subprocess.check_output(
+        ["git", "-C", str(PROJECT), "status", "--porcelain"], text=True
+    ).splitlines()
+    return {
+        "commit": commit,
+        "dirty": bool(dirty),
+        "dirty_paths": dirty,
+        "critical_source_sha256": {
+            relative: sha256(PROJECT / relative) for relative in CRITICAL_SOURCES
+        },
+    }
 
 
 def baselines() -> dict:
@@ -95,7 +119,13 @@ def current_pimplefoam() -> list[str]:
     return [line for line in completed.stdout.splitlines() if line.strip()]
 
 
-def preflight(run_id: str, output: Path, probe_transitions: int) -> dict:
+def preflight(
+    run_id: str,
+    output: Path,
+    probe_transitions: int,
+    resume_training: Path | None,
+    additional_timesteps: int,
+) -> dict:
     if not re.fullmatch(r"[a-z0-9_]{4,48}", run_id):
         raise ValueError("run-id must be 4..48 lowercase alphanumeric/underscore characters")
     output = output.resolve()
@@ -105,6 +135,57 @@ def preflight(run_id: str, output: Path, probe_transitions: int) -> dict:
         raise FileExistsError(output)
     if probe_transitions not in (0, 20):
         raise ValueError("probe-transitions must be zero (2048 PPO) or exactly 20")
+    if additional_timesteps <= 0 or additional_timesteps % 256:
+        raise ValueError("additional timesteps must be positive and divisible by 256")
+    resume_receipt = None
+    if resume_training is not None:
+        if probe_transitions:
+            raise ValueError("runtime probe cannot resume PPO")
+        resume_training = resume_training.resolve()
+        prior = json.loads((resume_training / "result.json").read_text(encoding="utf-8"))
+        if prior.get("status") not in {
+            "DIRECT_REAL_CFD_PPO_TRAINING_COMPLETE",
+            "DIRECT_REAL_CFD_PPO_CONTINUATION_COMPLETE",
+        }:
+            raise ValueError("resume source is not a completed direct-CFD PPO run")
+        required_contract = {
+            "surrogate_used": False,
+            "environment_count": 2,
+            "episode_steps": 128,
+            "reward_contract": "canonical_joint_v1 with actual causal prehistory",
+        }
+        if any(prior.get(key) != value for key, value in required_contract.items()):
+            raise ValueError("resume source differs from the direct-CFD training contract")
+        if prior.get("observation_dimension", 69) != 69:
+            raise ValueError("resume source does not use canonical 69D observations")
+        policy = resume_training / Path(prior["policy"]).name
+        normalization = resume_training / Path(prior["vecnormalize"]).name
+        if sha256(policy) != prior.get("policy_sha256"):
+            raise ValueError("resume policy SHA differs from its result")
+        if sha256(normalization) != prior.get("vecnormalize_sha256"):
+            raise ValueError("resume VecNormalize SHA differs from its result")
+        cumulative = int(prior.get("cumulative_transitions", prior.get("timesteps", 0)))
+        if cumulative <= 0:
+            raise ValueError("resume result lacks a positive cumulative transition count")
+        resume_receipt = {
+            "training": str(resume_training),
+            "result_sha256": sha256(resume_training / "result.json"),
+            "policy": str(policy),
+            "policy_sha256": sha256(policy),
+            "vecnormalize": str(normalization),
+            "vecnormalize_sha256": sha256(normalization),
+            "prior_transitions": cumulative,
+            "additional_transitions": additional_timesteps,
+            "cumulative_transitions_after_run": cumulative + additional_timesteps,
+            "contract": {**required_contract, "observation_dimension": 69},
+        }
+        prior_baselines = resume_training.parent / "train_only_baselines.json"
+        checked_baselines = json.loads(prior_baselines.read_text(encoding="utf-8"))
+        if checked_baselines != baselines():
+            raise ValueError("train-only phase baselines changed before PPO continuation")
+        resume_receipt["baseline_sha256"] = sha256(prior_baselines)
+    elif additional_timesteps != 2048:
+        raise ValueError("fresh PPO protocol fixes 2048 transitions")
     if available_memory_gib() < 20.0:
         raise RuntimeError("MemAvailable below 20 GiB")
     image_id = subprocess.check_output(
@@ -124,11 +205,16 @@ def preflight(run_id: str, output: Path, probe_transitions: int) -> dict:
         "status": "DIRECT_REAL_CFD_PPO_PREFLIGHT_PASS" if not active else "BLOCKED_ACTIVE_OPENFOAM",
         "run_id": run_id,
         "output": str(output),
-        "mode": "20-transition runtime probe" if probe_transitions else "2048-transition PPO",
+        "mode": (
+            "20-transition runtime probe"
+            if probe_transitions
+            else "continued PPO" if resume_receipt else "2048-transition PPO"
+        ),
         "phases": list(PHASES),
         "episode_steps": 128,
         "environment_count": 2,
-        "timesteps": probe_transitions or 2048,
+        "timesteps": probe_transitions or additional_timesteps,
+        "resume": resume_receipt,
         "runtime_image": RUNTIME_IMAGE,
         "runtime_image_id": image_id,
         "hydrogym_commit": commit,
@@ -139,6 +225,7 @@ def preflight(run_id: str, output: Path, probe_transitions: int) -> dict:
         "active_pimplefoam": active,
         "frozen_or_validation_access": False,
         "surrogate_used": False,
+        "git_provenance": git_provenance(),
         "scientific_scope": (
             "train-only direct real-CFD RL/basic online closure; short-window training "
             "diagnostics are not final 80-D/U paired-CFD acceptance"
@@ -216,6 +303,14 @@ def execute(args, audit: dict) -> int:
         (output / "workers_ready.json").write_text(
             json.dumps(hello, indent=2) + "\n", encoding="utf-8"
         )
+        resume_mount = (
+            []
+            if audit["resume"] is None
+            else [
+                "--mount",
+                f"type=bind,src={audit['resume']['training']},dst=/resume,readonly",
+            ]
+        )
         command = [
             "docker",
             "run",
@@ -270,6 +365,7 @@ def execute(args, audit: dict) -> int:
             f"type=bind,src={output},dst=/run/direct_cfd",
             "--mount",
             f"type=bind,src={socket_root},dst=/run/direct_cfd_sockets",
+            *resume_mount,
             "--workdir",
             "/workspace",
             RUNTIME_IMAGE,
@@ -289,6 +385,20 @@ def execute(args, audit: dict) -> int:
         ]
         if args.probe_transitions:
             command.extend(["--probe-transitions", str(args.probe_transitions)])
+        if audit["resume"] is not None:
+            resume = audit["resume"]
+            command.extend(
+                [
+                    "--resume-policy",
+                    f"/resume/{Path(resume['policy']).name}",
+                    "--resume-vecnormalize",
+                    f"/resume/{Path(resume['vecnormalize']).name}",
+                    "--prior-transitions",
+                    str(resume["prior_transitions"]),
+                    "--additional-timesteps",
+                    str(resume["additional_transitions"]),
+                ]
+            )
         with (output / "policy_runtime.log").open("w", encoding="utf-8") as log:
             completed = subprocess.run(
                 command, cwd=PROJECT, stdout=log, stderr=subprocess.STDOUT
@@ -329,6 +439,8 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--seed", type=int, default=20261003)
     parser.add_argument("--probe-transitions", type=int, default=0)
+    parser.add_argument("--resume-training", type=Path)
+    parser.add_argument("--additional-timesteps", type=int, default=2048)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--dry-run", action="store_true")
     mode.add_argument("--execute", action="store_true")
@@ -339,7 +451,13 @@ def main() -> None:
 
     signal.signal(signal.SIGTERM, interrupt)
     signal.signal(signal.SIGINT, interrupt)
-    audit = preflight(args.run_id, args.output, args.probe_transitions)
+    audit = preflight(
+        args.run_id,
+        args.output,
+        args.probe_transitions,
+        args.resume_training,
+        args.additional_timesteps,
+    )
     if args.dry_run:
         print(json.dumps(audit, indent=2))
         return

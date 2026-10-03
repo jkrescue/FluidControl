@@ -160,7 +160,10 @@ def execute(args) -> int:
         raise RuntimeError("cannot audit active OpenFOAM processes")
     training = args.training.resolve()
     result = json.loads((training / "result.json").read_text(encoding="utf-8"))
-    if result.get("status") != "DIRECT_REAL_CFD_PPO_TRAINING_COMPLETE":
+    if result.get("status") not in {
+        "DIRECT_REAL_CFD_PPO_TRAINING_COMPLETE",
+        "DIRECT_REAL_CFD_PPO_CONTINUATION_COMPLETE",
+    }:
         raise ValueError("completed direct-CFD PPO result is required")
     policy = training / Path(result["policy"]).name
     vecnormalize = training / Path(result["vecnormalize"]).name
