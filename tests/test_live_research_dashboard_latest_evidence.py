@@ -524,13 +524,17 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
             result["independent_b01_evaluation"]["physical_result"]["status"],
             "DIRECT_CFD_B01_FROZEN_PPO_PAIR_EVALUATED",
         )
-        self.assertIn("independent validation-phase", result["independent_b01_evaluation"]["scope"])
+        self.assertIn(
+            "statistical independence is unproven",
+            result["independent_b01_evaluation"]["scope"],
+        )
 
     def test_current_cards_label_b5_screen_and_executed_action_ramp(self) -> None:
         page = MODULE.PAGE
         self.assertIn("B5有限筛查 FAIL", page)
         self.assertIn("动作效应符号", page)
-        self.assertIn("b01独立初始相位", page)
+        self.assertIn("b01未用于训练的另一启动时刻", page)
+        self.assertIn("统计独立性尚未证明", page)
         self.assertIn("不是阶梯保持", page)
 
     def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
