@@ -173,6 +173,25 @@ def main(cfg: DictConfig) -> None:
         num_workers=cfg.training.workers,
         force_indices=force_indices,
     )
+    base_train = train
+    additional_sources = []
+    additional_roots = list(cfg.data.get("additional_train_roots", []))
+    if additional_roots:
+        from fluid_control.augmented_datapipe import compose_training_data
+
+        train, additional_sources = compose_training_data(
+            base_train, additional_roots, rollout_steps=rollout_steps,
+            stride=int(cfg.training.get("additional_train_stride", 2)),
+            workers=cfg.training.workers, force_indices=force_indices,
+        )
+        if dist.rank == 0:
+            (output / "training_data_sources.json").write_text(
+                json.dumps({"base_root": str(base_train.root),
+                            "base_windows": len(base_train),
+                            "total_windows": len(train),
+                            "additional_sources": additional_sources}, indent=2) + "\n",
+                encoding="utf-8",
+            )
     train_sampler = (
         DistributedSampler(train, shuffle=True, seed=cfg.training.seed)
         if dist.distributed
@@ -392,9 +411,10 @@ def main(cfg: DictConfig) -> None:
             "validation_rollout_steps": validation_rollout_steps,
             "teacher_forcing_ratio": current_teacher_forcing,
             "initialized_from": initialized_from,
-            "action_scale": train.action_scale,
-            "force_channels": list(train.force_channels),
-            "force_indices": list(train.force_indices),
+            "action_scale": base_train.action_scale,
+            "force_channels": list(base_train.force_channels),
+            "force_indices": list(base_train.force_indices),
+            "additional_training_sources": additional_sources,
             "force_channel_weights": channel_weights.detach().cpu().tolist(),
             "model_config": OmegaConf.to_container(cfg.model, resolve=True),
         }

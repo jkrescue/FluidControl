@@ -91,3 +91,20 @@ guard of at least20GiB (DGX Spark unified memory). The two-batch A probe succeed
 with minimum MemAvailable98.5GiB. Training and full evaluation are sequential
 on each GPU. New CFD allocation targets <=35GiB raw data; retain >=200GiB free
 disk. No Docker/image cleanup or host package changes are required.
+# Optional train-only dynamic-data continuation
+
+The rollout trainer now accepts `data.additional_train_roots` and
+`training.additional_train_stride`. The default remains the unchanged dev30
+dataset. Extra roots are composed using the installed official
+`physicsnemo.datapipes.MultiDataset`, not a replacement NVIDIA API.
+Only the eight predeclared training-phase trajectories are accepted; each HDF5
+SHA, the original normalization bytes, action scale, and split are checked.
+Validation and frozen-test trajectories cannot enter this additional source.
+The trainer records the manifest hashes and per-source window counts.
+
+Seven focused composition tests and four existing rollout-configuration tests
+passed in the pinned PhysicsNeMo container on CPU (2026-10-03). Test fixtures
+exercise validation logic only and are not CFD training data. A real HDF5 /
+official DataLoader integration check is required after Curator finishes,
+before any dynamic-data training. This optional path is not enabled in the
+currently running H20/H50 controlled comparisons.
