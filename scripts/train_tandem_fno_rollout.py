@@ -310,8 +310,8 @@ def main(cfg: DictConfig) -> None:
         if dist.rank == 0 and history_path.exists()
         else []
     )
-    state_std = train.state_std.to(dist.device)[None, None]
-    force_std = train.force_std.to(dist.device)[None, None]
+    state_std = base_train.state_std.to(dist.device)[None, None]
+    force_std = base_train.force_std.to(dist.device)[None, None]
 
     for epoch in range(loaded_epoch + 1, epochs + 1):
         current_teacher_forcing = teacher_forcing_ratio(cfg, epoch)
