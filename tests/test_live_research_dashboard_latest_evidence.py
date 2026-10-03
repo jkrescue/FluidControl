@@ -120,6 +120,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("renderFreeAR(d)", page)
         self.assertIn("反归一化流场综合MAE / 四个力系数平均MAE", page)
         self.assertIn("不是总Cd相对误差、减阻率", page)
+        self.assertIn("旧服务=", page)
         self.assertIn("FNO未用于奖励", page)
 
     def test_dual_node_watchdog_is_exposed_without_replacing_science_metrics(self) -> None:
@@ -334,6 +335,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
                 result = MODULE._free_ar_ablation(root)
         self.assertEqual(result["h20"]["epoch"], 2)
         self.assertEqual(result["h20"]["last_metrics"]["selection_score"], 1.25)
+        self.assertEqual(result["h20"]["previous_failed_service_state"], "active")
         self.assertEqual(result["h50"]["epoch"], 1)
         self.assertEqual(result["h50"]["synced_epochs"], 1)
         self.assertFalse(result["h50"]["final_sync_complete"])
