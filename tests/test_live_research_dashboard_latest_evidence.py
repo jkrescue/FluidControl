@@ -643,6 +643,8 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn('id="chain-dynamic"', page)
         self.assertIn('data["dynamic6_runtime"]', page)
         self.assertIn("AI训练叶进程", page)
+        self.assertIn("post-hoc per-phase oracle", page)
+        self.assertIn('data["dynamic6_physical_qc"]', page)
         self.assertIn("full40_dev30_quickscreen_qs1_interrupt_recovery.json", page)
 
 
