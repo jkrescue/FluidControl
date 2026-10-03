@@ -124,6 +124,8 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("训练内stride100终点pooled总Cd NRMSE", page)
         self.assertIn("不等于stride25完整评估", page)
         self.assertIn("FNO未用于奖励", page)
+        self.assertIn("原始未平滑时序", page)
+        self.assertIn("canonical_physical_joint_check", page)
 
     def test_dual_node_watchdog_is_exposed_without_replacing_science_metrics(self) -> None:
         page = MODULE.PAGE
@@ -435,11 +437,12 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
                 json.dumps(
                     {
                         "status": "DIRECT_CFD_B00_FROZEN_PPO_PAIR_EVALUATED",
-                        "comparison": {"canonical_joint_gate_pass": False},
+                        "comparison": {"canonical_physical_joint_check": False},
                     }
                 ),
                 encoding="utf-8",
             )
+            (pair / "raw_pair_timeseries.png").write_bytes(b"png")
             with patch.object(MODULE, "_service_state", return_value="active"):
                 result = MODULE._direct_cfd_ppo_status(root)
         self.assertTrue(result["training_complete"])
@@ -450,6 +453,11 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertEqual(
             result["paired_80d_evaluation"]["physical_result"]["status"],
             "DIRECT_CFD_B00_FROZEN_PPO_PAIR_EVALUATED",
+        )
+        self.assertTrue(result["paired_80d_evaluation"]["figure"]["available"])
+        self.assertEqual(
+            result["paired_80d_evaluation"]["figure"]["path"],
+            "/direct-cfd-pair.png",
         )
 
     def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
