@@ -14,6 +14,20 @@
     "b05_plus": 0.15765,
     "b05_zero": 0.03652
   },
+  "pressure_gauge_analysis": {
+    "candidate_average_raw_to_demeaned_reduction_percent_final": 0.44067321747848837,
+    "candidate_average_raw_to_demeaned_reduction_percent_all_steps": 0.4187819871410817,
+    "parent_average_raw_to_demeaned_reduction_percent_final": 0.35118552980513257,
+    "candidate_action_case_raw_pressure_relative_l2_final_range": [
+      0.47889065826421023,
+      0.5702626180892052
+    ],
+    "candidate_predicted_pressure_spatial_mean_range": [
+      -0.00502608958541921,
+      0.004514594505746619
+    ],
+    "conclusion": "Constant pressure-reference drift is not the dominant field error; demeaning changes pressure relative L2 by less than two percent in every case and about 0.44 percent on average. Remaining error is spatial/phase structure, so this diagnostic does not justify changing the recursive pressure state."
+  },
   "formal_dynamic6_result": {
     "status": "DYNAMIC6_FNO_DIAGNOSTIC_FAIL",
     "pooled_h100_total_cd_nrmse": 0.03296174971193385,
