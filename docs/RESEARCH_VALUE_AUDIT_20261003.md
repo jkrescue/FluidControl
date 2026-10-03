@@ -185,6 +185,19 @@ rear-rotation PPO study](https://research.polyu.edu.hk/en/publications/mitigatin
 already claims 98% lift-fluctuation reduction at L/D=5, so a rear-lift-only
 result would be a replication target, not a new contribution by itself.
 
+More importantly, the [2026 HydroGym Nature paper](https://www.nature.com/articles/s41586-026-10917-6)
+already controls a three-cylinder **triangular fluidic-pinball** wake by
+surface rotation and targets collective drag with an absolute-lift penalty;
+it reports approximately 90% drag reduction in its Re=100 2D pinball
+configuration. Therefore "multi-cylinder rotation + HydroGym + joint
+drag/lift reward" is **also prior art**, not our method claim. Our tandem
+centres, single downstream actuator, fixed geometry and hard mean-lift
+constraint are different, but merely changing geometry is not sufficient
+scientific novelty. The paper would need an independently useful
+decision-fidelity/CFD-efficiency finding and a physically verified,
+phase-robust constrained-control result. Its pinball percentage must not be
+used as a numerical benchmark for our different drag denominator or actuation.
+
 **Present verdict: promising physical trade-off, unproven controller, no
 publishable gain yet.** Real CFD shows >=2% total-drag improvement is
 possible under constant rear rotation, but both signs violate the locked
