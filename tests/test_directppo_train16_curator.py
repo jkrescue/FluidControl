@@ -35,3 +35,10 @@ def test_execution_is_reviewed_but_explicitly_token_gated():
     source = (ROOT / "cfd/tandem_cylinders/run_directppo_train16_vtk_case.sh").read_text()
     assert "--cpus 1 --memory 8g" in source
     assert "refusing-existing-vtk" in source
+
+
+def test_vtk_float32_time_is_snapped_only_inside_fixed_tolerance():
+    module = load()
+    assert module.canonical_time(148.10000610351562, 148.1) == 148.1
+    with pytest.raises(ValueError, match="cannot be matched"):
+        module.canonical_time(148.10002, 148.1)

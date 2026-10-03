@@ -149,7 +149,43 @@ def make_vtk_receipt(repo: Path, name: str) -> dict:
     }
 
 
+def canonical_time(actual: float, expected: float) -> float:
+    """Snap reviewed float32 VTK metadata to its exact saved CFD endpoint."""
+    if not math.isfinite(actual) or abs(actual - expected) > 1e-5:
+        raise ValueError(
+            f"VTK time cannot be matched to the reviewed endpoint: {actual} vs {expected}"
+        )
+    return float(expected)
+
+
 def source(base, repo: Path, name: str, config: dict):
+    class CanonicalTimeVTK:
+        """Preserve the mesh while replacing only verified TimeValue metadata."""
+
+        def __init__(self, wrapped, expected_times):
+            self.wrapped = wrapped
+            self.expected_times = list(map(float, expected_times))
+            if len(wrapped) != len(self.expected_times):
+                raise ValueError("VTK frame count differs before time canonicalization")
+
+        def __len__(self):
+            return len(self.wrapped)
+
+        def relative_path(self, index):
+            return self.wrapped.relative_path(index)
+
+        def __getitem__(self, index):
+            def generate():
+                for mesh in self.wrapped[index]:
+                    actual = float(mesh.global_data["TimeValue"].reshape(-1)[0].item())
+                    exact = canonical_time(actual, self.expected_times[index])
+                    mesh.global_data["TimeValue"] = base.torch.tensor(
+                        [exact], dtype=base.torch.float64, device=mesh.points.device
+                    )
+                    yield mesh
+
+            return generate()
+
     class DirectPPOSource(base.TandemTrajectorySource):
         def __init__(self):
             self.cases_root = repo / "cfd/tandem_cylinders/cases"
@@ -163,7 +199,10 @@ def source(base, repo: Path, name: str, config: dict):
             vtk = base.VTKSource(str(self.cases_root / name / "VTK_directppo_train16"), file_pattern="*/internal.vtu", manifold_dim=3, point_source="vertices", backend="pyvista", key_filters=[{"path_pattern": "**/internal.vtu", "mode": "include", "keys": ["U", "p"]}])
             if len(vtk) != 129:
                 raise ValueError(f"{name}: expected 129 VTK frames")
-            self.vtk_sources = [vtk]
+            expected_times = base.np.linspace(
+                float(config["start_time"]), float(config["end_time"]), 129
+            )
+            self.vtk_sources = [CanonicalTimeVTK(vtk, expected_times)]
     return DirectPPOSource()
 
 
