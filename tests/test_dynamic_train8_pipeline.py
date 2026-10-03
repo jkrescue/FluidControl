@@ -121,3 +121,12 @@ def test_raw_audit_is_exact_eight_case_fail_closed() -> None:
     assert 'sha256(case / "source_restart_provenance" / field)' in source
     assert 'omega_table(case / f"{start:g}" / "U")' in source
     assert '"validation_or_frozen_accessed": False' in source
+
+
+def test_vtk_runner_is_authorized_one_cpu_and_no_overwrite() -> None:
+    source = (ROOT / "cfd/tandem_cylinders/run_dynamic_train8_vtk_case.sh").read_text()
+    assert "DYNAMIC_TRAIN8_CURATION_AUTHORIZED_TRAIN_ONLY" in source
+    assert "DYNAMIC_TRAIN8_VTK_APPROVAL_TOKEN" in source
+    assert "--cpus 1" in source
+    assert "refusing existing VTK/log" in source
+    assert "-fields '(U p)'" in source
