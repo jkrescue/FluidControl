@@ -345,6 +345,20 @@ def recovery_candidates(services: dict, progress: dict) -> list[dict]:
     return candidates
 
 
+def worker_assignment_incomplete(progress: dict) -> bool:
+    """Keep Worker monitored through remainder curation and final publication.
+
+    RAW acquisition finishing does not finish Worker's assigned full40 work: the
+    node remains useful for reviewed Curator conversion until all 31 remainder
+    HDF5 files exist and the immutable full40 release manifest is published.
+    """
+
+    return (
+        progress["full40_remainder_staging_hdf5_count"] < 31
+        or not progress["full40_final_manifest_complete"]
+    )
+
+
 def build_sample(
     repo: Path, previous: dict | None, local_payload: dict, worker_payload: dict
 ) -> dict:
@@ -365,7 +379,7 @@ def build_sample(
     )
     worker = update_idle_state(
         worker,
-        not progress["raw_31_case_aggregate_complete"],
+        worker_assignment_incomplete(progress),
         previous_nodes.get("worker78"),
         now,
     )

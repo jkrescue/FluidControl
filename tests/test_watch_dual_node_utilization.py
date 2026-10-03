@@ -90,3 +90,18 @@ def test_full40_data_completion_alone_does_not_complete_research(tmp_path):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"status": status}))
     assert MODULE.project_progress(tmp_path)["project_complete"] is True
+
+
+def test_worker_assignment_continues_after_raw_aggregate_until_full40_release():
+    progress = {
+        "raw_31_case_aggregate_complete": True,
+        "full40_remainder_staging_hdf5_count": 0,
+        "full40_final_manifest_complete": False,
+    }
+    assert MODULE.worker_assignment_incomplete(progress) is True
+
+    progress["full40_remainder_staging_hdf5_count"] = 31
+    assert MODULE.worker_assignment_incomplete(progress) is True
+
+    progress["full40_final_manifest_complete"] = True
+    assert MODULE.worker_assignment_incomplete(progress) is False
