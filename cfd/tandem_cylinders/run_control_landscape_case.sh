@@ -5,7 +5,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 name="${1:-}"
 case "${name}" in
-    landscape_val_zero_20261003|landscape_val_p100_20261003|landscape_val_m100_20261003|landscape_val_sine_20261003|landscape_long_val_zero_20261003|landscape_long_val_p100_20261003|landscape_long_val_m100_20261003|landscape_step_val_p100_20261003|landscape_step_val_m100_20261003) ;;
+    landscape_val_zero_20261003|landscape_val_p100_20261003|landscape_val_m100_20261003|landscape_val_sine_20261003|landscape_long_val_zero_20261003|landscape_long_val_p100_20261003|landscape_long_val_m100_20261003|landscape_step_val_p100_20261003|landscape_step_val_m100_20261003|periodic_val_p10_20261003|periodic_val_p20_20261003) ;;
     *) echo "Unknown control-landscape case: ${name}" >&2; exit 2 ;;
 esac
 
