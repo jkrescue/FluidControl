@@ -40,14 +40,14 @@ def snapshot(default: str = "PENDING", **overrides: str) -> dict:
     }
 
 
-def test_queue_is_exact_31_and_authorized_but_review_blocked() -> None:
+def test_queue_is_exact_31_and_authorized_after_review() -> None:
     assert len(SCHEDULER.QUEUE) == 31
     assert len(SCHEDULER.AUTHORIZATION_SHA256) == 64
     report = SCHEDULER.dry_run_report()
-    assert report["execution_enabled"] is False
-    assert report["authorization"] == "BOUND_BUT_BLOCKED_PENDING_IMPLEMENTATION_REVIEW"
+    assert report["execution_enabled"] is True
+    assert report["authorization"] == "ENABLED"
     assert report["maximum_parallel_cases"] == 4
-    assert SCHEDULER.IMPLEMENTATION_REVIEWED is False
+    assert SCHEDULER.IMPLEMENTATION_REVIEWED is True
     assert all("_train_" in name for name in SCHEDULER.QUEUE[:11])
     assert all("_validation_" in name for name in SCHEDULER.QUEUE[11:21])
     assert all("_frozen_test_" in name for name in SCHEDULER.QUEUE[21:])
