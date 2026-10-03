@@ -164,3 +164,69 @@ evidence that the joint objective is nontrivial for the current open-loop
 cohort, not proof that feedback is necessary or sufficient. Keep the objective
 and its physical safety constraints; repair the surrogate's decision fidelity
 before any learned closed-loop success claim.
+
+## October 3 literature refresh and go/no-go decision
+
+The September 2026 preprint by Sharma and Chakravorty,
+[A Two-Stage, Model-Based Reinforcement Learning Approach for Active Flow
+Control of Bluff Body Wakes](https://arxiv.org/abs/2609.08436), reports a
+partially observed, model-based controller on a **single** Re=100 cylinder,
+with eight pressure sensors, 44% drag reduction and suppression of lift
+oscillations in its own high-order numerical setting. It makes generic
+"model-based closed-loop cylinder control" an even weaker novelty claim. It
+does **not** establish our tandem rear-rotation, *system-total* drag result;
+nor can its percentage be compared directly to this different geometry,
+actuator, drag denominator or OpenFOAM mesh. A 2026 experimental tandem
+rotary-actuation [preprint](https://arxiv.org/abs/2605.20778) concerns two
+**vibrating** cylinders and vibration suppression, not two fixed cylinders
+under our joint drag/side-load constraint. These papers narrow novelty but
+do not invalidate the physical question. PolyU's [2024 fixed-tandem
+rear-rotation PPO study](https://research.polyu.edu.hk/en/publications/mitigating-the-lift-of-a-circular-cylinder-in-wake-flow-using-dee/)
+already claims 98% lift-fluctuation reduction at L/D=5, so a rear-lift-only
+result would be a replication target, not a new contribution by itself.
+
+**Present verdict: promising physical trade-off, unproven controller, no
+publishable gain yet.** Real CFD shows >=2% total-drag improvement is
+possible under constant rear rotation, but both signs violate the locked
+mean-lift bound by roughly 8-9 times. Thirty existing open-loop
+train/validation trajectories and two controlled periodic baselines give
+zero joint successes. That sample is neither exhaustive nor a proof that
+feedback is necessary. The best FNO fails the locked long-horizon accuracy
+gate and selects the wrong signed action on a validation panel. HydroGym
+compatibility and high GPU utilization do not change this verdict.
+
+Continue the same objective, but impose a **bounded go/no-go sequence**:
+
+1. Finish the already running official-PhysicsNeMo H20/rear-drag ablation.
+   Validate first; use the frozen test only if it strictly improves the
+   previous validation NRMSE, and do not infer control competence from
+   force NRMSE alone. On the unchanged four-action validation panel, record
+   whether it selects CFD's best sign and its CFD regret.
+2. Finish the two train-only signed-pulse CFD labels and Curator v4 build.
+   Before evaluating a v4 model, lock a control-decision check on the same
+   four validation actions: >=5/6 pairwise orderings, select CFD's true-best
+   action, and <=0.01 mean-total-Cd CFD regret. This *adds* an operational
+   control-sufficiency screen; it does not replace Gate B's <=10% 100-step
+   drag NRMSE or remove the independent-phase check. Run an equal-budget
+   random acquisition comparator before attributing gains to active
+   learning.
+3. Only after both model screens pass, advance to CEM-MPC and a short
+   phase-matched OpenFOAM feedback replay; then test the locked Gate-D
+   long-window criteria against zero and the open-loop controls. PPO and
+   HydroGym interoperability follow demonstrated feedback benefit, not
+   vice versa.
+4. If the corrected model cannot preserve action ranking, do **not**
+   spend further CFD on surrogate-only PPO. Analyze the decision boundary
+   and acquisition bias, and present the negative model-control result.
+   If real closed-loop replay improves drag but repeatedly violates the
+   predeclared lift constraints, report the Pareto frontier rather than
+   silently redefining success. A different primary endpoint requires a
+   separately versioned objective and new validation campaign.
+
+The defensible paper contribution, if these gates succeed, is not a new
+PhysicsNeMo architecture or a new HydroGym solver: it is a reproducible,
+phase-robust **control-aware surrogate validation and CFD-verified
+constrained tandem-cylinder closed-loop result**, with CFD-hour savings
+against an explicitly matched CFD-only controller. The key unknown is
+whether any bounded rear-rotation policy meets the joint physical
+constraints on a mesh-converged flow; current evidence leaves that open.
