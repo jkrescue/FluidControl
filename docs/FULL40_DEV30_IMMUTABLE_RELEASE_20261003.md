@@ -104,3 +104,30 @@ and byte SHA must all match. A later full40 normalizer that introduces any new
 field is deliberately blocked pending explicit scientific review rather than
 being silently treated as equivalent. The audit reads frozen seal metadata but
 does not open or enumerate frozen HDF files.
+
+## Development-only validation diagnostic
+
+After a reviewed dev30 H20 run finishes, the independent runner below evaluates
+only the materialized validation10 cases at H1/H10/H50/H100. It reports pooled,
+macro, and worst-case total-Cd error, persistence comparison, front/rear lift
+MAE, and the b01/b05 H100 `start=0` five-action ranking. Later starts are
+explicitly excluded from the action-ranking claim because their states have
+already diverged under different actions.
+
+```bash
+CHECKPOINT_DIR=artifacts/tandem_fno_full40_dev30_h20_<run-id>/best \
+  bash scripts/run_full40_dev30_validation_diagnostic_spark.sh \
+  --dry-run <diagnostic-run-id>
+```
+
+Execution additionally requires
+`DEV30_VALIDATION_APPROVAL_TOKEN=EXECUTE_REVIEWED_DEV30_VALIDATION_DIAGNOSTIC`.
+The container mounts only read-only `scripts`, `src`, `conf`, the immutable
+dev30 release, and the selected checkpoint, plus one new dedicated output
+directory. It does not mount the repository root or frozen data. Existing
+outputs are refused and GPU allocation is guarded by the 20 GiB reserve.
+
+The resulting `diagnostic.json` is a validation-only development artifact. It
+is never a formal Gate and cannot authorize PPO. The identical checkpoint must
+subsequently pass the dev30-to-full40 promotion identity audit and the formal
+full40 validation Gate.
