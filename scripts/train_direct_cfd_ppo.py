@@ -59,6 +59,68 @@ def parameter_fingerprint(model, initial_parameters: dict[str, torch.Tensor]) ->
     }
 
 
+def reset_resume_exploration_std(model: PPO, target_std: float) -> dict:
+    """Reset only PPO's Gaussian log_std while preserving optimizer state."""
+    if not math.isfinite(target_std) or target_std <= 0.0:
+        raise ValueError("resume exploration std must be positive and finite")
+    parameter = model.policy.log_std
+    before = {
+        name: value.detach().cpu().clone()
+        for name, value in model.policy.named_parameters()
+    }
+    optimizer_state = model.policy.optimizer.state.get(parameter, {})
+    if not optimizer_state:
+        raise ValueError("resume log_std lacks saved optimizer state")
+    optimizer_before = {
+        key: value.detach().cpu().clone() if hasattr(value, "detach") else value
+        for key, value in optimizer_state.items()
+    }
+    old_std = parameter.detach().exp().cpu().tolist()
+    shape = tuple(model.observation_space.shape)
+    diagnostic_observations = np.stack(
+        [np.zeros(shape, dtype=np.float32), np.ones(shape, dtype=np.float32)]
+    )
+    deterministic_before, _ = model.predict(
+        diagnostic_observations, deterministic=True
+    )
+    with torch.no_grad():
+        parameter.fill_(math.log(target_std))
+    after = dict(model.policy.named_parameters())
+    deterministic_after, _ = model.predict(
+        diagnostic_observations, deterministic=True
+    )
+    deterministic_unchanged = np.array_equal(
+        deterministic_before, deterministic_after
+    )
+    changed = [
+        name
+        for name, value in before.items()
+        if not torch.equal(value, after[name].detach().cpu())
+    ]
+    optimizer_after = model.policy.optimizer.state.get(parameter, {})
+    optimizer_preserved = optimizer_before.keys() == optimizer_after.keys() and all(
+        torch.equal(value, optimizer_after[key].detach().cpu())
+        if hasattr(value, "detach")
+        else value == optimizer_after[key]
+        for key, value in optimizer_before.items()
+    )
+    if changed != ["log_std"] or not optimizer_preserved or not deterministic_unchanged:
+        raise RuntimeError("exploration reset changed more than log_std or optimizer state")
+    return {
+        "old_std": old_std,
+        "new_std": parameter.detach().exp().cpu().tolist(),
+        "target_std": target_std,
+        "changed_parameters": changed,
+        "deterministic_mean_parameters_unchanged": True,
+        "deterministic_action_probe_unchanged": True,
+        "deterministic_action_probe_sha256": hashlib.sha256(
+            np.asarray(deterministic_after).tobytes()
+        ).hexdigest(),
+        "optimizer_state_preserved": True,
+        "log_std_remains_trainable": bool(parameter.requires_grad),
+    }
+
+
 def write_atomic(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(
@@ -294,7 +356,15 @@ def execute(args) -> dict:
                     f"resume policy has {model.num_timesteps} transitions, "
                     f"expected {args.prior_transitions}"
                 )
+            exploration_reset = (
+                reset_resume_exploration_std(model, args.resume_exploration_std)
+                if args.resume_exploration_std is not None
+                else None
+            )
         else:
+            if args.resume_exploration_std is not None:
+                raise ValueError("exploration std reset is allowed only for continuation")
+            exploration_reset = None
             model = PPO(
                 "MlpPolicy",
                 env,
@@ -364,6 +434,7 @@ def execute(args) -> dict:
             "resume_vecnormalize_sha256": (
                 sha256(args.resume_vecnormalize) if resume else None
             ),
+            "resume_exploration_std_reset": exploration_reset,
             "environment_count": ENV_COUNT,
             "episode_steps": EPISODE_STEPS,
             "observation_dimension": 69,
@@ -400,6 +471,7 @@ def main() -> None:
     parser.add_argument("--resume-policy", type=Path)
     parser.add_argument("--resume-vecnormalize", type=Path)
     parser.add_argument("--prior-transitions", type=int, default=0)
+    parser.add_argument("--resume-exploration-std", type=float)
     parser.add_argument("--additional-timesteps", type=int, default=TOTAL_TIMESTEPS)
     args = parser.parse_args()
     if args.additional_timesteps <= 0 or args.additional_timesteps % CHECKPOINT_INTERVAL:

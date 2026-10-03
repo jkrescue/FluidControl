@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import signal
@@ -125,6 +126,7 @@ def preflight(
     probe_transitions: int,
     resume_training: Path | None,
     additional_timesteps: int,
+    resume_exploration_std: float | None,
 ) -> dict:
     if not re.fullmatch(r"[a-z0-9_]{4,48}", run_id):
         raise ValueError("run-id must be 4..48 lowercase alphanumeric/underscore characters")
@@ -138,6 +140,11 @@ def preflight(
     if additional_timesteps <= 0 or additional_timesteps % 256:
         raise ValueError("additional timesteps must be positive and divisible by 256")
     resume_receipt = None
+    if resume_exploration_std is not None and (
+        not math.isfinite(resume_exploration_std)
+        or not math.isclose(resume_exploration_std, 0.075, rel_tol=0.0, abs_tol=1e-12)
+    ):
+        raise ValueError("the predeclared continuation exploration std is exactly 0.075")
     if resume_training is not None:
         if probe_transitions:
             raise ValueError("runtime probe cannot resume PPO")
@@ -178,14 +185,27 @@ def preflight(
             "additional_transitions": additional_timesteps,
             "cumulative_transitions_after_run": cumulative + additional_timesteps,
             "contract": {**required_contract, "observation_dimension": 69},
+            "exploration_std_reset": (
+                None
+                if resume_exploration_std is None
+                else {
+                    "target_std": resume_exploration_std,
+                    "only_parameter_to_reset": "policy.log_std",
+                    "optimizer_state_policy": "preserve",
+                    "log_std_remains_trainable": True,
+                }
+            ),
         }
         prior_baselines = resume_training.parent / "train_only_baselines.json"
         checked_baselines = json.loads(prior_baselines.read_text(encoding="utf-8"))
         if checked_baselines != baselines():
             raise ValueError("train-only phase baselines changed before PPO continuation")
         resume_receipt["baseline_sha256"] = sha256(prior_baselines)
-    elif additional_timesteps != 2048:
-        raise ValueError("fresh PPO protocol fixes 2048 transitions")
+    else:
+        if resume_exploration_std is not None:
+            raise ValueError("exploration std reset requires a continuation source")
+        if additional_timesteps != 2048:
+            raise ValueError("fresh PPO protocol fixes 2048 transitions")
     if available_memory_gib() < 20.0:
         raise RuntimeError("MemAvailable below 20 GiB")
     image_id = subprocess.check_output(
@@ -399,6 +419,11 @@ def execute(args, audit: dict) -> int:
                     str(resume["additional_transitions"]),
                 ]
             )
+            reset = resume.get("exploration_std_reset")
+            if reset is not None:
+                command.extend(
+                    ["--resume-exploration-std", str(reset["target_std"])]
+                )
         with (output / "policy_runtime.log").open("w", encoding="utf-8") as log:
             completed = subprocess.run(
                 command, cwd=PROJECT, stdout=log, stderr=subprocess.STDOUT
@@ -441,6 +466,7 @@ def main() -> None:
     parser.add_argument("--probe-transitions", type=int, default=0)
     parser.add_argument("--resume-training", type=Path)
     parser.add_argument("--additional-timesteps", type=int, default=2048)
+    parser.add_argument("--resume-exploration-std", type=float)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--dry-run", action="store_true")
     mode.add_argument("--execute", action="store_true")
@@ -457,6 +483,7 @@ def main() -> None:
         args.probe_transitions,
         args.resume_training,
         args.additional_timesteps,
+        args.resume_exploration_std,
     )
     if args.dry_run:
         print(json.dumps(audit, indent=2))
