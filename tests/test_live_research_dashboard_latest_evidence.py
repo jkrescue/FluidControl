@@ -536,6 +536,8 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("b01未用于训练的另一启动时刻", page)
         self.assertIn("统计独立性尚未证明", page)
         self.assertIn("不是阶梯保持", page)
+        self.assertIn("这是epoch内validation10，不是dynamic6或最终门槛", page)
+        self.assertIn("四力${", page)
 
     def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
