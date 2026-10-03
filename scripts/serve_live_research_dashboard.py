@@ -109,7 +109,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  $('physical-tradeoff').textContent=plus&&minus?`恒转两案的平均后柱升力均超出既定上限；总升力 RMS 分别为零控制的 ${num(plus.relative_to_zero.rear_cl_total_rms_ratio,2)}、${num(minus.relative_to_zero.rear_cl_total_rms_ratio,2)} 倍。`:'统计窗口 t=120–160；同时检查阻力与侧向载荷。';
  let periodic=d.periodic_benchmark?.decisions||[];$('periodic-detail').textContent=periodic.length===2?`零均值周期 P10/P20：总阻力变化 ${num(-100*periodic[0].total_cd_reduction,2)}% / ${num(-100*periodic[1].total_cd_reduction,2)}%；后柱升力脉动比 ${num(periodic[0].rear_cl_fluctuation_rms_ratio,2)} / ${num(periodic[1].rear_cl_fluctuation_rms_ratio,2)}；均未通过联合门槛。仅单相位开环 CFD。`:'零均值周期转速基线：等待真实 CFD 审计。';
  let rank=d.control_ranking;$('ranking-score').textContent=rank?`${Math.round(rank.pairwise_ranking_accuracy*6)}/6 对动作排序正确`:'等待动作排序审计';
- $('ranking-detail').textContent=rank?`FNO 选 +1，真实 CFD 在启动窗口选 −1；选错的阻力代价 ${num(rank.cfd_regret_of_fno_selection,4)}。当前模型不得直接宣称可控。`:'用相同初始流场检验真实 CFD 与 FNO 决策是否一致。';
+ $('ranking-detail').textContent=rank?`20 步 FNO${d.control_ranking_weighted?' 与后柱加权 10 步 FNO 都':''}选 +1，真实 CFD 在启动窗口选 −1；选错的阻力代价 ${num(rank.cfd_regret_of_fno_selection,4)}。当前模型不得直接宣称可控。`:'用相同初始流场检验真实 CFD 与 FNO 决策是否一致。';
  let observed=picked?.observed,preliminary=observed?.summary?.['100']?.total_drag_nrmse;
  let b=audited?c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse:(Number.isFinite(preliminary)?preliminary:c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse),i=c.independent_phase_full_period_total_drag_nrmse?.total_drag_nrmse;
  $('heldout').textContent=pct(b);$('heldout').className=audited&&Number.isFinite(b)&&b<=.1?'good':Number.isFinite(b)&&b>.1?'bad':'';
@@ -117,7 +117,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  let watch=d.watchdog||{}, hours=Number.isFinite(watch.seconds_remaining)?(watch.seconds_remaining/3600).toFixed(1):'—';$('watchdog').textContent=`持续科研监控剩余 ${hours} 小时 · 监控采样 ${watch.timestamp_utc||'待启动'} · 告警 ${watch.alerts?.length?watch.alerts.join('、'):'无'}`;$('watchdog').className='small '+(watch.alerts?.length?'bad':'good');
  let finished=d.cfd.filter(x=>x.status==='complete').length,average=d.cfd.reduce((s,x)=>s+x.percent,0)/Math.max(1,d.cfd.length);
  $('cfd-progress').textContent=`${finished}/${d.cfd.length} 配对 CFD 完成`;
- $('cfd-sub').textContent='同初始场物理对照 7 条；另有训练相位 t=82 的正负镜像脉冲 2 条';
+ let v4=d.v4_curator||{};$('cfd-sub').textContent=v4.complete?'v4 训练数据 28/4/5 条已完成 Curator 与划分审计':`新增训练数据 Curator ${v4.frames||0}/1602 帧 · HDF5 ${v4.new_hdf5||0}/2 条`;
  let worker=d.resources.worker.at(-1)||{};$('second-seed').textContent=`计算节点：20 步＋后柱阻力加权 ${worker.v3_h20_rear_drag_epoch||0}/10 轮；主种子 20 步 ${worker.v3_primary_seed_h20_epoch||0}/10 轮已验收`;
  $('heldout-scope').textContent=audited?`${picked.label}；v3 五条 CFD 测试，完整审计` :Number.isFinite(preliminary)?`${picked.label}；v3 五条 CFD 测试初评，完整审计中`:'旧数据四条 CFD 测试；目标 ≤10%';
  $('decision').textContent=audited&&a.status==='GATE_B_PASS'?`${picked.label}已通过冻结的 100 步总阻力门槛（${pct(b)}）；下一步做 CEM 控制筛选，再用真实 CFD 验证。`:audited?`${picked.label}五工况 100 步总阻力误差 ${pct(b)}，未达到 10%；其他候选仍在训练或审计。CEM 与 PPO 暂不启动。`:Number.isFinite(preliminary)?`${picked.label}的 100 步五工况初评为 ${pct(b)}；动作扰动与独立相位审计未完成。CEM/PPO 暂不启动。`:`旧数据模型 100 步误差 ${pct(b)}，未达到 10%；v3 FNO 正在完成独立测试。CEM 与 PPO 暂不启动。`;
@@ -258,6 +258,26 @@ def _curator_progress(root: Path) -> dict:
     return {"done": sum(value >= 801 for value in frames.values()), "latest_frame": min(pending) if pending else 0, "complete": complete}
 
 
+def _v4_curator_progress(root: Path) -> dict:
+    names = ("train_signed_pulse_p_v4_20261003", "train_signed_pulse_m_v4_20261003")
+    data = root / "data/curated/tandem_cylinders_control_gap_v4"
+    log_path = root / "artifacts/tandem_cylinders/control_gap_v4_build.log"
+    frames = {name: 0 for name in names}
+    if log_path.exists():
+        with log_path.open("rb") as stream:
+            stream.seek(0, 2)
+            stream.seek(max(0, stream.tell() - 1048576))
+            tail = stream.read().decode("utf-8", errors="replace")
+        for name, count in re.findall(r"(train_signed_pulse_[pm]_v4_20261003): sampled (\d+)/801 VTK frames", tail):
+            frames[name] = max(frames[name], int(count))
+    finished = sum((data / "train" / f"{name}.h5").is_file() for name in names)
+    manifest = _read_json(data / "manifest.json", {})
+    split = _read_json(root / "artifacts/tandem_cylinders/control_gap_v4_split_integrity.json", {})
+    return {"frames": sum(frames.values()), "new_hdf5": finished,
+            "complete": manifest.get("trajectory_counts") == {"train": 28, "validation": 4, "test": 5}
+                        and split.get("status") == "SPLIT_INTEGRITY_OK"}
+
+
 class Sampler:
     def __init__(self, root: Path):
         self.path = root / SAMPLE_FILE
@@ -348,6 +368,8 @@ class Handler(BaseHTTPRequestHandler):
                     elif previous.exists():
                         figures[f"{case}/{horizon}"] = {"path": f"/figure/previous/{case}/{horizon}.png", "version": int(previous.stat().st_mtime), "label": "上一版单步 FNO · 真实 CFD / 预测 / 绝对误差（当前模型图待生成）"}
             data = {"server_time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "watchdog": _read_json(self.root / "artifacts/monitor/research_window_20261002/latest.json", None), "audit": audit, "v3_audit": _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/gate_b_audit.json", None), "v3_worker_audit": _read_json(self.root / V3_WORKER_RUN / "gate_b_audit.json", None), "v3_primary_rollout_audit": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "gate_b_audit.json", None), "v3_rollout_audit": _read_json(self.root / V3_ROLLOUT_RUN / "gate_b_audit.json", None), "v3_h20_audit": _read_json(self.root / V3_H20_RUN / "gate_b_audit.json", None), "v3_observed": _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/heldout_evaluation.json", None), "v3_worker_observed": _read_json(self.root / V3_WORKER_RUN / "heldout_evaluation.json", None), "v3_primary_rollout_observed": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "heldout_evaluation.json", None), "v3_rollout_observed": _read_json(self.root / V3_ROLLOUT_RUN / "heldout_evaluation.json", None), "v3_primary_rollout_validation": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "validation_long_horizon.json", None), "v3_rollout_validation": _read_json(self.root / V3_ROLLOUT_RUN / "validation_long_horizon.json", None), "v3_h20_observed": _read_json(self.root / V3_H20_RUN / "heldout_evaluation.json", None), "history": history, "v3_training": v3_training, "v3_primary_rollout_history": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "training_history.json", []), "second_seed": _read_json(self.root / SECOND_RUN / "heldout_evaluation.json", None), "evaluations": {"heldout": heldout.get("summary", {}), "independent": independent.get("summary", {})}, "resources": samples, "cfd": _cfd_progress(self.root), "curator": _curator_progress(self.root), "benchmark": _read_json(self.root / "artifacts/monitor/fno_inference_benchmark_seed20261003.json", None), "control_landscape_long": _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_long_result_20261003.json", None), "periodic_benchmark": _read_json(self.root / "artifacts/tandem_cylinders/periodic_rotation_benchmark_result_20261003.json", None), "control_ranking": _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_fno_ranking_h20_20261003.json", None), "figures": figures, "cem": (self.root / "artifacts/distributed_runs/gateb_multistep_20261002/formal/CEM_STAGE_C_COMPLETE").exists(), "ppo": False}
+            data["v4_curator"] = _v4_curator_progress(self.root)
+            data["control_ranking_weighted"] = _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_fno_ranking_rear_weighted_h10_20261003.json", None)
             data["v3_rear_weighted_history"] = _read_json(self.root / V3_REAR_WEIGHTED_RUN / "training_history.json", [])
             data["v3_rear_weighted_observed"] = _read_json(self.root / V3_REAR_WEIGHTED_RUN / "heldout_evaluation.json", None)
             data["v3_rear_weighted_audit"] = _read_json(self.root / V3_REAR_WEIGHTED_RUN / "gate_b_audit.json", None)
