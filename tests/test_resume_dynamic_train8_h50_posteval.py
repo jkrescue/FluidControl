@@ -25,4 +25,5 @@ def test_resume_is_fail_closed_and_never_mounts_frozen_data():
     )
     assert "DYNAMIC_FNO_POSTEVAL_RESUME_COMPLETE" in text
     assert "'model_sha256':model_sha" in text
-
+    assert 'checkpoint.0.$epoch.pt' in text
+    assert "'training_state_sha256':state_sha" in text
