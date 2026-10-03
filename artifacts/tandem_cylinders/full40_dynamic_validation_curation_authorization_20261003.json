@@ -1,0 +1,468 @@
+{
+  "status": "DYNAMIC6_CURATION_AUTHORIZED_VALIDATION_ONLY",
+  "predeclaration_sha256": "0478c8532bd2ded504ccd5f89303001eb8359f69b3036f296e31428a085d1272",
+  "real_cfd_aggregate_qc": "artifacts/tandem_cylinders/full40_dynamic_validation_real_cfd_qc_20261003.json",
+  "real_cfd_aggregate_qc_sha256": "9723203f922cbe6609f2c92b7b48d299ee9d948d694d3c6c2eab413472421d86",
+  "baseline_force_source_sha256": {
+    "forceFront": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+    "forceRear": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b"
+  },
+  "expected_frames_per_case": 201,
+  "force_channels": [
+    "front_cd",
+    "front_cl",
+    "rear_cd",
+    "rear_cl"
+  ],
+  "normalization_policy": "reference full40 train20 only; do not compute from dynamic6",
+  "training_access": "FORBIDDEN",
+  "frozen_test_accessed": false,
+  "cases": {
+    "full40_dynamic_validation_b01_minus": {
+      "split": "validation",
+      "phase_bin": 1,
+      "profile": "minus",
+      "source_state_sha256": {
+        "U": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+        "U_0": "5491cc64a1d8af0157df371c156c5acebbbb19c6926e4d5cade38c5b798c8fae",
+        "p": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+        "phi": "e8f7b7b5e7cd1130556023cbd58d133edb6294447baf05af2311d3b29898918b",
+        "phi_0": "d835b6b83bece1967a622e51c978bf6146baba9f0c4780418ff31a1f7a40e281"
+      },
+      "action_points": [
+        [
+          130.0,
+          -0.0
+        ],
+        [
+          130.8,
+          -0.75
+        ],
+        [
+          132.0,
+          -0.75
+        ],
+        [
+          133.5,
+          0.75
+        ],
+        [
+          134.7,
+          0.75
+        ],
+        [
+          135.5,
+          -0.0
+        ],
+        [
+          136.5,
+          -0.0
+        ],
+        [
+          136.9,
+          -0.375
+        ],
+        [
+          138.0,
+          -0.375
+        ],
+        [
+          138.8,
+          0.375
+        ],
+        [
+          139.9,
+          0.375
+        ],
+        [
+          140.3,
+          -0.0
+        ],
+        [
+          141.5,
+          -0.0
+        ],
+        [
+          142.3,
+          -0.75
+        ],
+        [
+          143.5,
+          -0.75
+        ],
+        [
+          145.0,
+          0.75
+        ],
+        [
+          146.2,
+          0.75
+        ],
+        [
+          147.0,
+          -0.0
+        ],
+        [
+          150.0,
+          -0.0
+        ]
+      ],
+      "run_window": [
+        130.0,
+        150.0
+      ],
+      "case_config_sha256": "363c6d6da9b75e9fd3d01bdcd2f717ea742195eb334f17ab85d2cdbd06ebbc33",
+      "solver_marker_sha256": "0a0f906f839790badde386d51604130a52d8382f3552134043dfdeae6d42aed8",
+      "solver_qc_sha256": "12e4ed7eb4d3a1a82a12769e8b024d8939f56f39e01e7ef85e3423102a4be150"
+    },
+    "full40_dynamic_validation_b01_plus": {
+      "split": "validation",
+      "phase_bin": 1,
+      "profile": "plus",
+      "source_state_sha256": {
+        "U": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+        "U_0": "5491cc64a1d8af0157df371c156c5acebbbb19c6926e4d5cade38c5b798c8fae",
+        "p": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+        "phi": "e8f7b7b5e7cd1130556023cbd58d133edb6294447baf05af2311d3b29898918b",
+        "phi_0": "d835b6b83bece1967a622e51c978bf6146baba9f0c4780418ff31a1f7a40e281"
+      },
+      "action_points": [
+        [
+          130.0,
+          0.0
+        ],
+        [
+          130.8,
+          0.75
+        ],
+        [
+          132.0,
+          0.75
+        ],
+        [
+          133.5,
+          -0.75
+        ],
+        [
+          134.7,
+          -0.75
+        ],
+        [
+          135.5,
+          0.0
+        ],
+        [
+          136.5,
+          0.0
+        ],
+        [
+          136.9,
+          0.375
+        ],
+        [
+          138.0,
+          0.375
+        ],
+        [
+          138.8,
+          -0.375
+        ],
+        [
+          139.9,
+          -0.375
+        ],
+        [
+          140.3,
+          0.0
+        ],
+        [
+          141.5,
+          0.0
+        ],
+        [
+          142.3,
+          0.75
+        ],
+        [
+          143.5,
+          0.75
+        ],
+        [
+          145.0,
+          -0.75
+        ],
+        [
+          146.2,
+          -0.75
+        ],
+        [
+          147.0,
+          0.0
+        ],
+        [
+          150.0,
+          0.0
+        ]
+      ],
+      "run_window": [
+        130.0,
+        150.0
+      ],
+      "case_config_sha256": "a56fc3f9288ac8c7b86925e143e6cce870aecc16212c7cabb417ae03fa96228e",
+      "solver_marker_sha256": "cf740b41675eec0eefa90b86a959702ecf3761ee23cf5bb1033d4279b236edeb",
+      "solver_qc_sha256": "0cef4bea9ac81267f0461dfe824a3fefcafbf414fcaf98d8985c8abaf4d47f4d"
+    },
+    "full40_dynamic_validation_b01_zero": {
+      "split": "validation",
+      "phase_bin": 1,
+      "profile": "zero",
+      "source_state_sha256": {
+        "U": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+        "U_0": "5491cc64a1d8af0157df371c156c5acebbbb19c6926e4d5cade38c5b798c8fae",
+        "p": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+        "phi": "e8f7b7b5e7cd1130556023cbd58d133edb6294447baf05af2311d3b29898918b",
+        "phi_0": "d835b6b83bece1967a622e51c978bf6146baba9f0c4780418ff31a1f7a40e281"
+      },
+      "action_points": [
+        [
+          130.0,
+          0.0
+        ],
+        [
+          150.0,
+          0.0
+        ]
+      ],
+      "run_window": [
+        130.0,
+        150.0
+      ],
+      "case_config_sha256": "ee40ce4632c5cc972cfd8fe14f189fa3611f02a118d9ccc4b71153aef5d92029",
+      "solver_marker_sha256": "75119f7d220cf35b6d74992e3cf245c9b77b281ca11956e223e6d9fa8a254b39",
+      "solver_qc_sha256": "e3db07306b907c3137407770504040ed087714da573543ad60fb376f562e7aa3"
+    },
+    "full40_dynamic_validation_b05_minus": {
+      "split": "validation",
+      "phase_bin": 5,
+      "profile": "minus",
+      "source_state_sha256": {
+        "U": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+        "U_0": "64ee5cc617280ea1ffc7bc3896c4a412d7643d6b677d03c0bf54d446fda12bd8",
+        "p": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+        "phi": "7c849fa6400aca978da7d35886d6a90918dfe081aa15bbb6ffbba92f9985d1bf",
+        "phi_0": "37c7acbf30a76e1c04262ab06d08a0ee27eae109cec9d2f1e6d51e849dae4405"
+      },
+      "action_points": [
+        [
+          102.0,
+          -0.0
+        ],
+        [
+          102.8,
+          -0.75
+        ],
+        [
+          104.0,
+          -0.75
+        ],
+        [
+          105.5,
+          0.75
+        ],
+        [
+          106.7,
+          0.75
+        ],
+        [
+          107.5,
+          -0.0
+        ],
+        [
+          108.5,
+          -0.0
+        ],
+        [
+          108.9,
+          -0.375
+        ],
+        [
+          110.0,
+          -0.375
+        ],
+        [
+          110.8,
+          0.375
+        ],
+        [
+          111.9,
+          0.375
+        ],
+        [
+          112.3,
+          -0.0
+        ],
+        [
+          113.5,
+          -0.0
+        ],
+        [
+          114.3,
+          -0.75
+        ],
+        [
+          115.5,
+          -0.75
+        ],
+        [
+          117.0,
+          0.75
+        ],
+        [
+          118.2,
+          0.75
+        ],
+        [
+          119.0,
+          -0.0
+        ],
+        [
+          122.0,
+          -0.0
+        ]
+      ],
+      "run_window": [
+        102.0,
+        122.0
+      ],
+      "case_config_sha256": "c744f42152b5e3b9e51df108a7fd662b32fcc37471ce58bc4c7116f5cae7a44c",
+      "solver_marker_sha256": "0fdb53d08288c723f818215cdc863a8dd1a623b26ac24ba9e0ec5f1b1bb0ede5",
+      "solver_qc_sha256": "22613660f07a8b74e525845916451217138a2683f708b247e5b7fe69a1d0f3e9"
+    },
+    "full40_dynamic_validation_b05_plus": {
+      "split": "validation",
+      "phase_bin": 5,
+      "profile": "plus",
+      "source_state_sha256": {
+        "U": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+        "U_0": "64ee5cc617280ea1ffc7bc3896c4a412d7643d6b677d03c0bf54d446fda12bd8",
+        "p": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+        "phi": "7c849fa6400aca978da7d35886d6a90918dfe081aa15bbb6ffbba92f9985d1bf",
+        "phi_0": "37c7acbf30a76e1c04262ab06d08a0ee27eae109cec9d2f1e6d51e849dae4405"
+      },
+      "action_points": [
+        [
+          102.0,
+          0.0
+        ],
+        [
+          102.8,
+          0.75
+        ],
+        [
+          104.0,
+          0.75
+        ],
+        [
+          105.5,
+          -0.75
+        ],
+        [
+          106.7,
+          -0.75
+        ],
+        [
+          107.5,
+          0.0
+        ],
+        [
+          108.5,
+          0.0
+        ],
+        [
+          108.9,
+          0.375
+        ],
+        [
+          110.0,
+          0.375
+        ],
+        [
+          110.8,
+          -0.375
+        ],
+        [
+          111.9,
+          -0.375
+        ],
+        [
+          112.3,
+          0.0
+        ],
+        [
+          113.5,
+          0.0
+        ],
+        [
+          114.3,
+          0.75
+        ],
+        [
+          115.5,
+          0.75
+        ],
+        [
+          117.0,
+          -0.75
+        ],
+        [
+          118.2,
+          -0.75
+        ],
+        [
+          119.0,
+          0.0
+        ],
+        [
+          122.0,
+          0.0
+        ]
+      ],
+      "run_window": [
+        102.0,
+        122.0
+      ],
+      "case_config_sha256": "29f7900c3b2ba49fb9122fec0a3112f61b192f9c25fc1e743cce0830bd765a94",
+      "solver_marker_sha256": "213ac01df815dd4e6d992229ff1a66d1e1ef0f66c9628c8314cfc2d0b162abce",
+      "solver_qc_sha256": "d939c08e481e62b0b6591b4ca9837d21c73726457d37f05f5f55ec1bf436918a"
+    },
+    "full40_dynamic_validation_b05_zero": {
+      "split": "validation",
+      "phase_bin": 5,
+      "profile": "zero",
+      "source_state_sha256": {
+        "U": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+        "U_0": "64ee5cc617280ea1ffc7bc3896c4a412d7643d6b677d03c0bf54d446fda12bd8",
+        "p": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+        "phi": "7c849fa6400aca978da7d35886d6a90918dfe081aa15bbb6ffbba92f9985d1bf",
+        "phi_0": "37c7acbf30a76e1c04262ab06d08a0ee27eae109cec9d2f1e6d51e849dae4405"
+      },
+      "action_points": [
+        [
+          102.0,
+          0.0
+        ],
+        [
+          122.0,
+          0.0
+        ]
+      ],
+      "run_window": [
+        102.0,
+        122.0
+      ],
+      "case_config_sha256": "8807135a5e804aad5514d78a13cb4eb31d2ce3fc8a9c13873d3935610318914a",
+      "solver_marker_sha256": "4ab683eaf68c9bc0f91be62f1b1e3ff34fd4dfa96eea40e180cec62af2f4c1ed",
+      "solver_qc_sha256": "e6cedaa15b08b83e1e60b1b8be434ffa4f93a41108fa354bd0199f9c978c0f32"
+    }
+  }
+}

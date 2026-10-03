@@ -1,0 +1,675 @@
+{
+  "status": "FULL40_DYNAMIC_VALIDATION_REAL_OPENFOAM_QC_COMPLETE",
+  "scope": "validation b01/b05 prescribed time-varying actions; not closed-loop PPO",
+  "predeclaration": "artifacts/tandem_cylinders/full40_dynamic_validation_predeclared_20261003.json",
+  "predeclaration_sha256": "0478c8532bd2ded504ccd5f89303001eb8359f69b3036f296e31428a085d1272",
+  "frozen_test_accessed": false,
+  "phases": {
+    "b01": {
+      "strict_common_initial_state": true,
+      "profiles": {
+        "minus": {
+          "phase_bin": 1,
+          "profile": "minus",
+          "source_state_sha256": {
+            "U": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+            "U_0": "5491cc64a1d8af0157df371c156c5acebbbb19c6926e4d5cade38c5b798c8fae",
+            "p": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+            "phi": "e8f7b7b5e7cd1130556023cbd58d133edb6294447baf05af2311d3b29898918b",
+            "phi_0": "d835b6b83bece1967a622e51c978bf6146baba9f0c4780418ff31a1f7a40e281"
+          },
+          "action_metrics": {
+            "max_abs_omega": 0.75,
+            "max_abs_delta_omega_per_0p1": 0.1,
+            "max_abs_domega_dt": 1.0
+          },
+          "solver_qc": {
+            "steps": 4000,
+            "terminal_time": 150.0,
+            "max_courant": 0.24551114,
+            "max_abs_global_continuity_per_step": 6.5204095e-13,
+            "last_nonblank_line": "End"
+          },
+          "windows": {
+            "elapsed_0_10": {
+              "samples": 2000,
+              "total_cd_mean": 2.1638900306929,
+              "front_cd_mean": 1.392190010731,
+              "rear_cd_mean": 0.7717000199618999,
+              "front_cl_mean": -0.06860129418782383,
+              "rear_cl_mean": 0.17519771788708297,
+              "front_cl_fluctuation_rms": 0.29977867825888355,
+              "rear_cl_fluctuation_rms": 1.1164456868102428,
+              "front_cl_total_rms": 0.3075278743510701,
+              "rear_cl_total_rms": 1.1301084956543053
+            },
+            "elapsed_10_20": {
+              "samples": 2000,
+              "total_cd_mean": 2.151751737869,
+              "front_cd_mean": 1.3897726106255,
+              "rear_cd_mean": 0.7619791272435,
+              "front_cl_mean": 0.08201803053979245,
+              "rear_cl_mean": 0.02985558112832922,
+              "front_cl_fluctuation_rms": 0.2923292240735098,
+              "rear_cl_fluctuation_rms": 1.2908636310429646,
+              "front_cl_total_rms": 0.30361708216279043,
+              "rear_cl_total_rms": 1.2912088404568556
+            },
+            "elapsed_0_20": {
+              "samples": 4000,
+              "total_cd_mean": 2.15782088428095,
+              "front_cd_mean": 1.3909813106782498,
+              "rear_cd_mean": 0.7668395736026999,
+              "front_cl_mean": 0.0067083681759843045,
+              "rear_cl_mean": 0.1025266495077061,
+              "front_cl_fluctuation_rms": 0.3055050913460896,
+              "rear_cl_fluctuation_rms": 1.2089958754903638,
+              "front_cl_total_rms": 0.3055787346036486,
+              "rear_cl_total_rms": 1.2133353785380145
+            }
+          },
+          "terminal_time": 150.0
+        },
+        "zero": {
+          "phase_bin": 1,
+          "profile": "zero",
+          "source_state_sha256": {
+            "U": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+            "U_0": "5491cc64a1d8af0157df371c156c5acebbbb19c6926e4d5cade38c5b798c8fae",
+            "p": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+            "phi": "e8f7b7b5e7cd1130556023cbd58d133edb6294447baf05af2311d3b29898918b",
+            "phi_0": "d835b6b83bece1967a622e51c978bf6146baba9f0c4780418ff31a1f7a40e281"
+          },
+          "action_metrics": {
+            "max_abs_omega": 0.0,
+            "max_abs_delta_omega_per_0p1": 0.0,
+            "max_abs_domega_dt": 0.0
+          },
+          "solver_qc": {
+            "steps": 4000,
+            "terminal_time": 150.0,
+            "max_courant": 0.245226214,
+            "max_abs_global_continuity_per_step": 7.10144908e-13,
+            "last_nonblank_line": "End"
+          },
+          "windows": {
+            "elapsed_0_10": {
+              "samples": 2000,
+              "total_cd_mean": 2.2986312809603495,
+              "front_cd_mean": 1.391543862394,
+              "rear_cd_mean": 0.9070874185663499,
+              "front_cl_mean": -0.06944059769288968,
+              "rear_cl_mean": 0.15288527767091423,
+              "front_cl_fluctuation_rms": 0.3024046561816494,
+              "rear_cl_fluctuation_rms": 1.1859637880391511,
+              "front_cl_total_rms": 0.31027499526756475,
+              "rear_cl_total_rms": 1.195777577423446
+            },
+            "elapsed_10_20": {
+              "samples": 2000,
+              "total_cd_mean": 2.2883196669595,
+              "front_cd_mean": 1.390531962072,
+              "rear_cd_mean": 0.8977877048875,
+              "front_cl_mean": 0.08190842867694482,
+              "rear_cl_mean": 0.054436668191779544,
+              "front_cl_fluctuation_rms": 0.29344975551546704,
+              "rear_cl_fluctuation_rms": 1.2092369035922659,
+              "front_cl_total_rms": 0.3046666205878378,
+              "rear_cl_total_rms": 1.210461581320627
+            },
+            "elapsed_0_20": {
+              "samples": 4000,
+              "total_cd_mean": 2.2934754739599246,
+              "front_cd_mean": 1.391037912233,
+              "rear_cd_mean": 0.902437561726925,
+              "front_cl_mean": 0.00623391549202757,
+              "rear_cl_mean": 0.10366097293134689,
+              "front_cl_fluctuation_rms": 0.3074203953741337,
+              "rear_cl_fluctuation_rms": 1.198668023245755,
+              "front_cl_total_rms": 0.30748359500036815,
+              "rear_cl_total_rms": 1.2031419813392594
+            }
+          },
+          "terminal_time": 150.0
+        },
+        "plus": {
+          "phase_bin": 1,
+          "profile": "plus",
+          "source_state_sha256": {
+            "U": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+            "U_0": "5491cc64a1d8af0157df371c156c5acebbbb19c6926e4d5cade38c5b798c8fae",
+            "p": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+            "phi": "e8f7b7b5e7cd1130556023cbd58d133edb6294447baf05af2311d3b29898918b",
+            "phi_0": "d835b6b83bece1967a622e51c978bf6146baba9f0c4780418ff31a1f7a40e281"
+          },
+          "action_metrics": {
+            "max_abs_omega": 0.75,
+            "max_abs_delta_omega_per_0p1": 0.1,
+            "max_abs_domega_dt": 1.0
+          },
+          "solver_qc": {
+            "steps": 4000,
+            "terminal_time": 150.0,
+            "max_courant": 0.245359848,
+            "max_abs_global_continuity_per_step": 1.48767645e-12,
+            "last_nonblank_line": "End"
+          },
+          "windows": {
+            "elapsed_0_10": {
+              "samples": 2000,
+              "total_cd_mean": 2.4758015646384,
+              "front_cd_mean": 1.389967760383,
+              "rear_cd_mean": 1.0858338042554,
+              "front_cl_mean": -0.07026566348023178,
+              "rear_cl_mean": 0.118355679824568,
+              "front_cl_fluctuation_rms": 0.30501336986761496,
+              "rear_cl_fluctuation_rms": 1.2586097869331847,
+              "front_cl_total_rms": 0.3130022671839865,
+              "rear_cl_total_rms": 1.2641624352553482
+            },
+            "elapsed_10_20": {
+              "samples": 2000,
+              "total_cd_mean": 2.4693843967046503,
+              "front_cd_mean": 1.3901375236895002,
+              "rear_cd_mean": 1.0792468730151499,
+              "front_cl_mean": 0.08193790741061986,
+              "rear_cl_mean": 0.07031865251024495,
+              "front_cl_fluctuation_rms": 0.29408413523544846,
+              "rear_cl_fluctuation_rms": 1.1233089204174322,
+              "front_cl_total_rms": 0.3052856027853473,
+              "rear_cl_total_rms": 1.1255077270193368
+            },
+            "elapsed_0_20": {
+              "samples": 4000,
+              "total_cd_mean": 2.472592980671525,
+              "front_cd_mean": 1.39005264203625,
+              "rear_cd_mean": 1.082540338635275,
+              "front_cl_mean": 0.005836121965194039,
+              "rear_cl_mean": 0.09433716616740648,
+              "front_cl_fluctuation_rms": 0.30911292264409074,
+              "rear_cl_fluctuation_rms": 1.1931209713289705,
+              "front_cl_total_rms": 0.30916801138727834,
+              "rear_cl_total_rms": 1.1968446654204894
+            }
+          },
+          "terminal_time": 150.0
+        }
+      },
+      "comparisons_to_paired_zero": {
+        "elapsed_0_10": {
+          "minus": {
+            "total_drag_reduction": 0.05861803560384671,
+            "rear_cl_total_rms_ratio": 0.9450825278806125,
+            "rear_cl_fluctuation_rms_ratio": 0.9413826105568972,
+            "front_cl_total_rms_ratio": 0.9911461736898081,
+            "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.1477260264217269,
+            "predeclared_checks": {
+              "total_drag_decreased": true,
+              "rear_cl_total_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": false
+            },
+            "short_pilot_joint_check": false,
+            "canonical_physical_checks": {
+              "total_drag_reduction_at_least_2pct": true,
+              "rear_cl_fluctuation_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": false
+            },
+            "canonical_physical_joint_check": false
+          },
+          "plus": {
+            "total_drag_reduction": -0.07707642593466768,
+            "rear_cl_total_rms_ratio": 1.057188610259152,
+            "rear_cl_fluctuation_rms_ratio": 1.0612548204478864,
+            "front_cl_total_rms_ratio": 1.0087898540263287,
+            "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.09979704356762437,
+            "predeclared_checks": {
+              "total_drag_decreased": false,
+              "rear_cl_total_rms_increase_at_most_5pct": false,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "short_pilot_joint_check": false,
+            "canonical_physical_checks": {
+              "total_drag_reduction_at_least_2pct": false,
+              "rear_cl_fluctuation_rms_increase_at_most_5pct": false,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "canonical_physical_joint_check": false
+          }
+        },
+        "elapsed_10_20": {
+          "minus": {
+            "total_drag_reduction": 0.05968044196900091,
+            "rear_cl_total_rms_ratio": 1.066707824834996,
+            "rear_cl_fluctuation_rms_ratio": 1.0675026764467832,
+            "front_cl_total_rms_ratio": 0.9965551249985236,
+            "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.02468960469171723,
+            "predeclared_checks": {
+              "total_drag_decreased": true,
+              "rear_cl_total_rms_increase_at_most_5pct": false,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "short_pilot_joint_check": false,
+            "canonical_physical_checks": {
+              "total_drag_reduction_at_least_2pct": true,
+              "rear_cl_fluctuation_rms_increase_at_most_5pct": false,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "canonical_physical_joint_check": false
+          },
+          "plus": {
+            "total_drag_reduction": -0.07912562757708219,
+            "rear_cl_total_rms_ratio": 0.929816975926981,
+            "rear_cl_fluctuation_rms_ratio": 0.9289403235052053,
+            "front_cl_total_rms_ratio": 1.0020316705398025,
+            "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.058151262421242814,
+            "predeclared_checks": {
+              "total_drag_decreased": false,
+              "rear_cl_total_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "short_pilot_joint_check": false,
+            "canonical_physical_checks": {
+              "total_drag_reduction_at_least_2pct": false,
+              "rear_cl_fluctuation_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "canonical_physical_joint_check": false
+          }
+        },
+        "elapsed_0_20": {
+          "minus": {
+            "total_drag_reduction": 0.05914804462449863,
+            "rear_cl_total_rms_ratio": 1.0084723144540335,
+            "rear_cl_fluctuation_rms_ratio": 1.0086161072493143,
+            "front_cl_total_rms_ratio": 0.9938050015425465,
+            "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.08553381546800948,
+            "predeclared_checks": {
+              "total_drag_decreased": true,
+              "rear_cl_total_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "short_pilot_joint_check": true,
+            "canonical_physical_checks": {
+              "total_drag_reduction_at_least_2pct": true,
+              "rear_cl_fluctuation_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "canonical_physical_joint_check": true
+          },
+          "plus": {
+            "total_drag_reduction": -0.07809872342010937,
+            "rear_cl_total_rms_ratio": 0.9947659411636852,
+            "rear_cl_fluctuation_rms_ratio": 0.99537232010097,
+            "front_cl_total_rms_ratio": 1.0054780691207548,
+            "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.07870166246027,
+            "predeclared_checks": {
+              "total_drag_decreased": false,
+              "rear_cl_total_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "short_pilot_joint_check": false,
+            "canonical_physical_checks": {
+              "total_drag_reduction_at_least_2pct": false,
+              "rear_cl_fluctuation_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "canonical_physical_joint_check": false
+          }
+        }
+      },
+      "true_cfd_total_cd_ranking": {
+        "elapsed_0_10": [
+          "minus",
+          "zero",
+          "plus"
+        ],
+        "elapsed_10_20": [
+          "minus",
+          "zero",
+          "plus"
+        ],
+        "elapsed_0_20": [
+          "minus",
+          "zero",
+          "plus"
+        ]
+      }
+    },
+    "b05": {
+      "strict_common_initial_state": true,
+      "profiles": {
+        "minus": {
+          "phase_bin": 5,
+          "profile": "minus",
+          "source_state_sha256": {
+            "U": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+            "U_0": "64ee5cc617280ea1ffc7bc3896c4a412d7643d6b677d03c0bf54d446fda12bd8",
+            "p": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+            "phi": "7c849fa6400aca978da7d35886d6a90918dfe081aa15bbb6ffbba92f9985d1bf",
+            "phi_0": "37c7acbf30a76e1c04262ab06d08a0ee27eae109cec9d2f1e6d51e849dae4405"
+          },
+          "action_metrics": {
+            "max_abs_omega": 0.75,
+            "max_abs_delta_omega_per_0p1": 0.1,
+            "max_abs_domega_dt": 1.0
+          },
+          "solver_qc": {
+            "steps": 4000,
+            "terminal_time": 122.0,
+            "max_courant": 0.245352042,
+            "max_abs_global_continuity_per_step": 1.26582812e-12,
+            "last_nonblank_line": "End"
+          },
+          "windows": {
+            "elapsed_0_10": {
+              "samples": 2000,
+              "total_cd_mean": 2.4858301488410497,
+              "front_cd_mean": 1.3900421610085,
+              "rear_cd_mean": 1.0957879878325498,
+              "front_cl_mean": 0.06671853650918963,
+              "rear_cl_mean": -0.13501849374335603,
+              "front_cl_fluctuation_rms": 0.30683080411532154,
+              "rear_cl_fluctuation_rms": 1.2386299885169663,
+              "front_cl_total_rms": 0.3140008048842915,
+              "rear_cl_total_rms": 1.245967191424503
+            },
+            "elapsed_10_20": {
+              "samples": 2000,
+              "total_cd_mean": 2.47247134041375,
+              "front_cd_mean": 1.3902432445464998,
+              "rear_cd_mean": 1.0822280958672499,
+              "front_cl_mean": -0.08226774489289596,
+              "rear_cl_mean": -0.0540372110981599,
+              "front_cl_fluctuation_rms": 0.29336926624582904,
+              "rear_cl_fluctuation_rms": 1.1092045601899172,
+              "front_cl_total_rms": 0.30468591734338285,
+              "rear_cl_total_rms": 1.1105200477836386
+            },
+            "elapsed_0_20": {
+              "samples": 4000,
+              "total_cd_mean": 2.4791507446274,
+              "front_cd_mean": 1.3901427027774997,
+              "rear_cd_mean": 1.0890080418499,
+              "front_cl_mean": -0.0077746041918531645,
+              "rear_cl_mean": -0.09452785242075797,
+              "front_cl_fluctuation_rms": 0.30928071775870675,
+              "rear_cl_fluctuation_rms": 1.176396614426673,
+              "front_cl_total_rms": 0.30937842013896316,
+              "rear_cl_total_rms": 1.1801883363759444
+            }
+          },
+          "terminal_time": 122.0
+        },
+        "zero": {
+          "phase_bin": 5,
+          "profile": "zero",
+          "source_state_sha256": {
+            "U": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+            "U_0": "64ee5cc617280ea1ffc7bc3896c4a412d7643d6b677d03c0bf54d446fda12bd8",
+            "p": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+            "phi": "7c849fa6400aca978da7d35886d6a90918dfe081aa15bbb6ffbba92f9985d1bf",
+            "phi_0": "37c7acbf30a76e1c04262ab06d08a0ee27eae109cec9d2f1e6d51e849dae4405"
+          },
+          "action_metrics": {
+            "max_abs_omega": 0.0,
+            "max_abs_delta_omega_per_0p1": 0.0,
+            "max_abs_domega_dt": 0.0
+          },
+          "solver_qc": {
+            "steps": 4000,
+            "terminal_time": 122.0,
+            "max_courant": 0.245227456,
+            "max_abs_global_continuity_per_step": 1.40345332e-12,
+            "last_nonblank_line": "End"
+          },
+          "windows": {
+            "elapsed_0_10": {
+              "samples": 2000,
+              "total_cd_mean": 2.30326896921385,
+              "front_cd_mean": 1.3916622984005,
+              "rear_cd_mean": 0.9116066708133499,
+              "front_cl_mean": 0.0659503286877704,
+              "rear_cl_mean": -0.17072918100199524,
+              "front_cl_fluctuation_rms": 0.3043698576444693,
+              "rear_cl_fluctuation_rms": 1.177992710805776,
+              "front_cl_total_rms": 0.311432907857438,
+              "rear_cl_total_rms": 1.1903004998558777
+            },
+            "elapsed_10_20": {
+              "samples": 2000,
+              "total_cd_mean": 2.2899991890091003,
+              "front_cd_mean": 1.3906245901,
+              "rear_cd_mean": 0.8993745989091,
+              "front_cl_mean": -0.08241058046392186,
+              "rear_cl_mean": -0.0332752655270335,
+              "front_cl_fluctuation_rms": 0.29295307037586577,
+              "rear_cl_fluctuation_rms": 1.210763199593587,
+              "front_cl_total_rms": 0.3043238492380239,
+              "rear_cl_total_rms": 1.2112203634293779
+            },
+            "elapsed_0_20": {
+              "samples": 4000,
+              "total_cd_mean": 2.296634079111475,
+              "front_cd_mean": 1.39114344425025,
+              "rear_cd_mean": 0.9054906348612248,
+              "front_cl_mean": -0.008230125888075732,
+              "rear_cl_mean": -0.10200222326451437,
+              "front_cl_fluctuation_rms": 0.3077888816764827,
+              "rear_cl_fluctuation_rms": 1.196465866968494,
+              "front_cl_total_rms": 0.3078988968083411,
+              "rear_cl_total_rms": 1.2008059894802212
+            }
+          },
+          "terminal_time": 122.0
+        },
+        "plus": {
+          "phase_bin": 5,
+          "profile": "plus",
+          "source_state_sha256": {
+            "U": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+            "U_0": "64ee5cc617280ea1ffc7bc3896c4a412d7643d6b677d03c0bf54d446fda12bd8",
+            "p": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+            "phi": "7c849fa6400aca978da7d35886d6a90918dfe081aa15bbb6ffbba92f9985d1bf",
+            "phi_0": "37c7acbf30a76e1c04262ab06d08a0ee27eae109cec9d2f1e6d51e849dae4405"
+          },
+          "action_metrics": {
+            "max_abs_omega": 0.75,
+            "max_abs_delta_omega_per_0p1": 0.1,
+            "max_abs_domega_dt": 1.0
+          },
+          "solver_qc": {
+            "steps": 4000,
+            "terminal_time": 122.0,
+            "max_courant": 0.245513484,
+            "max_abs_global_continuity_per_step": 1.42311211e-12,
+            "last_nonblank_line": "End"
+          },
+          "windows": {
+            "elapsed_0_10": {
+              "samples": 2000,
+              "total_cd_mean": 2.16041391020035,
+              "front_cd_mean": 1.3923198246825,
+              "rear_cd_mean": 0.7680940855178501,
+              "front_cl_mean": 0.06514906103528396,
+              "rear_cl_mean": -0.19431746424323615,
+              "front_cl_fluctuation_rms": 0.30190018191242607,
+              "rear_cl_fluctuation_rms": 1.1231713024607273,
+              "front_cl_total_rms": 0.30884967215869785,
+              "rear_cl_total_rms": 1.1398565925506805
+            },
+            "elapsed_10_20": {
+              "samples": 2000,
+              "total_cd_mean": 2.15416432747635,
+              "front_cd_mean": 1.3897835786895,
+              "rear_cd_mean": 0.76438074878685,
+              "front_cl_mean": -0.0825991911769545,
+              "rear_cl_mean": -0.0023439126601224416,
+              "front_cl_fluctuation_rms": 0.29217136472959976,
+              "rear_cl_fluctuation_rms": 1.3093169099163424,
+              "front_cl_total_rms": 0.30362268154906324,
+              "rear_cl_total_rms": 1.3093190079271888
+            },
+            "elapsed_0_20": {
+              "samples": 4000,
+              "total_cd_mean": 2.1572891188383503,
+              "front_cd_mean": 1.3910517016859998,
+              "rear_cd_mean": 0.76623741715235,
+              "front_cl_mean": -0.008725065070835264,
+              "rear_cl_mean": -0.09833068845167929,
+              "front_cl_fluctuation_rms": 0.3061230138543968,
+              "rear_cl_fluctuation_rms": 1.2235708944556347,
+              "front_cl_total_rms": 0.30624732875861876,
+              "rear_cl_total_rms": 1.227515644727326
+            }
+          },
+          "terminal_time": 122.0
+        }
+      },
+      "comparisons_to_paired_zero": {
+        "elapsed_0_10": {
+          "minus": {
+            "total_drag_reduction": -0.07926177188481431,
+            "rear_cl_total_rms_ratio": 1.0467669227857717,
+            "rear_cl_fluctuation_rms_ratio": 1.0514750873710526,
+            "front_cl_total_rms_ratio": 1.0082454261000222,
+            "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.11461742717491016,
+            "predeclared_checks": {
+              "total_drag_decreased": false,
+              "rear_cl_total_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": false
+            },
+            "short_pilot_joint_check": false,
+            "canonical_physical_checks": {
+              "total_drag_reduction_at_least_2pct": false,
+              "rear_cl_fluctuation_rms_increase_at_most_5pct": false,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": false
+            },
+            "canonical_physical_joint_check": false
+          },
+          "plus": {
+            "total_drag_reduction": 0.06202274285936282,
+            "rear_cl_total_rms_ratio": 0.9576208635455459,
+            "rear_cl_fluctuation_rms_ratio": 0.9534620139478202,
+            "front_cl_total_rms_ratio": 0.9917053219696275,
+            "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.1649564232959627,
+            "predeclared_checks": {
+              "total_drag_decreased": true,
+              "rear_cl_total_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": false
+            },
+            "short_pilot_joint_check": false,
+            "canonical_physical_checks": {
+              "total_drag_reduction_at_least_2pct": true,
+              "rear_cl_fluctuation_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": false
+            },
+            "canonical_physical_joint_check": false
+          }
+        },
+        "elapsed_10_20": {
+          "minus": {
+            "total_drag_reduction": -0.07968219040444602,
+            "rear_cl_total_rms_ratio": 0.9168604502647046,
+            "rear_cl_fluctuation_rms_ratio": 0.9161201468315524,
+            "front_cl_total_rms_ratio": 1.0011897460756543,
+            "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.04463070162381744,
+            "predeclared_checks": {
+              "total_drag_decreased": false,
+              "rear_cl_total_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "short_pilot_joint_check": false,
+            "canonical_physical_checks": {
+              "total_drag_reduction_at_least_2pct": false,
+              "rear_cl_fluctuation_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "canonical_physical_joint_check": false
+          },
+          "plus": {
+            "total_drag_reduction": 0.05931655442704642,
+            "rear_cl_total_rms_ratio": 1.0809915746628138,
+            "rear_cl_fluctuation_rms_ratio": 1.0813980061136947,
+            "front_cl_total_rms_ratio": 0.9976959817946695,
+            "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.0019358968466412054,
+            "predeclared_checks": {
+              "total_drag_decreased": true,
+              "rear_cl_total_rms_increase_at_most_5pct": false,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "short_pilot_joint_check": false,
+            "canonical_physical_checks": {
+              "total_drag_reduction_at_least_2pct": true,
+              "rear_cl_fluctuation_rms_increase_at_most_5pct": false,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "canonical_physical_joint_check": false
+          }
+        },
+        "elapsed_0_20": {
+          "minus": {
+            "total_drag_reduction": -0.07947137385792735,
+            "rear_cl_total_rms_ratio": 0.98283015467536,
+            "rear_cl_fluctuation_rms_ratio": 0.9832262222467987,
+            "front_cl_total_rms_ratio": 1.004805224526488,
+            "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.0790058914595406,
+            "predeclared_checks": {
+              "total_drag_decreased": false,
+              "rear_cl_total_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "short_pilot_joint_check": false,
+            "canonical_physical_checks": {
+              "total_drag_reduction_at_least_2pct": false,
+              "rear_cl_fluctuation_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "canonical_physical_joint_check": false
+          },
+          "plus": {
+            "total_drag_reduction": 0.06067355768187277,
+            "rear_cl_total_rms_ratio": 1.0222431062811956,
+            "rear_cl_fluctuation_rms_ratio": 1.0226542421605533,
+            "front_cl_total_rms_ratio": 0.9946360053029017,
+            "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.08218428219838936,
+            "predeclared_checks": {
+              "total_drag_decreased": true,
+              "rear_cl_total_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "short_pilot_joint_check": true,
+            "canonical_physical_checks": {
+              "total_drag_reduction_at_least_2pct": true,
+              "rear_cl_fluctuation_rms_increase_at_most_5pct": true,
+              "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+            },
+            "canonical_physical_joint_check": true
+          }
+        }
+      },
+      "true_cfd_total_cd_ranking": {
+        "elapsed_0_10": [
+          "plus",
+          "zero",
+          "minus"
+        ],
+        "elapsed_10_20": [
+          "plus",
+          "zero",
+          "minus"
+        ],
+        "elapsed_0_20": [
+          "plus",
+          "zero",
+          "minus"
+        ]
+      }
+    }
+  },
+  "interpretation_guards": [
+    "Only frame 0 within each phase is a strict counterfactual common state.",
+    "Later equal frame indices are matched elapsed time but action-diverged states.",
+    "Physical action benefit and FNO prediction accuracy require separate reports.",
+    "This panel cannot authorize PPO without the unchanged formal validation gates."
+  ]
+}
