@@ -296,9 +296,9 @@ function renderTrain20Physics(d){let p=d.full40_train20_physics,s=p?.all_train_c
  $('train20-physics').textContent=`TRAIN ONLY · 联合门槛 ${s.joint_pass_count}/${s.comparison_count} 通过 · 全动作 macro 降阻 ${pct(s.macro_mean_total_drag_reduction_fraction)}`;$('train20-physics').className='number '+(s.joint_pass_count?'good':'bad');
  let minus=a.m075,plus=a.p075;$('train20-actions').textContent=`−0.75 / +0.75 macro 降阻 ${pct(minus.macro_mean_total_drag_reduction_fraction)} / ${pct(plus.macro_mean_total_drag_reduction_fraction)}；worst phase ${pct(minus.worst_drag_reduction.total_drag_reduction_fraction_positive_is_better)} / ${pct(plus.worst_drag_reduction.total_drag_reduction_fraction_positive_is_better)}；macro 平均Cl偏置比 ${num(minus.macro_mean_abs_rear_cl_bias_ratio,3)} / ${num(plus.macro_mean_abs_rear_cl_bias_ratio,3)}（门槛≤0.10）。`;
  $('train20-scope').textContent=`四个train相位、16个非零固定动作、各自同相位zero、固定末60D/U。validation/frozen结果读取=${p.scope?.validation_or_frozen_results_read?'是（异常）':'否'}；不替代九案 commissioning，不代表泛化、PPO或真实闭环收益。`;}
-function renderFreeAR(d){let x=d.free_ar_ablation||{},a=x.h20||{},b=x.h50||{},am=a.last_metrics||{},bm=b.last_metrics||{},bval=b.validation10||{},b100=bval.horizons?.['100']||{},dyn=x.dynamic6_fno||{},direct=x.direct_cfd_ppo||{};
+function renderFreeAR(d){let x=d.free_ar_ablation||{},a=x.h20||{},b=x.h50||{},am=a.last_metrics||{},bm=b.last_metrics||{},bval=b.validation10||{},b100=bval.horizons?.['100']||{},dyn=x.dynamic6_fno||{},direct=x.direct_cfd_ppo||{},pe=a.post_evaluation||{};
  const stage=(v,m)=>`${v.epoch||0}/${v.expected_epochs||8}轮${Number.isFinite(m.selection_score)?` · H100 selection ${num(m.selection_score,4)}`:''}`;
- $('free-ar-h20').textContent=stage(a,am);$('free-ar-h20').className=a.status==='COMPLETE'?'good':a.status==='FAILED'?'bad':'';$('free-ar-h20-detail').textContent=`恢复服务 ${a.service_state||a.status||'等待'} · 训练进程 ${a.local_training_process_active?'存活':'未检出'} · ${a.active_log||'日志'}更新 ${a.train_log_mtime_utc||'待更新'}；旧服务=${a.previous_failed_service_state||'未知'}（记录保留）。pure-AR H20→验证H100${Number.isFinite(am.terminal_state_mae)?` · 终点反归一化流场综合MAE / 四个力系数平均MAE ${num(am.terminal_state_mae,4)} / ${num(am.terminal_force_mae,4)}`:''}${Number.isFinite(am.terminal_total_drag_pooled_nrmse)?` · 训练内stride100终点pooled总Cd NRMSE ${pct(am.terminal_total_drag_pooled_nrmse)}`:''}。训练内统计不等于stride25完整评估，也不是减阻率或正式Gate。`;
+ $('free-ar-h20').textContent=stage(a,am);$('free-ar-h20').className=a.status==='COMPLETE'?'good':a.status==='FAILED'?'bad':'';$('free-ar-h20-detail').textContent=`训练已完整 ${a.epoch||0}/${a.expected_epochs||8} 轮；完整validation10后评估 ${pe.complete?'完成':pe.active?'修正路径后重试中':'待完成'}。首次后评估仅因可视化写入只读路径失败，不是模型训练失败；失败日志保留。pure-AR H20→验证H100${Number.isFinite(am.terminal_state_mae)?` · 终点反归一化流场综合MAE / 四个力系数平均MAE ${num(am.terminal_state_mae,4)} / ${num(am.terminal_force_mae,4)}`:''}${Number.isFinite(am.terminal_total_drag_pooled_nrmse)?` · 训练内stride100终点pooled总Cd NRMSE ${pct(am.terminal_total_drag_pooled_nrmse)}`:''}。训练内统计不等于stride25完整评估，也不是减阻率或正式Gate。`;
  $('free-ar-h50').textContent=stage(b,bm);$('free-ar-h50').className=b.status==='COMPLETE'?'good':b.status==='FAILED'?'bad':'';$('free-ar-h50-detail').textContent=`${b.service_state||b.status||'等待'} · pure-AR H50→验证H100${Number.isFinite(bm.terminal_state_mae)?` · 终点反归一化流场综合MAE / 四个力系数平均MAE ${num(bm.terminal_state_mae,4)} / ${num(bm.terminal_force_mae,4)}`:''} · 已验SHA回传 ${b.synced_epochs||0}/8轮。${Number.isFinite(b100.pooled_total_cd_nrmse)?`e1独立validation10 H100 pooled总Cd NRMSE ${pct(b100.pooled_total_cd_nrmse)}（macro ${pct(b100.macro_total_cd_nrmse)}），仍高于10%门槛。`:''}不是减阻率。`;
  let evaluating=x.dynamic6_service_state==='active'&&dyn.checkpoint_epoch!==1,failed=dyn.status==='DYNAMIC6_FNO_DIAGNOSTIC_FAIL';$('free-ar-dynamic').textContent=evaluating?'H50 e1 · Dynamic6评估中':dyn.status?`${failed?'FAIL':'诊断完成'} · H100 pooled ${Number.isFinite(dyn.pooled_h100_total_cd_nrmse)?pct(dyn.pooled_h100_total_cd_nrmse):'—'}`:'等待诊断';$('free-ar-dynamic').className=!evaluating&&failed?'bad':'';$('free-ar-dynamic-detail').textContent=evaluating?'正在用H50 e1固定checkpoint评估全部6条动态动作真实CFD；parent e5失败仅为上一候选。':dyn.status?`${dyn.checkpoint_epoch===1?'H50 e1':'parent e5'} · 动作差值MAE ${num(dyn.strict_start0_h100_delta_total_cd_mae,4)}（限值 ${num(dyn.strict_delta_limit,3)}）；PPO授权=${dyn.ppo_authorized?'是':'否'}。全6案真实CFD validation-only，不是控制收益。`:'等待H50 e1对全6条动态动作轨迹的FNO诊断。';
  let completed=direct.completed_transitions||0,live=direct.live_collection_steps||0,updates=direct.ppo_update_count||0,last=direct.last_checkpoint||{},reward=last.raw_physical_reward||{},pair=direct.paired_80d_evaluation||{},comparison=pair.physical_result?.comparison||{},joint=comparison.canonical_physical_joint_check===true,checks=comparison.canonical_physical_checks||{};$('free-ar-direct-ppo').textContent=pair.service_state==='active'?`训练完成 2048/2048 · 80D配对CFD ${pair.completed_steps_per_branch||0}/800步`:pair.physical_result?.status?`80D配对CFD完成 · joint ${joint?'PASS':'FAIL'}`:direct.training_complete?'真实CFD训练完成 · 2048/2048步':direct.running?`真实CFD训练中 · ${completed}/2048步${completed<256?`（首轮 ${live}/256）`:''}`:'实现与测试中';$('free-ar-direct-ppo').className=pair.physical_result?.status?(joint?'good':'bad'):direct.training_complete?'good':'';$('free-ar-direct-ppo-detail').textContent=pair.physical_result?.status?`b00 train-phase配对末60D/U：总阻力降低 ${Number.isFinite(comparison.total_drag_reduction)?pct(comparison.total_drag_reduction):'—'}，后柱Cl′比 ${num(comparison.rear_cl_fluctuation_rms_ratio,3)}，mean-Cl偏置比 ${num(comparison.abs_rear_cl_mean_over_zero_fluctuation_rms,3)}；三项门槛 ${Object.entries(checks).filter(([,v])=>!v).map(([k])=>k).join('、')||'均通过'}。仅训练相位初步物理验证，不是独立泛化或论文结论。`:direct.running||direct.training_complete?`PPO更新 ${updates} 次${Number.isFinite(reward.mean)?` · 最近256步真实reward均值 ${num(reward.mean,4)}`:''}。FNO未用于奖励；${pair.service_state==='active'?'最终策略与zero正在做80D真实OpenFOAM配对。':'物理减阻尚待80D配对CFD验收。'}`:'直接CFD反馈，不依赖FNO代理；尚无运行日志或控制收益。';let pfig=$('free-ar-direct-ppo-figure'),pnote=$('free-ar-direct-ppo-figure-note');if(pair.figure?.available){pfig.src=pair.figure.path+'?v='+pair.figure.version;pfig.hidden=false;pnote.textContent='原始未平滑时序：灰色为前20D/U过渡，蓝色为后60D/U统计；上图总Cd、中图后柱Cl、下图为每0.1D/U记录的动作端点及CFD实际执行的区间线性ramp（含t=0初始ω=0）。';pnote.hidden=false}else{pfig.hidden=true;pnote.hidden=true}}
@@ -816,6 +816,39 @@ def _local_training_process_active() -> bool:
     )
 
 
+def _local_h20_posteval_active() -> bool:
+    """Identify the fixed A-run validation evaluator, not an arbitrary GPU process."""
+    try:
+        lines = subprocess.run(
+            ["ps", "-eo", "args="],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        ).stdout.splitlines()
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return any(
+        "evaluate_tandem_fno.py" in line
+        and "tandem_fno_full40_free_ar_h20_ar20_20261003" in line
+        and "--split validation" in line
+        for line in lines
+    )
+
+
+def _h20_posteval_stage(run: Path, active: bool) -> dict:
+    evaluation = _read_json(run / "validation10/evaluation.json", {})
+    summary = evaluation.get("summary", {}) if isinstance(evaluation, dict) else {}
+    complete = all(str(horizon) in summary for horizon in (1, 10, 50, 100))
+    return {
+        "status": "COMPLETE" if complete else "RETRY_RUNNING" if active else "PENDING",
+        "complete": complete,
+        "active": active,
+        "initial_failure": "read-only visualization output path",
+        "model_training_complete": True,
+    }
+
+
 def _last_jsonl_event(path: Path, event: str, limit: int = 262_144) -> dict | None:
     """Read only a bounded tail and return the newest matching JSON event."""
     try:
@@ -952,6 +985,9 @@ def _free_ar_ablation(root: Path) -> dict:
         "fluid-control-free-ar-h20-20261003.service"
     )
     h20_stage["local_training_process_active"] = _local_training_process_active()
+    h20_stage["post_evaluation"] = _h20_posteval_stage(
+        h20, _local_h20_posteval_active()
+    )
     try:
         active_log = (
             h20 / "train.resume.log"

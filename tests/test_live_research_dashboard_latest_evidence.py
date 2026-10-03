@@ -120,7 +120,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("renderFreeAR(d)", page)
         self.assertIn("反归一化流场综合MAE / 四个力系数平均MAE", page)
         self.assertIn("不是减阻率或正式Gate", page)
-        self.assertIn("旧服务=", page)
+        self.assertIn("首次后评估仅因可视化写入只读路径失败", page)
         self.assertIn("训练内stride100终点pooled总Cd NRMSE", page)
         self.assertIn("不等于stride25完整评估", page)
         self.assertIn("FNO未用于奖励", page)
@@ -404,6 +404,24 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         )
         self.assertFalse(result["fno_used_for_reward"])
         self.assertFalse(result["frozen_test_accessed"])
+
+    def test_h20_posteval_distinguishes_retry_from_training_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            run = Path(directory)
+            retrying = MODULE._h20_posteval_stage(run, active=True)
+            self.assertEqual(retrying["status"], "RETRY_RUNNING")
+            self.assertTrue(retrying["model_training_complete"])
+            validation = run / "validation10"
+            validation.mkdir()
+            (validation / "evaluation.json").write_text(
+                json.dumps(
+                    {"summary": {str(value): {} for value in (1, 10, 50, 100)}}
+                ),
+                encoding="utf-8",
+            )
+            complete = MODULE._h20_posteval_stage(run, active=False)
+        self.assertEqual(complete["status"], "COMPLETE")
+        self.assertTrue(complete["complete"])
 
     def test_direct_cfd_ppo_exposes_completed_training_and_pair_evaluation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
