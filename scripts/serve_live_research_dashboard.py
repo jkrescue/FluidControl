@@ -48,7 +48,9 @@ HOST_COMMAND = (
     "printf '__V3_PRIMARY_SEED_H20_EPOCH__\\n'; "
     "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/tandem_fno_gate_b_aug_v3_rollout_h20_seed20261002_dense_10epoch/training_history.json 2>/dev/null || true; "
     "printf '__V3_H20_REAR_DRAG_EPOCH__\\n'; "
-    "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/tandem_fno_gate_b_aug_v3_h20_rear_drag_seed20261002_10epoch/training_history.json 2>/dev/null || true"
+    "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/tandem_fno_gate_b_aug_v3_h20_rear_drag_seed20261002_10epoch/training_history.json 2>/dev/null || true; "
+    "printf '__V4_EPOCH__\\n'; "
+    "jq -r 'length' /home/USER/workspace/fluid_control_v4_compute_415a50f/project/artifacts/tandem_fno_control_gap_v4_10epoch_seed20261002/training_history.json 2>/dev/null || true"
 )
 PAGE = r'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -119,7 +121,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  let finished=d.cfd.filter(x=>x.status==='complete').length,average=d.cfd.reduce((s,x)=>s+x.percent,0)/Math.max(1,d.cfd.length);
  $('cfd-progress').textContent=`${finished}/${d.cfd.length} 配对 CFD 完成`;
  let v4=d.v4_curator||{};$('cfd-sub').textContent=v4.complete?'v4 训练数据 28/4/5 条已完成 Curator 与划分审计':`新增训练数据 Curator ${v4.frames||0}/1602 帧 · HDF5 ${v4.new_hdf5||0}/2 条`;
- let worker=d.resources.worker.at(-1)||{};$('second-seed').textContent=`计算节点：20 步＋后柱阻力加权 ${worker.v3_h20_rear_drag_epoch||0}/10 轮；主种子 20 步 ${worker.v3_primary_seed_h20_epoch||0}/10 轮已验收`;
+ let worker=d.resources.worker.at(-1)||{};$('second-seed').textContent=worker.v4_epoch>0||worker.tasks?.some(x=>x.includes('新数据训练'))?`计算节点：v4 真实 CFD 新数据 FNO ${worker.v4_epoch||0}/10 轮；可用统一内存 ${num(worker.mem_available_gib,1)} GiB`:`计算节点：20 步＋后柱阻力加权 ${worker.v3_h20_rear_drag_epoch||0}/10 轮已验收`;
  $('heldout-scope').textContent=audited?`${picked.label}；v3 五条 CFD 测试，完整审计` :Number.isFinite(preliminary)?`${picked.label}；v3 五条 CFD 测试初评，完整审计中`:'旧数据四条 CFD 测试；目标 ≤10%';
  $('decision').textContent=audited&&a.status==='GATE_B_PASS'?`${picked.label}已通过冻结的 100 步总阻力门槛（${pct(b)}）；下一步做 CEM 控制筛选，再用真实 CFD 验证。`:audited?`${picked.label}五工况 100 步总阻力误差 ${pct(b)}，未达到 10%；其他候选仍在训练或审计。CEM 与 PPO 暂不启动。`:Number.isFinite(preliminary)?`${picked.label}的 100 步五工况初评为 ${pct(b)}；动作扰动与独立相位审计未完成。CEM/PPO 暂不启动。`:`旧数据模型 100 步误差 ${pct(b)}，未达到 10%；v3 FNO 正在完成独立测试。CEM 与 PPO 暂不启动。`;
  resources('primary',d.resources.primary);resources('worker',d.resources.worker);
@@ -175,6 +177,7 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
     h20_start = lines.index("__V3_H20_EPOCH__")
     primary_h20_start = lines.index("__V3_PRIMARY_SEED_H20_EPOCH__")
     h20_rear_drag_start = lines.index("__V3_H20_REAR_DRAG_EPOCH__")
+    v4_start = lines.index("__V4_EPOCH__")
     active = []
     for line in lines[task_start + 1 : epoch_start]:
         fields = line.split(None, 1)
@@ -215,7 +218,8 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
     h20_epoch = int(lines[h20_start + 1]) if len(lines) > h20_start + 1 and lines[h20_start + 1].isdigit() else 0
     primary_h20_epoch = int(lines[primary_h20_start + 1]) if len(lines) > primary_h20_start + 1 and lines[primary_h20_start + 1].isdigit() else 0
     h20_rear_drag_epoch = int(lines[h20_rear_drag_start + 1]) if len(lines) > h20_rear_drag_start + 1 and lines[h20_rear_drag_start + 1].isdigit() else 0
-    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae"), "v3_worker_epoch": v3_epoch, "v3_rollout_epoch": rollout_epoch, "v3_h20_epoch": h20_epoch, "v3_primary_seed_h20_epoch": primary_h20_epoch, "v3_h20_rear_drag_epoch": h20_rear_drag_epoch}, (total, idle)
+    v4_epoch = int(lines[v4_start + 1]) if len(lines) > v4_start + 1 and lines[v4_start + 1].isdigit() else 0
+    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae"), "v3_worker_epoch": v3_epoch, "v3_rollout_epoch": rollout_epoch, "v3_h20_epoch": h20_epoch, "v3_primary_seed_h20_epoch": primary_h20_epoch, "v3_h20_rear_drag_epoch": h20_rear_drag_epoch, "v4_epoch": v4_epoch}, (total, idle)
 
 
 def _cfd_progress(root: Path) -> list[dict]:
