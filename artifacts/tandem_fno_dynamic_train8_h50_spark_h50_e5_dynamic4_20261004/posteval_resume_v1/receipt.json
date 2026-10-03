@@ -1,0 +1,25 @@
+{
+  "status": "DYNAMIC_FNO_POSTEVAL_RESUME_COMPLETE",
+  "created_utc": "2026-10-03T18:49:25.251650+00:00",
+  "checkpoint_epoch": 4,
+  "model_sha256": "7f60ed445286b64a17d8e273bd7ac2414446e5d40db734cc820de1e882a1bfdb",
+  "training_state_sha256": "4bc4294732564f47ccd237bd4b5b0dcdafaa8e5df126fce6f6d1e7b46bf10bb2",
+  "dev30_manifest_sha256": "5213c7bb07c824c6e601636c3cfa974b80ec7c051633b0c8368a045cea41ddd2",
+  "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+  "dynamic6_manifest_sha256": "bfa49031a1ab2b8e10a5cc5d95f1fbd8713e289c3ac8155838334e3c3d007dae",
+  "sha256": {
+    "validation10/evaluation.json": "48f5d327a804737d82c244670b8cb4bd124b716daef2dc5012e790dff89084c4",
+    "validation10/segments.json": "e197ade20d6ddef6e5951f310286733f01d335249fa019328df170707bfe221b",
+    "validation10/diagnostic.json": "e4ecb495d0d8dbc3ee7dd9a0b822a32a7d05a565386553fab13d104da1e5a8d5",
+    "dynamic6/evaluation.json": "90a1fc42558fdaf14b1a713febd3c4e6063350b3067454208bf43a74cdf585bf",
+    "dynamic6/segments.json": "e6bea9a2c2e4716deaa17ce5e4b4e2d6d6512951bbc7409e71bde6732144261f",
+    "dynamic6/diagnostic.json": "7e5467fbb50976ce3d384091d1fd38fe222d5c8cb6c2cd9a732ba656571b4801"
+  },
+  "execution_log_sha256": {
+    "validation10/evaluate.log": "2209643f10796045bca404dd2f225c02a22e62984ce9ce636f7467e882704294",
+    "dynamic6/evaluate.log": "525f09e0f352d37a707dbe105ad56063b05899d84cd202363a8c0a2edb471eae"
+  },
+  "evaluation_data_mount": "/workspace/devdata",
+  "frozen_test_accessed": false,
+  "training_performed": false
+}

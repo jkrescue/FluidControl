@@ -1,0 +1,86 @@
+{
+  "status": "DYNAMIC6_FNO_DIAGNOSTIC_FAIL",
+  "scope": "validation-only diagnostic; no training, frozen access, PPO authorization, or control-benefit claim",
+  "checkpoint_epoch": 4,
+  "checkpoint_sha256": "7f60ed445286b64a17d8e273bd7ac2414446e5d40db734cc820de1e882a1bfdb",
+  "dataset_manifest_sha256": "bfa49031a1ab2b8e10a5cc5d95f1fbd8713e289c3ac8155838334e3c3d007dae",
+  "horizons": [
+    1,
+    10,
+    50,
+    100
+  ],
+  "pooled_h100_total_cd_nrmse": 0.03296174971193385,
+  "pooled_h100_limit": 0.1,
+  "strict_start0_h100_delta_total_cd_mae": 0.030092239379882812,
+  "strict_delta_limit": 0.023,
+  "strict_pairs": {
+    "b01": [
+      {
+        "profile": "minus",
+        "true_delta_cd": -0.09214472770690918,
+        "predicted_delta_cd": -0.08700346946716309,
+        "absolute_error": 0.005141258239746094
+      },
+      {
+        "profile": "plus",
+        "true_delta_cd": 0.09996485710144043,
+        "predicted_delta_cd": 0.11587810516357422,
+        "absolute_error": 0.01591324806213379
+      }
+    ],
+    "b05": [
+      {
+        "profile": "minus",
+        "true_delta_cd": 0.10243058204650879,
+        "predicted_delta_cd": 0.08100628852844238,
+        "absolute_error": 0.021424293518066406
+      },
+      {
+        "profile": "plus",
+        "true_delta_cd": -0.09842181205749512,
+        "predicted_delta_cd": -0.020531654357910156,
+        "absolute_error": 0.07789015769958496
+      }
+    ]
+  },
+  "true_cfd_window_rankings": {
+    "b01": {
+      "elapsed_0_10": [
+        "minus",
+        "zero",
+        "plus"
+      ],
+      "elapsed_10_20": [
+        "minus",
+        "zero",
+        "plus"
+      ],
+      "elapsed_0_20": [
+        "minus",
+        "zero",
+        "plus"
+      ]
+    },
+    "b05": {
+      "elapsed_0_10": [
+        "plus",
+        "zero",
+        "minus"
+      ],
+      "elapsed_10_20": [
+        "plus",
+        "zero",
+        "minus"
+      ],
+      "elapsed_0_20": [
+        "plus",
+        "zero",
+        "minus"
+      ]
+    }
+  },
+  "frozen_test_accessed": false,
+  "ppo_authorized": false,
+  "passes_predeclared_joint_diagnostic": false
+}

@@ -1,0 +1,31 @@
+{
+  "status": "DYNAMIC_H50_FORCE_WINDOW_COMPARISON_COMPLETE",
+  "scope": "Fixed validation-only start0 H100 sampled-force diagnostic over the final 6.15 D/U; not the canonical 60 D/U physical gate, not checkpoint selection, and not PPO authorization",
+  "parent_model_sha256": "333a24517f74162031577bf9e37f86124bb63d05889db795ca6984b4f9c3ee2d",
+  "candidate_model_sha256": "7f60ed445286b64a17d8e273bd7ac2414446e5d40db734cc820de1e882a1bfdb",
+  "parent_mean_action_delta_error": 0.07814419774278525,
+  "candidate_mean_action_delta_error": 0.01655803596781147,
+  "relative_reduction_percent": 78.81116084778293,
+  "candidate_velocity_uv_relative_l2_final": {
+    "b01_minus": 0.17671,
+    "b01_plus": 0.15831,
+    "b01_zero": 0.03320,
+    "b05_minus": 0.16023,
+    "b05_plus": 0.15765,
+    "b05_zero": 0.03652
+  },
+  "formal_dynamic6_result": {
+    "status": "DYNAMIC6_FNO_DIAGNOSTIC_FAIL",
+    "pooled_h100_total_cd_nrmse": 0.03296174971193385,
+    "strict_start0_h100_delta_total_cd_mae": 0.030092239379882812,
+    "strict_delta_limit": 0.023
+  },
+  "interpretation": "Dynamic train8 materially improved sampled window-force fidelity and long-rollout velocity fields relative to the parent, but the unchanged formal instantaneous action-difference gate still fails; surrogate closed-loop reliability is not established.",
+  "source_sha256": {
+    "parent.json": "2534e4c223b243ccfc1dca49900f5edb035d2d31bc68b859fa4142c858913acd",
+    "candidate.json": "bc4cbc8148823b5633a241d695ccb19fdff2d9e88b11ed1cd1c337c0dd625146",
+    "posteval_resume_v1/receipt.json": "067a54bf6b38895e56cc3f2da36b773a34e43c034030addf353647f67ed84066"
+  },
+  "frozen_test_accessed": false,
+  "ppo_authorized": false
+}
