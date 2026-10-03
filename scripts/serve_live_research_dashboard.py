@@ -42,6 +42,9 @@ V3_PARENT_WINDOW_MEAN_CD = Path(
 TWO_PHASE_ALTERNATING = Path(
     "artifacts/tandem_cylinders/two_phase_alternating_result_20261003/result.json"
 )
+LONG_DWELL075 = Path(
+    "artifacts/tandem_cylinders/longdwell075_result_20261003/result.json"
+)
 LOW_ACTION_PHASE94_CANONICAL = Path(
     "artifacts/distributed_runs/control_gap_low_action_phase94_validation_v1_worker78/"
     "low_action_phase94_physical_audit_v3_canonical.json"
@@ -130,8 +133,9 @@ function renderLatestEvidence(d){
  $('v4-window-detail').textContent=windowReady?`v4 H20固定10%阈值 ${passText(windowPass)}；验证集真实CFD对FNO，步骤1–100总Cd算术均值。${parentWindowReady?`v3 parent ${pct(parentWindowValue)}，candidate ${windowGain?'改善':'退化'} ${num(Math.abs(windowDeltaPp),3)}个百分点；`: 'v3 parent对照尚未生成；'}macro ${pct(window.macro_window_mean_cd_nrmse)}，最差 ${pct(window.worst_case_window_mean_cd_nrmse)}。不是终点指标或控制收益。`:'窗口均值JSON尚未生成；与第100步终点指标分开展示。';
  let physical=d.two_phase_alternating,phases=physical?.phases||{},t90=phases.t90?.comparison,t94=phases.t94?.comparison,physicalReady=physical?.status==='TWO_PHASE_ALTERNATING_OPENFOAM_AUDIT_COMPLETED'&&t90&&t94,physicalPass=physicalReady?physical.robustness?.canonical_joint_pass_both_phases===true:null;
  let low=d.low_action_phase94_canonical,lowComparisons=low?.comparisons_to_same_phase_zero||{},lowMinus=Object.entries(lowComparisons).find(([name])=>name.includes('_m_phase94_'))?.[1],lowPlus=Object.entries(lowComparisons).find(([name])=>name.includes('_p_phase94_'))?.[1],lowReady=low?.status==='LOW_ACTION_PHASE94_CANONICAL_PHYSICAL_AUDIT_V3_COMPLETE'&&lowMinus&&lowPlus,lowNote=lowReady?` 低幅脉冲v3 canonical：−0.75降阻 ${num(-lowMinus.mean_total_cd_change_percent,3)}%<2%，Cl′比 ${num(lowMinus.rear_cl_fluctuation_rms_ratio,3)}≤1.05、平均Cl比 ${num(lowMinus.abs_mean_rear_cl_to_zero_cl_fluctuation_rms_ratio,3)}>0.1，joint ${lowMinus.canonical_joint_gate}；+0.75增阻 ${num(lowPlus.mean_total_cd_change_percent,3)}%，joint ${lowPlus.canonical_joint_gate}。真实OpenFOAM，仅t94单相位开环。`:'';
+ let dwell=d.long_dwell075,dwellPhases=dwell?.phases||{},d90=dwellPhases.t90?.comparison,d94=dwellPhases.t94?.comparison,dwellReady=dwell?.status==='TWO_PHASE_LONG_DWELL075_OPENFOAM_AUDIT_COMPLETED'&&d90&&d94,dwellPass=dwellReady?dwell.robustness?.canonical_joint_pass_both_phases===true:null,dwellNote=dwellReady?` 低幅长驻留±0.75（T=40）真实OpenFOAM：t90/t94降阻 ${pct(d90.total_drag_reduction)} / ${pct(d94.total_drag_reduction)}，均<2%；Cl′比 ${num(d90.rear_cl_fluctuation_rms_ratio,3)} / ${num(d94.rear_cl_fluctuation_rms_ratio,3)}，两相位joint ${passText(dwellPass)}。仅预声明开环物理筛查，不是代理或闭环达标。`:'';
  $('two-phase').textContent=physicalReady?`t90 ${dragEffect(t90.total_drag_reduction)} · t94 ${dragEffect(t94.total_drag_reduction)}`:'等待真实 CFD';$('two-phase').className='number '+(physicalPass===true?'good':physicalPass===false?'bad':'');
- $('two-phase-detail').textContent=physicalReady?`真实OpenFOAM CFD长窗口、各自相位匹配零控制；两相位联合 ${passText(physicalPass)}；后柱Cl′ RMS比 ${num(t90.rear_cl_fluctuation_rms_ratio,2)} / ${num(t94.rear_cl_fluctuation_rms_ratio,2)}。不是代理预测或闭环结果。${lowNote}`:'两相位OpenFOAM result.json尚未生成；不以代理结果代替。';
+ $('two-phase-detail').textContent=physicalReady?`真实OpenFOAM CFD长窗口、各自相位匹配零控制；两相位联合 ${passText(physicalPass)}；后柱Cl′ RMS比 ${num(t90.rear_cl_fluctuation_rms_ratio,2)} / ${num(t94.rear_cl_fluctuation_rms_ratio,2)}。不是代理预测或闭环结果。${dwellNote}${lowNote}`:'两相位OpenFOAM result.json尚未生成；不以代理结果代替。';
  let ready=[terminalReady,windowReady,Boolean(physicalReady)],passes=[terminalPass,windowPass,physicalPass],readyCount=ready.filter(Boolean).length,passCount=passes.filter(x=>x===true).length,jointReady=readyCount===3,jointPass=jointReady&&passCount===3;
  $('joint-status').textContent=jointReady?(jointPass?'PASS':'FAIL'):`等待 ${readyCount}/3`;$('joint-status').className='number '+(jointReady?(jointPass?'good':'bad'):'');
  $('joint-detail').textContent=`终点精度 ${passText(terminalPass)} · 窗口固定阈值 ${passText(windowPass)}${parentWindowReady?`、相对parent ${windowGain?'GAIN':'NO GAIN'}`:''} · 两相位真实CFD联合收益 ${passText(physicalPass)}。这是展示层联合状态；v4冻结测试未访问。`;
@@ -205,6 +209,7 @@ def _latest_evidence(root: Path) -> dict:
             root / V3_PARENT_WINDOW_MEAN_CD, None
         ),
         "two_phase_alternating": _read_json(root / TWO_PHASE_ALTERNATING, None),
+        "long_dwell075": _read_json(root / LONG_DWELL075, None),
         "low_action_phase94_canonical": _read_json(
             root / LOW_ACTION_PHASE94_CANONICAL, None
         ),

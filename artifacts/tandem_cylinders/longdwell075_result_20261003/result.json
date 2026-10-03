@@ -1,0 +1,273 @@
+{
+  "status": "TWO_PHASE_LONG_DWELL075_OPENFOAM_AUDIT_COMPLETED",
+  "scope": "predeclared real-CFD low-amplitude long-dwell physical screen; not tuning, learned closed loop, or final acceptance",
+  "predeclared_audit": "artifacts/tandem_cylinders/longdwell075_predeclared_20261003.json",
+  "predeclared_audit_sha256": "2ce4ec9b24522aa44c5b12d2f22f47e09dd1a3fab2538975036c135ca4307c63",
+  "phases": {
+    "t90": {
+      "cases": {
+        "zero": "longdwell075_t90_zero_20261003",
+        "control": "longdwell075_t90_control_20261003"
+      },
+      "window": [
+        130.0,
+        210.0
+      ],
+      "metrics": {
+        "zero": {
+          "samples": 16001,
+          "window": [
+            130.0,
+            210.0
+          ],
+          "total_cd_mean": 2.2986074252843447,
+          "front_cd_mean": 1.391195717704956,
+          "rear_cd_mean": 0.9074117075793888,
+          "front_cl_mean": -0.0035371516634787226,
+          "rear_cl_mean": -0.004926396692155858,
+          "front_cl_fluctuation_rms": 0.31346195054690124,
+          "rear_cl_fluctuation_rms": 1.1807565076258568,
+          "total_cl_fluctuation_rms": 1.2350968665877915,
+          "omega_time_mean": 0.0,
+          "omega_rms": 0.0,
+          "cm_pitch_mean": -7.013312934559275e-05,
+          "cm_pitch_rms": 0.012461032950849896,
+          "mean_omega_times_cm_pitch": 0.0,
+          "action_cycle_metrics": [
+            {
+              "window": [
+                130.0,
+                170.0
+              ],
+              "total_cd_mean": 2.29886763888165,
+              "rear_cl_mean": 0.07017763771663907,
+              "rear_cl_fluctuation_rms": 1.1775442968479963
+            },
+            {
+              "window": [
+                170.0,
+                210.0
+              ],
+              "total_cd_mean": 2.2983472442096735,
+              "rear_cl_mean": -0.08002104427000356,
+              "rear_cl_fluctuation_rms": 1.1791866797375115
+            }
+          ],
+          "torque_cost": {
+            "mean_signed_actuator_power_over_zero_drag_power": 0.0,
+            "mean_positive_only_actuator_power_over_zero_drag_power": 0.0,
+            "mean_abs_rotation_work_over_zero_drag_power": 0.0
+          }
+        },
+        "control": {
+          "samples": 16001,
+          "window": [
+            130.0,
+            210.0
+          ],
+          "total_cd_mean": 2.268954504416305,
+          "front_cd_mean": 1.390584826696144,
+          "rear_cd_mean": 0.8783696777201613,
+          "front_cl_mean": -0.003915758971595268,
+          "rear_cl_mean": -0.003729551089195328,
+          "front_cl_fluctuation_rms": 0.31351132916416646,
+          "rear_cl_fluctuation_rms": 1.3572192113615673,
+          "total_cl_fluctuation_rms": 1.4011617635805433,
+          "omega_time_mean": 0.0,
+          "omega_rms": 0.6981902680031813,
+          "cm_pitch_mean": -8.543470414594272e-05,
+          "cm_pitch_rms": 0.07283590954598711,
+          "mean_omega_times_cm_pitch": 0.04756438670378662,
+          "action_cycle_metrics": [
+            {
+              "window": [
+                130.0,
+                170.0
+              ],
+              "total_cd_mean": 2.2618422167591623,
+              "rear_cl_mean": 0.07089973003837013,
+              "rear_cl_fluctuation_rms": 1.31819581910208
+            },
+            {
+              "window": [
+                170.0,
+                210.0
+              ],
+              "total_cd_mean": 2.2760659031486066,
+              "rear_cl_mean": -0.07834950472255663,
+              "rear_cl_fluctuation_rms": 1.3911497899441965
+            }
+          ],
+          "torque_cost": {
+            "mean_signed_actuator_power_over_zero_drag_power": -0.020692696882723575,
+            "mean_positive_only_actuator_power_over_zero_drag_power": 0.00014023999270680766,
+            "mean_abs_rotation_work_over_zero_drag_power": 0.02097317686813719
+          }
+        }
+      },
+      "comparison": {
+        "total_drag_reduction": 0.012900385051341057,
+        "rear_cl_fluctuation_rms_ratio": 1.149448851305104,
+        "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.0031586115046651946,
+        "canonical_checks": {
+          "total_drag_reduction_at_least_2pct": false,
+          "rear_cl_fluctuation_rms_increase_at_most_5pct": false,
+          "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+        },
+        "canonical_joint_check": false
+      },
+      "solver_health": {
+        "zero": {
+          "steps": 24000,
+          "max_courant": 0.245227456,
+          "max_abs_global_continuity_per_step": 1.40345342e-12,
+          "solver_ended_cleanly": true
+        },
+        "control": {
+          "steps": 24000,
+          "max_courant": 0.249296129,
+          "max_abs_global_continuity_per_step": 1.71964528e-12,
+          "solver_ended_cleanly": true
+        }
+      }
+    },
+    "t94": {
+      "cases": {
+        "zero": "longdwell075_t94_zero_20261003",
+        "control": "longdwell075_t94_control_20261003"
+      },
+      "window": [
+        134.0,
+        214.0
+      ],
+      "metrics": {
+        "zero": {
+          "samples": 16001,
+          "window": [
+            134.0,
+            214.0
+          ],
+          "total_cd_mean": 2.3007943909545028,
+          "front_cd_mean": 1.3913127055897132,
+          "rear_cd_mean": 0.9094816853647897,
+          "front_cl_mean": 0.00132180873541545,
+          "rear_cl_mean": 0.013164376556291867,
+          "front_cl_fluctuation_rms": 0.3154104078536002,
+          "rear_cl_fluctuation_rms": 1.1736059215291048,
+          "total_cl_fluctuation_rms": 1.228744245850682,
+          "omega_time_mean": 0.0,
+          "omega_rms": 0.0,
+          "cm_pitch_mean": 0.00015348585321882453,
+          "cm_pitch_rms": 0.012374792506422486,
+          "mean_omega_times_cm_pitch": 0.0,
+          "action_cycle_metrics": [
+            {
+              "window": [
+                134.0,
+                174.0
+              ],
+              "total_cd_mean": 2.3013686864594627,
+              "rear_cl_mean": -0.011240362490415406,
+              "rear_cl_fluctuation_rms": 1.1726671290719064
+            },
+            {
+              "window": [
+                174.0,
+                214.0
+              ],
+              "total_cd_mean": 2.3002201672275087,
+              "rear_cl_mean": 0.03756606539189469,
+              "rear_cl_fluctuation_rms": 1.1740367489673107
+            }
+          ],
+          "torque_cost": {
+            "mean_signed_actuator_power_over_zero_drag_power": 0.0,
+            "mean_positive_only_actuator_power_over_zero_drag_power": 0.0,
+            "mean_abs_rotation_work_over_zero_drag_power": 0.0
+          }
+        },
+        "control": {
+          "samples": 16001,
+          "window": [
+            134.0,
+            214.0
+          ],
+          "total_cd_mean": 2.2668857439445844,
+          "front_cd_mean": 1.3907250689364414,
+          "rear_cd_mean": 0.8761606750081433,
+          "front_cl_mean": 0.0016201372134254724,
+          "rear_cl_mean": 0.013574838661402118,
+          "front_cl_fluctuation_rms": 0.315471556874365,
+          "rear_cl_fluctuation_rms": 1.3490985766088899,
+          "total_cl_fluctuation_rms": 1.3890773977532886,
+          "omega_time_mean": 0.0,
+          "omega_rms": 0.6981902680031813,
+          "cm_pitch_mean": 0.0001942635477976875,
+          "cm_pitch_rms": 0.07267174866109251,
+          "mean_omega_times_cm_pitch": 0.04754520794928156,
+          "action_cycle_metrics": [
+            {
+              "window": [
+                134.0,
+                174.0
+              ],
+              "total_cd_mean": 2.26487233961115,
+              "rear_cl_mean": -0.012694674768568974,
+              "rear_cl_fluctuation_rms": 1.3791573524076657
+            },
+            {
+              "window": [
+                174.0,
+                214.0
+              ],
+              "total_cd_mean": 2.2688988966339334,
+              "rear_cl_mean": 0.03984106881260431,
+              "rear_cl_fluctuation_rms": 1.3178350693114151
+            }
+          ],
+          "torque_cost": {
+            "mean_signed_actuator_power_over_zero_drag_power": -0.020664692219436894,
+            "mean_positive_only_actuator_power_over_zero_drag_power": 0.00012429498809443334,
+            "mean_abs_rotation_work_over_zero_drag_power": 0.020913282195625757
+          }
+        }
+      },
+      "comparison": {
+        "total_drag_reduction": 0.014737799754393155,
+        "rear_cl_fluctuation_rms_ratio": 1.1495328643631362,
+        "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.01156677758042947,
+        "canonical_checks": {
+          "total_drag_reduction_at_least_2pct": false,
+          "rear_cl_fluctuation_rms_increase_at_most_5pct": false,
+          "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+        },
+        "canonical_joint_check": false
+      },
+      "solver_health": {
+        "zero": {
+          "steps": 24000,
+          "max_courant": 0.245227456,
+          "max_abs_global_continuity_per_step": 1.40345343e-12,
+          "solver_ended_cleanly": true
+        },
+        "control": {
+          "steps": 24000,
+          "max_courant": 0.249148615,
+          "max_abs_global_continuity_per_step": 1.49990456e-12,
+          "solver_ended_cleanly": true
+        }
+      }
+    }
+  },
+  "robustness": {
+    "drag_reduction_phase_difference_percentage_points": 0.18374147030520982,
+    "rear_cl_fluctuation_ratio_phase_difference": 8.401305803218406e-05,
+    "canonical_joint_pass_both_phases": false
+  },
+  "torque_definition": "OpenFOAM CmPitch=M_fluid/(0.5*rho*U_inf^2*Aref*lRef); signed ideal actuator proxy=-omega*CmPitch/Cd_total_zero",
+  "torque_guard": "fluid-torque work proxy, not electrical motor power; positive-only assumes no regenerative recovery",
+  "torque_timeseries": "artifacts/tandem_cylinders/longdwell075_result_20261003/rear_cylinder_torque_timeseries.csv",
+  "torque_timeseries_sha256": "7992ba1e00ff027b552e49f054459ce6192b652f894ffb1e4956b92e4e85bbc2",
+  "raw_key_files_manifest": "artifacts/tandem_cylinders/longdwell075_result_20261003/raw_key_files.sha256",
+  "raw_key_files_manifest_sha256": "99c81b998e681caa243b70f6cb946bdc1e434b0b855988f51e283aff58a3f689"
+}

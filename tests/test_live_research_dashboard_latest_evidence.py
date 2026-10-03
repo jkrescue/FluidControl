@@ -32,6 +32,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
                 MODULE.V4_WINDOW_MEAN_CD: {"metric": "window"},
                 MODULE.V3_PARENT_WINDOW_MEAN_CD: {"metric": "parent-window"},
                 MODULE.TWO_PHASE_ALTERNATING: {"status": "real-cfd"},
+                MODULE.LONG_DWELL075: {"status": "long-dwell-real-cfd"},
                 MODULE.LOW_ACTION_PHASE94_CANONICAL: {"status": "canonical-v3"},
             }
             for relative, value in fixtures.items():
@@ -45,6 +46,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
                     "v4_window_mean_cd": {"metric": "window"},
                     "v3_parent_window_mean_cd": {"metric": "parent-window"},
                     "two_phase_alternating": {"status": "real-cfd"},
+                    "long_dwell075": {"status": "long-dwell-real-cfd"},
                     "low_action_phase94_canonical": {"status": "canonical-v3"},
                 },
             )
@@ -57,6 +59,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
             "v4_window_mean_cd",
             "v3_parent_window_mean_cd",
             "two_phase_alternating",
+            "long_dwell075",
             "low_action_phase94_canonical",
         })
         self.assertTrue(all(value is None for value in result.values()))
@@ -79,6 +82,9 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("canonical_joint_pass_both_phases", page)
         self.assertIn("LOW_ACTION_PHASE94_CANONICAL_PHYSICAL_AUDIT_V3_COMPLETE", page)
         self.assertIn("真实OpenFOAM，仅t94单相位开环", page)
+        self.assertIn("TWO_PHASE_LONG_DWELL075_OPENFOAM_AUDIT_COMPLETED", page)
+        self.assertIn("低幅长驻留±0.75（T=40）真实OpenFOAM", page)
+        self.assertIn("仅预声明开环物理筛查，不是代理或闭环达标", page)
         self.assertIn("仅验证集诊断，不是零控制收益或CFD闭环成功", page)
         self.assertIn("唯一严格同初态start=0", page)
 

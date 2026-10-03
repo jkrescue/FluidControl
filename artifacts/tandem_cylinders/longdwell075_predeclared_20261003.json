@@ -1,0 +1,851 @@
+{
+  "status": "PREDECLARED_BEFORE_CFD",
+  "scope": "two-phase low-amplitude long-dwell alternating rotation versus fresh same-phase zero; validation-only physical experiment",
+  "unique_design": {
+    "amplitude": 0.75,
+    "action_period": 40.0,
+    "negative_plateau_each_period": [
+      2.0,
+      18.0
+    ],
+    "positive_plateau_each_period": [
+      22.0,
+      38.0
+    ],
+    "sign_transition_duration": 4.0,
+    "motivation": "halve sign-change frequency relative to failed omega=+/-1 T=20 square wave and permit roughly 2.6 shedding periods at each low-amplitude plateau, testing nonlinear quasi-steady drag preservation rather than linear duty mixing"
+  },
+  "analysis_duration": 80.0,
+  "analysis_action_periods": 2.0,
+  "approximate_analysis_shedding_periods": 12.999675008124797,
+  "schedules": {
+    "longdwell075_t90_zero_20261003": {
+      "start": 90.0,
+      "controlled": false,
+      "run_window": [
+        90.0,
+        210.0
+      ],
+      "analysis_window": [
+        130.0,
+        210.0
+      ],
+      "action_points": [
+        [
+          90.0,
+          0.0
+        ],
+        [
+          210.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "signed_time_mean_omega": 0.0,
+        "max_abs_omega": 0.0,
+        "max_abs_domega_dt": 0.0
+      }
+    },
+    "longdwell075_t90_control_20261003": {
+      "start": 90.0,
+      "controlled": true,
+      "run_window": [
+        90.0,
+        210.0
+      ],
+      "analysis_window": [
+        130.0,
+        210.0
+      ],
+      "action_points": [
+        [
+          90.0,
+          0.0
+        ],
+        [
+          92.0,
+          -0.75
+        ],
+        [
+          108.0,
+          -0.75
+        ],
+        [
+          112.0,
+          0.75
+        ],
+        [
+          128.0,
+          0.75
+        ],
+        [
+          130.0,
+          0.0
+        ],
+        [
+          132.0,
+          -0.75
+        ],
+        [
+          148.0,
+          -0.75
+        ],
+        [
+          152.0,
+          0.75
+        ],
+        [
+          168.0,
+          0.75
+        ],
+        [
+          170.0,
+          0.0
+        ],
+        [
+          172.0,
+          -0.75
+        ],
+        [
+          188.0,
+          -0.75
+        ],
+        [
+          192.0,
+          0.75
+        ],
+        [
+          208.0,
+          0.75
+        ],
+        [
+          210.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "signed_time_mean_omega": 0.0,
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 0.375
+      }
+    },
+    "longdwell075_t94_zero_20261003": {
+      "start": 94.0,
+      "controlled": false,
+      "run_window": [
+        94.0,
+        214.0
+      ],
+      "analysis_window": [
+        134.0,
+        214.0
+      ],
+      "action_points": [
+        [
+          94.0,
+          0.0
+        ],
+        [
+          214.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "signed_time_mean_omega": 0.0,
+        "max_abs_omega": 0.0,
+        "max_abs_domega_dt": 0.0
+      }
+    },
+    "longdwell075_t94_control_20261003": {
+      "start": 94.0,
+      "controlled": true,
+      "run_window": [
+        94.0,
+        214.0
+      ],
+      "analysis_window": [
+        134.0,
+        214.0
+      ],
+      "action_points": [
+        [
+          94.0,
+          0.0
+        ],
+        [
+          96.0,
+          -0.75
+        ],
+        [
+          112.0,
+          -0.75
+        ],
+        [
+          116.0,
+          0.75
+        ],
+        [
+          132.0,
+          0.75
+        ],
+        [
+          134.0,
+          0.0
+        ],
+        [
+          136.0,
+          -0.75
+        ],
+        [
+          152.0,
+          -0.75
+        ],
+        [
+          156.0,
+          0.75
+        ],
+        [
+          172.0,
+          0.75
+        ],
+        [
+          174.0,
+          0.0
+        ],
+        [
+          176.0,
+          -0.75
+        ],
+        [
+          192.0,
+          -0.75
+        ],
+        [
+          196.0,
+          0.75
+        ],
+        [
+          212.0,
+          0.75
+        ],
+        [
+          214.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "signed_time_mean_omega": 0.0,
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 0.375
+      }
+    }
+  },
+  "canonical_checks": {
+    "total_drag_reduction_at_least_2pct": 0.02,
+    "rear_cl_fluctuation_rms_ratio_at_most": 1.05,
+    "abs_mean_rear_cl_over_zero_fluctuation_rms_at_most": 0.1
+  },
+  "torque_cost": "report signed -omega*CmPitch/Cd_zero, positive-only, and absolute proxies; not electrical motor energy",
+  "failure_stop_rule": "if either phase fails the canonical joint gate, retain the result and do not tune amplitude, period, duty, phase, or window",
+  "data_guard": "never merge cases into Curator/FNO train, validation, or frozen-test profiles; physical audit only",
+  "leakage_audit": {
+    "method": "raw OpenFOAM U/p SHA-256 at each start compared with every current-v4 and independent-phase train/validation/test case",
+    "datasets": [
+      "data/curated/tandem_cylinders_control_gap_v4",
+      "data/curated/tandem_cylinders_phase_v1"
+    ],
+    "comparisons": 82,
+    "split_counts": {
+      "train": 60,
+      "validation": 10,
+      "test": 12
+    },
+    "exact_u_and_p_matches": 0,
+    "source_hashes": {
+      "t90": {
+        "U": "3684a13bc9a1a81f9f538bce4f271f25e18b0c4d4318408a30c35509ae8d6b76",
+        "p": "7db599790751368f3239d6ab0fd5280a718ccfd7b376e21453dc9f0604b05cd5"
+      },
+      "t94": {
+        "U": "1f321c10b7aa8f80d26440f938c21a390285a62a06b246e6076db5281c6427c3",
+        "p": "f20225035ffda5804a9b1fc7cf331ee265b76560f3fe4fad5a92fc72d9cafc27"
+      }
+    },
+    "records": [
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_00",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_01",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_02",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_03",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_04",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_05",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_06",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_07",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_08",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_09",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_10",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_11",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_12",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_13",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_14",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_15",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_16",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_17",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_18",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_19",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_20",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_21",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_22",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_23",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_24",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_25",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "train_signed_pulse_m_v4_20261003",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "train_signed_pulse_p_v4_20261003",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "validation",
+        "case": "expanded_validation_00",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "validation",
+        "case": "expanded_validation_01",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "validation",
+        "case": "expanded_validation_02",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "validation",
+        "case": "expanded_validation_04",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "test",
+        "case": "expanded_test_00",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "test",
+        "case": "expanded_test_01",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "test",
+        "case": "expanded_test_02",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "test",
+        "case": "expanded_test_04",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "test",
+        "case": "expanded_test_05",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_phase_v1",
+        "split": "train",
+        "case": "phase_train_82_multisine",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_phase_v1",
+        "split": "train",
+        "case": "phase_train_84_ramp",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_phase_v1",
+        "split": "validation",
+        "case": "phase_validation_86_multisine",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 90.0,
+        "dataset": "data/curated/tandem_cylinders_phase_v1",
+        "split": "test",
+        "case": "phase_test_88_ramp",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_00",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_01",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_02",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_03",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_04",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_05",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_06",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_07",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_08",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_09",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_10",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_11",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_12",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_13",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_14",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_15",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_16",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_17",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_18",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_19",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_20",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_21",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_22",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_23",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_24",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "expanded_train_25",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "train_signed_pulse_m_v4_20261003",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "train",
+        "case": "train_signed_pulse_p_v4_20261003",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "validation",
+        "case": "expanded_validation_00",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "validation",
+        "case": "expanded_validation_01",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "validation",
+        "case": "expanded_validation_02",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "validation",
+        "case": "expanded_validation_04",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "test",
+        "case": "expanded_test_00",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "test",
+        "case": "expanded_test_01",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "test",
+        "case": "expanded_test_02",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "test",
+        "case": "expanded_test_04",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_control_gap_v4",
+        "split": "test",
+        "case": "expanded_test_05",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_phase_v1",
+        "split": "train",
+        "case": "phase_train_82_multisine",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_phase_v1",
+        "split": "train",
+        "case": "phase_train_84_ramp",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_phase_v1",
+        "split": "validation",
+        "case": "phase_validation_86_multisine",
+        "u_and_p_exact_match": false
+      },
+      {
+        "start": 94.0,
+        "dataset": "data/curated/tandem_cylinders_phase_v1",
+        "split": "test",
+        "case": "phase_test_88_ramp",
+        "u_and_p_exact_match": false
+      }
+    ]
+  }
+}
