@@ -645,13 +645,19 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn('data["dynamic6_runtime"]', page)
         self.assertIn("AI训练叶进程", page)
         self.assertIn("post-hoc per-phase oracle", page)
+        self.assertIn("展开 0–10 / 10–20D/U 分段明细（8行）", page)
+        self.assertIn("comparisons.elapsed_0_20", page)
         self.assertIn('data["dynamic6_physical_qc"]', page)
         self.assertIn("full40_dev30_quickscreen_qs1_interrupt_recovery.json", page)
 
     def test_current_chain_is_promoted_and_history_is_collapsed(self) -> None:
         page = SCRIPT.read_text(encoding="utf-8")
         self.assertIn('id="current-focus"', page)
-        self.assertIn("document.querySelector('.banner').after($('current-focus'))", page)
+        self.assertIn(
+            "document.querySelector('details.archive').before($('current-focus'))",
+            page,
+        )
+        self.assertIn("历史 v4（非当前 full40/dev30）", page)
         self.assertEqual(page.count('<details class="archive">'), 3)
         self.assertNotIn('<details class="archive" open>', page)
         self.assertIn("历史 v3/v4 与旧开环动作证据（非当前", page)
