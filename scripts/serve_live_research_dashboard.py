@@ -296,11 +296,11 @@ function renderTrain20Physics(d){let p=d.full40_train20_physics,s=p?.all_train_c
  $('train20-physics').textContent=`TRAIN ONLY · 联合门槛 ${s.joint_pass_count}/${s.comparison_count} 通过 · 全动作 macro 降阻 ${pct(s.macro_mean_total_drag_reduction_fraction)}`;$('train20-physics').className='number '+(s.joint_pass_count?'good':'bad');
  let minus=a.m075,plus=a.p075;$('train20-actions').textContent=`−0.75 / +0.75 macro 降阻 ${pct(minus.macro_mean_total_drag_reduction_fraction)} / ${pct(plus.macro_mean_total_drag_reduction_fraction)}；worst phase ${pct(minus.worst_drag_reduction.total_drag_reduction_fraction_positive_is_better)} / ${pct(plus.worst_drag_reduction.total_drag_reduction_fraction_positive_is_better)}；macro 平均Cl偏置比 ${num(minus.macro_mean_abs_rear_cl_bias_ratio,3)} / ${num(plus.macro_mean_abs_rear_cl_bias_ratio,3)}（门槛≤0.10）。`;
  $('train20-scope').textContent=`四个train相位、16个非零固定动作、各自同相位zero、固定末60D/U。validation/frozen结果读取=${p.scope?.validation_or_frozen_results_read?'是（异常）':'否'}；不替代九案 commissioning，不代表泛化、PPO或真实闭环收益。`;}
-function renderFreeAR(d){let x=d.free_ar_ablation||{},a=x.h20||{},b=x.h50||{},am=a.last_metrics||{},bm=b.last_metrics||{},dyn=x.dynamic6_fno||{},direct=x.direct_cfd_ppo||{};
+function renderFreeAR(d){let x=d.free_ar_ablation||{},a=x.h20||{},b=x.h50||{},am=a.last_metrics||{},bm=b.last_metrics||{},bval=b.validation10||{},b100=bval.horizons?.['100']||{},dyn=x.dynamic6_fno||{},direct=x.direct_cfd_ppo||{};
  const stage=(v,m)=>`${v.epoch||0}/${v.expected_epochs||8}轮${Number.isFinite(m.selection_score)?` · H100 selection ${num(m.selection_score,4)}`:''}`;
  $('free-ar-h20').textContent=stage(a,am);$('free-ar-h20').className=a.status==='COMPLETE'?'good':a.status==='FAILED'?'bad':'';$('free-ar-h20-detail').textContent=`${a.service_state||a.status||'等待'} · pure-AR H20→验证H100${Number.isFinite(am.terminal_state_mae)?` · 终点反归一化流场综合MAE / 四个力系数平均MAE ${num(am.terminal_state_mae,4)} / ${num(am.terminal_force_mae,4)}`:''}。不是总Cd相对误差、减阻率或正式Gate。`;
- $('free-ar-h50').textContent=stage(b,bm);$('free-ar-h50').className=b.status==='COMPLETE'?'good':b.status==='FAILED'?'bad':'';$('free-ar-h50-detail').textContent=`${b.service_state||b.status||'等待'} · pure-AR H50→验证H100${Number.isFinite(bm.terminal_state_mae)?` · 终点反归一化流场综合MAE / 四个力系数平均MAE ${num(bm.terminal_state_mae,4)} / ${num(bm.terminal_force_mae,4)}`:''} · 已验SHA回传 ${b.synced_epochs||0}/8轮。不是总Cd相对误差或减阻率。`;
- let failed=dyn.status==='DYNAMIC6_FNO_DIAGNOSTIC_FAIL';$('free-ar-dynamic').textContent=dyn.status?`${failed?'FAIL':'诊断完成'} · H100 pooled ${Number.isFinite(dyn.pooled_h100_total_cd_nrmse)?pct(dyn.pooled_h100_total_cd_nrmse):'—'}`:'等待诊断';$('free-ar-dynamic').className=failed?'bad':'';$('free-ar-dynamic-detail').textContent=dyn.status?`动作差值MAE ${num(dyn.strict_start0_h100_delta_total_cd_mae,4)}（限值 ${num(dyn.strict_delta_limit,3)}）；PPO授权=${dyn.ppo_authorized?'是':'否'}。真实CFD validation-only，不是控制收益。`:'等待Dynamic6 FNO诊断。';
+ $('free-ar-h50').textContent=stage(b,bm);$('free-ar-h50').className=b.status==='COMPLETE'?'good':b.status==='FAILED'?'bad':'';$('free-ar-h50-detail').textContent=`${b.service_state||b.status||'等待'} · pure-AR H50→验证H100${Number.isFinite(bm.terminal_state_mae)?` · 终点反归一化流场综合MAE / 四个力系数平均MAE ${num(bm.terminal_state_mae,4)} / ${num(bm.terminal_force_mae,4)}`:''} · 已验SHA回传 ${b.synced_epochs||0}/8轮。${Number.isFinite(b100.pooled_total_cd_nrmse)?`e1独立validation10 H100 pooled总Cd NRMSE ${pct(b100.pooled_total_cd_nrmse)}（macro ${pct(b100.macro_total_cd_nrmse)}），仍高于10%门槛。`:''}不是减阻率。`;
+ let evaluating=x.dynamic6_service_state==='active'&&dyn.checkpoint_epoch!==1,failed=dyn.status==='DYNAMIC6_FNO_DIAGNOSTIC_FAIL';$('free-ar-dynamic').textContent=evaluating?'H50 e1 · Dynamic6评估中':dyn.status?`${failed?'FAIL':'诊断完成'} · H100 pooled ${Number.isFinite(dyn.pooled_h100_total_cd_nrmse)?pct(dyn.pooled_h100_total_cd_nrmse):'—'}`:'等待诊断';$('free-ar-dynamic').className=!evaluating&&failed?'bad':'';$('free-ar-dynamic-detail').textContent=evaluating?'正在用H50 e1固定checkpoint评估全部6条动态动作真实CFD；parent e5失败仅为上一候选。':dyn.status?`${dyn.checkpoint_epoch===1?'H50 e1':'parent e5'} · 动作差值MAE ${num(dyn.strict_start0_h100_delta_total_cd_mae,4)}（限值 ${num(dyn.strict_delta_limit,3)}）；PPO授权=${dyn.ppo_authorized?'是':'否'}。全6案真实CFD validation-only，不是控制收益。`:'等待H50 e1对全6条动态动作轨迹的FNO诊断。';
  let completed=direct.completed_transitions||0,live=direct.live_collection_steps||0,updates=direct.ppo_update_count||0,last=direct.last_checkpoint||{},reward=last.raw_physical_reward||{};$('free-ar-direct-ppo').textContent=direct.running?`真实CFD训练中 · ${completed}/2048步${completed<256?`（首轮 ${live}/256）`:''}`:'实现与测试中';$('free-ar-direct-ppo').className=direct.running?'good':'';$('free-ar-direct-ppo-detail').textContent=direct.running?`PPO更新 ${updates} 次${Number.isFinite(reward.mean)?` · 最近256步真实reward均值 ${num(reward.mean,4)}`:''}。FNO未用于奖励；物理减阻尚待80D配对CFD验收。`:'直接CFD反馈，不依赖FNO代理；尚无运行日志或控制收益。';}
 function renderFull40Chain(d){let c=d.full40_development_chain||{},raw=c.raw_qc||{},hdf=c.development_hdf||{},release=c.dev30_release||{},one=c.quickscreen?.onestep||{},h20=c.quickscreen?.h20||{},diag=c.validation_diagnostic||{},ppo=c.canonical_ppo||{},dyn=d.dynamic6_runtime||{},incident=c.execution_incident||{},spark=d.dual_node_watchdog?.nodes?.spark||{},worker=d.dual_node_watchdog?.nodes?.worker78||{},legacy=d.watchdog||{};
  $('chain-raw').textContent=`RAW31 ${raw.full40_verified||0}/31 · 九案 ${raw.commissioning_qc_pass?'QC PASS':'QC待通过'}`;$('chain-raw').className=raw.full40_verified===31&&raw.commissioning_qc_pass?'good':'';$('chain-raw-detail').textContent=`新增31案严格receipt ${raw.full40_verified||0}/31；九案独立QC ${raw.commissioning_qc_pass?'已通过':'尚未通过'}。solver完成不能替代RAW/HDF QC。`;
@@ -863,10 +863,29 @@ def _free_ar_ablation(root: Path) -> dict:
     """Expose only the two predeclared free-AR runs and fixed Dynamic6 evidence."""
     h20 = root / "artifacts/tandem_fno_full40_free_ar_h20_ar20_20261003"
     h50 = root / "artifacts/tandem_fno_full40_free_ar_h50_ar50_20261003"
-    dynamic6 = _read_json(
+    parent_dynamic6 = _read_json(
         root
         / "artifacts/tandem_cylinders/full40_dynamic6_fno_e5_20261003/diagnostic.json",
         None,
+    )
+    h50_dynamic6 = _read_json(
+        root
+        / "artifacts/tandem_cylinders/full40_dynamic6_fno_h50_e1_20261003/diagnostic.json",
+        None,
+    )
+    h50_stage = _fixed_training_stage(
+        h50,
+        8,
+        "fluid-control-sync-worker-h50-20261003.service",
+        worker_sync=True,
+    )
+    h50_validation = _read_json(
+        root
+        / "artifacts/tandem_fno_full40_free_ar_h50_epoch1_eval_20261003/validation10/diagnostic.json",
+        None,
+    )
+    h50_stage["validation10"] = (
+        h50_validation if isinstance(h50_validation, dict) else {}
     )
     return {
         "h20": _fixed_training_stage(
@@ -874,13 +893,15 @@ def _free_ar_ablation(root: Path) -> dict:
             8,
             "fluid-control-free-ar-h20-20261003.service",
         ),
-        "h50": _fixed_training_stage(
-            h50,
-            8,
-            "fluid-control-sync-worker-h50-20261003.service",
-            worker_sync=True,
+        "h50": h50_stage,
+        "dynamic6_fno": h50_dynamic6
+        if isinstance(h50_dynamic6, dict)
+        else parent_dynamic6
+        if isinstance(parent_dynamic6, dict)
+        else {},
+        "dynamic6_service_state": _service_state(
+            "fluid-control-dynamic6-h50-e1-20261003.service"
         ),
-        "dynamic6_fno": dynamic6 if isinstance(dynamic6, dict) else {},
         "direct_cfd_ppo": _direct_cfd_ppo_status(root),
         "frozen_hdf_opened_or_enumerated": False,
     }

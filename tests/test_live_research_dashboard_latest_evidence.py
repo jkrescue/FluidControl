@@ -311,6 +311,25 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
+            h50_validation = (
+                root
+                / "artifacts/tandem_fno_full40_free_ar_h50_epoch1_eval_20261003/validation10"
+            )
+            h50_validation.mkdir(parents=True)
+            (h50_validation / "diagnostic.json").write_text(
+                json.dumps(
+                    {
+                        "status": "DEV30_VALIDATION_DIAGNOSTIC_COMPLETE",
+                        "horizons": {
+                            "100": {
+                                "pooled_total_cd_nrmse": 0.115,
+                                "macro_total_cd_nrmse": 0.071,
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
             with patch.object(MODULE, "_service_state", return_value="active"):
                 result = MODULE._free_ar_ablation(root)
         self.assertEqual(result["h20"]["epoch"], 2)
@@ -318,6 +337,12 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertEqual(result["h50"]["epoch"], 1)
         self.assertEqual(result["h50"]["synced_epochs"], 1)
         self.assertFalse(result["h50"]["final_sync_complete"])
+        self.assertEqual(
+            result["h50"]["validation10"]["horizons"]["100"][
+                "pooled_total_cd_nrmse"
+            ],
+            0.115,
+        )
         self.assertEqual(
             result["dynamic6_fno"]["status"],
             "DYNAMIC6_FNO_DIAGNOSTIC_FAIL",
