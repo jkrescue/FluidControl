@@ -1,0 +1,24 @@
+{
+  "status": "PARENT_START0_SCREEN_COMPLETE_NOT_FULL_QUALIFICATION",
+  "scope": "Six dynamic validation cases, one common-initial-state H100 endpoint each; no other rollout starts, no frozen test",
+  "identity_checks_passed": true,
+  "cases": 6,
+  "horizon": 100,
+  "start": 0,
+  "pooled_total_drag_nrmse": 0.045601349076461836,
+  "velocity_vector_relative_l2": 0.25386931576313493,
+  "field_relative_l2_u_v_p": [0.20138179479658497, 0.7145679264105252, 0.7758082005580926],
+  "zero_relative_action_delta_cd_mae": 0.11423599720001221,
+  "correct_action_effect_signs": 2,
+  "nonzero_action_pairs": 4,
+  "delta_pairs": [
+    {"phase": "b01", "action": "minus", "predicted_delta": 0.0678708553314209, "true_delta": -0.09214472770690918, "absolute_error": 0.16001558303833008},
+    {"phase": "b01", "action": "plus", "predicted_delta": 0.1749119758605957, "true_delta": 0.09996485710144043, "absolute_error": 0.07494711875915527},
+    {"phase": "b05", "action": "minus", "predicted_delta": 0.06315827369689941, "true_delta": 0.10243058204650879, "absolute_error": 0.039272308349609375},
+    {"phase": "b05", "action": "plus", "predicted_delta": 0.08428716659545898, "true_delta": -0.09842181205749512, "absolute_error": 0.1827089786529541}
+  ],
+  "interpretation": "Absolute drag accuracy alone is insufficient: action-effect signs and velocity/pressure fields remain inaccurate. Continue dynamic-data training; no surrogate-PPO promotion.",
+  "formal_gate": false,
+  "source_files": ["predeclaration.json", "evaluation.json", "segments.json", "run.log"],
+  "guard_min_mem_available_gib": 77.77328109741211
+}

@@ -1,0 +1,16 @@
+{
+  "status": "PREDECLARED_PARENT_START0_SCREEN_ONLY",
+  "purpose": "Measure the common B-e5 parent on changing-action validation before interpreting dynamic-data fine-tuning; not a full-suite accuracy or control qualification",
+  "model_sha256": "333a24517f74162031577bf9e37f86124bb63d05889db795ca6984b4f9c3ee2d",
+  "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+  "dynamic6_manifest_sha256": "bfa49031a1ab2b8e10a5cc5d95f1fbd8713e289c3ac8155838334e3c3d007dae",
+  "horizons": [100],
+  "segment_stride": 99999,
+  "expected_cases": 6,
+  "expected_start_per_case": 0,
+  "evaluation_batch_size": 1,
+  "action_mode": "observed",
+  "frozen_test_accessed_or_mounted": false,
+  "changes_to_training_or_checkpoint_selection": false,
+  "formal_gate": false
+}

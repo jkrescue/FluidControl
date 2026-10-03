@@ -155,3 +155,19 @@ recovery without repeating training. Actual H1/H10/H50 image outputs were
 verified during the recovered full evaluation; its execution record includes
 the runner/evaluator source hashes. No model, data, or evaluation window was
 changed by this output-path fix.
+
+## Common B-e5 parent: limited dynamic-action baseline
+
+Before interpreting dynamic-data fine-tuning, the immutable B-e5 parent was
+screened on the six dynamic validation cases at start=0 and H100 only. Its
+model, normalization and validation-manifest SHA identities were verified.
+This is not the full stride-1 protocol and does not qualify the model.
+Pooled total-Cd NRMSE was 4.5601%, but velocity-vector relative L2 was 25.3869%
+and the four zero-relative action comparisons had delta-Cd MAE 0.114236 with
+only 2/4 correct effect signs. In particular, two genuinely drag-reducing
+actions were predicted to increase endpoint drag. The separate u/v/p relative
+L2 values were 20.14%/71.46%/77.58%. A seemingly small aggregate drag error is
+therefore not evidence of reliable flow fields or useful control decisions.
+Continue the already declared dynamic-data H50/H100 training; do not promote
+this parent into surrogate-only PPO. Raw outputs and the limited-screen
+summary are in `artifacts/fno_b5_dynamic6_start0_20261004`.
