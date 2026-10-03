@@ -131,7 +131,9 @@ def make_vtk_receipt(repo: Path, name: str) -> dict:
     source = base.VTKSource(str(case / "VTK_directppo_train16"), file_pattern="*/internal.vtu", manifold_dim=3, point_source="vertices", backend="pyvista")
     actual = [float(next(source[i]).global_data["TimeValue"].reshape(-1)[0].item()) for i in range(len(source))]
     start, end = auth["cases"][name]["run_window"]
-    if not np.allclose(actual, np.linspace(start, end, 129), rtol=0, atol=2e-6):
+    # VTK TimeValue is float32 (observed quantization <=6.11e-6 near t=148).
+    # The raw OpenFOAM directory/journal contract remains checked at 2e-6.
+    if not np.allclose(actual, np.linspace(start, end, 129), rtol=0, atol=1e-5):
         raise ValueError(f"{name}: VTK times differ")
     log = case / "log.foamToVTK.directppo_train16"
     if not re.fullmatch(r"End:\s+\d+(?:\.\d+)? s, \d+ kB \(peak\)", last_nonblank(log)):
@@ -202,7 +204,7 @@ def finalize(repo: Path) -> dict:
             start, end = expected["run_window"]
             times = np.linspace(start, end, 129)
             actions = np.asarray(expected["action_points"])[:, 1]
-            if not np.allclose(handle["time"][:, 0], times, rtol=0, atol=2e-6) or not np.allclose(handle["omega"][:, 0], actions, rtol=0, atol=1e-6):
+            if not np.allclose(handle["time"][:, 0], times, rtol=0, atol=1e-5) or not np.allclose(handle["omega"][:, 0], actions, rtol=0, atol=1e-6):
                 raise ValueError(f"HDF time/action differs: {path.stem}")
             for key in ("state", "force"):
                 for begin in range(0, 129, 16):

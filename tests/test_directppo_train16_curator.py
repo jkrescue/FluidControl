@@ -31,6 +31,7 @@ def test_execution_is_reviewed_but_explicitly_token_gated():
     module = load()
     assert module.EXECUTION_REVIEWED is True
     assert module.PREDECL_SHA == "7d9fc2a71ebe4bb0e817b1ce41f5e9a42310348bc5faf530bc1b3ad6a5229736"
+    assert "observed quantization <=6.11e-6" in SCRIPT.read_text()
     source = (ROOT / "cfd/tandem_cylinders/run_directppo_train16_vtk_case.sh").read_text()
     assert "--cpus 1 --memory 8g" in source
     assert "refusing-existing-vtk" in source
