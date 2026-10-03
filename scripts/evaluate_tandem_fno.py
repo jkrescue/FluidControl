@@ -24,17 +24,21 @@ from matplotlib import pyplot as plt  # noqa: E402
 def field_error_sums(physical_error, physical_target, mask):
     """Per-channel physical SSE/reference sums over fluid cells only."""
     weight = mask.double()
-    return torch.stack([
-        (physical_error.double().square() * weight).sum(dim=(0, 2, 3)),
-        (physical_target.double().square() * weight).sum(dim=(0, 2, 3)),
-    ])
+    return torch.stack(
+        [
+            (physical_error.double().square() * weight).sum(dim=(0, 2, 3)),
+            (physical_target.double().square() * weight).sum(dim=(0, 2, 3)),
+        ]
+    )
 
 
 def relative_field_metrics(sums):
     """Pooled L2 ratios, never a mean of case-wise ratios; zero reference is undefined."""
     error, reference = np.asarray(sums, dtype=np.float64)
+
     def ratio(numerator, denominator):
         return float(np.sqrt(numerator / denominator)) if denominator > 0 else None
+
     return {
         "field_squared_error_sums_u_v_p": error.tolist(),
         "field_reference_squared_sums_u_v_p": reference.tolist(),
@@ -100,6 +104,30 @@ def save_rollout_figure(
     plt.close(figure)
 
 
+def preflight_evaluation_paths(data, split, horizons, batch_size, stride=None):
+    """Reject unavailable/incomplete input before loading a model on the GPU."""
+    if not horizons or any(horizon < 1 for horizon in horizons):
+        raise ValueError("evaluation horizons must be positive")
+    if batch_size < 1 or (stride is not None and stride < 1):
+        raise ValueError("evaluation batch size and explicit stride must be positive")
+    paths = sorted((data / split).glob("*.h5"))
+    if not paths:
+        raise FileNotFoundError(
+            f"no evaluation HDF files under {data / split}; check container mounts and symlinks"
+        )
+    for path in paths:
+        with h5py.File(path, "r") as handle:
+            counts = {
+                key: len(handle[key])
+                for key in ("state", "mask", "omega", "force", "time")
+            }
+        if len(set(counts.values())) != 1 or counts["state"] <= max(horizons):
+            raise ValueError(
+                f"evaluation frames do not cover requested horizons: {path}: {counts}"
+            )
+    return paths
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -155,6 +183,13 @@ def main() -> None:
         help="optional JSON file with per-segment errors and action statistics",
     )
     args = parser.parse_args()
+    evaluation_paths = preflight_evaluation_paths(
+        args.data,
+        args.split,
+        args.horizons,
+        args.evaluation_batch_size,
+        args.segment_stride,
+    )
 
     DistributedManager.initialize()
     dist = DistributedManager()
@@ -229,7 +264,7 @@ def main() -> None:
         "cases": [],
     }
     segment_records = []
-    for case_index, path in enumerate(sorted((args.data / args.split).glob("*.h5"))):
+    for case_index, path in enumerate(evaluation_paths):
         with h5py.File(path, "r") as handle:
             state = torch.from_numpy(handle["state"][:]).to(dist.device)
             mask = torch.from_numpy(handle["mask"][:]).float().to(dist.device)
@@ -644,11 +679,16 @@ def main() -> None:
         report["summary"][key]["state_channel_mae_u_v_p"] = np.mean(
             [row["state_channel_mae_u_v_p"] for row in rows], axis=0
         ).tolist()
-        pooled_field_sums = np.asarray([
-            [row["field_squared_error_sums_u_v_p"],
-             row["field_reference_squared_sums_u_v_p"]]
-            for row in rows
-        ], dtype=np.float64).sum(axis=0)
+        pooled_field_sums = np.asarray(
+            [
+                [
+                    row["field_squared_error_sums_u_v_p"],
+                    row["field_reference_squared_sums_u_v_p"],
+                ]
+                for row in rows
+            ],
+            dtype=np.float64,
+        ).sum(axis=0)
         report["summary"][key].update(relative_field_metrics(pooled_field_sums))
         report["summary"][key].update(
             {
