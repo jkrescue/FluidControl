@@ -191,6 +191,63 @@ def _load_gate_module():
     return module
 
 
+def _load_promotion_module():
+    path = Path(__file__).with_name("verify_dev30_full40_promotion.py")
+    spec = importlib.util.spec_from_file_location("dev30_promotion_runtime", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("cannot load dev30/full40 promotion verifier")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def validate_dev30_promotion_receipt(
+    path: Path,
+    *,
+    dev30_data: Path,
+    full40_data: Path,
+    predeclaration: Path,
+) -> dict:
+    """Recompute promotion identity and bind both releases byte-for-byte."""
+    module = _load_promotion_module()
+    recomputed = module.verify(
+        dev30_data.resolve(), full40_data.resolve(), predeclaration.resolve()
+    )
+    stored = read_json(path)
+    if stored != recomputed:
+        raise ValueError("stored dev30 promotion receipt differs from recomputation")
+    required = {
+        "status": "DEV30_FULL40_PROMOTION_PASS",
+        "formal_gate_input_authorized": True,
+        "ppo_identity_prerequisite_passed": True,
+        "frozen_hdf_opened_or_enumerated": False,
+    }
+    if any(recomputed.get(key) != value for key, value in required.items()):
+        raise ValueError("dev30/full40 promotion identity did not pass")
+    dev_manifest = dev30_data / "manifest.json"
+    full_manifest = full40_data / "manifest.json"
+    dev_normalization = dev30_data / "normalization.json"
+    full_normalization = full40_data / "normalization.json"
+    normalization_sha = recomputed.get("details", {}).get("normalization", {}).get(
+        "sha256"
+    )
+    if (
+        sha256(dev_normalization) != normalization_sha
+        or sha256(full_normalization) != normalization_sha
+    ):
+        raise ValueError("promotion normalization SHA binding differs")
+    return {
+        "promotion_receipt_sha256": sha256(path),
+        "promotion_verifier_sha256": sha256(
+            Path(module.__file__).resolve()
+        ),
+        "dev30_manifest_sha256": sha256(dev_manifest),
+        "full40_manifest_sha256": sha256(full_manifest),
+        "dev30_normalization_sha256": sha256(dev_normalization),
+        "full40_normalization_sha256": sha256(full_normalization),
+    }
+
+
 def validate_evidence_gate(
     path: Path,
     *,
@@ -381,6 +438,8 @@ def preflight(
     data: Path,
     config: Path,
     checkpoint_dir: Path,
+    dev30_data: Path,
+    promotion_receipt: Path,
     validation_gate: Path,
     validation_report: Path,
     validation_segments: Path,
@@ -397,6 +456,7 @@ def preflight(
     checkpoint_sha = None
     baseline_rows = None
     evidence_gate_sha256 = {}
+    promotion_lineage = None
     try:
         manifest = read_json(data / "manifest.json")
         action_contract = validate_full40_action_contract(manifest)
@@ -414,6 +474,15 @@ def preflight(
         for case in cases:
             if not (data / split / f"{case}.h5").is_file():
                 blockers.append(f"missing_{split}_zero_case:{case}")
+    try:
+        promotion_lineage = validate_dev30_promotion_receipt(
+            promotion_receipt,
+            dev30_data=dev30_data,
+            full40_data=data,
+            predeclaration=predeclaration,
+        )
+    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+        blockers.append(f"dev30_promotion_receipt_invalid:{error}")
     try:
         gate_module = _load_gate_module()
         recomputed = gate_module.audit(
@@ -435,6 +504,15 @@ def preflight(
         if recomputed["h100_force_gate"].get("beats_persistence") is not True:
             raise ValueError("H100 total-drag model does not beat persistence")
         checkpoint_sha = recomputed["checkpoint_sha256"]
+        if promotion_lineage is None:
+            raise ValueError("dev30/full40 promotion lineage is unavailable")
+        if (
+            recomputed["data_manifest_sha256"]
+            != promotion_lineage["full40_manifest_sha256"]
+            or recomputed["normalization_sha256"]
+            != promotion_lineage["full40_normalization_sha256"]
+        ):
+            raise ValueError("validation gate differs from promoted full40 lineage")
     except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
         blockers.append(f"validation_gate_invalid:{error}")
     if checkpoint_sha is not None:
@@ -472,6 +550,7 @@ def preflight(
         "validation_cases": list(VALIDATION_CASES),
         "frozen_test_directory_enumerated_or_opened": False,
         "checkpoint_sha256": checkpoint_sha,
+        "dev30_full40_promotion_lineage": promotion_lineage,
         "validation_gate_sha256": (
             sha256(validation_gate) if checkpoint_sha is not None else None
         ),
@@ -576,6 +655,20 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
     if sha256(args.baselines) != readiness["baseline_artifact_sha256"]:
         raise ValueError("baseline artifact changed after preflight")
     if not train_only_smoke:
+        lineage = readiness["dev30_full40_promotion_lineage"]
+        current_lineage = {
+            "promotion_receipt_sha256": sha256(args.promotion_receipt),
+            "dev30_manifest_sha256": sha256(args.dev30_data / "manifest.json"),
+            "full40_manifest_sha256": sha256(args.data / "manifest.json"),
+            "dev30_normalization_sha256": sha256(
+                args.dev30_data / "normalization.json"
+            ),
+            "full40_normalization_sha256": sha256(
+                args.data / "normalization.json"
+            ),
+        }
+        if any(lineage.get(key) != value for key, value in current_lineage.items()):
+            raise ValueError("dev30/full40 promotion lineage changed after preflight")
         if sha256(args.validation_gate) != readiness["validation_gate_sha256"]:
             raise ValueError("validation gate changed after preflight")
         for label, path in (
@@ -714,6 +807,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--checkpoint-dir", type=Path, required=True)
+    parser.add_argument("--dev30-data", type=Path)
+    parser.add_argument("--promotion-receipt", type=Path)
     parser.add_argument("--validation-gate", type=Path)
     parser.add_argument("--validation-report", type=Path)
     parser.add_argument("--validation-segments", type=Path)
@@ -768,6 +863,8 @@ def main() -> None:
             args.predeclaration,
             args.window_gate,
             args.dynamic_gate,
+            args.dev30_data,
+            args.promotion_receipt,
         )
         if any(path is None for path in required):
             parser.error("formal dry-run/execute requires all validation gate paths")
@@ -775,6 +872,8 @@ def main() -> None:
             data=args.data,
             config=args.config,
             checkpoint_dir=args.checkpoint_dir,
+            dev30_data=args.dev30_data,
+            promotion_receipt=args.promotion_receipt,
             validation_gate=args.validation_gate,
             validation_report=args.validation_report,
             validation_segments=args.validation_segments,

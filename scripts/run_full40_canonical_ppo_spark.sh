@@ -9,8 +9,10 @@ image="fluid-control-physicsnemo-hydrogym:2.2.2-4ab9854"
 runtime_image_id="sha256:2e45b4e1ac9553ea86aa9148455be9aae30688446039fdee6255a637603acb2c"
 validation_image_id="sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e"
 data="data/curated/tandem_cylinders_matched_start_full40_v1"
+dev30_data="data/curated/tandem_cylinders_matched_start_full40_dev30_v1"
 checkpoint="${CHECKPOINT_DIR:-artifacts/tandem_fno_full40_h20_seed20261003_10epoch/best}"
 validation_root="${VALIDATION_ROOT:-artifacts/tandem_cylinders/full40_fno_validation_pending_review}"
+promotion_receipt="${PROMOTION_RECEIPT:-artifacts/tandem_cylinders/dev30_full40_promotion.json}"
 if [[ "$mode" == "--dry-run" ]]; then
   default_output="artifacts/hydrogym/full40_canonical_joint_v1/preflight.json"
 else
@@ -37,7 +39,8 @@ esac
 
 command=(python -u scripts/train_full40_hydrogym_ppo_canonical.py
   --data "$data" --config conf/tandem_fno_full40_h20.yaml
-  --checkpoint-dir "$checkpoint" --baselines "$baselines"
+  --checkpoint-dir "$checkpoint" --dev30-data "$dev30_data"
+  --promotion-receipt "$promotion_receipt" --baselines "$baselines"
   --validation-gate "$validation_root/gate.json"
   --validation-report "$validation_root/evaluation.json"
   --validation-segments "$validation_root/segments.json"

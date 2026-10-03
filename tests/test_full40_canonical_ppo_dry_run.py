@@ -65,6 +65,8 @@ def test_preflight_fails_closed_before_runtime_imports_and_never_reads_frozen(
         data=data,
         config=config,
         checkpoint_dir=tmp_path / "checkpoint",
+        dev30_data=tmp_path / "dev30",
+        promotion_receipt=tmp_path / "promotion.json",
         validation_gate=tmp_path / "gate.json",
         validation_report=tmp_path / "report.json",
         validation_segments=tmp_path / "segments.json",
@@ -118,6 +120,68 @@ def test_evidence_gate_rejects_tampering(tmp_path) -> None:
             gate,
             expected_status=MODULE.WINDOW_GATE_STATUS,
             checkpoint_sha256="a" * 64,
+        )
+
+
+def test_dev30_promotion_receipt_and_normalization_are_recomputed(
+    tmp_path, monkeypatch
+) -> None:
+    dev30 = tmp_path / "dev30"
+    full40 = tmp_path / "full40"
+    for root in (dev30, full40):
+        root.mkdir()
+        (root / "manifest.json").write_text('{"profile":"matched_start_full40_v1"}\n')
+        (root / "normalization.json").write_text('{"state_mean":[0,0,0]}\n')
+    predeclaration = tmp_path / "predeclaration.json"
+    predeclaration.write_text("{}\n")
+    producer = tmp_path / "verify_dev30_full40_promotion.py"
+    producer.write_text("# reviewed verifier fixture\n")
+    normalization_sha = MODULE.sha256(dev30 / "normalization.json")
+    report = {
+        "status": "DEV30_FULL40_PROMOTION_PASS",
+        "formal_gate_input_authorized": True,
+        "ppo_identity_prerequisite_passed": True,
+        "frozen_hdf_opened_or_enumerated": False,
+        "details": {"normalization": {"sha256": normalization_sha}},
+    }
+    receipt = tmp_path / "promotion.json"
+    receipt.write_text(json.dumps(report))
+
+    class FakePromotionModule:
+        __file__ = str(producer)
+
+        @staticmethod
+        def verify(*args):
+            return report
+
+    monkeypatch.setattr(
+        MODULE, "_load_promotion_module", lambda: FakePromotionModule
+    )
+    lineage = MODULE.validate_dev30_promotion_receipt(
+        receipt,
+        dev30_data=dev30,
+        full40_data=full40,
+        predeclaration=predeclaration,
+    )
+    assert lineage["dev30_normalization_sha256"] == normalization_sha
+    assert lineage["full40_normalization_sha256"] == normalization_sha
+
+    (full40 / "normalization.json").write_text('{"state_mean":[1,0,0]}\n')
+    with pytest.raises(ValueError, match="normalization SHA"):
+        MODULE.validate_dev30_promotion_receipt(
+            receipt,
+            dev30_data=dev30,
+            full40_data=full40,
+            predeclaration=predeclaration,
+        )
+    (full40 / "normalization.json").write_text('{"state_mean":[0,0,0]}\n')
+    receipt.write_text(json.dumps({**report, "status": "tampered"}))
+    with pytest.raises(ValueError, match="differs from recomputation"):
+        MODULE.validate_dev30_promotion_receipt(
+            receipt,
+            dev30_data=dev30,
+            full40_data=full40,
+            predeclaration=predeclaration,
         )
 
 

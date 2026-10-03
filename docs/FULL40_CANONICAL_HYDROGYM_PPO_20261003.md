@@ -61,6 +61,16 @@ manifest, and pinned PhysicsNeMo image. It requires H100 total-drag NRMSE at or
 below 10%, model total-drag MAE better than persistence, and the predeclared
 matched-start action-ranking checks.
 
+Because the formal checkpoint is trained first on the frozen-blind dev30
+release, formal PPO also recomputes
+`scripts/verify_dev30_full40_promotion.py` and requires its exact stored receipt
+to be `DEV30_FULL40_PROMOTION_PASS`. The resulting PPO readiness record binds
+the dev30 manifest SHA, final-full40 manifest SHA, both byte-identical
+normalization SHAs, promotion-receipt SHA, verifier SHA, and selected FNO
+checkpoint SHA. Thus a validation score alone cannot bypass development-to-
+formal data lineage. This extra promotion prerequisite is intentionally not
+required by the isolated train-only software smoke.
+
 That endpoint gate is necessary but not sufficient for this reward. Execution
 also requires cryptographically bound b01/b05 artifacts for:
 
