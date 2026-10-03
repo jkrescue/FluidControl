@@ -118,6 +118,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("HydroGym + 真实 OpenFOAM PPO", page)
         self.assertIn("实现与测试中", page)
         self.assertIn("renderFreeAR(d)", page)
+        self.assertIn("这是模型误差，不是减阻百分比", page)
 
     def test_dual_node_watchdog_is_exposed_without_replacing_science_metrics(self) -> None:
         page = MODULE.PAGE
