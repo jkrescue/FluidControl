@@ -1,0 +1,166 @@
+{
+  "status": "FULL40_FIRST4_TRAIN_INCREMENT_PHYSICS_SUMMARY",
+  "scope": {
+    "increment_cases": [
+      "matched_start_acquisition_train_b00_m0375",
+      "matched_start_acquisition_train_b00_p0375",
+      "matched_start_acquisition_train_b02_m0375",
+      "matched_start_acquisition_train_b02_p0375"
+    ],
+    "zero_reference_cases": [
+      "matched_start_acquisition_train_b00_zero",
+      "matched_start_acquisition_train_b02_zero"
+    ],
+    "excluded_splits": [
+      "validation",
+      "frozen_test"
+    ]
+  },
+  "provenance": {
+    "phase_manifest_sha256": "6279492bd3a79eff868a4333e1f642e3be4a4d58a78e46dc47dde040e4e39603",
+    "full40_predeclaration_sha256": "d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b",
+    "full40_extension_authorization_sha256": "da8bccaf18a86666ac78804e775c1608d8fc390bfca1484cbd1eaabe93c17151",
+    "nine_case_aggregate_qc": "/workspace/fluid_control/artifacts/matched_start_acquisition/aggregate_qc/result.json",
+    "nine_case_aggregate_qc_sha256": "703f58323098e9e3c99552f75fad8e40d2e9bc86a48fbe6f7f24377479aadd69"
+  },
+  "metric_contract": {
+    "window": "each case_config predeclared final 60D/U; no subwindow selection",
+    "force_sample_interval": 0.005,
+    "samples_per_branch": 12001,
+    "total_drag": "mean(Cd_front + Cd_rear)",
+    "canonical_joint_gate": "drag reduction >=2%; rear Cl-prime RMS <=1.05x same-phase zero; abs(mean rear Cl) <=0.10x same-phase zero Cl-prime RMS"
+  },
+  "phases": {
+    "b00": {
+      "split": "train",
+      "analysis_window": [
+        168.0,
+        228.0
+      ],
+      "same_phase_zero": {
+        "case": "matched_start_acquisition_train_b00_zero",
+        "metrics": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.391103472155237,
+          "mean_cd_rear": 0.9064229468397716,
+          "mean_cd_total": 2.2975264189950084,
+          "mean_cl_rear": -0.01937794837142752,
+          "rms_cl_rear_fluctuation": 1.1826535012844825
+        }
+      },
+      "increment_branches": {
+        "m0375": {
+          "case": "matched_start_acquisition_train_b00_m0375",
+          "action_target": -0.375,
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.391060024305308,
+            "mean_cd_rear": 0.8924391262398467,
+            "mean_cd_total": 2.2834991505451545,
+            "mean_cl_rear": 0.35709676020759984,
+            "rms_cl_rear_fluctuation": 1.1779107036958802
+          },
+          "same_phase_zero_comparison": {
+            "total_drag_reduction_fraction_positive_is_better": 0.006105378520952831,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9959896980954682,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.30194537945370836,
+            "canonical_drag_check_ge_0p02": false,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        },
+        "p0375": {
+          "case": "matched_start_acquisition_train_b00_p0375",
+          "action_target": 0.375,
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3909915153610533,
+            "mean_cd_rear": 0.8934355837277395,
+            "mean_cd_total": 2.2844270990887927,
+            "mean_cl_rear": -0.3946270319517452,
+            "rms_cl_rear_fluctuation": 1.1772591085993755
+          },
+          "same_phase_zero_comparison": {
+            "total_drag_reduction_fraction_positive_is_better": 0.005701488260555276,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9954387378219841,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.33367933339996875,
+            "canonical_drag_check_ge_0p02": false,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        }
+      }
+    },
+    "b02": {
+      "split": "train",
+      "analysis_window": [
+        126.0,
+        186.0
+      ],
+      "same_phase_zero": {
+        "case": "matched_start_acquisition_train_b02_zero",
+        "metrics": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.3914893705134572,
+          "mean_cd_rear": 0.9112236638031748,
+          "mean_cd_total": 2.302713034316632,
+          "mean_cl_rear": -0.04503425049595398,
+          "rms_cl_rear_fluctuation": 1.1697400192062322
+        }
+      },
+      "increment_branches": {
+        "m0375": {
+          "case": "matched_start_acquisition_train_b02_m0375",
+          "action_target": -0.375,
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3913266268712607,
+            "mean_cd_rear": 0.90231410453973,
+            "mean_cd_total": 2.2936407314109903,
+            "mean_cl_rear": 0.3309990290698874,
+            "rms_cl_rear_fluctuation": 1.1644865796381567
+          },
+          "same_phase_zero_comparison": {
+            "total_drag_reduction_fraction_positive_is_better": 0.003939832176411029,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9955088827587173,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.28296803019058736,
+            "canonical_drag_check_ge_0p02": false,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        },
+        "p0375": {
+          "case": "matched_start_acquisition_train_b02_p0375",
+          "action_target": 0.375,
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3914962933352222,
+            "mean_cd_rear": 0.8931046053315475,
+            "mean_cd_total": 2.284600898666769,
+            "mean_cl_rear": -0.42097011172665727,
+            "rms_cl_rear_fluctuation": 1.1645313106839108
+          },
+          "same_phase_zero_comparison": {
+            "total_drag_reduction_fraction_positive_is_better": 0.007865563524391939,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9955471229189407,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.35988348249581237,
+            "canonical_drag_check_ge_0p02": false,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        }
+      }
+    }
+  },
+  "all_four_canonical_joint_diagnostics_pass": false,
+  "interpretation_guards": [
+    "These are prescribed open-loop branches in the train split only.",
+    "This summary is not validation, frozen-test, or generalization evidence.",
+    "This summary is not learned control or online closed-loop evidence.",
+    "Results must not stop, reorder, or tune the predeclared acquisition panel."
+  ]
+}
