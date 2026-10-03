@@ -55,14 +55,14 @@ def test_predeclaration_never_uses_validation_or_frozen(monkeypatch) -> None:
     assert payload["solver_contract"]["maximum_total_raw_GiB"] == 30
 
 
-def test_generation_and_runner_bind_reviewed_sha_and_curator_stays_disabled() -> None:
+def test_generation_runner_and_post_raw_curator_bind_reviewed_sha() -> None:
     generator = load(GENERATOR, "dynamic_train8_disabled")
     curator = load(CURATOR, "dynamic_train8_curator_disabled")
     runner = (ROOT / "cfd/tandem_cylinders/run_dynamic_train8_case.sh").read_text()
     digest = "4cf4e7c9b9da27b71e58db2e94b0750736b7f79f09a2aebc3ffa97729e882c5a"
     assert generator.APPROVED_PREDECLARATION_SHA256 == digest
     assert curator.PREDECL_SHA == digest
-    assert curator.EXECUTION_REVIEWED is False
+    assert curator.EXECUTION_REVIEWED is True
     assert f'predecl_sha="{digest}"' in runner
     assert "DYNAMIC_TRAIN8_APPROVAL_TOKEN" in runner
     assert "active < 4" in runner

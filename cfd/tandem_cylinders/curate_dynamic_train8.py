@@ -33,7 +33,7 @@ EXPECTED = {
     for phase in (0, 2, 4, 6)
     for profile in ("prbs", "multisine")
 }
-EXECUTION_REVIEWED = False
+EXECUTION_REVIEWED = True
 TOKEN = "EXECUTE_REVIEWED_DYNAMIC_TRAIN8_CURATOR"
 
 

@@ -1,0 +1,222 @@
+{
+  "status": "DYNAMIC_TRAIN8_REAL_OPENFOAM_QC_COMPLETE",
+  "scope": "eight train-only prescribed dynamic-action trajectories; not validation or control benefit",
+  "predeclaration": "artifacts/tandem_cylinders/dynamic_train8_predeclared_20261003.json",
+  "predeclaration_sha256": "4cf4e7c9b9da27b71e58db2e94b0750736b7f79f09a2aebc3ffa97729e882c5a",
+  "baseline_force_source_sha256": {
+    "forceFront": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+    "forceRear": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b"
+  },
+  "case_count": 8,
+  "validation_or_frozen_accessed": false,
+  "cases": {
+    "dynamic_train8_b00_multisine": {
+      "split": "train",
+      "phase_bin": 0,
+      "profile": "multisine",
+      "source_state_sha256": {
+        "U": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+        "U_0": "6257e54018d03d01d01876e24d511d9c7af5b5caa2318d5da73628d233dec8c0",
+        "p": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+        "phi": "b331ed8547306f874c3de07f0cb2aaefaf7ea59b1d46a2a7cb61b4d45b444215",
+        "phi_0": "be1e19fa6e71200fe57a0d2ba253907ecebbd8d6caf196fd32f7d711969effd9"
+      },
+      "action_metrics": {
+        "max_abs_omega": 0.5598667081,
+        "max_abs_delta_omega_per_0p1": 0.0865279088,
+        "mean_omega": 0.014291604198507465
+      },
+      "solver_log_sha256": "7189a8c3b4df7fdeb888618330e4073d402fa553f65f4150013be6cfff132302",
+      "solver_qc_sha256": "ff0a904afae60313cbcb63ea403192c4bb1d84bd5cb2cef8d60d7b40caa87d57",
+      "raw_force_samples": 4000,
+      "front_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b00_multisine/postProcessing/forceFront/148/coefficient.dat": "3b65e8ef4ee0c9b9f25c326dddf2213a44fbf75680966631a19bb6c3e8b86548"
+      },
+      "rear_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b00_multisine/postProcessing/forceRear/148/coefficient.dat": "0bcef4957d0cc1ddf52d86760b12dfd47159ac6d8f08c7b94e0d75cbfc51b342"
+      }
+    },
+    "dynamic_train8_b00_prbs": {
+      "split": "train",
+      "phase_bin": 0,
+      "profile": "prbs",
+      "source_state_sha256": {
+        "U": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+        "U_0": "6257e54018d03d01d01876e24d511d9c7af5b5caa2318d5da73628d233dec8c0",
+        "p": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+        "phi": "b331ed8547306f874c3de07f0cb2aaefaf7ea59b1d46a2a7cb61b4d45b444215",
+        "phi_0": "be1e19fa6e71200fe57a0d2ba253907ecebbd8d6caf196fd32f7d711969effd9"
+      },
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_delta_omega_per_0p1": 0.10000000000000003,
+        "mean_omega": 0.02972636815920398
+      },
+      "solver_log_sha256": "84a3dc06fc69ad0d839294e3c95b130b66792273abc1d9bf81b77975268de285",
+      "solver_qc_sha256": "16be0b5b3709f9b1c71383a8f3ead8175562db96363571933e443c290bf0a79f",
+      "raw_force_samples": 4000,
+      "front_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b00_prbs/postProcessing/forceFront/148/coefficient.dat": "cb74c57b3970b4138ded29be8df6240c9bef17d110cf87cd5cfd2e0d14cfadac"
+      },
+      "rear_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b00_prbs/postProcessing/forceRear/148/coefficient.dat": "70c2cfc241028139d613ec24957b33190f782e7d9e42e31bfa9c1304350ba87f"
+      }
+    },
+    "dynamic_train8_b02_multisine": {
+      "split": "train",
+      "phase_bin": 2,
+      "profile": "multisine",
+      "source_state_sha256": {
+        "U": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+        "U_0": "30eb1b5f1377eb5644418ea5470828cc94c4d2c8662f21180780a286a88cc494",
+        "p": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+        "phi": "fdc1a6c1eba6669f42f5a663c45fa8b7893511e4cf6ccfad12578a682a79b394",
+        "phi_0": "3ad9aa7c8c12d85c5d18a460cdb29030a179981c300f28b37f8ac6cc2b5cb3ff"
+      },
+      "action_metrics": {
+        "max_abs_omega": 0.5201164725,
+        "max_abs_delta_omega_per_0p1": 0.0763127577,
+        "mean_omega": 0.013147152578109453
+      },
+      "solver_log_sha256": "cdc31e42641b1ab5db63c4eb33a1ace2c0b3452adc348f79dc7e7c13c9cfd8db",
+      "solver_qc_sha256": "f35b0e0ea6a806268bcc8391c66c742a06740c5de83f40beb86003f44b798702",
+      "raw_force_samples": 4000,
+      "front_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b02_multisine/postProcessing/forceFront/106/coefficient.dat": "b5bd3bbe09c4b23c8c89d4c50d5fd6605be7ed2fb84c105c43e924fee698d761"
+      },
+      "rear_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b02_multisine/postProcessing/forceRear/106/coefficient.dat": "958e34a9ddd326365a49eb9363a955ceab7102054d6ba88dd738c9019379f473"
+      }
+    },
+    "dynamic_train8_b02_prbs": {
+      "split": "train",
+      "phase_bin": 2,
+      "profile": "prbs",
+      "source_state_sha256": {
+        "U": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+        "U_0": "30eb1b5f1377eb5644418ea5470828cc94c4d2c8662f21180780a286a88cc494",
+        "p": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+        "phi": "fdc1a6c1eba6669f42f5a663c45fa8b7893511e4cf6ccfad12578a682a79b394",
+        "phi_0": "3ad9aa7c8c12d85c5d18a460cdb29030a179981c300f28b37f8ac6cc2b5cb3ff"
+      },
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_delta_omega_per_0p1": 0.10000000000000003,
+        "mean_omega": 0.005099502487562188
+      },
+      "solver_log_sha256": "b7c752c6e7fcc463a864b4276a88d702490f68d0931eeb5cfce20ff8528b0aa0",
+      "solver_qc_sha256": "7cfc0a7bb18f170054949054ea9159e21523fc09eeaa34af3a8a71d42bff9d3d",
+      "raw_force_samples": 4000,
+      "front_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b02_prbs/postProcessing/forceFront/106/coefficient.dat": "ab538affd0fb4685ade7070c21679f89b6daf2cf7c2b56b8cd8726328db80853"
+      },
+      "rear_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b02_prbs/postProcessing/forceRear/106/coefficient.dat": "c188c906a1e4a612d638990d0fea965dffd65fb6156c1113c6c27ee4c3fe2a94"
+      }
+    },
+    "dynamic_train8_b04_multisine": {
+      "split": "train",
+      "phase_bin": 4,
+      "profile": "multisine",
+      "source_state_sha256": {
+        "U": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+        "U_0": "483ea88d99c466edb0835d5a70852896952542765bf31f763abb3185b49a95b3",
+        "p": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+        "phi": "c334bd5f7163d8ed65be8d8fa8176a8518fa39270ce41160ac5844de96278b73",
+        "phi_0": "7ae171d161b07e03a64d7a6611956b8956bc9ca54e8da65a58bfc9958d9bf722"
+      },
+      "action_metrics": {
+        "max_abs_omega": 0.4701569018,
+        "max_abs_delta_omega_per_0p1": 0.0608649928,
+        "mean_omega": -0.002251430009452735
+      },
+      "solver_log_sha256": "924d48e0b787e7a034a704cad67b845cea933ca461ff2417a74ecd87f4b78fc3",
+      "solver_qc_sha256": "4a7cf2060604a0e1d70fcf45bf9e1958333ffcb827e255a1768b52046ddf719f",
+      "raw_force_samples": 4000,
+      "front_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b04_multisine/postProcessing/forceFront/120/coefficient.dat": "0356a9c8f0c2f345184014c287f713a24bf404539dd9237e0842e7175c650d49"
+      },
+      "rear_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b04_multisine/postProcessing/forceRear/120/coefficient.dat": "ea44cec77855b6ea104d92cb4f1dc60eb821545eb44e216ae5c131712985eb64"
+      }
+    },
+    "dynamic_train8_b04_prbs": {
+      "split": "train",
+      "phase_bin": 4,
+      "profile": "prbs",
+      "source_state_sha256": {
+        "U": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+        "U_0": "483ea88d99c466edb0835d5a70852896952542765bf31f763abb3185b49a95b3",
+        "p": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+        "phi": "c334bd5f7163d8ed65be8d8fa8176a8518fa39270ce41160ac5844de96278b73",
+        "phi_0": "7ae171d161b07e03a64d7a6611956b8956bc9ca54e8da65a58bfc9958d9bf722"
+      },
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_delta_omega_per_0p1": 0.10000000000000003,
+        "mean_omega": -0.005099502487562188
+      },
+      "solver_log_sha256": "90b370533d88d3e8e5436a33b784cae2ff134edc947944e6d9f829ff5d1329bb",
+      "solver_qc_sha256": "a0161b791640b2bc230bddb455675e29cedd2a59a1f2bf8108a5de7286e8462c",
+      "raw_force_samples": 4000,
+      "front_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b04_prbs/postProcessing/forceFront/120/coefficient.dat": "eabe3f6e685084320f50aa27e84b8cd763cd76be5d7d376acee5f1828a7f7fdf"
+      },
+      "rear_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b04_prbs/postProcessing/forceRear/120/coefficient.dat": "d305ab9015463c647848c4e607e64278a07c17e902cb53c7ca8d5c5bda4f2fe1"
+      }
+    },
+    "dynamic_train8_b06_multisine": {
+      "split": "train",
+      "phase_bin": 6,
+      "profile": "multisine",
+      "source_state_sha256": {
+        "U": "e56f3ff419313fdabe878a24ee16470f658480d590d56a7168ecbc0e87d7a24c",
+        "U_0": "56e68a2eee180a8939dfdd2972da6c88776a296510ddcff85ace97a1f2a4892d",
+        "p": "7db300cce53760e6118045083391a53d15fbbdd6251117e58d7512be484a54d1",
+        "phi": "4fdf3eaaf07a3f9c29f6a9f843adc82eb4be32187e09577994881c8ebddefcbc",
+        "phi_0": "b7dd563b1e14ecb10a1354443d38a851ff5afe9e769b0bfc6844f9bbf2b82623"
+      },
+      "action_metrics": {
+        "max_abs_omega": 0.4513949159,
+        "max_abs_delta_omega_per_0p1": 0.0726623036,
+        "mean_omega": -0.005529188236815921
+      },
+      "solver_log_sha256": "09ddc2c2455cc6425bfa1cb4f0498578b1c6be97177ffb9f8aaedd0610bc4bcc",
+      "solver_qc_sha256": "bd5c36f083eb04019eb4501033e990f42e88c1b95820fa35609e9746495332c2",
+      "raw_force_samples": 4000,
+      "front_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b06_multisine/postProcessing/forceFront/134/coefficient.dat": "9a3b9c211701cb035b3b28a33406591d070209bbf6635492113a313144b2d729"
+      },
+      "rear_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b06_multisine/postProcessing/forceRear/134/coefficient.dat": "c056e0a88f9a1abe01d1a91e584addf7991bda083f2435432ce8e7d368d4b7a8"
+      }
+    },
+    "dynamic_train8_b06_prbs": {
+      "split": "train",
+      "phase_bin": 6,
+      "profile": "prbs",
+      "source_state_sha256": {
+        "U": "e56f3ff419313fdabe878a24ee16470f658480d590d56a7168ecbc0e87d7a24c",
+        "U_0": "56e68a2eee180a8939dfdd2972da6c88776a296510ddcff85ace97a1f2a4892d",
+        "p": "7db300cce53760e6118045083391a53d15fbbdd6251117e58d7512be484a54d1",
+        "phi": "4fdf3eaaf07a3f9c29f6a9f843adc82eb4be32187e09577994881c8ebddefcbc",
+        "phi_0": "b7dd563b1e14ecb10a1354443d38a851ff5afe9e769b0bfc6844f9bbf2b82623"
+      },
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_delta_omega_per_0p1": 0.10000000000000003,
+        "mean_omega": -0.017661691542288558
+      },
+      "solver_log_sha256": "8001e44b054224e482f601ac11a95588288c5969c830c4033cf99bf6def126a8",
+      "solver_qc_sha256": "b39e74de1305846d156af965d70da8e0d2c17179a5f277f4a5874232fc8010a6",
+      "raw_force_samples": 4000,
+      "front_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b06_prbs/postProcessing/forceFront/134/coefficient.dat": "a2809c1ef23cb19e3ab6ca2f0cb40e25c1b8d464d6530a2ab26f972b487da799"
+      },
+      "rear_force_file_sha256": {
+        "cfd/tandem_cylinders/cases/dynamic_train8_b06_prbs/postProcessing/forceRear/134/coefficient.dat": "87a25bf247e89fff17ab95b0aff92c75d40ea17c61c1ff93ceaeb4ef1c1f249e"
+      }
+    }
+  }
+}
