@@ -70,3 +70,34 @@ def test_endpoint_probe_is_separate_and_explicitly_token_gated():
     assert "endpoint-probe" in SCRIPT.read_text()
     assert module.ENDPOINT_PROBE != module.OUTPUT
     assert "DIRECTPPO_TRAIN16_ENDPOINT_PROBE_PASS" in SCRIPT.read_text()
+
+
+def test_exact_force_series_requires_unique_real_endpoint_rows(tmp_path):
+    import numpy as np
+
+    module = load()
+    name = "case"
+    case = tmp_path / "cfd/tandem_cylinders/cases" / name
+    (case / "postProcessing/forceFront/1").mkdir(parents=True)
+    (case / "postProcessing/forceRear/1").mkdir(parents=True)
+    (case / "postProcessing/forceFront/1/coefficient.dat").write_text("fixture")
+    (case / "postProcessing/forceRear/1/coefficient.dat").write_text("fixture")
+
+    class FakeBase:
+        @staticmethod
+        def load_merged_coefficients(paths):
+            object_name = paths[0].parts[-3]
+            offset = 0.0 if object_name == "forceFront" else 10.0
+            return np.asarray(
+                [[1.0, offset + 1.0, offset + 2.0], [1.1, offset + 3.0, offset + 4.0]]
+            )
+
+    actual = module.exact_force_series(
+        FakeBase(), tmp_path, name, {}, np.asarray([1.0, 1.1])
+    )
+    assert actual.tolist() == [
+        [1.0, 2.0, 11.0, 12.0],
+        [3.0, 4.0, 13.0, 14.0],
+    ]
+    with pytest.raises(ValueError, match="no unique exact"):
+        module.exact_force_series(FakeBase(), tmp_path, name, {}, [1.05])

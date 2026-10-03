@@ -255,6 +255,39 @@ def endpoint_force(base, repo: Path, name: str, config: dict, time: float) -> np
     return np.asarray(values, dtype=np.float32)
 
 
+def exact_force_series(base, repo: Path, name: str, config: dict, times) -> np.ndarray:
+    """Assemble only uniquely observed force rows at declared CFD endpoints."""
+    case = repo / "cfd/tandem_cylinders/cases" / name
+    columns = []
+    for object_name in ("forceFront", "forceRear"):
+        raw = base.load_merged_coefficients(
+            sorted(case.glob(f"postProcessing/{object_name}/*/coefficient.dat"))
+        )
+        source = None
+        source_name = config.get("source_restart_case")
+        if source_name:
+            source = base.load_coefficients(
+                case.parent / source_name / "postProcessing" / object_name
+                / "0" / "coefficient.dat"
+            )
+        rows = []
+        for time in times:
+            matches = np.flatnonzero(np.isclose(raw[:, 0], time, rtol=0, atol=1e-8))
+            selected = raw
+            if len(matches) == 0 and source is not None:
+                matches = np.flatnonzero(
+                    np.isclose(source[:, 0], time, rtol=0, atol=1e-8)
+                )
+                selected = source
+            if len(matches) != 1:
+                raise ValueError(
+                    f"{name}: no unique exact {object_name} row at t={time}"
+                )
+            rows.append(selected[matches[0], (1, 2)])
+        columns.append(np.asarray(rows, dtype=np.float32))
+    return np.concatenate(columns, axis=1)
+
+
 def endpoint_probe(repo: Path, name: str) -> dict:
     """Run a cheap real first/last-frame official Source/Filter/Sink probe."""
     import h5py
@@ -376,7 +409,14 @@ def finalize(repo: Path) -> dict:
     paths = sorted((root / "train").glob("*.h5"))
     if {path.stem for path in paths} != set(auth["cases"]):
         raise ValueError("directppo train16 HDF set differs")
+    if set(root.rglob("*.h5")) != set(paths):
+        raise ValueError("HDF exists outside the train-only directppo set")
+    base = module(repo / BASE, "directppo_train16_base_final")
     digests = {}
+    vtk_receipt_digests = {}
+    reference_mask = None
+    reference_x = None
+    reference_y = None
     for path in paths:
         with h5py.File(path) as handle:
             if handle["state"].shape != (129, 3, 128, 256) or handle["force"].shape != (129, 4):
@@ -385,13 +425,43 @@ def finalize(repo: Path) -> dict:
             start, end = expected["run_window"]
             times = np.linspace(start, end, 129)
             actions = np.asarray(expected["action_points"])[:, 1]
+            config = load(
+                repo / "cfd/tandem_cylinders/cases" / path.stem / "case_config.json"
+            )
+            config["source_force_sha256"] = FORCE_SHA
+            forces = exact_force_series(base, repo, path.stem, config, times)
             if not np.allclose(handle["time"][:, 0], times, rtol=0, atol=1e-5) or not np.allclose(handle["omega"][:, 0], actions, rtol=0, atol=1e-6):
                 raise ValueError(f"HDF time/action differs: {path.stem}")
-            for key in ("state", "force"):
-                for begin in range(0, 129, 16):
-                    if not np.isfinite(handle[key][begin:begin + 16]).all():
-                        raise ValueError(f"nonfinite HDF: {path.stem}/{key}")
+            if not np.allclose(handle["force"][:], forces, rtol=0, atol=2e-6):
+                raise ValueError(f"HDF exact force endpoints differ: {path.stem}")
+            if handle.attrs["case"] != path.stem or handle.attrs["split"] != "train":
+                raise ValueError(f"HDF identity/split differs: {path.stem}")
+            if json.loads(handle.attrs["state_channels"]) != ["u", "v", "gauge_pressure"]:
+                raise ValueError(f"state channel order differs: {path.stem}")
+            if json.loads(handle.attrs["force_channels"]) != ["front_cd", "front_cl", "rear_cd", "rear_cl"]:
+                raise ValueError(f"force channel order differs: {path.stem}")
+            x, y = handle["x"][:], handle["y"][:]
+            if reference_x is None:
+                reference_x, reference_y = x, y
+                reference_mask = handle["mask"][:]
+            elif not np.array_equal(x, reference_x) or not np.array_equal(y, reference_y):
+                raise ValueError(f"grid differs across directppo cases: {path.stem}")
+            for begin in range(0, 129, 16):
+                state = handle["state"][begin:begin + 16]
+                mask = handle["mask"][begin:begin + 16]
+                if not np.isfinite(state).all() or not np.isfinite(handle["force"][begin:begin + 16]).all():
+                    raise ValueError(f"nonfinite HDF: {path.stem}/{begin}")
+                if not np.array_equal(mask, reference_mask[begin:begin + len(mask)]):
+                    raise ValueError(f"mask differs across directppo cases: {path.stem}")
+                for frame, valid_raw in zip(state, mask, strict=True):
+                    valid = valid_raw[0].astype(bool)
+                    if abs(float(frame[2][valid].mean(dtype=np.float64))) > 2e-6:
+                        raise ValueError(f"gauge pressure mean differs: {path.stem}")
         digests[path.name] = pre.sha256(path)
+        receipt = repo / VTK_RECEIPTS / f"{path.stem}.json"
+        if load(receipt) != make_vtk_receipt(repo, path.stem):
+            raise ValueError(f"stale VTK receipt at finalization: {path.stem}")
+        vtk_receipt_digests[path.stem] = pre.sha256(receipt)
     src, dst = repo / FULL40 / "normalization.json", root / "normalization.json"
     if dst.exists():
         raise FileExistsError(dst)
@@ -413,8 +483,10 @@ def finalize(repo: Path) -> dict:
         "max_abs_omega": 0.75,
         "normalization_sha256": pre.sha256(dst),
         "curation_authorization_sha256": pre.sha256(repo / AUTH),
+        "vtk_receipt_sha256": vtk_receipt_digests,
         "validation_or_frozen_accessed": False,
         "source_scope": "historical changing exploratory PPO policies; not final-policy on-policy samples",
+        "endpoint_alignment": "Float32 VTK TimeValue is matched within 1e-5 to each predeclared real CFD endpoint before exact force/action lookup; U/p is unchanged",
         "hdf_sha256": digests,
         "official_pipeline": ["PhysicsNeMo Curator Source/Filter/Sink", "VTKSource", "run_pipeline"],
     }
