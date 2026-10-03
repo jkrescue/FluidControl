@@ -22,7 +22,7 @@ WORKER = "USER@WORKER_HOST"
 HOST_PROBE = (
     "awk '/^MemAvailable:/ {print $2}' /proc/meminfo; "
     "nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits | head -1; "
-    "ps -eo args | grep -E 'train_tandem_fno_rollout.py|evaluate_tandem_fno.py|train_tandem_hydrogym_ppo_pilot.py' "
+    "ps -eo args | grep -E 'train_tandem_fno_rollout.py|evaluate_tandem_fno.py|train_tandem_hydrogym_ppo_pilot.py|pimpleFoam' "
     "| grep -v grep | wc -l; "
     "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/"
     "tandem_fno_gate_b_aug_v3_rollout_seed20261005_10epoch/"
