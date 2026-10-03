@@ -13,7 +13,6 @@ import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-
 MIN_AVAILABLE_GIB = 20.0
 
 
@@ -22,14 +21,18 @@ class Spec:
     name: str
     latent_channels: int
     batch_size: int
+    num_fno_modes: tuple[int, int]
 
 
-def benchmark_plan() -> list[Spec]:
-    return [
-        Spec("width48_batch4", 48, 4),
-        Spec("width48_batch8", 48, 8),
-        Spec("width64_batch4", 64, 4),
+def benchmark_plan(include_modes48: bool = False) -> list[Spec]:
+    plan = [
+        Spec("width48_batch4", 48, 4, (32, 32)),
+        Spec("width48_batch8", 48, 8, (32, 32)),
+        Spec("width64_batch4", 64, 4, (32, 32)),
     ]
+    if include_modes48:
+        plan.append(Spec("modes48_width48_batch4", 48, 4, (48, 48)))
+    return plan
 
 
 def mem_available_gib() -> float:
@@ -78,7 +81,8 @@ def write_reports(output_json: Path, output_csv: Path, report: dict) -> None:
     temporary.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     temporary.replace(output_json)
     fields = [
-        "name", "latent_channels", "batch_size", "status", "timed_iterations",
+        "name", "latent_channels", "batch_size", "num_fno_modes", "status",
+        "timed_iterations",
         "elapsed_seconds", "sequences_per_second", "transitions_per_second",
         "peak_allocated_gib", "peak_reserved_gib", "min_mem_available_gib",
         "error",
@@ -97,6 +101,7 @@ def main() -> None:
     parser.add_argument("--output-csv", type=Path, required=True)
     parser.add_argument("--warmup", type=int, default=1)
     parser.add_argument("--iterations", type=int, default=2)
+    parser.add_argument("--include-modes48", action="store_true")
     args = parser.parse_args()
     if args.output_json.exists() or args.output_csv.exists():
         parser.error("refusing to overwrite an existing benchmark report")
@@ -106,10 +111,11 @@ def main() -> None:
     import numpy as np
     import physicsnemo
     import torch
-    from fluid_control.tandem_datapipe import TandemRolloutDataset
     from omegaconf import OmegaConf
     from train_tandem_fno import build_model
     from train_tandem_fno_rollout import rollout
+
+    from fluid_control.tandem_datapipe import TandemRolloutDataset
 
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is required")
@@ -156,8 +162,13 @@ def main() -> None:
         "rollout_steps": 20,
         "model_fixed": {
             "in_channels": 6, "out_channels": 7, "num_fno_layers": 5,
-            "num_fno_modes": [32, 32], "decoder_layers": 2,
-            "decoder_layer_size": 128, "padding": 8, "coord_features": True,
+            "decoder_layers": 2, "decoder_layer_size": 128, "padding": 8,
+            "coord_features": True,
+        },
+        "model_variable": {
+            "num_fno_modes": (
+                "recorded per result; original three configurations remain [32, 32]"
+            ),
         },
         "data": {
             "root": str(args.data), "split": "train",
@@ -175,7 +186,7 @@ def main() -> None:
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
 
     width48_safe = True
-    for spec in benchmark_plan():
+    for spec in benchmark_plan(include_modes48=args.include_modes48):
         before = mem_available_gib()
         result = {**asdict(spec), "mem_available_before_gib": before}
         if not reserve_ok(before):
@@ -189,12 +200,20 @@ def main() -> None:
             report["results"].append(result)
             write_reports(args.output_json, args.output_csv, report)
             continue
+        if spec.name == "modes48_width48_batch4" and not width48_safe:
+            result.update(
+                status="SKIPPED_AFTER_UNSAFE_WIDTH48",
+                error="original width48 prerequisite failed",
+            )
+            report["results"].append(result)
+            write_reports(args.output_json, args.output_csv, report)
+            continue
         batch = real_batch(spec.batch_size)
         cfg = OmegaConf.create({
             "model": {
                 "in_channels": 6, "out_channels": 7,
                 "latent_channels": spec.latent_channels, "num_fno_layers": 5,
-                "num_fno_modes": [32, 32], "decoder_layers": 2,
+                "num_fno_modes": list(spec.num_fno_modes), "decoder_layers": 2,
                 "decoder_layer_size": 128, "padding": 8, "coord_features": True,
             }
         })
@@ -203,13 +222,16 @@ def main() -> None:
             network = build_model(cfg).to(device).train()
             result["parameter_count"] = sum(parameter.numel() for parameter in network.parameters())
 
-            def step() -> torch.Tensor:
-                network.zero_grad(set_to_none=True)
+            def step(model=network, inputs=batch) -> torch.Tensor:
+                model.zero_grad(set_to_none=True)
                 predicted_state, predicted_force = rollout(
-                    network, batch["state"], batch["mask"], batch["omega"]
+                    model, inputs["state"], inputs["mask"], inputs["omega"]
                 )
-                field = ((predicted_state - batch["target_state"]).square() * batch["mask"][:, None]).mean()
-                force = (predicted_force - batch["target_force"]).square().mean()
+                field = (
+                    (predicted_state - inputs["target_state"]).square()
+                    * inputs["mask"][:, None]
+                ).mean()
+                force = (predicted_force - inputs["target_force"]).square().mean()
                 loss = field + 0.2 * force
                 loss.backward()
                 return loss

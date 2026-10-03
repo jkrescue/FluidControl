@@ -6,8 +6,14 @@ image_id=sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e
 run_id="${1:-tandem_fno_h20_resource_20261003}"
 warmup="${2:-1}"
 iterations="${3:-2}"
+plan="${4:-default}"
 [[ "${run_id}" =~ ^[a-zA-Z0-9_-]+$ ]]
 [[ "${warmup}" =~ ^[1-9][0-9]*$ && "${iterations}" =~ ^[1-9][0-9]*$ ]]
+[[ "${plan}" == default || "${plan}" == include-modes48 ]]
+benchmark_args=()
+if [[ "${plan}" == include-modes48 ]]; then
+  benchmark_args+=(--include-modes48)
+fi
 output="artifacts/benchmarks/${run_id}"
 cd "${root}"
 [[ ! -e "${output}" ]] || { echo "Refusing existing output: ${output}" >&2; exit 1; }
@@ -30,4 +36,5 @@ exec docker run --rm --network none --gpus 'device=0' --cpus 8 --memory 100g \
     --data data/curated/tandem_cylinders_control_gap_v4 \
     --output-json "${output}/benchmark.json" \
     --output-csv "${output}/benchmark.csv" \
-    --warmup "${warmup}" --iterations "${iterations}"
+    --warmup "${warmup}" --iterations "${iterations}" \
+    "${benchmark_args[@]}"
