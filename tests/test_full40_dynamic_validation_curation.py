@@ -56,3 +56,18 @@ def test_checked_authorization_rejects_stale_receipt(tmp_path, monkeypatch):
     )
     with pytest.raises(ValueError, match="authorization is stale"):
         module.checked_auth(tmp_path)
+
+
+def test_vtk_receipt_rejects_missing_frames(tmp_path, monkeypatch):
+    module = load_module()
+    name = "full40_dynamic_validation_b01_zero"
+    monkeypatch.setattr(
+        module,
+        "checked_auth",
+        lambda repo: {
+            "cases": {name: {"run_window": [130.0, 150.0]}},
+        },
+    )
+    (tmp_path / "cfd/tandem_cylinders/cases" / name / "VTK_curator").mkdir(parents=True)
+    with pytest.raises(ValueError, match="expected exactly 201 VTK frames"):
+        module.make_vtk_receipt(tmp_path, name)

@@ -2,7 +2,7 @@
 """Fail-closed validation-only Curator entry point for dynamic6."""
 
 from __future__ import annotations
-import argparse, hashlib, importlib.util, json, os, tempfile
+import argparse, hashlib, importlib.util, json, os, re, tempfile
 from pathlib import Path
 import h5py, numpy as np
 
@@ -15,8 +15,9 @@ RAW_QC = Path(
     "artifacts/tandem_cylinders/full40_dynamic_validation_real_cfd_qc_20261003.json"
 )
 AUTH = Path(
-    "artifacts/tandem_cylinders/full40_dynamic_validation_curation_authorization_20261003.json"
+    "artifacts/tandem_cylinders/full40_dynamic_validation_curation_authorization_v2_20261003.json"
 )
+VTK_RECEIPTS = Path("artifacts/tandem_cylinders/full40_dynamic_validation_vtk_ready")
 OUTPUT = Path("data/curated/tandem_cylinders_full40_dynamic_validation_v1")
 FULL40 = Path("data/curated/tandem_cylinders_matched_start_full40_v1")
 BASE = Path("scripts/curate_low_action_phase94_validation.py")
@@ -89,13 +90,37 @@ def make_authorization(repo):
         c, m, s = load(cp), load(mp), load(sp)
         if any(c.get(k) != v for k, v in expected.items()):
             raise ValueError(f"case contract differs: {name}")
+        log_path = case / "log.pimpleFoam.full40_dynamic_validation"
         if (
             m.get("case") != name
             or m.get("predeclaration_sha256") != PREDECL_SHA
+            or m.get("solver_log_sha256") != sha(log_path)
             or m.get("solver_qc_sha256") != sha(sp)
             or s.get("steps") != 4000
         ):
             raise ValueError(f"solver provenance differs: {name}")
+        source = case / "source_restart_provenance"
+        for field, digest in expected["source_state_sha256"].items():
+            if sha(source / field) != digest:
+                raise ValueError(f"source-state SHA differs: {name}/{field}")
+        velocity = (case / f'{expected["source_restart_time"]:g}' / "U").read_text()
+        patch = re.search(r"rearCylinder\s*\{(?P<body>.*?)\n\s*\}", velocity, re.S)
+        table = patch and re.search(
+            r"omega\s+table\s*\((?P<rows>.*?)\)\s*;", patch.group("body"), re.S
+        )
+        actual = (
+            []
+            if not table
+            else [
+                [float(a), float(b)]
+                for a, b in re.findall(
+                    r"\(\s*([-+0-9.eE]+)\s+([-+0-9.eE]+)\s*\)",
+                    table.group("rows"),
+                )
+            ]
+        )
+        if actual != expected["action_points"]:
+            raise ValueError(f"OpenFOAM action table differs: {name}")
         rows[name] = {
             "split": "validation",
             "phase_bin": expected["phase_bin"],
@@ -105,6 +130,7 @@ def make_authorization(repo):
             "run_window": expected["run_window"],
             "case_config_sha256": sha(cp),
             "solver_marker_sha256": sha(mp),
+            "solver_log_sha256": sha(log_path),
             "solver_qc_sha256": sha(sp),
         }
     return {
@@ -126,6 +152,60 @@ def checked_auth(repo):
     saved = load(repo / AUTH)
     if saved != make_authorization(repo):
         raise ValueError("saved authorization is stale")
+    return saved
+
+
+def make_vtk_receipt(repo, name):
+    auth = checked_auth(repo)
+    if name not in auth["cases"]:
+        raise ValueError("case not authorized")
+    case = repo / "cfd/tandem_cylinders/cases" / name
+    files = sorted((case / "VTK_curator").glob("*/internal.vtu"))
+    if len(files) != 201:
+        raise ValueError(f"{name}: expected exactly 201 VTK frames")
+    expected = np.linspace(*auth["cases"][name]["run_window"], 201)
+    directory_times = np.asarray([float(path.parent.name) for path in files])
+    if not np.allclose(directory_times, expected, rtol=0, atol=2e-6):
+        raise ValueError(f"{name}: VTK directory times differ")
+    base = base_module(repo)
+    vtk = base.VTKSource(
+        str(case / "VTK_curator"),
+        file_pattern="*/internal.vtu",
+        manifold_dim=3,
+        point_source="vertices",
+        backend="pyvista",
+    )
+    actual_times = []
+    for index in range(len(vtk)):
+        mesh = next(vtk[index])
+        if "TimeValue" not in mesh.global_data:
+            raise ValueError(f"{name}: VTK frame lacks TimeValue")
+        actual_times.append(float(mesh.global_data["TimeValue"].reshape(-1)[0].item()))
+    if not np.allclose(actual_times, expected, rtol=0, atol=2e-6):
+        raise ValueError(f"{name}: VTK TimeValue sequence differs")
+    manifest = {str(path.relative_to(repo)): sha(path) for path in files}
+    marker = case / "solver_complete.full40_dynamic_validation.json"
+    log = case / "log.foamToVTK.full40_dynamic_validation"
+    if not log.is_file() or "End" not in log.read_text(encoding="utf-8"):
+        raise ValueError(f"{name}: foamToVTK log is absent or incomplete")
+    return {
+        "status": "DYNAMIC6_VTK_READY",
+        "case": name,
+        "split": "validation",
+        "frames": 201,
+        "times": [float(expected[0]), float(expected[-1]), 0.1],
+        "solver_marker_sha256": sha(marker),
+        "curation_authorization_sha256": sha(repo / AUTH),
+        "foam_to_vtk_log_sha256": sha(log),
+        "vtk_file_sha256": manifest,
+    }
+
+
+def checked_vtk_receipt(repo, name):
+    path = repo / VTK_RECEIPTS / f"{name}.json"
+    saved = load(path)
+    if saved != make_vtk_receipt(repo, name):
+        raise ValueError(f"stale VTK receipt: {name}")
     return saved
 
 
@@ -184,6 +264,7 @@ def curate(repo, name):
     auth = checked_auth(repo)
     if name not in auth["cases"]:
         raise ValueError("case not authorized")
+    checked_vtk_receipt(repo, name)
     config = dict(load(repo / "cfd/tandem_cylinders/cases" / name / "case_config.json"))
     config.update(source_force_sha256=FORCE_SHA, expected_frames=201)
     base = base_module(repo)
@@ -256,7 +337,7 @@ def finalize(repo):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("mode", choices=("authorize", "curate", "finalize"))
+    p.add_argument("mode", choices=("authorize", "vtk-receipt", "curate", "finalize"))
     p.add_argument("--repo", type=Path, default=REPO)
     p.add_argument("--case")
     p.add_argument("--execute", action="store_true")
@@ -267,6 +348,14 @@ def main():
         payload = make_authorization(repo)
         if a.execute:
             exclusive(repo / AUTH, payload)
+        print(json.dumps(payload, indent=2))
+        return
+    if a.mode == "vtk-receipt":
+        if not a.case:
+            p.error("--case required")
+        payload = make_vtk_receipt(repo, a.case)
+        if a.execute:
+            exclusive(repo / VTK_RECEIPTS / f"{a.case}.json", payload)
         print(json.dumps(payload, indent=2))
         return
     if not a.execute:
