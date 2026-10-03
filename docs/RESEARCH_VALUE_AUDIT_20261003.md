@@ -118,9 +118,12 @@ signal**, not a learned closed-loop result.
 
 Crucially, rear-cylinder total Cl RMS (including the nonzero mean side load)
 rose by 32%/24%; rear mean absolute Cl rose 21%/10%. The late-window
-fluctuating Cl RMS fell only ~3%, in tension with an earlier constant-rotation
-pilot that found substantially higher fluctuations. Action onset and window
-differ, so neither result establishes a universal lift effect. The research
+fluctuating Cl RMS fell only ~3%. An apparent conflict with an older
+constant-rotation table was resolved by re-reading its raw OpenFOAM forces:
+the old ~1.517 was **total** RMS including mean, while its fluctuating RMS
+was ~1.137, close to the new ~1.143. Instant/ramp onset made negligible
+difference in a matched comparison; see `CONTROL_ONSET_REPLICATION_20261003.md`.
+The research
 target remains *system total drag subject to explicit side-load and effort
 constraints*, with a Pareto-frontier fallback. Do not hide the side-load cost
 inside a single reward or describe the open-loop result as a closed-loop gain.

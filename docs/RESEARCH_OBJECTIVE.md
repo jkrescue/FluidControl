@@ -35,6 +35,16 @@ multiple shedding periods. The initial real-CFD acceptance criteria are:
 - bounded actuator magnitude and rate, with action energy reported separately;
 - no hidden solver failure, early termination or discarded unfavorable phase.
 
+Metric clarification (2026-10-03; thresholds and objective unchanged): because
+the physical question says **lift fluctuations**, the 5% criterion uses
+`Cl'_rms = sqrt(mean((Cl - mean(Cl))²))` on the declared replay window.
+The separate mean-lift bound uses `abs(mean(Cl))`. Also report
+`Cl_total_rms = sqrt(mean(Cl²))`, but do not relabel it as fluctuating RMS.
+The Stage-C surrogate screening code currently penalizes **total** lift RMS
+as a conservative soft proxy; this is not a substitute for checking both
+fixed Gate-D lift criteria on real CFD. This clarification follows a
+raw-force audit of a historical table that mixed the two RMS definitions.
+
 Front and rear forces must always be retained separately in the data and reports.
 A rear-only drag improvement is not sufficient if the front-cylinder drag offsets
 it. Lift is a safety/load constraint, not an optional visualization.

@@ -72,10 +72,13 @@ The fluctuating rear Cl RMS is about 3% below the paired baseline in this
 particular ramp-start, late-window panel. But mean lateral lift is large, so
 the rear total RMS including its mean rises 24–32%, and mean absolute Cl rises
 10–21%. This is a drag/side-load trade-off, not an unqualified improvement.
-The earlier constant-rotation `t=80..160` pilot reported *higher* fluctuating
-Cl RMS at `omega=±1` (~1.517); it used a different action onset and averaging
-window. We do not treat the discrepancy as resolved. Before any lift claim,
-run a matched onset/window replication and inspect cycle-to-cycle statistics.
+The earlier constant-rotation `t=80..160` pilot's ~1.517 statistic was
+**total** Cl RMS including mean, not fluctuating RMS. A matched instant-vs-ramp
+replication found fluctuating RMS ratios within `0.0021%` of unity. The
+retained old `control_small_p100` force series independently gives
+fluctuating RMS `1.137038` and total RMS `1.517437`; see
+`CONTROL_ONSET_REPLICATION_20261003.md`. The seeming lift discrepancy was
+primarily a metric-label inconsistency, not a demonstrated onset mechanism.
 These cases have only a coarse-grid check at other conditions, no measured
 wall torque, and no policy feedback. They justify studying a Pareto-constrained
 controller, not claiming one has been achieved.

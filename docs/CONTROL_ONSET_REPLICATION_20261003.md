@@ -1,10 +1,11 @@
 # Matched rotation-onset replication (pre-solve plan)
 
-The earlier constant-rotation pilot reported rear fluctuating Cl RMS of about
-1.517 at `omega=±1`, whereas the new matched-start, two-time-unit ramp panel
-reported about 1.143 at the same final rotation. Their onset and averaging
-windows differ. This difference is too large to wave away or to use either
-result as a definitive lift-control claim.
+The earlier constant-rotation pilot *labelled* rear Cl RMS of about 1.517 at
+`omega=±1`, whereas the new matched-start, two-time-unit ramp panel reported
+about 1.143 for **fluctuating** Cl RMS. At the time of predeclaration, this
+looked like a possible onset/window effect; the two metrics were later found
+to be different. The experiment remains a useful controlled check and is
+retained with its original motivation documented transparently.
 
 Before solving, this validation-only experiment freezes two additional real
 OpenFOAM cases from the **same uncontrolled `t=80` restart** as the ramp panel:
@@ -28,3 +29,23 @@ matched-window comparison must report rear fluctuating and total Cl RMS,
 mean Cl, total/front/rear mean Cd, force-block drift and numerical health.
 Even if the onset effect persists, two schedules at one phase and one mesh
 would be a mechanism hypothesis, not a broad bistability or control claim.
+
+## Result and corrected interpretation
+
+Both instant-onset cases ended cleanly and passed the same 801-field,
+16,000-force-row and solver-health checks as the ramp cases. The matching
+`t=120..160` analysis found instant/ramp **fluctuating** rear Cl RMS ratios
+of `1.0000204` (`omega=-1`) and `0.9999882` (`omega=+1`). Mean total Cd
+changes versus ramp were `-0.0148%` and `+0.0097%`. Thus onset speed has
+negligible effect in this comparison; it does **not** explain a 1.517-vs-1.143
+gap. Artifact:
+`artifacts/tandem_cylinders/control_onset_replication_result_20261003.json`
+(SHA-256 `2d52f4202d89dc1c480342f66fbd0be718a1c87b542ac9bd182e3c7507f287f5`).
+
+The retained original `control_small_p100` OpenFOAM force series resolves
+the apparent gap: over its `t=80..160` window, mean Cl is `-1.004868`,
+**fluctuating** RMS is `1.137038`, and **total** RMS including the mean is
+`1.517437`. The old table's ~1.517 value was a total-RMS statistic despite
+the ambiguous label; the new ~1.143 is fluctuating RMS. The different case
+starts and windows cause only small additional numerical differences. This
+is a metric-definition correction, **not** evidence for two flow attractors.
