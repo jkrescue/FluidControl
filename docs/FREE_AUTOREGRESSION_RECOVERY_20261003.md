@@ -132,3 +132,16 @@ is replaced. Resume retains the failed log, writes a separate resume record
 and log, and restores the completed model/optimizer/scheduler checkpoint.
 The restart is not claimed to be bitwise identical to uninterrupted training;
 the sampler/RNG sequence is not restored by this project trainer.
+
+## Flow-field accuracy versus force accuracy
+
+Future independent evaluations additionally report pooled relative L2 errors
+for u, v and gauge pressure separately, plus the combined velocity-vector L2
+error. They use physical-scale fields, exclude solid cells, and pool squared
+errors/reference energy across samples and cases before division. A zero
+reference energy produces null rather than a misleading zero error. These
+are distinct from total-drag coefficient errors and do not replace the
+existing control-readiness checks. Four focused tests passed. An actual
+H50-epoch-1, validation10, start-zero-only H1 integration probe passed with
+all ten outputs finite; that limited probe is not a full accuracy assessment.
+The result is retained in `artifacts/field_relative_metric_probe_20261004`.

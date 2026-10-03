@@ -21,6 +21,28 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt  # noqa: E402
 
 
+def field_error_sums(physical_error, physical_target, mask):
+    """Per-channel physical SSE/reference sums over fluid cells only."""
+    weight = mask.double()
+    return torch.stack([
+        (physical_error.double().square() * weight).sum(dim=(0, 2, 3)),
+        (physical_target.double().square() * weight).sum(dim=(0, 2, 3)),
+    ])
+
+
+def relative_field_metrics(sums):
+    """Pooled L2 ratios, never a mean of case-wise ratios; zero reference is undefined."""
+    error, reference = np.asarray(sums, dtype=np.float64)
+    def ratio(numerator, denominator):
+        return float(np.sqrt(numerator / denominator)) if denominator > 0 else None
+    return {
+        "field_squared_error_sums_u_v_p": error.tolist(),
+        "field_reference_squared_sums_u_v_p": reference.tolist(),
+        "field_relative_l2_u_v_p": [ratio(e, r) for e, r in zip(error, reference)],
+        "velocity_relative_l2": ratio(error[:2].sum(), reference[:2].sum()),
+    }
+
+
 def load_composed_config(path: Path):
     """Resolve the Hydra defaults tree used by the training entry point."""
     with initialize_config_dir(
@@ -237,6 +259,7 @@ def main() -> None:
             model_omega = observed_model_omega[permutation]
         case_report = {"case": path.stem, "horizons": {}, "visualizations": []}
         for horizon in args.horizons:
+            field_sums = torch.zeros((2, 3), dtype=torch.float64, device=dist.device)
             model_errors = []
             channel_errors = []
             persistence_errors = []
@@ -311,6 +334,11 @@ def main() -> None:
                 target_indices = start_indices + horizon
                 target = normalized[target_indices]
                 physical_error = (predicted - target) * state_std
+                field_sums += field_error_sums(
+                    physical_error[finite],
+                    (target[finite] * state_std + state_mean),
+                    active_mask[finite],
+                )
                 persistence_error = (normalized[start_indices] - target) * state_std
                 point_count = active_mask.sum(dim=(1, 2, 3)).clamp_min(1)
                 model_mae = (physical_error.abs() * active_mask).sum(dim=(1, 2, 3)) / (
@@ -515,6 +543,7 @@ def main() -> None:
                 "segments": len(model_errors),
                 "segment_stride": segment_stride,
             }
+            horizon_report.update(relative_field_metrics(field_sums.cpu().numpy()))
             if len(force_errors_array) and "rear_cd" in force_channels:
                 rear_cd_index = force_channels.index("rear_cd")
                 rear_cl_index = force_channels.index("rear_cl")
@@ -615,6 +644,12 @@ def main() -> None:
         report["summary"][key]["state_channel_mae_u_v_p"] = np.mean(
             [row["state_channel_mae_u_v_p"] for row in rows], axis=0
         ).tolist()
+        pooled_field_sums = np.asarray([
+            [row["field_squared_error_sums_u_v_p"],
+             row["field_reference_squared_sums_u_v_p"]]
+            for row in rows
+        ], dtype=np.float64).sum(axis=0)
+        report["summary"][key].update(relative_field_metrics(pooled_field_sums))
         report["summary"][key].update(
             {
                 "stable": all(row["stable"] for row in rows),
