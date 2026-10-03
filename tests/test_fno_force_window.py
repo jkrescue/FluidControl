@@ -80,8 +80,16 @@ class FieldStepStatisticsTests(unittest.TestCase):
         predicted[:, 1, 1] = 1e9
         mask = np.asarray([[1, 1], [1, 0]])
         result = module.field_step_statistics(predicted, truth, mask)
-        self.assertEqual(result["pressure_raw_relative_l2"], 0.0)
-        self.assertEqual(result["velocity_uv_relative_l2"], 0.0)
+        self.assertIsNone(result["pressure_raw_relative_l2"])
+        self.assertIsNone(result["velocity_uv_relative_l2"])
+
+    def test_zero_reference_pressure_and_velocity_are_undefined(self):
+        truth = np.zeros((3, 2, 2), dtype=float)
+        predicted = np.ones((3, 2, 2), dtype=float)
+        result = module.field_step_statistics(predicted, truth, np.ones((2, 2)))
+        self.assertIsNone(result["pressure_raw_relative_l2"])
+        self.assertIsNone(result["pressure_demeaned_relative_l2_diagnostic_only"])
+        self.assertIsNone(result["velocity_uv_relative_l2"])
 
     def test_field_diagnostic_rejects_nonfinite_or_shape_mismatch(self):
         field = np.zeros((3, 2, 2), dtype=float)
@@ -106,9 +114,39 @@ class FieldStepStatisticsTests(unittest.TestCase):
         result = module.summarize_field_diagnostics(rows)
         self.assertEqual(
             result["predicted_pressure_spatial_mean"],
-            {"minimum": 0.0, "maximum": 2.0, "mean": 1.0, "final": 2.0},
+            {
+                "defined_steps": 3,
+                "total_steps": 3,
+                "minimum": 0.0,
+                "maximum": 2.0,
+                "mean": 1.0,
+                "final": 2.0,
+            },
         )
         self.assertEqual(result["velocity_uv_relative_l2"]["final"], 5.0)
+
+    def test_all_null_relative_summary_is_explicit(self):
+        rows = [
+            {
+                "predicted_pressure_spatial_mean": 1.0,
+                "truth_pressure_spatial_mean": 0.0,
+                "pressure_raw_relative_l2": None,
+                "pressure_demeaned_relative_l2_diagnostic_only": None,
+                "velocity_uv_relative_l2": None,
+            }
+            for _ in range(3)
+        ]
+        result = module.summarize_field_diagnostics(rows)
+        expected = {
+            "defined_steps": 0,
+            "total_steps": 3,
+            "minimum": None,
+            "maximum": None,
+            "mean": None,
+            "final": None,
+        }
+        self.assertEqual(result["pressure_raw_relative_l2"], expected)
+        self.assertEqual(result["velocity_uv_relative_l2"], expected)
 
 
 if __name__ == "__main__":

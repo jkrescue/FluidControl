@@ -97,21 +97,22 @@ def field_step_statistics(predicted, truth, mask):
     predicted_pressure_mean = float(predicted_pressure.mean())
     truth_pressure_mean = float(truth_pressure.mean())
     pressure_error = predicted_pressure - truth_pressure
-    pressure_raw_relative_l2 = float(
-        np.sqrt(np.square(pressure_error).sum())
-        / max(np.sqrt(np.square(truth_pressure).sum()), 1e-12)
-    )
+
+    def relative_l2(error, reference):
+        reference_norm = float(np.sqrt(np.square(reference).sum()))
+        if reference_norm == 0.0:
+            return None
+        return float(np.sqrt(np.square(error).sum()) / reference_norm)
+
+    pressure_raw_relative_l2 = relative_l2(pressure_error, truth_pressure)
     predicted_pressure_gauge = predicted_pressure - predicted_pressure_mean
     truth_pressure_gauge = truth_pressure - truth_pressure_mean
-    pressure_demeaned_relative_l2 = float(
-        np.sqrt(np.square(predicted_pressure_gauge - truth_pressure_gauge).sum())
-        / max(np.sqrt(np.square(truth_pressure_gauge).sum()), 1e-12)
+    pressure_demeaned_relative_l2 = relative_l2(
+        predicted_pressure_gauge - truth_pressure_gauge,
+        truth_pressure_gauge,
     )
     velocity_error = predicted_valid[:2] - truth_valid[:2]
-    velocity_relative_l2 = float(
-        np.sqrt(np.square(velocity_error).sum())
-        / max(np.sqrt(np.square(truth_valid[:2]).sum()), 1e-12)
-    )
+    velocity_relative_l2 = relative_l2(velocity_error, truth_valid[:2])
     return {
         "predicted_pressure_spatial_mean": predicted_pressure_mean,
         "truth_pressure_spatial_mean": truth_pressure_mean,
@@ -134,13 +135,16 @@ def summarize_field_diagnostics(rows):
     )
     result = {}
     for key in keys:
-        values = [float(row[key]) for row in rows]
-        if any(not math.isfinite(value) for value in values):
+        values = [None if row[key] is None else float(row[key]) for row in rows]
+        defined = [value for value in values if value is not None]
+        if any(not math.isfinite(value) for value in defined):
             raise ValueError("nonfinite field diagnostic summary input")
         result[key] = {
-            "minimum": min(values),
-            "maximum": max(values),
-            "mean": sum(values) / len(values),
+            "defined_steps": len(defined),
+            "total_steps": len(values),
+            "minimum": min(defined) if defined else None,
+            "maximum": max(defined) if defined else None,
+            "mean": sum(defined) / len(defined) if defined else None,
             "final": values[-1],
         }
     return result
