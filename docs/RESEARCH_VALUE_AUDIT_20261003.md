@@ -124,3 +124,12 @@ differ, so neither result establishes a universal lift effect. The research
 target remains *system total drag subject to explicit side-load and effort
 constraints*, with a Pareto-frontier fallback. Do not hide the side-load cost
 inside a single reward or describe the open-loop result as a closed-loop gain.
+
+The separate 100-step validation action-ranking check found that the current
+best completed FNO selected `+1` rotation whereas paired CFD preferred `-1`.
+Its selected action was slightly worse than zero in the startup window;
+see `CONTROL_RANKING_AUDIT_20261003.md`. This is the decisive present
+*model-control gap*: physical actuation can lower drag, but the current
+surrogate cannot yet be trusted to select the beneficial action. Pause
+surrogate-only PPO/MPC claims, preserve frozen Gate B, and prioritize
+control-aware model validation and train-only real-CFD acquisition.
