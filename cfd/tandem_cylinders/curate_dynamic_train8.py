@@ -404,6 +404,12 @@ def finalize(repo: Path) -> dict:
         "normalization_reference": str(FULL40),
         "normalization_sha256": sha256(target_normalization),
         "validation_or_frozen_accessed": False,
+        "actuation_contract": {
+            "openfoam_boundary": "linear omega table from omega_now to omega_next over each 0.1 D/U interval",
+            "curator_alignment": "numpy.interp at the same field timestamp",
+            "fno_action_inputs": ["omega_now", "omega_next"],
+            "direct_cfd_alignment": "worker uses the same previous-to-applied linear table",
+        },
         "hdf_sha256": digests,
         "official_pipeline": ["PhysicsNeMo Curator Source/Filter/Sink", "VTKSource", "run_pipeline"],
     }

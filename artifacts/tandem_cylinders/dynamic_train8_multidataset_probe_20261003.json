@@ -1,0 +1,39 @@
+{
+  "status": "OFFICIAL_PHYSICSNEMO_MULTIDATASET_DATALOADER_PASS",
+  "scope": "one real combined H20 batch plus one direct dynamic8 sample; no training or validation",
+  "physicsnemo_image": "fluid-control-physicsnemo:2.2.2",
+  "physicsnemo_image_id": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e",
+  "official_api": [
+    "physicsnemo.datapipes.MultiDataset",
+    "physicsnemo.datapipes.DataLoader"
+  ],
+  "prefetch_factor": 0,
+  "rollout_steps": 20,
+  "base_train_stride": 20,
+  "additional_train_stride": 2,
+  "base_windows": 800,
+  "additional_windows": 728,
+  "combined_windows": 1528,
+  "dynamic_train8_manifest_sha256": "a0bd0e3b79d4d43ace407292c31a595d552dbd6e1a5de1fd149b1ca446f53f35",
+  "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+  "batch_shapes": {
+    "state": [1, 3, 128, 256],
+    "target_state": [1, 20, 3, 128, 256],
+    "omega": [1, 21, 1],
+    "target_force": [1, 20, 4],
+    "mask": [1, 1, 128, 256]
+  },
+  "direct_additional_sample": {
+    "case": "dynamic_train8_b00_multisine",
+    "step": 0,
+    "split": "train",
+    "rollout_steps": 20
+  },
+  "checks": {
+    "all_batch_values_finite": true,
+    "direct_additional_state_and_force_finite": true,
+    "normalized_action_within_unit_support": true,
+    "all_four_force_channels_present": true,
+    "validation_or_frozen_accessed": false
+  }
+}

@@ -108,6 +108,7 @@ def test_curator_uses_official_source_filter_sink_contract() -> None:
     assert "tandem_cylinders_matched_start_full40_dev30_v1" in source
     assert "DYNAMIC_TRAIN8_REAL_ENDPOINT_CURATOR_PROBE_PASS" in source
     assert "expected_frames=2" in source
+    assert '"fno_action_inputs": ["omega_now", "omega_next"]' in source
 
 
 def test_curator_maps_authorized_window_to_base_source_contract() -> None:

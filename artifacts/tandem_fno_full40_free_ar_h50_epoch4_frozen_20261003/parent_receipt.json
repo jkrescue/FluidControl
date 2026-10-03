@@ -1,0 +1,14 @@
+{
+  "status": "IMMUTABLE_COMPLETED_H50_EPOCH_PARENT",
+  "source": "artifacts/tandem_fno_full40_free_ar_h50_ar50_20261003/checkpoints",
+  "source_sync_receipt": "artifacts/tandem_fno_full40_free_ar_h50_ar50_20261003/worker_epoch_04_sync.json",
+  "training_horizon": 50,
+  "validation_horizon": 100,
+  "epoch": 4,
+  "selection_score": 0.05228048901311889,
+  "sha256": {
+    "FNO.0.4.mdlus": "06040259b177bac548b906be1f908873e6c9a7508e5c8b571049c6683cb97889",
+    "checkpoint.0.4.pt": "96d9d078a0e1aa9998549e998846b1ab2c0b313409bacb18fbf10b87777dff31"
+  },
+  "frozen_test_accessed": false
+}
