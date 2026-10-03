@@ -296,11 +296,12 @@ function renderTrain20Physics(d){let p=d.full40_train20_physics,s=p?.all_train_c
  $('train20-physics').textContent=`TRAIN ONLY · 联合门槛 ${s.joint_pass_count}/${s.comparison_count} 通过 · 全动作 macro 降阻 ${pct(s.macro_mean_total_drag_reduction_fraction)}`;$('train20-physics').className='number '+(s.joint_pass_count?'good':'bad');
  let minus=a.m075,plus=a.p075;$('train20-actions').textContent=`−0.75 / +0.75 macro 降阻 ${pct(minus.macro_mean_total_drag_reduction_fraction)} / ${pct(plus.macro_mean_total_drag_reduction_fraction)}；worst phase ${pct(minus.worst_drag_reduction.total_drag_reduction_fraction_positive_is_better)} / ${pct(plus.worst_drag_reduction.total_drag_reduction_fraction_positive_is_better)}；macro 平均Cl偏置比 ${num(minus.macro_mean_abs_rear_cl_bias_ratio,3)} / ${num(plus.macro_mean_abs_rear_cl_bias_ratio,3)}（门槛≤0.10）。`;
  $('train20-scope').textContent=`四个train相位、16个非零固定动作、各自同相位zero、固定末60D/U。validation/frozen结果读取=${p.scope?.validation_or_frozen_results_read?'是（异常）':'否'}；不替代九案 commissioning，不代表泛化、PPO或真实闭环收益。`;}
-function renderFreeAR(d){let x=d.free_ar_ablation||{},a=x.h20||{},b=x.h50||{},am=a.last_metrics||{},bm=b.last_metrics||{},dyn=x.dynamic6_fno||{};
+function renderFreeAR(d){let x=d.free_ar_ablation||{},a=x.h20||{},b=x.h50||{},am=a.last_metrics||{},bm=b.last_metrics||{},dyn=x.dynamic6_fno||{},direct=x.direct_cfd_ppo||{};
  const stage=(v,m)=>`${v.epoch||0}/${v.expected_epochs||8}轮${Number.isFinite(m.selection_score)?` · H100 selection ${num(m.selection_score,4)}`:''}`;
  $('free-ar-h20').textContent=stage(a,am);$('free-ar-h20').className=a.status==='COMPLETE'?'good':a.status==='FAILED'?'bad':'';$('free-ar-h20-detail').textContent=`${a.service_state||a.status||'等待'} · pure-AR H20→验证H100${Number.isFinite(am.terminal_state_mae)?` · 终点场/力归一化MAE ${num(am.terminal_state_mae,4)}/${num(am.terminal_force_mae,4)}`:''}。这是模型误差，不是减阻百分比或总Cd正式Gate。`;
  $('free-ar-h50').textContent=stage(b,bm);$('free-ar-h50').className=b.status==='COMPLETE'?'good':b.status==='FAILED'?'bad':'';$('free-ar-h50-detail').textContent=`${b.service_state||b.status||'等待'} · pure-AR H50→验证H100${Number.isFinite(bm.terminal_state_mae)?` · 终点场/力归一化MAE ${num(bm.terminal_state_mae,4)}/${num(bm.terminal_force_mae,4)}`:''} · 已验SHA回传 ${b.synced_epochs||0}/8轮。不是减阻百分比。`;
- let failed=dyn.status==='DYNAMIC6_FNO_DIAGNOSTIC_FAIL';$('free-ar-dynamic').textContent=dyn.status?`${failed?'FAIL':'诊断完成'} · H100 pooled ${Number.isFinite(dyn.pooled_h100_total_cd_nrmse)?pct(dyn.pooled_h100_total_cd_nrmse):'—'}`:'等待诊断';$('free-ar-dynamic').className=failed?'bad':'';$('free-ar-dynamic-detail').textContent=dyn.status?`动作差值MAE ${num(dyn.strict_start0_h100_delta_total_cd_mae,4)}（限值 ${num(dyn.strict_delta_limit,3)}）；PPO授权=${dyn.ppo_authorized?'是':'否'}。真实CFD validation-only，不是控制收益。`:'等待Dynamic6 FNO诊断。';}
+ let failed=dyn.status==='DYNAMIC6_FNO_DIAGNOSTIC_FAIL';$('free-ar-dynamic').textContent=dyn.status?`${failed?'FAIL':'诊断完成'} · H100 pooled ${Number.isFinite(dyn.pooled_h100_total_cd_nrmse)?pct(dyn.pooled_h100_total_cd_nrmse):'—'}`:'等待诊断';$('free-ar-dynamic').className=failed?'bad':'';$('free-ar-dynamic-detail').textContent=dyn.status?`动作差值MAE ${num(dyn.strict_start0_h100_delta_total_cd_mae,4)}（限值 ${num(dyn.strict_delta_limit,3)}）；PPO授权=${dyn.ppo_authorized?'是':'否'}。真实CFD validation-only，不是控制收益。`:'等待Dynamic6 FNO诊断。';
+ let completed=direct.completed_transitions||0,live=direct.live_collection_steps||0,updates=direct.ppo_update_count||0,last=direct.last_checkpoint||{},reward=last.raw_physical_reward||{};$('free-ar-direct-ppo').textContent=direct.running?`真实CFD训练中 · ${completed}/2048步${completed<256?`（首轮 ${live}/256）`:''}`:'实现与测试中';$('free-ar-direct-ppo').className=direct.running?'good':'';$('free-ar-direct-ppo-detail').textContent=direct.running?`PPO更新 ${updates} 次${Number.isFinite(reward.mean)?` · 最近256步真实reward均值 ${num(reward.mean,4)}`:''}。FNO未用于奖励；物理减阻尚待80D配对CFD验收。`:'直接CFD反馈，不依赖FNO代理；尚无运行日志或控制收益。';}
 function renderFull40Chain(d){let c=d.full40_development_chain||{},raw=c.raw_qc||{},hdf=c.development_hdf||{},release=c.dev30_release||{},one=c.quickscreen?.onestep||{},h20=c.quickscreen?.h20||{},diag=c.validation_diagnostic||{},ppo=c.canonical_ppo||{},dyn=d.dynamic6_runtime||{},incident=c.execution_incident||{},spark=d.dual_node_watchdog?.nodes?.spark||{},worker=d.dual_node_watchdog?.nodes?.worker78||{},legacy=d.watchdog||{};
  $('chain-raw').textContent=`RAW31 ${raw.full40_verified||0}/31 · 九案 ${raw.commissioning_qc_pass?'QC PASS':'QC待通过'}`;$('chain-raw').className=raw.full40_verified===31&&raw.commissioning_qc_pass?'good':'';$('chain-raw-detail').textContent=`新增31案严格receipt ${raw.full40_verified||0}/31；九案独立QC ${raw.commissioning_qc_pass?'已通过':'尚未通过'}。solver完成不能替代RAW/HDF QC。`;
  $('chain-hdf').textContent=`train ${hdf.train_ready||0}/20 · validation ${hdf.validation_ready||0}/10`;$('chain-hdf').className=hdf.train_ready===20&&hdf.validation_ready===10?'good':'';$('chain-release').textContent=release.published?`dev30 immutable 已发布 · manifest ${String(release.manifest_sha256||'').slice(0,12)}…`:`Spark本机已验收HDF；dev30 BLOCKED · ${release.reason||'等待30个开发HDF'}`;
@@ -796,6 +797,68 @@ def _fixed_training_stage(
     return result
 
 
+def _last_jsonl_event(path: Path, event: str, limit: int = 262_144) -> dict | None:
+    """Read only a bounded tail and return the newest matching JSON event."""
+    try:
+        with path.open("rb") as stream:
+            stream.seek(0, 2)
+            stream.seek(max(0, stream.tell() - limit))
+            tail = stream.read().decode("utf-8", errors="replace")
+    except OSError:
+        return None
+    for line in reversed(tail.splitlines()):
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(row, dict) and row.get("event") == event:
+            return row
+    return None
+
+
+def _direct_cfd_ppo_status(root: Path) -> dict:
+    """Read only the declared direct-CFD PPO run; FNO is not in its reward path."""
+    run = root / "artifacts/direct_cfd/directppo2048_v1"
+    latest_steps = [
+        _last_jsonl_event(run / f"worker_env{index}.jsonl", "step")
+        for index in (0, 1)
+    ]
+    live_collection_steps = sum(
+        row.get("step", 0)
+        for row in latest_steps
+        if isinstance(row, dict) and isinstance(row.get("step"), int)
+    )
+    progress = _read_json(run / "training/progress.json", {})
+    if not isinstance(progress, dict):
+        progress = {}
+    checkpoints = progress.get("checkpoints", [])
+    if not isinstance(checkpoints, list):
+        checkpoints = []
+    completed = progress.get("completed_transitions", 0)
+    if not isinstance(completed, int):
+        completed = 0
+    running = run.is_dir() and any(row is not None for row in latest_steps)
+    return {
+        "status": progress.get("status", "DIRECT_REAL_CFD_PPO_RUNNING")
+        if running
+        else "IMPLEMENTATION_AND_TESTING",
+        "running": running,
+        "completed_transitions": completed,
+        "target_transitions": 2048,
+        "live_collection_steps": live_collection_steps,
+        "collection_steps_per_update": 256,
+        "ppo_update_count": len(checkpoints),
+        "last_checkpoint": checkpoints[-1] if checkpoints else None,
+        "environment_latest_steps": latest_steps,
+        "method": "official HydroGym + direct OpenFOAM feedback",
+        "surrogate_dependency": False,
+        "fno_used_for_reward": False,
+        "physical_result_available": False,
+        "final_physical_gate": "pending paired 80-D/U OpenFOAM evaluation",
+        "frozen_test_accessed": False,
+    }
+
+
 def _free_ar_ablation(root: Path) -> dict:
     """Expose only the two predeclared free-AR runs and fixed Dynamic6 evidence."""
     h20 = root / "artifacts/tandem_fno_full40_free_ar_h20_ar20_20261003"
@@ -818,12 +881,7 @@ def _free_ar_ablation(root: Path) -> dict:
             worker_sync=True,
         ),
         "dynamic6_fno": dynamic6 if isinstance(dynamic6, dict) else {},
-        "direct_cfd_ppo": {
-            "status": "IMPLEMENTATION_AND_TESTING",
-            "method": "official HydroGym + direct OpenFOAM feedback",
-            "surrogate_dependency": False,
-            "physical_result_available": False,
-        },
+        "direct_cfd_ppo": _direct_cfd_ppo_status(root),
         "frozen_hdf_opened_or_enumerated": False,
     }
 

@@ -119,6 +119,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("实现与测试中", page)
         self.assertIn("renderFreeAR(d)", page)
         self.assertIn("这是模型误差，不是减阻百分比", page)
+        self.assertIn("FNO未用于奖励", page)
 
     def test_dual_node_watchdog_is_exposed_without_replacing_science_metrics(self) -> None:
         page = MODULE.PAGE
@@ -322,6 +323,55 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         )
         self.assertFalse(result["direct_cfd_ppo"]["physical_result_available"])
         self.assertFalse(result["frozen_hdf_opened_or_enumerated"])
+
+    def test_direct_cfd_ppo_reads_tail_and_after_update_progress(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            run = root / "artifacts/direct_cfd/directppo2048_v1"
+            training = run / "training"
+            training.mkdir(parents=True)
+            for index, step in ((0, 41), (1, 40)):
+                (run / f"worker_env{index}.jsonl").write_text(
+                    "not-json\n"
+                    + json.dumps({"event": "reset", "episode": 2})
+                    + "\n"
+                    + json.dumps(
+                        {
+                            "event": "step",
+                            "env_index": index,
+                            "episode": 2,
+                            "step": step,
+                        }
+                    )
+                    + "\n",
+                    encoding="utf-8",
+                )
+            (training / "progress.json").write_text(
+                json.dumps(
+                    {
+                        "status": "DIRECT_REAL_CFD_PPO_RUNNING",
+                        "completed_transitions": 256,
+                        "checkpoints": [
+                            {
+                                "timesteps": 256,
+                                "ppo_update_count": 1,
+                                "raw_physical_reward": {"mean": -0.25},
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = MODULE._direct_cfd_ppo_status(root)
+        self.assertTrue(result["running"])
+        self.assertEqual(result["completed_transitions"], 256)
+        self.assertEqual(result["live_collection_steps"], 81)
+        self.assertEqual(result["ppo_update_count"], 1)
+        self.assertEqual(
+            result["last_checkpoint"]["raw_physical_reward"]["mean"], -0.25
+        )
+        self.assertFalse(result["fno_used_for_reward"])
+        self.assertFalse(result["frozen_test_accessed"])
 
     def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
