@@ -38,6 +38,7 @@ base=(docker run --rm --network none --gpus device=0 --cpus 8 --memory 90g
  --shm-size 2g --pids-limit 512 --cap-drop ALL --security-opt no-new-privileges
  --read-only --tmpfs /tmp:rw,nosuid,nodev,size=4g
  --user "$(id -u):$(id -g)" --env HOME=/tmp --env XDG_CACHE_HOME=/tmp/cache
+ --env "USER=$(id -un)" --env "LOGNAME=$(id -un)"
  --env PYTHONDONTWRITEBYTECODE=1 --env PYTHONPATH=/workspace/src:/workspace/scripts
  --env OMP_NUM_THREADS=4
  --mount "type=bind,src=$root/scripts,dst=/workspace/scripts,readonly"
