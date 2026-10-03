@@ -1,0 +1,42 @@
+{
+  "status": "DYNAMIC_TRAIN8_H50_ONE_BATCH_TRAINER_PROBE_PASS",
+  "scope": "one H50 train batch and one independent H100 validation batch; engineering integration probe only",
+  "systemd_unit": "fluid-control-dynamic-train8-h50-probe-v2-20261003.service",
+  "exit_status": 0,
+  "physicsnemo_image": "fluid-control-physicsnemo:2.2.2",
+  "parent": {
+    "epoch": 4,
+    "training_horizon": 50,
+    "model_sha256": "06040259b177bac548b906be1f908873e6c9a7508e5c8b571049c6683cb97889",
+    "checkpoint_sha256": "96d9d078a0e1aa9998549e998846b1ab2c0b313409bacb18fbf10b87777dff31"
+  },
+  "data": {
+    "base_h50_windows_stride20": 760,
+    "dynamic_train8_h50_windows_stride2": 608,
+    "combined_windows": 1368,
+    "dynamic_train8_manifest_sha256": "a0bd0e3b79d4d43ace407292c31a595d552dbd6e1a5de1fd149b1ca446f53f35",
+    "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+    "prefetch_factor": 0,
+    "validation_or_frozen_accessed_for_training": false
+  },
+  "probe": {
+    "batch_size": 4,
+    "train_batches": 1,
+    "validation_batches": 1,
+    "teacher_forcing_ratio": 0.0,
+    "train_rollout_steps": 50,
+    "validation_rollout_steps": 100,
+    "train_loss": 0.0026497994549572468,
+    "selection_score": 0.2113441783542413,
+    "terminal_total_drag_pooled_nrmse": 0.06968168126874813,
+    "rollout_total_drag_pooled_nrmse": 0.03234430507232989,
+    "all_reported_metrics_finite": true
+  },
+  "sha256": {
+    "training_history.json": "447c8158d2d8fb6f7b45d279503fb93ec4773758d18489207aa3a394f96b5d89",
+    "training_data_sources.json": "f49826d971366932be7e1e8c405a4642f9f62a3d460586f58a030c96321e7066",
+    "probe_model": "4fb6f25d9f70736d28409129675ab3eb6959d5c3fd3d6bb69c147551098df962",
+    "probe_checkpoint": "5b985ff65630873b9634f30272cb87404ff1c6861f83c7f11a3216f23b48eaf1"
+  },
+  "scientific_claim": "none; no full training, checkpoint selection, PPO authorization, or flow-control success claim"
+}
