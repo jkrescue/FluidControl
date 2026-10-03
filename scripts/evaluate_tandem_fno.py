@@ -64,7 +64,7 @@ def save_rollout_figure(
     title: str,
 ) -> None:
     """Write a physical-unit ground-truth/prediction/error comparison."""
-    labels = ("u", "v", "p")
+    labels = ("u/U∞", "v/U∞", "p/(ρU∞²)")
     figure, axes = plt.subplots(3, 3, figsize=(16, 11), constrained_layout=True)
     for channel, label in enumerate(labels):
         truth = np.where(valid_mask, ground_truth[channel], np.nan)
@@ -98,7 +98,12 @@ def save_rollout_figure(
             axes[channel, column].set_xlabel("x/D")
             axes[channel, column].set_ylabel("y/D")
             figure.colorbar(image, ax=axes[channel, column], shrink=0.82)
-    figure.suptitle(title, fontsize=11)
+    figure.suptitle(
+        title
+        + "\nShared truth/prediction colors: 1st–99th percentile; "
+        "absolute-error colors: 0–99th percentile",
+        fontsize=10,
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(path, dpi=160)
     plt.close(figure)
