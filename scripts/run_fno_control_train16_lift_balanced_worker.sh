@@ -122,6 +122,7 @@ common=(--rm --network none --gpus device=0 --cpus 8 --memory 100g --shm-size 2g
   --pids-limit 512 --cap-drop ALL --security-opt no-new-privileges --read-only
   --tmpfs /tmp:rw,nosuid,nodev,size=8g --user "$(id -u):$(id -g)"
   --env HOME=/tmp --env XDG_CACHE_HOME=/tmp/cache --env PYTHONDONTWRITEBYTECODE=1
+  --env "USER=$(id -un)" --env "LOGNAME=$(id -un)"
   --env PYTHONPATH=/workspace/src:/workspace/scripts --env OMP_NUM_THREADS=4
   --mount "type=bind,src=$source_root/scripts,dst=/workspace/scripts,readonly"
   --mount "type=bind,src=$source_root/src,dst=/workspace/src,readonly"

@@ -479,6 +479,7 @@ def test_control_train16_lift_balanced_worker_runner_is_fail_closed():
     assert "--allocator-fraction 0.45" in source
     assert "--min-free-gib 40" in source
     assert "--shm-size 2g" in source
+    assert '--env "USER=$(id -un)" --env "LOGNAME=$(id -un)"' in source
     assert "frozen_test" not in "\n".join(
         line for line in source.splitlines() if "--mount" in line
     )
