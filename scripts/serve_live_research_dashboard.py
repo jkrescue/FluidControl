@@ -46,6 +46,13 @@ LOW_ACTION_PHASE94_CANONICAL = Path(
     "artifacts/distributed_runs/control_gap_low_action_phase94_validation_v1_worker78/"
     "low_action_phase94_physical_audit_v3_canonical.json"
 )
+LOW_ACTION_FNO_ROOT = Path(
+    "artifacts/distributed_runs/control_gap_low_action_phase94_validation_v1_worker78/"
+    "evaluations"
+)
+LOW_ACTION_FNO_PAIRWISE = Path(
+    "artifacts/tandem_cylinders/low_action_phase94_fno_pairwise_h100_20261003.json"
+)
 OLD = Path("artifacts/tandem_fno_total_drag_spark_30epoch")
 SAMPLE_FILE = Path("artifacts/monitor/live_resource_samples.jsonl")
 HOST_COMMAND = (
@@ -152,8 +159,9 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  let periodic=d.periodic_benchmark?.decisions||[];$('periodic-detail').textContent=periodic.length===2?`零均值周期 P10/P20：总阻力变化 ${num(-100*periodic[0].total_cd_reduction,2)}% / ${num(-100*periodic[1].total_cd_reduction,2)}%；后柱升力脉动比 ${num(periodic[0].rear_cl_fluctuation_rms_ratio,2)} / ${num(periodic[1].rear_cl_fluctuation_rms_ratio,2)}；均未通过联合门槛。仅单相位开环 CFD。`:'零均值周期转速基线：等待真实 CFD 审计。';
  let cohort=d.existing_open_loop;$('cohort-detail').textContent=cohort?`已有真实 CFD 训练/验证轨迹：${cohort.joint_pass_count}/${cohort.trajectory_count} 条同时满足降阻与升力约束；冻结测试未用于筛选。`:'已有开环 CFD 轨迹联合验收：等待审计。';
  let pilots=d.phase_feedback_pilots||[],ready=pilots.filter(x=>x?.comparison),passed=ready.filter(x=>x.comparison.total_drag_reduction>=.02&&x.comparison.rear_cl_fluctuation_rms_ratio<=1.05&&x.comparison.abs_rear_cl_mean_over_zero_fluctuation_rms<=.1),bestPilot=ready.reduce((a,b)=>!a||b.comparison.total_drag_reduction>a.comparison.total_drag_reduction?b:a,null);$('feedback-detail').textContent=ready.length===3?`短时真实 CFD 反馈：${passed.length}/3 种方案满足联合目标；最佳减阻 ${num(100*bestPilot.comparison.total_drag_reduction,2)}%，但其后柱升力波动增大 ${num(100*(bestPilot.comparison.rear_cl_fluctuation_rms_ratio-1),1)}%。仅一周期试验，不等于最终结果。`:ready.length?`短时真实 CFD 反馈：已完成 ${ready.length}/3 组，继续核对。`:'短时真实 CFD 反馈：等待配对结果。';
- let rank=d.control_ranking_h20_rear_drag||d.control_ranking;$('ranking-score').textContent=rank?`${Math.round(rank.pairwise_ranking_accuracy*6)}/6 对动作排序正确`:'等待动作排序审计';
- $('ranking-detail').textContent=d.control_ranking_h20_rear_drag?`20 步＋后柱阻力加权 FNO 选 −1，与该验证窗口的 CFD 最优一致；真实 CFD 相对零转速阻力降低 ${num(-rank.cfd_change_of_fno_selection_vs_zero_percent,2)}%，但 100 步预测误差仍超标，不能作为闭环控制结果。`:rank?`此前 20 步 FNO 选 +1，真实 CFD 在启动窗口选 −1；选错的阻力代价 ${num(rank.cfd_regret_of_fno_selection,4)}。`:'用相同初始流场检验真实 CFD 与 FNO 决策是否一致。';
+ let rank=d.control_ranking_h20_rear_drag||d.control_ranking,lowFno=d.low_action_fno_h100,lowV3=lowFno?.models?.v3_parent,lowV4=lowFno?.models?.v4_candidate;
+ $('ranking-score').textContent=lowV3&&lowV4?`低幅H100 pooled：v3 ${pct(lowV3.h100_pooled_total_drag_nrmse)} · v4 ${pct(lowV4.h100_pooled_total_drag_nrmse)}`:rank?`${Math.round(rank.pairwise_ranking_accuracy*6)}/6 对动作排序正确`:'等待动作排序审计';
+ $('ranking-detail').textContent=lowV3&&lowV4?`低幅±0.75 validation瞬时终点：总Cd MAE / persistence MAE，v3 ${num(lowV3.h100_total_drag_mae,4)} / ${num(lowV3.h100_persistence_total_drag_mae,4)}，v4 ${num(lowV4.h100_total_drag_mae,4)} / ${num(lowV4.h100_persistence_total_drag_mae,4)}，两模型均差于persistence；唯一严格同初态start=0的动作差值误差为 ${num(lowV3.strict_start0_pairwise_delta_absolute_error,4)} / ${num(lowV4.strict_start0_pairwise_delta_absolute_error,4)}。仅验证集诊断，不是零控制收益或CFD闭环成功。`:d.control_ranking_h20_rear_drag?`20 步＋后柱阻力加权 FNO 选 −1，与该验证窗口的 CFD 最优一致；真实 CFD 相对零转速阻力降低 ${num(-rank.cfd_change_of_fno_selection_vs_zero_percent,2)}%，但 100 步预测误差仍超标，不能作为闭环控制结果。`:rank?`此前 20 步 FNO 选 +1，真实 CFD 在启动窗口选 −1；选错的阻力代价 ${num(rank.cfd_regret_of_fno_selection,4)}。`:'用相同初始流场检验真实 CFD 与 FNO 决策是否一致。';
  let phase=d.crossphase86_ranking;$('crossphase-ranking').textContent=phase?.status==='VALIDATION_ONLY_CROSSPHASE_ACTION_RANKING_DIAGNOSTIC'?`另一个初始相位 t=86，20 步、3 个动作：FNO 排序 ${num(100*phase.pairwise_ranking_accuracy,0)}% 正确，选 ${phase.fno_selected_case?.includes('_m100_')?'−1':phase.fno_selected_case?.includes('_p100_')?'+1':'0'}；窗口短于一个涡脱落周期，升力约束未通过，不能视为控制达标。`:'独立相位短窗口：等待审计。';
  let observed=picked?.observed,preliminary=observed?.summary?.['100']?.total_drag_nrmse;
  let strict=d.gate_b_metric_integrity, b=strict?.pooled_total_drag_nrmse??(audited?c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse:(Number.isFinite(preliminary)?preliminary:c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse)),i=c.independent_phase_full_period_total_drag_nrmse?.total_drag_nrmse;
@@ -220,6 +228,69 @@ def _pooled_terminal_nrmse(rows: object) -> float | None:
     if denominator <= 0 or not math.isfinite(numerator + denominator):
         return None
     return math.sqrt(numerator / denominator)
+
+
+def _low_action_fno_summary(root: Path) -> dict | None:
+    pairwise = _read_json(root / LOW_ACTION_FNO_PAIRWISE, None)
+    if pairwise is None:
+        return None
+    if pairwise.get("status") != "LOW_ACTION_PAIRWISE_FNO_H100_AUDIT_COMPLETE":
+        return None
+    models = {}
+    for result_key, directory in (
+        ("v3_parent", "v3_h20_parent"),
+        ("v4_candidate", "v4_h20_candidate"),
+    ):
+        evaluation = _read_json(
+            root / LOW_ACTION_FNO_ROOT / directory / "evaluation.json", None
+        )
+        pooled = _read_json(
+            root / LOW_ACTION_FNO_ROOT / directory / "pooled_audit.json", None
+        )
+        pair = pairwise.get("models", {}).get(result_key)
+        if (
+            not isinstance(evaluation, dict)
+            or evaluation.get("split") != "validation"
+            or evaluation.get("action_mode") != "observed"
+            or not isinstance(pooled, dict)
+            or pooled.get("split") != "validation"
+            or not isinstance(pair, dict)
+        ):
+            return None
+        try:
+            endpoint = pooled["horizons"]["100"]["pooled"]
+            summary = evaluation["summary"]["100"]
+            model_mae = float(summary["total_drag_mae"])
+            persistence_mae = float(summary["persistence_total_drag_mae"])
+            values = {
+                "h100_pooled_total_drag_nrmse": float(
+                    endpoint["total_drag_nrmse_pooled"]
+                ),
+                "h100_total_drag_mae": model_mae,
+                "h100_persistence_total_drag_mae": persistence_mae,
+                "h100_mae_minus_persistence": model_mae - persistence_mae,
+                "strict_start0_pairwise_delta_absolute_error": float(
+                    pair["strict_common_initial_pairwise_absolute_error"]
+                ),
+                "strict_start0_ranking_correct": pair[
+                    "strict_common_initial_ranking_correct"
+                ],
+            }
+        except (KeyError, TypeError, ValueError):
+            return None
+        if not all(
+            math.isfinite(value)
+            for key, value in values.items()
+            if key != "strict_start0_ranking_correct"
+        ):
+            return None
+        models[result_key] = values
+    return {
+        "status": pairwise["status"],
+        "split": "validation",
+        "models": models,
+        "scope": "H100 endpoint validation diagnostic; not control success",
+    }
 
 
 def _host_output(worker: bool) -> str:
@@ -473,6 +544,7 @@ class Handler(BaseHTTPRequestHandler):
             data["v4_h20_history"] = _read_json(self.root / V4_H20_DEVELOPMENT_RUN / "training_history.json", [])
             data["phase_feedback_pilots"] = [_read_json(self.root / "artifacts/tandem_cylinders" / name / "result.json", None) for name in ("phase_feedback_pair_k075_20261003", "phase_feedback_pair_k020_20261003", "phase_feedback_pair_k050_l15_20261003")]
             data.update(_latest_evidence(self.root))
+            data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
 

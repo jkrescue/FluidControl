@@ -79,6 +79,8 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("canonical_joint_pass_both_phases", page)
         self.assertIn("LOW_ACTION_PHASE94_CANONICAL_PHYSICAL_AUDIT_V3_COMPLETE", page)
         self.assertIn("真实OpenFOAM，仅t94单相位开环", page)
+        self.assertIn("仅验证集诊断，不是零控制收益或CFD闭环成功", page)
+        self.assertIn("唯一严格同初态start=0", page)
 
     def test_only_canonical_low_action_audit_is_loaded(self) -> None:
         self.assertEqual(
@@ -100,6 +102,67 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertAlmostEqual(MODULE._pooled_terminal_nrmse(rows), 0.5)
         self.assertIsNone(MODULE._pooled_terminal_nrmse([]))
         self.assertIn("不是H20", MODULE.PAGE)
+
+    def test_low_action_fno_summary_joins_audited_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            pairwise = {
+                "status": "LOW_ACTION_PAIRWISE_FNO_H100_AUDIT_COMPLETE",
+                "models": {
+                    name: {
+                        "strict_common_initial_pairwise_absolute_error": error,
+                        "strict_common_initial_ranking_correct": True,
+                    }
+                    for name, error in (("v3_parent", 0.09), ("v4_candidate", 0.11))
+                },
+            }
+            pair_path = root / MODULE.LOW_ACTION_FNO_PAIRWISE
+            pair_path.parent.mkdir(parents=True)
+            pair_path.write_text(json.dumps(pairwise), encoding="utf-8")
+            for directory_name, pooled_nrmse, mae in (
+                ("v3_h20_parent", 0.16, 0.35),
+                ("v4_h20_candidate", 0.18, 0.37),
+            ):
+                result_dir = root / MODULE.LOW_ACTION_FNO_ROOT / directory_name
+                result_dir.mkdir(parents=True)
+                evaluation = {
+                    "split": "validation",
+                    "action_mode": "observed",
+                    "summary": {
+                        "100": {
+                            "total_drag_mae": mae,
+                            "persistence_total_drag_mae": 0.22,
+                        }
+                    },
+                }
+                pooled = {
+                    "split": "validation",
+                    "horizons": {
+                        "100": {"pooled": {"total_drag_nrmse_pooled": pooled_nrmse}}
+                    },
+                }
+                (result_dir / "evaluation.json").write_text(
+                    json.dumps(evaluation), encoding="utf-8"
+                )
+                (result_dir / "pooled_audit.json").write_text(
+                    json.dumps(pooled), encoding="utf-8"
+                )
+            result = MODULE._low_action_fno_summary(root)
+            self.assertEqual(result["split"], "validation")
+            self.assertAlmostEqual(
+                result["models"]["v3_parent"]["h100_pooled_total_drag_nrmse"],
+                0.16,
+            )
+            self.assertAlmostEqual(
+                result["models"]["v4_candidate"]["h100_mae_minus_persistence"],
+                0.15,
+            )
+            self.assertAlmostEqual(
+                result["models"]["v4_candidate"][
+                    "strict_start0_pairwise_delta_absolute_error"
+                ],
+                0.11,
+            )
 
 
 if __name__ == "__main__":

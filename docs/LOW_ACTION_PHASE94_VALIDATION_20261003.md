@@ -18,6 +18,21 @@ Raw cases live under `cfd/tandem_cylinders/cases/validation_signed_low_pulse_{p,
 The separated curated profile is
 `data/curated/tandem_cylinders_low_action_phase94_validation_v1`.
 
+The reproducible case generator is
+`cfd/tandem_cylinders/generate_low_action_phase94_validation.py`. From
+`cfd/tandem_cylinders`, the original workflow was:
+
+```bash
+python generate_low_action_phase94_validation.py
+bash run_low_action_phase94_validation_case.sh validation_signed_low_pulse_p_phase94_v1_20261003
+bash run_low_action_phase94_validation_case.sh validation_signed_low_pulse_m_phase94_v1_20261003
+```
+
+The runner delegates to `run_openfoam.sh`, which pins the digest below and
+disables network access. Existing case directories deliberately cause refusal
+instead of overwrite; reproduction should use a clean compute staging tree and
+copy verified results back to Spark.
+
 ## Solver and numerical QC
 
 The calculation used the pinned OpenCFD container
@@ -29,6 +44,27 @@ force samples.  Peak Courant numbers were 0.248259 and 0.247841; maximum
 absolute global continuity error per step was below `1.28e-12`; both solver
 logs ended cleanly.  Raw QC is in
 `artifacts/distributed_runs/control_gap_low_action_phase94_validation_v1_worker78/low_action_phase94_validation_v1_cfd_qc.json`.
+
+VTK-to-HDF5 curation is reproducible with the project copy of the exact script
+that ran (SHA-256
+`b11eee58a41ef8634c80ffb009a536fc966600c7b27b01ae890e334af8cd44d2`):
+
+```bash
+.venv-curator-py312/bin/python -u scripts/curate_low_action_phase94_validation.py \
+  --profile low_action_phase94_validation_v1 \
+  --output data/curated/tandem_cylinders_low_action_phase94_validation_v1 \
+  --nx 256 --ny 128 \
+  --cases validation_signed_low_pulse_p_phase94_v1_20261003 \
+          validation_signed_low_pulse_m_phase94_v1_20261003 \
+  --defer-finalize
+```
+
+It uses official PhysicsNeMo Curator `Source`, `Filter`, `Sink`, `VTKSource`,
+and `run_pipeline` APIs plus PhysicsNeMo `Mesh`/`BVH` sampling. Final validation
+is performed by `scripts/finalize_low_action_phase94_curated.py`. Float32
+Curator timestamps are checked against the exact 801-point grid with `2e-5`
+absolute tolerance (observed roundoff `6.11e-6`) and a separate uniform-step
+check; a directed test rejects larger perturbations.
 
 ## Same-phase physical diagnostic
 
@@ -82,3 +118,41 @@ isolation checks.  This incident affects elapsed time, not CFD values.
 The audit implementation is `scripts/audit_low_action_phase94_physics.py`; its
 canonical three-term gate has a directed regression test in
 `tests/test_low_action_phase94_physics.py`.
+
+## Fixed-checkpoint surrogate diagnostic
+
+After the pair passed final QC, the pinned PhysicsNeMo 2.2.2 image
+`sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e`
+evaluated the fixed v3 and v4 H20 checkpoints. Each model used its own immutable
+training normalization. Only this profile's `validation` split was requested;
+the frozen test was not accessed. Strict pooled endpoint total-drag NRMSE was:
+
+| checkpoint | H1 | H10 | H50 | H100 |
+|---|---:|---:|---:|---:|
+| v3 H20 parent | 1.0339% | 0.8728% | 6.2206% | 16.2544% |
+| v4 H20 candidate | 0.8752% | 0.5786% | 6.8923% | 17.8589% |
+
+The v4 candidate improves H1/H10 but is worse at H50/H100. At H100 its pooled
+NRMSE is 9.87% higher than v3; state MAE is `0.044852` versus `0.044270`, and
+total-drag MAE is `0.373271` versus `0.350797`. This independent low-action
+diagnostic therefore does not support promoting v4 for long-horizon closed-loop
+work. It is diagnostic evidence, not a new tuning or model-selection split.
+Both H100 drag errors are also worse than the same segments' persistence drag
+MAE (`0.216900`); at H50 both models still beat persistence (`0.260562`). The
+authoritative machine-readable decision is
+`low_action_phase94_fixed_checkpoint_decision_v3.json` (SHA-256
+`ab2722fd5e8bf18daf492e0fd991b3d0b8842f417b130656ea9c40835ff9ba5f`).
+Its conclusion is derived from three saved H100 checks: NRMSE at most 10%,
+total-drag MAE better than persistence, and NRMSE no worse than v3. All three
+fail here. Even a counterfactual pass of all three checks yields only
+`ELIGIBLE_FOR_PAIRED_ACTION_RANKING_AUDIT`: paired same-initial-state action
+drag-difference/ranking evidence and matched real CFD are still required. It
+does not pass Gate-C or authorize closed-loop promotion. The earlier non-v2
+JSON and v2 JSON are retained for provenance but superseded; non-v2 hardcoded
+the conclusion, while v2 overstated what a surrogate error-gate pass permits.
+
+Commands and immutable normalization/checkpoint hashes are recorded by
+`scripts/run_low_action_phase94_validation_spark.sh` in each
+`evaluation_provenance.json`. Raw summaries, endpoint segments and strict pooled
+audits are under
+`artifacts/distributed_runs/control_gap_low_action_phase94_validation_v1_worker78/evaluations/`.
