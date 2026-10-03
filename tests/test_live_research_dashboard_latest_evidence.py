@@ -127,6 +127,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("原始未平滑时序", page)
         self.assertIn("canonical_physical_joint_check", page)
         self.assertIn("计划8、实际5", page)
+        self.assertIn("动态H100", page)
 
     def test_dual_node_watchdog_is_exposed_without_replacing_science_metrics(self) -> None:
         page = MODULE.PAGE
@@ -344,6 +345,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertEqual(result["h50"]["epoch"], 1)
         self.assertEqual(result["h50"]["synced_epochs"], 1)
         self.assertFalse(result["h50"]["final_sync_complete"])
+        self.assertEqual(result["dynamic_h100"]["expected_epochs"], 2)
         self.assertEqual(
             result["h50"]["validation10"]["horizons"]["100"][
                 "pooled_total_cd_nrmse"
