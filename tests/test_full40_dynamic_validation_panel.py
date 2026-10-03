@@ -61,6 +61,9 @@ def test_execution_and_qc_are_fail_closed() -> None:
     assert "FULL40_DYNAMIC_VALIDATION_APPROVAL_TOKEN" in runner
     assert "MemAvailable is below 40 GiB" in runner
     assert "Curator/training activity detected" in runner
+    assert "expected_repo=\"/workspace/fluid_control\"" in runner
+    assert "Worker temporary copies require a separate reviewed transfer protocol" in runner
+    assert "[p]impleFoam" in runner
     assert "refusing existing solver output" in runner
     assert "dst=/workspace/frozen" not in runner
     assert "frozen_test_accessed\") is not False" in runner

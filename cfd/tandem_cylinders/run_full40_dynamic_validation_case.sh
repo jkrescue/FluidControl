@@ -4,11 +4,17 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 repo="$(cd "$root/../.." && pwd -P)"
+expected_repo="/workspace/fluid_control"
 name="${1:-}"
 mode="${2:---preflight-only}"
 predeclaration="$repo/artifacts/tandem_cylinders/full40_dynamic_validation_predeclared_20261003.json"
 predeclaration_sha="0478c8532bd2ded504ccd5f89303001eb8359f69b3036f296e31428a085d1272"
 execute_token="EXECUTE_REVIEWED_FULL40_DYNAMIC_VALIDATION"
+
+[[ "$repo" == "$expected_repo" ]] || {
+  echo "dynamic validation is Spark-local; Worker temporary copies require a separate reviewed transfer protocol" >&2
+  exit 2
+}
 
 [[ "$name" =~ ^full40_dynamic_validation_b(01|05)_(minus|zero|plus)$ ]] \
   || { echo "case is outside the six-case dynamic validation panel" >&2; exit 2; }

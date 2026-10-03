@@ -58,15 +58,23 @@ The generator refuses a pre-existing case, requires the reviewed
 predeclaration SHA and an explicit generation token, and stages one case per
 invocation. The runner defaults to preflight, requires 40 GiB MemAvailable,
 refuses existing solver output, and blocks while `pimpleFoam`, matched-start
-Curator, or FNO training is active. Execution additionally requires a separate
-environment token. The panel QC output is exclusive and cannot overwrite an
-earlier report.
+Curator, or FNO training is active. Consequently this reviewed version is
+strictly serial: a second panel case cannot start while the first solver is
+running. Execution additionally requires a separate environment token. The
+panel QC output is exclusive and cannot overwrite an earlier report.
+
+Execution is deliberately restricted to the authoritative Spark repository
+path. A Worker temporary-copy run is rejected: this protocol does not yet
+define atomic raw transfer, a per-file transfer manifest/receipt, or
+post-transfer source/action/force revalidation. Worker execution may be added
+only as a separately reviewed protocol with those SHA-bound receipts. The
+current panel therefore has no transfer step; its cases, solver logs, force
+files, completion markers, and aggregate QC remain together on Spark.
 
 Based on the measured full40 throughput of roughly 23 minutes per 80-D/U case,
 one 20-D/U case is estimated at 6–8 minutes including startup and QC. Six
-cases require about 36–48 CPU-minutes serially; with two reviewed CPU workers,
-three waves are approximately 18–24 wall-clock minutes. These are linear
-estimates, not completed measurements. The panel must wait for current
+cases require approximately **36–48 minutes wall time in the enforced serial
+mode**. This is a linear estimate, not a completed measurement. The panel must wait for current
 Curator/training work to finish and must not delay the primary dev30 chain.
 
 Files:
