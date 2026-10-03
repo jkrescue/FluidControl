@@ -22,3 +22,14 @@ A favorable b00 result can motivate a separately predeclared b01 validation
 run. This b00 result alone is training-phase evidence and cannot support an
 independent-generalization, frozen-test, or final paper conclusion. No frozen
 split is accessed by this protocol.
+
+## Secondary post-hoc torque-power diagnostic
+
+After the canonical paired result was frozen, the already written rear-cylinder
+`CmPitch` and linearly ramped angular-velocity records were used for a separate
+ideal fluid-mechanical power diagnostic. The sign follows the coefficient-file
+header's actual `pitchAxis`, and the normalization follows OpenFOAM's documented
+moment coefficient. This diagnostic is excluded from the canonical gate and is
+not motor electrical power, drivetrain loss, net energy, or a change to the
+predeclared objective. Its JSON receipt binds the force, action, configuration,
+and execution-source hashes.
