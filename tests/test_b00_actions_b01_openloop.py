@@ -72,3 +72,22 @@ def test_predeclaration_binds_protocol(tmp_path, monkeypatch):
     path.write_text(json.dumps(predecl))
     with pytest.raises(ValueError, match="predeclaration differs"):
         MODULE.validate_predeclaration("b00seq_b01_openloop_v1", actions)
+
+
+def test_secondary_comparison_has_no_zero_based_gate_labels():
+    feedback = {
+        "total_cd_mean": 2.0,
+        "rear_cl_fluctuation_rms": 1.1,
+        "rear_cl_total_rms": 1.2,
+    }
+    openloop = {
+        "total_cd_mean": 2.2,
+        "rear_cl_fluctuation_rms": 1.0,
+        "rear_cl_total_rms": 1.0,
+    }
+    result = MODULE.secondary_feedback_vs_openloop(feedback, openloop)
+    assert result["feedback_total_drag_reduction_relative_to_openloop"] == pytest.approx(
+        1 - 2.0 / 2.2
+    )
+    assert result["feedback_rear_cl_fluctuation_rms_ratio_to_openloop"] == 1.1
+    assert not any("canonical" in key or "check" in key for key in result)

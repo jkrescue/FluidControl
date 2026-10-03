@@ -38,11 +38,13 @@
     "openloop_drag_reduction_vs_zero": -0.007440221640796274,
     "feedback_drag_reduction_vs_zero": 0.04250159308826673,
     "feedback_drag_reduction_vs_openloop_reference": 0.04957298076477823,
+    "feedback_rear_cl_fluctuation_rms_ratio_vs_openloop": 1.1547538512941404,
     "openloop_rear_cl_fluctuation_rms_ratio_vs_zero": 0.810539594866042,
     "openloop_abs_rear_cl_mean_over_zero_fluctuation_rms": 0.033997130981388596,
     "openloop_canonical_joint_pass": false,
     "feedback_canonical_joint_pass": true
   },
+  "secondary_comparison_warning": "The immutable result.json feedback_vs_openloop_reference reused the zero-based comparison helper. Its nested canonical_* checks are inapplicable because open-loop is not the canonical zero reference. Feedback lowered Cd by 4.9573% relative to open-loop but had 15.4754% higher rear Cl fluctuation RMS; it did not dominate every metric. Both controls must be judged separately against zero for canonical acceptance.",
   "interpretation": "At this one held-out-time b01 restart, the immutable b00 sequence did not reproduce the feedback drag benefit. This supports an added value of observation feedback for this comparison, but is not statistical independence or broad phase generalization.",
   "frozen_test_accessed": false,
   "training_or_checkpoint_selection_performed": false

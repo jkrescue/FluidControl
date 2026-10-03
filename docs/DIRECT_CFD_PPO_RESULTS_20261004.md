@@ -86,6 +86,17 @@ phases, disturbances, or multiple policies. Evidence is under
 `artifacts/direct_cfd/b00seq_b01_openloop_v1/`; the immutable audit receipt is
 `audit_receipt.json`.
 
+Feedback did not dominate the fixed sequence on every quantity: its rear Cl'
+RMS was 15.4754% higher than the open-loop sequence (`1.097453` versus
+`0.950379`), although both separately remained below the unchanged zero-based
+lift limit. In the original immutable `result.json`, the
+`feedback_vs_openloop_reference` object was mechanically produced by the
+zero-reference comparison helper. Its nested `canonical_*` booleans are not a
+canonical acceptance result because open-loop, rather than zero, was supplied
+as the reference; only the descriptive Cd and RMS ratios are meaningful there.
+The source now emits a dedicated secondary comparison without gate labels for
+future runs; the original result was not rewritten.
+
 ## Secondary ideal fluid-power diagnostic
 
 The post-hoc b00 diagnostic at

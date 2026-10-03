@@ -139,6 +139,23 @@ def validate_predeclaration(run_id: str, actions: np.ndarray) -> dict:
     return document
 
 
+def secondary_feedback_vs_openloop(feedback: dict, openloop: dict) -> dict:
+    """Descriptive cross-control comparison; never apply zero-based gate labels."""
+    return {
+        "feedback_total_drag_reduction_relative_to_openloop": (
+            1.0 - feedback["total_cd_mean"] / openloop["total_cd_mean"]
+        ),
+        "feedback_rear_cl_fluctuation_rms_ratio_to_openloop": (
+            feedback["rear_cl_fluctuation_rms"]
+            / openloop["rear_cl_fluctuation_rms"]
+        ),
+        "feedback_rear_cl_total_rms_ratio_to_openloop": (
+            feedback["rear_cl_total_rms"] / openloop["rear_cl_total_rms"]
+        ),
+        "scope": "descriptive secondary comparison; not canonical zero-referenced acceptance",
+    }
+
+
 def summarize(output: Path, case: Path, rows: list[dict], journal: Path) -> dict:
     front = read_force_window(case, "forceFront", *WINDOW)
     rear = read_force_window(case, "forceRear", *WINDOW)
@@ -178,7 +195,9 @@ def summarize(output: Path, case: Path, rows: list[dict], journal: Path) -> dict
         "comparison": {
             "openloop_vs_zero": compare_metrics(metrics, existing["metrics"]["zero"]),
             "feedback_vs_zero": existing["comparison"],
-            "feedback_vs_openloop_reference": compare_metrics(existing["metrics"]["ppo"], metrics),
+            "feedback_vs_openloop_reference": secondary_feedback_vs_openloop(
+                existing["metrics"]["ppo"], metrics
+            ),
         },
         "action": {
             "max_abs_omega": max(abs(row["applied_omega"]) for row in rows),
