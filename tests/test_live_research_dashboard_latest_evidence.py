@@ -654,7 +654,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         page = SCRIPT.read_text(encoding="utf-8")
         self.assertIn('id="current-focus"', page)
         self.assertIn(
-            "document.querySelector('details.archive').before($('current-focus'))",
+            "$('page-guide').before($('current-focus'))",
             page,
         )
         self.assertIn("历史 v4（非当前 full40/dev30）", page)
@@ -664,6 +664,31 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("历史数据生产与 commissioning 明细", page)
         identifiers = re.findall(r'id="([^"]+)"', page)
         self.assertEqual(len(identifiers), len(set(identifiers)))
+
+    def test_compact_chinese_reading_guide_defines_scientific_layers(self) -> None:
+        page = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn('id="page-guide"', page)
+        self.assertIn("怎么看这页 / 术语说明", page)
+        for term in (
+            "三层结论",
+            "epoch",
+            "H20 / H100",
+            "matched-start",
+            "full40 / dev30",
+            "VTK / HDF",
+            "QC",
+            "joint gate",
+            "macro",
+            "D/U",
+            "历史 v4",
+            "RAW",
+            "不是 rollout",
+            "低幅 H100",
+            "不是低频",
+            "t=120–160",
+            "时间平均窗口",
+        ):
+            self.assertIn(term, page)
 
 
 if __name__ == "__main__":

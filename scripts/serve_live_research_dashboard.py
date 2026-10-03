@@ -186,9 +186,20 @@ img{width:100%;height:auto;background:white;border-radius:4px}.row{display:flex;
 .summary b{font-size:19px;display:block;margin:3px 0}.foot{margin-top:35px;border-top:1px solid #2a3d53;padding-top:13px;font-size:12px;color:#9aafc4}
 .casegrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0}.caseitem{background:#101b2b;border:1px solid #25374b;border-radius:5px;padding:8px;font-size:12px}.caseitem b{display:block;margin-bottom:3px}.caseitem .bar{height:4px;background:#26394e;border-radius:3px;margin-top:5px;overflow:hidden}.caseitem .bar i{display:block;height:100%;background:#60c9fb}
 details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;background:#101b2b;padding:10px 14px}details.archive>summary{cursor:pointer;color:#bed0df;font-weight:650}details.archive[open]>summary{margin-bottom:14px}.current-focus{border-left:4px solid #60c9fb;padding-left:12px;margin-top:10px}
-@media(max-width:750px){.grid,.resources,.summary,.casegrid{grid-template-columns:1fr}main{padding:16px}}
+.guide{margin:14px 0;border:1px solid #36516b;border-radius:8px;background:#101b2b;padding:10px 14px}.guide>summary{cursor:pointer;color:#d8e8f5;font-weight:650}.guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;margin-top:10px}.guide-grid div{font-size:12px;color:#aec1d3;line-height:1.55}.guide-grid b{color:#e5eff9}
+@media(max-width:750px){.grid,.resources,.summary,.casegrid,.guide-grid{grid-template-columns:1fr}main{padding:16px}}
 </style></head><body><main>
 <div class="top"><div><h1>串列双圆柱流动控制 · 实时进展</h1><div class="muted">目标：降低两圆柱总阻力，同时报告侧向载荷与动作代价</div></div><div class="stamp" id="clock">连接中…</div></div>
+<details class="guide" id="page-guide"><summary>怎么看这页 / 术语说明</summary><div class="guide-grid">
+<div><b>三层结论：</b>数据完成只说明样本已生成；模型准确要看独立验证误差；控制成功还须真实 CFD 同时通过降阻、升力波动和平均升力三项门槛。</div>
+<div><b>epoch：</b>完整看一遍训练数据。<b>H20 / H100：</b>从真实初态连续递推 20 / 100 步，用来检查误差是否随时间累积，不是训练轮数。</div>
+<div><b>matched-start：</b>不同动作从完全相同的流场初态出发，才可公平比较。<b>full40 / dev30：</b>40 条完整规划；dev30 只含训练20和验证10，冻结测试10不参与开发。</div>
+<div><b>VTK / HDF：</b>VTK 是 OpenFOAM 导出的逐时刻网格场；HDF 是整理后供 PhysicsNeMo 读取的数据。<b>QC：</b>质量与来源校验通过，不等于模型准确或控制有效。</div>
+<div><b>joint gate：</b>三项物理指标必须同时达标。<b>macro：</b>先对每个案例算指标、再对案例等权平均；与把所有样本混在一起计算不同。</div>
+<div><b>D/U：</b>无量纲流动时间；流体以速度 U 走过一个圆柱直径 D 所需的时间。<b>历史 v4：</b>只作归档对照，不代表当前 full40/dev30 结论。</div>
+<div><b>RAW：</b>从计算节点回传的原始求解器数据，不是 rollout。<b>低幅 H100：</b>动作幅值小（±0.75）的100步递推，不是低频。</div>
+<div><b>t=120–160：</b>真实 CFD 的时间平均窗口，不是预测第120到160步。</div>
+</div></details>
 <details class="archive"><summary>历史 v3/v4 与旧开环动作证据（非当前 full40/dev30，点击展开）</summary>
 <div class="banner" id="decision">读取历史 v4 阶段判定…</div>
 <h2>旧 v4 历史严格证据（非 full40 新链）</h2><div class="summary"><div class="card"><span class="label">v4 验证集 · 第 100 步终点总阻力</span><b id="v4-terminal">—</b><span class="small" id="v4-terminal-detail">PhysicsNeMo FNO 对真实 CFD；冻结测试未访问</span></div><div class="card"><span class="label">v4 验证集 · 100 步窗口平均总阻力</span><b id="v4-window">—</b><span class="small" id="v4-window-detail">PhysicsNeMo FNO 对真实 CFD；等待独立窗口审计</span></div><div class="card"><span class="label">两相位交替旋转 · 真实 OpenFOAM CFD</span><b id="two-phase">—</b><span class="small" id="two-phase-detail">相位匹配零控制；不是代理预测</span></div><div class="card"><span class="label">旧 v4 三项联合状态</span><b id="joint-status">等待</b><span class="small" id="joint-detail">仅历史参考，不代表 full40/dev30 精度</span></div></div>
@@ -218,7 +229,7 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 </details>
 <div class="foot">图表读取原始训练与评估记录。真实 CFD 控制收益仍须通过相位匹配的 OpenFOAM 回放验证。</div>
 </main><script>
-const $=x=>document.getElementById(x);let latest=null;document.querySelector('details.archive').before($('current-focus'));
+const $=x=>document.getElementById(x);let latest=null;$('page-guide').before($('current-focus'));
 function pct(x){return Number.isFinite(x)?(x*100).toFixed(2)+'%':'—'}
 function num(x,d=1){return Number.isFinite(x)?x.toFixed(d):'—'}
 function passText(value){return value===true?'PASS':value===false?'FAIL':'等待'}
