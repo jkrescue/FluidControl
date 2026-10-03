@@ -399,6 +399,55 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertFalse(result["fno_used_for_reward"])
         self.assertFalse(result["frozen_test_accessed"])
 
+    def test_direct_cfd_ppo_exposes_completed_training_and_pair_evaluation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            run = root / "artifacts/direct_cfd/directppo2048_v1"
+            training = run / "training"
+            training.mkdir(parents=True)
+            (run / "worker_env0.jsonl").write_text(
+                json.dumps({"event": "step", "step": 128}) + "\n",
+                encoding="utf-8",
+            )
+            (training / "progress.json").write_text(
+                json.dumps(
+                    {
+                        "completed_transitions": 2048,
+                        "checkpoints": [{"timesteps": 2048}],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (training / "result.json").write_text(
+                json.dumps({"status": "DIRECT_REAL_CFD_PPO_TRAINING_COMPLETE"}),
+                encoding="utf-8",
+            )
+            pair = root / "artifacts/direct_cfd/directppo2048_b00_eval80_v1"
+            (pair / "rollout").mkdir(parents=True)
+            (pair / "rollout/progress.json").write_text(
+                json.dumps({"completed_steps_per_branch": 300}), encoding="utf-8"
+            )
+            (pair / "physical_result.json").write_text(
+                json.dumps(
+                    {
+                        "status": "DIRECT_CFD_B00_FROZEN_PPO_PAIR_EVALUATED",
+                        "comparison": {"canonical_joint_gate_pass": False},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with patch.object(MODULE, "_service_state", return_value="active"):
+                result = MODULE._direct_cfd_ppo_status(root)
+        self.assertTrue(result["training_complete"])
+        self.assertFalse(result["running"])
+        self.assertEqual(
+            result["paired_80d_evaluation"]["completed_steps_per_branch"], 300
+        )
+        self.assertEqual(
+            result["paired_80d_evaluation"]["physical_result"]["status"],
+            "DIRECT_CFD_B00_FROZEN_PPO_PAIR_EVALUATED",
+        )
+
     def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

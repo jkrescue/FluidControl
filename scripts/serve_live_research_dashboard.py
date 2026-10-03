@@ -301,7 +301,7 @@ function renderFreeAR(d){let x=d.free_ar_ablation||{},a=x.h20||{},b=x.h50||{},am
  $('free-ar-h20').textContent=stage(a,am);$('free-ar-h20').className=a.status==='COMPLETE'?'good':a.status==='FAILED'?'bad':'';$('free-ar-h20-detail').textContent=`${a.service_state||a.status||'等待'} · pure-AR H20→验证H100${Number.isFinite(am.terminal_state_mae)?` · 终点反归一化流场综合MAE / 四个力系数平均MAE ${num(am.terminal_state_mae,4)} / ${num(am.terminal_force_mae,4)}`:''}。不是总Cd相对误差、减阻率或正式Gate。`;
  $('free-ar-h50').textContent=stage(b,bm);$('free-ar-h50').className=b.status==='COMPLETE'?'good':b.status==='FAILED'?'bad':'';$('free-ar-h50-detail').textContent=`${b.service_state||b.status||'等待'} · pure-AR H50→验证H100${Number.isFinite(bm.terminal_state_mae)?` · 终点反归一化流场综合MAE / 四个力系数平均MAE ${num(bm.terminal_state_mae,4)} / ${num(bm.terminal_force_mae,4)}`:''} · 已验SHA回传 ${b.synced_epochs||0}/8轮。${Number.isFinite(b100.pooled_total_cd_nrmse)?`e1独立validation10 H100 pooled总Cd NRMSE ${pct(b100.pooled_total_cd_nrmse)}（macro ${pct(b100.macro_total_cd_nrmse)}），仍高于10%门槛。`:''}不是减阻率。`;
  let evaluating=x.dynamic6_service_state==='active'&&dyn.checkpoint_epoch!==1,failed=dyn.status==='DYNAMIC6_FNO_DIAGNOSTIC_FAIL';$('free-ar-dynamic').textContent=evaluating?'H50 e1 · Dynamic6评估中':dyn.status?`${failed?'FAIL':'诊断完成'} · H100 pooled ${Number.isFinite(dyn.pooled_h100_total_cd_nrmse)?pct(dyn.pooled_h100_total_cd_nrmse):'—'}`:'等待诊断';$('free-ar-dynamic').className=!evaluating&&failed?'bad':'';$('free-ar-dynamic-detail').textContent=evaluating?'正在用H50 e1固定checkpoint评估全部6条动态动作真实CFD；parent e5失败仅为上一候选。':dyn.status?`${dyn.checkpoint_epoch===1?'H50 e1':'parent e5'} · 动作差值MAE ${num(dyn.strict_start0_h100_delta_total_cd_mae,4)}（限值 ${num(dyn.strict_delta_limit,3)}）；PPO授权=${dyn.ppo_authorized?'是':'否'}。全6案真实CFD validation-only，不是控制收益。`:'等待H50 e1对全6条动态动作轨迹的FNO诊断。';
- let completed=direct.completed_transitions||0,live=direct.live_collection_steps||0,updates=direct.ppo_update_count||0,last=direct.last_checkpoint||{},reward=last.raw_physical_reward||{};$('free-ar-direct-ppo').textContent=direct.running?`真实CFD训练中 · ${completed}/2048步${completed<256?`（首轮 ${live}/256）`:''}`:'实现与测试中';$('free-ar-direct-ppo').className=direct.running?'good':'';$('free-ar-direct-ppo-detail').textContent=direct.running?`PPO更新 ${updates} 次${Number.isFinite(reward.mean)?` · 最近256步真实reward均值 ${num(reward.mean,4)}`:''}。FNO未用于奖励；物理减阻尚待80D配对CFD验收。`:'直接CFD反馈，不依赖FNO代理；尚无运行日志或控制收益。';}
+ let completed=direct.completed_transitions||0,live=direct.live_collection_steps||0,updates=direct.ppo_update_count||0,last=direct.last_checkpoint||{},reward=last.raw_physical_reward||{},pair=direct.paired_80d_evaluation||{},comparison=pair.physical_result?.comparison||{};$('free-ar-direct-ppo').textContent=pair.service_state==='active'?`训练完成 2048/2048 · 80D配对CFD ${pair.completed_steps_per_branch||0}/800步`:pair.physical_result?.status?`80D配对CFD完成 · joint ${comparison.canonical_joint_gate_pass?'PASS':'FAIL'}`:direct.training_complete?'真实CFD训练完成 · 2048/2048步':direct.running?`真实CFD训练中 · ${completed}/2048步${completed<256?`（首轮 ${live}/256）`:''}`:'实现与测试中';$('free-ar-direct-ppo').className=direct.training_complete?'good':'';$('free-ar-direct-ppo-detail').textContent=pair.physical_result?.status?`b00 train-phase配对结果：总阻力变化 ${Number.isFinite(comparison.total_drag_reduction)?pct(comparison.total_drag_reduction):'—'}；仅训练相位初步物理验证，不是独立泛化或论文结论。`:direct.running||direct.training_complete?`PPO更新 ${updates} 次${Number.isFinite(reward.mean)?` · 最近256步真实reward均值 ${num(reward.mean,4)}`:''}。FNO未用于奖励；${pair.service_state==='active'?'最终策略与zero正在做80D真实OpenFOAM配对。':'物理减阻尚待80D配对CFD验收。'}`:'直接CFD反馈，不依赖FNO代理；尚无运行日志或控制收益。';}
 function renderFull40Chain(d){let c=d.full40_development_chain||{},raw=c.raw_qc||{},hdf=c.development_hdf||{},release=c.dev30_release||{},one=c.quickscreen?.onestep||{},h20=c.quickscreen?.h20||{},diag=c.validation_diagnostic||{},ppo=c.canonical_ppo||{},dyn=d.dynamic6_runtime||{},incident=c.execution_incident||{},spark=d.dual_node_watchdog?.nodes?.spark||{},worker=d.dual_node_watchdog?.nodes?.worker78||{},legacy=d.watchdog||{};
  $('chain-raw').textContent=`RAW31 ${raw.full40_verified||0}/31 · 九案 ${raw.commissioning_qc_pass?'QC PASS':'QC待通过'}`;$('chain-raw').className=raw.full40_verified===31&&raw.commissioning_qc_pass?'good':'';$('chain-raw-detail').textContent=`新增31案严格receipt ${raw.full40_verified||0}/31；九案独立QC ${raw.commissioning_qc_pass?'已通过':'尚未通过'}。solver完成不能替代RAW/HDF QC。`;
  $('chain-hdf').textContent=`train ${hdf.train_ready||0}/20 · validation ${hdf.validation_ready||0}/10`;$('chain-hdf').className=hdf.train_ready===20&&hdf.validation_ready===10?'good':'';$('chain-release').textContent=release.published?`dev30 immutable 已发布 · manifest ${String(release.manifest_sha256||'').slice(0,12)}…`:`Spark本机已验收HDF；dev30 BLOCKED · ${release.reason||'等待30个开发HDF'}`;
@@ -837,12 +837,31 @@ def _direct_cfd_ppo_status(root: Path) -> dict:
     completed = progress.get("completed_transitions", 0)
     if not isinstance(completed, int):
         completed = 0
-    running = run.is_dir() and any(row is not None for row in latest_steps)
+    training_result = _read_json(run / "training/result.json", {})
+    if not isinstance(training_result, dict):
+        training_result = {}
+    training_complete = training_result.get("status") in {
+        "DIRECT_REAL_CFD_PPO_TRAINING_COMPLETE",
+        "DIRECT_REAL_CFD_PPO_CONTINUATION_COMPLETE",
+    }
+    running = (
+        run.is_dir()
+        and any(row is not None for row in latest_steps)
+        and not training_complete
+    )
+    pair = root / "artifacts/direct_cfd/directppo2048_b00_eval80_v1"
+    pair_progress = _read_json(pair / "rollout/progress.json", {})
+    if not isinstance(pair_progress, dict):
+        pair_progress = {}
+    physical_result = _read_json(pair / "physical_result.json", {})
+    if not isinstance(physical_result, dict):
+        physical_result = {}
     return {
         "status": progress.get("status", "DIRECT_REAL_CFD_PPO_RUNNING")
         if running
         else "IMPLEMENTATION_AND_TESTING",
         "running": running,
+        "training_complete": training_complete,
         "completed_transitions": completed,
         "target_transitions": 2048,
         "live_collection_steps": live_collection_steps,
@@ -855,6 +874,16 @@ def _direct_cfd_ppo_status(root: Path) -> dict:
         "fno_used_for_reward": False,
         "physical_result_available": False,
         "final_physical_gate": "pending paired 80-D/U OpenFOAM evaluation",
+        "paired_80d_evaluation": {
+            "service_state": _service_state(
+                "directppo2048-b00-eval80-v1.service"
+            ),
+            "completed_steps_per_branch": pair_progress.get(
+                "completed_steps_per_branch", 0
+            ),
+            "physical_result": physical_result,
+            "scope": "b00 train-phase preliminary paired physical validation",
+        },
         "frozen_test_accessed": False,
     }
 
