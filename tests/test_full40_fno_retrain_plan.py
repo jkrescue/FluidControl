@@ -66,3 +66,8 @@ def test_runner_is_guarded_and_does_not_reference_frozen_data() -> None:
     assert "--network none" in text
     assert "EXECUTE_REVIEWED_FULL40_FNO_RETRAIN" in text
     assert "frozen_test" not in text
+    assert '[[ ! -e "$output" ]]' in text
+    assert "retry with a new independent run-id" in text
+    assert "training_history.json" not in text
+    assert "requested_run_id=\"${3:-}\"" in text
+    assert "^[a-z0-9][a-z0-9_-]{0,63}$" in text
