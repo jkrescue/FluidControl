@@ -1,5 +1,23 @@
 # Scientific-value audit: tandem-cylinder closed-loop control
 
+## Latest evidence update: October 4 local time
+
+The earlier verdicts below are historical snapshots, not the current controller
+status. The frozen direct real-CFD PPO policy has now passed the original joint
+physical criteria at b00 and b01 starts: total drag reductions of 4.2212% and
+4.2502%, respectively, with acceptable rear lift fluctuation and mean bias.
+See [the complete physical results](DIRECT_CFD_PPO_RESULTS_20261004.md).
+The b01 start was not used in training, but its 18D/U separation from b00 is
+roughly three shedding cycles; statistical independence is not established.
+
+This resolves basic physical feasibility of the implemented CFD-only feedback
+policy in the present mesh/solver setting. It does not establish a contribution
+from FNO, a superiority of feedback over a fixed waveform, mesh convergence,
+CFD-hour savings, or publication novelty. A fixed b00 action-sequence replay
+at the same b01 restart is being evaluated without policy changes. FNO remains
+unqualified for surrogate-policy claims until its separate state, force and
+action-effect checks pass. The original physical objective is unchanged.
+
 Date: 2026-10-03 UTC. Scope: two fixed-centre tandem cylinders at Re=100,
 L/D=5, rear-cylinder rotation; real OpenFOAM labels, official PhysicsNeMo FNO,
 and a possible later HydroGym control interface. This is a research decision
