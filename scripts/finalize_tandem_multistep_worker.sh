@@ -14,6 +14,7 @@ remote_log="${REMOTE_LOG:-/tmp/fluid_control_multistep_formal.log}"
 expected_epochs="${EXPECTED_EPOCHS:-10}"
 evaluation_data="${EVALUATION_DATA:-data/curated/tandem_cylinders_expanded_independent_v2}"
 normalization_data="${NORMALIZATION_DATA:-data/curated/tandem_cylinders_expanded_independent_v2}"
+parent_validation_json="${PARENT_VALIDATION_JSON:-}"
 
 [[ "${destination}" != /* && "${run_name}" =~ ^[a-zA-Z0-9_.-]+$ ]] || {
     echo "Destination must be project-relative and run name must be safe" >&2
@@ -79,6 +80,62 @@ for file in "${model}"/best/*.mdlus "${model}/training_history.json"; do
     }
     echo "TRANSFER_SHA256_OK ${relative} ${local_sha}"
 done
+if [[ -n "${parent_validation_json}" ]]; then
+    [[ "${parent_validation_json}" == artifacts/* && -s "${parent_validation_json}" ]] || {
+        echo "Parent validation JSON must be an existing project artifact" >&2; exit 2;
+    }
+    docker run --rm --network none --gpus 'device=0' --cpus 8 --memory 64g \
+        --shm-size 2g --user "$(id -u):$(id -g)" \
+        --env HOME=/tmp --env "USER=$(id -un)" --env "LOGNAME=$(id -un)" \
+        --env PYTHONPATH=/workspace/src:/workspace/scripts --env OMP_NUM_THREADS=4 \
+        --mount "type=bind,src=${root},dst=/workspace" --workdir /workspace \
+        fluid-control-physicsnemo:2.2.2 \
+        python -u scripts/spark_gpu_guard.py \
+          --min-free-gib 20 --allocator-fraction 0.20 --margin-gib 4 -- \
+          python -u scripts/evaluate_tandem_fno.py \
+            --data "${evaluation_data}" --normalization-data "${normalization_data}" \
+            --config conf/tandem_fno_total_drag.yaml \
+            --checkpoint-dir "/workspace/${model}/best" \
+            --output "/workspace/${model}/validation_long_horizon.json" \
+            --split validation --horizons 1 10 50 100 --segment-stride 25 \
+            --action-mode observed --evaluation-batch-size 4 \
+            --visualizations-per-horizon 0
+    python3 - "${parent_validation_json}" "${model}/validation_long_horizon.json" \
+        "${model}/validation_decision.json" <<'PY'
+import json
+import math
+import sys
+from pathlib import Path
+
+parent_path, candidate_path, decision_path = map(Path, sys.argv[1:])
+parent = json.loads(parent_path.read_text())
+candidate = json.loads(candidate_path.read_text())
+if parent.get("split") != "validation" or candidate.get("split") != "validation":
+    raise SystemExit("validation-first gate received a non-validation report")
+for key in ("evaluation_data", "normalization_data", "segment_stride", "action_mode"):
+    if parent.get(key) != candidate.get(key):
+        raise SystemExit(f"validation comparison mismatch: {key}")
+parent_error = float(parent["summary"]["100"]["total_drag_nrmse"])
+candidate_error = float(candidate["summary"]["100"]["total_drag_nrmse"])
+if not all(math.isfinite(value) and value >= 0 for value in (parent_error, candidate_error)):
+    raise SystemExit("non-finite validation error")
+proceed = candidate_error < parent_error
+report = {
+    "status": "VALIDATION_IMPROVED_PROCEED_TO_FROZEN_GATE_B" if proceed else "VALIDATION_NO_GAIN_SKIP_FROZEN_TEST",
+    "parent_validation_100step_nrmse": parent_error,
+    "candidate_validation_100step_nrmse": candidate_error,
+    "selection_rule": "strictly lower 100-step NRMSE on identical validation split",
+    "scientific_scope": "surrogate accuracy only, no CFD control-benefit claim",
+}
+decision_path.write_text(json.dumps(report, indent=2) + "\n")
+print(json.dumps(report), flush=True)
+PY
+    if [[ "$(jq -r '.status' "${model}/validation_decision.json")" == VALIDATION_NO_GAIN_SKIP_FROZEN_TEST ]]; then
+        touch "${destination}/MULTISTEP_VALIDATION_COMPLETE_NO_GAIN"
+        echo "VALIDATION_NO_GAIN_SKIP_FROZEN_TEST $(date -Is)"
+        exit 0
+    fi
+fi
 for mode in observed zero sign_flip shuffle; do
     MODEL_DIR="${model}" EVALUATION_DATA="${evaluation_data}" \
     NORMALIZATION_DATA="${normalization_data}" \

@@ -45,7 +45,9 @@ HOST_COMMAND = (
     "printf '__V3_H20_EPOCH__\\n'; "
     "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/tandem_fno_gate_b_aug_v3_rollout_h20_seed20261005_10epoch/training_history.json 2>/dev/null || true; "
     "printf '__V3_PRIMARY_SEED_H20_EPOCH__\\n'; "
-    "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/tandem_fno_gate_b_aug_v3_rollout_h20_seed20261002_dense_10epoch/training_history.json 2>/dev/null || true"
+    "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/tandem_fno_gate_b_aug_v3_rollout_h20_seed20261002_dense_10epoch/training_history.json 2>/dev/null || true; "
+    "printf '__V3_H20_REAR_DRAG_EPOCH__\\n'; "
+    "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/tandem_fno_gate_b_aug_v3_h20_rear_drag_seed20261002_10epoch/training_history.json 2>/dev/null || true"
 )
 PAGE = r'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -104,11 +106,11 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  let b=audited?c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse:(Number.isFinite(preliminary)?preliminary:c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse),i=c.independent_phase_full_period_total_drag_nrmse?.total_drag_nrmse;
  $('heldout').textContent=pct(b);$('heldout').className=audited&&Number.isFinite(b)&&b<=.1?'good':Number.isFinite(b)&&b>.1?'bad':'';
  $('epoch').textContent=`主节点：10 步 ${d.v3_primary_rollout_history.length}/10，加权 ${d.v3_rear_weighted_history.length}/10 轮`;$('hydro-status').textContent=d.cem?'CEM 已完成':'当前目标待 Gate B';
- let watch=d.watchdog||{}, hours=Number.isFinite(watch.seconds_remaining)?(watch.seconds_remaining/3600).toFixed(1):'—';$('watchdog').textContent=`七小时验收窗口剩余 ${hours} 小时 · 监控采样 ${watch.timestamp_utc||'待启动'} · 告警 ${watch.alerts?.length?watch.alerts.join('、'):'无'}`;$('watchdog').className='small '+(watch.alerts?.length?'bad':'good');
+ let watch=d.watchdog||{}, hours=Number.isFinite(watch.seconds_remaining)?(watch.seconds_remaining/3600).toFixed(1):'—';$('watchdog').textContent=`持续科研监控剩余 ${hours} 小时 · 监控采样 ${watch.timestamp_utc||'待启动'} · 告警 ${watch.alerts?.length?watch.alerts.join('、'):'无'}`;$('watchdog').className='small '+(watch.alerts?.length?'bad':'good');
  let finished=d.cfd.filter(x=>x.status==='complete').length,average=d.cfd.reduce((s,x)=>s+x.percent,0)/Math.max(1,d.cfd.length);
  $('cfd-progress').textContent=`${finished}/3 CFD 完成`;
  $('cfd-sub').textContent=d.curator.complete?'Curator：35 条轨迹已完成数据验收':`Curator：${d.curator.done}/3 条新增轨迹已采样，当前 ${d.curator.latest_frame}/801 帧`;
- let worker=d.resources.worker.at(-1)||{};$('second-seed').textContent=`计算节点：10 步 ${worker.v3_rollout_epoch||0}/10，20 步原种子 ${worker.v3_h20_epoch||0}/10，20 步主种子 ${worker.v3_primary_seed_h20_epoch||0}/10 轮`;
+ let worker=d.resources.worker.at(-1)||{};$('second-seed').textContent=`计算节点：20 步＋后柱阻力加权 ${worker.v3_h20_rear_drag_epoch||0}/10 轮；主种子 20 步 ${worker.v3_primary_seed_h20_epoch||0}/10 轮已验收`;
  $('heldout-scope').textContent=audited?`${picked.label}；v3 五条 CFD 测试，完整审计` :Number.isFinite(preliminary)?`${picked.label}；v3 五条 CFD 测试初评，完整审计中`:'旧数据四条 CFD 测试；目标 ≤10%';
  $('decision').textContent=audited&&a.status==='GATE_B_PASS'?`${picked.label}已通过冻结的 100 步总阻力门槛（${pct(b)}）；下一步做 CEM 控制筛选，再用真实 CFD 验证。`:audited?`${picked.label}五工况 100 步总阻力误差 ${pct(b)}，未达到 10%；其他候选仍在训练或审计。CEM 与 PPO 暂不启动。`:Number.isFinite(preliminary)?`${picked.label}的 100 步五工况初评为 ${pct(b)}；动作扰动与独立相位审计未完成。CEM/PPO 暂不启动。`:`旧数据模型 100 步误差 ${pct(b)}，未达到 10%；v3 FNO 正在完成独立测试。CEM 与 PPO 暂不启动。`;
  resources('primary',d.resources.primary);resources('worker',d.resources.worker);
@@ -151,6 +153,7 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
     rollout_start = lines.index("__V3_ROLLOUT_EPOCH__")
     h20_start = lines.index("__V3_H20_EPOCH__")
     primary_h20_start = lines.index("__V3_PRIMARY_SEED_H20_EPOCH__")
+    h20_rear_drag_start = lines.index("__V3_H20_REAR_DRAG_EPOCH__")
     active = []
     for line in lines[task_start + 1 : epoch_start]:
         fields = line.split(None, 1)
@@ -186,7 +189,8 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
         rollout_epoch = 0
     h20_epoch = int(lines[h20_start + 1]) if len(lines) > h20_start + 1 and lines[h20_start + 1].isdigit() else 0
     primary_h20_epoch = int(lines[primary_h20_start + 1]) if len(lines) > primary_h20_start + 1 and lines[primary_h20_start + 1].isdigit() else 0
-    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae"), "v3_worker_epoch": v3_epoch, "v3_rollout_epoch": rollout_epoch, "v3_h20_epoch": h20_epoch, "v3_primary_seed_h20_epoch": primary_h20_epoch}, (total, idle)
+    h20_rear_drag_epoch = int(lines[h20_rear_drag_start + 1]) if len(lines) > h20_rear_drag_start + 1 and lines[h20_rear_drag_start + 1].isdigit() else 0
+    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae"), "v3_worker_epoch": v3_epoch, "v3_rollout_epoch": rollout_epoch, "v3_h20_epoch": h20_epoch, "v3_primary_seed_h20_epoch": primary_h20_epoch, "v3_h20_rear_drag_epoch": h20_rear_drag_epoch}, (total, idle)
 
 
 def _cfd_progress(root: Path) -> list[dict]:
