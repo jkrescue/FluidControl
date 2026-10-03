@@ -119,7 +119,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  let b=audited?c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse:(Number.isFinite(preliminary)?preliminary:c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse),i=c.independent_phase_full_period_total_drag_nrmse?.total_drag_nrmse;
  $('heldout').textContent=pct(b);$('heldout').className=audited&&Number.isFinite(b)&&b<=.1?'good':Number.isFinite(b)&&b>.1?'bad':'';
  let v4primary=d.v4_h20_history||[];$('epoch').textContent=`新数据多步 ${v4primary.length}/5 轮`;$('hydro-status').textContent=d.cem?'CEM 已完成':'当前目标待 Gate B';
- let watch=d.watchdog||{}, hours=Number.isFinite(watch.seconds_remaining)?(watch.seconds_remaining/3600).toFixed(1):'—';$('watchdog').textContent=`持续科研监控剩余 ${hours} 小时 · 监控采样 ${watch.timestamp_utc||'待启动'} · 告警 ${watch.alerts?.length?watch.alerts.join('、'):'无'}`;$('watchdog').className='small '+(watch.alerts?.length?'bad':'good');
+ let watch=d.watchdog||{}, sprintHours=Math.max(0,(Date.UTC(2026,9,3,5,23)-Date.now())/3600000).toFixed(1);$('watchdog').textContent=`两小时阶段验收剩余 ${sprintHours} 小时（北京时间 13:23） · 科研监控采样 ${watch.timestamp_utc||'待启动'} · 告警 ${watch.alerts?.length?watch.alerts.join('、'):'无'}`;$('watchdog').className='small '+(watch.alerts?.length?'bad':'good');
  let finished=d.cfd.filter(x=>x.status==='complete').length,average=d.cfd.reduce((s,x)=>s+x.percent,0)/Math.max(1,d.cfd.length);
  $('cfd-progress').textContent=`${finished}/${d.cfd.length} 配对 CFD 完成`;
  let v4=d.v4_curator||{};$('cfd-sub').textContent=v4.complete?'v4 训练数据 28/4/5 条已完成 Curator 与划分审计':`新增训练数据 Curator ${v4.frames||0}/1602 帧 · HDF5 ${v4.new_hdf5||0}/2 条`;
