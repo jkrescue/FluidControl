@@ -218,7 +218,8 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 <div class="card" style="margin-top:12px"><h3>Train20 固定动作物理对照 · TRAIN ONLY</h3><div class="number" id="train20-physics">等待 train20 权威 JSON…</div><div class="small" id="train20-actions">仅显示四个训练相位、同相位零动作参考。</div><div class="small" id="train20-scope">此卡不替代九案 commissioning，不读取 validation / frozen 结果，也不是泛化或闭环证据。</div></div>
 </details>
 <section id="current-focus" class="current-focus">
-<h2>Full40 / dev30 · 数据、PhysicsNeMo 与 HydroGym 链</h2><div class="card"><div class="summary"><div class="card"><span class="label">真实 CFD 与严格 QC</span><b id="chain-raw">读取中…</b><span class="small" id="chain-raw-detail">RAW31 与九案状态分开统计</span></div><div class="card"><span class="label">开发集 HDF / immutable 发布</span><b id="chain-hdf">读取中…</b><span class="small" id="chain-release">仅 train20 + validation10；不读取冻结 HDF</span></div><div class="card"><span class="label">Quick-screen · 官方 PhysicsNeMo FNO</span><b id="chain-train">读取中…</b><span class="small" id="chain-train-detail">10 epoch one-step → 固定 parent SHA → 5 epoch H20</span></div><div class="card"><span class="label">Dynamic6 · 真实 OpenFOAM</span><b id="chain-dynamic">读取中…</b><span class="small" id="chain-dynamic-detail">六案严格串行；validation only</span></div><div class="card"><span class="label">HydroGym canonical PPO</span><b id="chain-ppo">BLOCKED</b><span class="small" id="chain-ppo-detail">等待 promotion 与正式 validation gates</span></div></div><div class="small" id="chain-validation" style="margin-top:9px">validation10 诊断尚未生成；quick-screen 不是 formal Gate。</div></div>
+<h2>Full40 / dev30 · 当前模型修复实验</h2><div class="card"><span class="label">当前主线：官方 PhysicsNeMo FNO · 纯自回归、无 teacher forcing · 冻结测试未访问</span><div class="summary"><div class="card"><span class="label">A · Spark · 训练 H20 / 验证 H100</span><b id="free-ar-h20">读取中…</b><span class="small" id="free-ar-h20-detail">8轮；每轮直接看H100误差</span></div><div class="card"><span class="label">B · Worker · 训练 H50 / 验证 H100</span><b id="free-ar-h50">读取中…</b><span class="small" id="free-ar-h50-detail">8轮；checkpoint逐轮验SHA回传Spark</span></div><div class="card"><span class="label">上一候选 · Dynamic6 FNO真实CFD诊断</span><b id="free-ar-dynamic">读取中…</b><span class="small" id="free-ar-dynamic-detail">validation only；失败则PPO继续BLOCKED</span></div><div class="card"><span class="label">并行方法 · HydroGym + 真实 OpenFOAM PPO</span><b id="free-ar-direct-ppo">实现与测试中</b><span class="small" id="free-ar-direct-ppo-detail">直接CFD反馈，不依赖FNO代理；尚无运行日志或控制收益</span></div></div><div class="small" id="free-ar-scope" style="margin-top:9px">训练内H100用于逐轮诊断；最终仍须完整validation10、动态动作与真实CFD门槛，不能用训练loss宣称控制成功。</div></div>
+<h2>数据与控制证据链</h2><div class="card"><div class="summary"><div class="card"><span class="label">真实 CFD 与严格 QC</span><b id="chain-raw">读取中…</b><span class="small" id="chain-raw-detail">RAW31 与九案状态分开统计</span></div><div class="card"><span class="label">开发集 HDF / immutable 发布</span><b id="chain-hdf">读取中…</b><span class="small" id="chain-release">仅 train20 + validation10；不读取冻结 HDF</span></div><div class="card"><span class="label">Parent qs1 · 非当前训练</span><b id="chain-train">读取中…</b><span class="small" id="chain-train-detail">当前A/B从此固定parent继续训练</span></div><div class="card"><span class="label">Dynamic6 · 真实 OpenFOAM</span><b id="chain-dynamic">读取中…</b><span class="small" id="chain-dynamic-detail">六案严格串行；validation only</span></div><div class="card"><span class="label">HydroGym canonical PPO</span><b id="chain-ppo">BLOCKED</b><span class="small" id="chain-ppo-detail">等待 promotion 与正式 validation gates</span></div></div><div class="small" id="chain-validation" style="margin-top:9px">validation10 诊断尚未生成；quick-screen 不是 formal Gate。</div></div>
 <div class="card" style="margin-top:9px"><span class="label">Dynamic6 validation-only 开环物理筛选 · 同相位 zero 对照</span><div class="small" id="chain-dynamic-results">等待六案 aggregate CFD QC；不是FNO预测、PPO闭环或末60D/U最终验收。</div></div>
 </section>
 <details class="archive"><summary>历史模型图表、冻结测试图与旧控制入口（非当前，点击展开）</summary>
@@ -295,6 +296,11 @@ function renderTrain20Physics(d){let p=d.full40_train20_physics,s=p?.all_train_c
  $('train20-physics').textContent=`TRAIN ONLY · 联合门槛 ${s.joint_pass_count}/${s.comparison_count} 通过 · 全动作 macro 降阻 ${pct(s.macro_mean_total_drag_reduction_fraction)}`;$('train20-physics').className='number '+(s.joint_pass_count?'good':'bad');
  let minus=a.m075,plus=a.p075;$('train20-actions').textContent=`−0.75 / +0.75 macro 降阻 ${pct(minus.macro_mean_total_drag_reduction_fraction)} / ${pct(plus.macro_mean_total_drag_reduction_fraction)}；worst phase ${pct(minus.worst_drag_reduction.total_drag_reduction_fraction_positive_is_better)} / ${pct(plus.worst_drag_reduction.total_drag_reduction_fraction_positive_is_better)}；macro 平均Cl偏置比 ${num(minus.macro_mean_abs_rear_cl_bias_ratio,3)} / ${num(plus.macro_mean_abs_rear_cl_bias_ratio,3)}（门槛≤0.10）。`;
  $('train20-scope').textContent=`四个train相位、16个非零固定动作、各自同相位zero、固定末60D/U。validation/frozen结果读取=${p.scope?.validation_or_frozen_results_read?'是（异常）':'否'}；不替代九案 commissioning，不代表泛化、PPO或真实闭环收益。`;}
+function renderFreeAR(d){let x=d.free_ar_ablation||{},a=x.h20||{},b=x.h50||{},am=a.last_metrics||{},bm=b.last_metrics||{},dyn=x.dynamic6_fno||{};
+ const stage=(v,m)=>`${v.epoch||0}/${v.expected_epochs||8}轮${Number.isFinite(m.selection_score)?` · H100 selection ${num(m.selection_score,4)}`:''}`;
+ $('free-ar-h20').textContent=stage(a,am);$('free-ar-h20').className=a.status==='COMPLETE'?'good':a.status==='FAILED'?'bad':'';$('free-ar-h20-detail').textContent=`${a.service_state||a.status||'等待'} · pure-AR H20→验证H100${Number.isFinite(am.terminal_state_mae)?` · 终点场/力MAE ${num(am.terminal_state_mae,4)}/${num(am.terminal_force_mae,4)}`:''}。这不是总Cd正式Gate。`;
+ $('free-ar-h50').textContent=stage(b,bm);$('free-ar-h50').className=b.status==='COMPLETE'?'good':b.status==='FAILED'?'bad':'';$('free-ar-h50-detail').textContent=`${b.service_state||b.status||'等待'} · pure-AR H50→验证H100${Number.isFinite(bm.terminal_state_mae)?` · 终点场/力MAE ${num(bm.terminal_state_mae,4)}/${num(bm.terminal_force_mae,4)}`:''} · 已验SHA回传 ${b.synced_epochs||0}/8轮。`;
+ let failed=dyn.status==='DYNAMIC6_FNO_DIAGNOSTIC_FAIL';$('free-ar-dynamic').textContent=dyn.status?`${failed?'FAIL':'诊断完成'} · H100 pooled ${Number.isFinite(dyn.pooled_h100_total_cd_nrmse)?pct(dyn.pooled_h100_total_cd_nrmse):'—'}`:'等待诊断';$('free-ar-dynamic').className=failed?'bad':'';$('free-ar-dynamic-detail').textContent=dyn.status?`动作差值MAE ${num(dyn.strict_start0_h100_delta_total_cd_mae,4)}（限值 ${num(dyn.strict_delta_limit,3)}）；PPO授权=${dyn.ppo_authorized?'是':'否'}。真实CFD validation-only，不是控制收益。`:'等待Dynamic6 FNO诊断。';}
 function renderFull40Chain(d){let c=d.full40_development_chain||{},raw=c.raw_qc||{},hdf=c.development_hdf||{},release=c.dev30_release||{},one=c.quickscreen?.onestep||{},h20=c.quickscreen?.h20||{},diag=c.validation_diagnostic||{},ppo=c.canonical_ppo||{},dyn=d.dynamic6_runtime||{},incident=c.execution_incident||{},spark=d.dual_node_watchdog?.nodes?.spark||{},worker=d.dual_node_watchdog?.nodes?.worker78||{},legacy=d.watchdog||{};
  $('chain-raw').textContent=`RAW31 ${raw.full40_verified||0}/31 · 九案 ${raw.commissioning_qc_pass?'QC PASS':'QC待通过'}`;$('chain-raw').className=raw.full40_verified===31&&raw.commissioning_qc_pass?'good':'';$('chain-raw-detail').textContent=`新增31案严格receipt ${raw.full40_verified||0}/31；九案独立QC ${raw.commissioning_qc_pass?'已通过':'尚未通过'}。solver完成不能替代RAW/HDF QC。`;
  $('chain-hdf').textContent=`train ${hdf.train_ready||0}/20 · validation ${hdf.validation_ready||0}/10`;$('chain-hdf').className=hdf.train_ready===20&&hdf.validation_ready===10?'good':'';$('chain-release').textContent=release.published?`dev30 immutable 已发布 · manifest ${String(release.manifest_sha256||'').slice(0,12)}…`:`Spark本机已验收HDF；dev30 BLOCKED · ${release.reason||'等待30个开发HDF'}`;
@@ -332,6 +338,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  renderMatchedStart(d);
  renderFull40(d);
  renderTrain20Physics(d);
+ renderFreeAR(d);
  renderFull40Chain(d);
  let trainHistory=v4primary.length?v4primary:d.history;$('train-title').textContent=v4primary.length?'v4 新数据 20 步 FNO：训练轮次 → 验证误差':'旧数据多步 FNO：训练轮次 → 验证误差';plot('train-chart',[{values:trainHistory.map(x=>x.terminal_state_mae),color:'#60c9fb'},{values:trainHistory.map(x=>x.terminal_force_mae),color:'#e9ae68'}],.05);
  let steps=['1','10','50','100'],v3series=[{result:d.v3_observed,color:'#60c9fb',label:'主节点单步'},{result:d.v3_worker_observed,color:'#79d5a3',label:'计算节点单步'},{result:d.v3_primary_rollout_observed,color:'#dc95e4',label:'主节点 10 步训练'},{result:d.v3_rollout_observed,color:'#e9ae68',label:'计算节点 10 步训练'},{result:d.v3_h20_observed,color:'#f49ab8',label:'计算节点种子 20 步训练'},{result:d.v3_rear_weighted_observed,color:'#97e1e4',label:'主节点后圆柱加权训练'},{result:d.v3_primary_seed_h20_observed,color:'#dce779',label:'主节点种子 20 步训练'},{result:d.v3_h20_rear_drag_observed,color:'#e66ac7',label:'20 步＋后柱阻力加权'}].filter(x=>x.result?.summary);
@@ -732,6 +739,92 @@ def _training_stage(root: Path, stage: str, expected_epochs: int) -> dict:
         "epoch": epoch if isinstance(epoch, int) else 0,
         "expected_epochs": expected_epochs,
         "last_metrics": rows[-1] if rows else None,
+    }
+
+
+def _service_state(unit: str) -> str:
+    try:
+        result = subprocess.run(
+            ["systemctl", "--user", "is-active", unit],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    return result.stdout.strip() or "unknown"
+
+
+def _fixed_training_stage(
+    run: Path, expected_epochs: int, unit: str, *, worker_sync: bool = False
+) -> dict:
+    """Read one declared run only; never discover candidate or frozen artifacts."""
+    history = _read_json(run / "training_history.json", [])
+    if not isinstance(history, list):
+        history = []
+    rows = [row for row in history if isinstance(row, dict)]
+    epoch = rows[-1].get("epoch", 0) if rows else 0
+    if not isinstance(epoch, int):
+        epoch = 0
+    service_state = _service_state(unit)
+    status = (
+        "COMPLETE"
+        if epoch == expected_epochs
+        else "FAILED"
+        if service_state == "failed"
+        else "RUNNING"
+        if service_state == "active"
+        else "NOT_STARTED"
+        if not run.exists()
+        else "INCOMPLETE"
+    )
+    result = {
+        "status": status,
+        "service_state": service_state,
+        "epoch": epoch,
+        "expected_epochs": expected_epochs,
+        "last_metrics": rows[-1] if rows else None,
+        "frozen_hdf_opened_or_enumerated": False,
+    }
+    if worker_sync:
+        result["synced_epochs"] = sum(
+            (run / f"worker_epoch_{index:02d}_sync.json").is_file()
+            for index in range(1, expected_epochs + 1)
+        )
+        result["final_sync_complete"] = (run / "worker_final_sync.json").is_file()
+    return result
+
+
+def _free_ar_ablation(root: Path) -> dict:
+    """Expose only the two predeclared free-AR runs and fixed Dynamic6 evidence."""
+    h20 = root / "artifacts/tandem_fno_full40_free_ar_h20_ar20_20261003"
+    h50 = root / "artifacts/tandem_fno_full40_free_ar_h50_ar50_20261003"
+    dynamic6 = _read_json(
+        root
+        / "artifacts/tandem_cylinders/full40_dynamic6_fno_e5_20261003/diagnostic.json",
+        None,
+    )
+    return {
+        "h20": _fixed_training_stage(
+            h20,
+            8,
+            "fluid-control-free-ar-h20-20261003.service",
+        ),
+        "h50": _fixed_training_stage(
+            h50,
+            8,
+            "fluid-control-sync-worker-h50-20261003.service",
+            worker_sync=True,
+        ),
+        "dynamic6_fno": dynamic6 if isinstance(dynamic6, dict) else {},
+        "direct_cfd_ppo": {
+            "status": "IMPLEMENTATION_AND_TESTING",
+            "method": "official HydroGym + direct OpenFOAM feedback",
+            "surrogate_dependency": False,
+            "physical_result_available": False,
+        },
+        "frozen_hdf_opened_or_enumerated": False,
     }
 
 
@@ -1218,6 +1311,7 @@ class Handler(BaseHTTPRequestHandler):
             data["full40_development_chain"] = _full40_development_chain(
                 self.root, data["full40_extension"]
             )
+            data["free_ar_ablation"] = _free_ar_ablation(self.root)
             data["dynamic6_runtime"] = _dynamic6_runtime(self.root)
             data["dynamic6_physical_qc"] = _read_json(
                 self.root

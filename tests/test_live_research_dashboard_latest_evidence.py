@@ -106,12 +106,18 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("冻结测试仅显示采集与验收状态", page)
         self.assertIn("31 案 CFD/RAW 也不代表 Curator、模型训练或精度提升", page)
         self.assertIn("PPO 禁止宣称收益", page)
-        self.assertIn("Full40 / dev30 · 数据、PhysicsNeMo 与 HydroGym 链", page)
-        self.assertIn("Quick-screen · 官方 PhysicsNeMo FNO", page)
+        self.assertIn("Full40 / dev30 · 当前模型修复实验", page)
+        self.assertIn("当前主线：官方 PhysicsNeMo FNO", page)
         self.assertIn("未训练即明确BLOCKED", page)
         self.assertIn("val rollout field/force", page)
         self.assertIn("Spark本机已验收HDF", page)
         self.assertIn("不是上方 v4 validation 评估", SCRIPT.read_text(encoding="utf-8"))
+        self.assertIn("当前模型修复实验", page)
+        self.assertIn("A · Spark · 训练 H20 / 验证 H100", page)
+        self.assertIn("B · Worker · 训练 H50 / 验证 H100", page)
+        self.assertIn("HydroGym + 真实 OpenFOAM PPO", page)
+        self.assertIn("实现与测试中", page)
+        self.assertIn("renderFreeAR(d)", page)
 
     def test_dual_node_watchdog_is_exposed_without_replacing_science_metrics(self) -> None:
         page = MODULE.PAGE
@@ -245,6 +251,76 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
             ],
             0.09,
         )
+
+    def test_free_ar_ablation_reads_only_fixed_runs_and_sync_receipts(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            h20 = (
+                root
+                / "artifacts/tandem_fno_full40_free_ar_h20_ar20_20261003"
+            )
+            h50 = (
+                root
+                / "artifacts/tandem_fno_full40_free_ar_h50_ar50_20261003"
+            )
+            h20.mkdir(parents=True)
+            h50.mkdir(parents=True)
+            (h20 / "training_history.json").write_text(
+                json.dumps(
+                    [
+                        {
+                            "epoch": 2,
+                            "selection_score": 1.25,
+                            "terminal_state_mae": 0.5,
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (h50 / "training_history.json").write_text(
+                json.dumps(
+                    [
+                        {
+                            "epoch": 1,
+                            "selection_score": 2.5,
+                            "terminal_force_mae": 0.75,
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (h50 / "worker_epoch_01_sync.json").write_text(
+                "{}", encoding="utf-8"
+            )
+            dynamic = (
+                root
+                / "artifacts/tandem_cylinders/full40_dynamic6_fno_e5_20261003"
+            )
+            dynamic.mkdir(parents=True)
+            (dynamic / "diagnostic.json").write_text(
+                json.dumps(
+                    {
+                        "status": "DYNAMIC6_FNO_DIAGNOSTIC_FAIL",
+                        "pooled_h100_total_cd_nrmse": 45660.0,
+                        "ppo_authorized": False,
+                        "frozen_test_accessed": False,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with patch.object(MODULE, "_service_state", return_value="active"):
+                result = MODULE._free_ar_ablation(root)
+        self.assertEqual(result["h20"]["epoch"], 2)
+        self.assertEqual(result["h20"]["last_metrics"]["selection_score"], 1.25)
+        self.assertEqual(result["h50"]["epoch"], 1)
+        self.assertEqual(result["h50"]["synced_epochs"], 1)
+        self.assertFalse(result["h50"]["final_sync_complete"])
+        self.assertEqual(
+            result["dynamic6_fno"]["status"],
+            "DYNAMIC6_FNO_DIAGNOSTIC_FAIL",
+        )
+        self.assertFalse(result["direct_cfd_ppo"]["physical_result_available"])
+        self.assertFalse(result["frozen_hdf_opened_or_enumerated"])
 
     def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
