@@ -50,7 +50,7 @@ p=json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
 if (
     p.get("status") != "CONTROL_TRAIN16_H100_LIFT_BALANCED_WORKER_TRANSFER_COMPLETE"
     or p.get("training_exit_code") != 0
-    or p.get("source_commit") != "6ff44a137e1e3a34245ef5b8f0ab109056bb9fba"
+    or p.get("source_commit") != "0bc1f3de5d3bdd74babdccc81082665c4f968670"
     or p.get("frozen_test_accessed") is not False
 ):
     raise SystemExit("balanced Worker transfer receipt differs")
