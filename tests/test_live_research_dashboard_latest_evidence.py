@@ -104,6 +104,44 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("PPO 禁止宣称收益", page)
         self.assertIn("不是上方 v4 validation 评估", SCRIPT.read_text(encoding="utf-8"))
 
+    def test_dual_node_watchdog_is_exposed_without_replacing_science_metrics(self) -> None:
+        page = MODULE.PAGE
+        for label in (
+            "双节点运行守护",
+            "连续 300 秒无有效项目计算时告警",
+            "Spark 保留 20 GiB、Worker 保留 40 GiB",
+            "只告警，不执行",
+            "正式闭环研究",
+        ):
+            self.assertIn(label, page)
+        for existing in (
+            "最新严格证据",
+            "真实 CFD 收益与代理决策是否一致",
+            "FNO 训练和推理结果",
+            "HydroGym 闭环控制",
+        ):
+            self.assertIn(existing, page)
+        self.assertIn("renderDualWatchdog(d)", page)
+        self.assertIn('data["dual_node_watchdog"]', SCRIPT.read_text(encoding="utf-8"))
+
+    def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / MODULE.DUAL_NODE_WATCHDOG
+            path.parent.mkdir(parents=True)
+            payload = {
+                "status": "MONITORING",
+                "alerts": [],
+                "nodes": {
+                    "spark": {"node_cpu_utilization_pct": 55.0},
+                    "worker78": {"node_cpu_utilization_pct": 21.0},
+                },
+            }
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            self.assertEqual(MODULE._dual_node_watchdog(root), payload)
+            path.write_text(json.dumps({"status": "UNKNOWN"}), encoding="utf-8")
+            self.assertIsNone(MODULE._dual_node_watchdog(root))
+
     def test_matched_start_progress_uses_solver_time_and_end_marker(self) -> None:
         lines = [
             "ignored",

@@ -58,6 +58,9 @@ LOW_ACTION_FNO_PAIRWISE = Path(
 )
 OLD = Path("artifacts/tandem_fno_total_drag_spark_30epoch")
 SAMPLE_FILE = Path("artifacts/monitor/live_resource_samples.jsonl")
+DUAL_NODE_WATCHDOG = Path(
+    "artifacts/monitor/dual_node_watchdog_20261003/latest.json"
+)
 MATCHED_START_DT = 0.005
 MATCHED_START_ITERATIONS = 16_000
 MATCHED_START_PHASE_MANIFEST_SHA256 = (
@@ -182,6 +185,7 @@ img{width:100%;height:auto;background:white;border-radius:4px}.row{display:flex;
 <div class="card"><h3>主节点 · SPARK_HOST</h3><div class="task" id="primary-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="primary-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="primary-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="primary-mem">—</div></div></div><svg id="primary-chart" role="img" aria-label="主节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="primary-more"></div></div>
 <div class="card"><h3>计算节点 · WORKER_HOST</h3><div class="task" id="worker-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="worker-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="worker-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="worker-mem">—</div></div></div><svg id="worker-chart" role="img" aria-label="计算节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="worker-more"></div></div>
 </div><div class="legend"><span><i class="sw" style="background:#60c9fb"></i>GPU</span><span><i class="sw" style="background:#e9ae68"></i>CPU</span><span>GB10 采用统一内存；训练保护线：至少剩余 20 GiB。</span></div>
+<h2>双节点运行守护</h2><div class="card"><div class="row"><div><div class="number" id="dual-watch-status">读取 watchdog…</div><div class="small" id="dual-watch-time">等待最新状态 JSON。</div></div><div class="small" id="dual-watch-alerts">告警状态读取中…</div></div><div class="summary"><div class="card"><span class="label">Spark · SPARK_HOST</span><b id="dual-watch-spark">—</b><span class="small" id="dual-watch-spark-detail">读取 CPU / 内存 / 空闲计时…</span></div><div class="card"><span class="label">Worker · WORKER_HOST</span><b id="dual-watch-worker">—</b><span class="small" id="dual-watch-worker-detail">读取 CPU / 内存 / 空闲计时…</span></div><div class="card"><span class="label">采集与整理进度</span><b id="dual-watch-progress">—</b><span class="small" id="dual-watch-progress-detail">读取 receipt / HDF 状态…</span></div><div class="card"><span class="label">自动处置边界</span><b>只告警，不执行</b><span class="small">每 15 秒采样；任务未完成且连续 300 秒无有效项目计算时告警。Spark 保留 20 GiB、Worker 保留 40 GiB；禁止自动启动未授权训练或科研动作。</span></div></div></div>
 <h2>Matched-start 九案 commissioning</h2><div class="card"><div class="row"><div><div class="number" id="matched-summary">等待真实采样…</div><div class="small">真实 OpenFOAM / RAW / VTK / HDF staging 状态；不是训练结果或控制收益。</div></div><div class="small" id="matched-resource">读取 Worker CPU / 内存与 Spark GPU…</div></div><div class="casegrid" id="matched-cases"></div><div class="small" id="matched-physics">九案开放环物理汇总：等待权威 JSON。</div><div class="small">求解 <code>End</code>、RAW_TRANSFER_VERIFIED、VTK_READY 和 staging HDF 是四个独立门槛；模型训练尚未由此 commissioning 启动，HDF 完成不等于模型已训练。</div></div>
 <h2>Matched-start 新增 31 案采集</h2><div class="card"><div class="row"><div><div class="number" id="full40-summary">等待 scheduler 状态…</div><div class="small">顺序为 train → validation → frozen test；求解完成不等于 RAW QC 通过。</div></div><div class="small" id="full40-resource">复用 Worker 真实资源采样…</div></div><div class="small" id="full40-splits">读取 split 摘要…</div><div class="casegrid" id="full40-cases"></div><div class="small">冻结测试仅显示采集与验收状态，绝不展示或用于筛选物理收益；31 案 CFD/RAW 也不代表 Curator、模型训练或精度提升。</div></div>
 <h2>FNO 训练和推理结果</h2><div class="grid"><div class="card"><h3 id="train-title">FNO：训练轮次 → 预测误差</h3><svg class="tall" id="train-chart" role="img" aria-label="多步训练验证误差"></svg><div class="small">蓝：流场平均绝对误差；橙：四个受力系数平均绝对误差。数值来自验证数据。</div></div><div class="card"><h3 id="error-title">递推步数 → 总阻力预测误差</h3><svg class="tall" id="error-chart" role="img" aria-label="不同预测步长的总阻力误差"></svg><div class="small" id="error-legend">读取评估结果…</div></div></div>
@@ -228,6 +232,12 @@ function resources(name,items){let last=items.at(-1);if(!last)return;
  $(name+'-task').textContent=last.tasks?.length?`${last.tasks.join('、')} ${last.task_count>1?'×'+last.task_count:''}`:(name==='worker'&&last.second_seed_epoch>=10?'10 轮训练已完成；模型在主节点接受独立测试':'当前无计算任务');
  $(name+'-more').textContent=`采样时间 ${last.time} · GPU ${num(last.temp_c,0)}°C${name==='primary'&&Number.isFinite(last.cuda_free_gib)?` · CUDA 当前可直接分配 ${num(last.cuda_free_gib,1)} GiB（不同于上方可回收内存）`:''}`;
  plot(name+'-chart',[{values:items.map(x=>x.gpu),color:'#60c9fb'},{values:items.map(x=>x.cpu),color:'#e9ae68'}])}
+function renderDualWatchdog(d){let w=d.dual_node_watchdog;
+ if(!w){$('dual-watch-status').textContent='状态暂不可用';$('dual-watch-status').className='number bad';$('dual-watch-time').textContent='latest.json 尚未生成或不可读。';$('dual-watch-alerts').textContent='请检查 watchdog 服务。';return}
+ let alerts=w.alerts||[],ok=w.status==='MONITORING'&&!alerts.length;$('dual-watch-status').textContent=ok?'运行正常':`ALERT · ${alerts.length} 项`;$('dual-watch-status').className='number '+(ok?'good':'bad');$('dual-watch-time').textContent=`最新采样 ${w.timestamp_utc||'未知'} · 状态来自只读 latest.json`;$('dual-watch-alerts').textContent=alerts.length?`告警：${alerts.join('、')}`:'当前无告警';$('dual-watch-alerts').className='small '+(alerts.length?'bad':'good');
+ for(const [key,id,label] of [['spark','spark','Spark'],['worker78','worker','Worker']]){let n=w.nodes?.[key],title=$('dual-watch-'+id),detail=$('dual-watch-'+id+'-detail');if(!n){title.textContent='不可达/无数据';title.className='bad';continue}let active=n.useful_compute_active===true,idle=n.idle_duration_seconds||0;title.textContent=`CPU ${num(n.node_cpu_utilization_pct,1)}% · ${num(n.mem_available_gib,1)} GiB`;title.className=(n.memory_guard_pass&&idle<300)?'good':'bad';detail.textContent=`${label} 项目计算 ${active?'活跃':'空闲'} · 匹配进程 ${n.project_compute_process_count||0} · 连续空闲 ${idle} 秒 / 300 秒告警门槛 · 内存保护 ${num(n.memory_floor_gib,0)} GiB ${n.memory_guard_pass?'PASS':'BREACH'}`;}
+ let p=w.progress||{};$('dual-watch-progress').textContent=`RAW ${p.strict_full40_receipt_count||0}/${p.strict_full40_receipt_target||31} · HDF ${p.matched9_staging_hdf5_count||0}/9`;$('dual-watch-progress-detail').textContent=`31案 aggregate ${p.raw_31_case_aggregate_complete?'完成':'未完成'} · full40 数据 ${p.full40_final_manifest_complete?'完成':'未完成'} · 正式闭环研究 ${p.project_complete?'完成':'未完成'}；数据完成不会被误写为训练/RL/闭环完成。`;
+}
 function renderMatchedStart(d){let worker=d.resources?.worker?.at(-1)||{},primary=d.resources?.primary?.at(-1)||{},rows=worker.matched_start||[],receipts=Object.fromEntries((d.matched_start_transfer||[]).map(x=>[x.case,x])),pipeline=Object.fromEntries((d.matched_start_pipeline||[]).map(x=>[x.case,x]));
  if(!rows.length){$('matched-summary').textContent='等待 Worker 真实采样';$('matched-cases').textContent='';return}
  let counts={complete:0,running:0,pending:0,stopped_incomplete:0};rows.forEach(x=>counts[x.status]=(counts[x.status]||0)+1);
@@ -270,6 +280,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  $('decision').textContent=audited&&a.status==='GATE_B_PASS'?`${picked.label}已通过冻结的 100 步总阻力门槛（${pct(b)}）；下一步做 CEM 控制筛选，再用真实 CFD 验证。`:audited?`${picked.label}五工况 100 步总阻力误差 ${pct(b)}，未达到 10%；其他候选仍在训练或审计。CEM 与 PPO 暂不启动。`:Number.isFinite(preliminary)?`${picked.label}的 100 步五工况初评为 ${pct(b)}；动作扰动与独立相位审计未完成。CEM/PPO 暂不启动。`:`旧数据模型 100 步误差 ${pct(b)}，未达到 10%；v3 FNO 正在完成独立测试。CEM 与 PPO 暂不启动。`;
  renderLatestEvidence(d);
  resources('primary',d.resources.primary);resources('worker',d.resources.worker);
+ renderDualWatchdog(d);
  renderMatchedStart(d);
  renderFull40(d);
  let trainHistory=v4primary.length?v4primary:d.history;$('train-title').textContent=v4primary.length?'v4 新数据 20 步 FNO：训练轮次 → 验证误差':'旧数据多步 FNO：训练轮次 → 验证误差';plot('train-chart',[{values:trainHistory.map(x=>x.terminal_state_mae),color:'#60c9fb'},{values:trainHistory.map(x=>x.terminal_force_mae),color:'#e9ae68'}],.05);
@@ -290,6 +301,16 @@ def _read_json(path: Path, fallback):
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return fallback
+
+
+def _dual_node_watchdog(root: Path):
+    payload = _read_json(root / DUAL_NODE_WATCHDOG, None)
+    if not isinstance(payload, dict) or payload.get("status") not in {
+        "MONITORING",
+        "ALERT",
+    }:
+        return None
+    return payload
 
 
 def _latest_evidence(root: Path) -> dict:
@@ -860,6 +881,7 @@ class Handler(BaseHTTPRequestHandler):
                 _matched_start_physics_summary(self.root)
             )
             data["full40_extension"] = _full40_extension_status(self.root)
+            data["dual_node_watchdog"] = _dual_node_watchdog(self.root)
             data["gate_b_metric_integrity"] = _read_json(self.root / "artifacts/tandem_cylinders/gate_b_metric_integrity_v3_h20_rear_drag_test_v2_20261003.json", None)
             data["crossphase86_ranking"] = _read_json(self.root / "artifacts/tandem_cylinders/crossphase86_fno_cfd_ranking_20261003.json", None)
             data["control_ranking_weighted"] = _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_fno_ranking_rear_weighted_h10_20261003.json", None)

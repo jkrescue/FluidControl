@@ -34,6 +34,20 @@ SERVICES = {
     "matched9_curator": "fluid-control-curator-matched9-20261003.service",
 }
 RAW_AGGREGATE_STATUS = "MATCHED_START_FULL40_EXTENSION_31_CASE_RAW_QC_PASS"
+FORMAL_COMPLETION_GATES = {
+    "gate_c_hydrogym_screen": (
+        Path("artifacts/research_gates/gate_c_hydrogym_screen.json"),
+        "GATE_C_PASS",
+    ),
+    "gate_d_real_cfd_closed_loop": (
+        Path("artifacts/research_gates/gate_d_real_cfd_closed_loop.json"),
+        "GATE_D_PASS",
+    ),
+    "gate_e_policy_refresh_robustness": (
+        Path("artifacts/research_gates/gate_e_policy_refresh_robustness.json"),
+        "GATE_E_PASS",
+    ),
+}
 
 REMOTE_PROBE = r"""
 import json, subprocess
@@ -225,6 +239,17 @@ def project_progress(repo: Path) -> dict:
             )
         except (OSError, ValueError):
             final_complete = False
+    formal_gates = {
+        name: {
+            "path": str(path),
+            "required_status": required_status,
+            "passed": read_json_status(repo / path, required_status),
+        }
+        for name, (path, required_status) in FORMAL_COMPLETION_GATES.items()
+    }
+    project_complete = final_complete and all(
+        row["passed"] for row in formal_gates.values()
+    )
     return {
         "strict_full40_receipt_count": len(list(receipts.glob("*.json"))),
         "strict_full40_receipt_target": 31,
@@ -236,7 +261,8 @@ def project_progress(repo: Path) -> dict:
         "full40_remainder_staging_tmp_count": len(list(full40_staging.glob("*/*/*.h5.tmp"))),
         "full40_final_manifest_complete": final_complete,
         "full40_final_hdf5_count": len(list(full40_final.glob("*/*.h5"))),
-        "project_complete": final_complete,
+        "formal_research_gates": formal_gates,
+        "project_complete": project_complete,
     }
 
 
@@ -333,7 +359,7 @@ def build_sample(
     )
     spark = update_idle_state(
         spark,
-        not progress["full40_final_manifest_complete"],
+        not progress["project_complete"],
         previous_nodes.get("spark"),
         now,
     )

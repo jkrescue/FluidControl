@@ -61,3 +61,32 @@ def test_project_progress_counts_receipts_without_reading_case_data(tmp_path):
     assert result["strict_full40_receipt_count"] == 3
     assert result["raw_31_case_aggregate_complete"] is True
     assert result["project_complete"] is False
+
+
+def test_full40_data_completion_alone_does_not_complete_research(tmp_path):
+    final = tmp_path / "data/curated/tandem_cylinders_matched_start_full40_v1"
+    final.mkdir(parents=True)
+    (final / "manifest.json").write_text(
+        json.dumps(
+            {
+                "profile": "matched_start_full40_v1",
+                "trajectory_counts": {
+                    "train": 20,
+                    "validation": 10,
+                    "frozen_test": 10,
+                },
+            }
+        )
+    )
+    result = MODULE.project_progress(tmp_path)
+    assert result["full40_final_manifest_complete"] is True
+    assert result["project_complete"] is False
+    assert all(
+        row["passed"] is False for row in result["formal_research_gates"].values()
+    )
+
+    for relative, status in MODULE.FORMAL_COMPLETION_GATES.values():
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"status": status}))
+    assert MODULE.project_progress(tmp_path)["project_complete"] is True
