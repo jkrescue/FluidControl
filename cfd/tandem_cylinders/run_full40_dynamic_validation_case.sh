@@ -76,10 +76,11 @@ steps="${contract[2]}"
 available_kib="$(awk '/MemAvailable:/ {print $2}' /proc/meminfo)"
 (( available_kib >= 40 * 1024 * 1024 )) \
   || { echo "MemAvailable is below 40 GiB" >&2; exit 1; }
-if pgrep -af '[p]impleFoam|[c]urate_matched_start|[t]rain_tandem_fno' >/dev/null; then
-  echo "CFD/Curator/training activity detected; dynamic validation is deferred" >&2
+if pgrep -af '[p]impleFoam|[c]urate_matched_start' >/dev/null; then
+  echo "CFD/Curator activity detected; dynamic validation is deferred" >&2
   exit 1
 fi
+python3 "$repo/scripts/check_dynamic6_qs1_coexistence.py"
 if [[ "$mode" == "--preflight-only" ]]; then
   echo "FULL40_DYNAMIC_VALIDATION_PREFLIGHT_OK $name"
   exit 0

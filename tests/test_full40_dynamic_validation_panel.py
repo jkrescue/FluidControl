@@ -60,7 +60,8 @@ def test_execution_and_qc_are_fail_closed() -> None:
     assert "--preflight-only" in runner
     assert "FULL40_DYNAMIC_VALIDATION_APPROVAL_TOKEN" in runner
     assert "MemAvailable is below 40 GiB" in runner
-    assert "Curator/training activity detected" in runner
+    assert "CFD/Curator activity detected" in runner
+    assert "check_dynamic6_qs1_coexistence.py" in runner
     assert "expected_repo=\"/workspace/fluid_control\"" in runner
     assert "Worker temporary copies require a separate reviewed transfer protocol" in runner
     assert "[p]impleFoam" in runner
@@ -70,3 +71,65 @@ def test_execution_and_qc_are_fail_closed() -> None:
     assert "write_exclusive" in audit
     assert "Only frame 0 within each phase is a strict counterfactual" in audit
     assert "not closed-loop PPO" in audit
+
+
+def test_qs1_coexistence_is_exact_and_resource_bounded() -> None:
+    guard = (
+        ROOT / "scripts/check_dynamic6_qs1_coexistence.py"
+    ).read_text(encoding="utf-8")
+    assert "fluid-control-dev30-quickscreen-pipeline-qs1.service" not in guard
+    assert "fluid-control-dev30-quickscreen-h20-qs1.service" in guard
+    assert 'host.get("Memory") == 64 * 1024**3' in guard
+    assert 'host.get("NanoCpus") == 8_000_000_000' in guard
+    assert 'row.get("DeviceIDs") == ["0"]' in guard
+    assert 'mem_available_gib() < 60' in guard
+    assert 'mounts.get("/workspace/devdata") == (str(DATA), False)' in guard
+    assert '"/workspace/frozen" not in mounts' in guard
+    assert "tracked <= container_pids(matches[0])" in guard
+
+
+def test_qs1_container_contract_rejects_mutated_resource_or_output() -> None:
+    path = ROOT / "scripts/check_dynamic6_qs1_coexistence.py"
+    spec = importlib.util.spec_from_file_location("dynamic6_coexistence", path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    contract = module.ALLOWED["fluid-control-dev30-quickscreen-h20-qs1.service"]
+    payload = {
+        "State": {"Running": True},
+        "Image": module.IMAGE_ID,
+        "Config": {
+            "Cmd": [
+                "python",
+                f"/workspace/scripts/{contract['trainer']}",
+                "--config-name",
+                contract["config"],
+            ]
+        },
+        "HostConfig": {
+            "NetworkMode": "none",
+            "Memory": 64 * 1024**3,
+            "NanoCpus": 8_000_000_000,
+            "ReadonlyRootfs": True,
+            "AutoRemove": True,
+            "DeviceRequests": [{"DeviceIDs": ["0"]}],
+        },
+        "Mounts": [
+            {
+                "Destination": "/workspace/devdata",
+                "Source": str(module.DATA),
+                "RW": False,
+            },
+            {
+                "Destination": "/workspace/output",
+                "Source": str(contract["output"]),
+                "RW": True,
+            },
+        ],
+    }
+    assert module.valid_container(payload, contract)
+    payload["HostConfig"]["Memory"] = 65 * 1024**3
+    assert not module.valid_container(payload, contract)
+    payload["HostConfig"]["Memory"] = 64 * 1024**3
+    payload["Mounts"][1]["Source"] = "/tmp/unreviewed-output"
+    assert not module.valid_container(payload, contract)
