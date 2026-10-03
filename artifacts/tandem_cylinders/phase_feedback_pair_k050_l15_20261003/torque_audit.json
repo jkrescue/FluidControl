@@ -1,0 +1,23 @@
+{
+  "status": "REAR_CYLINDER_CMPITCH_AUDIT_OK",
+  "case": "probe_feedback_phase_control_k050_l15_20261003",
+  "window": [
+    86.2,
+    92.4
+  ],
+  "force_coefficient_definition": "OpenFOAM forceCoeffs CmPitch=M_fluid/(0.5*rho*U_inf^2*Aref*lRef)",
+  "normalization": "D=U_inf=lRef=1, so signed actuator power divided by the matched zero-case drag power is -omega*CmPitch/Cd_total_zero",
+  "metrics": {
+    "samples": 1241,
+    "cm_pitch_mean": 0.006875212855447967,
+    "cm_pitch_rms": 0.15004260574508052,
+    "mean_omega_times_cm_pitch": 0.08233691960284169,
+    "mean_fluid_to_cylinder_power_over_zero_drag_power": 0.035737690423326474,
+    "mean_signed_actuator_power_over_zero_drag_power": -0.035737690423326474,
+    "mean_positive_only_actuator_power_over_zero_drag_power": 0.0019077614019121394,
+    "mean_abs_rotation_work_over_zero_drag_power": 0.039553213227150746
+  },
+  "timeseries": "/workspace/fluid_control/artifacts/tandem_cylinders/phase_feedback_pair_k050_l15_20261003/rear_cylinder_torque_timeseries.csv",
+  "timeseries_sha256": "6104b8ebb599db7b4ec4a10daf4d7f83a96497ca6e6ed57e5fed6da4abcad78c",
+  "interpretation_guard": "kinematic fluid-torque work proxy, not electrical motor input power; positive-only assumes no regenerative energy recovery"
+}

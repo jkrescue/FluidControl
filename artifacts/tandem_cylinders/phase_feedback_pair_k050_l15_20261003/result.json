@@ -1,0 +1,118 @@
+{
+  "status": "REAL_OPENFOAM_PHASE_FEEDBACK_PAIR_COMPLETED",
+  "scientific_status": "predeclared_physics_feedback_short_pilot_not_learned_policy_not_final_closed_loop_claim",
+  "solver": "OpenFOAM v2512 pimpleFoam",
+  "geometry": "tandem circular cylinders Re=100, L/D=5, rear rotation only",
+  "source_restart": "tandem_backward_dt005 at t=80",
+  "initial_observation_sources": {
+    "time": 80.0,
+    "probe_sources": [
+      "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/wakeProbes/0/U"
+    ],
+    "force_sources": [
+      "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat"
+    ],
+    "channel_order": "32*(u,v),front_cd,front_cl,rear_cd,rear_cl,applied_omega",
+    "front_force_sources": [
+      "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat"
+    ]
+  },
+  "source_field_hashes": {
+    "U": {
+      "feedback": "1230c025e36e1025883e20e8ebd74184584198613004fa00d773e22e3e3575a6",
+      "zero": "1230c025e36e1025883e20e8ebd74184584198613004fa00d773e22e3e3575a6"
+    },
+    "p": {
+      "feedback": "e58e2cd109edb9dd452df9830e62eb26efab0c79f15a60f3128da6b3897bd15b",
+      "zero": "e58e2cd109edb9dd452df9830e62eb26efab0c79f15a60f3128da6b3897bd15b"
+    }
+  },
+  "controller": {
+    "law": "omega_target=clip(0.5*rear_Cl(t-1.5),-1,1)",
+    "gain": 0.5,
+    "lag_steps": 15,
+    "lag_time": 1.5,
+    "warmup": "omega=0 until the causal lag history is available",
+    "physical_sign_rationale": "positive rear lift requests positive rotation, whose Magnus side-force is expected to oppose the measured lift",
+    "control_interval": 0.1,
+    "omega_limit": 1.0,
+    "max_delta_omega": 0.1,
+    "max_abs_domega_dt": 1.0,
+    "surrogate_or_learned_model_used": false
+  },
+  "pair": {
+    "feedback": "probe_feedback_phase_control_k050_l15_20261003",
+    "zero": "probe_feedback_phase_zero_k050_l15_20261003"
+  },
+  "steps": 124,
+  "simulation_window": [
+    80.0,
+    92.4
+  ],
+  "predeclared_evaluation_window": [
+    86.2,
+    92.4
+  ],
+  "metrics": {
+    "feedback": {
+      "samples": 1241,
+      "total_cd_mean": 2.289493680154714,
+      "front_cd_mean": 1.3893236514907334,
+      "rear_cd_mean": 0.9001700286639808,
+      "front_cl_mean": -0.0017061924642481794,
+      "rear_cl_mean": 0.0011545715419910563,
+      "front_cl_fluctuation_rms": 0.31475141004878887,
+      "rear_cl_fluctuation_rms": 1.6138054031408426,
+      "front_cl_total_rms": 0.31475603444640404,
+      "rear_cl_total_rms": 1.613805816150761
+    },
+    "zero": {
+      "samples": 1241,
+      "total_cd_mean": 2.3039239141514103,
+      "front_cd_mean": 1.389393771751813,
+      "rear_cd_mean": 0.914530142399597,
+      "front_cl_mean": -0.00020208298589992699,
+      "rear_cl_mean": -0.0022923689815357935,
+      "front_cl_fluctuation_rms": 0.3111835584275929,
+      "rear_cl_fluctuation_rms": 1.1709398890877072,
+      "front_cl_total_rms": 0.31118362404405586,
+      "rear_cl_total_rms": 1.1709421329904734
+    }
+  },
+  "comparison": {
+    "total_drag_reduction": 0.006263329230649206,
+    "rear_cl_total_rms_ratio": 1.3782114168436799,
+    "rear_cl_fluctuation_rms_ratio": 1.378213705229717,
+    "front_cl_total_rms_ratio": 1.0114800719778314,
+    "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.0009860211892607027,
+    "predeclared_checks": {
+      "total_drag_decreased": true,
+      "rear_cl_total_rms_increase_at_most_5pct": false,
+      "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+    },
+    "short_pilot_joint_check": false,
+    "canonical_physical_checks": {
+      "total_drag_reduction_at_least_2pct": false,
+      "rear_cl_fluctuation_rms_increase_at_most_5pct": false,
+      "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": true
+    },
+    "canonical_physical_joint_check": false
+  },
+  "effort_proxy": {
+    "omega_rms": 0.6706161912968186,
+    "omega_abs_max": 1.0,
+    "delta_omega_abs_max": 0.10000000000000003,
+    "note": "kinematic proxy only; torque and actuator power were not measured"
+  },
+  "numerical_health": {
+    "peak_courant_across_pair": 0.245095543,
+    "memory_floor_gib": 40.0
+  },
+  "limitations": [
+    "one initial phase and one coarse mesh",
+    "only one shedding period is used for the predeclared comparison",
+    "no torque or actuator power measurement",
+    "not PPO, not PhysicsNeMo control, and not a final closed-loop result"
+  ],
+  "acceptance_audit_note": "Original pilot predeclared_checks retained; canonical_physical_checks added after identifying mismatch with project Gate-D."
+}
