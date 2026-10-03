@@ -22,20 +22,23 @@ class ControlLandscapeAnalysisTests(unittest.TestCase):
 
     def test_control_response_reports_lift_tradeoff(self) -> None:
         baseline = {"case": "zero", "action_kind": "zero", "total_cd_mean": 2.0,
-                    "front": {"cl_rms": 0.3}, "rear": {"cl_rms": 1.0}}
+                    "front": {"cl_rms": 0.3}, "rear": {"cl_rms": 1.0, "cl_mean": 0.0, "cl_abs_mean": 1.0}}
         controlled = {"case": "actuated", "action_kind": "positive_constant",
                       "total_cd_mean": 1.8, "front": {"cl_rms": 0.3},
-                      "rear": {"cl_rms": 1.5}}
+                      "rear": {"cl_rms": 1.5, "cl_mean": 0.0, "cl_abs_mean": 2.0}}
         result = compare([baseline, controlled])
         metrics = result["cases"][1]["relative_to_zero"]
         self.assertAlmostEqual(metrics["total_cd_change_percent"], -10.0)
         self.assertAlmostEqual(metrics["rear_cl_rms_ratio"], 1.5)
+        self.assertAlmostEqual(metrics["rear_cl_abs_mean_ratio"], 2.0)
+        self.assertAlmostEqual(metrics["rear_cl_root_mean_square_ratio"], 1.5)
         self.assertEqual(result["status"], "EXPLORATORY_MATCHED_CFD_PANEL_OK")
 
     def test_kinematic_effort_is_not_called_physical_work(self) -> None:
         points = [[92.0, 0.0], [92.1, 1.0], [116.0, 1.0]]
         effort = action_effort(points)
-        self.assertGreater(effort["omega_rms"], 0)
+        self.assertGreater(effort["analysis_window_omega_rms"], 0)
+        self.assertGreater(effort["full_horizon_domega_dt_rms"], 0)
         self.assertIn("not actuator torque", effort["note"])
 
 

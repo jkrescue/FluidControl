@@ -5,7 +5,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 name="${1:-}"
 case "${name}" in
-    landscape_val_zero_20261003|landscape_val_p100_20261003|landscape_val_m100_20261003|landscape_val_sine_20261003) ;;
+    landscape_val_zero_20261003|landscape_val_p100_20261003|landscape_val_m100_20261003|landscape_val_sine_20261003|landscape_long_val_zero_20261003|landscape_long_val_p100_20261003|landscape_long_val_m100_20261003) ;;
     *) echo "Unknown control-landscape case: ${name}" >&2; exit 2 ;;
 esac
 
@@ -21,7 +21,11 @@ if find "${target}" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' \
     exit 1
 fi
 
-echo "Starting ${name}: t=80..116, OpenFOAM v2512"
+end_time="$(jq -er '.end_time' "${target}/case_config.json")"
+[[ "${end_time}" == 116.0 || "${end_time}" == 160.0 ]] || {
+    echo "Unexpected frozen end time: ${end_time}" >&2; exit 2;
+}
+echo "Starting ${name}: t=80..${end_time}, OpenFOAM v2512"
 if bash "${root}/run_openfoam.sh" pimpleFoam -case "/case/cases/${name}" >"${log}" 2>&1; then
     grep -qx End "${log}" || { echo "Solver log has no End marker" >&2; exit 1; }
     echo "Completed ${name}"

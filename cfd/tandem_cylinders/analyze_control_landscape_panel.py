@@ -57,14 +57,18 @@ def block_drag_means(rows: list[tuple[float, float]]) -> list[float]:
 
 
 def action_effort(points: list[list[float]]) -> dict[str, float]:
-    window = [(float(time), float(omega)) for time, omega in points if ANALYSIS_START <= time <= END_TIME]
+    full = [(float(time), float(omega)) for time, omega in points]
+    window = [(time, omega) for time, omega in full if ANALYSIS_START <= time <= END_TIME]
     if len(window) < 3:
         raise ValueError("action window is incomplete")
     omega_rms = math.sqrt(statistics.mean(value * value for _, value in window))
     rates = [(b[1] - a[1]) / (b[0] - a[0]) for a, b in zip(window, window[1:])]
+    full_rates = [(b[1] - a[1]) / (b[0] - a[0]) for a, b in zip(full, full[1:])]
     return {
-        "omega_rms": omega_rms,
-        "domega_dt_rms": math.sqrt(statistics.mean(value * value for value in rates)),
+        "analysis_window_omega_rms": omega_rms,
+        "analysis_window_domega_dt_rms": math.sqrt(statistics.mean(value * value for value in rates)),
+        "full_horizon_omega_rms": math.sqrt(statistics.mean(value * value for _, value in full)),
+        "full_horizon_domega_dt_rms": math.sqrt(statistics.mean(value * value for value in full_rates)),
         "note": "kinematic effort proxies, not actuator torque or physical work",
     }
 
@@ -109,12 +113,19 @@ def compare(rows: list[dict]) -> dict:
     baseline = next(row for row in rows if row["action_kind"] == "zero")
     denominator = baseline["total_cd_mean"]
     lift_denominator = baseline["rear"]["cl_rms"]
+    rear_root_mean_square_baseline = math.hypot(
+        baseline["rear"]["cl_rms"], baseline["rear"]["cl_mean"]
+    )
     if denominator <= 0 or lift_denominator <= 0:
         raise ValueError("invalid zero-action baseline")
     for row in rows:
         row["relative_to_zero"] = {
             "total_cd_change_percent": 100 * (row["total_cd_mean"] / denominator - 1),
             "rear_cl_rms_ratio": row["rear"]["cl_rms"] / lift_denominator,
+            "rear_cl_abs_mean_ratio": row["rear"]["cl_abs_mean"] / baseline["rear"]["cl_abs_mean"],
+            "rear_cl_root_mean_square_ratio": math.hypot(
+                row["rear"]["cl_rms"], row["rear"]["cl_mean"]
+            ) / rear_root_mean_square_baseline,
             "front_cl_rms_ratio": row["front"]["cl_rms"] / baseline["front"]["cl_rms"],
         }
     return {

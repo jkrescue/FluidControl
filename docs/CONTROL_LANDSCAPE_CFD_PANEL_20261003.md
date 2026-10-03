@@ -70,3 +70,26 @@ python3 cfd/tandem_cylinders/analyze_control_landscape_panel.py \
 The reported rotation RMS and rate RMS are **kinematic effort proxies**;
 without measured wall torque they must never be called actuator energy or
 net power savings. No case's raw data enter FNO training during this audit.
+
+## Completed exploratory result (2026-10-03)
+
+All four real-CFD runs completed `t=80..116` and passed the fail-closed
+frame/force, finite, Courant, continuity and source-provenance checks.
+The machine-readable result is
+`artifacts/tandem_cylinders/control_landscape_panel_result_v3_20261003.json`
+(SHA-256 `19119478e18aee199fd0df21bd0751fa07ec66462a939d195fd76727d32d6618`).
+The zero-action mean system-total Cd was `2.30282` over `t=92..116`.
+
+| Schedule | Total Cd change vs zero | Rear Cl fluctuation RMS ratio | Rear Cl total RMS ratio | Rear mean-absolute Cl ratio |
+| --- | ---: | ---: | ---: | ---: |
+| `+1` after ramp | −3.62% | 0.968 | **1.263** | **1.130** |
+| `−1` after ramp | −4.08% | 0.969 | **1.299** | **1.182** |
+| shedding-period sine | +14.86% | 1.057 | 1.057 | 1.065 |
+
+The distinction between fluctuating RMS and total RMS is crucial: constant
+rotation induces mean rear Cl near `−0.96` / `+1.02`, respectively. It is
+therefore a drag/lateral-load trade-off, **not** simultaneous unqualified
+drag and lift improvement. This short matched-start panel's fluctuating
+RMS trend differs from the earlier long constant-rotation CFD panel, so
+its transient must be checked before drawing a stationary conclusion; see
+`CONTROL_LANDSCAPE_LONG_CFD_20261003.md`.
