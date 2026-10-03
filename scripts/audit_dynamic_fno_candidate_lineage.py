@@ -100,7 +100,12 @@ def build(repo: Path, candidate_root: Path) -> dict:
     artifacts = (repo / "artifacts").resolve()
     if artifacts not in root.parents:
         raise ValueError("candidate must remain under the project artifact root")
-    is_train16 = root.name == "tandem_fno_control_train16_h100_20261004"
+    is_train16_main = root.name == "tandem_fno_control_train16_h100_20261004"
+    is_train16_balanced = (
+        root.name
+        == "tandem_fno_control_train16_h100_lift_balanced_worker_20261004"
+    )
+    is_train16 = is_train16_main or is_train16_balanced
     if not is_train16 and not root.name.startswith("tandem_fno_dynamic_train8_h"):
         raise ValueError("candidate is not a reviewed FNO artifact kind")
 
@@ -111,10 +116,23 @@ def build(repo: Path, candidate_root: Path) -> dict:
     horizon = int(training.get("rollout_steps", -1))
     epochs = int(training.get("epochs", -1))
     if is_train16:
-        candidate_kind = "control_train16_h100"
+        candidate_kind = (
+            "control_train16_h100_lift_balanced"
+            if is_train16_balanced
+            else "control_train16_h100"
+        )
         expected_roots = ["/workspace/train8", "/workspace/train16"]
         expected_windows = (720, 408, 240)
-        source_config_relative = "conf/tandem_fno_control_train16_h100.yaml"
+        source_config_relative = (
+            "conf/tandem_fno_control_train16_h100_lift_balanced.yaml"
+            if is_train16_balanced
+            else "conf/tandem_fno_control_train16_h100.yaml"
+        )
+        expected_force_weights = (
+            [1.0, 1.0, 4.0, 4.0]
+            if is_train16_balanced
+            else [1.0, 1.0, 4.0, 1.0]
+        )
         if (
             horizon != 100
             or epochs != 2
@@ -128,6 +146,8 @@ def build(repo: Path, candidate_root: Path) -> dict:
             or training.get("train_stride") != 20
             or training.get("additional_train_stride") != 2
             or training.get("initial_checkpoint") != "/workspace/parent"
+            or list(training.get("force_channel_weights", []))
+            != expected_force_weights
         ):
             raise ValueError("train16 candidate training contract differs")
     else:
@@ -293,7 +313,12 @@ def build(repo: Path, candidate_root: Path) -> dict:
         )
         source_parent = source.get("parent", {})
         if (
-            source.get("status") != "CONTROL_TRAIN16_H100_STAGED_NOT_EXECUTED"
+            source.get("status")
+            != (
+                "CONTROL_TRAIN16_H100_LIFT_BALANCED_STAGED"
+                if is_train16_balanced
+                else "CONTROL_TRAIN16_H100_STAGED_NOT_EXECUTED"
+            )
             or source.get("candidate_kind") != candidate_kind
             or dev30_source.get("manifest_sha256") != DEV30_MANIFEST_SHA
             or dev30_source.get("normalization_sha256") != NORMALIZATION_SHA
@@ -336,11 +361,19 @@ def build(repo: Path, candidate_root: Path) -> dict:
             "scripts/train_tandem_fno.py",
             "scripts/train_tandem_fno_rollout.py",
             "scripts/probe_directppo_train16_datapipe.py",
-            "scripts/run_fno_control_train16_spark.sh",
             "src/fluid_control/augmented_datapipe.py",
             "src/fluid_control/tandem_datapipe.py",
             "conf/tandem_fno_control_train16_h100.yaml",
         }
+        if is_train16_balanced:
+            required_snapshot_files.update(
+                {
+                    "scripts/run_fno_control_train16_lift_balanced_worker.sh",
+                    "conf/tandem_fno_control_train16_h100_lift_balanced.yaml",
+                }
+            )
+        else:
+            required_snapshot_files.add("scripts/run_fno_control_train16_spark.sh")
         if not required_snapshot_files <= set(snapshot_hashes):
             raise ValueError("train16 source snapshot lacks required implementation files")
 

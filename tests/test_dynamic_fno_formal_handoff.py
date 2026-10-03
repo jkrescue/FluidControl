@@ -13,7 +13,6 @@ from pathlib import Path
 import pytest
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -210,6 +209,7 @@ def make_train16_candidate(tmp_path, monkeypatch):
             "teacher_forcing_start": 0.0,
             "teacher_forcing_end": 0.0,
             "seed": 20261003,
+            "force_channel_weights": [1.0, 1.0, 4.0, 1.0],
         },
         "data": {
             "root": "/workspace/base",
@@ -278,10 +278,12 @@ def make_train16_candidate(tmp_path, monkeypatch):
         "scripts/train_tandem_fno_rollout.py",
         "scripts/probe_directppo_train16_datapipe.py",
         "scripts/run_fno_control_train16_spark.sh",
+        "scripts/run_fno_control_train16_lift_balanced_worker.sh",
         "scripts/evaluate_tandem_fno.py",
         "src/fluid_control/augmented_datapipe.py",
         "src/fluid_control/tandem_datapipe.py",
         "conf/tandem_fno_control_train16_h100.yaml",
+        "conf/tandem_fno_control_train16_h100_lift_balanced.yaml",
     )
     for relative in required:
         path = repo / relative
@@ -425,6 +427,30 @@ def test_train16_lineage_binds_three_sources_parent_snapshot_and_probe(
         module.build(repo, candidate)
 
 
+def test_train16_lift_balanced_lineage_is_single_declared_weight_change(
+    tmp_path, monkeypatch
+):
+    module, repo, candidate = make_train16_candidate(tmp_path, monkeypatch)
+    balanced = repo / "artifacts/tandem_fno_control_train16_h100_lift_balanced_worker_20261004"
+    candidate.rename(balanced)
+    config_path = balanced / "resolved_config.yaml"
+    config = yaml.safe_load(config_path.read_text())
+    config["training"]["force_channel_weights"] = [1.0, 1.0, 4.0, 4.0]
+    config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+    source_path = balanced / "source_receipt.json"
+    source = json.loads(source_path.read_text())
+    source["status"] = "CONTROL_TRAIN16_H100_LIFT_BALANCED_STAGED"
+    source["candidate_kind"] = "control_train16_h100_lift_balanced"
+    write_json(source_path, source)
+
+    result = module.build(repo, balanced)
+    assert result["candidate_kind"] == "control_train16_h100_lift_balanced"
+    config["training"]["force_channel_weights"] = [1.0, 1.0, 4.0, 1.0]
+    config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+    with pytest.raises(ValueError, match="training contract differs"):
+        module.build(repo, balanced)
+
+
 def test_control_train16_runner_is_fail_closed_and_training_only():
     source = (ROOT / "scripts/run_fno_control_train16_spark.sh").read_text()
     assert "--dry-run|--probe|--execute" in source
@@ -435,6 +461,24 @@ def test_control_train16_runner_is_fail_closed_and_training_only():
     assert "--min-free-gib 20" in source
     assert "DIRECTPPO_TRAIN16_OFFICIAL_DATAPIPE_PROBE_PASS" in source
     assert "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL" in source
+    assert "frozen_test" not in "\n".join(
+        line for line in source.splitlines() if "--mount" in line
+    )
+
+
+def test_control_train16_lift_balanced_worker_runner_is_fail_closed():
+    source = (
+        ROOT / "scripts/run_fno_control_train16_lift_balanced_worker.sh"
+    ).read_text()
+    config = (
+        ROOT / "conf/tandem_fno_control_train16_h100_lift_balanced.yaml"
+    ).read_text()
+    assert "--dry-run|--probe|--execute" in source
+    assert "force_channel_weights: [1.0, 1.0, 4.0, 4.0]" in config
+    assert "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL" in source
+    assert "--allocator-fraction 0.45" in source
+    assert "--min-free-gib 40" in source
+    assert "--shm-size 2g" in source
     assert "frozen_test" not in "\n".join(
         line for line in source.splitlines() if "--mount" in line
     )

@@ -1,0 +1,9 @@
+defaults:
+  - tandem_fno_control_train16_h100
+  - _self_
+
+# Controlled Worker comparison: every data/model/optimizer/horizon setting is
+# inherited from the Spark branch. Only normalized force-channel allocation is
+# changed to test the validation-informed rear-Cl fidelity hypothesis.
+training:
+  force_channel_weights: [1.0, 1.0, 4.0, 4.0]
