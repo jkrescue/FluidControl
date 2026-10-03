@@ -270,7 +270,7 @@ write_exclusive(candidate / "source_receipt.json", {
 PY
 }
 
-common=(--rm --network none --gpus device=0 --cpus 8 --memory 90g --pids-limit 512
+common=(--rm --network none --gpus device=0 --cpus 8 --memory 90g --shm-size 2g --pids-limit 512
   --cap-drop ALL --security-opt no-new-privileges --read-only
   --tmpfs /tmp:rw,nosuid,nodev,size=8g --user "$(id -u):$(id -g)"
   --env HOME=/tmp --env XDG_CACHE_HOME=/tmp/cache --env PYTHONDONTWRITEBYTECODE=1
