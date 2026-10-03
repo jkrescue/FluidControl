@@ -1,0 +1,15 @@
+[Unit]
+Description=Fluid-control read-only Spark/Worker utilization watchdog
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/workspace/fluid_control
+ExecStart=/usr/bin/python3 -u /workspace/fluid_control/scripts/watch_dual_node_utilization.py --interval 15
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target
