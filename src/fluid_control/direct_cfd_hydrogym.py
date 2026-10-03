@@ -303,8 +303,8 @@ def make_direct_cfd_env(
     baseline: Mapping[str, float | str],
     episode_steps: int = 128,
 ):
-    if episode_steps != 128:
-        raise ValueError("first direct-CFD PPO protocol fixes 128-step episodes")
+    if episode_steps not in (128, 800):
+        raise ValueError("direct-CFD protocol permits only 128-step train or 800-step eval")
     raw = FlowEnv(
         {
             "flow": DirectOpenFOAMFlow,

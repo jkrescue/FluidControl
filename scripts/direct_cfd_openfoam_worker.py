@@ -122,16 +122,27 @@ def actual_causal_prehistory(reference: Path, restart_time: float) -> tuple[list
 
 
 class OpenFOAMWorker:
-    def __init__(self, *, run_id: str, env_index: int, phase: str, journal: Path) -> None:
+    def __init__(
+        self,
+        *,
+        run_id: str,
+        env_index: int,
+        phase: str,
+        journal: Path,
+        episode_steps: int = 128,
+    ) -> None:
         if not re.fullmatch(r"[a-z0-9_]{4,48}", run_id):
             raise ValueError("run_id must be 4..48 lowercase alphanumeric/underscore characters")
         if env_index not in (0, 1):
             raise ValueError("first protocol has exactly env indexes 0 and 1")
         if phase not in ALLOWED_SOURCES:
             raise ValueError("only fixed train phases b00 and b02 are allowed")
+        if episode_steps not in (128, 800):
+            raise ValueError("episode_steps must be 128 for train or 800 for eval")
         self.run_id = run_id
         self.env_index = env_index
         self.phase = phase
+        self.episode_steps = episode_steps
         self.source = CASES / ALLOWED_SOURCES[phase]
         config = json.loads((self.source / "case_config.json").read_text(encoding="utf-8"))
         if config.get("split") != "train" or config.get("action_target") != 0.0:
@@ -252,7 +263,7 @@ class OpenFOAMWorker:
             shutil.copytree(self.source / "constant", stage / "constant")
             shutil.copytree(self.source / "system", stage / "system")
             shutil.copytree(self.source / f"{self.restart_time:g}", stage / f"{self.restart_time:g}")
-            end_time = self.restart_time + 128 * CONTROL_DT
+            end_time = self.restart_time + self.episode_steps * CONTROL_DT
             velocity = stage / f"{self.restart_time:g}" / "U"
             velocity.write_text(
                 replace_rear_patch(
@@ -276,7 +287,7 @@ class OpenFOAMWorker:
                 "prehistory_sources": self.prehistory_sources,
                 "observation_sources": self.initial_observation_sources,
                 "protocol": {
-                    "episode_steps": 128,
+                    "episode_steps": self.episode_steps,
                     "control_dt": CONTROL_DT,
                     "action_limit": ACTION_LIMIT,
                     "max_delta_omega": MAX_DELTA_OMEGA,
@@ -501,12 +512,14 @@ def main() -> None:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--env-index", type=int, required=True)
     parser.add_argument("--phase", choices=tuple(ALLOWED_SOURCES), required=True)
+    parser.add_argument("--episode-steps", type=int, choices=(128, 800), default=128)
     args = parser.parse_args()
     worker = OpenFOAMWorker(
         run_id=args.run_id,
         env_index=args.env_index,
         phase=args.phase,
         journal=args.journal,
+        episode_steps=args.episode_steps,
     )
     serve(args.socket, worker)
 

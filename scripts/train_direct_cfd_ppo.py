@@ -13,6 +13,7 @@ from functools import partial
 from pathlib import Path
 
 import numpy as np
+import torch
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor
@@ -33,6 +34,29 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def parameter_fingerprint(model, initial_parameters: dict[str, torch.Tensor]) -> dict:
+    digest = hashlib.sha256()
+    squared_delta = 0.0
+    squared_initial = 0.0
+    current = dict(model.policy.named_parameters())
+    if set(current) != set(initial_parameters):
+        raise ValueError("policy parameter schema changed during PPO training")
+    for name in sorted(current):
+        value = current[name].detach().cpu().contiguous()
+        initial = initial_parameters[name]
+        digest.update(name.encode() + b"\0")
+        digest.update(value.numpy().tobytes())
+        squared_delta += float(torch.sum((value - initial) ** 2))
+        squared_initial += float(torch.sum(initial**2))
+    delta_l2 = math.sqrt(squared_delta)
+    initial_l2 = math.sqrt(squared_initial)
+    return {
+        "parameter_tensor_sha256": digest.hexdigest(),
+        "parameter_delta_l2_from_initial": delta_l2,
+        "parameter_relative_delta_l2_from_initial": delta_l2 / max(initial_l2, 1e-30),
+    }
 
 
 def write_atomic(path: Path, payload: dict) -> None:
@@ -126,7 +150,13 @@ class PhysicalJournalCallback(BaseCallback):
             )
         return True
 
-    def checkpoint_after_update(self, timestep: int, update_count: int) -> None:
+    def checkpoint_after_update(
+        self,
+        timestep: int,
+        update_count: int,
+        initial_parameters: dict[str, torch.Tensor],
+        training_metrics: dict[str, float | int],
+    ) -> None:
         """Save only after ``PPO.learn`` returns from its optimizer update."""
         checkpoint = self.output / "checkpoints" / f"ppo_{timestep:08d}"
         self.model.save(checkpoint)
@@ -144,6 +174,10 @@ class PhysicalJournalCallback(BaseCallback):
             "timesteps": timestep,
             "ppo_update_count": update_count,
             "checkpoint_timing": "after PPO optimizer update returned",
+            "sb3_training_metrics": training_metrics,
+            "policy_parameter_evidence": parameter_fingerprint(
+                self.model, initial_parameters
+            ),
             "policy": str(policy_path),
             "policy_sha256": sha256(policy_path),
             "vecnormalize": str(vec_path),
@@ -250,6 +284,11 @@ def execute(args) -> dict:
             verbose=1,
         )
         callback = PhysicalJournalCallback(args.output)
+        initial_parameters = {
+            name: parameter.detach().cpu().clone()
+            for name, parameter in model.policy.named_parameters()
+        }
+        initial_fingerprint = parameter_fingerprint(model, initial_parameters)
         completed = 0
         update_count = 0
         while completed < TOTAL_TIMESTEPS:
@@ -260,7 +299,27 @@ def execute(args) -> dict:
             )
             completed += CHECKPOINT_INTERVAL
             update_count += 1
-            callback.checkpoint_after_update(completed, update_count)
+            logger_values = model.logger.name_to_value
+            metric_names = (
+                "train/approx_kl",
+                "train/policy_gradient_loss",
+                "train/value_loss",
+                "train/entropy_loss",
+                "train/clip_fraction",
+                "train/loss",
+            )
+            training_metrics = {
+                name.removeprefix("train/"): float(logger_values[name])
+                for name in metric_names
+                if name in logger_values
+            }
+            training_metrics["n_updates"] = int(model._n_updates)
+            callback.checkpoint_after_update(
+                completed,
+                update_count,
+                initial_parameters,
+                training_metrics,
+            )
         final_policy = args.output / "ppo_policy_final"
         model.save(final_policy)
         final_policy = final_policy.with_suffix(".zip")
@@ -278,6 +337,7 @@ def execute(args) -> dict:
             "vecnormalize": str(final_vec),
             "vecnormalize_sha256": sha256(final_vec),
             "checkpoint_summaries": callback.checkpoints,
+            "initial_policy_parameter_evidence": initial_fingerprint,
             "reward_contract": "canonical_joint_v1 with actual causal prehistory",
             "scientific_scope": (
                 "genuine train-only real-CFD RL/basic online closure; not evidence of "

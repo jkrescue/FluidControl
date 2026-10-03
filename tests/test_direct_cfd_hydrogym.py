@@ -130,7 +130,7 @@ class DirectCFDHydroGymTest(unittest.TestCase):
             )
 
     def test_episode_protocol_is_fixed(self) -> None:
-        with self.assertRaisesRegex(ValueError, "128-step"):
+        with self.assertRaisesRegex(ValueError, "128-step train"):
             make_direct_cfd_env(
                 transport_factory=ScriptedTransport,
                 baseline=BASELINE,
