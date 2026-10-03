@@ -32,7 +32,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
                 MODULE.V4_WINDOW_MEAN_CD: {"metric": "window"},
                 MODULE.V3_PARENT_WINDOW_MEAN_CD: {"metric": "parent-window"},
                 MODULE.TWO_PHASE_ALTERNATING: {"status": "real-cfd"},
-                MODULE.LOW_ACTION_PHASE94_CANONICAL: {"status": "canonical-v2"},
+                MODULE.LOW_ACTION_PHASE94_CANONICAL: {"status": "canonical-v3"},
             }
             for relative, value in fixtures.items():
                 path = root / relative
@@ -45,7 +45,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
                     "v4_window_mean_cd": {"metric": "window"},
                     "v3_parent_window_mean_cd": {"metric": "parent-window"},
                     "two_phase_alternating": {"status": "real-cfd"},
-                    "low_action_phase94_canonical": {"status": "canonical-v2"},
+                    "low_action_phase94_canonical": {"status": "canonical-v3"},
                 },
             )
 
@@ -77,18 +77,17 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("v3_parent_window_mean_cd", page)
         self.assertIn("NO GAIN", page)
         self.assertIn("canonical_joint_pass_both_phases", page)
-        self.assertIn("LOW_ACTION_PHASE94_CANONICAL_PHYSICAL_AUDIT_V2_COMPLETE", page)
+        self.assertIn("LOW_ACTION_PHASE94_CANONICAL_PHYSICAL_AUDIT_V3_COMPLETE", page)
         self.assertIn("真实OpenFOAM，仅t94单相位开环", page)
 
     def test_only_canonical_low_action_audit_is_loaded(self) -> None:
         self.assertEqual(
             MODULE.LOW_ACTION_PHASE94_CANONICAL.name,
-            "low_action_phase94_physical_audit_v2_canonical.json",
+            "low_action_phase94_physical_audit_v3_canonical.json",
         )
-        self.assertNotIn(
-            '"low_action_phase94_physical_audit.json"',
-            SCRIPT.read_text(encoding="utf-8"),
-        )
+        source = SCRIPT.read_text(encoding="utf-8")
+        self.assertNotIn('"low_action_phase94_physical_audit.json"', source)
+        self.assertNotIn('"low_action_phase94_physical_audit_v2_canonical.json"', source)
 
     def test_negative_drag_reduction_is_presented_as_increase(self) -> None:
         self.assertIn("value>=0?`降阻 ${pct(value)}`:`增阻 ${pct(-value)}`", MODULE.PAGE)
