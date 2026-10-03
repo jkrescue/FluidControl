@@ -61,6 +61,8 @@ def test_config_and_runner_are_immutable_parent_guarded():
     assert '--segment-stride 1 --evaluation-batch-size 8' in runner
     assert 'artifacts/tandem_fno_dynamic_train8_${horizon}_${run_id}' in runner
     assert 'training.max_train_batches=1 training.max_validation_batches=1' in runner
+    assert 'DYNAMIC_TRAIN8_FNO_PROBE_SEED:-20261003' in runner
+    assert 'training.seed="$probe_seed"' in runner
     assert 'tandem_cylinders_matched_start_full40_v1"' not in runner
     assert "frozen" not in " ".join(line for line in runner.splitlines() if "mount" in line)
 

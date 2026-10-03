@@ -8,6 +8,7 @@ parent="${2:-}"
 run_id="${3:-}"
 horizon="${4:-}"
 token="${DYNAMIC_TRAIN8_FNO_APPROVAL_TOKEN:-}"
+probe_seed="${DYNAMIC_TRAIN8_FNO_PROBE_SEED:-20261003}"
 image="fluid-control-physicsnemo:2.2.2"
 image_id="sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e"
 base="$root/data/curated/tandem_cylinders_matched_start_full40_dev30_v1"
@@ -24,6 +25,7 @@ esac
 [[ "$(basename "$parent")" != best ]] || { echo "mutable best parent directory is forbidden" >&2; exit 2; }
 [[ "$run_id" =~ ^[a-z0-9][a-z0-9_-]{0,63}$ ]] || { echo "valid run-id required" >&2; exit 2; }
 case "$mode" in --dry-run|--probe|--execute) ;; *) echo "mode must be --dry-run, --probe, or --execute" >&2; exit 2 ;; esac
+[[ "$probe_seed" =~ ^[0-9]+$ ]] || { echo "probe seed must be an unsigned integer" >&2; exit 2; }
 [[ -f "$train8/manifest.json" ]] || { echo "train8 final manifest is not ready" >&2; exit 3; }
 [[ "$(docker image inspect "$image" --format '{{.Id}}')" == "$image_id" ]] \
   || { echo "PhysicsNeMo image ID mismatch" >&2; exit 2; }
@@ -122,7 +124,7 @@ train_cmd=("${base_cmd[@]}" "$image" python -u scripts/spark_gpu_guard.py \
   python -u scripts/train_tandem_fno_rollout.py --config-name "$config" \
   data.prefetch_factor=0 hydra.run.dir=/tmp/hydra hydra.output_subdir=null)
 if [[ "$mode" == --probe ]]; then
-  train_cmd+=(training.epochs=1 training.max_train_batches=1 training.max_validation_batches=1)
+  train_cmd+=(training.epochs=1 training.max_train_batches=1 training.max_validation_batches=1 training.seed="$probe_seed")
 fi
 "${train_cmd[@]}" 2>&1 | tee "$output/train.log"
 [[ "$mode" == --execute ]] || exit 0
