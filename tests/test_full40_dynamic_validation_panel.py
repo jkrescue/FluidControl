@@ -133,3 +133,25 @@ def test_qs1_container_contract_rejects_mutated_resource_or_output() -> None:
     payload["HostConfig"]["Memory"] = 64 * 1024**3
     payload["Mounts"][1]["Source"] = "/tmp/unreviewed-output"
     assert not module.valid_container(payload, contract)
+
+
+def test_serial_runner_is_fixed_fail_stop_and_lock_guarded() -> None:
+    runner = (ROOT / "scripts/run_full40_dynamic6_serial_spark.sh").read_text(
+        encoding="utf-8"
+    )
+    expected = [
+        "full40_dynamic_validation_b01_zero",
+        "full40_dynamic_validation_b01_minus",
+        "full40_dynamic_validation_b01_plus",
+        "full40_dynamic_validation_b05_zero",
+        "full40_dynamic_validation_b05_minus",
+        "full40_dynamic_validation_b05_plus",
+    ]
+    positions = [runner.index(case) for case in expected]
+    assert positions == sorted(positions)
+    assert "set -euo pipefail" in runner
+    assert "flock -n 9" in runner
+    assert 'bash "$runner" "$case" --preflight-only' in runner
+    assert 'bash "$runner" "$case" --execute' in runner
+    assert "EXECUTE_REVIEWED_FULL40_DYNAMIC6_SERIAL" in runner
+    assert '--execute &\n' not in runner
