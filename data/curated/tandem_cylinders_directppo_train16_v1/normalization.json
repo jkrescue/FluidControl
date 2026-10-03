@@ -1,0 +1,57 @@
+{
+  "computed_from": "train split only",
+  "source_scope": "explicit 20-case train manifest only",
+  "state_channels": [
+    "u",
+    "v",
+    "gauge_pressure"
+  ],
+  "state_mean": [
+    0.929789746709105,
+    4.374019421184832e-07,
+    3.132473762581896e-15
+  ],
+  "state_std": [
+    0.26123366234718876,
+    0.2188913321827071,
+    0.11832027697710167
+  ],
+  "state_abs_normalized_channel_max_train": [
+    4.851417037319465,
+    5.574066612984297,
+    9.724466970823455
+  ],
+  "state_abs_normalized_max_train": 9.724466970823455,
+  "state_support_computed_from": "exact train split valid cells",
+  "force_channels": [
+    "rear_cd",
+    "rear_cl"
+  ],
+  "force_mean": [
+    0.8851913852303216,
+    -0.00013177838209514547
+  ],
+  "force_std": [
+    0.19020192905227945,
+    1.2790580300042969
+  ],
+  "all_force_channels": [
+    "front_cd",
+    "front_cl",
+    "rear_cd",
+    "rear_cl"
+  ],
+  "all_force_mean": [
+    1.391179040926375,
+    -7.255949200950202e-05,
+    0.8851913852303216,
+    -0.00013177838209514547
+  ],
+  "all_force_std": [
+    0.010190426322839858,
+    0.3144104436832508,
+    0.19020192905227945,
+    1.2790580300042969
+  ],
+  "train_split_manifest_sha256": "1eaa84f12ebd56e2fc9c4da3b51fa6392e94276fa44f6d2539db66c325296b89"
+}

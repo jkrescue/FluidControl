@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "profile": "directppo_train16_v1",
+  "status": "DIRECTPPO_TRAIN16_TRAIN_ONLY_CURATED",
+  "trajectory_counts": {
+    "train": 16,
+    "validation": 0,
+    "frozen_test": 0
+  },
+  "frames_per_trajectory": 129,
+  "max_abs_omega": 0.75,
+  "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+  "curation_authorization_sha256": "321ae9d3ee4297212f91ee60ad774663c51ec16a16b663f5bccdc6e301d66e56",
+  "vtk_receipt_sha256": {
+    "direct_cfd_directppo2048_v1_env0_ep0002_b00": "bc3e827baff6be1e177003e398eba3d627a476659fa5b8741344b24dcb6d95eb",
+    "direct_cfd_directppo2048_v1_env0_ep0003_b00": "7664d6952077c171c0133c394c948c6cd03176707842044f60e439fba30b2c58",
+    "direct_cfd_directppo2048_v1_env0_ep0004_b00": "b7cbf79f4514eea16bbc2724e6528e14ea524560fed0931d1e69a6a9fc3fa83e",
+    "direct_cfd_directppo2048_v1_env0_ep0005_b00": "7e25b3977b80b8705bef6b4f4be7b90add89422cf2f3427fac85d2920f69485e",
+    "direct_cfd_directppo2048_v1_env0_ep0006_b00": "085f2dc19d2e89f3988fb6879027b1ce3c6ce40888bf5767ac5c7c9758b5585f",
+    "direct_cfd_directppo2048_v1_env0_ep0007_b00": "8cd463996562f22bf8fb1787f8073dcb4dd1063dc38045b39d17a42d686cd94c",
+    "direct_cfd_directppo2048_v1_env0_ep0008_b00": "d40f67b7b3f925c0d8a6c717a5e5ad5ad59e3d0e2168f495698f98003b54300a",
+    "direct_cfd_directppo2048_v1_env0_ep0009_b00": "412bf71bce86666db56cc6382eca56c44d5796b324be38f51eb4213f68854121",
+    "direct_cfd_directppo2048_v1_env1_ep0002_b02": "df7083d0b67f7f6e48277afb59839dd1822a1d1331064c946e30eb6b1050a02f",
+    "direct_cfd_directppo2048_v1_env1_ep0003_b02": "20688639300af493dbb45fc2a5ea0088307d2d6760dd783bae72dfd13447842d",
+    "direct_cfd_directppo2048_v1_env1_ep0004_b02": "90de3eb75d836d1dd14d5edea9c1710232d6077cdfd04182500ad561aa8ff9d0",
+    "direct_cfd_directppo2048_v1_env1_ep0005_b02": "c26c277d8426f2fcfc91bfb173b960ca4dcaf692aec5d0c9696d93cd89c4c1f8",
+    "direct_cfd_directppo2048_v1_env1_ep0006_b02": "aa187b69fbb24c156b9b0ba40f8b4cd9287c496e3305e74a3c8111a5904e0763",
+    "direct_cfd_directppo2048_v1_env1_ep0007_b02": "7f7472547de442795776a8712bc2ed7804d36e30c771ade8f893e3dbb91301a1",
+    "direct_cfd_directppo2048_v1_env1_ep0008_b02": "35eed93d079c6482cef9ed7e124200f2e0a9be02d0650cbf30378f48dd95f6c9",
+    "direct_cfd_directppo2048_v1_env1_ep0009_b02": "677c0aad649824d9ac90c62fa7be94cfc166f599ae6e4fbbdf7b640b4f8dc6c5"
+  },
+  "validation_or_frozen_accessed": false,
+  "source_scope": "historical changing exploratory PPO policies; not final-policy on-policy samples",
+  "endpoint_alignment": "Float32 VTK TimeValue is matched within 1e-5 to each predeclared real CFD endpoint before exact force/action lookup; U/p is unchanged",
+  "hdf_sha256": {
+    "direct_cfd_directppo2048_v1_env0_ep0002_b00.h5": "1830868b5907ac3d53a873e265263da8d462ba72bf85f378a28bdd567bdbafc6",
+    "direct_cfd_directppo2048_v1_env0_ep0003_b00.h5": "f63d9d91f5609358bf73c9e7911ae456410ace45b6c6facf0b0206ee251844f8",
+    "direct_cfd_directppo2048_v1_env0_ep0004_b00.h5": "60a3bec559711da8d01f875f4155b7c787fb1d53ba06704fd7c7bd5440e5c816",
+    "direct_cfd_directppo2048_v1_env0_ep0005_b00.h5": "00cffebb116505b577f69369ba67592f18b293e8ef679af2565924ca660389e6",
+    "direct_cfd_directppo2048_v1_env0_ep0006_b00.h5": "ec9f914eef1ef2114e59a24e68a9eb4263fabeef11bab66ad7bdfb45f16a817b",
+    "direct_cfd_directppo2048_v1_env0_ep0007_b00.h5": "792fbbbedeb1a263995b3b314a54f529d168c415a6256648368eda807aaa533a",
+    "direct_cfd_directppo2048_v1_env0_ep0008_b00.h5": "53492f685155b5ebb1822811d5f281c9f4685d8c2eabfc8a7adec370a3117ee6",
+    "direct_cfd_directppo2048_v1_env0_ep0009_b00.h5": "270c88a8cd9f58c5d6415e850697c92a1b078141c6f9bf3764b008965d6779a6",
+    "direct_cfd_directppo2048_v1_env1_ep0002_b02.h5": "c7da5e744f557a4b7272d446ed1673a6c576ef0cc7acbeac04b9166cd5e7485e",
+    "direct_cfd_directppo2048_v1_env1_ep0003_b02.h5": "3db81c9294685d0d7606f77ae14861bd5d096d3dea63856f002d1ef7d41e4af0",
+    "direct_cfd_directppo2048_v1_env1_ep0004_b02.h5": "cbdd80e888e8a901072094b552b6459bb4869ce99f2ae753f63d9baebd7e8344",
+    "direct_cfd_directppo2048_v1_env1_ep0005_b02.h5": "78eb2618af72744c2533348ecb09a71f94c11273093981894d08adbaa9713725",
+    "direct_cfd_directppo2048_v1_env1_ep0006_b02.h5": "cf261484b061b50cd4ef6ed28a518b9263362498ca4fd9f08dbf46647042f991",
+    "direct_cfd_directppo2048_v1_env1_ep0007_b02.h5": "30ff129169c519c94caaef2a67cc5d1baf579d5c77e17d446148753b6e3f720d",
+    "direct_cfd_directppo2048_v1_env1_ep0008_b02.h5": "5e5c1cefe57bdaed761b33eaee4bbfeda04c86b4017ffe98428fc441db20c2fb",
+    "direct_cfd_directppo2048_v1_env1_ep0009_b02.h5": "c59958b947c8aac477d8f5c11eb46a376f7bd71eb93885a6aca4b40b3a320a74"
+  },
+  "official_pipeline": [
+    "PhysicsNeMo Curator Source/Filter/Sink",
+    "VTKSource",
+    "run_pipeline"
+  ]
+}
