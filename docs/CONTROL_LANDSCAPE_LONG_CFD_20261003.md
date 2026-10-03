@@ -79,3 +79,12 @@ run a matched onset/window replication and inspect cycle-to-cycle statistics.
 These cases have only a coarse-grid check at other conditions, no measured
 wall torque, and no policy feedback. They justify studying a Pareto-constrained
 controller, not claiming one has been achieved.
+
+The pre-existing canonical acceptance rule in `RESEARCH_OBJECTIVE.md` also
+requires absolute mean rear Cl to stay at or below **10% of the uncontrolled
+rear fluctuating Cl RMS**. Here that fixed limit is `0.117904`, while the
+measured magnitudes are `1.06594` (`+1`) and `0.91422` (`-1`): roughly 9.0
+and 7.8 times the permitted value. Both rotations pass the predeclared 2%
+total-drag reduction threshold, but **both fail the mean-lift constraint**.
+They are not Gate-D control successes, even though their fluctuating Cl RMS
+alone is slightly below baseline in this panel.

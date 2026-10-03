@@ -133,3 +133,12 @@ see `CONTROL_RANKING_AUDIT_20261003.md`. This is the decisive present
 surrogate cannot yet be trusted to select the beneficial action. Pause
 surrogate-only PPO/MPC claims, preserve frozen Gate B, and prioritize
 control-aware model validation and train-only real-CFD acquisition.
+
+The canonical objective already locked a separate mean-rear-lift bound:
+`|mean Cl_rear| <= 0.1 * uncontrolled Cl_rear,rms`. In the long matched panel
+that limit is `0.117904`, whereas constant `+1/-1` rotation produces
+`1.06594/0.91422`. Hence **neither constant action satisfies the existing
+physical acceptance criteria**, despite meeting the 2% drag-reduction
+threshold. This strengthens—not weakens—the need for phase-aware time-varying
+control. The scientific question remains valid, but an open-loop drag-only
+result must never be reported as achieving it.
