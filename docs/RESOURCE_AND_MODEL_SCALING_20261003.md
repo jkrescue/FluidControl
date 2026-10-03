@@ -25,6 +25,7 @@
 - 港理工 Zhao、Tang 等的 [2024 年尾流圆柱深度强化学习工作](https://research.polyu.edu.hk/en/publications/mitigating-the-lift-of-a-circular-cylinder-in-wake-flow-using-dee/) 主要关注后方圆柱升力波动抑制。我们添加了**总阻力与平均升力联合约束**，所以不能直接把它报告的升力抑制效果等同于本项目完成。
 - 港理工团队的 [2024 年 FNO/U-Net 混合湍流预测论文](https://ira.lib.polyu.edu.hk/bitstream/10397/111435/1/PhysRevFluids.9.084604.pdf) 说明局部结构可能改善长时间预测，但其三维湍流通道与当前二维串联圆柱及后柱旋转控制并不相同；需要控制变量实验，不应直接迁移结论。
 - [2025 年模型辅助主动流动控制论文](https://doi.org/10.1063/5.0287427) 重视多步预测与模型偏差；[2025 年 CFD/代理交替训练论文](https://www.sciencedirect.com/science/article/pii/S0952197625024996) 给出减少高成本交互的例子。这支持本项目“先测长窗误差、再用 CFD 验证并补有信息量的样本”的路线，但并非现成的本工况性能保证。
+- [2026 年两阶段模型控制预印本](https://arxiv.org/abs/2609.08436) 使用稀疏压力观测控制 Re=100 单圆柱尾流，提示论文下一阶段应认真比较“短时转移 + 局部反馈稳定”的闭环架构。但它是近期预印本、单圆柱且控制器/动作不同，不能把其降阻数字迁移到串联双圆柱案例。
 - 官方 [PhysicsNeMo FNO 文档](https://docs.nvidia.com/physicsnemo/26.03/physicsnemo/api/models/fnos.html) 列明可用的维度与参数。本项目继续以官方实现为准，任何新 API 都先在固定镜像里验证。
 
 ## 近期执行判据
