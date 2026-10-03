@@ -55,3 +55,18 @@ or actuation costs rise. Comparisons must therefore report the trade-off
 instead of a single scalar reward. For model ranking, score all four action
 returns with the selected FNO from the *same source state* and compare their
 ordering with these CFD outcomes, without using the frozen test split.
+
+Once **all four** solver runs finish, the fail-closed analysis checks exact
+frame/force counts, finite values, source-state hashes, solver `End`, Courant
+and continuity histories, and front/rear force timestamp pairing. It
+calculates the predeclared `t=92..116` means and four six-unit block means:
+
+```bash
+python3 -m unittest tests.test_control_landscape_analysis
+python3 cfd/tandem_cylinders/analyze_control_landscape_panel.py \
+  --output artifacts/tandem_cylinders/control_landscape_panel_result_20261003.json
+```
+
+The reported rotation RMS and rate RMS are **kinematic effort proxies**;
+without measured wall torque they must never be called actuator energy or
+net power savings. No case's raw data enter FNO training during this audit.
