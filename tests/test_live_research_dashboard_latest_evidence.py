@@ -488,6 +488,22 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (pair / "raw_pair_timeseries.png").write_bytes(b"png")
+            independent = (
+                root / "artifacts/direct_cfd/directppo2048_b01_eval80_v1"
+            )
+            independent.mkdir(parents=True)
+            (independent / "physical_result.json").write_text(
+                json.dumps(
+                    {
+                        "status": "DIRECT_CFD_B01_FROZEN_PPO_PAIR_EVALUATED",
+                        "comparison": {
+                            "canonical_physical_joint_check": True,
+                            "total_drag_reduction": 0.0425,
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
             with patch.object(MODULE, "_service_state", return_value="active"):
                 result = MODULE._direct_cfd_ppo_status(root)
         self.assertTrue(result["training_complete"])
@@ -504,6 +520,18 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
             result["paired_80d_evaluation"]["figure"]["path"],
             "/direct-cfd-pair.png",
         )
+        self.assertEqual(
+            result["independent_b01_evaluation"]["physical_result"]["status"],
+            "DIRECT_CFD_B01_FROZEN_PPO_PAIR_EVALUATED",
+        )
+        self.assertIn("independent validation-phase", result["independent_b01_evaluation"]["scope"])
+
+    def test_current_cards_label_b5_screen_and_executed_action_ramp(self) -> None:
+        page = MODULE.PAGE
+        self.assertIn("B5有限筛查 FAIL", page)
+        self.assertIn("动作效应符号", page)
+        self.assertIn("b01独立初始相位", page)
+        self.assertIn("不是阶梯保持", page)
 
     def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
