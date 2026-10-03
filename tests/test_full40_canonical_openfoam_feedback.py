@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -85,6 +86,11 @@ def fixture(tmp_path: Path, monkeypatch):
     source.mkdir(parents=True)
     for field in MODULE.STATE_FIELDS:
         (source / field).write_text(f"real-{field}\n")
+    source_case = source.parent
+    for relative in MODULE.SOURCE_CONFIGURATION_FILES:
+        target = source_case / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(f"reviewed-{relative}\n", encoding="utf-8")
     end = start + MODULE.MIN_STEPS * MODULE.CONTROL_INTERVAL
     declaration = {
         "status": "FULL40_CANONICAL_OPENFOAM_FEEDBACK_PREDECLARED_NO_EXECUTION",
@@ -101,6 +107,10 @@ def fixture(tmp_path: Path, monkeypatch):
         "source_restart_time": start,
         "source_state_sha256": {
             field: MODULE.sha256(source / field) for field in MODULE.STATE_FIELDS
+        },
+        "source_configuration_sha256": {
+            relative: MODULE.sha256(source_case / relative)
+            for relative in MODULE.SOURCE_CONFIGURATION_FILES
         },
         "analysis_window": [end - 60.0, end],
         "pair": {
@@ -196,6 +206,25 @@ def test_predeclaration_sha_and_final_60_window_are_immutable(
         )
 
 
+def test_predeclaration_binds_mesh_solver_and_force_configuration(
+    tmp_path, monkeypatch
+) -> None:
+    item = fixture(tmp_path, monkeypatch)
+    control = (
+        MODULE.CASES
+        / "tandem_backward_dt005"
+        / "system"
+        / "controlDict"
+    )
+    control.write_text("tampered force functions\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="configuration differs"):
+        MODULE.validate_predeclaration(
+            item["predeclaration"],
+            MODULE.sha256(item["predeclaration"]),
+            lineage=item["lineage"],
+        )
+
+
 def test_69d_policy_boundary_is_cpu_only_and_sha_bound() -> None:
     policy = MODULE.PROJECT / "artifacts/hydrogym/test/ppo.zip"
     marker = {
@@ -204,27 +233,68 @@ def test_69d_policy_boundary_is_cpu_only_and_sha_bound() -> None:
         "deterministic": True,
         "policy_sha256": "a" * 64,
     }
-    completed = type(
-        "Result",
-        (),
-        {
-            "returncode": 0,
-            "stdout": "CANONICAL_POLICY_ACTION_JSON=" + json.dumps(marker) + "\n",
-            "stderr": "",
-        },
-    )()
-    with patch.object(MODULE.subprocess, "run", return_value=completed) as run:
-        requested, _ = MODULE.infer_action(
-            policy, "a" * 64, np.zeros(69, dtype=np.float32)
-        )
-    assert requested == 0.25
-    command = run.call_args.args[0]
+    process = MagicMock()
+    process.stdin = io.StringIO()
+    process.stdout = io.StringIO(
+        "container startup banner\n"
+        + 2 * ("CANONICAL_POLICY_ACTION_JSON=" + json.dumps(marker) + "\n")
+    )
+    process.wait.return_value = 0
+    selector = MagicMock()
+    selector.__enter__.return_value = selector
+    selector.select.return_value = [(object(), object())]
+    with (
+        patch.object(MODULE.subprocess, "Popen", return_value=process) as popen,
+        patch.object(MODULE.selectors, "DefaultSelector", return_value=selector),
+    ):
+        session = MODULE.PolicyInferenceSession(policy, "a" * 64)
+        first, _ = session.request(np.zeros(69, dtype=np.float32))
+        second, _ = session.request(np.ones(69, dtype=np.float32))
+        request_lines = process.stdin.getvalue().splitlines()
+        session.close()
+    assert first == second == 0.25
+    assert popen.call_count == 1
+    assert len(request_lines) == 2
+    command = popen.call_args.args[0]
     assert "--network" in command and "none" in command
     assert "--read-only" in command
     assert "--gpus" not in command
+    assert "--serve-jsonl" in command
     assert any(
         item.endswith("/infer_full40_canonical_ppo_action.py") for item in command
     )
+
+
+def test_openfoam_pair_containers_start_once_and_exec_each_segment(
+    tmp_path, monkeypatch
+) -> None:
+    monkeypatch.setattr(MODULE, "CASES", tmp_path / "cases")
+    names = ("canonical_ppo_feedback_pair_policy", "canonical_ppo_feedback_pair_zero")
+    for name in names:
+        (MODULE.CASES / name).mkdir(parents=True)
+    completed = MagicMock(returncode=0, stdout="container-id\n", stderr="")
+    processes = [MagicMock(), MagicMock(), MagicMock(), MagicMock()]
+    with (
+        patch.object(MODULE.subprocess, "run", return_value=completed) as run,
+        patch.object(MODULE.subprocess, "Popen", side_effect=processes) as popen,
+        MODULE.OpenFOAMPairSession(names) as session,
+    ):
+        launched_1 = session.launch(1)
+        launched_2 = session.launch(2)
+        for _, handle, _ in launched_1 + launched_2:
+            handle.close()
+    docker_runs = [
+        call.args[0] for call in run.call_args_list if call.args[0][:2] == ["docker", "run"]
+    ]
+    docker_stops = [
+        call.args[0]
+        for call in run.call_args_list
+        if call.args[0][:2] == ["docker", "stop"]
+    ]
+    assert len(docker_runs) == 2
+    assert len(docker_stops) == 2
+    assert popen.call_count == 4
+    assert all(call.args[0][:2] == ["docker", "exec"] for call in popen.call_args_list)
 
 
 def test_action_guard_is_exact_full40_rate_contract() -> None:
@@ -232,3 +302,15 @@ def test_action_guard_is_exact_full40_rate_contract() -> None:
     assert action["applied_omega"] == pytest.approx(0.1)
     assert action["applied_abs_rate"] == pytest.approx(1.0)
     assert action["rate_limited"] is True
+
+
+def test_final_window_requires_every_exact_solver_time(monkeypatch) -> None:
+    monkeypatch.setattr(MODULE, "ANALYSIS_DURATION", 0.02)
+    monkeypatch.setattr(MODULE, "SOLVER_DT", 0.005)
+    grid = np.arange(5, dtype=np.float64) * 0.005 + 10.0
+    front = np.column_stack((grid, np.ones(5), np.zeros(5)))
+    rear = front.copy()
+    MODULE.validate_final_force_grid(front, rear, 10.0)
+    rear[2, 0] += 0.001
+    with pytest.raises(ValueError, match="force grid differs"):
+        MODULE.validate_final_force_grid(front, rear, 10.0)

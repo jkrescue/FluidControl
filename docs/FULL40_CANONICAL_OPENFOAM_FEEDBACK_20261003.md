@@ -38,6 +38,30 @@ Each feedback interval records:
 The zero branch advances from the byte-identical restart in parallel and uses
 the same segmented solver schedule.
 
+## Adapter review and runtime lifecycle
+
+The 2026-10-03 strict review found that the first implementation launched a
+new policy container once per decision and a new solver container once per
+branch and decision.  That would have caused 800 policy image starts and
+1,600 OpenFOAM image starts, even though the numerical work still consisted
+of only 20 solver steps per control interval.  The reviewed implementation
+now loads the exact policy once in one read-only, CPU-only JSON-lines process
+and keeps two pinned OpenFOAM containers alive for the paired branches.  Each
+decision uses one policy request and two `docker exec` solver segments.  The
+container totals are therefore fixed at one policy plus two OpenFOAM starts;
+the evidence file records these counts.  Cleanup occurs on normal completion
+and exceptions.
+
+The online channel order was checked against
+`Full40CanonicalSurrogateFlow.get_observations`: both are exactly
+`32*(u,v), front Cd, front Cl, rear Cd, rear Cl, previous applied omega`.
+Forces are coefficient-file columns `Cd` and `Cl` at the same exact endpoint
+as the probes.  The policy and zero cases are copied from the same five-field
+matched restart, advanced over identical `0.1 D/U` intervals, and the zero
+action stays identically zero.  The final comparison begins only after the
+first `20 D/U` and requires the inclusive `dt=0.005` grid from `start+20` to
+`start+80`; no shorter or post-selected window is accepted.
+
 ## Fail-closed gates
 
 `scripts/run_full40_canonical_ppo_openfoam_feedback.py --dry-run` verifies:
@@ -48,7 +72,8 @@ the same segmented solver schedule.
   full40 manifest, normalization, and FNO checkpoint SHA all agree;
 - a separately reviewed predeclaration file matches an explicitly supplied SHA
   and binds the case pair, source-state five-file hashes, policy/data lineage,
-  800-step schedule, and final-60D/U window;
+  mesh, transport, solver and force-function configuration hashes, 800-step
+  schedule, and final-60D/U window;
 - Spark has at least 40 GiB available memory and 200 GiB disk, Worker has at
   least 40 GiB memory and 100 GiB disk, both nodes are reachable/idle with
   respect to OpenFOAM/Curator work, and pinned OpenFOAM/HydroGym images and

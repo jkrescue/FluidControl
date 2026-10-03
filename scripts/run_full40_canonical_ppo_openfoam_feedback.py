@@ -14,10 +14,13 @@ import hashlib
 import json
 import math
 import os
+import secrets
+import selectors
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 import numpy as np
@@ -62,6 +65,18 @@ SPARK_DISK_FLOOR_GIB = 200.0
 WORKER_DISK_FLOOR_GIB = 100.0
 EXECUTION_TOKEN = "EXECUTE_REVIEWED_CANONICAL_OPENFOAM_FEEDBACK"
 STATE_FIELDS = ("U", "U_0", "p", "phi", "phi_0")
+SOURCE_CONFIGURATION_FILES = (
+    "constant/polyMesh/boundary",
+    "constant/polyMesh/faces",
+    "constant/polyMesh/neighbour",
+    "constant/polyMesh/owner",
+    "constant/polyMesh/points",
+    "constant/transportProperties",
+    "constant/turbulenceProperties",
+    "system/controlDict",
+    "system/fvSchemes",
+    "system/fvSolution",
+)
 
 
 def sha256(path: Path) -> str:
@@ -296,6 +311,18 @@ def validate_predeclaration(
         raise ValueError("source-state hash contract differs")
     if any(not (source / field).is_file() or sha256(source / field) != hashes[field] for field in STATE_FIELDS):
         raise ValueError("source matched-start fields differ")
+    source_case_path = CASES / source_case
+    configuration_hashes = document.get("source_configuration_sha256")
+    if not isinstance(configuration_hashes, dict) or set(configuration_hashes) != set(
+        SOURCE_CONFIGURATION_FILES
+    ):
+        raise ValueError("source mesh/solver configuration hash contract differs")
+    if any(
+        not (source_case_path / relative).is_file()
+        or sha256(source_case_path / relative) != configuration_hashes[relative]
+        for relative in SOURCE_CONFIGURATION_FILES
+    ):
+        raise ValueError("source mesh/solver configuration differs")
     pair = document.get("pair", {})
     names = (pair.get("feedback"), pair.get("zero"))
     if (
@@ -388,65 +415,123 @@ def build_preflight(
     }
 
 
-def infer_action(policy: Path, policy_sha: str, observation: np.ndarray) -> tuple[float, str]:
-    if observation.shape != (69,) or not np.isfinite(observation).all():
-        raise ValueError("expected 69 finite real-CFD channels")
-    relative_policy = policy.resolve().relative_to(PROJECT)
-    command = [
-        "docker",
-        "run",
-        "--rm",
-        "--network",
-        "none",
-        "--read-only",
-        "--tmpfs",
-        "/tmp:rw,nosuid,nodev,size=1g",
-        "--cpus",
-        "2",
-        "--memory",
-        "8g",
-        "--pids-limit",
-        "128",
-        "--user",
-        f"{os.getuid()}:{os.getgid()}",
-        "--env",
-        "HOME=/tmp",
-        "--env",
-        "PYTHONPATH=/workspace/src:/workspace/scripts",
-        "--mount",
-        f"type=bind,src={PROJECT},dst=/workspace,readonly",
-        "--workdir",
-        "/workspace",
-        RUNTIME_IMAGE,
-        "python",
-        "scripts/infer_full40_canonical_ppo_action.py",
-        "--policy",
-        str(Path("/workspace") / relative_policy),
-        "--policy-sha256",
-        policy_sha,
-        "--observation-json",
-        json.dumps(observation.tolist()),
-    ]
-    completed = subprocess.run(
-        command, text=True, capture_output=True, cwd=PROJECT, check=False
-    )
-    if completed.returncode:
-        raise RuntimeError(f"canonical PPO inference failed: {completed.stderr[-1000:]}")
-    markers = [
-        line.partition("CANONICAL_POLICY_ACTION_JSON=")[2]
-        for line in completed.stdout.splitlines()
-        if line.startswith("CANONICAL_POLICY_ACTION_JSON=")
-    ]
-    if len(markers) != 1:
-        raise ValueError("expected exactly one canonical PPO action marker")
-    payload = json.loads(markers[0])
-    if (
-        payload.get("observation_channels") != 69
-        or payload.get("deterministic") is not True
-        or payload.get("policy_sha256") != policy_sha
-    ):
-        raise ValueError("canonical PPO inference metadata differs")
-    return float(payload["requested_omega"]), markers[0]
+class PolicyInferenceSession:
+    """Load the immutable PPO once, then exchange one JSON line per CFD step."""
+
+    def __init__(self, policy: Path, policy_sha: str, timeout: float = 120.0) -> None:
+        relative_policy = policy.resolve().relative_to(PROJECT)
+        self.policy_sha = policy_sha
+        self.timeout = timeout
+        self.command = [
+            "docker",
+            "run",
+            "--rm",
+            "--interactive",
+            "--network",
+            "none",
+            "--read-only",
+            "--tmpfs",
+            "/tmp:rw,nosuid,nodev,size=1g",
+            "--cpus",
+            "2",
+            "--memory",
+            "8g",
+            "--pids-limit",
+            "128",
+            "--user",
+            f"{os.getuid()}:{os.getgid()}",
+            "--env",
+            "HOME=/tmp",
+            "--env",
+            "PYTHONPATH=/workspace/src:/workspace/scripts",
+            "--mount",
+            f"type=bind,src={PROJECT},dst=/workspace,readonly",
+            "--workdir",
+            "/workspace",
+            RUNTIME_IMAGE,
+            "python",
+            "-u",
+            "scripts/infer_full40_canonical_ppo_action.py",
+            "--policy",
+            str(Path("/workspace") / relative_policy),
+            "--policy-sha256",
+            policy_sha,
+            "--serve-jsonl",
+        ]
+        # The session owns this file until ``close``; a lexical context would
+        # close it before the persistent child exits.
+        self.stderr = tempfile.TemporaryFile(  # noqa: SIM115
+            mode="w+", encoding="utf-8"
+        )
+        self.process = subprocess.Popen(
+            self.command,
+            cwd=PROJECT,
+            text=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=self.stderr,
+            bufsize=1,
+        )
+
+    def __enter__(self):
+        return self
+
+    def _error_tail(self) -> str:
+        self.stderr.flush()
+        self.stderr.seek(0)
+        return self.stderr.read()[-1000:]
+
+    def request(self, observation: np.ndarray) -> tuple[float, str]:
+        if observation.shape != (69,) or not np.isfinite(observation).all():
+            raise ValueError("expected 69 finite real-CFD channels")
+        if self.process.stdin is None or self.process.stdout is None:
+            raise RuntimeError("canonical PPO inference pipes are unavailable")
+        self.process.stdin.write(json.dumps(observation.tolist()) + "\n")
+        self.process.stdin.flush()
+        prefix = "CANONICAL_POLICY_ACTION_JSON="
+        deadline = time.monotonic() + self.timeout
+        with selectors.DefaultSelector() as selector:
+            selector.register(self.process.stdout, selectors.EVENT_READ)
+            while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0 or not selector.select(remaining):
+                    raise TimeoutError("canonical PPO inference timed out")
+                line = self.process.stdout.readline()
+                if not line:
+                    raise RuntimeError(
+                        "canonical PPO inference exited before a response: "
+                        + self._error_tail()
+                    )
+                if line.startswith(prefix):
+                    break
+        marker = line.partition(prefix)[2].strip()
+        payload = json.loads(marker)
+        if (
+            payload.get("observation_channels") != 69
+            or payload.get("deterministic") is not True
+            or payload.get("policy_sha256") != self.policy_sha
+        ):
+            raise ValueError("canonical PPO inference metadata differs")
+        return float(payload["requested_omega"]), marker
+
+    def close(self) -> None:
+        if self.process.stdin is not None and not self.process.stdin.closed:
+            self.process.stdin.close()
+        try:
+            code = self.process.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            self.process.terminate()
+            code = self.process.wait(timeout=10)
+        self.stderr.close()
+        if code != 0:
+            raise RuntimeError(f"canonical PPO inference exited with {code}")
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        try:
+            self.close()
+        except RuntimeError:
+            if exc_type is None:
+                raise
 
 
 def stage_case(name: str, source_case: str, start: float, steps: int, role: str) -> Path:
@@ -508,26 +593,110 @@ def configure_interval(case: Path, start: float, end: float, before: float, afte
     substitute(case / "system/controlDict", "endTime", end)
 
 
-def launch_pair(names: tuple[str, str], step: int) -> list[tuple[subprocess.Popen, object, Path]]:
-    launched = []
-    for name in names:
-        case = CASES / name
-        log = case / f"log.pimpleFoam.canonical_feedback_{step:04d}"
-        if log.exists():
-            raise FileExistsError(log)
-        handle = log.open("w", encoding="utf-8")
-        command = [
-            "bash",
-            str(CFD / "run_openfoam.sh"),
-            "pimpleFoam",
-            "-case",
-            f"/case/cases/{name}",
-        ]
-        process = subprocess.Popen(
-            command, cwd=PROJECT, stdout=handle, stderr=subprocess.STDOUT
+class OpenFOAMPairSession:
+    """Keep two pinned solver containers alive across all 800 short segments."""
+
+    def __init__(self, names: tuple[str, str]) -> None:
+        token = f"{os.getpid()}-{secrets.token_hex(4)}"
+        self.names = names
+        self.containers = tuple(
+            f"canonical-feedback-{token}-{index}" for index in range(len(names))
         )
-        launched.append((process, handle, log))
-    return launched
+        self.started: list[str] = []
+
+    def __enter__(self):
+        try:
+            for container in self.containers:
+                command = [
+                    "docker",
+                    "run",
+                    "--rm",
+                    "--detach",
+                    "--name",
+                    container,
+                    "--network",
+                    "none",
+                    "--read-only",
+                    "--tmpfs",
+                    "/tmp:rw,nosuid,nodev,size=512m",
+                    "--cpus",
+                    "4",
+                    "--memory",
+                    "8g",
+                    "--pids-limit",
+                    "128",
+                    "--cap-drop",
+                    "ALL",
+                    "--security-opt",
+                    "no-new-privileges",
+                    "--user",
+                    f"{os.getuid()}:{os.getgid()}",
+                    "--mount",
+                    f"type=bind,src={CFD},dst=/case",
+                    "--workdir",
+                    "/case",
+                    OPENFOAM_IMAGE,
+                    "sh",
+                    "-c",
+                    "while :; do sleep 3600; done",
+                ]
+                completed = subprocess.run(
+                    command, cwd=PROJECT, text=True, capture_output=True, check=False
+                )
+                if completed.returncode != 0:
+                    raise RuntimeError(
+                        "persistent OpenFOAM container failed: "
+                        + completed.stderr[-1000:]
+                    )
+                self.started.append(container)
+        except Exception:
+            self.close()
+            raise
+        return self
+
+    def launch(self, step: int) -> list[tuple[subprocess.Popen, object, Path]]:
+        launched = []
+        for name, container in zip(self.names, self.containers, strict=True):
+            case = CASES / name
+            log = case / f"log.pimpleFoam.canonical_feedback_{step:04d}"
+            if log.exists():
+                raise FileExistsError(log)
+            handle = log.open("w", encoding="utf-8")
+            command = [
+                "docker",
+                "exec",
+                container,
+                "pimpleFoam",
+                "-case",
+                f"/case/cases/{name}",
+            ]
+            try:
+                process = subprocess.Popen(
+                    command, cwd=PROJECT, stdout=handle, stderr=subprocess.STDOUT
+                )
+            except Exception:
+                handle.close()
+                for earlier, earlier_handle, _ in launched:
+                    earlier.terminate()
+                    earlier.wait(timeout=10)
+                    earlier_handle.close()
+                raise
+            launched.append((process, handle, log))
+        return launched
+
+    def close(self) -> None:
+        for container in reversed(self.started):
+            subprocess.run(
+                ["docker", "stop", "--time", "10", container],
+                cwd=PROJECT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+        self.started.clear()
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        self.close()
 
 
 def check_segment(case: Path, log: Path, end: float) -> dict:
@@ -542,6 +711,18 @@ def check_segment(case: Path, log: Path, end: float) -> dict:
     ):
         raise ValueError(f"unsafe OpenFOAM segment: {case.name}: {health}")
     return health
+
+
+def validate_final_force_grid(front: np.ndarray, rear: np.ndarray, begin: float) -> None:
+    expected = round(ANALYSIS_DURATION / SOLVER_DT) + 1
+    expected_grid = begin + np.arange(expected, dtype=np.float64) * SOLVER_DT
+    if (
+        len(front) != expected
+        or len(rear) != expected
+        or not np.allclose(front[:, 0], expected_grid, rtol=0.0, atol=1e-8)
+        or not np.allclose(rear[:, 0], expected_grid, rtol=0.0, atol=1e-8)
+    ):
+        raise ValueError("final 60D/U force grid differs")
 
 
 def run_feedback(
@@ -571,95 +752,102 @@ def run_feedback(
     )
     previous = 0.0
     rows = []
-    for step in range(1, steps + 1):
-        if available_memory_gib() < SPARK_MEMORY_FLOOR_GIB:
-            raise RuntimeError("Spark MemAvailable fell below 40 GiB")
-        interval_start = round(start + CONTROL_INTERVAL * (step - 1), 10)
-        interval_end = round(interval_start + CONTROL_INTERVAL, 10)
-        if not all(
-            math.isclose(latest_time(case), interval_start, abs_tol=2e-6)
-            for case in cases
-        ):
-            raise ValueError(f"paired restart mismatch before step {step}")
-        input_sha = array_sha256(observation)
-        requested, marker = infer_action(policy, lineage["policy_sha256"], observation)
-        action = apply_action_rate_limit(requested, previous)
-        applied = float(action["applied_omega"])
-        configure_interval(cases[0], interval_start, interval_end, previous, applied)
-        configure_interval(cases[1], interval_start, interval_end, 0.0, 0.0)
-        launched = launch_pair(names, step)
-        try:
-            codes = [process.wait() for process, _, _ in launched]
-        finally:
-            for _, handle, _ in launched:
-                handle.close()
-        if any(codes):
-            raise RuntimeError(f"paired OpenFOAM segment failed: {codes}")
-        health = {
-            name: check_segment(case, log, interval_end)
-            for name, case, (_, _, log) in zip(names, cases, launched, strict=True)
-        }
-        observation, feedback_sources = total_drag_observation_at(
-            cases[0], interval_end, applied
-        )
-        zero_observation, zero_sources = total_drag_observation_at(
-            cases[1], interval_end, 0.0
-        )
-        row = {
-            "step": step,
-            "start_time": interval_start,
-            "end_time": interval_end,
-            "input_observation_sha256": input_sha,
-            "output_observation_sha256": array_sha256(observation),
-            "policy_marker": marker,
-            **action,
-            "feedback_forces": {
-                key: float(observation[index])
-                for key, index in zip(
-                    ("front_cd", "front_cl", "rear_cd", "rear_cl"),
-                    range(64, 68),
-                    strict=True,
+    with PolicyInferenceSession(
+        policy, lineage["policy_sha256"]
+    ) as inference, OpenFOAMPairSession(names) as solvers:
+        for step in range(1, steps + 1):
+            if available_memory_gib() < SPARK_MEMORY_FLOOR_GIB:
+                raise RuntimeError("Spark MemAvailable fell below 40 GiB")
+            interval_start = round(start + CONTROL_INTERVAL * (step - 1), 10)
+            interval_end = round(interval_start + CONTROL_INTERVAL, 10)
+            if not all(
+                math.isclose(latest_time(case), interval_start, abs_tol=2e-6)
+                for case in cases
+            ):
+                raise ValueError(f"paired restart mismatch before step {step}")
+            input_sha = array_sha256(observation)
+            requested, marker = inference.request(observation)
+            action = apply_action_rate_limit(requested, previous)
+            applied = float(action["applied_omega"])
+            configure_interval(cases[0], interval_start, interval_end, previous, applied)
+            configure_interval(cases[1], interval_start, interval_end, 0.0, 0.0)
+            boundary_sha256 = {
+                name: sha256(case / f"{interval_start:g}" / "U")
+                for name, case in zip(names, cases, strict=True)
+            }
+            launched = solvers.launch(step)
+            try:
+                codes = [process.wait() for process, _, _ in launched]
+            finally:
+                for _, handle, _ in launched:
+                    handle.close()
+            if any(codes):
+                raise RuntimeError(f"paired OpenFOAM segment failed: {codes}")
+            health = {
+                name: check_segment(case, log, interval_end)
+                for name, case, (_, _, log) in zip(
+                    names, cases, launched, strict=True
                 )
-            },
-            "zero_forces": {
-                key: float(zero_observation[index])
-                for key, index in zip(
-                    ("front_cd", "front_cl", "rear_cd", "rear_cl"),
-                    range(64, 68),
-                    strict=True,
-                )
-            },
-            "observation_sources": {
-                "feedback": feedback_sources,
-                "zero": zero_sources,
-            },
-            "solver_health": health,
-        }
-        rows.append(row)
-        previous = applied
-        write_atomic(
-            output / "progress.json",
-            {
-                "status": "CANONICAL_REAL_OPENFOAM_FEEDBACK_RUNNING",
-                "completed_steps": step,
-                "lineage": lineage,
-                "rows": rows,
-            },
-        )
+            }
+            observation, feedback_sources = total_drag_observation_at(
+                cases[0], interval_end, applied
+            )
+            zero_observation, zero_sources = total_drag_observation_at(
+                cases[1], interval_end, 0.0
+            )
+            row = {
+                "step": step,
+                "start_time": interval_start,
+                "end_time": interval_end,
+                "input_observation_sha256": input_sha,
+                "output_observation_sha256": array_sha256(observation),
+                "policy_marker": marker,
+                "applied_boundary_U_sha256": boundary_sha256,
+                **action,
+                "feedback_forces": {
+                    key: float(observation[index])
+                    for key, index in zip(
+                        ("front_cd", "front_cl", "rear_cd", "rear_cl"),
+                        range(64, 68),
+                        strict=True,
+                    )
+                },
+                "zero_forces": {
+                    key: float(zero_observation[index])
+                    for key, index in zip(
+                        ("front_cd", "front_cl", "rear_cd", "rear_cl"),
+                        range(64, 68),
+                        strict=True,
+                    )
+                },
+                "observation_sources": {
+                    "feedback": feedback_sources,
+                    "zero": zero_sources,
+                },
+                "solver_health": health,
+            }
+            rows.append(row)
+            previous = applied
+            write_atomic(
+                output / "progress.json",
+                {
+                    "status": "CANONICAL_REAL_OPENFOAM_FEEDBACK_RUNNING",
+                    "completed_steps": step,
+                    "lineage": lineage,
+                    "runtime_reuse": {
+                        "policy_container_starts": 1,
+                        "openfoam_container_starts": 2,
+                    },
+                    "rows": rows,
+                },
+            )
     end = start + steps * CONTROL_INTERVAL
     begin = end - ANALYSIS_DURATION
     metrics = {}
     for label, case in zip(("feedback", "zero"), cases, strict=True):
         front = read_force_window(case, "forceFront", begin, end)
         rear = read_force_window(case, "forceRear", begin, end)
-        expected = round(ANALYSIS_DURATION / SOLVER_DT) + 1
-        if (
-            len(front) != expected
-            or len(rear) != expected
-            or not math.isclose(front[0, 0], begin, abs_tol=1e-8)
-            or not math.isclose(front[-1, 0], end, abs_tol=1e-8)
-        ):
-            raise ValueError("final 60D/U force grid differs")
+        validate_final_force_grid(front, rear, begin)
         metrics[label] = force_metrics(front, rear)
     comparison = compare_metrics(metrics["feedback"], metrics["zero"])
     omega = np.asarray([row["applied_omega"] for row in rows])
@@ -676,6 +864,11 @@ def run_feedback(
         "initial_observation_sources": initial_sources,
         "steps": steps,
         "analysis_window": [begin, end],
+        "runtime_reuse": {
+            "policy_container_starts": 1,
+            "openfoam_container_starts": 2,
+            "openfoam_exec_segments": 2 * steps,
+        },
         "metrics": metrics,
         "canonical_comparison": comparison,
         "canonical_joint_gate_pass": comparison["canonical_physical_joint_check"],
