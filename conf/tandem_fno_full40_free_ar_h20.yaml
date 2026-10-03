@@ -1,0 +1,26 @@
+defaults:
+  - tandem_fno_full40_h20
+  - _self_
+
+# Controlled continuation of qs1 e5, using the unchanged official FNO.
+# Validation selects by free H100 terminal error, while the scientific
+# acceptance still requires the separate unchanged full evaluation.
+output_dir: artifacts/tandem_fno_full40_free_ar_h20
+training:
+  epochs: 8
+  batch_size: 4
+  workers: 4
+  gpu_memory_fraction: 0.25
+  learning_rate: 1.0e-5
+  teacher_forcing_start: 0.0
+  teacher_forcing_end: 0.0
+  teacher_forcing_epochs: 1
+  rollout_steps: 20
+  validation_rollout_steps: 100
+  train_stride: 10
+  validation_stride: 100
+  checkpoint_interval: 1
+  checkpoint_keep_last: 8
+  best_checkpoint_keep_last: 1
+  initial_checkpoint: artifacts/tandem_fno_full40_dev30_quickscreen_h20_qs1/best
+  seed: 20261003

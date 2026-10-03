@@ -148,6 +148,11 @@ def main(cfg: DictConfig) -> None:
 
     smoke = bool(cfg.training.smoke)
     rollout_steps = 2 if smoke else int(cfg.training.rollout_steps)
+    validation_rollout_steps = (
+        rollout_steps if smoke else int(cfg.training.get("validation_rollout_steps", rollout_steps))
+    )
+    if validation_rollout_steps < 1:
+        raise ValueError("validation_rollout_steps must be positive")
     force_indices = configured_force_indices(cfg)
     if int(cfg.model.out_channels) != 3 + len(force_indices):
         raise ValueError("model.out_channels must equal 3 + number of force targets")
@@ -163,7 +168,7 @@ def main(cfg: DictConfig) -> None:
     validation = TandemRolloutDataset(
         cfg.data.root,
         "validation",
-        rollout_steps,
+        validation_rollout_steps,
         stride=64 if smoke else int(cfg.training.validation_stride),
         num_workers=cfg.training.workers,
         force_indices=force_indices,
@@ -237,7 +242,10 @@ def main(cfg: DictConfig) -> None:
         ).sum(dim=2)
         field_loss = (field_by_step * weights[None]).sum(dim=1).mean()
         force_loss = (force_by_step * weights[None]).sum(dim=1).mean()
-        return field_loss + float(cfg.training.force_loss_weight) * force_loss
+        loss = field_loss + float(cfg.training.force_loss_weight) * force_loss
+        if not torch.isfinite(loss):
+            raise FloatingPointError("Non-finite autoregressive training loss; refusing optimizer update")
+        return loss
 
     @StaticCaptureEvaluateNoGrad(
         model=network,
@@ -381,6 +389,7 @@ def main(cfg: DictConfig) -> None:
             "best_rollout_score": best,
             "validation": metrics,
             "rollout_steps": rollout_steps,
+            "validation_rollout_steps": validation_rollout_steps,
             "teacher_forcing_ratio": current_teacher_forcing,
             "initialized_from": initialized_from,
             "action_scale": train.action_scale,
@@ -418,6 +427,8 @@ def main(cfg: DictConfig) -> None:
                 "epoch": epoch,
                 "train_loss": train_loss,
                 "teacher_forcing_ratio": current_teacher_forcing,
+                "train_rollout_steps": rollout_steps,
+                "validation_rollout_steps": validation_rollout_steps,
                 "selection_score": score,
                 **metrics,
             }

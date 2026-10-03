@@ -368,6 +368,7 @@ def main() -> None:
     parser.add_argument(
         "--candidate-kind",
         choices=(
+            "dev30_free_ar_development",
             "dev30_h20_development",
             "dev30_quickscreen_h20_stage_candidate",
         ),

@@ -1,0 +1,8 @@
+defaults:
+  - tandem_fno_full40_free_ar_h20
+  - _self_
+
+output_dir: artifacts/tandem_fno_full40_free_ar_h50
+training:
+  rollout_steps: 50
+  gpu_memory_fraction: 0.45
