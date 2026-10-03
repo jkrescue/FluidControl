@@ -59,6 +59,11 @@ def test_config_and_runner_are_immutable_parent_guarded():
     assert 'audit_dev30_validation_diagnostic.py' in runner
     assert 'audit_full40_dynamic6_fno.py' in runner
     assert '--segment-stride 1 --evaluation-batch-size 8' in runner
+    assert '--data /workspace/devdata --normalization-data /workspace/devdata' in runner
+    assert '--data /workspace/dynamic --normalization-data /workspace/devdata' in runner
+    assert "DYNAMIC6_REAL_HDF_PREFLIGHT_PASS" in runner
+    assert "dynamic6 requires six regular validation HDF files" in runner
+    assert "handle['state'].shape!=(201,3,128,256)" in runner
     assert 'artifacts/tandem_fno_dynamic_train8_${horizon}_${run_id}' in runner
     assert 'training.max_train_batches=1 training.max_validation_batches=1' in runner
     assert 'DYNAMIC_TRAIN8_FNO_PROBE_SEED:-20261003' in runner

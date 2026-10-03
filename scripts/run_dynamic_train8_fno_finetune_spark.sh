@@ -145,8 +145,9 @@ PY
 )
 mkdir "$output/validation10" "$output/dynamic6"
 "${base_cmd[@]}" --mount "type=bind,src=$best,dst=/workspace/checkpoint,readonly" \
+  --mount "type=bind,src=$base,dst=/workspace/devdata,readonly" \
   "$image" python -u scripts/spark_gpu_guard.py --min-free-gib 20 --allocator-fraction .15 --margin-gib 4 -- \
-  python -u scripts/evaluate_tandem_fno.py --data /workspace/base --normalization-data /workspace/base \
+  python -u scripts/evaluate_tandem_fno.py --data /workspace/devdata --normalization-data /workspace/devdata \
   --config /workspace/conf/tandem_fno_full40_h20.yaml --checkpoint-dir /workspace/checkpoint \
   --split validation --horizons 1 10 50 100 --segment-stride 25 --evaluation-batch-size 4 \
   --action-mode observed --visualizations-per-horizon 0 --output /workspace/output/validation10/evaluation.json \
@@ -157,10 +158,33 @@ python3 scripts/audit_dev30_validation_diagnostic.py \
   --output "$output/validation10/diagnostic.json"
 
 dynamic="$root/data/curated/tandem_cylinders_full40_dynamic_validation_v1"
+docker run --rm --network none --cpus 1 --memory 4g --pids-limit 128 \
+  --cap-drop ALL --security-opt no-new-privileges --read-only \
+  --tmpfs /tmp:rw,nosuid,nodev,size=256m --user "$(id -u):$(id -g)" \
+  --env HOME=/tmp --mount "type=bind,src=$dynamic,dst=/workspace/dynamic,readonly" \
+  "$image" python - <<'PY'
+import hashlib,h5py,json,sys
+from pathlib import Path
+root=Path('/workspace/dynamic')
+manifest=json.loads((root/'manifest.json').read_text())
+paths=sorted((root/'validation').glob('*.h5'))
+if len(paths)!=6 or any(path.is_symlink() for path in paths):
+    raise SystemExit('dynamic6 requires six regular validation HDF files')
+expected=manifest.get('hdf_sha256',{})
+for path in paths:
+    digest=hashlib.sha256(path.read_bytes()).hexdigest()
+    if expected.get(path.name)!=digest:
+        raise SystemExit(f'dynamic6 HDF SHA differs: {path.name}')
+    with h5py.File(path) as handle:
+        if handle['state'].shape!=(201,3,128,256) or handle['time'].shape!=(201,1):
+            raise SystemExit(f'dynamic6 HDF shape differs: {path.name}')
+print('DYNAMIC6_REAL_HDF_PREFLIGHT_PASS')
+PY
 "${base_cmd[@]}" --mount "type=bind,src=$dynamic,dst=/workspace/dynamic,readonly" \
+  --mount "type=bind,src=$base,dst=/workspace/devdata,readonly" \
   --mount "type=bind,src=$best,dst=/workspace/checkpoint,readonly" \
   "$image" python -u scripts/spark_gpu_guard.py --min-free-gib 20 --allocator-fraction .15 --margin-gib 4 -- \
-  python -u scripts/evaluate_tandem_fno.py --data /workspace/dynamic --normalization-data /workspace/base \
+  python -u scripts/evaluate_tandem_fno.py --data /workspace/dynamic --normalization-data /workspace/devdata \
   --config /workspace/conf/tandem_fno_full40_h20.yaml --checkpoint-dir /workspace/checkpoint \
   --split validation --horizons 1 10 50 100 --segment-stride 1 --evaluation-batch-size 8 \
   --action-mode observed --visualizations-per-horizon 0 --output /workspace/output/dynamic6/evaluation.json \
