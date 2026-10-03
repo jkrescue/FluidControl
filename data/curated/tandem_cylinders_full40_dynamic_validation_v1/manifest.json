@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "profile": "full40_dynamic_validation_v1",
+  "status": "DYNAMIC6_VALIDATION_ONLY_CURATED",
+  "trajectory_counts": {
+    "train": 0,
+    "validation": 6,
+    "frozen_test": 0
+  },
+  "frames_per_trajectory": 201,
+  "pairs_per_trajectory": 200,
+  "max_abs_omega": 0.75,
+  "force_channels": [
+    "front_cd",
+    "front_cl",
+    "rear_cd",
+    "rear_cl"
+  ],
+  "curation_authorization_sha256": "c25ce1905fc53e22e386637d651b02b1d36b2609560a7477854cda423017e988",
+  "normalization_reference": "data/curated/tandem_cylinders_matched_start_full40_v1",
+  "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+  "full40_manifest_sha256": "1c9086b4d08da57e84fb4f6a22376f0935596727952a50c55acb1a130e77e90e",
+  "training_access": "FORBIDDEN",
+  "frozen_test_accessed": false,
+  "hdf_sha256": {
+    "full40_dynamic_validation_b01_minus.h5": "cb7c53dd21263e6a91e5bbb8af6152dc6d44628b027b5ddb8ec459d6dadad916",
+    "full40_dynamic_validation_b01_plus.h5": "03836993a569f8bf666b675fc0b491d5c385c66ed58b00545e29d4707e5e1429",
+    "full40_dynamic_validation_b01_zero.h5": "751af4a87ccf22d5eb0f3b42963cb7e6734f03f89b0cd0563fbdd79289ba6a0f",
+    "full40_dynamic_validation_b05_minus.h5": "c8f53487d636e83edb69383177aaa192d50b056dcad9e031352a36a767ce2419",
+    "full40_dynamic_validation_b05_plus.h5": "b3ea9f278cf36f36927773a9695d8d73db9caf6f12248fc243df6e3a475f36df",
+    "full40_dynamic_validation_b05_zero.h5": "0b45eeb50fa998573bb967bb9c2d4cf99a70a0e1968f0bd58ee0e26e3e8b6475"
+  },
+  "official_pipeline": [
+    "physicsnemo_curator Source/Filter/Sink",
+    "VTKSource + PhysicsNeMo Mesh/BVH",
+    "run_pipeline"
+  ]
+}
