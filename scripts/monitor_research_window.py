@@ -104,6 +104,7 @@ def sample(deadline: datetime) -> dict:
         "worker_multistep": read_audit("artifacts/distributed_runs/gateb_aug_v3_rollout_seed20261005_20261002/formal/tandem_fno_gate_b_aug_v3_rollout_seed20261005_10epoch/gate_b_audit.json"),
         "rear_drag_weighted": read_audit("artifacts/tandem_fno_gate_b_aug_v3_rear_drag_seed20261007_10epoch/gate_b_audit.json"),
         "primary_seed_h20": read_audit("artifacts/distributed_runs/gateb_aug_v3_rollout_h20_seed20261002_dense_20261002/formal/tandem_fno_gate_b_aug_v3_rollout_h20_seed20261002_dense_10epoch/gate_b_audit.json"),
+        "combined_h20_rear_drag": read_audit("artifacts/distributed_runs/gateb_aug_v3_h20_rear_drag_seed20261002_20261003/formal/tandem_fno_gate_b_aug_v3_h20_rear_drag_seed20261002_10epoch/gate_b_audit.json"),
     }
     alerts = []
     for name, host in (("primary", primary), ("worker", worker)):
@@ -152,6 +153,7 @@ def sample(deadline: datetime) -> dict:
         ("artifacts/distributed_runs/gateb_aug_v3_rollout_h20_seed20261005_20261002/formal/MULTISTEP_GATE_B_FAILED", "worker_h20_finalizer_failed"),
         ("artifacts/tandem_cylinders/GATE_B_AUG_V3_REAR_DRAG_FINALIZE_FAILED", "rear_drag_finalizer_failed"),
         ("artifacts/distributed_runs/gateb_aug_v3_rollout_h20_seed20261002_dense_20261002/formal/MULTISTEP_GATE_B_FAILED", "primary_seed_h20_finalizer_failed"),
+        ("artifacts/distributed_runs/gateb_aug_v3_h20_rear_drag_seed20261002_20261003/formal/MULTISTEP_GATE_B_FAILED", "combined_h20_rear_drag_finalizer_failed"),
     ):
         if (ROOT / marker).exists():
             alerts.append(name)

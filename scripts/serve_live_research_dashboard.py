@@ -28,6 +28,7 @@ V3_PRIMARY_ROLLOUT_RUN = Path("artifacts/tandem_fno_gate_b_aug_v3_rollout_seed20
 V3_REAR_WEIGHTED_RUN = Path("artifacts/tandem_fno_gate_b_aug_v3_rear_drag_seed20261007_10epoch")
 V3_H20_RUN = Path("artifacts/distributed_runs/gateb_aug_v3_rollout_h20_seed20261005_20261002/formal/tandem_fno_gate_b_aug_v3_rollout_h20_seed20261005_10epoch")
 V3_PRIMARY_SEED_H20_RUN = Path("artifacts/distributed_runs/gateb_aug_v3_rollout_h20_seed20261002_dense_20261002/formal/tandem_fno_gate_b_aug_v3_rollout_h20_seed20261002_dense_10epoch")
+V3_H20_REAR_DRAG_RUN = Path("artifacts/distributed_runs/gateb_aug_v3_h20_rear_drag_seed20261002_20261003/formal/tandem_fno_gate_b_aug_v3_h20_rear_drag_seed20261002_10epoch")
 OLD = Path("artifacts/tandem_fno_total_drag_spark_30epoch")
 SAMPLE_FILE = Path("artifacts/monitor/live_resource_samples.jsonl")
 HOST_COMMAND = (
@@ -101,7 +102,7 @@ function resources(name,items){let last=items.at(-1);if(!last)return;
  $(name+'-more').textContent=`采样时间 ${last.time} · GPU ${num(last.temp_c,0)}°C`;
  plot(name+'-chart',[{values:items.map(x=>x.gpu),color:'#60c9fb'},{values:items.map(x=>x.cpu),color:'#e9ae68'}])}
 function figure(){if(!latest)return;let key=$('case').value+'/'+$('horizon').value;let found=latest.figures[key];if(found){$('flow').src=found.path+'?v='+found.version;$('flow').hidden=false;$('figure-label').textContent=found.label}else{$('flow').hidden=true;$('figure-label').textContent='该工况暂无导出的对照图'}}
-function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' · 页面每 5 秒更新';let candidates=[{label:'主节点种子 20 步训练',audit:d.v3_primary_seed_h20_audit,observed:d.v3_primary_seed_h20_observed},{label:'主节点后圆柱加权训练',audit:d.v3_rear_weighted_audit,observed:d.v3_rear_weighted_observed},{label:'计算节点种子 20 步训练',audit:d.v3_h20_audit,observed:d.v3_h20_observed},{label:'主节点 10 步训练',audit:d.v3_primary_rollout_audit,observed:d.v3_primary_rollout_observed},{label:'计算节点 10 步训练',audit:d.v3_rollout_audit,observed:d.v3_rollout_observed},{label:'主节点单步训练',audit:d.v3_audit,observed:d.v3_observed},{label:'计算节点单步训练',audit:d.v3_worker_audit,observed:d.v3_worker_observed}];let picked=candidates.find(x=>x.audit?.status==='GATE_B_PASS')||candidates.find(x=>x.observed)||candidates.find(x=>x.audit);let audited=picked?.audit,a=audited||d.audit,c=a?.checks||{};
+function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' · 页面每 5 秒更新';let candidates=[{label:'20 步＋后柱阻力加权训练',audit:d.v3_h20_rear_drag_audit,observed:d.v3_h20_rear_drag_observed},{label:'主节点种子 20 步训练',audit:d.v3_primary_seed_h20_audit,observed:d.v3_primary_seed_h20_observed},{label:'主节点后圆柱加权训练',audit:d.v3_rear_weighted_audit,observed:d.v3_rear_weighted_observed},{label:'计算节点种子 20 步训练',audit:d.v3_h20_audit,observed:d.v3_h20_observed},{label:'主节点 10 步训练',audit:d.v3_primary_rollout_audit,observed:d.v3_primary_rollout_observed},{label:'计算节点 10 步训练',audit:d.v3_rollout_audit,observed:d.v3_rollout_observed},{label:'主节点单步训练',audit:d.v3_audit,observed:d.v3_observed},{label:'计算节点单步训练',audit:d.v3_worker_audit,observed:d.v3_worker_observed}];let picked=candidates.find(x=>x.audit?.status==='GATE_B_PASS')||candidates.find(x=>x.observed)||candidates.find(x=>x.audit);let audited=picked?.audit,a=audited||d.audit,c=a?.checks||{};
  let observed=picked?.observed,preliminary=observed?.summary?.['100']?.total_drag_nrmse;
  let b=audited?c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse:(Number.isFinite(preliminary)?preliminary:c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse),i=c.independent_phase_full_period_total_drag_nrmse?.total_drag_nrmse;
  $('heldout').textContent=pct(b);$('heldout').className=audited&&Number.isFinite(b)&&b<=.1?'good':Number.isFinite(b)&&b>.1?'bad':'';
@@ -318,6 +319,9 @@ class Handler(BaseHTTPRequestHandler):
             data["v3_rear_weighted_validation_mid"] = _read_json(self.root / V3_REAR_WEIGHTED_RUN / "validation_epoch5_long_horizon.json", None)
             data["v3_primary_seed_h20_observed"] = _read_json(self.root / V3_PRIMARY_SEED_H20_RUN / "heldout_evaluation.json", None)
             data["v3_primary_seed_h20_audit"] = _read_json(self.root / V3_PRIMARY_SEED_H20_RUN / "gate_b_audit.json", None)
+            data["v3_h20_rear_drag_observed"] = _read_json(self.root / V3_H20_REAR_DRAG_RUN / "heldout_evaluation.json", None)
+            data["v3_h20_rear_drag_audit"] = _read_json(self.root / V3_H20_REAR_DRAG_RUN / "gate_b_audit.json", None)
+            data["v3_h20_rear_drag_validation_decision"] = _read_json(self.root / V3_H20_REAR_DRAG_RUN / "validation_decision.json", None)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
 
