@@ -22,7 +22,7 @@ RAW_QC = Path("artifacts/tandem_cylinders/dynamic_train8_real_cfd_qc_20261003.js
 AUTH = Path("artifacts/tandem_cylinders/dynamic_train8_curation_authorization_20261003.json")
 VTK_RECEIPTS = Path("artifacts/tandem_cylinders/dynamic_train8_vtk_ready")
 OUTPUT = Path("data/curated/tandem_cylinders_dynamic_train8_v1")
-FULL40 = Path("data/curated/tandem_cylinders_matched_start_full40_v1")
+FULL40 = Path("data/curated/tandem_cylinders_matched_start_full40_dev30_v1")
 BASE = Path("scripts/curate_low_action_phase94_validation.py")
 FORCE_SHA = {
     "forceFront": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
@@ -203,6 +203,19 @@ def checked_vtk_receipt(repo: Path, name: str) -> None:
         raise ValueError(f"stale VTK receipt: {name}")
 
 
+def inject_authorized_run_window(config: dict, authorization: dict) -> dict:
+    """Map the reviewed run window into the base Curator time contract."""
+    window = authorization.get("run_window")
+    if not isinstance(window, list) or len(window) != 2:
+        raise ValueError("authorized run_window must contain start and end")
+    start, end = map(float, window)
+    if not np.isfinite([start, end]).all() or end <= start:
+        raise ValueError("authorized run_window is invalid")
+    result = dict(config)
+    result.update(start_time=start, end_time=end)
+    return result
+
+
 def source(base, repo: Path, name: str, config: dict):
     class DynamicTrainSource(base.TandemTrajectorySource):
         def __init__(self):
@@ -234,7 +247,10 @@ def curate(repo: Path, name: str) -> None:
     if name not in auth["cases"]:
         raise ValueError("case not authorized")
     checked_vtk_receipt(repo, name)
-    config = load(repo / "cfd/tandem_cylinders/cases" / name / "case_config.json")
+    config = inject_authorized_run_window(
+        load(repo / "cfd/tandem_cylinders/cases" / name / "case_config.json"),
+        auth["cases"][name],
+    )
     config.update(source_force_sha256=FORCE_SHA, expected_frames=201)
     base = base_module(repo)
     base.validate_matched_start_source_force(repo / "cfd/tandem_cylinders/cases", name, config)

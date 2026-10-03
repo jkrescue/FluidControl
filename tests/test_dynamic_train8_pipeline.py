@@ -105,6 +105,20 @@ def test_curator_uses_official_source_filter_sink_contract() -> None:
     assert '"max_abs_omega": 0.75' in source
     assert "shutil.copyfile(source_normalization, temporary)" in source
     assert "sha256(target_normalization) != sha256(source_normalization)" in source
+    assert "tandem_cylinders_matched_start_full40_dev30_v1" in source
+
+
+def test_curator_maps_authorized_window_to_base_source_contract() -> None:
+    module = load(CURATOR, "dynamic_train8_time_contract")
+    result = module.inject_authorized_run_window(
+        {"run_window": [999, 1000]}, {"run_window": [148.0, 168.0]}
+    )
+    assert result["start_time"] == 148.0
+    assert result["end_time"] == 168.0
+    with pytest.raises(ValueError, match="invalid"):
+        module.inject_authorized_run_window({}, {"run_window": [168.0, 148.0]})
+    with pytest.raises(ValueError, match="start and end"):
+        module.inject_authorized_run_window({}, {"run_window": [148.0]})
 
 
 def test_raw_audit_is_exact_eight_case_fail_closed() -> None:
