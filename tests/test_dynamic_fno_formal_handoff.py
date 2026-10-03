@@ -6,6 +6,8 @@ import hashlib
 import importlib.util
 import json
 import math
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -176,6 +178,267 @@ def test_h50_lineage_binds_unique_best_and_detects_mismatch(tmp_path, monkeypatc
     (candidate / "best/FNO.0.4.mdlus").write_bytes(b"different")
     with pytest.raises(ValueError, match="best files differ"):
         module.build(repo, candidate)
+
+
+def make_train16_candidate(tmp_path, monkeypatch):
+    module, repo, old = make_candidate(tmp_path, monkeypatch)
+    candidate = repo / "artifacts/tandem_fno_control_train16_h100_20261004"
+    old.rename(candidate)
+    train16 = repo / "data/curated/tandem_cylinders_directppo_train16_v1"
+    train16.mkdir(parents=True)
+    (train16 / "normalization.json").write_text("normalization", encoding="utf-8")
+    manifest = {
+        "status": "DIRECTPPO_TRAIN16_TRAIN_ONLY_CURATED",
+        "profile": "directppo_train16_v1",
+        "trajectory_counts": {"train": 16, "validation": 0, "frozen_test": 0},
+        "frames_per_trajectory": 129,
+        "normalization_sha256": module.NORMALIZATION_SHA,
+        "validation_or_frozen_accessed": False,
+    }
+    write_json(train16 / "manifest.json", manifest)
+    monkeypatch.setattr(module, "TRAIN16_MANIFEST_SHA", digest(train16 / "manifest.json"))
+    config = {
+        "training": {
+            "rollout_steps": 100,
+            "validation_rollout_steps": 100,
+            "epochs": 2,
+            "batch_size": 2,
+            "learning_rate": 1.0e-5,
+            "train_stride": 20,
+            "additional_train_stride": 2,
+            "initial_checkpoint": "/workspace/parent",
+            "teacher_forcing_start": 0.0,
+            "teacher_forcing_end": 0.0,
+            "seed": 20261003,
+        },
+        "data": {
+            "root": "/workspace/base",
+            "additional_train_roots": ["/workspace/train8", "/workspace/train16"],
+            "force_indices": [0, 1, 2, 3],
+        },
+    }
+    (candidate / "resolved_config.yaml").write_text(yaml.safe_dump(config), encoding="utf-8")
+    write_json(candidate / "training_history.json", [
+        {
+            "epoch": epoch,
+            "teacher_forcing_ratio": 0.0,
+            "train_rollout_steps": 100,
+            "validation_rollout_steps": 100,
+            "selection_score": score,
+        }
+        for epoch, score in ((1, 2.0), (2, 1.0))
+    ])
+    shutil.rmtree(candidate / "best")
+    shutil.rmtree(candidate / "checkpoints")
+    for directory_name in ("best", "checkpoints"):
+        directory = candidate / directory_name
+        directory.mkdir()
+        (directory / "FNO.0.2.mdlus").write_bytes(b"trained-model")
+        (directory / "checkpoint.0.2.pt").write_bytes(b"trained-state")
+    shutil.rmtree(candidate / "immutable_parent")
+    parent = candidate / "immutable_parent"
+    parent.mkdir()
+    (parent / "FNO.0.2.mdlus").write_bytes(b"parent-model")
+    (parent / "checkpoint.0.2.pt").write_bytes(b"parent-state")
+    parent_hashes = {
+        name: digest(parent / name)
+        for name in ("FNO.0.2.mdlus", "checkpoint.0.2.pt")
+    }
+    write_json(candidate / "parent_receipt.json", {
+        "status": "IMMUTABLE_PARENT_COPIED",
+        "sha256": parent_hashes,
+    })
+    write_json(candidate / "training_data_sources.json", {
+        "base_root": "/workspace/base",
+        "base_windows": 720,
+        "total_windows": 1368,
+        "additional_sources": [
+            {
+                "root": "/workspace/train8",
+                "windows": 408,
+                "stride": 2,
+                "manifest_sha256": module.TRAIN8_MANIFEST_SHA,
+                "normalization_sha256": module.NORMALIZATION_SHA,
+                "release_status": "DYNAMIC_TRAIN8_TRAIN_ONLY_CURATED",
+                "trajectory_count": 8,
+            },
+            {
+                "root": "/workspace/train16",
+                "windows": 240,
+                "stride": 2,
+                "manifest_sha256": module.TRAIN16_MANIFEST_SHA,
+                "normalization_sha256": module.NORMALIZATION_SHA,
+                "release_status": "DIRECTPPO_TRAIN16_TRAIN_ONLY_CURATED",
+                "trajectory_count": 16,
+            },
+        ],
+    })
+    required = (
+        "scripts/train_tandem_fno.py",
+        "scripts/train_tandem_fno_rollout.py",
+        "scripts/probe_directppo_train16_datapipe.py",
+        "scripts/run_fno_control_train16_spark.sh",
+        "scripts/evaluate_tandem_fno.py",
+        "src/fluid_control/augmented_datapipe.py",
+        "src/fluid_control/tandem_datapipe.py",
+        "conf/tandem_fno_control_train16_h100.yaml",
+    )
+    for relative in required:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(relative, encoding="utf-8")
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run(["git", "add", "scripts", "src", "conf"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "-c", "user.name=test", "-c", "user.email=test@example.invalid", "commit", "-qm", "fixture"],
+        cwd=repo,
+        check=True,
+    )
+    commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip()
+    tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=repo, text=True).strip()
+    snapshot = candidate / "source_snapshot"
+    snapshot.mkdir()
+    snapshot_hashes = {}
+    for relative in required:
+        target = snapshot / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(repo / relative, target)
+        snapshot_hashes[relative] = digest(target)
+    probe = {
+        "status": "DIRECTPPO_TRAIN16_OFFICIAL_DATAPIPE_PROBE_PASS",
+        "training_executed": False,
+        "validation_or_frozen_hdf_opened": False,
+        "rollout_steps": 100,
+        "base_windows": 720,
+        "total_windows": 1368,
+        "additional_sources": [
+            {
+                "root": "/workspace/train8", "windows": 408, "stride": 2,
+                "manifest_sha256": module.TRAIN8_MANIFEST_SHA,
+                "normalization_sha256": module.NORMALIZATION_SHA,
+                "trajectory_count": 8,
+                "release_status": "DYNAMIC_TRAIN8_TRAIN_ONLY_CURATED",
+            },
+            {
+                "root": "/workspace/train16", "windows": 240, "stride": 2,
+                "manifest_sha256": module.TRAIN16_MANIFEST_SHA,
+                "normalization_sha256": module.NORMALIZATION_SHA,
+                "trajectory_count": 16,
+                "release_status": "DIRECTPPO_TRAIN16_TRAIN_ONLY_CURATED",
+            },
+        ],
+        "samples": [
+            {
+                "metadata": {
+                    "dataset_index": index, "split": "train", "rollout_steps": 100
+                },
+                "shapes": {
+                    "state": [1, 3, 128, 256],
+                    "target_state": [1, 100, 3, 128, 256],
+                    "target_force": [1, 100, 4],
+                    "omega": [1, 101, 1],
+                    "mask": [1, 1, 128, 256],
+                },
+                "max_abs_omega": 0.5,
+                "max_delta_omega": 0.1,
+                "action_slew_representation_tolerance": (
+                    2.0e-6 if index == 2 else 2.0e-5
+                ),
+            }
+            for index in (0, 1, 2, 2)
+        ],
+        "script_sha256": snapshot_hashes["scripts/probe_directppo_train16_datapipe.py"],
+        "implementation_sha256": {
+            relative: snapshot_hashes[relative]
+            for relative in (
+                "src/fluid_control/augmented_datapipe.py",
+                "src/fluid_control/tandem_datapipe.py",
+            )
+        },
+    }
+    probe_path = repo / module.TRAIN16_PROBE
+    write_json(probe_path, probe)
+    write_json(candidate / "source_receipt.json", {
+        "status": "CONTROL_TRAIN16_H100_STAGED_NOT_EXECUTED",
+        "candidate_kind": "control_train16_h100",
+        "source_snapshot_commit": commit,
+        "source_snapshot_tree": tree,
+        "source_snapshot_sha256": snapshot_hashes,
+        "physicsnemo_image_id": module.PHYSICSNEMO_IMAGE_ID,
+        "datapipe_probe_sha256": digest(probe_path),
+        "data": {
+            "dev30": {
+                "manifest_sha256": module.DEV30_MANIFEST_SHA,
+                "normalization_sha256": module.NORMALIZATION_SHA,
+            },
+            "train8": {
+                "manifest_sha256": module.TRAIN8_MANIFEST_SHA,
+                "normalization_sha256": module.NORMALIZATION_SHA,
+                "file_count": 8,
+            },
+            "train16": {
+                "manifest_sha256": module.TRAIN16_MANIFEST_SHA,
+                "normalization_sha256": module.NORMALIZATION_SHA,
+                "file_count": 16,
+            },
+            "frozen_test_transferred_or_opened": False,
+        },
+        "parent": {
+            "candidate_kind": "dynamic_train8_h100",
+            "checkpoint_epoch": 2,
+            "sha256": parent_hashes,
+            "optimizer_loaded": False,
+            "new_optimizer": "AdamW",
+        },
+    })
+    return module, repo, candidate
+
+
+def test_train16_lineage_binds_three_sources_parent_snapshot_and_probe(
+    tmp_path, monkeypatch
+):
+    module, repo, candidate = make_train16_candidate(tmp_path, monkeypatch)
+    result = module.build(repo, candidate)
+    assert result["candidate_kind"] == "control_train16_h100"
+    assert result["data_lineage"]["train16_windows"] == 240
+    assert result["data_lineage"]["train16_manifest_sha256"] == module.TRAIN16_MANIFEST_SHA
+    assert result["training_implementation_sha256_at_launch"] is not None
+    probe_path = repo / module.TRAIN16_PROBE
+    probe = json.loads(probe_path.read_text())
+    probe["samples"][0]["max_delta_omega"] = 0.2
+    write_json(probe_path, probe)
+    source = json.loads((candidate / "source_receipt.json").read_text())
+    source["datapipe_probe_sha256"] = digest(probe_path)
+    write_json(candidate / "source_receipt.json", source)
+    with pytest.raises(ValueError, match="DataPipe sample contract"):
+        module.build(repo, candidate)
+    probe["samples"][0]["max_delta_omega"] = 0.1
+    write_json(probe_path, probe)
+    source = json.loads((candidate / "source_receipt.json").read_text())
+    source["datapipe_probe_sha256"] = digest(probe_path)
+    write_json(candidate / "source_receipt.json", source)
+    assert module.build(repo, candidate)["candidate_kind"] == "control_train16_h100"
+    source = json.loads((candidate / "source_receipt.json").read_text())
+    source["parent"]["checkpoint_epoch"] = 1
+    write_json(candidate / "source_receipt.json", source)
+    with pytest.raises(ValueError, match="launch source/data/parent"):
+        module.build(repo, candidate)
+
+
+def test_control_train16_runner_is_fail_closed_and_training_only():
+    source = (ROOT / "scripts/run_fno_control_train16_spark.sh").read_text()
+    assert "--dry-run|--probe|--execute" in source
+    assert "tandem_fno_control_train16_h100_20261004" in source
+    assert "ef95ff96582983680800710679258a6705eb2294fab6a43dfa38163a606ed0c8" in source
+    assert "63e88160faef1db50140c6aee859ef4de50b84d68e0f675af83f3bc5fb35c63a" in source
+    assert "--allocator-fraction 0.45" in source
+    assert "--min-free-gib 20" in source
+    assert "DIRECTPPO_TRAIN16_OFFICIAL_DATAPIPE_PROBE_PASS" in source
+    assert "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL" in source
+    assert "frozen_test" not in "\n".join(
+        line for line in source.splitlines() if "--mount" in line
+    )
+    assert "train_full40_hydrogym_ppo" not in source
 
 
 def test_development_gate_passes_exact_stepwise_evidence(tmp_path):
