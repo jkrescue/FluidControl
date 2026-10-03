@@ -108,3 +108,11 @@ exercise validation logic only and are not CFD training data. A real HDF5 /
 official DataLoader integration check is required after Curator finishes,
 before any dynamic-data training. This optional path is not enabled in the
 currently running H20/H50 controlled comparisons.
+
+Future runs also report pooled total-drag relative RMS error after each epoch.
+The implementation first restores the original force-coefficient scale, sums
+front and rear drag, then computes sqrt(sum(error^2)/sum(reference^2)).
+Terminal-horizon and all-horizon values are reported separately; neither is an
+average of per-case ratios. These diagnostics do not change the loss or existing
+checkpoint-selection score. Four focused CPU tests passed in the pinned
+PhysicsNeMo container. Already-running comparisons retain their loaded code.

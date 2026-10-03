@@ -92,6 +92,27 @@ def force_channel_weights(
     return torch.as_tensor(values / values.sum(), dtype=torch.float32, device=device)
 
 
+def total_drag_error_sums(predicted, target, mean, std, channels):
+    """Pooled physical total-Cd errors, without averaging case-wise ratios.
+
+    Return terminal squared error/reference sums and all-step sums. These
+    diagnostics do not change the existing checkpoint-selection objective.
+    """
+    if "front_cd" not in channels or "rear_cd" not in channels:
+        return None
+    indices = [channels.index("front_cd"), channels.index("rear_cd")]
+    physical_target = target.double() * std.double() + mean.double()
+    physical_error = (predicted.double() - target.double()) * std.double()
+    total_target = physical_target[..., indices].sum(dim=-1)
+    total_error = physical_error[..., indices].sum(dim=-1)
+    return torch.stack([
+        total_error[:, -1].square().sum(),
+        total_target[:, -1].square().sum(),
+        total_error.square().sum(),
+        total_target.square().sum(),
+    ])
+
+
 @hydra.main(version_base="1.3", config_path="../conf", config_name="tandem_fno_rollout")
 def main(cfg: DictConfig) -> None:
     DistributedManager.initialize()
@@ -312,6 +333,7 @@ def main(cfg: DictConfig) -> None:
     )
     state_std = base_train.state_std.to(dist.device)[None, None]
     force_std = base_train.force_std.to(dist.device)[None, None]
+    force_mean = base_train.force_mean.to(dist.device)[None, None]
 
     for epoch in range(loaded_epoch + 1, epochs + 1):
         current_teacher_forcing = teacher_forcing_ratio(cfg, epoch)
@@ -351,7 +373,7 @@ def main(cfg: DictConfig) -> None:
         totals = reduce_totals(totals, dist).cpu()
         train_loss = float(totals[0] / totals[1])
 
-        validation_totals = torch.zeros(8, dtype=torch.float64, device=dist.device)
+        validation_totals = torch.zeros(12, dtype=torch.float64, device=dist.device)
         max_validation_batches = cfg.training.get("max_validation_batches")
         with LaunchLogger("validation", epoch=epoch) as logger:
             for batch_index, batch in enumerate(validation_loader):
@@ -381,6 +403,12 @@ def main(cfg: DictConfig) -> None:
                 validation_totals[5] += force_error.numel()
                 validation_totals[6] += force_error[:, -1].abs().sum().double()
                 validation_totals[7] += force_error[:, -1].numel()
+                drag_sums = total_drag_error_sums(
+                    predicted_force, batch["target_force"], force_mean,
+                    force_std, list(base_train.force_channels),
+                )
+                if drag_sums is not None:
+                    validation_totals[8:] += drag_sums
             validation_totals = reduce_totals(validation_totals, dist).cpu()
             metrics = {
                 "rollout_state_mae": float(validation_totals[0] / validation_totals[1]),
@@ -392,6 +420,15 @@ def main(cfg: DictConfig) -> None:
                     validation_totals[6] / validation_totals[7]
                 ),
             }
+            if validation_totals[9] > 0 and validation_totals[11] > 0:
+                metrics.update(
+                    terminal_total_drag_pooled_nrmse=float(
+                        torch.sqrt(validation_totals[8] / validation_totals[9])
+                    ),
+                    rollout_total_drag_pooled_nrmse=float(
+                        torch.sqrt(validation_totals[10] / validation_totals[11])
+                    ),
+                )
             logger.log_epoch(metrics)
 
         scheduler.step()
