@@ -1,0 +1,897 @@
+{
+  "status": "FULL40_TRAIN20_OPEN_LOOP_PHYSICS_SUMMARY",
+  "scope": {
+    "split": "train",
+    "phase_bins": [
+      0,
+      2,
+      4,
+      6
+    ],
+    "case_count_including_zero": 20,
+    "same_phase_control_comparison_count": 16,
+    "excluded_splits": [
+      "validation",
+      "frozen_test"
+    ],
+    "validation_or_frozen_results_read": false
+  },
+  "provenance": {
+    "full40_predeclaration": "/workspace/fluid_control/artifacts/tandem_cylinders/matched_start_full40_predeclared_20261003.json",
+    "full40_predeclaration_sha256": "d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b",
+    "phase_manifest_sha256": "6279492bd3a79eff868a4333e1f642e3be4a4d58a78e46dc47dde040e4e39603",
+    "existing_nine_aggregate_qc": "/workspace/fluid_control/artifacts/matched_start_acquisition/aggregate_qc/result.json",
+    "existing_nine_aggregate_qc_sha256": "703f58323098e9e3c99552f75fad8e40d2e9bc86a48fbe6f7f24377479aadd69",
+    "strict_existing_receipt_count": 9,
+    "strict_extension_train_receipt_count": 11
+  },
+  "metric_contract": {
+    "analysis_window": "predeclared final 60D/U for every branch",
+    "force_sample_interval": 0.005,
+    "samples_per_branch": 12001,
+    "reference": "same-phase zero-action branch only",
+    "total_drag": "mean(Cd_front + Cd_rear)",
+    "canonical_joint_gate": "drag reduction >=2%; rear Cl-prime RMS <=1.05x same-phase zero; abs(mean rear Cl) <=0.10x same-phase zero Cl-prime RMS"
+  },
+  "phases": {
+    "b00": {
+      "split": "train",
+      "analysis_window": [
+        168.0,
+        228.0
+      ],
+      "same_phase_zero": {
+        "case": "matched_start_acquisition_train_b00_zero",
+        "metrics": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.391103472155237,
+          "mean_cd_rear": 0.9064229468397716,
+          "mean_cd_total": 2.2975264189950084,
+          "mean_cl_rear": -0.01937794837142752,
+          "rms_cl_rear_fluctuation": 1.1826535012844825
+        }
+      },
+      "control_branches": {
+        "m075": {
+          "case": "matched_start_acquisition_train_b00_m075",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_acquisition/transfer_verified/matched_start_acquisition_train_b00_m075.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3909012161654029,
+            "mean_cd_rear": 0.8528410451759686,
+            "mean_cd_total": 2.243742261341372,
+            "mean_cl_rear": 0.7299931560397449,
+            "rms_cl_rear_fluctuation": 1.1631767104852486
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b00_m075",
+            "phase_bin": 0,
+            "action_target": -0.75,
+            "total_drag_reduction_fraction_positive_is_better": 0.023409592685842973,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9835312787912266,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.617250238761309,
+            "canonical_drag_check_ge_0p02": true,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        },
+        "m0375": {
+          "case": "matched_start_acquisition_train_b00_m0375",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_full40_extension/transfer_verified/matched_start_acquisition_train_b00_m0375.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.391060024305308,
+            "mean_cd_rear": 0.8924391262398467,
+            "mean_cd_total": 2.2834991505451545,
+            "mean_cl_rear": 0.35709676020759984,
+            "rms_cl_rear_fluctuation": 1.1779107036958802
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b00_m0375",
+            "phase_bin": 0,
+            "action_target": -0.375,
+            "total_drag_reduction_fraction_positive_is_better": 0.006105378520952831,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9959896980954682,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.30194537945370836,
+            "canonical_drag_check_ge_0p02": false,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        },
+        "p0375": {
+          "case": "matched_start_acquisition_train_b00_p0375",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_full40_extension/transfer_verified/matched_start_acquisition_train_b00_p0375.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3909915153610533,
+            "mean_cd_rear": 0.8934355837277395,
+            "mean_cd_total": 2.2844270990887927,
+            "mean_cl_rear": -0.3946270319517452,
+            "rms_cl_rear_fluctuation": 1.1772591085993755
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b00_p0375",
+            "phase_bin": 0,
+            "action_target": 0.375,
+            "total_drag_reduction_fraction_positive_is_better": 0.005701488260555276,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9954387378219841,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.33367933339996875,
+            "canonical_drag_check_ge_0p02": false,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        },
+        "p075": {
+          "case": "matched_start_acquisition_train_b00_p075",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_acquisition/transfer_verified/matched_start_acquisition_train_b00_p075.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3907445215140404,
+            "mean_cd_rear": 0.8542768201982835,
+            "mean_cd_total": 2.2450213417123237,
+            "mean_cl_rear": -0.7638876079489123,
+            "rms_cl_rear_fluctuation": 1.1620233728044749
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b00_p075",
+            "phase_bin": 0,
+            "action_target": 0.75,
+            "total_drag_reduction_fraction_positive_is_better": 0.022852872049084705,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9825560669650061,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6459099027054436,
+            "canonical_drag_check_ge_0p02": true,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        }
+      },
+      "phase_summary": {
+        "comparison_count": 4,
+        "macro_mean_total_drag_reduction_fraction": 0.014517332879108946,
+        "macro_mean_rear_cl_fluctuation_ratio": 0.9893789454184213,
+        "macro_mean_abs_rear_cl_bias_ratio": 0.47469621358010744,
+        "joint_pass_count": 0,
+        "worst_drag_reduction": {
+          "case": "matched_start_acquisition_train_b00_p0375",
+          "phase_bin": 0,
+          "action_target": 0.375,
+          "total_drag_reduction_fraction_positive_is_better": 0.005701488260555276,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9954387378219841,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.33367933339996875,
+          "canonical_drag_check_ge_0p02": false,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        },
+        "worst_rear_cl_fluctuation_ratio": {
+          "case": "matched_start_acquisition_train_b00_m0375",
+          "phase_bin": 0,
+          "action_target": -0.375,
+          "total_drag_reduction_fraction_positive_is_better": 0.006105378520952831,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9959896980954682,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.30194537945370836,
+          "canonical_drag_check_ge_0p02": false,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        },
+        "worst_abs_rear_cl_bias_ratio": {
+          "case": "matched_start_acquisition_train_b00_p075",
+          "phase_bin": 0,
+          "action_target": 0.75,
+          "total_drag_reduction_fraction_positive_is_better": 0.022852872049084705,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9825560669650061,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6459099027054436,
+          "canonical_drag_check_ge_0p02": true,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        }
+      }
+    },
+    "b02": {
+      "split": "train",
+      "analysis_window": [
+        126.0,
+        186.0
+      ],
+      "same_phase_zero": {
+        "case": "matched_start_acquisition_train_b02_zero",
+        "metrics": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.3914893705134572,
+          "mean_cd_rear": 0.9112236638031748,
+          "mean_cd_total": 2.302713034316632,
+          "mean_cl_rear": -0.04503425049595398,
+          "rms_cl_rear_fluctuation": 1.1697400192062322
+        }
+      },
+      "control_branches": {
+        "m075": {
+          "case": "matched_start_acquisition_train_b02_m075",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_acquisition/transfer_verified/matched_start_acquisition_train_b02_m075.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.39104364567811,
+            "mean_cd_rear": 0.8672249148339055,
+            "mean_cd_total": 2.258268560512016,
+            "mean_cl_rear": 0.702551901155398,
+            "rms_cl_rear_fluctuation": 1.1491724145988795
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b02_m075",
+            "phase_bin": 2,
+            "action_target": -0.75,
+            "total_drag_reduction_fraction_positive_is_better": 0.01930091728420924,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9824169437057394,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6006051683451329,
+            "canonical_drag_check_ge_0p02": false,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        },
+        "m0375": {
+          "case": "matched_start_acquisition_train_b02_m0375",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_full40_extension/transfer_verified/matched_start_acquisition_train_b02_m0375.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3913266268712607,
+            "mean_cd_rear": 0.90231410453973,
+            "mean_cd_total": 2.2936407314109903,
+            "mean_cl_rear": 0.3309990290698874,
+            "rms_cl_rear_fluctuation": 1.1644865796381567
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b02_m0375",
+            "phase_bin": 2,
+            "action_target": -0.375,
+            "total_drag_reduction_fraction_positive_is_better": 0.003939832176411029,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9955088827587173,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.28296803019058736,
+            "canonical_drag_check_ge_0p02": false,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        },
+        "p0375": {
+          "case": "matched_start_acquisition_train_b02_p0375",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_full40_extension/transfer_verified/matched_start_acquisition_train_b02_p0375.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3914962933352222,
+            "mean_cd_rear": 0.8931046053315475,
+            "mean_cd_total": 2.284600898666769,
+            "mean_cl_rear": -0.42097011172665727,
+            "rms_cl_rear_fluctuation": 1.1645313106839108
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b02_p0375",
+            "phase_bin": 2,
+            "action_target": 0.375,
+            "total_drag_reduction_fraction_positive_is_better": 0.007865563524391939,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9955471229189407,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.35988348249581237,
+            "canonical_drag_check_ge_0p02": false,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        },
+        "p075": {
+          "case": "matched_start_acquisition_train_b02_p075",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_acquisition/transfer_verified/matched_start_acquisition_train_b02_p075.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3913681778076827,
+            "mean_cd_rear": 0.8490150371901758,
+            "mean_cd_total": 2.2403832149978586,
+            "mean_cl_rear": -0.7920215885189184,
+            "rms_cl_rear_fluctuation": 1.1491223003472202
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b02_p075",
+            "phase_bin": 2,
+            "action_target": 0.75,
+            "total_drag_reduction_fraction_positive_is_better": 0.027067992576535138,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9823741014922248,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6770919824187704,
+            "canonical_drag_check_ge_0p02": true,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        }
+      },
+      "phase_summary": {
+        "comparison_count": 4,
+        "macro_mean_total_drag_reduction_fraction": 0.014543576390386836,
+        "macro_mean_rear_cl_fluctuation_ratio": 0.9889617627189056,
+        "macro_mean_abs_rear_cl_bias_ratio": 0.48013716586257577,
+        "joint_pass_count": 0,
+        "worst_drag_reduction": {
+          "case": "matched_start_acquisition_train_b02_m0375",
+          "phase_bin": 2,
+          "action_target": -0.375,
+          "total_drag_reduction_fraction_positive_is_better": 0.003939832176411029,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9955088827587173,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.28296803019058736,
+          "canonical_drag_check_ge_0p02": false,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        },
+        "worst_rear_cl_fluctuation_ratio": {
+          "case": "matched_start_acquisition_train_b02_p0375",
+          "phase_bin": 2,
+          "action_target": 0.375,
+          "total_drag_reduction_fraction_positive_is_better": 0.007865563524391939,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9955471229189407,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.35988348249581237,
+          "canonical_drag_check_ge_0p02": false,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        },
+        "worst_abs_rear_cl_bias_ratio": {
+          "case": "matched_start_acquisition_train_b02_p075",
+          "phase_bin": 2,
+          "action_target": 0.75,
+          "total_drag_reduction_fraction_positive_is_better": 0.027067992576535138,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9823741014922248,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6770919824187704,
+          "canonical_drag_check_ge_0p02": true,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        }
+      }
+    },
+    "b04": {
+      "split": "train",
+      "analysis_window": [
+        140.0,
+        200.0
+      ],
+      "same_phase_zero": {
+        "case": "matched_start_acquisition_train_b04_zero",
+        "metrics": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.3911067362809768,
+          "mean_cd_rear": 0.9063555552604281,
+          "mean_cd_total": 2.297462291541405,
+          "mean_cl_rear": 0.016279802542867906,
+          "rms_cl_rear_fluctuation": 1.1834515218623534
+        }
+      },
+      "control_branches": {
+        "m075": {
+          "case": "matched_start_acquisition_train_b04_m075",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_acquisition/transfer_verified/matched_start_acquisition_train_b04_m075.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3907365464574617,
+            "mean_cd_rear": 0.8548825828373136,
+            "mean_cd_total": 2.245619129294776,
+            "mean_cl_rear": 0.7607870118631117,
+            "rms_cl_rear_fluctuation": 1.1626886866634727
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b04_m075",
+            "phase_bin": 4,
+            "action_target": -0.75,
+            "total_drag_reduction_fraction_positive_is_better": 0.02256540289583897,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9824556943691222,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6428543948009714,
+            "canonical_drag_check_ge_0p02": true,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        },
+        "m0375": {
+          "case": "matched_start_acquisition_train_b04_m0375",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_full40_extension/transfer_verified/matched_start_acquisition_train_b04_m0375.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3909888633969667,
+            "mean_cd_rear": 0.8937104486890591,
+            "mean_cd_total": 2.2846993120860266,
+            "mean_cl_rear": 0.3915296757565527,
+            "rms_cl_rear_fluctuation": 1.1780115125689028
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b04_m0375",
+            "phase_bin": 4,
+            "action_target": -0.375,
+            "total_drag_reduction_fraction_positive_is_better": 0.005555250896769115,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.995403268158471,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.33083710530061855,
+            "canonical_drag_check_ge_0p02": false,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        },
+        "p0375": {
+          "case": "matched_start_acquisition_train_b04_p0375",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_full40_extension/transfer_verified/matched_start_acquisition_train_b04_p0375.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3910695112761438,
+            "mean_cd_rear": 0.8920339413706607,
+            "mean_cd_total": 2.283103452646804,
+            "mean_cl_rear": -0.3601956084361708,
+            "rms_cl_rear_fluctuation": 1.1787006395989539
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b04_p0375",
+            "phase_bin": 4,
+            "action_target": 0.375,
+            "total_drag_reduction_fraction_positive_is_better": 0.006249869235053884,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9959855708699219,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.3043602562353754,
+            "canonical_drag_check_ge_0p02": false,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        },
+        "p075": {
+          "case": "matched_start_acquisition_train_b04_p075",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_acquisition/transfer_verified/matched_start_acquisition_train_b04_p075.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3909169871272393,
+            "mean_cd_rear": 0.852126629188251,
+            "mean_cd_total": 2.2430436163154903,
+            "mean_cl_rear": -0.7330763251142102,
+            "rms_cl_rear_fluctuation": 1.1639012981767989
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b04_p075",
+            "phase_bin": 4,
+            "action_target": 0.75,
+            "total_drag_reduction_fraction_positive_is_better": 0.02368642803247245,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9834803341544662,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.61943925169034,
+            "canonical_drag_check_ge_0p02": true,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        }
+      },
+      "phase_summary": {
+        "comparison_count": 4,
+        "macro_mean_total_drag_reduction_fraction": 0.014514237765033605,
+        "macro_mean_rear_cl_fluctuation_ratio": 0.9893312168879953,
+        "macro_mean_abs_rear_cl_bias_ratio": 0.4743727520068263,
+        "joint_pass_count": 0,
+        "worst_drag_reduction": {
+          "case": "matched_start_acquisition_train_b04_m0375",
+          "phase_bin": 4,
+          "action_target": -0.375,
+          "total_drag_reduction_fraction_positive_is_better": 0.005555250896769115,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.995403268158471,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.33083710530061855,
+          "canonical_drag_check_ge_0p02": false,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        },
+        "worst_rear_cl_fluctuation_ratio": {
+          "case": "matched_start_acquisition_train_b04_p0375",
+          "phase_bin": 4,
+          "action_target": 0.375,
+          "total_drag_reduction_fraction_positive_is_better": 0.006249869235053884,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9959855708699219,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.3043602562353754,
+          "canonical_drag_check_ge_0p02": false,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        },
+        "worst_abs_rear_cl_bias_ratio": {
+          "case": "matched_start_acquisition_train_b04_m075",
+          "phase_bin": 4,
+          "action_target": -0.75,
+          "total_drag_reduction_fraction_positive_is_better": 0.02256540289583897,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9824556943691222,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6428543948009714,
+          "canonical_drag_check_ge_0p02": true,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        }
+      }
+    },
+    "b06": {
+      "split": "train",
+      "analysis_window": [
+        154.0,
+        214.0
+      ],
+      "same_phase_zero": {
+        "case": "matched_start_acquisition_train_b06_zero",
+        "metrics": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.391485684686776,
+          "mean_cd_rear": 0.9108937355711024,
+          "mean_cd_total": 2.302379420257879,
+          "mean_cl_rear": 0.04389044703423101,
+          "rms_cl_rear_fluctuation": 1.170626865033999
+        }
+      },
+      "control_branches": {
+        "m075": {
+          "case": "matched_start_acquisition_train_b06_m075",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_full40_extension/transfer_verified/matched_start_acquisition_train_b06_m075.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3913702406362802,
+            "mean_cd_rear": 0.848580367625048,
+            "mean_cd_total": 2.2399506082613283,
+            "mean_cl_rear": 0.79090925454641,
+            "rms_cl_rear_fluctuation": 1.1499151652217172
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b06_m075",
+            "phase_bin": 6,
+            "action_target": -0.75,
+            "total_drag_reduction_fraction_positive_is_better": 0.02711491053440629,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9823071719683452,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6756288260336818,
+            "canonical_drag_check_ge_0p02": true,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        },
+        "m0375": {
+          "case": "matched_start_acquisition_train_b06_m0375",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_full40_extension/transfer_verified/matched_start_acquisition_train_b06_m0375.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3914954038577618,
+            "mean_cd_rear": 0.8927113019985418,
+            "mean_cd_total": 2.284206705856304,
+            "mean_cl_rear": 0.41980218115664225,
+            "rms_cl_rear_fluctuation": 1.1654057028985478
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b06_m0375",
+            "phase_bin": 6,
+            "action_target": -0.375,
+            "total_drag_reduction_fraction_positive_is_better": 0.007893014609876792,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.995539857924498,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.35861314454324417,
+            "canonical_drag_check_ge_0p02": false,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        },
+        "p0375": {
+          "case": "matched_start_acquisition_train_b06_p0375",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_full40_extension/transfer_verified/matched_start_acquisition_train_b06_p0375.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.391320454061828,
+            "mean_cd_rear": 0.9020514743221564,
+            "mean_cd_total": 2.293371928383985,
+            "mean_cl_rear": -0.3320390413125562,
+            "rms_cl_rear_fluctuation": 1.1653203310524178
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b06_p0375",
+            "phase_bin": 6,
+            "action_target": 0.375,
+            "total_drag_reduction_fraction_positive_is_better": 0.003912253469015581,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9954669296083282,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.2836420820590963,
+            "canonical_drag_check_ge_0p02": false,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        },
+        "p075": {
+          "case": "matched_start_acquisition_train_b06_p075",
+          "receipt": "/workspace/fluid_control/artifacts/matched_start_full40_extension/transfer_verified/matched_start_acquisition_train_b06_p075.json",
+          "metrics": {
+            "sample_count": 12001,
+            "mean_cd_front": 1.3910342065280392,
+            "mean_cd_rear": 0.8670149363420798,
+            "mean_cd_total": 2.2580491428701186,
+            "mean_cl_rear": -0.7034034298306833,
+            "rms_cl_rear_fluctuation": 1.1498984576040374
+          },
+          "same_phase_zero_comparison": {
+            "case": "matched_start_acquisition_train_b06_p075",
+            "phase_bin": 6,
+            "action_target": 0.75,
+            "total_drag_reduction_fraction_positive_is_better": 0.01925411467706528,
+            "rear_cl_fluctuation_rms_ratio_to_zero": 0.9822928996001133,
+            "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.600877573239577,
+            "canonical_drag_check_ge_0p02": false,
+            "canonical_rear_cl_fluctuation_check_le_1p05": true,
+            "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+            "canonical_joint_diagnostic_pass": false
+          }
+        }
+      },
+      "phase_summary": {
+        "comparison_count": 4,
+        "macro_mean_total_drag_reduction_fraction": 0.014543573322590986,
+        "macro_mean_rear_cl_fluctuation_ratio": 0.9889017147753211,
+        "macro_mean_abs_rear_cl_bias_ratio": 0.4796904064688998,
+        "joint_pass_count": 0,
+        "worst_drag_reduction": {
+          "case": "matched_start_acquisition_train_b06_p0375",
+          "phase_bin": 6,
+          "action_target": 0.375,
+          "total_drag_reduction_fraction_positive_is_better": 0.003912253469015581,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9954669296083282,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.2836420820590963,
+          "canonical_drag_check_ge_0p02": false,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        },
+        "worst_rear_cl_fluctuation_ratio": {
+          "case": "matched_start_acquisition_train_b06_m0375",
+          "phase_bin": 6,
+          "action_target": -0.375,
+          "total_drag_reduction_fraction_positive_is_better": 0.007893014609876792,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.995539857924498,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.35861314454324417,
+          "canonical_drag_check_ge_0p02": false,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        },
+        "worst_abs_rear_cl_bias_ratio": {
+          "case": "matched_start_acquisition_train_b06_m075",
+          "phase_bin": 6,
+          "action_target": -0.75,
+          "total_drag_reduction_fraction_positive_is_better": 0.02711491053440629,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9823071719683452,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6756288260336818,
+          "canonical_drag_check_ge_0p02": true,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        }
+      }
+    }
+  },
+  "per_action_macro_and_worst": {
+    "m075": {
+      "comparison_count": 4,
+      "macro_mean_total_drag_reduction_fraction": 0.023097705850074368,
+      "macro_mean_rear_cl_fluctuation_ratio": 0.9826777722086084,
+      "macro_mean_abs_rear_cl_bias_ratio": 0.6340846569852738,
+      "joint_pass_count": 0,
+      "worst_drag_reduction": {
+        "case": "matched_start_acquisition_train_b02_m075",
+        "phase_bin": 2,
+        "action_target": -0.75,
+        "total_drag_reduction_fraction_positive_is_better": 0.01930091728420924,
+        "rear_cl_fluctuation_rms_ratio_to_zero": 0.9824169437057394,
+        "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6006051683451329,
+        "canonical_drag_check_ge_0p02": false,
+        "canonical_rear_cl_fluctuation_check_le_1p05": true,
+        "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+        "canonical_joint_diagnostic_pass": false
+      },
+      "worst_rear_cl_fluctuation_ratio": {
+        "case": "matched_start_acquisition_train_b00_m075",
+        "phase_bin": 0,
+        "action_target": -0.75,
+        "total_drag_reduction_fraction_positive_is_better": 0.023409592685842973,
+        "rear_cl_fluctuation_rms_ratio_to_zero": 0.9835312787912266,
+        "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.617250238761309,
+        "canonical_drag_check_ge_0p02": true,
+        "canonical_rear_cl_fluctuation_check_le_1p05": true,
+        "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+        "canonical_joint_diagnostic_pass": false
+      },
+      "worst_abs_rear_cl_bias_ratio": {
+        "case": "matched_start_acquisition_train_b06_m075",
+        "phase_bin": 6,
+        "action_target": -0.75,
+        "total_drag_reduction_fraction_positive_is_better": 0.02711491053440629,
+        "rear_cl_fluctuation_rms_ratio_to_zero": 0.9823071719683452,
+        "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6756288260336818,
+        "canonical_drag_check_ge_0p02": true,
+        "canonical_rear_cl_fluctuation_check_le_1p05": true,
+        "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+        "canonical_joint_diagnostic_pass": false
+      }
+    },
+    "m0375": {
+      "comparison_count": 4,
+      "macro_mean_total_drag_reduction_fraction": 0.005873369051002442,
+      "macro_mean_rear_cl_fluctuation_ratio": 0.9956104267342887,
+      "macro_mean_abs_rear_cl_bias_ratio": 0.3185909148720396,
+      "joint_pass_count": 0,
+      "worst_drag_reduction": {
+        "case": "matched_start_acquisition_train_b02_m0375",
+        "phase_bin": 2,
+        "action_target": -0.375,
+        "total_drag_reduction_fraction_positive_is_better": 0.003939832176411029,
+        "rear_cl_fluctuation_rms_ratio_to_zero": 0.9955088827587173,
+        "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.28296803019058736,
+        "canonical_drag_check_ge_0p02": false,
+        "canonical_rear_cl_fluctuation_check_le_1p05": true,
+        "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+        "canonical_joint_diagnostic_pass": false
+      },
+      "worst_rear_cl_fluctuation_ratio": {
+        "case": "matched_start_acquisition_train_b00_m0375",
+        "phase_bin": 0,
+        "action_target": -0.375,
+        "total_drag_reduction_fraction_positive_is_better": 0.006105378520952831,
+        "rear_cl_fluctuation_rms_ratio_to_zero": 0.9959896980954682,
+        "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.30194537945370836,
+        "canonical_drag_check_ge_0p02": false,
+        "canonical_rear_cl_fluctuation_check_le_1p05": true,
+        "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+        "canonical_joint_diagnostic_pass": false
+      },
+      "worst_abs_rear_cl_bias_ratio": {
+        "case": "matched_start_acquisition_train_b06_m0375",
+        "phase_bin": 6,
+        "action_target": -0.375,
+        "total_drag_reduction_fraction_positive_is_better": 0.007893014609876792,
+        "rear_cl_fluctuation_rms_ratio_to_zero": 0.995539857924498,
+        "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.35861314454324417,
+        "canonical_drag_check_ge_0p02": false,
+        "canonical_rear_cl_fluctuation_check_le_1p05": true,
+        "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+        "canonical_joint_diagnostic_pass": false
+      }
+    },
+    "p0375": {
+      "comparison_count": 4,
+      "macro_mean_total_drag_reduction_fraction": 0.00593229362225417,
+      "macro_mean_rear_cl_fluctuation_ratio": 0.9956095903047937,
+      "macro_mean_abs_rear_cl_bias_ratio": 0.3203912885475632,
+      "joint_pass_count": 0,
+      "worst_drag_reduction": {
+        "case": "matched_start_acquisition_train_b06_p0375",
+        "phase_bin": 6,
+        "action_target": 0.375,
+        "total_drag_reduction_fraction_positive_is_better": 0.003912253469015581,
+        "rear_cl_fluctuation_rms_ratio_to_zero": 0.9954669296083282,
+        "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.2836420820590963,
+        "canonical_drag_check_ge_0p02": false,
+        "canonical_rear_cl_fluctuation_check_le_1p05": true,
+        "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+        "canonical_joint_diagnostic_pass": false
+      },
+      "worst_rear_cl_fluctuation_ratio": {
+        "case": "matched_start_acquisition_train_b04_p0375",
+        "phase_bin": 4,
+        "action_target": 0.375,
+        "total_drag_reduction_fraction_positive_is_better": 0.006249869235053884,
+        "rear_cl_fluctuation_rms_ratio_to_zero": 0.9959855708699219,
+        "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.3043602562353754,
+        "canonical_drag_check_ge_0p02": false,
+        "canonical_rear_cl_fluctuation_check_le_1p05": true,
+        "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+        "canonical_joint_diagnostic_pass": false
+      },
+      "worst_abs_rear_cl_bias_ratio": {
+        "case": "matched_start_acquisition_train_b02_p0375",
+        "phase_bin": 2,
+        "action_target": 0.375,
+        "total_drag_reduction_fraction_positive_is_better": 0.007865563524391939,
+        "rear_cl_fluctuation_rms_ratio_to_zero": 0.9955471229189407,
+        "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.35988348249581237,
+        "canonical_drag_check_ge_0p02": false,
+        "canonical_rear_cl_fluctuation_check_le_1p05": true,
+        "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+        "canonical_joint_diagnostic_pass": false
+      }
+    },
+    "p075": {
+      "comparison_count": 4,
+      "macro_mean_total_drag_reduction_fraction": 0.023215351833789394,
+      "macro_mean_rear_cl_fluctuation_ratio": 0.9826758505529526,
+      "macro_mean_abs_rear_cl_bias_ratio": 0.6358296775135328,
+      "joint_pass_count": 0,
+      "worst_drag_reduction": {
+        "case": "matched_start_acquisition_train_b06_p075",
+        "phase_bin": 6,
+        "action_target": 0.75,
+        "total_drag_reduction_fraction_positive_is_better": 0.01925411467706528,
+        "rear_cl_fluctuation_rms_ratio_to_zero": 0.9822928996001133,
+        "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.600877573239577,
+        "canonical_drag_check_ge_0p02": false,
+        "canonical_rear_cl_fluctuation_check_le_1p05": true,
+        "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+        "canonical_joint_diagnostic_pass": false
+      },
+      "worst_rear_cl_fluctuation_ratio": {
+        "case": "matched_start_acquisition_train_b04_p075",
+        "phase_bin": 4,
+        "action_target": 0.75,
+        "total_drag_reduction_fraction_positive_is_better": 0.02368642803247245,
+        "rear_cl_fluctuation_rms_ratio_to_zero": 0.9834803341544662,
+        "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.61943925169034,
+        "canonical_drag_check_ge_0p02": true,
+        "canonical_rear_cl_fluctuation_check_le_1p05": true,
+        "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+        "canonical_joint_diagnostic_pass": false
+      },
+      "worst_abs_rear_cl_bias_ratio": {
+        "case": "matched_start_acquisition_train_b02_p075",
+        "phase_bin": 2,
+        "action_target": 0.75,
+        "total_drag_reduction_fraction_positive_is_better": 0.027067992576535138,
+        "rear_cl_fluctuation_rms_ratio_to_zero": 0.9823741014922248,
+        "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6770919824187704,
+        "canonical_drag_check_ge_0p02": true,
+        "canonical_rear_cl_fluctuation_check_le_1p05": true,
+        "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+        "canonical_joint_diagnostic_pass": false
+      }
+    }
+  },
+  "all_train_control_macro_and_worst": {
+    "comparison_count": 16,
+    "macro_mean_total_drag_reduction_fraction": 0.014529680089280093,
+    "macro_mean_rear_cl_fluctuation_ratio": 0.9891434099501608,
+    "macro_mean_abs_rear_cl_bias_ratio": 0.4772241344796023,
+    "joint_pass_count": 0,
+    "worst_drag_reduction": {
+      "case": "matched_start_acquisition_train_b06_p0375",
+      "phase_bin": 6,
+      "action_target": 0.375,
+      "total_drag_reduction_fraction_positive_is_better": 0.003912253469015581,
+      "rear_cl_fluctuation_rms_ratio_to_zero": 0.9954669296083282,
+      "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.2836420820590963,
+      "canonical_drag_check_ge_0p02": false,
+      "canonical_rear_cl_fluctuation_check_le_1p05": true,
+      "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+      "canonical_joint_diagnostic_pass": false
+    },
+    "worst_rear_cl_fluctuation_ratio": {
+      "case": "matched_start_acquisition_train_b00_m0375",
+      "phase_bin": 0,
+      "action_target": -0.375,
+      "total_drag_reduction_fraction_positive_is_better": 0.006105378520952831,
+      "rear_cl_fluctuation_rms_ratio_to_zero": 0.9959896980954682,
+      "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.30194537945370836,
+      "canonical_drag_check_ge_0p02": false,
+      "canonical_rear_cl_fluctuation_check_le_1p05": true,
+      "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+      "canonical_joint_diagnostic_pass": false
+    },
+    "worst_abs_rear_cl_bias_ratio": {
+      "case": "matched_start_acquisition_train_b02_p075",
+      "phase_bin": 2,
+      "action_target": 0.75,
+      "total_drag_reduction_fraction_positive_is_better": 0.027067992576535138,
+      "rear_cl_fluctuation_rms_ratio_to_zero": 0.9823741014922248,
+      "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6770919824187704,
+      "canonical_drag_check_ge_0p02": true,
+      "canonical_rear_cl_fluctuation_check_le_1p05": true,
+      "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+      "canonical_joint_diagnostic_pass": false
+    }
+  },
+  "interpretation_guards": [
+    "All results are prescribed open-loop train-split CFD diagnostics.",
+    "No validation or frozen-test result or receipt was opened.",
+    "Train macro/worst summaries are not generalization or closed-loop evidence.",
+    "These summaries must not tune thresholds or select on frozen-test outcomes."
+  ]
+}
