@@ -1,0 +1,49 @@
+{
+  "status": "DIRECTPPO_TRAIN16_ENDPOINT_PROBE_PASS",
+  "case": "direct_cfd_directppo2048_v1_env0_ep0002_b00",
+  "frames": 2,
+  "source_frame_indices": [
+    0,
+    128
+  ],
+  "actual_stored_times": [
+    148.0,
+    160.8000030517578
+  ],
+  "declared_exact_times": [
+    148.0,
+    160.8
+  ],
+  "exact_actions": [
+    0.0,
+    0.2321174293756485
+  ],
+  "exact_force": [
+    [
+      1.4018714427947998,
+      0.4442231059074402,
+      1.0752390623092651,
+      0.12269821017980576
+    ],
+    [
+      1.4046062231063843,
+      0.40803277492523193,
+      1.0279027223587036,
+      0.7274080514907837
+    ]
+  ],
+  "pressure_valid_mean": [
+    -1.8464598557626714e-10,
+    -5.279814412650385e-10
+  ],
+  "mask_coverage": 0.9869384765625,
+  "hdf_sha256": "af524cf6d81604c22518115334e7a40f0f95b3b67e31c555acbde02d8f5b26c0",
+  "vtk_receipt_sha256": "bc3e827baff6be1e177003e398eba3d627a476659fa5b8741344b24dcb6d95eb",
+  "curation_authorization_sha256": "321ae9d3ee4297212f91ee60ad774663c51ec16a16b663f5bccdc6e301d66e56",
+  "curator_source_sha256": "52174651fa9562ae5613668511162b5db5ab56aa93ffb260d8c10dd32b584f75",
+  "official_pipeline": [
+    "PhysicsNeMo Curator Source/Filter/Sink",
+    "VTKSource",
+    "run_pipeline"
+  ]
+}

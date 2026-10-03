@@ -42,3 +42,31 @@ def test_vtk_float32_time_is_snapped_only_inside_fixed_tolerance():
     assert module.canonical_time(148.10000610351562, 148.1) == 148.1
     with pytest.raises(ValueError, match="cannot be matched"):
         module.canonical_time(148.10002, 148.1)
+
+
+def test_endpoint_view_maps_only_first_and_last_reviewed_frames():
+    module = load()
+
+    class FakeSource:
+        def __len__(self):
+            return 129
+
+        def __getitem__(self, index):
+            return f"frame-{index}"
+
+        def relative_path(self, index):
+            return f"path-{index}"
+
+    view = module.EndpointView(FakeSource())
+    assert len(view) == 2
+    assert view[0] == "frame-0"
+    assert view[1] == "frame-128"
+    assert view.relative_path(0) == "path-0"
+    assert view.relative_path(1) == "path-128"
+
+
+def test_endpoint_probe_is_separate_and_explicitly_token_gated():
+    module = load()
+    assert "endpoint-probe" in SCRIPT.read_text()
+    assert module.ENDPOINT_PROBE != module.OUTPUT
+    assert "DIRECTPPO_TRAIN16_ENDPOINT_PROBE_PASS" in SCRIPT.read_text()

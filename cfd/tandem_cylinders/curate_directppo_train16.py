@@ -20,6 +20,9 @@ PREDECL = Path("artifacts/tandem_cylinders/directppo_train16_predeclared_2026100
 PREDECL_SHA = "7d9fc2a71ebe4bb0e817b1ce41f5e9a42310348bc5faf530bc1b3ad6a5229736"
 AUTH = Path("artifacts/tandem_cylinders/directppo_train16_curation_authorization_20261004.json")
 VTK_RECEIPTS = Path("artifacts/tandem_cylinders/directppo_train16_vtk_ready")
+ENDPOINT_PROBE = Path(
+    "artifacts/tandem_cylinders/directppo_train16_endpoint_probe_20261004"
+)
 OUTPUT = Path("data/curated/tandem_cylinders_directppo_train16_v1")
 FULL40 = Path("data/curated/tandem_cylinders_matched_start_full40_dev30_v1")
 BASE = Path("scripts/curate_low_action_phase94_validation.py")
@@ -30,6 +33,25 @@ FORCE_SHA = {
 }
 TOKEN = "EXECUTE_REVIEWED_DIRECTPPO_TRAIN16_CURATOR"
 EXECUTION_REVIEWED = True
+
+
+class EndpointView:
+    """Expose only the first and last frames without copying mesh data."""
+
+    def __init__(self, wrapped):
+        if len(wrapped) != 129:
+            raise ValueError("endpoint probe requires the reviewed 129-frame sequence")
+        self.wrapped = wrapped
+        self.indices = (0, 128)
+
+    def __len__(self):
+        return len(self.indices)
+
+    def relative_path(self, index):
+        return self.wrapped.relative_path(self.indices[index])
+
+    def __getitem__(self, index):
+        return self.wrapped[self.indices[index]]
 
 
 def module(path: Path, name: str):
@@ -158,7 +180,7 @@ def canonical_time(actual: float, expected: float) -> float:
     return float(expected)
 
 
-def source(base, repo: Path, name: str, config: dict):
+def source(base, repo: Path, name: str, config: dict, *, endpoints_only: bool = False):
     class CanonicalTimeVTK:
         """Preserve the mesh while replacing only verified TimeValue metadata."""
 
@@ -202,8 +224,128 @@ def source(base, repo: Path, name: str, config: dict):
             expected_times = base.np.linspace(
                 float(config["start_time"]), float(config["end_time"]), 129
             )
-            self.vtk_sources = [CanonicalTimeVTK(vtk, expected_times)]
+            reviewed = CanonicalTimeVTK(vtk, expected_times)
+            self.vtk_sources = [EndpointView(reviewed) if endpoints_only else reviewed]
     return DirectPPOSource()
+
+
+def endpoint_force(base, repo: Path, name: str, config: dict, time: float) -> np.ndarray:
+    """Read an exact real-CFD force endpoint, including restart provenance."""
+    case = repo / "cfd/tandem_cylinders/cases" / name
+    values = []
+    for object_name in ("forceFront", "forceRear"):
+        raw = base.load_merged_coefficients(
+            sorted(case.glob(f"postProcessing/{object_name}/*/coefficient.dat"))
+        )
+        matches = np.flatnonzero(np.isclose(raw[:, 0], time, rtol=0, atol=1e-8))
+        if len(matches) == 0:
+            source_name = config.get("source_restart_case")
+            if not source_name:
+                raise ValueError(f"{name}: no source restart for endpoint force")
+            raw = base.load_coefficients(
+                case.parent / source_name / "postProcessing" / object_name
+                / "0" / "coefficient.dat"
+            )
+            matches = np.flatnonzero(
+                np.isclose(raw[:, 0], time, rtol=0, atol=1e-8)
+            )
+        if len(matches) != 1:
+            raise ValueError(f"{name}: no unique exact {object_name} row at t={time}")
+        values.extend(raw[matches[0], (1, 2)])
+    return np.asarray(values, dtype=np.float32)
+
+
+def endpoint_probe(repo: Path, name: str) -> dict:
+    """Run a cheap real first/last-frame official Source/Filter/Sink probe."""
+    import h5py
+
+    auth = checked_auth(repo)
+    receipt_path = repo / VTK_RECEIPTS / f"{name}.json"
+    if name not in auth["cases"] or load(receipt_path) != make_vtk_receipt(repo, name):
+        raise ValueError("case VTK receipt is absent or stale")
+    case = repo / "cfd/tandem_cylinders/cases" / name
+    config = load(case / "case_config.json")
+    expected = auth["cases"][name]
+    start, end = map(float, expected["run_window"])
+    config.update(
+        start_time=start, end_time=end, expected_frames=2,
+        action_points=expected["action_points"], source_force_sha256=FORCE_SHA,
+    )
+    base = module(repo / BASE, "directppo_train16_base_endpoint_probe")
+    base.validate_matched_start_source_force(
+        repo / "cfd/tandem_cylinders/cases", name, config
+    )
+    output = repo / ENDPOINT_PROBE
+    pipe = source(base, repo, name, config, endpoints_only=True).filter(
+        base.NumericalQualityFilter(0.75)
+    ).write(base.TrajectoryHDF5Sink(output, atomic_tmp=True))
+    result = base.run_pipeline(
+        pipe, n_jobs=1, backend="sequential", indices=None, use_tui=False
+    )
+    if len(result) != 1 or not result[0]:
+        raise RuntimeError("official endpoint Source/Filter/Sink returned no HDF")
+
+    path = output / "train" / f"{name}.h5"
+    expected_times = np.asarray([start, end], dtype=np.float64)
+    expected_actions = np.asarray(
+        [expected["action_points"][0][1], expected["action_points"][-1][1]],
+        dtype=np.float32,
+    )
+    expected_force = np.stack([
+        endpoint_force(base, repo, name, config, start),
+        endpoint_force(base, repo, name, config, end),
+    ])
+    with h5py.File(path, "r") as handle:
+        if handle["state"].shape != (2, 3, 128, 256):
+            raise ValueError("endpoint probe state shape differs")
+        if handle["force"].shape != (2, 4) or handle["mask"].shape != (2, 1, 128, 256):
+            raise ValueError("endpoint probe force/mask shape differs")
+        actual_times = handle["time"][:, 0]
+        actual_actions = handle["omega"][:, 0]
+        if not np.allclose(actual_times, expected_times, rtol=0, atol=1e-5):
+            raise ValueError("endpoint probe stored times differ")
+        if not np.allclose(actual_actions, expected_actions, rtol=0, atol=1e-6):
+            raise ValueError("endpoint probe exact actions differ")
+        if not np.allclose(handle["force"][:], expected_force, rtol=0, atol=2e-6):
+            raise ValueError("endpoint probe exact force rows differ")
+        state = handle["state"][:]
+        mask = handle["mask"][:]
+        if not np.isfinite(state).all() or not np.array_equal(mask, mask.astype(bool)):
+            raise ValueError("endpoint probe contains non-finite state or invalid mask")
+        coverage = float(mask.mean())
+        if not 0.8 < coverage < 1.0:
+            raise ValueError("endpoint probe mask coverage differs")
+        pressure_means = [
+            float(np.mean(state[i, 2][mask[i, 0].astype(bool)], dtype=np.float64))
+            for i in range(2)
+        ]
+        if max(map(abs, pressure_means)) > 2e-6:
+            raise ValueError("endpoint probe gauge pressure is not zero mean")
+        if not np.array_equal(handle["x"][:], np.linspace(8, 25, 256, dtype=np.float32)):
+            raise ValueError("endpoint probe x grid differs")
+        if not np.array_equal(handle["y"][:], np.linspace(4, 11, 128, dtype=np.float32)):
+            raise ValueError("endpoint probe y grid differs")
+
+    pre = module(repo / PREDECL_MODULE, "directppo_train16_predecl_probe")
+    return {
+        "status": "DIRECTPPO_TRAIN16_ENDPOINT_PROBE_PASS",
+        "case": name,
+        "frames": 2,
+        "source_frame_indices": [0, 128],
+        "actual_stored_times": actual_times.astype(float).tolist(),
+        "declared_exact_times": expected_times.tolist(),
+        "exact_actions": actual_actions.astype(float).tolist(),
+        "exact_force": expected_force.astype(float).tolist(),
+        "pressure_valid_mean": pressure_means,
+        "mask_coverage": coverage,
+        "hdf_sha256": pre.sha256(path),
+        "vtk_receipt_sha256": pre.sha256(receipt_path),
+        "curation_authorization_sha256": pre.sha256(repo / AUTH),
+        "curator_source_sha256": pre.sha256(Path(__file__)),
+        "official_pipeline": [
+            "PhysicsNeMo Curator Source/Filter/Sink", "VTKSource", "run_pipeline"
+        ],
+    }
 
 
 def curate(repo: Path, name: str) -> None:
@@ -282,7 +424,9 @@ def finalize(repo: Path) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("authorize", "vtk-receipt", "curate", "finalize"))
+    parser.add_argument(
+        "mode", choices=("authorize", "vtk-receipt", "endpoint-probe", "curate", "finalize")
+    )
     parser.add_argument("--repo", type=Path, default=REPO)
     parser.add_argument("--case")
     parser.add_argument("--execute", action="store_true")
@@ -296,6 +440,10 @@ def main() -> None:
         pre.exclusive(repo / AUTH, make_authorization(repo))
     elif args.mode == "vtk-receipt":
         pre.exclusive(repo / VTK_RECEIPTS / f"{args.case}.json", make_vtk_receipt(repo, args.case))
+    elif args.mode == "endpoint-probe":
+        receipt = endpoint_probe(repo, args.case)
+        pre.exclusive(repo / ENDPOINT_PROBE / f"{args.case}.json", receipt)
+        print(json.dumps(receipt, indent=2))
     elif args.mode == "curate":
         curate(repo, args.case)
     else:
