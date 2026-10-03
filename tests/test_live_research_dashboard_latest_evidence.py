@@ -97,6 +97,12 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("HDF staging 完成", page)
         self.assertIn("Curator 实际任务", page)
         self.assertIn("HDF 完成不等于模型已训练", page)
+        self.assertIn("Matched-start 新增 31 案采集", page)
+        self.assertIn("求解完成不等于 RAW QC 通过", page)
+        self.assertIn("冻结测试仅显示采集与验收状态", page)
+        self.assertIn("31 案 CFD/RAW 也不代表 Curator、模型训练或精度提升", page)
+        self.assertIn("PPO 禁止宣称收益", page)
+        self.assertIn("不是上方 v4 validation 评估", SCRIPT.read_text(encoding="utf-8"))
 
     def test_matched_start_progress_uses_solver_time_and_end_marker(self) -> None:
         lines = [
@@ -222,6 +228,132 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
             ],
             "pending",
         )
+
+    def test_full40_status_separates_solver_completion_from_strict_raw_qc(self) -> None:
+        self.assertEqual(len(MODULE.FULL40_CASES), 31)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            completed = "matched_start_acquisition_train_b00_m0375"
+            verified = "matched_start_acquisition_validation_b01_zero"
+            scheduler = root / MODULE.FULL40_SCHEDULER_STATE
+            scheduler.parent.mkdir(parents=True)
+            scheduler.write_text(
+                json.dumps(
+                    {
+                        "status": "FULL40_EXTENSION_WATCH_ACTIVE",
+                        "receipt_count": 1,
+                        "snapshot": {
+                            "cases": {
+                                completed: {"status": "COMPLETED", "alive": False},
+                                verified: {"status": "COMPLETED", "alive": False},
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            receipt_dir = root / MODULE.FULL40_RECEIPTS
+            receipt_dir.mkdir(parents=True)
+            receipt_dir.joinpath(f"{verified}.json").write_text(
+                json.dumps(
+                    {
+                        "status": "FULL40_RAW_TRANSFER_VERIFIED",
+                        "case": verified,
+                        "split": "validation",
+                        "phase_bin": 1,
+                        "action_target": 0.0,
+                        "full40_predeclaration_sha256": (
+                            MODULE.FULL40_PREDECLARATION_SHA256
+                        ),
+                        "full40_extension_authorization_sha256": (
+                            MODULE.FULL40_AUTHORIZATION_SHA256
+                        ),
+                        "worker_raw_manifest_sha256": "a" * 64,
+                        "raw_file_count": 4,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            rows = {
+                row["case"]: row
+                for row in MODULE._full40_extension_status(root)["cases"]
+            }
+        self.assertTrue(rows[completed]["solver_completed"])
+        self.assertFalse(rows[completed]["raw_qc_verified"])
+        self.assertTrue(rows[verified]["solver_completed"])
+        self.assertTrue(rows[verified]["raw_qc_verified"])
+
+    def test_full40_receipt_fails_closed_on_wrong_split(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            case = "matched_start_acquisition_frozen_test_b03_p075"
+            receipt_dir = root / MODULE.FULL40_RECEIPTS
+            receipt_dir.mkdir(parents=True)
+            receipt_dir.joinpath(f"{case}.json").write_text(
+                json.dumps(
+                    {
+                        "status": "FULL40_RAW_TRANSFER_VERIFIED",
+                        "case": case,
+                        "split": "validation",
+                        "phase_bin": 3,
+                        "action_target": 0.75,
+                        "full40_predeclaration_sha256": (
+                            MODULE.FULL40_PREDECLARATION_SHA256
+                        ),
+                        "full40_extension_authorization_sha256": (
+                            MODULE.FULL40_AUTHORIZATION_SHA256
+                        ),
+                        "worker_raw_manifest_sha256": "b" * 64,
+                        "raw_file_count": 3,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            row = next(
+                row
+                for row in MODULE._full40_extension_status(root)["cases"]
+                if row["case"] == case
+            )
+        self.assertFalse(row["raw_qc_verified"])
+        self.assertFalse(row["receipt_checks"]["split"])
+
+    def test_nine_case_physics_summary_is_train_only_and_reduced(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / MODULE.MATCHED_START_PHYSICS_SUMMARY
+            path.parent.mkdir(parents=True)
+            comparison = {
+                "m075": {
+                    "total_drag_reduction_fraction_positive_is_better": 0.02,
+                    "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6,
+                    "canonical_joint_diagnostic_pass": False,
+                },
+                "p075": {
+                    "total_drag_reduction_fraction_positive_is_better": 0.03,
+                    "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.7,
+                    "canonical_joint_diagnostic_pass": False,
+                },
+            }
+            path.write_text(
+                json.dumps(
+                    {
+                        "status": (
+                            "MATCHED_START_9_CASE_TRAIN_COMMISSIONING_PHYSICS_SUMMARY"
+                        ),
+                        "phases": {
+                            "b00": {
+                                "split": "train",
+                                "same_phase_zero_comparisons": comparison,
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = MODULE._matched_start_physics_summary(root)
+        self.assertEqual(result["scope"], "train_phase_open_loop_commissioning_only")
+        self.assertEqual(result["comparison_count"], 2)
+        self.assertEqual(result["joint_pass_count"], 0)
 
     def test_only_canonical_low_action_audit_is_loaded(self) -> None:
         self.assertEqual(

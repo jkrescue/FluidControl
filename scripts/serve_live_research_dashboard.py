@@ -69,6 +69,18 @@ MATCHED_START_CURATOR_LOGS = Path("artifacts/matched_start_acquisition/curator_l
 MATCHED_START_STAGING = (
     Path("data/curated/.staging") / "matched_start_commissioning_train9_v1"
 )
+MATCHED_START_PHYSICS_SUMMARY = Path(
+    "artifacts/matched_start_acquisition/physics_summary/result.json"
+)
+FULL40_EXTENSION_ROOT = Path("artifacts/matched_start_full40_extension")
+FULL40_SCHEDULER_STATE = FULL40_EXTENSION_ROOT / "scheduler_state.json"
+FULL40_RECEIPTS = FULL40_EXTENSION_ROOT / "transfer_verified"
+FULL40_PREDECLARATION_SHA256 = (
+    "d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b"
+)
+FULL40_AUTHORIZATION_SHA256 = (
+    "da8bccaf18a86666ac78804e775c1608d8fc390bfca1484cbd1eaabe93c17151"
+)
 MATCHED_START_CASES = {
     "matched_start_acquisition_train_b00_zero": ("b00 · zero", 148.0),
     "matched_start_acquisition_train_b00_p075": ("b00 · +0.75", 148.0),
@@ -79,6 +91,35 @@ MATCHED_START_CASES = {
     "matched_start_acquisition_train_b04_zero": ("b04 · zero", 120.0),
     "matched_start_acquisition_train_b04_p075": ("b04 · +0.75", 120.0),
     "matched_start_acquisition_train_b04_m075": ("b04 · −0.75", 120.0),
+}
+FULL40_ACTIONS = {
+    "m075": -0.75,
+    "m0375": -0.375,
+    "zero": 0.0,
+    "p0375": 0.375,
+    "p075": 0.75,
+}
+FULL40_CASES = {
+    **{
+        f"matched_start_acquisition_train_b{phase:02d}_{action}": (
+            "train",
+            phase,
+            target,
+        )
+        for phase, actions in ((0, ("m0375", "p0375")), (2, ("m0375", "p0375")), (4, ("m0375", "p0375")), (6, tuple(FULL40_ACTIONS)))
+        for action in actions
+        for target in (FULL40_ACTIONS[action],)
+    },
+    **{
+        f"matched_start_acquisition_{split}_b{phase:02d}_{action}": (
+            split,
+            phase,
+            target,
+        )
+        for split, phases in (("validation", (1, 5)), ("frozen_test", (3, 7)))
+        for phase in phases
+        for action, target in FULL40_ACTIONS.items()
+    },
 }
 HOST_COMMAND = (
     "awk '/^cpu /{print}' /proc/stat; "
@@ -141,7 +182,8 @@ img{width:100%;height:auto;background:white;border-radius:4px}.row{display:flex;
 <div class="card"><h3>主节点 · SPARK_HOST</h3><div class="task" id="primary-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="primary-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="primary-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="primary-mem">—</div></div></div><svg id="primary-chart" role="img" aria-label="主节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="primary-more"></div></div>
 <div class="card"><h3>计算节点 · WORKER_HOST</h3><div class="task" id="worker-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="worker-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="worker-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="worker-mem">—</div></div></div><svg id="worker-chart" role="img" aria-label="计算节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="worker-more"></div></div>
 </div><div class="legend"><span><i class="sw" style="background:#60c9fb"></i>GPU</span><span><i class="sw" style="background:#e9ae68"></i>CPU</span><span>GB10 采用统一内存；训练保护线：至少剩余 20 GiB。</span></div>
-<h2>Matched-start 九案 commissioning</h2><div class="card"><div class="row"><div><div class="number" id="matched-summary">等待真实采样…</div><div class="small">真实 OpenFOAM / RAW / VTK / HDF staging 状态；不是训练结果或控制收益。</div></div><div class="small" id="matched-resource">读取 Worker CPU / 内存与 Spark GPU…</div></div><div class="casegrid" id="matched-cases"></div><div class="small">求解 <code>End</code>、RAW_TRANSFER_VERIFIED、VTK_READY 和 staging HDF 是四个独立门槛；模型训练尚未由此 commissioning 启动，HDF 完成不等于模型已训练。</div></div>
+<h2>Matched-start 九案 commissioning</h2><div class="card"><div class="row"><div><div class="number" id="matched-summary">等待真实采样…</div><div class="small">真实 OpenFOAM / RAW / VTK / HDF staging 状态；不是训练结果或控制收益。</div></div><div class="small" id="matched-resource">读取 Worker CPU / 内存与 Spark GPU…</div></div><div class="casegrid" id="matched-cases"></div><div class="small" id="matched-physics">九案开放环物理汇总：等待权威 JSON。</div><div class="small">求解 <code>End</code>、RAW_TRANSFER_VERIFIED、VTK_READY 和 staging HDF 是四个独立门槛；模型训练尚未由此 commissioning 启动，HDF 完成不等于模型已训练。</div></div>
+<h2>Matched-start 新增 31 案采集</h2><div class="card"><div class="row"><div><div class="number" id="full40-summary">等待 scheduler 状态…</div><div class="small">顺序为 train → validation → frozen test；求解完成不等于 RAW QC 通过。</div></div><div class="small" id="full40-resource">复用 Worker 真实资源采样…</div></div><div class="small" id="full40-splits">读取 split 摘要…</div><div class="casegrid" id="full40-cases"></div><div class="small">冻结测试仅显示采集与验收状态，绝不展示或用于筛选物理收益；31 案 CFD/RAW 也不代表 Curator、模型训练或精度提升。</div></div>
 <h2>FNO 训练和推理结果</h2><div class="grid"><div class="card"><h3 id="train-title">FNO：训练轮次 → 预测误差</h3><svg class="tall" id="train-chart" role="img" aria-label="多步训练验证误差"></svg><div class="small">蓝：流场平均绝对误差；橙：四个受力系数平均绝对误差。数值来自验证数据。</div></div><div class="card"><h3 id="error-title">递推步数 → 总阻力预测误差</h3><svg class="tall" id="error-chart" role="img" aria-label="不同预测步长的总阻力误差"></svg><div class="small" id="error-legend">读取评估结果…</div></div></div>
 <div class="small" id="v3-metrics" style="margin-top:8px">正在读取新数据 FNO 训练指标…</div><div class="small" id="infer-speed" style="margin-top:4px">正在读取 FNO 推理耗时…</div>
 <h2>真实流场 / FNO 预测 / 误差</h2><div class="card"><div class="row"><div class="small" id="figure-label">读取图片…</div><div><select id="case"><option value="expanded_test_00">测试 00</option><option value="expanded_test_01">测试 01</option><option value="expanded_test_02">测试 02</option><option value="expanded_test_04">测试 04</option><option value="expanded_test_05">新测试 05</option></select> <select id="horizon"><option value="001">1 步</option><option value="010">10 步</option><option value="050">50 步</option><option value="100" selected>100 步</option></select></div></div><img id="flow" alt="真实 OpenFOAM 流场、FNO 预测、误差对照"></div>
@@ -194,6 +236,15 @@ function renderMatchedStart(d){let worker=d.resources?.worker?.at(-1)||{},primar
  $('matched-resource').textContent=`Curator 实际任务 ${primary.matched_start_curator_tasks||0} · Worker 整机 CPU ${num(worker.cpu,1)}% / 可用 ${num(worker.mem_available_gib,1)} GiB · Spark GPU ${num(primary.gpu,0)}% / 可用 ${num(primary.mem_available_gib,1)} GiB`;
  const state={complete:'求解完成',running:'运行中',pending:'待启动',stopped_incomplete:'异常停止/待核查'};
  $('matched-cases').innerHTML=rows.map(x=>{let accepted=receipts[x.case]?.raw_transfer_verified===true,p=pipeline[x.case]||{},hdf=p.hdf_staging_status||'pending',hdfText={complete:'HDF staging 完成',writing:'HDF staging 写入中',started:'Curator 已启动',conflict:'HDF staging 冲突',pending:'HDF staging 待处理'}[hdf]||'HDF staging 状态未知';return `<div class="caseitem"><b>${x.label}</b><span class="${x.status==='complete'?'good':x.status==='stopped_incomplete'?'bad':''}">${state[x.status]||'状态未知'}</span><div>${x.iteration}/16000 · ${num(100*x.iteration/16000,1)}%</div><div class="${accepted?'good':''}">${accepted?'RAW 已回传验收':'RAW 待回传验收'}</div><div class="${p.vtk_ready?'good':''}">${p.vtk_ready?'VTK_READY 801帧':'VTK 待验证'}</div><div class="${hdf==='complete'?'good':hdf==='conflict'?'bad':''}">${hdfText}</div><div class="bar"><i style="width:${Math.min(100,100*x.iteration/16000)}%"></i></div></div>`}).join('');}
+function renderFull40(d){let rows=d.full40_extension?.cases||[],worker=d.resources?.worker?.at(-1)||{},physics=d.matched_start_physics_summary;
+ if(physics?.status==='MATCHED_START_9_CASE_TRAIN_COMMISSIONING_PHYSICS_SUMMARY'){$('matched-physics').textContent=`九案真实OpenFOAM、仅train-phase开放环：−0.75 / +0.75平均降阻 ${pct(physics.actions?.m075?.mean_drag_reduction)} / ${pct(physics.actions?.p075?.mean_drag_reduction)}，平均Cl偏置比 ${num(physics.actions?.m075?.mean_lift_bias_ratio,3)} / ${num(physics.actions?.p075?.mean_lift_bias_ratio,3)}，联合目标 ${physics.joint_pass_count}/${physics.comparison_count} 通过。不是验证/冻结测试或闭环收益。`;}
+ if(!rows.length){$('full40-summary').textContent='scheduler 状态不可用';$('full40-cases').textContent='';return}
+ let qc=rows.filter(x=>x.raw_qc_verified).length,active=rows.filter(x=>x.scheduler_status==='ACQUIRED'&&x.alive).length,ended=rows.filter(x=>x.solver_completed).length;
+ $('full40-summary').textContent=`${active} 求解中 · ${ended}/31 求解完成 · ${qc}/31 RAW QC`;
+ $('full40-resource').textContent=`Worker 整机 CPU ${num(worker.cpu,1)}% · 可用统一内存 ${num(worker.mem_available_gib,1)} GiB · scheduler ${d.full40_extension.status||'未知'}`;
+ let labels={train:'训练',validation:'验证',frozen_test:'冻结测试'};$('full40-splits').textContent=['train','validation','frozen_test'].map(s=>{let r=rows.filter(x=>x.split===s);return `${labels[s]} ${r.filter(x=>x.raw_qc_verified).length}/${r.length} RAW QC`}).join(' · ');
+ let state={ACQUIRED:'求解中',COMPLETED:'求解完成、待RAW QC',NOT_GENERATED:'待生成',SPARK_GENERATED:'Spark已生成',WORKER_STAGED:'Worker已暂存',PENDING:'待启动',FAILED:'失败',ORPHANED:'进程异常',DIRTY_PENDING:'脏状态待核查'};
+ $('full40-cases').innerHTML=rows.map(x=>`<div class="caseitem"><b>${labels[x.split]} · b${String(x.phase_bin).padStart(2,'0')} · ${x.action_target>0?'+':''}${x.action_target}</b><span class="${x.raw_qc_verified?'good':['FAILED','ORPHANED','DIRTY_PENDING'].includes(x.scheduler_status)?'bad':''}">${x.raw_qc_verified?'RAW QC 已通过':state[x.scheduler_status]||x.scheduler_status}</span><div>${x.raw_qc_verified?'严格receipt已验收':x.solver_completed?'solver完成≠QC通过':'RAW QC待验收'}</div>${x.split==='frozen_test'?'<div>冻结测试：仅显示采集状态</div>':''}</div>`).join('');}
 function figure(){if(!latest)return;let key=$('case').value+'/'+$('horizon').value;let found=latest.figures[key];if(found){$('flow').src=found.path+'?v='+found.version;$('flow').hidden=false;$('figure-label').textContent=found.label}else{$('flow').hidden=true;$('figure-label').textContent='该工况暂无导出的对照图'}}
 function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' · 页面每 5 秒更新';let candidates=[{label:'20 步＋后柱阻力加权训练',audit:d.v3_h20_rear_drag_audit,observed:d.v3_h20_rear_drag_observed},{label:'主节点种子 20 步训练',audit:d.v3_primary_seed_h20_audit,observed:d.v3_primary_seed_h20_observed},{label:'主节点后圆柱加权训练',audit:d.v3_rear_weighted_audit,observed:d.v3_rear_weighted_observed},{label:'计算节点种子 20 步训练',audit:d.v3_h20_audit,observed:d.v3_h20_observed},{label:'主节点 10 步训练',audit:d.v3_primary_rollout_audit,observed:d.v3_primary_rollout_observed},{label:'计算节点 10 步训练',audit:d.v3_rollout_audit,observed:d.v3_rollout_observed},{label:'主节点单步训练',audit:d.v3_audit,observed:d.v3_observed},{label:'计算节点单步训练',audit:d.v3_worker_audit,observed:d.v3_worker_observed}];let picked=candidates.find(x=>x.audit?.status==='GATE_B_PASS')||candidates.find(x=>x.observed)||candidates.find(x=>x.audit);let audited=picked?.audit,a=audited||d.audit,c=a?.checks||{};
  let long=d.control_landscape_long?.cases||[],zero=long.find(x=>x.omega_final===0),plus=long.find(x=>x.omega_final===1),minus=long.find(x=>x.omega_final===-1);
@@ -209,7 +260,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  let observed=picked?.observed,preliminary=observed?.summary?.['100']?.total_drag_nrmse;
  let strict=d.gate_b_metric_integrity, b=strict?.pooled_total_drag_nrmse??(audited?c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse:(Number.isFinite(preliminary)?preliminary:c.heldout_full_period_total_drag_nrmse?.total_drag_nrmse)),i=c.independent_phase_full_period_total_drag_nrmse?.total_drag_nrmse;
  $('heldout').textContent=pct(b);$('heldout').className=audited&&Number.isFinite(b)&&b<=.1?'good':Number.isFinite(b)&&b>.1?'bad':'';
- let v4primary=d.v4_h20_history||[];$('epoch').textContent=`新数据多步 ${v4primary.length}/5 轮`;$('hydro-status').textContent=d.cem?'CEM 已完成':'当前目标待 Gate B';
+ let v4primary=d.v4_h20_history||[],v4gate=d.v4_validation_decision,v4err=v4gate?.candidate_terminal_100step?.pooled_total_drag_nrmse,v4threshold=v4gate?.fixed_gate_b_threshold;$('epoch').textContent=`新数据多步 ${v4primary.length}/5 轮`;$('hydro-status').textContent=Number.isFinite(v4err)&&Number.isFinite(v4threshold)&&v4err>v4threshold?`代理 ${pct(v4err)} > ${pct(v4threshold)}，PPO 禁止宣称收益`:d.cem?'CEM 已完成':'当前目标待 Gate B';
  let watch=d.watchdog||{}, sprintHours=Math.max(0,(Date.UTC(2026,9,3,5,23)-Date.now())/3600000).toFixed(1);$('watchdog').textContent=`两小时阶段验收剩余 ${sprintHours} 小时（北京时间 13:23） · 科研监控采样 ${watch.timestamp_utc||'待启动'} · 告警 ${watch.alerts?.length?watch.alerts.join('、'):'无'}`;$('watchdog').className='small '+(watch.alerts?.length?'bad':'good');
  let finished=d.cfd.filter(x=>x.status==='complete').length,average=d.cfd.reduce((s,x)=>s+x.percent,0)/Math.max(1,d.cfd.length);
  $('cfd-progress').textContent=`${finished}/${d.cfd.length} 配对 CFD 完成`;
@@ -220,6 +271,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  renderLatestEvidence(d);
  resources('primary',d.resources.primary);resources('worker',d.resources.worker);
  renderMatchedStart(d);
+ renderFull40(d);
  let trainHistory=v4primary.length?v4primary:d.history;$('train-title').textContent=v4primary.length?'v4 新数据 20 步 FNO：训练轮次 → 验证误差':'旧数据多步 FNO：训练轮次 → 验证误差';plot('train-chart',[{values:trainHistory.map(x=>x.terminal_state_mae),color:'#60c9fb'},{values:trainHistory.map(x=>x.terminal_force_mae),color:'#e9ae68'}],.05);
  let steps=['1','10','50','100'],v3series=[{result:d.v3_observed,color:'#60c9fb',label:'主节点单步'},{result:d.v3_worker_observed,color:'#79d5a3',label:'计算节点单步'},{result:d.v3_primary_rollout_observed,color:'#dc95e4',label:'主节点 10 步训练'},{result:d.v3_rollout_observed,color:'#e9ae68',label:'计算节点 10 步训练'},{result:d.v3_h20_observed,color:'#f49ab8',label:'计算节点种子 20 步训练'},{result:d.v3_rear_weighted_observed,color:'#97e1e4',label:'主节点后圆柱加权训练'},{result:d.v3_primary_seed_h20_observed,color:'#dce779',label:'主节点种子 20 步训练'},{result:d.v3_h20_rear_drag_observed,color:'#e66ac7',label:'20 步＋后柱阻力加权'}].filter(x=>x.result?.summary);
  if(v3series.length){let series=v3series.map(x=>({values:steps.map(h=>x.result.summary[h]?.total_drag_nrmse),color:x.color}));let top=Math.max(.2,...series.flatMap(x=>x.values.filter(Number.isFinite)));series.push({values:steps.map(()=>.1),color:'#d77979'});plot('error-chart',series,Math.ceil(top*10)/10);$('error-title').textContent='v3 真实 CFD：递推步数 → 终点阻力误差';$('error-legend').textContent=v3series.map(x=>x.label).join('、')+'；曲线为逐工况平均，红线为10%；正式判定用上方合并误差。'}
@@ -473,6 +525,109 @@ def _matched_start_pipeline_status(root: Path) -> list[dict]:
     return rows
 
 
+def _matched_start_physics_summary(root: Path) -> dict | None:
+    """Reduce the finalized nine-case JSON without exposing branch time series."""
+    data = _read_json(root / MATCHED_START_PHYSICS_SUMMARY, None)
+    if not isinstance(data, dict) or data.get("status") != (
+        "MATCHED_START_9_CASE_TRAIN_COMMISSIONING_PHYSICS_SUMMARY"
+    ):
+        return None
+    phases = data.get("phases")
+    if not isinstance(phases, dict) or any(
+        not isinstance(row, dict) or row.get("split") != "train"
+        for row in phases.values()
+    ):
+        return None
+    actions = {}
+    comparison_count = 0
+    joint_pass_count = 0
+    for action in ("m075", "p075"):
+        comparisons = [
+            phase.get("same_phase_zero_comparisons", {}).get(action)
+            for phase in phases.values()
+        ]
+        if not comparisons or any(not isinstance(row, dict) for row in comparisons):
+            return None
+        drag = [row.get("total_drag_reduction_fraction_positive_is_better") for row in comparisons]
+        bias = [row.get("abs_mean_rear_cl_over_zero_fluctuation_rms") for row in comparisons]
+        if any(not isinstance(value, (int, float)) for value in (*drag, *bias)):
+            return None
+        actions[action] = {
+            "mean_drag_reduction": sum(drag) / len(drag),
+            "mean_lift_bias_ratio": sum(bias) / len(bias),
+        }
+        comparison_count += len(comparisons)
+        joint_pass_count += sum(
+            row.get("canonical_joint_diagnostic_pass") is True
+            for row in comparisons
+        )
+    return {
+        "status": data["status"],
+        "scope": "train_phase_open_loop_commissioning_only",
+        "actions": actions,
+        "comparison_count": comparison_count,
+        "joint_pass_count": joint_pass_count,
+    }
+
+
+def _full40_extension_status(root: Path) -> dict:
+    """Read the fixed scheduler/receipt JSONs; never inspect CFD or HDF data."""
+    scheduler = _read_json(root / FULL40_SCHEDULER_STATE, None)
+    snapshot = scheduler.get("snapshot", {}) if isinstance(scheduler, dict) else {}
+    observed = snapshot.get("cases", {}) if isinstance(snapshot, dict) else {}
+    if not isinstance(observed, dict):
+        observed = {}
+    rows = []
+    for case, (split, phase_bin, action_target) in FULL40_CASES.items():
+        state = observed.get(case, {})
+        if not isinstance(state, dict):
+            state = {}
+        receipt = _read_json(root / FULL40_RECEIPTS / f"{case}.json", None)
+        checks = {
+            "status": isinstance(receipt, dict)
+            and receipt.get("status") == "FULL40_RAW_TRANSFER_VERIFIED",
+            "case": isinstance(receipt, dict) and receipt.get("case") == case,
+            "split": isinstance(receipt, dict) and receipt.get("split") == split,
+            "phase_bin": isinstance(receipt, dict)
+            and receipt.get("phase_bin") == phase_bin,
+            "action_target": isinstance(receipt, dict)
+            and receipt.get("action_target") == action_target,
+            "predeclaration": isinstance(receipt, dict)
+            and receipt.get("full40_predeclaration_sha256")
+            == FULL40_PREDECLARATION_SHA256,
+            "authorization": isinstance(receipt, dict)
+            and receipt.get("full40_extension_authorization_sha256")
+            == FULL40_AUTHORIZATION_SHA256,
+            "raw_manifest": isinstance(receipt, dict)
+            and isinstance(receipt.get("worker_raw_manifest_sha256"), str)
+            and len(receipt["worker_raw_manifest_sha256"]) == 64
+            and isinstance(receipt.get("raw_file_count"), int)
+            and receipt["raw_file_count"] > 0,
+        }
+        verified = all(checks.values())
+        status = state.get("status", "UNKNOWN")
+        rows.append(
+            {
+                "case": case,
+                "split": split,
+                "phase_bin": phase_bin,
+                "action_target": action_target,
+                "scheduler_status": status,
+                "alive": state.get("alive") is True,
+                "solver_completed": status == "COMPLETED" or verified,
+                "raw_qc_verified": verified,
+                "receipt_checks": checks,
+            }
+        )
+    return {
+        "status": scheduler.get("status") if isinstance(scheduler, dict) else None,
+        "scheduler_receipt_count": scheduler.get("receipt_count")
+        if isinstance(scheduler, dict)
+        else None,
+        "cases": rows,
+    }
+
+
 def _parse_host(output: str, previous: tuple[int, int] | None):
     lines = output.strip().splitlines()
     cpu = [int(x) for x in lines[0].split()[1:]]
@@ -688,11 +843,11 @@ class Handler(BaseHTTPRequestHandler):
                     current = run / "heldout_figures_dashboard" / filename
                     previous = self.root / OLD / "heldout_figures" / filename
                     if v3.exists():
-                        figures[f"{case}/{horizon}"] = {"path": f"/figure/v3/{case}/{horizon}.png", "version": int(v3.stat().st_mtime), "label": "v3 单步 FNO · 真实 OpenFOAM CFD / 预测 / 绝对误差（初评）"}
+                        figures[f"{case}/{horizon}"] = {"path": f"/figure/v3/{case}/{horizon}.png", "version": int(v3.stat().st_mtime), "label": f"v3 单步 FNO · 历史 expanded_test 冻结测试 · H{int(horizon)} 步 · 真实 CFD / 预测 / 绝对误差；不是上方 v4 validation 评估"}
                     elif current.exists():
-                        figures[f"{case}/{horizon}"] = {"path": f"/figure/current/{case}/{horizon}.png", "version": int(current.stat().st_mtime), "label": "当前 10 轮多步 FNO · 真实 CFD / 预测 / 绝对误差"}
+                        figures[f"{case}/{horizon}"] = {"path": f"/figure/current/{case}/{horizon}.png", "version": int(current.stat().st_mtime), "label": f"Gate-B seed20261003 10轮多步 FNO · 历史 expanded_test 冻结测试 · H{int(horizon)} 步 · 真实 CFD / 预测 / 绝对误差；不是上方 v4 validation 评估"}
                     elif previous.exists():
-                        figures[f"{case}/{horizon}"] = {"path": f"/figure/previous/{case}/{horizon}.png", "version": int(previous.stat().st_mtime), "label": "上一版单步 FNO · 真实 CFD / 预测 / 绝对误差（当前模型图待生成）"}
+                        figures[f"{case}/{horizon}"] = {"path": f"/figure/previous/{case}/{horizon}.png", "version": int(previous.stat().st_mtime), "label": f"历史 30轮单步 FNO · expanded_test 冻结测试 · H{int(horizon)} 步 · 真实 CFD / 预测 / 绝对误差；不是上方 v4 validation 评估"}
             data = {"server_time": datetime.now(UTC).isoformat(timespec="seconds"), "watchdog": _read_json(self.root / "artifacts/monitor/research_window_20261002/latest.json", None), "audit": audit, "v3_audit": _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/gate_b_audit.json", None), "v3_worker_audit": _read_json(self.root / V3_WORKER_RUN / "gate_b_audit.json", None), "v3_primary_rollout_audit": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "gate_b_audit.json", None), "v3_rollout_audit": _read_json(self.root / V3_ROLLOUT_RUN / "gate_b_audit.json", None), "v3_h20_audit": _read_json(self.root / V3_H20_RUN / "gate_b_audit.json", None), "v3_observed": _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/heldout_evaluation.json", None), "v3_worker_observed": _read_json(self.root / V3_WORKER_RUN / "heldout_evaluation.json", None), "v3_primary_rollout_observed": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "heldout_evaluation.json", None), "v3_rollout_observed": _read_json(self.root / V3_ROLLOUT_RUN / "heldout_evaluation.json", None), "v3_primary_rollout_validation": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "validation_long_horizon.json", None), "v3_rollout_validation": _read_json(self.root / V3_ROLLOUT_RUN / "validation_long_horizon.json", None), "v3_h20_observed": _read_json(self.root / V3_H20_RUN / "heldout_evaluation.json", None), "history": history, "v3_training": v3_training, "v3_primary_rollout_history": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "training_history.json", []), "second_seed": _read_json(self.root / SECOND_RUN / "heldout_evaluation.json", None), "evaluations": {"heldout": heldout.get("summary", {}), "independent": independent.get("summary", {})}, "resources": samples, "cfd": _cfd_progress(self.root), "curator": _curator_progress(self.root), "benchmark": _read_json(self.root / "artifacts/monitor/fno_inference_benchmark_seed20261003.json", None), "control_landscape_long": _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_long_result_20261003.json", None), "periodic_benchmark": _read_json(self.root / "artifacts/tandem_cylinders/periodic_rotation_benchmark_result_20261003.json", None), "control_ranking": _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_fno_ranking_h20_20261003.json", None), "figures": figures, "cem": (self.root / "artifacts/distributed_runs/gateb_multistep_20261002/formal/CEM_STAGE_C_COMPLETE").exists(), "ppo": False}
             data["v4_curator"] = _v4_curator_progress(self.root)
             data["matched_start_transfer"] = _matched_start_transfer_receipts(
@@ -701,6 +856,10 @@ class Handler(BaseHTTPRequestHandler):
             data["matched_start_pipeline"] = _matched_start_pipeline_status(
                 self.root
             )
+            data["matched_start_physics_summary"] = (
+                _matched_start_physics_summary(self.root)
+            )
+            data["full40_extension"] = _full40_extension_status(self.root)
             data["gate_b_metric_integrity"] = _read_json(self.root / "artifacts/tandem_cylinders/gate_b_metric_integrity_v3_h20_rear_drag_test_v2_20261003.json", None)
             data["crossphase86_ranking"] = _read_json(self.root / "artifacts/tandem_cylinders/crossphase86_fno_cfd_ranking_20261003.json", None)
             data["control_ranking_weighted"] = _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_fno_ranking_rear_weighted_h10_20261003.json", None)
