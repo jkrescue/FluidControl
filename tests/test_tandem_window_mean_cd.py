@@ -8,6 +8,8 @@ import types
 import unittest
 from pathlib import Path
 
+import numpy as np
+
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "evaluate_tandem_window_mean_cd.py"
 WRAPPER = ROOT / "scripts" / "run_tandem_window_mean_cd_v4_validation_spark.sh"
@@ -58,6 +60,16 @@ MODULE = load_module()
 
 
 class WindowMeanCdTest(unittest.TestCase):
+    def test_float32_cfd_time_rounding_is_not_irregular_sampling(self):
+        time = (80.0 + np.arange(801, dtype=np.float64) * 0.1).astype(
+            np.float32
+        )[:, None]
+        MODULE.validate_time_spacing(time)
+        irregular = time.copy()
+        irregular[100] += np.float32(0.01)
+        with self.assertRaisesRegex(ValueError, "uniform"):
+            MODULE.validate_time_spacing(irregular)
+
     def test_pooled_nrmse_uses_segment_weighted_sums(self):
         cases = [
             {"segments": 1, "window_mean_cd_rmse": 1.0, "window_mean_cd_target_rms": 2.0},

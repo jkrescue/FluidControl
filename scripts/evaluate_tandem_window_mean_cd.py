@@ -79,6 +79,17 @@ def decode_attribute(value: object, label: str) -> object:
     return value
 
 
+def validate_time_spacing(time: np.ndarray) -> None:
+    """Accept only 0.1 D/U cadence, allowing float32 timestamp rounding."""
+    values = np.asarray(time, dtype=np.float64).reshape(-1)
+    if values.size <= HORIZON or not np.isfinite(values).all():
+        raise ValueError("invalid CFD time vector")
+    # Curated time is stored as float32: at t=160, its 0.1 increments vary
+    # between 0.09999084 and 0.10000610 due to representation alone.
+    if not np.allclose(np.diff(values), 0.1, rtol=0.0, atol=2.0e-5):
+        raise ValueError("expected uniform 0.1 time spacing")
+
+
 def validate_hdf5(path: Path) -> None:
     with h5py.File(path, "r") as handle:
         for name in ("state", "mask", "omega", "force", "time"):
@@ -103,9 +114,10 @@ def validate_hdf5(path: Path) -> None:
         frame_counts = {len(handle[name]) for name in ("state", "mask", "omega", "force", "time")}
         if len(frame_counts) != 1 or next(iter(frame_counts)) <= HORIZON:
             raise ValueError(f"{path}: inconsistent or insufficient frame counts")
-        time = np.asarray(handle["time"][:], dtype=np.float64).reshape(-1)
-        if not np.isfinite(time).all() or not np.allclose(np.diff(time), 0.1, atol=1e-6):
-            raise ValueError(f"{path}: expected uniform 0.1 time spacing")
+        try:
+            validate_time_spacing(handle["time"][:])
+        except ValueError as error:
+            raise ValueError(f"{path}: {error}") from error
 
 
 def validate_normalization(stats: dict) -> None:
