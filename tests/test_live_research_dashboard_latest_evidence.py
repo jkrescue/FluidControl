@@ -112,6 +112,8 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
             "Spark 保留 20 GiB、Worker 保留 40 GiB",
             "只告警，不执行",
             "正式闭环研究",
+            "Train20 固定动作物理对照 · TRAIN ONLY",
+            "不替代九案 commissioning",
         ):
             self.assertIn(label, page)
         for existing in (
@@ -123,6 +125,9 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
             self.assertIn(existing, page)
         self.assertIn("renderDualWatchdog(d)", page)
         self.assertIn('data["dual_node_watchdog"]', SCRIPT.read_text(encoding="utf-8"))
+        self.assertIn('data["full40_train20_physics"]', SCRIPT.read_text(encoding="utf-8"))
+        self.assertIn("FULL40_TRAIN20_OPEN_LOOP_PHYSICS_SUMMARY", page)
+        self.assertIn("validation/frozen结果读取", page)
 
     def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
