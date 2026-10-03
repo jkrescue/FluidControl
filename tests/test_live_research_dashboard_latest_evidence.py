@@ -504,6 +504,20 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
+            replay = root / "artifacts/direct_cfd/b00seq_b01_openloop_v1"
+            replay.mkdir(parents=True)
+            (replay / "audit_receipt.json").write_text(
+                json.dumps(
+                    {
+                        "status": "B00_ACTIONS_B01_OPENLOOP_INDEPENDENT_AUDIT_PASS",
+                        "physical_summary": {
+                            "openloop_drag_reduction_vs_zero": -0.00744,
+                            "feedback_drag_reduction_vs_zero": 0.0425,
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
             with patch.object(MODULE, "_service_state", return_value="active"):
                 result = MODULE._direct_cfd_ppo_status(root)
         self.assertTrue(result["training_complete"])
@@ -528,6 +542,10 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
             "statistical independence is unproven",
             result["independent_b01_evaluation"]["scope"],
         )
+        self.assertEqual(
+            result["b00_sequence_b01_replay"]["status"],
+            "B00_ACTIONS_B01_OPENLOOP_INDEPENDENT_AUDIT_PASS",
+        )
 
     def test_current_cards_label_b5_screen_and_executed_action_ramp(self) -> None:
         page = MODULE.PAGE
@@ -538,6 +556,9 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("不是阶梯保持", page)
         self.assertIn("这是epoch内validation10，不是dynamic6或最终门槛", page)
         self.assertIn("四力${", page)
+        self.assertIn("此起点上反馈对减阻有附加价值", page)
+        self.assertIn("固定序列更抑制升力波动", page)
+        self.assertNotIn("feedback_vs_openloop_reference", page)
 
     def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
