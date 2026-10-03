@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -646,6 +647,17 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("post-hoc per-phase oracle", page)
         self.assertIn('data["dynamic6_physical_qc"]', page)
         self.assertIn("full40_dev30_quickscreen_qs1_interrupt_recovery.json", page)
+
+    def test_current_chain_is_promoted_and_history_is_collapsed(self) -> None:
+        page = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn('id="current-focus"', page)
+        self.assertIn("document.querySelector('.banner').after($('current-focus'))", page)
+        self.assertEqual(page.count('<details class="archive">'), 3)
+        self.assertNotIn('<details class="archive" open>', page)
+        self.assertIn("历史 v3/v4 与旧开环动作证据（非当前", page)
+        self.assertIn("历史数据生产与 commissioning 明细", page)
+        identifiers = re.findall(r'id="([^"]+)"', page)
+        self.assertEqual(len(identifiers), len(set(identifiers)))
 
 
 if __name__ == "__main__":
