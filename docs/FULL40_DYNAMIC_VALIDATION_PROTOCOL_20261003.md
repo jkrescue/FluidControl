@@ -2,8 +2,11 @@
 
 ## Status and purpose
 
-This is a predeclared **real OpenFOAM** development-validation panel. It has
-not been staged or solved. It uses only the train-excluded validation phases
+This is a predeclared **real OpenFOAM** development-validation panel. All six
+case skeletons are staged on Spark. The fail-stop serial solver service
+`fluid-control-dynamic6-serial-r2-20261003.service` started the first case at
+2026-10-03 10:38:59 UTC; this status is not a claim that the panel or its QC
+has completed. It uses only the train-excluded validation phases
 `b01` and `b05`; it neither opens nor enumerates frozen-test HDF5 data. Its
 purpose is to test whether the official PhysicsNeMo FNO resolves force
 transients and action ordering under bounded action switches before a
@@ -54,14 +57,26 @@ paired real-CFD PPO acceptance run.
 
 ## Execution gates and resource estimate
 
-The generator refuses a pre-existing case, requires the reviewed
-predeclaration SHA and an explicit generation token, and stages one case per
-invocation. The runner defaults to preflight, requires 40 GiB MemAvailable,
-refuses existing solver output, and blocks while `pimpleFoam`, matched-start
-Curator, or FNO training is active. Consequently this reviewed version is
-strictly serial: a second panel case cannot start while the first solver is
-running. Execution additionally requires a separate environment token. The
-panel QC output is exclusive and cannot overwrite an earlier report.
+The generator refuses a pre-existing case, requires reviewed predeclaration
+SHA `0478c8532bd2ded504ccd5f89303001eb8359f69b3036f296e31428a085d1272`
+and an explicit generation token, and stages one case per invocation. The
+runner defaults to preflight, requires 40 GiB MemAvailable, refuses existing
+solver output, and blocks an actual `pimpleFoam` or matched-start Curator
+process. Consequently it remains strictly serial: a second panel case cannot
+start while the first solver is running. Execution additionally requires a
+separate environment token. The panel QC output is exclusive and cannot
+overwrite an earlier report.
+
+The original protocol blocked every FNO training command and required the
+panel to wait until training ended. That resource policy was revised before
+the first solver started. Coexistence is allowed only with the exact active
+`fluid-control-dev30-quickscreen-h20-qs1.service`: the guard verifies a unique
+digest-pinned PhysicsNeMo container, GPU 0, 8-CPU/64-GiB limits, read-only
+dev30 input, the dedicated qs1 H20 output, no frozen mount, all training PIDs
+inside that container, and at least 60 GiB host MemAvailable. Any other
+training or evaluation process fails closed. This revision changes resource
+scheduling only; it does not change a case, action, split, physical metric,
+or scientific threshold.
 
 Execution is deliberately restricted to the authoritative Spark repository
 path. A Worker temporary-copy run is rejected: this protocol does not yet
@@ -74,12 +89,15 @@ files, completion markers, and aggregate QC remain together on Spark.
 Based on the measured full40 throughput of roughly 23 minutes per 80-D/U case,
 one 20-D/U case is estimated at 6–8 minutes including startup and QC. Six
 cases require approximately **36–48 minutes wall time in the enforced serial
-mode**. This is a linear estimate, not a completed measurement. The panel must wait for current
-Curator/training work to finish and must not delay the primary dev30 chain.
+mode**. This is a linear estimate, not a completed measurement. The single
+CFD may run beside the reviewed qs1 H20 service under the guard above; no
+second CFD is allowed.
 
 Files:
 
 - `cfd/tandem_cylinders/make_full40_dynamic_validation_panel.py`
 - `cfd/tandem_cylinders/run_full40_dynamic_validation_case.sh`
+- `scripts/check_dynamic6_qs1_coexistence.py`
+- `scripts/run_full40_dynamic6_serial_spark.sh`
 - `scripts/audit_full40_dynamic_validation_panel.py`
 - `artifacts/tandem_cylinders/full40_dynamic_validation_predeclared_20261003.json`

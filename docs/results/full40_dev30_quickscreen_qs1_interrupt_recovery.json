@@ -1,0 +1,13 @@
+{
+  "status": "QS1_ONESTEP_COMPLETE_H20_RECOVERED_STANDALONE",
+  "incident_utc": "2026-10-03T10:27:05Z",
+  "cause": "The original pipeline service was stopped after cudaMemGetInfo free memory on DGX Spark UMA was incorrectly treated as non-reclaimable total available memory.",
+  "scientific_data_impact": "The one-step trainer continued to its predeclared epoch 10 and wrote a complete 10-row history and checkpoint before its container exited. No H20 or validation result was fabricated.",
+  "one_step_run_id": "qs1",
+  "one_step_epochs_complete": 10,
+  "one_step_best_fno_sha256": "c6c5a184f08a022bef09b6942eba4e071b698af2cda31d11a3a922d1ac42e087",
+  "stale_pipeline_status_warning": "artifacts/tandem_cylinders/full40_dev30_quickscreen_pipeline_qs1/pipeline_status.json says RUNNING but is superseded for live state because its parent service was stopped.",
+  "recovery_service": "fluid-control-dev30-quickscreen-h20-qs1.service",
+  "recovery_scope": "H20 only; validation remains a later separate stage; frozen test was not mounted or accessed.",
+  "frozen_test_accessed_or_mounted": false
+}

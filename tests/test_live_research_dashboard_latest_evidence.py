@@ -5,6 +5,8 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "serve_live_research_dashboard.py"
@@ -593,6 +595,55 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
                 ],
                 0.11,
             )
+
+
+    def test_dynamic6_runtime_reads_bounded_log_and_exact_service(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cases = root / "cfd/tandem_cylinders/cases"
+            for name, phase, profile, start in (
+                ("full40_dynamic_validation_b01_zero", 1, "zero", 130.0),
+                ("full40_dynamic_validation_b01_minus", 1, "minus", 130.0),
+                ("full40_dynamic_validation_b01_plus", 1, "plus", 130.0),
+                ("full40_dynamic_validation_b05_zero", 5, "zero", 102.0),
+                ("full40_dynamic_validation_b05_minus", 5, "minus", 102.0),
+                ("full40_dynamic_validation_b05_plus", 5, "plus", 102.0),
+            ):
+                case = cases / name
+                case.mkdir(parents=True)
+                (case / "case_config.json").write_text(
+                    json.dumps(
+                        {
+                            "phase_bin": phase,
+                            "profile": profile,
+                            "start_time": start,
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+            current = cases / "full40_dynamic_validation_b01_zero"
+            (current / "log.pimpleFoam.full40_dynamic_validation").write_text(
+                "Time = 130.005\nTime = 135\n", encoding="utf-8"
+            )
+            with patch.object(
+                MODULE.subprocess,
+                "run",
+                return_value=SimpleNamespace(stdout="active\n", returncode=0),
+            ):
+                result = MODULE._dynamic6_runtime(root)
+            self.assertEqual(result["status"], "RUNNING")
+            self.assertEqual(result["current_case"]["steps"], 1000)
+            self.assertEqual(result["current_case"]["phase_bin"], 1)
+            self.assertEqual(result["ai_training_processes"], 0)
+            self.assertEqual(result["cfd_solver_processes"], 0)
+            self.assertFalse(result["frozen_hdf_opened_or_enumerated"])
+
+    def test_dashboard_exposes_dynamic6_and_interrupt_record(self) -> None:
+        page = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn('id="chain-dynamic"', page)
+        self.assertIn('data["dynamic6_runtime"]', page)
+        self.assertIn("AI训练叶进程", page)
+        self.assertIn("full40_dev30_quickscreen_qs1_interrupt_recovery.json", page)
 
 
 if __name__ == "__main__":
