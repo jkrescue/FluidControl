@@ -49,3 +49,7 @@ the apparent gap: over its `t=80..160` window, mean Cl is `-1.004868`,
 the ambiguous label; the new ~1.143 is fluctuating RMS. The different case
 starts and windows cause only small additional numerical differences. This
 is a metric-definition correction, **not** evidence for two flow attractors.
+This conclusion is independently reproducible via
+`python3 cfd/tandem_cylinders/audit_lift_rms_definitions.py --output
+artifacts/tandem_cylinders/lift_rms_metric_audit_20261003.json` (output
+SHA-256 `c0492df19626562bbb415e959a3d2094328e47c9c91f8e3ca577505b4a8670aa`).

@@ -145,3 +145,12 @@ physical acceptance criteria**, despite meeting the 2% drag-reduction
 threshold. This strengthens—not weakens—the need for phase-aware time-varying
 control. The scientific question remains valid, but an open-loop drag-only
 result must never be reported as achieving it.
+
+Two predeclared zero-mean smooth periodic open-loop CFD controls (periods 10
+and 20) have also completed. They pass the mean-lift bound but fail the joint
+drag/fluctuation criteria: period 10 changes total Cd by `+0.586%` and rear
+fluctuating Cl RMS by `+10.3%`; period 20 changes them by `-0.919%` and
+`+13.8%`. See `PERIODIC_ROTATION_BENCHMARK_20261003.md`. This establishes
+concrete baselines for a learned controller to beat, but only at one phase
+and one coarse mesh. It does not rescue the current FNO's failed action
+ranking or prove feedback benefit in advance.

@@ -35,3 +35,27 @@ python3 cfd/tandem_cylinders/make_periodic_rotation_benchmark.py \
 bash cfd/tandem_cylinders/run_control_landscape_case.sh periodic_val_p10_20261003
 bash cfd/tandem_cylinders/run_control_landscape_case.sh periodic_val_p20_20261003
 ```
+
+## Completed CFD result (2026-10-03 UTC)
+
+Both cases ended cleanly and passed the fixed 801-field, 16,000-force-sample,
+identical-restart, Courant and continuity checks. The exact audited result is
+`artifacts/tandem_cylinders/periodic_rotation_benchmark_result_20261003.json`
+(SHA-256 `46b573daf70399c514c1422579c255d6ba32b8bdcee2936ddfe91e8de39a0d7f`).
+
+| Case | Mean total Cd | Change vs zero | Rear fluctuating Cl RMS / zero | `|mean rear Cl| / zero Cl'_rms` | Fixed one-phase screen |
+| :-- | --: | --: | --: | --: | :-- |
+| Zero | 2.29931 | — | 1.000 | 0.0679 | reference |
+| Period 10 | 2.31279 | +0.586% | 1.103 | 0.0703 | fail drag and fluctuation |
+| Period 20 | 2.27819 | -0.919% | 1.138 | 0.0647 | fail drag and fluctuation |
+
+Both periodic controls satisfy the locked mean-lift bound (`≤0.1`), unlike
+the constant signed controls, but neither reaches the 2% total-drag reduction
+or the `≤1.05` rear fluctuating-lift ratio. The period-10 force blocks vary
+substantially because the generic six-block diagnostic is not aligned to its
+ten-unit actuation period; the full analysis window contains four complete
+periods. These two predeclared choices do not exhaust useful open-loop
+schedules, so failure here supports a nontrivial phase-feedback hypothesis,
+not a proof that closed loop is necessary or that it will succeed. No physical
+actuator torque or power was measured; `omega` and slew are only kinematic
+proxies. Final comparisons still require independent phases and grid checks.
