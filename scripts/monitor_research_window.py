@@ -15,15 +15,26 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "artifacts/monitor/research_window_20261002"
 WORKER = "USER@WORKER_HOST"
+TRACKED_PROCESS_AWK = r"""awk '
+$1 ~ /^python(3)?$/ {
+    args = $0
+    sub(/^[^[:space:]]+[[:space:]]+/, "", args)
+    if (args ~ /^python(3)?([[:space:]]+-u)?[[:space:]]+[^[:space:]]*\/(train_tandem_fno(_rollout)?|evaluate_tandem_fno|train_tandem_hydrogym_ppo_pilot)\.py([[:space:]]|$)/) {
+        count += 1
+    }
+}
+$1 == "pimpleFoam" { count += 1 }
+END { print count + 0 }
+'"""
 HOST_PROBE = (
     "awk '/^MemAvailable:/ {print $2}' /proc/meminfo; "
     "nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits | head -1; "
-    "ps -eo args | grep -E 'train_tandem_fno_rollout.py|evaluate_tandem_fno.py|train_tandem_hydrogym_ppo_pilot.py|pimpleFoam' "
-    "| grep -v grep | wc -l; "
+    "ps -eo comm=,args= | "
+    + TRACKED_PROCESS_AWK
+    + "; "
     "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/"
     "tandem_fno_gate_b_aug_v3_rollout_seed20261005_10epoch/"
     "training_history.json 2>/dev/null || echo 0; "
