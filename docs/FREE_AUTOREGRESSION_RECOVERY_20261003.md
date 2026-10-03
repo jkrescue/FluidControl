@@ -116,3 +116,19 @@ Terminal-horizon and all-horizon values are reported separately; neither is an
 average of per-case ratios. These diagnostics do not change the loss or existing
 checkpoint-selection score. Four focused CPU tests passed in the pinned
 PhysicsNeMo container. Already-running comparisons retain their loaded code.
+
+## Interrupted H20 run and official synchronous loading
+
+The H20 process stopped during epoch 6 on 2026-10-03 15:54 UTC. Its five
+completed epoch checkpoints are retained. The installed TensorDict dependency
+uses a process-global device-transfer recorder; concurrent HDF5Reader calls
+raised `Can only mark one TensorDict at a time`. This was not an out-of-memory
+failure (minimum host MemAvailable was 72.30 GiB).
+
+The runner now uses the official DataLoader option `prefetch_factor=0`, which
+selects synchronous iteration in the installed NVIDIA source. Disabling CUDA
+streams alone does not disable threaded host prefetch. No vendor code or API
+is replaced. Resume retains the failed log, writes a separate resume record
+and log, and restores the completed model/optimizer/scheduler checkpoint.
+The restart is not claimed to be bitwise identical to uninterrupted training;
+the sampler/RNG sequence is not restored by this project trainer.
