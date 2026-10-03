@@ -9,6 +9,7 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -21,6 +22,7 @@ RAW_QC = Path("artifacts/tandem_cylinders/dynamic_train8_real_cfd_qc_20261003.js
 AUTH = Path("artifacts/tandem_cylinders/dynamic_train8_curation_authorization_20261003.json")
 VTK_RECEIPTS = Path("artifacts/tandem_cylinders/dynamic_train8_vtk_ready")
 OUTPUT = Path("data/curated/tandem_cylinders_dynamic_train8_v1")
+FULL40 = Path("data/curated/tandem_cylinders_matched_start_full40_v1")
 BASE = Path("scripts/curate_low_action_phase94_validation.py")
 FORCE_SHA = {
     "forceFront": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
@@ -273,15 +275,33 @@ def finalize(repo: Path) -> dict:
                     if not np.isfinite(dataset[begin : begin + 16]).all():
                         raise ValueError(f"nonfinite HDF: {path.stem}/{key}")
         digests[path.name] = sha256(path)
+    source_normalization = repo / FULL40 / "normalization.json"
+    target_normalization = root / "normalization.json"
+    if target_normalization.exists():
+        raise FileExistsError(f"refusing overwrite: {target_normalization}")
+    with tempfile.NamedTemporaryFile(dir=root, delete=False) as stream:
+        temporary = Path(stream.name)
+    try:
+        shutil.copyfile(source_normalization, temporary)
+        with temporary.open("rb") as stream:
+            os.fsync(stream.fileno())
+        os.link(temporary, target_normalization)
+    finally:
+        temporary.unlink(missing_ok=True)
+    if sha256(target_normalization) != sha256(source_normalization):
+        raise ValueError("train20 normalization copy differs")
     manifest = {
         "schema_version": 1,
         "profile": "dynamic_train8_v1",
         "status": "DYNAMIC_TRAIN8_TRAIN_ONLY_CURATED",
         "trajectory_counts": {"train": 8, "validation": 0, "frozen_test": 0},
         "frames_per_trajectory": 201,
+        "max_abs_omega": 0.75,
         "force_channels": ["front_cd", "front_cl", "rear_cd", "rear_cl"],
         "curation_authorization_sha256": sha256(repo / AUTH),
         "normalization_status": "reuse full40 train20 normalization; no refit",
+        "normalization_reference": str(FULL40),
+        "normalization_sha256": sha256(target_normalization),
         "validation_or_frozen_accessed": False,
         "hdf_sha256": digests,
         "official_pipeline": ["PhysicsNeMo Curator Source/Filter/Sink", "VTKSource", "run_pipeline"],

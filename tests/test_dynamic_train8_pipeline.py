@@ -102,6 +102,9 @@ def test_curator_uses_official_source_filter_sink_contract() -> None:
     assert '"split": "train"' in source
     assert '"validation": 0, "frozen_test": 0' in source
     assert "validate_matched_start_source_force" in source
+    assert '"max_abs_omega": 0.75' in source
+    assert "shutil.copyfile(source_normalization, temporary)" in source
+    assert "sha256(target_normalization) != sha256(source_normalization)" in source
 
 
 def test_raw_audit_is_exact_eight_case_fail_closed() -> None:
