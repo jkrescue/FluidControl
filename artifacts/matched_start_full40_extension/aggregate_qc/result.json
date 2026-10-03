@@ -1,0 +1,12 @@
+{
+  "status": "MATCHED_START_FULL40_EXTENSION_31_CASE_RAW_QC_PASS",
+  "case_count": 31,
+  "split_counts": {
+    "train": 11,
+    "validation": 10,
+    "frozen_test": 10
+  },
+  "full40_predeclaration_sha256": "d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b",
+  "full40_extension_authorization_sha256": "da8bccaf18a86666ac78804e775c1608d8fc390bfca1484cbd1eaabe93c17151",
+  "frozen_guard": "integrity QC only; no reward, drag summary, or model selection"
+}
