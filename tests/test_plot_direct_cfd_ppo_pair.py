@@ -59,3 +59,16 @@ def test_paired_force_rejects_different_time_grids(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="time grids differ"):
         MODULE.paired_force(case, 1.0, 2.0)
+
+
+def test_action_endpoint_series_includes_zero_then_linear_ramp_endpoints() -> None:
+    time, omega = MODULE.action_endpoint_series(
+        [
+            {"cfd_time": 148.1, "applied_omega": 0.1},
+            {"cfd_time": 148.2, "applied_omega": -0.05},
+        ],
+        148.0,
+    )
+
+    np.testing.assert_allclose(time, [0.0, 0.1, 0.2])
+    np.testing.assert_allclose(omega, [0.0, 0.1, -0.05])

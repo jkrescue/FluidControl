@@ -52,6 +52,15 @@ def paired_force(case: Path, start: float, end: float) -> tuple[np.ndarray, list
     ]
 
 
+def action_endpoint_series(rows: list[dict], start: float) -> tuple[np.ndarray, np.ndarray]:
+    """Return linear-ramp endpoints, including the known zero action at t=0."""
+    action_time = np.asarray([0.0, *[float(row["cfd_time"]) - start for row in rows]])
+    omega = np.asarray([0.0, *[float(row["applied_omega"]) for row in rows]])
+    if np.any(np.diff(action_time) <= 0.0):
+        raise ValueError("action endpoint times must be strictly increasing")
+    return action_time, omega
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run", type=Path, required=True)
@@ -100,9 +109,14 @@ def main() -> None:
         time = forces[role][:, 0] - start
         axes[0].plot(time, forces[role][:, 1], linewidth=0.8, label=labels[role], color=colors[role])
         axes[1].plot(time, forces[role][:, 2], linewidth=0.8, label=labels[role], color=colors[role])
-    action_time = np.asarray([float(row["cfd_time"]) - start for row in ppo_rows])
-    omega = np.asarray([float(row["applied_omega"]) for row in ppo_rows])
-    axes[2].step(action_time, omega, where="post", linewidth=0.9, color="tab:green", label="PPO applied ω")
+    action_time, omega = action_endpoint_series(ppo_rows, start)
+    axes[2].plot(
+        action_time,
+        omega,
+        linewidth=0.9,
+        color="tab:green",
+        label="PPO applied ω (linear ramp)",
+    )
     axes[2].axhline(0.0, linewidth=0.8, color="tab:orange", linestyle="--", label="zero rotation")
     for axis in axes:
         axis.axvspan(0.0, 20.0, color="0.75", alpha=0.18, label="transition 0–20 D/U")
@@ -129,6 +143,10 @@ def main() -> None:
         "elapsed_windows_du": {"transition": [0.0, 20.0], "statistics": [20.0, 80.0]},
         "signals": ["total_cd", "rear_cl", "applied_rear_cylinder_omega"],
         "raw_unsmoothed": True,
+        "action_rendering": (
+            "recorded 0.1-D/U interval endpoints connected by the executed linear ramp; "
+            "known initial omega=0 included at elapsed t=0"
+        ),
         "force_sources": sources,
         "scientific_scope": physical["scientific_scope"],
     }
