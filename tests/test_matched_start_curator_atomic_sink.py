@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import json
 import sys
 import tempfile
 import unittest
@@ -72,6 +74,62 @@ class MatchedStartAtomicSinkTests(unittest.TestCase):
             self.assertRaises(SystemExit),
         ):
             self.module.main()
+
+    def build_matched_start_source(self, root: Path) -> tuple[Path, str, dict]:
+        cases_root = root / "cases"
+        name = "matched_start_acquisition_train_b00_zero"
+        case = cases_root / name
+        case.mkdir(parents=True)
+        source_hashes = {}
+        for object_name in self.module.MATCHED_START_FORCE_OBJECTS:
+            path = (
+                cases_root
+                / "tandem_backward_dt005"
+                / "postProcessing"
+                / object_name
+                / "0/coefficient.dat"
+            )
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("# Time Cd Cl\n0 1.0 0.0\n1 1.1 0.1\n")
+            source_hashes[object_name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        config = {
+            "case": name,
+            "split": "train",
+            "expected_field_frames": 801,
+            "source_restart_case": "tandem_backward_dt005",
+            "source_force_sha256": source_hashes,
+        }
+        (case / "case_config.json").write_text(json.dumps(config))
+        return cases_root, name, config
+
+    def test_source_preflight_binds_baseline_force_before_vtk_source(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            cases_root, name, config = self.build_matched_start_source(Path(directory))
+            records = self.module.case_records(
+                cases_root, self.module.MATCHED_START_PROFILE, {name}
+            )
+            self.assertEqual(records[0]["config"], config)
+
+    def test_source_preflight_rejects_baseline_force_mutation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            cases_root, name, _ = self.build_matched_start_source(Path(directory))
+            source = (
+                cases_root
+                / "tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat"
+            )
+            source.write_text("# Time Cd Cl\n0 99 99\n1 99 99\n")
+            with self.assertRaisesRegex(ValueError, "baseline source-force SHA mismatch"):
+                self.module.case_records(
+                    cases_root, self.module.MATCHED_START_PROFILE, {name}
+                )
+
+    def test_source_force_guard_is_not_applied_to_legacy_profiles(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            self.module,
+            "validate_matched_start_source_force",
+            side_effect=AssertionError("matched-start-only guard was called"),
+        ), self.assertRaises(FileNotFoundError):
+            self.module.case_records(Path(directory), "stage1")
 
 
 if __name__ == "__main__":

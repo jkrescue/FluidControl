@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
@@ -16,6 +17,15 @@ PROFILE = "matched_start_commissioning_train9_v1"
 STAGING_ROOT = Path("data/curated/.staging") / PROFILE
 FINAL_ROOT = Path("data/curated/tandem_cylinders_matched_start_commissioning_train9_v1")
 VTK_VERIFIED_ROOT = Path("artifacts/matched_start_acquisition/vtk_ready")
+FORCE_OBJECTS = ("forceFront", "forceRear")
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def validate_staging_layout(repo: Path, expected_cases: list[str]) -> None:
@@ -90,11 +100,23 @@ def assembled_force(
     source_name = config.get("source_restart_case")
     if not source_name:
         raise ValueError(f"{case.name}: source_restart_case required for exact t0 force")
-    source_paths = sorted(
-        (cases_root / source_name).glob(
-            f"postProcessing/{object_name}/*/coefficient.dat"
+    declared = config.get("source_force_sha256")
+    if not isinstance(declared, dict) or set(declared) != set(FORCE_OBJECTS):
+        raise ValueError(
+            f"{case.name}: source_force_sha256 must contain exact front/rear keys"
         )
+    source_path = (
+        cases_root
+        / source_name
+        / "postProcessing"
+        / object_name
+        / "0/coefficient.dat"
     )
+    if not source_path.is_file() or sha256(source_path) != declared[object_name]:
+        raise ValueError(
+            f"{case.name}:{object_name}: baseline source-force SHA mismatch"
+        )
+    source_paths = [source_path]
     source = load_force_files(source_paths)
     matches = np.flatnonzero(np.isclose(source[:, 0], start, rtol=0.0, atol=1e-8))
     if len(matches) != 1:
@@ -110,6 +132,7 @@ def assembled_force(
         "assembled_rows": 16001,
         "source_restart_case": source_name,
         "source_t0_coefficient_paths": [str(path) for path in source_paths],
+        "source_t0_coefficient_sha256": declared[object_name],
         "source_t0_row": assembled[0].tolist(),
     }
 

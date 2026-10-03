@@ -79,7 +79,18 @@ class MatchedStartFinalizerTests(unittest.TestCase):
             assembled, audit = self.module.assembled_force(
                 cases_root,
                 case,
-                {"source_restart_case": "baseline"},
+                {
+                    "source_restart_case": "baseline",
+                    "source_force_sha256": {
+                        object_name: self.module.sha256(
+                            source
+                            / "postProcessing"
+                            / object_name
+                            / "0/coefficient.dat"
+                        )
+                        for object_name in self.module.FORCE_OBJECTS
+                    },
+                },
                 "forceFront",
                 0.0,
                 80.0,
@@ -88,6 +99,51 @@ class MatchedStartFinalizerTests(unittest.TestCase):
             self.assertEqual(assembled[0].tolist(), [0.0, 12.5, -3.25])
             self.assertEqual(audit["raw_rows"], 16000)
             self.assertEqual(audit["assembled_rows"], 16001)
+            self.assertEqual(
+                audit["source_t0_coefficient_sha256"],
+                self.module.sha256(
+                    source / "postProcessing/forceFront/0/coefficient.dat"
+                ),
+            )
+
+    def test_source_t0_force_hash_mismatch_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            cases_root = Path(directory)
+            case = cases_root / "branch"
+            source = cases_root / "baseline"
+            for root, rows in (
+                (case, [(index * 0.005, 1.0, -1.0) for index in range(1, 16001)]),
+                (source, [(0.0, 12.5, -3.25)]),
+            ):
+                for object_name in self.module.FORCE_OBJECTS:
+                    path = (
+                        root
+                        / "postProcessing"
+                        / object_name
+                        / "0/coefficient.dat"
+                    )
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(
+                        "# Time Cd Cl\n"
+                        + "".join(
+                            f"{time:.8f} {cd:.8f} {cl:.8f}\n"
+                            for time, cd, cl in rows
+                        ),
+                        encoding="utf-8",
+                    )
+            config = {
+                "source_restart_case": "baseline",
+                "source_force_sha256": {
+                    "forceFront": "0" * 64,
+                    "forceRear": self.module.sha256(
+                        source / "postProcessing/forceRear/0/coefficient.dat"
+                    ),
+                },
+            }
+            with self.assertRaisesRegex(ValueError, "baseline source-force SHA mismatch"):
+                self.module.assembled_force(
+                    cases_root, case, config, "forceFront", 0.0, 80.0
+                )
 
 
 if __name__ == "__main__":

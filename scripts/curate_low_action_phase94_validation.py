@@ -11,6 +11,7 @@ are recorded.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from collections.abc import Generator, Iterator
@@ -66,6 +67,52 @@ PROFILE_FRAME_COUNTS = {
     "low_action_phase94_validation_v1": 801,
     "matched_start_commissioning_train9_v1": 801,
 }
+MATCHED_START_PROFILE = "matched_start_commissioning_train9_v1"
+MATCHED_START_FORCE_OBJECTS = ("forceFront", "forceRear")
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def validate_matched_start_source_force(
+    cases_root: Path, case_name: str, config: dict[str, Any]
+) -> dict[str, str]:
+    """Validate exact baseline force files before any VTK sampling or t0 read."""
+    declared = config.get("source_force_sha256")
+    if not isinstance(declared, dict) or set(declared) != set(
+        MATCHED_START_FORCE_OBJECTS
+    ):
+        raise ValueError(
+            f"{case_name}: source_force_sha256 must contain exact front/rear keys"
+        )
+    if any(
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
+        for value in declared.values()
+    ):
+        raise ValueError(f"{case_name}: invalid source-force SHA")
+    source_name = config.get("source_restart_case")
+    if source_name != "tandem_backward_dt005":
+        raise ValueError(f"{case_name}: source_restart_case mismatch")
+    for object_name in MATCHED_START_FORCE_OBJECTS:
+        path = (
+            cases_root
+            / source_name
+            / "postProcessing"
+            / object_name
+            / "0/coefficient.dat"
+        )
+        if not path.is_file() or sha256(path) != declared[object_name]:
+            raise ValueError(
+                f"{case_name}: baseline source-force SHA mismatch: {object_name}"
+            )
+    return declared
 
 
 def load_coefficients(path: Path) -> np.ndarray:
@@ -101,7 +148,7 @@ def load_merged_coefficients(paths: list[Path]) -> np.ndarray:
 def case_records(
     cases_root: Path, profile: str, selected_names: set[str] | None = None
 ) -> list[dict[str, Any]]:
-    if profile == "matched_start_commissioning_train9_v1":
+    if profile == MATCHED_START_PROFILE:
         if not selected_names or len(selected_names) != 1:
             raise ValueError(
                 "commissioning curation requires exactly one explicit --cases name"
@@ -109,6 +156,7 @@ def case_records(
         name = next(iter(selected_names))
         case = cases_root / name
         config = json.loads((case / "case_config.json").read_text(encoding="utf-8"))
+        validate_matched_start_source_force(cases_root, name, config)
         if config.get("split") != "train":
             raise ValueError(f"{name}: commissioning case must have split=train")
         if int(config.get("expected_field_frames", -1)) != 801:
@@ -336,7 +384,7 @@ class TandemTrajectorySource(Source[dict[str, Any]]):
         force_root = f"{start_time:g}" if "source_restart_case" in record["config"] else "0"
         aligned = []
         for object_name in ("forceFront", "forceRear"):
-            if self.profile == "matched_start_commissioning_train9_v1":
+            if self.profile == MATCHED_START_PROFILE:
                 raw = load_merged_coefficients(
                     sorted(
                         case.glob(

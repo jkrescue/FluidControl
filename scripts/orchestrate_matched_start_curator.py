@@ -19,6 +19,7 @@ CASE_RE = re.compile(
     r"^matched_start_acquisition_train_b(00|02|04)_(m075|zero|p075)$"
 )
 STATE_KEYS = {"U", "U_0", "p", "phi", "phi_0"}
+FORCE_OBJECTS = ("forceFront", "forceRear")
 PHASE_MANIFEST = Path(
     "artifacts/tandem_cylinders/matched_start_phase_restart_predeclared_v3_20261003.json"
 )
@@ -122,6 +123,39 @@ def validate_generator_scalar_contract(
         )
 
 
+def validate_source_force_provenance(
+    cases_root: Path, config: dict, case: str
+) -> dict[str, dict[str, str]]:
+    """Bind the exact baseline coefficient files used to prepend the t0 row."""
+    declared = config.get("source_force_sha256")
+    if not isinstance(declared, dict) or set(declared) != set(FORCE_OBJECTS):
+        raise ValueError(
+            f"{case}: source_force_sha256 must contain exact front/rear keys"
+        )
+    if any(not re.fullmatch(r"[0-9a-f]{64}", value) for value in declared.values()):
+        raise ValueError(f"{case}: invalid source-force SHA")
+    source_name = config.get("source_restart_case")
+    if source_name != "tandem_backward_dt005":
+        raise ValueError(f"{case}: source_restart_case mismatch")
+    result = {}
+    for object_name in FORCE_OBJECTS:
+        relative = (
+            Path("cfd/tandem_cylinders/cases")
+            / source_name
+            / "postProcessing"
+            / object_name
+            / "0/coefficient.dat"
+        )
+        path = cases_root.parent.parent.parent / relative
+        if not path.is_file() or sha256(path) != declared[object_name]:
+            raise ValueError(f"{case}: baseline source-force SHA mismatch: {object_name}")
+        result[object_name] = {
+            "path": str(relative),
+            "sha256": declared[object_name],
+        }
+    return result
+
+
 def validate_case(repo: Path, entry: dict, phase_sha: str) -> dict:
     case = entry["case"]
     match = CASE_RE.fullmatch(case)
@@ -180,8 +214,7 @@ def validate_case(repo: Path, entry: dict, phase_sha: str) -> dict:
         raise ValueError(f"{case}: source_state_sha256 must contain exact five-field keys")
     if any(not re.fullmatch(r"[0-9a-f]{64}", value) for value in source_state.values()):
         raise ValueError(f"{case}: invalid source-state SHA")
-    if config.get("source_restart_case") != "tandem_backward_dt005":
-        raise ValueError(f"{case}: source_restart_case mismatch")
+    source_force = validate_source_force_provenance(cases_root, config, case)
     if config.get("source_state_provenance_dir") != "source_restart_provenance":
         raise ValueError(f"{case}: source_state_provenance_dir mismatch")
     provenance = case_root / "source_restart_provenance"
@@ -207,6 +240,7 @@ def validate_case(repo: Path, entry: dict, phase_sha: str) -> dict:
         "worker_raw_manifest_sha256": sha256(worker_manifest),
         "raw_file_count": len(raw_rows),
         "source_state_sha256": source_state,
+        "source_force_provenance": source_force,
     }
 
 

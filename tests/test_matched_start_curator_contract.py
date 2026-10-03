@@ -28,11 +28,25 @@ class MatchedStartCuratorContractTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.module = load_module()
 
-    def build_repo(self, root: Path, mismatch: str | None = None) -> dict:
+    def build_repo(
+        self,
+        root: Path,
+        mismatch: str | None = None,
+        force_hash_mismatch: bool = False,
+    ) -> dict:
         phase = root / self.module.PHASE_MANIFEST
         phase.parent.mkdir(parents=True)
         phase.write_text('{"status":"PREDECLARED"}\n')
         phase_sha = digest(phase)
+        baseline = root / "cfd/tandem_cylinders/cases/tandem_backward_dt005"
+        source_force_sha256 = {}
+        for object_name in self.module.FORCE_OBJECTS:
+            force = baseline / "postProcessing" / object_name / "0/coefficient.dat"
+            force.parent.mkdir(parents=True, exist_ok=True)
+            force.write_text("# Time Cd Cl\n0 1.25 -0.5\n", encoding="utf-8")
+            source_force_sha256[object_name] = digest(force)
+        if force_hash_mismatch:
+            source_force_sha256["forceRear"] = "0" * 64
         entries = []
         for case in self.module.expected_cases():
             match = self.module.CASE_RE.fullmatch(case)
@@ -70,6 +84,7 @@ class MatchedStartCuratorContractTests(unittest.TestCase):
                 "phase_manifest_sha256": phase_sha, "source_state_sha256": fields,
                 "source_restart_case": "tandem_backward_dt005",
                 "source_state_provenance_dir": "source_restart_provenance",
+                "source_force_sha256": source_force_sha256,
             }
             config_path = case_root / "case_config.json"
             config_path.write_text(json.dumps(config))
@@ -118,6 +133,10 @@ class MatchedStartCuratorContractTests(unittest.TestCase):
             self.assertEqual(report["status"], "CURATOR_PREFLIGHT_OK")
             self.assertEqual(len(report["cases"]), 9)
             self.assertEqual(report["training_use"], "FORBIDDEN_COMMISSIONING_ONLY")
+            for row in report["cases"]:
+                self.assertEqual(
+                    set(row["source_force_provenance"]), {"forceFront", "forceRear"}
+                )
 
     def test_generator_scalar_contract_uses_exact_real_keys(self) -> None:
         config = {
@@ -148,6 +167,26 @@ class MatchedStartCuratorContractTests(unittest.TestCase):
             contract = self.build_repo(root)
             contract["status"] = "UNBOUND_DO_NOT_CURATE"
             with self.assertRaisesRegex(ValueError, "not bound"):
+                self.module.preflight(root, contract)
+
+    def test_declared_baseline_force_hash_mismatch_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            contract = self.build_repo(root, force_hash_mismatch=True)
+            with self.assertRaisesRegex(ValueError, "baseline source-force SHA mismatch"):
+                self.module.preflight(root, contract)
+
+    def test_baseline_force_mutation_after_case_generation_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            contract = self.build_repo(root)
+            force = (
+                root
+                / "cfd/tandem_cylinders/cases/tandem_backward_dt005/"
+                "postProcessing/forceFront/0/coefficient.dat"
+            )
+            force.write_text("# Time Cd Cl\n0 99 99\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "baseline source-force SHA mismatch"):
                 self.module.preflight(root, contract)
 
 
