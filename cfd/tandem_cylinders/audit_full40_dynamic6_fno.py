@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """Audit the predeclared validation-only dynamic6 PhysicsNeMo diagnostic."""
 
-import argparse, hashlib, json, math, os, tempfile
+import argparse
+import hashlib
+import json
+import math
+import os
+import tempfile
 from pathlib import Path
 
 CASES = {
@@ -43,10 +48,11 @@ def audit(args):
         or manifest.get("training_access") != "FORBIDDEN"
     ):
         raise ValueError("dynamic6 dataset identity differs")
-    if sha(args.checkpoint / "FNO.0.5.mdlus") != MODEL_SHA:
-        raise ValueError("e5 model SHA differs")
+    model = args.checkpoint / f"FNO.0.{args.checkpoint_epoch}.mdlus"
+    if sha(model) != args.expected_model_sha:
+        raise ValueError("model SHA differs")
     if (
-        report.get("checkpoint_epoch") != 5
+        report.get("checkpoint_epoch") != args.checkpoint_epoch
         or report.get("split") != "validation"
         or report.get("action_mode") != "observed"
         or report.get("force_channels")
@@ -110,8 +116,8 @@ def audit(args):
             "DYNAMIC6_FNO_DIAGNOSTIC_PASS" if passed else "DYNAMIC6_FNO_DIAGNOSTIC_FAIL"
         ),
         "scope": "validation-only diagnostic; no training, frozen access, PPO authorization, or control-benefit claim",
-        "checkpoint_epoch": 5,
-        "checkpoint_sha256": MODEL_SHA,
+        "checkpoint_epoch": args.checkpoint_epoch,
+        "checkpoint_sha256": args.expected_model_sha,
         "dataset_manifest_sha256": MANIFEST_SHA,
         "horizons": [1, 10, 50, 100],
         "pooled_h100_total_cd_nrmse": pooled,
@@ -132,6 +138,8 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--data", type=Path, required=True)
     p.add_argument("--checkpoint", type=Path, required=True)
+    p.add_argument("--checkpoint-epoch", type=int, default=5)
+    p.add_argument("--expected-model-sha", default=MODEL_SHA)
     p.add_argument("--report", type=Path, required=True)
     p.add_argument("--segments", type=Path, required=True)
     p.add_argument("--physical-qc", type=Path, required=True)
