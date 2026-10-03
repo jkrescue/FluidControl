@@ -17,7 +17,7 @@ RAW_QC = Path(
 AUTH = Path(
     "artifacts/tandem_cylinders/full40_dynamic_validation_curation_authorization_v2_20261003.json"
 )
-VTK_RECEIPTS = Path("artifacts/tandem_cylinders/full40_dynamic_validation_vtk_ready")
+VTK_RECEIPTS = Path("artifacts/tandem_cylinders/full40_dynamic_validation_vtk_ready_v2")
 OUTPUT = Path("data/curated/tandem_cylinders_full40_dynamic_validation_v1")
 FULL40 = Path("data/curated/tandem_cylinders_matched_start_full40_v1")
 BASE = Path("scripts/curate_low_action_phase94_validation.py")
@@ -155,6 +155,10 @@ def checked_auth(repo):
     return saved
 
 
+def valid_foam_end_line(line):
+    return re.fullmatch(r"End:\s+\d+(?:\.\d+)? s, \d+ kB \(peak\)", line) is not None
+
+
 def make_vtk_receipt(repo, name):
     auth = checked_auth(repo)
     if name not in auth["cases"]:
@@ -195,7 +199,7 @@ def make_vtk_receipt(repo, name):
         if log.is_file()
         else []
     )
-    if not nonblank or nonblank[-1] != "End":
+    if not nonblank or not valid_foam_end_line(nonblank[-1]):
         raise ValueError(f"{name}: foamToVTK log is absent or incomplete")
     return {
         "status": "DYNAMIC6_VTK_READY",

@@ -71,3 +71,11 @@ def test_vtk_receipt_rejects_missing_frames(tmp_path, monkeypatch):
     (tmp_path / "cfd/tandem_cylinders/cases" / name / "VTK_curator").mkdir(parents=True)
     with pytest.raises(ValueError, match="expected exactly 201 VTK frames"):
         module.make_vtk_receipt(tmp_path, name)
+
+
+def test_foam_to_vtk_terminal_line_is_strict():
+    module = load_module()
+    assert module.valid_foam_end_line("End: 12.71 s, 150628 kB (peak)")
+    assert not module.valid_foam_end_line("End")
+    assert not module.valid_foam_end_line("prefix End: 12.71 s, 150628 kB (peak)")
+    assert not module.valid_foam_end_line("End: failed")
