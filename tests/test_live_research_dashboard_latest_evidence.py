@@ -87,6 +87,85 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("仅预声明开环物理筛查，不是代理或闭环达标", page)
         self.assertIn("仅验证集诊断，不是零控制收益或CFD闭环成功", page)
         self.assertIn("唯一严格同初态start=0", page)
+        self.assertIn("Matched-start 九案 commissioning", page)
+        self.assertIn("Worker 整机 CPU", page)
+        self.assertIn("RAW_TRANSFER_VERIFIED", page)
+        self.assertIn("不是训练结果或控制收益", page)
+        self.assertIn("RAW 已回传验收", page)
+        self.assertIn("RAW 待回传验收", page)
+
+    def test_matched_start_progress_uses_solver_time_and_end_marker(self) -> None:
+        lines = [
+            "ignored",
+            "__MATCHED_START__",
+            "matched_start_acquisition_train_b00_zero|150|1|0",
+            "matched_start_acquisition_train_b02_p075|186|0|1",
+            "matched_start_acquisition_train_b04_m075|120.005|0|0",
+        ]
+        rows = {
+            row["case"]: row for row in MODULE._matched_start_progress(lines)
+        }
+        self.assertEqual(len(rows), 9)
+        self.assertEqual(
+            rows["matched_start_acquisition_train_b00_zero"]["iteration"], 400
+        )
+        self.assertEqual(
+            rows["matched_start_acquisition_train_b00_zero"]["status"], "running"
+        )
+        completed = rows["matched_start_acquisition_train_b02_p075"]
+        self.assertEqual(completed["iteration"], 16_000)
+        self.assertEqual(completed["status"], "complete")
+        self.assertNotIn("raw_transfer_verified", completed)
+        self.assertEqual(
+            rows["matched_start_acquisition_train_b04_m075"]["status"],
+            "stopped_incomplete",
+        )
+        self.assertEqual(
+            rows["matched_start_acquisition_train_b04_zero"]["status"], "pending"
+        )
+
+    def test_transfer_receipts_require_status_case_and_phase_sha(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt_dir = root / MODULE.MATCHED_START_RECEIPTS
+            receipt_dir.mkdir(parents=True)
+            valid_case = "matched_start_acquisition_train_b00_zero"
+            wrong_sha_case = "matched_start_acquisition_train_b00_p075"
+            wrong_case_case = "matched_start_acquisition_train_b00_m075"
+            common = {
+                "status": "RAW_TRANSFER_VERIFIED",
+                "phase_manifest_sha256": MODULE.MATCHED_START_PHASE_MANIFEST_SHA256,
+            }
+            (receipt_dir / f"{valid_case}.json").write_text(
+                json.dumps({**common, "case": valid_case}), encoding="utf-8"
+            )
+            (receipt_dir / f"{wrong_sha_case}.json").write_text(
+                json.dumps(
+                    {
+                        **common,
+                        "case": wrong_sha_case,
+                        "phase_manifest_sha256": "wrong",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (receipt_dir / f"{wrong_case_case}.json").write_text(
+                json.dumps({**common, "case": "different-case"}), encoding="utf-8"
+            )
+            rows = {
+                row["case"]: row
+                for row in MODULE._matched_start_transfer_receipts(root)
+            }
+        self.assertTrue(rows[valid_case]["raw_transfer_verified"])
+        self.assertFalse(rows[wrong_sha_case]["raw_transfer_verified"])
+        self.assertFalse(rows[wrong_sha_case]["checks"]["phase_manifest_sha256"])
+        self.assertFalse(rows[wrong_case_case]["raw_transfer_verified"])
+        self.assertFalse(rows[wrong_case_case]["checks"]["case"])
+        self.assertFalse(
+            rows["matched_start_acquisition_train_b02_zero"][
+                "raw_transfer_verified"
+            ]
+        )
 
     def test_only_canonical_low_action_audit_is_loaded(self) -> None:
         self.assertEqual(

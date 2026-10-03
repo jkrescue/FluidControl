@@ -15,7 +15,7 @@ import subprocess
 import threading
 import time
 from collections import deque
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
@@ -58,6 +58,23 @@ LOW_ACTION_FNO_PAIRWISE = Path(
 )
 OLD = Path("artifacts/tandem_fno_total_drag_spark_30epoch")
 SAMPLE_FILE = Path("artifacts/monitor/live_resource_samples.jsonl")
+MATCHED_START_DT = 0.005
+MATCHED_START_ITERATIONS = 16_000
+MATCHED_START_PHASE_MANIFEST_SHA256 = (
+    "6279492bd3a79eff868a4333e1f642e3be4a4d58a78e46dc47dde040e4e39603"
+)
+MATCHED_START_RECEIPTS = Path("artifacts/matched_start_acquisition/transfer_verified")
+MATCHED_START_CASES = {
+    "matched_start_acquisition_train_b00_zero": ("b00 · zero", 148.0),
+    "matched_start_acquisition_train_b00_p075": ("b00 · +0.75", 148.0),
+    "matched_start_acquisition_train_b00_m075": ("b00 · −0.75", 148.0),
+    "matched_start_acquisition_train_b02_zero": ("b02 · zero", 106.0),
+    "matched_start_acquisition_train_b02_p075": ("b02 · +0.75", 106.0),
+    "matched_start_acquisition_train_b02_m075": ("b02 · −0.75", 106.0),
+    "matched_start_acquisition_train_b04_zero": ("b04 · zero", 120.0),
+    "matched_start_acquisition_train_b04_p075": ("b04 · +0.75", 120.0),
+    "matched_start_acquisition_train_b04_m075": ("b04 · −0.75", 120.0),
+}
 HOST_COMMAND = (
     "awk '/^cpu /{print}' /proc/stat; "
     "awk '/^MemTotal:|^MemAvailable:/{print}' /proc/meminfo; "
@@ -79,7 +96,14 @@ HOST_COMMAND = (
     "printf '__V4_EPOCH__\\n'; "
     "jq -r 'length' /home/USER/workspace/fluid_control_v4_compute_415a50f/project/artifacts/tandem_fno_control_gap_v4_10epoch_seed20261002/training_history.json 2>/dev/null || true; "
     "printf '__V4_SINGLE_VALIDATION__\\n'; "
-    "jq -c '[.cases[].horizons[\"100\"] | {segments,total_drag_rmse,total_drag_target_rms}]' /home/USER/workspace/fluid_control_v4_compute_415a50f/project/artifacts/tandem_fno_control_gap_v4_10epoch_seed20261002/validation_evaluation.json 2>/dev/null || true"
+    "jq -c '[.cases[].horizons[\"100\"] | {segments,total_drag_rmse,total_drag_target_rms}]' /home/USER/workspace/fluid_control_v4_compute_415a50f/project/artifacts/tandem_fno_control_gap_v4_10epoch_seed20261002/validation_evaluation.json 2>/dev/null || true; "
+    "printf '__MATCHED_START__\n'; "
+    "matched_root=/home/USER/workspace/fluid_control_v4_compute_415a50f/project/cfd/tandem_cylinders/cases; "
+    "for matched_case in matched_start_acquisition_train_b00_zero matched_start_acquisition_train_b00_p075 matched_start_acquisition_train_b00_m075 matched_start_acquisition_train_b02_zero matched_start_acquisition_train_b02_p075 matched_start_acquisition_train_b02_m075 matched_start_acquisition_train_b04_zero matched_start_acquisition_train_b04_p075 matched_start_acquisition_train_b04_m075; do "
+    "matched_log=\"$matched_root/$matched_case/log.pimpleFoam.matched_start_acquisition\"; matched_time=; matched_active=0; matched_end=0; "
+    "if [ -f \"$matched_log\" ]; then matched_time=$(tail -c 262144 \"$matched_log\" | awk '/^Time = /{t=$3} END{print t}'); tail -c 262144 \"$matched_log\" | grep -q '^End$' && matched_end=1; fi; "
+    "pgrep -f \"pimpleFoam -case /case/cases/$matched_case$\" >/dev/null && matched_active=1; "
+    "printf '%s|%s|%s|%s\n' \"$matched_case\" \"$matched_time\" \"$matched_active\" \"$matched_end\"; done"
 )
 PAGE = r'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -99,7 +123,8 @@ select{background:#152237;color:#e5eff9;border:1px solid #42617f;padding:7px;bor
 img{width:100%;height:auto;background:white;border-radius:4px}.row{display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap}
 .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:13px}.summary .card{padding:12px}
 .summary b{font-size:19px;display:block;margin:3px 0}.foot{margin-top:35px;border-top:1px solid #2a3d53;padding-top:13px;font-size:12px;color:#9aafc4}
-@media(max-width:750px){.grid,.resources,.summary{grid-template-columns:1fr}main{padding:16px}}
+.casegrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0}.caseitem{background:#101b2b;border:1px solid #25374b;border-radius:5px;padding:8px;font-size:12px}.caseitem b{display:block;margin-bottom:3px}.caseitem .bar{height:4px;background:#26394e;border-radius:3px;margin-top:5px;overflow:hidden}.caseitem .bar i{display:block;height:100%;background:#60c9fb}
+@media(max-width:750px){.grid,.resources,.summary,.casegrid{grid-template-columns:1fr}main{padding:16px}}
 </style></head><body><main>
 <div class="top"><div><h1>串列双圆柱流动控制 · 实时进展</h1><div class="muted">目标：降低两圆柱总阻力，同时报告侧向载荷与动作代价</div></div><div class="stamp" id="clock">连接中…</div></div>
 <div class="banner" id="decision">读取阶段判定…</div>
@@ -111,6 +136,7 @@ img{width:100%;height:auto;background:white;border-radius:4px}.row{display:flex;
 <div class="card"><h3>主节点 · SPARK_HOST</h3><div class="task" id="primary-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="primary-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="primary-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="primary-mem">—</div></div></div><svg id="primary-chart" role="img" aria-label="主节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="primary-more"></div></div>
 <div class="card"><h3>计算节点 · WORKER_HOST</h3><div class="task" id="worker-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="worker-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="worker-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="worker-mem">—</div></div></div><svg id="worker-chart" role="img" aria-label="计算节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="worker-more"></div></div>
 </div><div class="legend"><span><i class="sw" style="background:#60c9fb"></i>GPU</span><span><i class="sw" style="background:#e9ae68"></i>CPU</span><span>GB10 采用统一内存；训练保护线：至少剩余 20 GiB。</span></div>
+<h2>Matched-start 九案 commissioning</h2><div class="card"><div class="row"><div><div class="number" id="matched-summary">等待真实采样…</div><div class="small">真实 OpenFOAM 求解进度；不是训练结果或控制收益。</div></div><div class="small" id="matched-resource">读取 Worker CPU / 内存与 Spark GPU…</div></div><div class="casegrid" id="matched-cases"></div><div class="small">“求解完成”仅表示日志出现 <code>End</code>；在 RAW_TRANSFER_VERIFIED 前不表示原始文件已回传验收。</div></div>
 <h2>FNO 训练和推理结果</h2><div class="grid"><div class="card"><h3 id="train-title">FNO：训练轮次 → 预测误差</h3><svg class="tall" id="train-chart" role="img" aria-label="多步训练验证误差"></svg><div class="small">蓝：流场平均绝对误差；橙：四个受力系数平均绝对误差。数值来自验证数据。</div></div><div class="card"><h3 id="error-title">递推步数 → 总阻力预测误差</h3><svg class="tall" id="error-chart" role="img" aria-label="不同预测步长的总阻力误差"></svg><div class="small" id="error-legend">读取评估结果…</div></div></div>
 <div class="small" id="v3-metrics" style="margin-top:8px">正在读取新数据 FNO 训练指标…</div><div class="small" id="infer-speed" style="margin-top:4px">正在读取 FNO 推理耗时…</div>
 <h2>真实流场 / FNO 预测 / 误差</h2><div class="card"><div class="row"><div class="small" id="figure-label">读取图片…</div><div><select id="case"><option value="expanded_test_00">测试 00</option><option value="expanded_test_01">测试 01</option><option value="expanded_test_02">测试 02</option><option value="expanded_test_04">测试 04</option><option value="expanded_test_05">新测试 05</option></select> <select id="horizon"><option value="001">1 步</option><option value="010">10 步</option><option value="050">50 步</option><option value="100" selected>100 步</option></select></div></div><img id="flow" alt="真实 OpenFOAM 流场、FNO 预测、误差对照"></div>
@@ -155,6 +181,14 @@ function resources(name,items){let last=items.at(-1);if(!last)return;
  $(name+'-task').textContent=last.tasks?.length?`${last.tasks.join('、')} ${last.task_count>1?'×'+last.task_count:''}`:(name==='worker'&&last.second_seed_epoch>=10?'10 轮训练已完成；模型在主节点接受独立测试':'当前无计算任务');
  $(name+'-more').textContent=`采样时间 ${last.time} · GPU ${num(last.temp_c,0)}°C${name==='primary'&&Number.isFinite(last.cuda_free_gib)?` · CUDA 当前可直接分配 ${num(last.cuda_free_gib,1)} GiB（不同于上方可回收内存）`:''}`;
  plot(name+'-chart',[{values:items.map(x=>x.gpu),color:'#60c9fb'},{values:items.map(x=>x.cpu),color:'#e9ae68'}])}
+function renderMatchedStart(d){let worker=d.resources?.worker?.at(-1)||{},primary=d.resources?.primary?.at(-1)||{},rows=worker.matched_start||[],receipts=Object.fromEntries((d.matched_start_transfer||[]).map(x=>[x.case,x]));
+ if(!rows.length){$('matched-summary').textContent='等待 Worker 真实采样';$('matched-cases').textContent='';return}
+ let counts={complete:0,running:0,pending:0,stopped_incomplete:0};rows.forEach(x=>counts[x.status]=(counts[x.status]||0)+1);
+ let verified=rows.filter(x=>receipts[x.case]?.raw_transfer_verified===true).length;
+ $('matched-summary').textContent=`${counts.complete}/9 求解完成 · ${counts.running}/9 运行中 · ${verified}/9 RAW 已验收`;
+ $('matched-resource').textContent=`Worker 整机 CPU ${num(worker.cpu,1)}% · 可用内存 ${num(worker.mem_available_gib,1)} GiB；Spark GPU ${num(primary.gpu,0)}% · 可用统一内存 ${num(primary.mem_available_gib,1)} GiB（均为实时采样）`;
+ const state={complete:'求解完成',running:'运行中',pending:'待启动',stopped_incomplete:'异常停止/待核查'};
+ $('matched-cases').innerHTML=rows.map(x=>{let accepted=receipts[x.case]?.raw_transfer_verified===true;return `<div class="caseitem"><b>${x.label}</b><span class="${x.status==='complete'?'good':x.status==='stopped_incomplete'?'bad':''}">${state[x.status]||'状态未知'}</span><div>${x.iteration}/16000 · ${num(100*x.iteration/16000,1)}%</div><div class="${accepted?'good':''}">${accepted?'RAW 已回传验收':'RAW 待回传验收'}</div><div class="bar"><i style="width:${Math.min(100,100*x.iteration/16000)}%"></i></div></div>`}).join('');}
 function figure(){if(!latest)return;let key=$('case').value+'/'+$('horizon').value;let found=latest.figures[key];if(found){$('flow').src=found.path+'?v='+found.version;$('flow').hidden=false;$('figure-label').textContent=found.label}else{$('flow').hidden=true;$('figure-label').textContent='该工况暂无导出的对照图'}}
 function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' · 页面每 5 秒更新';let candidates=[{label:'20 步＋后柱阻力加权训练',audit:d.v3_h20_rear_drag_audit,observed:d.v3_h20_rear_drag_observed},{label:'主节点种子 20 步训练',audit:d.v3_primary_seed_h20_audit,observed:d.v3_primary_seed_h20_observed},{label:'主节点后圆柱加权训练',audit:d.v3_rear_weighted_audit,observed:d.v3_rear_weighted_observed},{label:'计算节点种子 20 步训练',audit:d.v3_h20_audit,observed:d.v3_h20_observed},{label:'主节点 10 步训练',audit:d.v3_primary_rollout_audit,observed:d.v3_primary_rollout_observed},{label:'计算节点 10 步训练',audit:d.v3_rollout_audit,observed:d.v3_rollout_observed},{label:'主节点单步训练',audit:d.v3_audit,observed:d.v3_observed},{label:'计算节点单步训练',audit:d.v3_worker_audit,observed:d.v3_worker_observed}];let picked=candidates.find(x=>x.audit?.status==='GATE_B_PASS')||candidates.find(x=>x.observed)||candidates.find(x=>x.audit);let audited=picked?.audit,a=audited||d.audit,c=a?.checks||{};
  let long=d.control_landscape_long?.cases||[],zero=long.find(x=>x.omega_final===0),plus=long.find(x=>x.omega_final===1),minus=long.find(x=>x.omega_final===-1);
@@ -180,6 +214,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  $('decision').textContent=audited&&a.status==='GATE_B_PASS'?`${picked.label}已通过冻结的 100 步总阻力门槛（${pct(b)}）；下一步做 CEM 控制筛选，再用真实 CFD 验证。`:audited?`${picked.label}五工况 100 步总阻力误差 ${pct(b)}，未达到 10%；其他候选仍在训练或审计。CEM 与 PPO 暂不启动。`:Number.isFinite(preliminary)?`${picked.label}的 100 步五工况初评为 ${pct(b)}；动作扰动与独立相位审计未完成。CEM/PPO 暂不启动。`:`旧数据模型 100 步误差 ${pct(b)}，未达到 10%；v3 FNO 正在完成独立测试。CEM 与 PPO 暂不启动。`;
  renderLatestEvidence(d);
  resources('primary',d.resources.primary);resources('worker',d.resources.worker);
+ renderMatchedStart(d);
  let trainHistory=v4primary.length?v4primary:d.history;$('train-title').textContent=v4primary.length?'v4 新数据 20 步 FNO：训练轮次 → 验证误差':'旧数据多步 FNO：训练轮次 → 验证误差';plot('train-chart',[{values:trainHistory.map(x=>x.terminal_state_mae),color:'#60c9fb'},{values:trainHistory.map(x=>x.terminal_force_mae),color:'#e9ae68'}],.05);
  let steps=['1','10','50','100'],v3series=[{result:d.v3_observed,color:'#60c9fb',label:'主节点单步'},{result:d.v3_worker_observed,color:'#79d5a3',label:'计算节点单步'},{result:d.v3_primary_rollout_observed,color:'#dc95e4',label:'主节点 10 步训练'},{result:d.v3_rollout_observed,color:'#e9ae68',label:'计算节点 10 步训练'},{result:d.v3_h20_observed,color:'#f49ab8',label:'计算节点种子 20 步训练'},{result:d.v3_rear_weighted_observed,color:'#97e1e4',label:'主节点后圆柱加权训练'},{result:d.v3_primary_seed_h20_observed,color:'#dce779',label:'主节点种子 20 步训练'},{result:d.v3_h20_rear_drag_observed,color:'#e66ac7',label:'20 步＋后柱阻力加权'}].filter(x=>x.result?.summary);
  if(v3series.length){let series=v3series.map(x=>({values:steps.map(h=>x.result.summary[h]?.total_drag_nrmse),color:x.color}));let top=Math.max(.2,...series.flatMap(x=>x.values.filter(Number.isFinite)));series.push({values:steps.map(()=>.1),color:'#d77979'});plot('error-chart',series,Math.ceil(top*10)/10);$('error-title').textContent='v3 真实 CFD：递推步数 → 终点阻力误差';$('error-legend').textContent=v3series.map(x=>x.label).join('、')+'；曲线为逐工况平均，红线为10%；正式判定用上方合并误差。'}
@@ -316,6 +351,79 @@ def _primary_cuda_free_gib() -> float | None:
         return None
 
 
+def _matched_start_progress(lines: list[str]) -> list[dict]:
+    """Parse worker solver tails; transfer is audited separately on Spark."""
+    observed: dict[str, tuple[float | None, bool, bool]] = {}
+    try:
+        start = lines.index("__MATCHED_START__") + 1
+    except ValueError:
+        start = len(lines)
+    for line in lines[start:]:
+        fields = line.split("|")
+        if len(fields) != 4 or fields[0] not in MATCHED_START_CASES:
+            continue
+        try:
+            last_time = float(fields[1]) if fields[1] else None
+        except ValueError:
+            last_time = None
+        observed[fields[0]] = (last_time, fields[2] == "1", fields[3] == "1")
+
+    rows = []
+    for case, (label, restart_time) in MATCHED_START_CASES.items():
+        last_time, active, ended = observed.get(case, (None, False, False))
+        iteration = 0
+        if last_time is not None:
+            iteration = round((last_time - restart_time) / MATCHED_START_DT)
+            iteration = max(0, min(MATCHED_START_ITERATIONS, iteration))
+        if ended:
+            status = "complete"
+            iteration = MATCHED_START_ITERATIONS
+        elif active:
+            status = "running"
+        elif last_time is None:
+            status = "pending"
+        else:
+            status = "stopped_incomplete"
+        rows.append(
+            {
+                "case": case,
+                "label": label,
+                "status": status,
+                "iteration": iteration,
+                "iterations_total": MATCHED_START_ITERATIONS,
+                "last_solver_time": last_time,
+                "solver_finished": ended,
+            }
+        )
+    return rows
+
+
+def _matched_start_transfer_receipts(root: Path) -> list[dict]:
+    """Fail-closed validation of Spark-local raw-transfer receipts."""
+    rows = []
+    for case, (label, _) in MATCHED_START_CASES.items():
+        path = root / MATCHED_START_RECEIPTS / f"{case}.json"
+        receipt = _read_json(path, None)
+        checks = {
+            "status": isinstance(receipt, dict)
+            and receipt.get("status") == "RAW_TRANSFER_VERIFIED",
+            "case": isinstance(receipt, dict) and receipt.get("case") == case,
+            "phase_manifest_sha256": isinstance(receipt, dict)
+            and receipt.get("phase_manifest_sha256")
+            == MATCHED_START_PHASE_MANIFEST_SHA256,
+        }
+        rows.append(
+            {
+                "case": case,
+                "label": label,
+                "raw_transfer_verified": all(checks.values()),
+                "checks": checks,
+                "receipt_path": str(MATCHED_START_RECEIPTS / f"{case}.json"),
+            }
+        )
+    return rows
+
+
 def _parse_host(output: str, previous: tuple[int, int] | None):
     lines = output.strip().splitlines()
     cpu = [int(x) for x in lines[0].split()[1:]]
@@ -377,7 +485,7 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
         v4_single_rows = json.loads(lines[v4_single_validation_start + 1])
     except (IndexError, ValueError):
         v4_single_rows = None
-    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae"), "v3_worker_epoch": v3_epoch, "v3_rollout_epoch": rollout_epoch, "v3_h20_epoch": h20_epoch, "v3_primary_seed_h20_epoch": primary_h20_epoch, "v3_h20_rear_drag_epoch": h20_rear_drag_epoch, "v4_epoch": v4_epoch, "v4_single_validation_pooled_nrmse": _pooled_terminal_nrmse(v4_single_rows)}, (total, idle)
+    return {"time": datetime.now(UTC).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae"), "v3_worker_epoch": v3_epoch, "v3_rollout_epoch": rollout_epoch, "v3_h20_epoch": h20_epoch, "v3_primary_seed_h20_epoch": primary_h20_epoch, "v3_h20_rear_drag_epoch": h20_rear_drag_epoch, "v4_epoch": v4_epoch, "v4_single_validation_pooled_nrmse": _pooled_terminal_nrmse(v4_single_rows), "matched_start": _matched_start_progress(lines)}, (total, idle)
 
 
 def _cfd_progress(root: Path) -> list[dict]:
@@ -469,7 +577,7 @@ class Sampler:
                 try:
                     sample, self.previous[name] = _parse_host(_host_output(name == "worker"), self.previous[name])
                 except (OSError, subprocess.SubprocessError, ValueError, IndexError, KeyError) as exc:
-                    sample = {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "error": str(exc)[:150]}
+                    sample = {"time": datetime.now(UTC).isoformat(timespec="seconds"), "error": str(exc)[:150]}
                 if name == "primary":
                     sample["cuda_free_gib"] = self.cuda_free_gib
                 with self.lock:
@@ -530,8 +638,11 @@ class Handler(BaseHTTPRequestHandler):
                         figures[f"{case}/{horizon}"] = {"path": f"/figure/current/{case}/{horizon}.png", "version": int(current.stat().st_mtime), "label": "当前 10 轮多步 FNO · 真实 CFD / 预测 / 绝对误差"}
                     elif previous.exists():
                         figures[f"{case}/{horizon}"] = {"path": f"/figure/previous/{case}/{horizon}.png", "version": int(previous.stat().st_mtime), "label": "上一版单步 FNO · 真实 CFD / 预测 / 绝对误差（当前模型图待生成）"}
-            data = {"server_time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "watchdog": _read_json(self.root / "artifacts/monitor/research_window_20261002/latest.json", None), "audit": audit, "v3_audit": _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/gate_b_audit.json", None), "v3_worker_audit": _read_json(self.root / V3_WORKER_RUN / "gate_b_audit.json", None), "v3_primary_rollout_audit": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "gate_b_audit.json", None), "v3_rollout_audit": _read_json(self.root / V3_ROLLOUT_RUN / "gate_b_audit.json", None), "v3_h20_audit": _read_json(self.root / V3_H20_RUN / "gate_b_audit.json", None), "v3_observed": _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/heldout_evaluation.json", None), "v3_worker_observed": _read_json(self.root / V3_WORKER_RUN / "heldout_evaluation.json", None), "v3_primary_rollout_observed": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "heldout_evaluation.json", None), "v3_rollout_observed": _read_json(self.root / V3_ROLLOUT_RUN / "heldout_evaluation.json", None), "v3_primary_rollout_validation": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "validation_long_horizon.json", None), "v3_rollout_validation": _read_json(self.root / V3_ROLLOUT_RUN / "validation_long_horizon.json", None), "v3_h20_observed": _read_json(self.root / V3_H20_RUN / "heldout_evaluation.json", None), "history": history, "v3_training": v3_training, "v3_primary_rollout_history": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "training_history.json", []), "second_seed": _read_json(self.root / SECOND_RUN / "heldout_evaluation.json", None), "evaluations": {"heldout": heldout.get("summary", {}), "independent": independent.get("summary", {})}, "resources": samples, "cfd": _cfd_progress(self.root), "curator": _curator_progress(self.root), "benchmark": _read_json(self.root / "artifacts/monitor/fno_inference_benchmark_seed20261003.json", None), "control_landscape_long": _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_long_result_20261003.json", None), "periodic_benchmark": _read_json(self.root / "artifacts/tandem_cylinders/periodic_rotation_benchmark_result_20261003.json", None), "control_ranking": _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_fno_ranking_h20_20261003.json", None), "figures": figures, "cem": (self.root / "artifacts/distributed_runs/gateb_multistep_20261002/formal/CEM_STAGE_C_COMPLETE").exists(), "ppo": False}
+            data = {"server_time": datetime.now(UTC).isoformat(timespec="seconds"), "watchdog": _read_json(self.root / "artifacts/monitor/research_window_20261002/latest.json", None), "audit": audit, "v3_audit": _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/gate_b_audit.json", None), "v3_worker_audit": _read_json(self.root / V3_WORKER_RUN / "gate_b_audit.json", None), "v3_primary_rollout_audit": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "gate_b_audit.json", None), "v3_rollout_audit": _read_json(self.root / V3_ROLLOUT_RUN / "gate_b_audit.json", None), "v3_h20_audit": _read_json(self.root / V3_H20_RUN / "gate_b_audit.json", None), "v3_observed": _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/heldout_evaluation.json", None), "v3_worker_observed": _read_json(self.root / V3_WORKER_RUN / "heldout_evaluation.json", None), "v3_primary_rollout_observed": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "heldout_evaluation.json", None), "v3_rollout_observed": _read_json(self.root / V3_ROLLOUT_RUN / "heldout_evaluation.json", None), "v3_primary_rollout_validation": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "validation_long_horizon.json", None), "v3_rollout_validation": _read_json(self.root / V3_ROLLOUT_RUN / "validation_long_horizon.json", None), "v3_h20_observed": _read_json(self.root / V3_H20_RUN / "heldout_evaluation.json", None), "history": history, "v3_training": v3_training, "v3_primary_rollout_history": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "training_history.json", []), "second_seed": _read_json(self.root / SECOND_RUN / "heldout_evaluation.json", None), "evaluations": {"heldout": heldout.get("summary", {}), "independent": independent.get("summary", {})}, "resources": samples, "cfd": _cfd_progress(self.root), "curator": _curator_progress(self.root), "benchmark": _read_json(self.root / "artifacts/monitor/fno_inference_benchmark_seed20261003.json", None), "control_landscape_long": _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_long_result_20261003.json", None), "periodic_benchmark": _read_json(self.root / "artifacts/tandem_cylinders/periodic_rotation_benchmark_result_20261003.json", None), "control_ranking": _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_fno_ranking_h20_20261003.json", None), "figures": figures, "cem": (self.root / "artifacts/distributed_runs/gateb_multistep_20261002/formal/CEM_STAGE_C_COMPLETE").exists(), "ppo": False}
             data["v4_curator"] = _v4_curator_progress(self.root)
+            data["matched_start_transfer"] = _matched_start_transfer_receipts(
+                self.root
+            )
             data["gate_b_metric_integrity"] = _read_json(self.root / "artifacts/tandem_cylinders/gate_b_metric_integrity_v3_h20_rear_drag_test_v2_20261003.json", None)
             data["crossphase86_ranking"] = _read_json(self.root / "artifacts/tandem_cylinders/crossphase86_fno_cfd_ranking_20261003.json", None)
             data["control_ranking_weighted"] = _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_fno_ranking_rear_weighted_h10_20261003.json", None)
