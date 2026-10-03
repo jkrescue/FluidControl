@@ -88,3 +88,19 @@ The development validation result is provisional: after the final full40
 release is assembled, the same checkpoint must pass the formal full40 gate
 against byte-identical train/validation HDF hashes before any PPO readiness
 decision. The dev30 runner does not modify or bypass that formal gate.
+
+Before that formal Gate or any PPO preflight, run the independent promotion
+identity audit:
+
+```bash
+python3 scripts/verify_dev30_full40_promotion.py \
+  --output artifacts/tandem_cylinders/dev30_full40_promotion_<run-id>.json
+```
+
+It requires identical train/validation names, phase sets, split-manifest
+SHA-256 values, per-file declared and actual HDF SHA-256 values, and an
+identical normalization file. The normalization key set, definitions, values,
+and byte SHA must all match. A later full40 normalizer that introduces any new
+field is deliberately blocked pending explicit scientific review rather than
+being silently treated as equivalent. The audit reads frozen seal metadata but
+does not open or enumerate frozen HDF files.
