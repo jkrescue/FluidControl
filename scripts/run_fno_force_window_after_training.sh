@@ -4,8 +4,9 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 cd "$root"
 mode="${1:---dry-run}"
-unit=fluid-control-dynamic-train8-h50-e5-4epoch-20261004.service
+unit=fluid-control-dynamic-h50-e4-posteval-resume-v1-20261004.service
 training="$root/artifacts/tandem_fno_dynamic_train8_h50_spark_h50_e5_dynamic4_20261004"
+posteval="$training/posteval_resume_v1"
 parent="$root/artifacts/tandem_fno_full40_free_ar_h50_epoch5_frozen_20261003"
 output="$root/artifacts/fno_force_window_parent_vs_dynamic_h50_20261004"
 image=fluid-control-physicsnemo:2.2.2
@@ -18,22 +19,46 @@ if [[ "$mode" == --dry-run ]]; then
   echo "FORCE_WINDOW_QUEUE_READY waiting_for=$unit parent=$parent candidate=$training/best output=$output"
   exit 0
 fi
-while systemctl --user is-active --quiet "$unit"; do sleep 30; done
+while [[ ! -f "$posteval/receipt.json" ]] || systemctl --user is-active --quiet "$unit"; do
+  if systemctl --user is-failed --quiet "$unit"; then
+    echo 'post-evaluation recovery failed; preserving outputs without inference'; exit 3
+  fi
+  sleep 30
+done
 unit_result="$(systemctl --user show "$unit" -p Result --value 2>/dev/null || true)"
 [[ -z "$unit_result" || "$unit_result" == success ]] || {
   echo 'training workflow failed; diagnostic queue does not silently recover or select another candidate'; exit 3;
 }
-[[ -f "$training/validation10/diagnostic.json" && -f "$training/dynamic6/diagnostic.json" ]] || {
+[[ -f "$posteval/validation10/diagnostic.json" && -f "$posteval/dynamic6/diagnostic.json" ]] || {
   echo 'full post-training diagnostics are not complete'; exit 3;
 }
-python3 - "$training" <<'PY'
-import json,sys
+python3 - "$training" "$posteval" <<'PY'
+import hashlib,json,sys
 from pathlib import Path
-p=Path(sys.argv[1])
+p,e=map(Path,sys.argv[1:])
+def sha(path):
+    h=hashlib.sha256()
+    with path.open('rb') as f:
+        for block in iter(lambda:f.read(1<<20),b''): h.update(block)
+    return h.hexdigest()
 history=json.loads((p/'training_history.json').read_text())
 if [r['epoch'] for r in history] != [1,2,3,4]: raise SystemExit('not all four epochs completed')
-static=json.loads((p/'validation10/diagnostic.json').read_text())
-dynamic=json.loads((p/'dynamic6/diagnostic.json').read_text())
+receipt=json.loads((e/'receipt.json').read_text())
+required={'status':'DYNAMIC_FNO_POSTEVAL_RESUME_COMPLETE','checkpoint_epoch':4,
+          'frozen_test_accessed':False,'training_performed':False,
+          'evaluation_data_mount':'/workspace/devdata'}
+if any(receipt.get(k)!=v for k,v in required.items()): raise SystemExit('recovery receipt contract differs')
+models=list((p/'best').glob('FNO.0.*.mdlus'))
+if len(models)!=1 or models[0].name!='FNO.0.4.mdlus' or sha(models[0])!=receipt.get('model_sha256'):
+    raise SystemExit('recovery checkpoint differs from selected epoch 4')
+expected={f'{suite}/{name}.json' for suite in ('validation10','dynamic6')
+          for name in ('evaluation','segments','diagnostic')}
+hashes=receipt.get('sha256',{})
+if set(hashes)!=expected: raise SystemExit('recovery must bind exactly six evaluation files')
+for relative in sorted(expected):
+    if sha(e/relative)!=hashes[relative]: raise SystemExit(f'recovery output SHA differs: {relative}')
+static=json.loads((e/'validation10/diagnostic.json').read_text())
+dynamic=json.loads((e/'dynamic6/diagnostic.json').read_text())
 if static.get('status')!='DEV30_VALIDATION_DIAGNOSTIC_COMPLETE': raise SystemExit('static diagnostic incomplete')
 if dynamic.get('status') not in ('DYNAMIC6_FNO_DIAGNOSTIC_PASS','DYNAMIC6_FNO_DIAGNOSTIC_FAIL'):
     raise SystemExit('dynamic diagnostic incomplete')
@@ -42,17 +67,19 @@ mkdir "$output"
 mkdir "$output/candidate_checkpoint"
 cp --reflink=auto "$training/best"/FNO.0.*.mdlus "$training/best"/checkpoint.0.*.pt "$output/candidate_checkpoint/"
 chmod 444 "$output/candidate_checkpoint"/*
-python3 - "$root" "$output" "$parent" "$training" <<'PY'
+python3 - "$root" "$output" "$parent" "$training" "$posteval" <<'PY'
 import hashlib,json,sys
 from pathlib import Path
-root,out,parent,training=map(Path,sys.argv[1:])
+root,out,parent,training,posteval=map(Path,sys.argv[1:])
 def sha(path):
     h=hashlib.sha256()
     with path.open('rb') as f:
         for block in iter(lambda:f.read(1<<20),b''): h.update(block)
     return h.hexdigest()
 receipt={'scope':'fixed validation-only diagnostic, no checkpoint selection or PPO authorization',
-         'training':str(training),'parent':str(parent),'sha256':{}}
+         'training':str(training),'parent':str(parent),
+         'posteval_receipt':str(posteval/'receipt.json'),
+         'posteval_receipt_sha256':sha(posteval/'receipt.json'),'sha256':{}}
 for p in sorted((out/'candidate_checkpoint').iterdir()):
     if sha(p)!=sha(training/'best'/p.name): raise SystemExit('candidate copy SHA differs')
     receipt['sha256'][str(p.relative_to(out))]=sha(p)
