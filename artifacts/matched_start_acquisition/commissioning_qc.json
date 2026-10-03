@@ -1,0 +1,482 @@
+{
+  "status": "MATCHED_START_COMMISSIONING_NINE_CASE_QC_OK",
+  "profile": "matched_start_commissioning_train9_v1",
+  "trajectory_counts": {
+    "train": 9,
+    "validation": 0,
+    "test": 0
+  },
+  "normalization": "NOT_COMPUTED",
+  "training_use": "FORBIDDEN_COMMISSIONING_ONLY",
+  "validation_or_frozen_access": "NOT_ACCESSED",
+  "cases": [
+    {
+      "case": "matched_start_acquisition_train_b00_m075",
+      "split": "train",
+      "frames": 801,
+      "phase_bin": "b00",
+      "branch": "m075",
+      "source_state_sha256": {
+        "U": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+        "U_0": "6257e54018d03d01d01876e24d511d9c7af5b5caa2318d5da73628d233dec8c0",
+        "p": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+        "phi": "b331ed8547306f874c3de07f0cb2aaefaf7ea59b1d46a2a7cb61b4d45b444215",
+        "phi_0": "be1e19fa6e71200fe57a0d2ba253907ecebbd8d6caf196fd32f7d711969effd9"
+      },
+      "hdf5": "data/curated/.staging/matched_start_commissioning_train9_v1/matched_start_acquisition_train_b00_m075/train/matched_start_acquisition_train_b00_m075.h5",
+      "hdf5_sha256": "bd2622c0c6a1174bc0bc95033240bda410e7cd8fd50722b3de7324be854cdaad",
+      "max_abs_pressure_mean": 1.5861975273145717e-09,
+      "coverage_range": [
+        0.9869384765625,
+        0.9869384765625
+      ],
+      "force_front": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+        "source_t0_row": [
+          148.0,
+          1.401871395,
+          0.4442231168
+        ]
+      },
+      "force_rear": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+        "source_t0_row": [
+          148.0,
+          1.075239016,
+          0.1226982093
+        ]
+      },
+      "vtk_marker_sha256": "9c1ee53df8fd14bbf865c58c165f0a770bc8c8682fed9f7aa441f8b52a91713c",
+      "vtk_manifest_sha256": "00501aab4a6d60f4c69bd84fef7d51452f210c00095e13b47a5d0547a570de16",
+      "raw_transfer_receipt_sha256": "9d5a599a836036f1a54eed0bda99c72d8e238ce92b1eec2bae2a9ea2576525e7"
+    },
+    {
+      "case": "matched_start_acquisition_train_b00_zero",
+      "split": "train",
+      "frames": 801,
+      "phase_bin": "b00",
+      "branch": "zero",
+      "source_state_sha256": {
+        "U": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+        "U_0": "6257e54018d03d01d01876e24d511d9c7af5b5caa2318d5da73628d233dec8c0",
+        "p": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+        "phi": "b331ed8547306f874c3de07f0cb2aaefaf7ea59b1d46a2a7cb61b4d45b444215",
+        "phi_0": "be1e19fa6e71200fe57a0d2ba253907ecebbd8d6caf196fd32f7d711969effd9"
+      },
+      "hdf5": "data/curated/.staging/matched_start_commissioning_train9_v1/matched_start_acquisition_train_b00_zero/train/matched_start_acquisition_train_b00_zero.h5",
+      "hdf5_sha256": "243caa79ac320b421adc1bf0c2cc830a32482dc758c3c0f9ce71d26171a61a01",
+      "max_abs_pressure_mean": 1.6916656362945704e-09,
+      "coverage_range": [
+        0.9869384765625,
+        0.9869384765625
+      ],
+      "force_front": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+        "source_t0_row": [
+          148.0,
+          1.401871395,
+          0.4442231168
+        ]
+      },
+      "force_rear": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+        "source_t0_row": [
+          148.0,
+          1.075239016,
+          0.1226982093
+        ]
+      },
+      "vtk_marker_sha256": "c59dce267c95a3e6e9073ba2fbd13c56f03162de54e53a927b6c6d66e0ae50f2",
+      "vtk_manifest_sha256": "a6e84c5fcb526338b0bea5d260a9d6e351ffd834f4a6df42627eb9128302126c",
+      "raw_transfer_receipt_sha256": "4ed89122829259c486d8ff86561fe7ddb1a353165b43e89cba2e5a3ca9eb9d17"
+    },
+    {
+      "case": "matched_start_acquisition_train_b00_p075",
+      "split": "train",
+      "frames": 801,
+      "phase_bin": "b00",
+      "branch": "p075",
+      "source_state_sha256": {
+        "U": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+        "U_0": "6257e54018d03d01d01876e24d511d9c7af5b5caa2318d5da73628d233dec8c0",
+        "p": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+        "phi": "b331ed8547306f874c3de07f0cb2aaefaf7ea59b1d46a2a7cb61b4d45b444215",
+        "phi_0": "be1e19fa6e71200fe57a0d2ba253907ecebbd8d6caf196fd32f7d711969effd9"
+      },
+      "hdf5": "data/curated/.staging/matched_start_commissioning_train9_v1/matched_start_acquisition_train_b00_p075/train/matched_start_acquisition_train_b00_p075.h5",
+      "hdf5_sha256": "f7aa886ead70e7f2f8e185acc1b3034fcd54d31c9a6c5144e9c0f51a60674ada",
+      "max_abs_pressure_mean": 1.7534441396135585e-09,
+      "coverage_range": [
+        0.9869384765625,
+        0.9869384765625
+      ],
+      "force_front": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+        "source_t0_row": [
+          148.0,
+          1.401871395,
+          0.4442231168
+        ]
+      },
+      "force_rear": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+        "source_t0_row": [
+          148.0,
+          1.075239016,
+          0.1226982093
+        ]
+      },
+      "vtk_marker_sha256": "e25173c39223b69bb86e5e7aacb0830d776f6456f113b08201ef3cd1cf478f5c",
+      "vtk_manifest_sha256": "159d9fd1a0942ba49bf53a1d005bf5ea7f3e7936eea0db1b0c3f4a6ff5d073b8",
+      "raw_transfer_receipt_sha256": "cd92a913678effdd1a28f3871591cb983b525904d701009982dc81805ac4d102"
+    },
+    {
+      "case": "matched_start_acquisition_train_b02_m075",
+      "split": "train",
+      "frames": 801,
+      "phase_bin": "b02",
+      "branch": "m075",
+      "source_state_sha256": {
+        "U": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+        "U_0": "30eb1b5f1377eb5644418ea5470828cc94c4d2c8662f21180780a286a88cc494",
+        "p": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+        "phi": "fdc1a6c1eba6669f42f5a663c45fa8b7893511e4cf6ccfad12578a682a79b394",
+        "phi_0": "3ad9aa7c8c12d85c5d18a460cdb29030a179981c300f28b37f8ac6cc2b5cb3ff"
+      },
+      "hdf5": "data/curated/.staging/matched_start_commissioning_train9_v1/matched_start_acquisition_train_b02_m075/train/matched_start_acquisition_train_b02_m075.h5",
+      "hdf5_sha256": "1fac26417fc1188c04be3c215a84f731446e94d16a924dd05ab393d4692f2704",
+      "max_abs_pressure_mean": 1.8474430623524088e-09,
+      "coverage_range": [
+        0.9869384765625,
+        0.9869384765625
+      ],
+      "force_front": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+        "source_t0_row": [
+          106.0,
+          1.382912826,
+          0.04033573473
+        ]
+      },
+      "force_rear": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+        "source_t0_row": [
+          106.0,
+          0.7462372965,
+          1.64371024
+        ]
+      },
+      "vtk_marker_sha256": "58d433cd8e32efd54302b19635a04e2c262796c3c08ad4d2ea3150aef8b3b034",
+      "vtk_manifest_sha256": "763121241b9466024fb62a0a0d8b0da76cfede7d5f360fd601fef9861d31aea8",
+      "raw_transfer_receipt_sha256": "1d529fd8b842dd93121062d634a500750db5965df545972c7ebec1e804480fa9"
+    },
+    {
+      "case": "matched_start_acquisition_train_b02_zero",
+      "split": "train",
+      "frames": 801,
+      "phase_bin": "b02",
+      "branch": "zero",
+      "source_state_sha256": {
+        "U": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+        "U_0": "30eb1b5f1377eb5644418ea5470828cc94c4d2c8662f21180780a286a88cc494",
+        "p": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+        "phi": "fdc1a6c1eba6669f42f5a663c45fa8b7893511e4cf6ccfad12578a682a79b394",
+        "phi_0": "3ad9aa7c8c12d85c5d18a460cdb29030a179981c300f28b37f8ac6cc2b5cb3ff"
+      },
+      "hdf5": "data/curated/.staging/matched_start_commissioning_train9_v1/matched_start_acquisition_train_b02_zero/train/matched_start_acquisition_train_b02_zero.h5",
+      "hdf5_sha256": "54f95af21c382145a26a006bad4bc9e90f9cc6c1e6cfbf5c47ab85fc58f43c7e",
+      "max_abs_pressure_mean": 1.6902096784226112e-09,
+      "coverage_range": [
+        0.9869384765625,
+        0.9869384765625
+      ],
+      "force_front": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+        "source_t0_row": [
+          106.0,
+          1.382912826,
+          0.04033573473
+        ]
+      },
+      "force_rear": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+        "source_t0_row": [
+          106.0,
+          0.7462372965,
+          1.64371024
+        ]
+      },
+      "vtk_marker_sha256": "b7b5e4c633d0c1a818bbed65858e9527df78f0bac60e913cd03e5e3b39b7e583",
+      "vtk_manifest_sha256": "da95c7d5f43d6b1ead1d28c9b44a4b0d704c9c693f9ccb9a24e91c0d1e103641",
+      "raw_transfer_receipt_sha256": "4f453e8b79477cb22428809c1c0447154017ef403e75777fce1b8b32ad5d0534"
+    },
+    {
+      "case": "matched_start_acquisition_train_b02_p075",
+      "split": "train",
+      "frames": 801,
+      "phase_bin": "b02",
+      "branch": "p075",
+      "source_state_sha256": {
+        "U": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+        "U_0": "30eb1b5f1377eb5644418ea5470828cc94c4d2c8662f21180780a286a88cc494",
+        "p": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+        "phi": "fdc1a6c1eba6669f42f5a663c45fa8b7893511e4cf6ccfad12578a682a79b394",
+        "phi_0": "3ad9aa7c8c12d85c5d18a460cdb29030a179981c300f28b37f8ac6cc2b5cb3ff"
+      },
+      "hdf5": "data/curated/.staging/matched_start_commissioning_train9_v1/matched_start_acquisition_train_b02_p075/train/matched_start_acquisition_train_b02_p075.h5",
+      "hdf5_sha256": "61bb3f8a741354b407b962a313b7070ab718006f619df121cd5b98737d273b3f",
+      "max_abs_pressure_mean": 1.7604496955098216e-09,
+      "coverage_range": [
+        0.9869384765625,
+        0.9869384765625
+      ],
+      "force_front": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+        "source_t0_row": [
+          106.0,
+          1.382912826,
+          0.04033573473
+        ]
+      },
+      "force_rear": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+        "source_t0_row": [
+          106.0,
+          0.7462372965,
+          1.64371024
+        ]
+      },
+      "vtk_marker_sha256": "77b1812ca56b2ed18ec906e8ddd4c6e63a2e18de9dee225d4441e02571d2920d",
+      "vtk_manifest_sha256": "a8ca504ed35adffbeebb6bd9bccd358f1a8adffc87ac084cdf095d4e869982eb",
+      "raw_transfer_receipt_sha256": "2652fb32a8e47056af40405313afca979f65772ba2c17f46324e38f1a3b25973"
+    },
+    {
+      "case": "matched_start_acquisition_train_b04_m075",
+      "split": "train",
+      "frames": 801,
+      "phase_bin": "b04",
+      "branch": "m075",
+      "source_state_sha256": {
+        "U": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+        "U_0": "483ea88d99c466edb0835d5a70852896952542765bf31f763abb3185b49a95b3",
+        "p": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+        "phi": "c334bd5f7163d8ed65be8d8fa8176a8518fa39270ce41160ac5844de96278b73",
+        "phi_0": "7ae171d161b07e03a64d7a6611956b8956bc9ca54e8da65a58bfc9958d9bf722"
+      },
+      "hdf5": "data/curated/.staging/matched_start_commissioning_train9_v1/matched_start_acquisition_train_b04_m075/train/matched_start_acquisition_train_b04_m075.h5",
+      "hdf5_sha256": "9fd391090802f7f6a7189d1cbb2ccedf3e667fa4ee78b2f8f1c2c20c1dea0345",
+      "max_abs_pressure_mean": 1.7352642010859673e-09,
+      "coverage_range": [
+        0.9869384765625,
+        0.9869384765625
+      ],
+      "force_front": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+        "source_t0_row": [
+          120.0,
+          1.400639425,
+          -0.4440491714
+        ]
+      },
+      "force_rear": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+        "source_t0_row": [
+          120.0,
+          1.068796152,
+          -0.001364871063
+        ]
+      },
+      "vtk_marker_sha256": "fc642a2be46641a223c9ef36a3de0a144cf82279d64154b6e8d5c3a373805eed",
+      "vtk_manifest_sha256": "17fcdc8ff730fa9ebe7998e948c33701788da50b4b3b5298eb68bc4ec964859a",
+      "raw_transfer_receipt_sha256": "534e36f724633e768a3334d927b628049a00d612bc0cd03e4fefc09a19322018"
+    },
+    {
+      "case": "matched_start_acquisition_train_b04_zero",
+      "split": "train",
+      "frames": 801,
+      "phase_bin": "b04",
+      "branch": "zero",
+      "source_state_sha256": {
+        "U": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+        "U_0": "483ea88d99c466edb0835d5a70852896952542765bf31f763abb3185b49a95b3",
+        "p": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+        "phi": "c334bd5f7163d8ed65be8d8fa8176a8518fa39270ce41160ac5844de96278b73",
+        "phi_0": "7ae171d161b07e03a64d7a6611956b8956bc9ca54e8da65a58bfc9958d9bf722"
+      },
+      "hdf5": "data/curated/.staging/matched_start_commissioning_train9_v1/matched_start_acquisition_train_b04_zero/train/matched_start_acquisition_train_b04_zero.h5",
+      "hdf5_sha256": "37c2abc9ef54496c1952239f9c7fba1815d2d1c6694efa3921d459256d27edf2",
+      "max_abs_pressure_mean": 1.6868269641805881e-09,
+      "coverage_range": [
+        0.9869384765625,
+        0.9869384765625
+      ],
+      "force_front": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+        "source_t0_row": [
+          120.0,
+          1.400639425,
+          -0.4440491714
+        ]
+      },
+      "force_rear": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+        "source_t0_row": [
+          120.0,
+          1.068796152,
+          -0.001364871063
+        ]
+      },
+      "vtk_marker_sha256": "153a80bfd384ac21a65d3eefc7ef53799e37cd638cab33c97c2e51af09f7536c",
+      "vtk_manifest_sha256": "702caf089a21716949401623652a7a802b95b0e167b579e9adbc99fa9a2c0e79",
+      "raw_transfer_receipt_sha256": "9a69e417d9b58449fbdcc6eda38163b0903398c69eedee516262b162ddec45ba"
+    },
+    {
+      "case": "matched_start_acquisition_train_b04_p075",
+      "split": "train",
+      "frames": 801,
+      "phase_bin": "b04",
+      "branch": "p075",
+      "source_state_sha256": {
+        "U": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+        "U_0": "483ea88d99c466edb0835d5a70852896952542765bf31f763abb3185b49a95b3",
+        "p": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+        "phi": "c334bd5f7163d8ed65be8d8fa8176a8518fa39270ce41160ac5844de96278b73",
+        "phi_0": "7ae171d161b07e03a64d7a6611956b8956bc9ca54e8da65a58bfc9958d9bf722"
+      },
+      "hdf5": "data/curated/.staging/matched_start_commissioning_train9_v1/matched_start_acquisition_train_b04_p075/train/matched_start_acquisition_train_b04_p075.h5",
+      "hdf5_sha256": "7af58ef6cc51882e6d508f6f75de10c03c049169c6843053c27f4fef8f0075b3",
+      "max_abs_pressure_mean": 1.7805792824509907e-09,
+      "coverage_range": [
+        0.9869384765625,
+        0.9869384765625
+      ],
+      "force_front": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+        "source_t0_row": [
+          120.0,
+          1.400639425,
+          -0.4440491714
+        ]
+      },
+      "force_rear": {
+        "raw_rows": 16000,
+        "assembled_rows": 16001,
+        "source_restart_case": "tandem_backward_dt005",
+        "source_t0_coefficient_paths": [
+          "/workspace/fluid_control/cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat"
+        ],
+        "source_t0_coefficient_sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+        "source_t0_row": [
+          120.0,
+          1.068796152,
+          -0.001364871063
+        ]
+      },
+      "vtk_marker_sha256": "9548362862b57e11ca39addb3f40c89d20e71578d0c9709222b9864ddfac0e0e",
+      "vtk_manifest_sha256": "87b150d3e757ff957e1e025ff75b243879d46124e1260c33de6f3998c0251134",
+      "raw_transfer_receipt_sha256": "1c5e79e70eb7ceaa7090820c562c5cefbaa55823587ca9e5c8b35b7c12ec39b3"
+    }
+  ]
+}
