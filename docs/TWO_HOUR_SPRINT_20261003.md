@@ -1,4 +1,4 @@
-# Two-hour research sprint: 2026-10-03 03:31–05:31 UTC
+# Two-hour research sprint: 2026-10-03 03:23–05:23 UTC
 
 The physical objective is unchanged: rear-cylinder rotation of fixed tandem
 cylinders at Re=100 and L/D=5 should reduce *system-total* mean drag in real
@@ -26,7 +26,7 @@ must be reported. One favorable drag number alone is not success.
    use, update the live dashboard and commit only reproducible milestones to
    GitLab. The primary Spark remains the sole durable data host.
 
-At 05:31 UTC report which of these have completed, with exact physical and
+At 05:23 UTC report which of these have completed, with exact physical and
 model metrics and failed checks. If no control meets all three physical
 checks, state that plainly and continue with the best verified trade-off;
 do not weaken criteria or call surrogate-only PPO a physical result. The
