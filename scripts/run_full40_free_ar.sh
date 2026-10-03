@@ -7,7 +7,7 @@ variant="${1:?h20 or h50}"
 mode="${2:---dry-run}"
 run_id="${3:?unique run id}"
 case "$variant" in h20) fraction=.25 ;; h50) fraction=.45 ;; *) exit 2 ;; esac
-case "$mode" in --dry-run|--probe|--execute|--resume) ;; *) exit 2 ;; esac
+case "$mode" in --dry-run|--probe|--execute|--resume|--evaluate-only) ;; *) exit 2 ;; esac
 [[ "$run_id" =~ ^[a-z0-9][a-z0-9_-]{0,63}$ ]] || exit 2
 image=fluid-control-physicsnemo:2.2.2
 image_sha=sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e
@@ -15,9 +15,11 @@ data="$root/data/curated/tandem_cylinders_matched_start_full40_dev30_v1"
 parent="$root/artifacts/tandem_fno_full40_dev30_quickscreen_h20_qs1/best"
 out="$root/artifacts/tandem_fno_full40_free_ar_${variant}_${run_id}"
 config="tandem_fno_full40_free_ar_${variant}"
-if [[ "$mode" == --resume ]]; then
+if [[ "$mode" == --resume || "$mode" == --evaluate-only ]]; then
  [[ -f "$out/training_history.json" && -d "$out/checkpoints" ]] || exit 2
- [[ ! -e "$out/resume_predeclaration.json" ]] || exit 2
+ if [[ "$mode" == --resume ]]; then
+  [[ ! -e "$out/resume_predeclaration.json" ]] || exit 2
+ fi
 else
  [[ ! -e "$out" ]] || { echo "Output already exists: $out" >&2; exit 2; }
 fi
@@ -65,6 +67,7 @@ fi
 if [[ "$mode" == --dry-run ]]; then
  printf '%q ' "${train[@]}"; printf '\n'; exit 0
 fi
+if [[ "$mode" != --evaluate-only ]]; then
 record="$out/predeclaration.json"
 log="$out/train.log"
 if [[ "$mode" == --resume ]]; then
@@ -95,8 +98,21 @@ Path(p).write_text(json.dumps(record,indent=2)+'\n')
 PY
 "${train[@]}" 2>&1 | tee "$log"
 [[ "$mode" == --execute || "$mode" == --resume ]] || exit 0
+fi
 # Train process has exited before independent evaluation gets the GPU.
 mkdir "$out/validation10"
+python3 - "$out/validation10/execution_record.json" "$mode" "$(git rev-parse HEAD)" <<'PY'
+import datetime, hashlib, json, sys
+from pathlib import Path
+record = dict(created_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              mode=sys.argv[2], source_git_commit=sys.argv[3],
+              source_sha256={name:hashlib.sha256(Path(name).read_bytes()).hexdigest()
+                             for name in ['scripts/run_full40_free_ar.sh',
+                                          'scripts/evaluate_tandem_fno.py']},
+              visualization_dir='/workspace/output/validation10/rollout_visualizations',
+              frozen_test_accessed=False)
+Path(sys.argv[1]).write_text(json.dumps(record,indent=2)+'\n')
+PY
 eval_cmd=("${base[@]}"
  --mount "type=bind,src=$out/best,dst=/workspace/checkpoint,readonly"
  "$image" python -u /workspace/scripts/spark_gpu_guard.py
@@ -107,6 +123,7 @@ eval_cmd=("${base[@]}"
  --checkpoint-dir /workspace/checkpoint --split validation
  --horizons 1 10 50 100 --segment-stride 25 --evaluation-batch-size 4
  --action-mode observed --visualizations-per-horizon 2
+ --visualization-dir /workspace/output/validation10/rollout_visualizations
  --output /workspace/output/validation10/evaluation.json
  --segment-metrics-output /workspace/output/validation10/segments.json)
 "${eval_cmd[@]}" 2>&1 | tee "$out/validation10/evaluate.log"

@@ -145,3 +145,13 @@ existing control-readiness checks. Four focused tests passed. An actual
 H50-epoch-1, validation10, start-zero-only H1 integration probe passed with
 all ten outputs finite; that limited probe is not a full accuracy assessment.
 The result is retained in `artifacts/field_relative_metric_probe_20261004`.
+
+H20 completed all eight training epochs after recovery. Its first automatic
+post-training evaluation hit a read-only visualization output path, not a
+model-training error. The failed evaluation log was retained in
+`validation10_failed_readonly_visuals_20261004`. The runner now explicitly
+places plots inside the writable output mount and supports evaluation-only
+recovery without repeating training. Actual H1/H10/H50 image outputs were
+verified during the recovered full evaluation; its execution record includes
+the runner/evaluator source hashes. No model, data, or evaluation window was
+changed by this output-path fix.
