@@ -4,6 +4,31 @@ This is a read-only scheduling audit. It does not authorize CFD, Curator,
 training, validation, or frozen-test access. The operational deadline used
 below is 11:35 UTC on 2026-10-03.
 
+## Erratum: one-step training duration
+
+The original version incorrectly described approximately 59 minutes as a
+complete comparable 30-epoch run. The underlying
+`tandem_fno_total_drag_spark_30epoch` artifact was a resume from the immutable
+epoch-20 checkpoint after a CUDA-context stall. Its newly created history/log
+window, 03:57:55--04:57:33 UTC, covers only the resumed epoch 21--30 tail. The
+epoch-25 checkpoint is timestamped 04:27:54 and epoch 30 is 04:57:32, so the
+last five epochs alone took 29.6 minutes. The retained artifacts do not contain
+the exact wall-clock start of epochs 1--20; 59 minutes therefore cannot be used
+as a 30-epoch measurement.
+
+The closest complete fresh seven-output run is
+`tandem_fno_gate_b_aug_v3_30epoch`: PhysicsNeMo 2.2.2 image
+`sha256:b40d5888...`, GPU0, eight CPU cores, 26 train plus four validation
+trajectories, batch 64, and the same 32-mode/width-48 FNO. Its runtime log spans
+12:29:12--15:18:45 UTC, or 169.6 minutes for 30 epochs. Two fresh five-output
+batch-64 runs on 24 train plus four validation trajectories took 24.8 minutes
+for five epochs and 100.3 minutes for 20 epochs, both approximately five
+minutes per epoch. The full40 dev30 job changes the mix to 20 train plus ten
+validation trajectories and batch 16, for which no complete production run
+exists. The evidence-backed planning range is therefore 150--180 minutes for
+one-step 30 epochs, with approximately 170 minutes as the scheduling estimate,
+not 59 minutes.
+
 ## Evidence at 07:59 UTC
 
 Measured state:
@@ -24,17 +49,20 @@ Measured state:
 
 Historical training measurements:
 
-- Comparable one-step 30-epoch training took about 59 minutes.
+- The closest fresh seven-output one-step 30-epoch training took 169.6
+  minutes. Other fresh runs support a 150--180 minute planning range for the
+  unmeasured dev30 batch-16 configuration; use 170 minutes for scheduling.
 - H20 training on 28 train trajectories took 65.4 minutes for five epochs.
   Linear scaling to 20 trajectories and ten epochs gives about 93 minutes.
 - A previous four-case H1/H10/H50/H100 validation took about 2.3 minutes per
   model. Ten-case full40 validation is budgeted at approximately six minutes.
 
-The 93-minute H20 value and six-minute validation value are linear estimates,
-not measurements of the not-yet-existing full40 release. Together with the
-measured one-step time, a finalized development dataset requires at least
-about 158 minutes before a strict validation result, excluding finalization
-and scheduling overhead.
+The one-step dev30 duration, 93-minute H20 value, and six-minute validation
+value are estimates, not measurements of the not-yet-existing full40 release.
+Using the 150--180 minute one-step range, a finalized development dataset needs
+about 249--279 minutes before a strict validation result, excluding
+finalization, transfer, and scheduling overhead. The central planning value is
+approximately 269 minutes.
 
 ## Earliest honest schedules
 
@@ -45,18 +73,20 @@ about 20 development cases remain.
 - Unvalidated optimistic lower bound: simultaneous Spark-3 plus Worker-8
   throughput gives 11 slots, hence two 23-minute waves. HDF5 would finish no
   earlier than about 08:59. A 10--20 minute immutable-release finalization
-  gives 09:09--09:19, and training plus validation ends about 11:47--11:57.
+  gives 09:09--09:19, and the estimated one-step, H20, and validation sequence
+  ends about 13:18--13:58.
   This is a lower bound, not a forecast: Worker eight-way parity and sustained
   throughput had not been demonstrated.
 - More credible eight-slot bound: 20 cases require three waves, or about 69
   minutes. HDF5 ends about 09:22, release finalization about 09:32--09:42, and
-  training plus validation about 12:10--12:20.
+  training plus validation about 13:41--14:21.
 - Spark-only measured throughput: seven waves are needed for the remaining
   development cases. HDF5 ends around 10:54 before finalization; the strict
   result is correspondingly much later.
 
-To finish by 11:35, an immutable train20+validation10 release would need to be
-fully finalized by about 08:57. No evidence-backed schedule meets that time.
+To finish the full 30-epoch one-step, ten-epoch H20, and validation sequence by
+11:35, an immutable train20+validation10 release would have needed to be fully
+finalized around 06:56--07:26 UTC. No evidence-backed schedule meets that time.
 The four-hour target therefore must not be reported as achievable.
 
 ## Development-only immutable release
