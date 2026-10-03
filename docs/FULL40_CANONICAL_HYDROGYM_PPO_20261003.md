@@ -113,3 +113,16 @@ PhysicsNeMo 2.2.2 + HydroGym commit `4ab9854` image, GPU0, the 20 GiB free-memor
 guard, and the project-only artifact root. No training was started while this
 entry was implemented. `--dry-run` uses a CPU-only 2-CPU/4-GiB container and
 does not request a GPU; only actual smoke/formal execution enters the GPU guard.
+
+The execution allocator is capped at `0.20` (24.34 GiB on the 121.69-GiB GB10)
+inside a 64-GiB container. This matches the completed 8,192-step HydroGym PPO
+pilot, whose guard used `0.20` and retained 110.94 GiB minimum unified-memory
+availability; the new canonical path has four environments rather than that
+pilot's eight and shares one frozen FNO instance. The previous `0.60` setting
+was not evidence-backed and could not pass a 50.40-GiB CUDA-free preflight once
+the 20-GiB reserve and 4-GiB margin were included. A dedicated guard now
+requires both CUDA-free and system `MemAvailable` to cover the allocator cap,
+20-GiB reserve, and margin before launch, then terminates safely if either
+measured free value drops below 20 GiB. This resource correction authorizes no
+PPO run: promotion, endpoint, causal-window, dynamic-action, and subsequent
+predeclared real-CFD gates remain mandatory.

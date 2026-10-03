@@ -823,7 +823,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timesteps", type=int, default=8192)
     parser.add_argument("--checkpoint-interval", type=int, default=2048)
     parser.add_argument("--device", default="cuda:0")
-    parser.add_argument("--gpu-memory-fraction", type=float, default=0.60)
+    parser.add_argument("--gpu-memory-fraction", type=float, default=0.20)
     parser.add_argument("--seed", type=int, default=20261003)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--dry-run", action="store_true")
@@ -844,8 +844,8 @@ def main() -> None:
         parser.error("checkpoint interval must be divisible by 512")
     if args.timesteps % args.checkpoint_interval:
         parser.error("checkpoint interval must divide timesteps")
-    if not 0.0 < args.gpu_memory_fraction <= 0.75:
-        parser.error("gpu memory fraction must be in (0, 0.75]")
+    if not 0.0 < args.gpu_memory_fraction <= 0.20:
+        parser.error("gpu memory fraction must be in (0, 0.20]")
     if args.train_only_smoke:
         readiness = smoke_preflight(
             data=args.data,

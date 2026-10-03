@@ -49,7 +49,8 @@ command=(python -u scripts/train_full40_hydrogym_ppo_canonical.py
   --dynamic-gate "$validation_root/dynamic_action_gate.json"
   --image-id "$validation_image_id" --runtime-image-id "$runtime_image_id"
   --output "$output" --episode-steps 100 --timesteps "${TIMESTEPS:-8192}"
-  --checkpoint-interval "${CHECKPOINT_INTERVAL:-2048}" "$mode")
+  --checkpoint-interval "${CHECKPOINT_INTERVAL:-2048}"
+  --gpu-memory-fraction 0.20 "$mode")
 
 if [[ "$mode" == "--dry-run" ]]; then
   docker run --rm --network none --cpus 2 --memory 4g \
@@ -58,10 +59,10 @@ if [[ "$mode" == "--dry-run" ]]; then
     --mount "type=bind,src=$root,dst=/workspace" --workdir /workspace "$image" \
     "${command[@]}"
 else
-  docker run --rm --network none --gpus device=0 --cpus 8 --memory 72g \
+  docker run --rm --network none --gpus device=0 --cpus 8 --memory 64g \
     --user "$(id -u):$(id -g)" --env HOME=/tmp \
     --env PYTHONPATH=/workspace/.tools/hydrogym:/workspace/src:/workspace/scripts \
     --mount "type=bind,src=$root,dst=/workspace" --workdir /workspace "$image" \
-    python -u scripts/spark_gpu_guard.py --min-free-gib 20 \
-    --allocator-fraction 0.60 --margin-gib 4 -- "${command[@]}"
+    python -u scripts/spark_ppo_gpu_guard.py --min-free-gib 20 \
+    --allocator-fraction 0.20 --margin-gib 4 -- "${command[@]}"
 fi

@@ -265,3 +265,53 @@ def test_shell_dry_run_branch_does_not_request_gpu() -> None:
     dry_run_branch = branch.split("else", maxsplit=1)[0]
     assert "--gpus" not in dry_run_branch
     assert "--cpus 2 --memory 4g" in dry_run_branch
+
+
+def test_formal_runner_uses_evidenced_allocator_and_cuda_floor_guard() -> None:
+    shell_path = SCRIPT.with_name("run_full40_canonical_ppo_spark.sh")
+    shell = shell_path.read_text(encoding="utf-8")
+    assert "--memory 64g" in shell
+    assert "--allocator-fraction 0.20" in shell
+    assert "--gpu-memory-fraction 0.20" in shell
+    assert "spark_ppo_gpu_guard.py" in shell
+    assert "--allocator-fraction 0.60" not in shell
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert 'default=0.20' in source
+    assert 'gpu_memory_fraction <= 0.20' in source
+
+
+def test_ppo_gpu_contract_rejects_old_fraction_and_low_cuda_headroom() -> None:
+    guard_path = SCRIPT.with_name("spark_ppo_gpu_guard.py")
+    spec = importlib.util.spec_from_file_location("spark_ppo_gpu_guard", guard_path)
+    assert spec is not None and spec.loader is not None
+    guard = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(guard)
+    gib = guard.GIB
+    safe = guard.resource_contract(
+        cuda_free=int(50.4 * gib),
+        cuda_total=int(121.69 * gib),
+        available=int(107 * gib),
+        allocator_fraction=0.20,
+        min_free_gib=20,
+        margin_gib=4,
+    )
+    assert safe["cuda_preflight_pass"] is True
+    assert safe["unified_preflight_pass"] is True
+    old = guard.resource_contract(
+        cuda_free=int(50.4 * gib),
+        cuda_total=int(121.69 * gib),
+        available=int(107 * gib),
+        allocator_fraction=0.60,
+        min_free_gib=20,
+        margin_gib=4,
+    )
+    assert old["cuda_preflight_pass"] is False
+    low_cuda = guard.resource_contract(
+        cuda_free=int(19 * gib),
+        cuda_total=int(121.69 * gib),
+        available=int(107 * gib),
+        allocator_fraction=0.20,
+        min_free_gib=20,
+        margin_gib=4,
+    )
+    assert low_cuda["cuda_preflight_pass"] is False
