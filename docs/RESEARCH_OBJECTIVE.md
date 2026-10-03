@@ -80,6 +80,18 @@ Failure at a gate changes the next method, not the research claim. In particular
 Gate-B long-horizon drift routes to multi-step training and shorter CFD-anchored
 rollouts; it does not permit lowering the accuracy threshold after seeing results.
 
+Gate-B clarification (2026-10-03; no physical threshold changed): the 10% drag
+NRMSE is a minimum screening condition, **not sufficient evidence** that a
+surrogate can select a 2% drag improvement. The uncontrolled total Cd is about
+2.30, so the target difference is about 0.046, smaller than the absolute error
+allowed by a 10% full-scale NRMSE. Before trusting Gate-C action rankings,
+evaluate matched-start CFD action pairs for the *difference* in window-mean
+total drag and their ordering, including independent low-magnitude action
+histories over the full control horizon. Validation windows that contain no
+such histories cannot establish low-action generalization. Keep the original
+validation and frozen test cases intact; add a separately identified independent
+profile when action coverage is missing.
+
 ## Evidence and change control
 
 Every milestone records:
