@@ -112,7 +112,7 @@ base_cmd=(docker run --rm --network none --gpus device=0 --cpus 8 --memory 90g \
 train_cmd=("${base_cmd[@]}" "$image" python -u scripts/spark_gpu_guard.py \
   --min-free-gib 20 --allocator-fraction "$fraction" --margin-gib 4 -- \
   python -u scripts/train_tandem_fno_rollout.py --config-name "$config" \
-  hydra.run.dir=/tmp/hydra hydra.output_subdir=null)
+  data.prefetch_factor=0 hydra.run.dir=/tmp/hydra hydra.output_subdir=null)
 if [[ "$mode" == --probe ]]; then
   train_cmd+=(training.epochs=1 training.max_train_batches=1 training.max_validation_batches=1)
 fi

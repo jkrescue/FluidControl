@@ -61,8 +61,10 @@ def test_hydra_composition_keeps_variant_memory_and_batch_contracts():
         h20 = compose(config_name="tandem_fno_dynamic_train8_h20")
         h50 = compose(config_name="tandem_fno_dynamic_train8_h50")
     assert float(h20.training.gpu_memory_fraction) == 0.25
+    assert int(h20.data.prefetch_factor) == 0
     assert int(h20.training.rollout_steps) == 20
     assert int(h20.training.batch_size) == 4
     assert float(h50.training.gpu_memory_fraction) == 0.45
+    assert int(h50.data.prefetch_factor) == 0
     assert int(h50.training.rollout_steps) == 50
     assert int(h50.training.batch_size) == 4

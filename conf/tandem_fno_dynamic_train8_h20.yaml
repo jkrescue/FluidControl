@@ -6,6 +6,9 @@ defaults:
 output_dir: /workspace/output
 data:
   root: /workspace/base
+  # PhysicsNeMo DataLoader synchronous path avoids TensorDict's process-global
+  # device recorder race under threaded host prefetch.
+  prefetch_factor: 0
   additional_train_roots:
     - /workspace/train8
 training:

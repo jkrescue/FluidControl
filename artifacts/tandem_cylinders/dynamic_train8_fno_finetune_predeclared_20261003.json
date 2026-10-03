@@ -13,6 +13,8 @@
     "base_train_stride": 20,
     "additional_train_stride": 2,
     "composition": "official physicsnemo.datapipes.MultiDataset",
+    "physicsnemo_dataloader_prefetch_factor": 0,
+    "dataloader_reason": "official synchronous iterator; avoids verified TensorDict process-global device-recorder race in threaded host prefetch",
     "validation": "unchanged full40 validation10",
     "dynamic_validation": "unchanged b01/b05 dynamic6 after training only",
     "frozen_test_access": false
