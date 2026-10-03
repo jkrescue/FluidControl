@@ -1,0 +1,71 @@
+{
+  "case_count": 4,
+  "cases": [
+    {
+      "case": "expanded_validation_00",
+      "segments": 29,
+      "total_drag_nrmse": 0.10490477902794877,
+      "total_drag_rmse": 0.2501845705455396,
+      "total_drag_target_rms": 2.384872956825783
+    },
+    {
+      "case": "expanded_validation_01",
+      "segments": 29,
+      "total_drag_nrmse": 0.09232258173437816,
+      "total_drag_rmse": 0.23036993766045544,
+      "total_drag_target_rms": 2.4952718320123903
+    },
+    {
+      "case": "expanded_validation_02",
+      "segments": 29,
+      "total_drag_nrmse": 0.09937983528552376,
+      "total_drag_rmse": 0.3200683441144296,
+      "total_drag_target_rms": 3.2206568183058017
+    },
+    {
+      "case": "expanded_validation_04",
+      "segments": 29,
+      "total_drag_nrmse": 0.2399716526741077,
+      "total_drag_rmse": 0.6871076712326927,
+      "total_drag_target_rms": 2.863286823989231
+    }
+  ],
+  "checkpoint_model": "artifacts/distributed_runs/gateb_aug_v3_h20_rear_drag_seed20261002_20261003/formal/tandem_fno_gate_b_aug_v3_h20_rear_drag_seed20261002_10epoch/best/FNO.0.9.mdlus",
+  "checkpoint_sha256": "0e31d5e40bf8b805f64ebaf553af35aee62e6030e2aa042da8bcc6a5551fb226",
+  "error_sum_squares": 20.01647640434345,
+  "evaluation_profile": "gate_b_aug_v3",
+  "hdf5_contract": {
+    "force_channels": [
+      "front_cd",
+      "front_cl",
+      "rear_cd",
+      "rear_cl"
+    ],
+    "force_shape": "(frames, 4)",
+    "split_attribute": "validation"
+  },
+  "horizon_steps": 100,
+  "macro_total_drag_nrmse": 0.1341447121804896,
+  "manifest_sha256": "c0b612554e01cbed757cd9943384f207e99e982489b6d8593de57ec24c363d74",
+  "metric_scope": "100-step terminal instantaneous total-drag force only; not the mean Cd_total over the 100-step rollout window",
+  "normalization_profile": "gate_b_aug_v3",
+  "normalization_sha256": "be858979a70c558ae3fca6ee0827e212cad19b71d676af40f9f9619a030649df",
+  "pooled_total_drag_nrmse": 0.15047051744332332,
+  "report": "artifacts/distributed_runs/gateb_aug_v3_h20_rear_drag_seed20261002_20261003/formal/tandem_fno_gate_b_aug_v3_h20_rear_drag_seed20261002_10epoch/validation_long_horizon.json",
+  "report_sha256": "b2b903c8e352b207a4e930612641a655b43d19e535683d940d37b24e3aac9342",
+  "reported_summary_macro_total_drag_nrmse": 0.1341447121804896,
+  "schema_version": 2,
+  "segments": 116,
+  "split": "validation",
+  "status": "TERMINAL_FORCE_GATE_B_ACCURACY_FAIL",
+  "target_sum_squares": 884.066227093339,
+  "threshold": 0.1,
+  "threshold_policy": "fixed at 10%; this audit cannot relax it",
+  "worst_case": {
+    "case": "expanded_validation_04",
+    "segments": 29,
+    "total_drag_nrmse": 0.2399716526741077,
+    "total_drag_rmse": 0.6871076712326927,
+    "total_drag_target_rms": 2.863286823989231
+  }
+}

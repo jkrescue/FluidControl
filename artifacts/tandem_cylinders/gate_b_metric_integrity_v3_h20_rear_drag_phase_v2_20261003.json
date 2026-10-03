@@ -1,0 +1,50 @@
+{
+  "case_count": 1,
+  "cases": [
+    {
+      "case": "phase_test_88_ramp",
+      "segments": 6,
+      "total_drag_nrmse": 0.10811671519657208,
+      "total_drag_rmse": 0.2971496618596764,
+      "total_drag_target_rms": 2.748415555535651
+    }
+  ],
+  "checkpoint_model": "artifacts/distributed_runs/gateb_aug_v3_h20_rear_drag_seed20261002_20261003/formal/tandem_fno_gate_b_aug_v3_h20_rear_drag_seed20261002_10epoch/best/FNO.0.9.mdlus",
+  "checkpoint_sha256": "0e31d5e40bf8b805f64ebaf553af35aee62e6030e2aa042da8bcc6a5551fb226",
+  "error_sum_squares": 0.5297875292599201,
+  "evaluation_profile": "phase_v1",
+  "hdf5_contract": {
+    "force_channels": [
+      "front_cd",
+      "front_cl",
+      "rear_cd",
+      "rear_cl"
+    ],
+    "force_shape": "(frames, 4)",
+    "split_attribute": "test"
+  },
+  "horizon_steps": 100,
+  "macro_total_drag_nrmse": 0.10811671519657208,
+  "manifest_sha256": "6e38112e9d5011d3974aa27051dc1ac703887c13081ad00c93a3be64c651c64b",
+  "metric_scope": "100-step terminal instantaneous total-drag force only; not the mean Cd_total over the 100-step rollout window",
+  "normalization_profile": "gate_b_aug_v3",
+  "normalization_sha256": "be858979a70c558ae3fca6ee0827e212cad19b71d676af40f9f9619a030649df",
+  "pooled_total_drag_nrmse": 0.10811671519657208,
+  "report": "artifacts/distributed_runs/gateb_aug_v3_h20_rear_drag_seed20261002_20261003/formal/tandem_fno_gate_b_aug_v3_h20_rear_drag_seed20261002_10epoch/heldout_evaluation_phase_independent.json",
+  "report_sha256": "1ef15c800e862ef7393ff7a66f35fab3441516f2553812c969307b252a81536d",
+  "reported_summary_macro_total_drag_nrmse": 0.10811671519657208,
+  "schema_version": 2,
+  "segments": 6,
+  "split": "test",
+  "status": "TERMINAL_FORCE_GATE_B_ACCURACY_FAIL",
+  "target_sum_squares": 45.32272839546204,
+  "threshold": 0.1,
+  "threshold_policy": "fixed at 10%; this audit cannot relax it",
+  "worst_case": {
+    "case": "phase_test_88_ramp",
+    "segments": 6,
+    "total_drag_nrmse": 0.10811671519657208,
+    "total_drag_rmse": 0.2971496618596764,
+    "total_drag_target_rms": 2.748415555535651
+  }
+}

@@ -59,8 +59,12 @@ The wrapper refuses to overwrite a previous formal result and writes under:
 - `v4_candidate_validation.json`: unmodified evaluator report;
 - `v3_parent_on_v4_validation.json`: parent report using its v3 training
   normalization on the byte-identical v4 validation trajectories;
-- `decision.json`: 1/10/50/100-step NRMSE table, candidate-minus-parent deltas
-  and the strict 100-step development decision;
+- `v4_candidate_metric_integrity.json` and `v3_parent_metric_integrity.json`:
+  strict profile/checkpoint/normalization audits and recomputed pooled, macro and
+  worst-case 100-step terminal-force NRMSE;
+- `decision.json`: 1/10/50/100-step macro NRMSE table, pooled 100-step metrics,
+  worst cases, candidate-minus-parent deltas and the strict pooled development
+  decision;
 - `VALIDATION_COMPLETE` or `VALIDATION_FAILED`: terminal marker.
 
 Normalization is part of each checkpoint's training contract. The v4 candidate
@@ -72,6 +76,12 @@ targets, so total-drag NRMSE has the same physical target RMS denominator.
 `decision.json` records both normalization roots and hashes. The comparison
 must not be presented as an equal-training-budget ablation because the v4 run
 is a five-epoch warm start.
+
+The strict improvement decision uses pooled 100-step terminal total-drag NRMSE,
+not the evaluator's arithmetic mean of per-case NRMSE values. The fixed 10%
+Gate-B threshold is also reported without modification. Both pooled and macro
+values remain terminal instantaneous-force errors; neither establishes accurate
+mean `Cd_total` over the full 100-step window.
 
 ## Execution state
 

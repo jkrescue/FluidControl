@@ -17,6 +17,8 @@ lock="${XDG_RUNTIME_DIR:-/tmp}/fluid-control-v4-validation-only.lock"
 preflight="${output}/preflight.json"
 candidate_report="${output}/v4_candidate_validation.json"
 parent_report="${output}/v3_parent_on_v4_validation.json"
+candidate_integrity="${output}/v4_candidate_metric_integrity.json"
+parent_integrity="${output}/v3_parent_metric_integrity.json"
 decision="${output}/decision.json"
 running_marker="${output}/VALIDATION_RUNNING"
 failed_marker="${output}/VALIDATION_FAILED"
@@ -52,7 +54,8 @@ flock -n 9 || { echo "Another v4 validation-only evaluation holds ${lock}" >&2; 
     echo "Immutable v3 H20 parent is missing" >&2; exit 2;
 }
 [[ ! -e "${complete_marker}" && ! -e "${candidate_report}" \
-    && ! -e "${parent_report}" && ! -e "${decision}" ]] || {
+    && ! -e "${parent_report}" && ! -e "${candidate_integrity}" \
+    && ! -e "${parent_integrity}" && ! -e "${decision}" ]] || {
     echo "Refusing to overwrite an existing formal validation result" >&2; exit 2;
 }
 actual_image="$(docker image inspect "${image}" --format '{{.Id}}')"
@@ -100,6 +103,34 @@ run_evaluation() {
 
 run_evaluation "${candidate}" "${candidate_report}" "${v4_data}"
 run_evaluation "${parent}" "${parent_report}" "${v3_data}"
+
+candidate_models=("${candidate}"/best/FNO.*.mdlus)
+parent_models=("${parent}"/best/FNO.*.mdlus)
+[[ ${#candidate_models[@]} -eq 1 && -f "${candidate_models[0]}" \
+    && ${#parent_models[@]} -eq 1 && -f "${parent_models[0]}" ]] || {
+    echo "Expected one candidate and one parent model checkpoint" >&2; exit 2;
+}
+candidate_checkpoint_sha="$(sha256sum "${candidate_models[0]}" | awk '{print $1}')"
+parent_checkpoint_sha="$(sha256sum "${parent_models[0]}" | awk '{print $1}')"
+v4_normalization_sha="$(sha256sum "${v4_data}/normalization.json" | awk '{print $1}')"
+v3_normalization_sha="$(sha256sum "${v3_data}/normalization.json" | awk '{print $1}')"
+
+python3 scripts/audit_gate_b_metric_integrity.py \
+    --report "${candidate_report}" --data "${v4_data}" \
+    --normalization-data "${v4_data}" --checkpoint-model "${candidate_models[0]}" \
+    --expected-split validation --expected-profile control_gap_v4 \
+    --expected-normalization-profile control_gap_v4 --expected-case-count 4 \
+    --expected-checkpoint-sha256 "${candidate_checkpoint_sha}" \
+    --expected-normalization-sha256 "${v4_normalization_sha}" \
+    --output "${candidate_integrity}"
+python3 scripts/audit_gate_b_metric_integrity.py \
+    --report "${parent_report}" --data "${v4_data}" \
+    --normalization-data "${v3_data}" --checkpoint-model "${parent_models[0]}" \
+    --expected-split validation --expected-profile control_gap_v4 \
+    --expected-normalization-profile gate_b_aug_v3 --expected-case-count 4 \
+    --expected-checkpoint-sha256 "${parent_checkpoint_sha}" \
+    --expected-normalization-sha256 "${v3_normalization_sha}" \
+    --output "${parent_integrity}"
 
 python3 scripts/audit_control_gap_v4_validation.py compare \
     --candidate-report "${candidate_report}" --parent-report "${parent_report}" \

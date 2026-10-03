@@ -12,6 +12,10 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from audit_gate_b_metric_integrity import (
+    MAX_TOTAL_DRAG_NRMSE,
+    recompute_terminal_drag_metrics,
+)
 
 HORIZONS = (1, 10, 50, 100)
 ARCHITECTURE_KEYS = (
@@ -235,32 +239,47 @@ def compare(
     preflight_report = load_json(preflight_path)
     validate_evaluation(candidate, expected_data, candidate_normalization)
     validate_evaluation(parent, expected_data, parent_normalization)
-    candidate_nrmse = {
+    candidate_macro_nrmse = {
         str(horizon): float(candidate["summary"][str(horizon)]["total_drag_nrmse"])
         for horizon in HORIZONS
     }
-    parent_nrmse = {
+    parent_macro_nrmse = {
         str(horizon): float(parent["summary"][str(horizon)]["total_drag_nrmse"])
         for horizon in HORIZONS
     }
-    delta = {
-        str(horizon): candidate_nrmse[str(horizon)] - parent_nrmse[str(horizon)]
+    macro_delta = {
+        str(horizon): (
+            candidate_macro_nrmse[str(horizon)] - parent_macro_nrmse[str(horizon)]
+        )
         for horizon in HORIZONS
     }
-    improved = delta["100"] < 0
+    candidate_terminal = recompute_terminal_drag_metrics(candidate)
+    parent_terminal = recompute_terminal_drag_metrics(parent)
+    candidate_pooled = candidate_terminal["pooled_total_drag_nrmse"]
+    parent_pooled = parent_terminal["pooled_total_drag_nrmse"]
+    pooled_delta = candidate_pooled - parent_pooled
+    improved = pooled_delta < 0
+    meets_threshold = candidate_pooled <= MAX_TOTAL_DRAG_NRMSE
+    if improved and meets_threshold:
+        status = "V4_VALIDATION_IMPROVED_AND_FIXED_THRESHOLD_MET"
+    elif improved:
+        status = "V4_VALIDATION_IMPROVED_BUT_ABOVE_FIXED_THRESHOLD"
+    else:
+        status = "V4_VALIDATION_100STEP_NO_GAIN"
     return {
-        "status": (
-            "V4_VALIDATION_100STEP_IMPROVED"
-            if improved
-            else "V4_VALIDATION_100STEP_NO_GAIN"
-        ),
+        "status": status,
         "split": "validation",
-        "selection_metric": "100-step total-drag NRMSE",
+        "selection_metric": "pooled 100-step terminal total-drag NRMSE",
         "selection_rule": "strictly lower is better; no threshold changed",
+        "fixed_gate_b_threshold": MAX_TOTAL_DRAG_NRMSE,
+        "candidate_meets_fixed_threshold": meets_threshold,
         "horizons": list(HORIZONS),
-        "candidate_total_drag_nrmse": candidate_nrmse,
-        "v3_parent_total_drag_nrmse": parent_nrmse,
-        "candidate_minus_parent_nrmse": delta,
+        "candidate_macro_total_drag_nrmse": candidate_macro_nrmse,
+        "v3_parent_macro_total_drag_nrmse": parent_macro_nrmse,
+        "candidate_minus_parent_macro_nrmse": macro_delta,
+        "candidate_terminal_100step": candidate_terminal,
+        "v3_parent_terminal_100step": parent_terminal,
+        "candidate_minus_parent_pooled_100step_nrmse": pooled_delta,
         "evaluation_data": expected_data,
         "candidate_normalization_data": candidate_normalization,
         "parent_normalization_data": parent_normalization,
@@ -273,8 +292,8 @@ def compare(
             "total-drag RMS denominator"
         ),
         "scientific_scope": (
-            "validation-only development comparison; no frozen-test access and no CFD "
-            "control-benefit claim"
+            "validation-only terminal-force development comparison; not 100-step "
+            "window-mean Cd accuracy, no frozen-test access, and no CFD control-benefit claim"
         ),
         "candidate_report": str(candidate_path),
         "candidate_report_sha256": sha256(candidate_path),

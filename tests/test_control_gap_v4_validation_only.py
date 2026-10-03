@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 SCRIPT = Path(__file__).parents[1] / "scripts" / "audit_control_gap_v4_validation.py"
+sys.path.insert(0, str(SCRIPT.parent))
 SPEC = importlib.util.spec_from_file_location("v4_validation_audit", SCRIPT)
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
@@ -125,6 +127,24 @@ class ValidationOnlyAuditTest(unittest.TestCase):
             MODULE.preflight(self.v4, self.v3, self.candidate, self.parent)
 
     def evaluation(self, values: list[float], normalization: Path) -> dict:
+        cases = []
+        for case_index in range(4):
+            cases.append(
+                {
+                    "case": f"validation_{case_index:02d}",
+                    "horizons": {
+                        str(horizon): {
+                            "total_drag_rmse": value,
+                            "total_drag_target_rms": 1.0,
+                            "total_drag_nrmse": value,
+                            "segments": 1,
+                            "stable": True,
+                            "failed_segments": 0,
+                        }
+                        for horizon, value in zip(MODULE.HORIZONS, values, strict=True)
+                    },
+                }
+            )
         return {
             "split": "validation",
             "evaluation_data": str(self.v4),
@@ -133,11 +153,13 @@ class ValidationOnlyAuditTest(unittest.TestCase):
             "action_mode": "observed",
             "force_indices": [0, 1, 2, 3],
             "checkpoint_epoch": 5,
+            "cases": cases,
             "summary": {
                 str(horizon): {
                     "total_drag_nrmse": value,
                     "stable": True,
                     "failed_segments": 0,
+                    "segments": 4,
                 }
                 for horizon, value in zip(MODULE.HORIZONS, values, strict=True)
             },
@@ -169,8 +191,12 @@ class ValidationOnlyAuditTest(unittest.TestCase):
             str(self.v4),
             str(self.v3),
         )
-        self.assertEqual(report["status"], "V4_VALIDATION_100STEP_IMPROVED")
-        self.assertAlmostEqual(report["candidate_minus_parent_nrmse"]["100"], -0.02)
+        self.assertEqual(
+            report["status"], "V4_VALIDATION_IMPROVED_AND_FIXED_THRESHOLD_MET"
+        )
+        self.assertAlmostEqual(
+            report["candidate_minus_parent_pooled_100step_nrmse"], -0.02
+        )
         self.assertIn("own training", report["normalization_policy"])
         self.assertIn("same physical-unit", report["common_denominator_basis"])
 
@@ -179,6 +205,37 @@ class ValidationOnlyAuditTest(unittest.TestCase):
         report["split"] = "test"
         with self.assertRaisesRegex(ValueError, "split"):
             MODULE.validate_evaluation(report, str(self.v4), str(self.v4))
+
+    def test_pooled_improvement_does_not_relax_fixed_threshold(self) -> None:
+        candidate_path = self.root / "candidate_above.json"
+        parent_path = self.root / "parent_above.json"
+        preflight_path = self.root / "preflight_above.json"
+        candidate_path.write_text(
+            json.dumps(self.evaluation([0.01, 0.02, 0.08, 0.11], self.v4))
+        )
+        parent_path.write_text(
+            json.dumps(self.evaluation([0.02, 0.03, 0.09, 0.12], self.v3))
+        )
+        preflight_path.write_text(
+            json.dumps(
+                {
+                    "candidate_checkpoint": {"epoch": 5},
+                    "parent_checkpoint": {"epoch": 9},
+                }
+            )
+        )
+        result = MODULE.compare(
+            candidate_path,
+            parent_path,
+            preflight_path,
+            str(self.v4),
+            str(self.v4),
+            str(self.v3),
+        )
+        self.assertEqual(
+            result["status"], "V4_VALIDATION_IMPROVED_BUT_ABOVE_FIXED_THRESHOLD"
+        )
+        self.assertFalse(result["candidate_meets_fixed_threshold"])
 
 
 if __name__ == "__main__":
