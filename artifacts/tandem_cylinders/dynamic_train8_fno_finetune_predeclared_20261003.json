@@ -1,7 +1,7 @@
 {
   "status": "DYNAMIC_TRAIN8_FNO_FINETUNE_PREDECLARED_NOT_EXECUTED",
   "scope": "official PhysicsNeMo FNO train-only dynamic-action augmentation; no PPO or control claim",
-  "model": "physicsnemo.models.fno.FNO unchanged from full40 free-AR H20",
+  "model": "physicsnemo.models.fno.FNO unchanged from the full40 free-AR architecture",
   "data": {
     "base": "data/curated/tandem_cylinders_matched_start_full40_dev30_v1",
     "base_manifest_sha256": "5213c7bb07c824c6e601636c3cfa974b80ec7c051633b0c8368a045cea41ddd2",
@@ -22,18 +22,20 @@
   "training_variants": {
     "h20_parent": {"epochs": 6, "rollout_steps": 20},
     "h50_parent": {"epochs": 4, "rollout_steps": 50},
+    "h100_parent": {"epochs": 2, "rollout_steps": 100, "batch_size": 2},
     "validation_rollout_steps": 100,
     "teacher_forcing_ratio": 0.0,
     "checkpoint_interval": 1,
     "checkpoint_selection": "lowest unchanged validation H100 rollout score; never frozen and never dynamic6 waveform selection",
     "gpu": 0,
     "minimum_free_unified_memory_GiB": 20,
-    "allocator_fraction": {"h20": 0.25, "h50": 0.45},
+    "allocator_fraction": {"h20": 0.25, "h50": 0.45, "h100": 0.45},
     "container_memory_limit_GiB": 90,
-    "rule": "continue at the selected parent's training horizon; do not downgrade an H50 parent to H20"
+    "rule": "H50 continues the selected H50 parent horizon; H100 deliberately extends that same immutable H50 parent to H100 without changing architecture, data, loss, or teacher forcing"
   },
   "parent_selection": {
     "rule": "at launch choose the best already-completed A/B epoch under the same validation10 H100 protocol",
+    "parallel_run_contract": "the Spark H50 and Worker H100 runs must copy the same selected immutable completed epoch and record identical parent model/checkpoint SHA-256 values",
     "required_input": "explicit completed epoch directory (basename best forbidden) containing exactly one matching FNO.0.E.mdlus and checkpoint.0.E.pt pair",
     "launch_action": "copy both files into run/immutable_parent, verify SHA-256, chmod read-only, and train only from that copy",
     "mutable_best_directory_forbidden": true,
@@ -47,6 +49,7 @@
   ],
   "post_evaluation_runtime": [
     "validation10 uses evaluation batch size 4",
-    "dynamic6 uses independently resource-probed batch size 8, allocator fraction 0.12, stride 1"
+    "validation10 uses allocator fraction 0.15",
+    "dynamic6 uses independently resource-probed batch size 8, allocator fraction 0.15, stride 1"
   ]
 }

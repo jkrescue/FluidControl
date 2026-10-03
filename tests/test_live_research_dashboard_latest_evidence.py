@@ -126,6 +126,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("FNO未用于奖励", page)
         self.assertIn("原始未平滑时序", page)
         self.assertIn("canonical_physical_joint_check", page)
+        self.assertIn("计划8、实际5", page)
 
     def test_dual_node_watchdog_is_exposed_without_replacing_science_metrics(self) -> None:
         page = MODULE.PAGE
@@ -355,6 +356,30 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         )
         self.assertFalse(result["direct_cfd_ppo"]["physical_result_available"])
         self.assertFalse(result["frozen_hdf_opened_or_enumerated"])
+
+    def test_free_ar_marks_worker_epoch5_as_intentional_reallocation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt = root / "artifacts/worker_audit/B_E5_REALLOCATION_RECEIPT.json"
+            receipt.parent.mkdir(parents=True)
+            receipt.write_text(
+                json.dumps(
+                    {"status": "B_E5_FROZEN_FOR_DYNAMIC_H100_REALLOCATION"}
+                ),
+                encoding="utf-8",
+            )
+            h50 = root / "artifacts/tandem_fno_full40_free_ar_h50_ar50_20261003"
+            h50.mkdir(parents=True)
+            (h50 / "training_history.json").write_text(
+                json.dumps([{"epoch": 5, "selection_score": 0.041}]),
+                encoding="utf-8",
+            )
+            with patch.object(MODULE, "_service_state", return_value="inactive"):
+                result = MODULE._free_ar_ablation(root)
+        self.assertEqual(
+            result["h50"]["status"], "INTENTIONALLY_REALLOCATED_AT_EPOCH5"
+        )
+        self.assertEqual(result["h50"]["epoch"], 5)
 
     def test_direct_cfd_ppo_reads_tail_and_after_update_progress(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

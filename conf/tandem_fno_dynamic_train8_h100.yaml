@@ -1,0 +1,15 @@
+defaults:
+  - tandem_fno_dynamic_train8_h50
+  - _self_
+
+# Same official PhysicsNeMo FNO and train-only data as H50.  Only the
+# autoregressive training horizon and conservative batch size change.
+training:
+  epochs: 2
+  rollout_steps: 100
+  validation_rollout_steps: 100
+  batch_size: 2
+  gpu_memory_fraction: 0.45
+  teacher_forcing_start: 0.0
+  teacher_forcing_end: 0.0
+  checkpoint_keep_last: 2

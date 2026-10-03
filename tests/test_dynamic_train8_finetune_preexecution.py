@@ -13,17 +13,23 @@ def test_predeclaration_is_train_only_and_keeps_formal_gates():
     assert payload["data"]["frozen_test_access"] is False
     assert payload["training_variants"]["h20_parent"] == {"epochs":6,"rollout_steps":20}
     assert payload["training_variants"]["h50_parent"] == {"epochs":4,"rollout_steps":50}
+    assert payload["training_variants"]["h100_parent"] == {
+        "epochs": 2, "rollout_steps": 100, "batch_size": 2
+    }
     assert payload["training_variants"]["validation_rollout_steps"] == 100
     assert payload["training_variants"]["teacher_forcing_ratio"] == 0.0
     assert payload["parent_selection"]["mutable_best_directory_forbidden"] is True
     assert payload["data"]["base"].endswith("full40_dev30_v1")
     assert payload["data"]["base_manifest_sha256"].startswith("5213c7bb")
-    assert payload["training_variants"]["allocator_fraction"] == {"h20":0.25,"h50":0.45}
+    assert payload["training_variants"]["allocator_fraction"] == {
+        "h20": 0.25, "h50": 0.45, "h100": 0.45
+    }
 
 
 def test_config_and_runner_are_immutable_parent_guarded():
     config=(ROOT/"conf/tandem_fno_dynamic_train8_h20.yaml").read_text()
     config50=(ROOT/"conf/tandem_fno_dynamic_train8_h50.yaml").read_text()
+    config100=(ROOT/"conf/tandem_fno_dynamic_train8_h100.yaml").read_text()
     runner=(ROOT/"scripts/run_dynamic_train8_fno_finetune_spark.sh").read_text()
     assert "additional_train_stride: 2" in config
     assert "train_stride: 20" in config
@@ -31,16 +37,22 @@ def test_config_and_runner_are_immutable_parent_guarded():
     assert "teacher_forcing_start: 0.0" in config
     assert "rollout_steps: 50" in config50
     assert "epochs: 4" in config50
+    assert "rollout_steps: 100" in config100
+    assert "batch_size: 2" in config100
     assert "cp --reflink=auto" in runner
     assert "immutable parent copy SHA differs" in runner
     assert "parent_copy,dst=/workspace/parent,readonly" in runner
+    assert 'immutable.get("model_sha256")' in runner
+    assert 'immutable.get("state_sha256")' in runner
     assert "DYNAMIC_TRAIN8_FNO_FINETUNE_DRY_RUN_READY" in runner
     assert "EXECUTE_REVIEWED_DYNAMIC_TRAIN8_FNO_FINETUNE" in runner
     assert "--min-free-gib 20" in runner
     assert '--memory 90g' in runner
     assert 'h20) config="tandem_fno_dynamic_train8_h20"; fraction=.25' in runner
     assert 'h50) config="tandem_fno_dynamic_train8_h50"; fraction=.45' in runner
-    assert 'h50) config="tandem_fno_dynamic_train8_h50"' in runner
+    assert 'h100) config="tandem_fno_dynamic_train8_h100"; fraction=.45' in runner
+    assert runner.count("--allocator-fraction .15") == 2
+    assert "--allocator-fraction .12" not in runner
     assert '$(basename "$parent")" != best' in runner
     assert '--env "USER=$(id -un)"' in runner
     assert 'tandem_cylinders_matched_start_full40_dev30_v1' in runner
@@ -60,6 +72,7 @@ def test_hydra_composition_keeps_variant_memory_and_batch_contracts():
     with initialize_config_dir(version_base=None, config_dir=str(ROOT / "conf")):
         h20 = compose(config_name="tandem_fno_dynamic_train8_h20")
         h50 = compose(config_name="tandem_fno_dynamic_train8_h50")
+        h100 = compose(config_name="tandem_fno_dynamic_train8_h100")
     assert float(h20.training.gpu_memory_fraction) == 0.25
     assert int(h20.data.prefetch_factor) == 0
     assert int(h20.training.rollout_steps) == 20
@@ -68,3 +81,11 @@ def test_hydra_composition_keeps_variant_memory_and_batch_contracts():
     assert int(h50.data.prefetch_factor) == 0
     assert int(h50.training.rollout_steps) == 50
     assert int(h50.training.batch_size) == 4
+    assert float(h100.training.gpu_memory_fraction) == 0.45
+    assert int(h100.data.prefetch_factor) == 0
+    assert int(h100.training.rollout_steps) == 100
+    assert int(h100.training.validation_rollout_steps) == 100
+    assert int(h100.training.batch_size) == 2
+    assert int(h100.training.epochs) == 2
+    assert float(h100.training.teacher_forcing_start) == 0.0
+    assert float(h100.training.teacher_forcing_end) == 0.0

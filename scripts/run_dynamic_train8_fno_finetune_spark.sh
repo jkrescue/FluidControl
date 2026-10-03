@@ -16,7 +16,8 @@ predecl="$root/artifacts/tandem_cylinders/dynamic_train8_fno_finetune_predeclare
 case "$horizon" in
   h20) config="tandem_fno_dynamic_train8_h20"; fraction=.25 ;;
   h50) config="tandem_fno_dynamic_train8_h50"; fraction=.45 ;;
-  *) echo "explicit parent horizon must be h20 or h50" >&2; exit 2 ;;
+  h100) config="tandem_fno_dynamic_train8_h100"; fraction=.45 ;;
+  *) echo "explicit parent horizon must be h20, h50, or h100" >&2; exit 2 ;;
 esac
 
 [[ -n "$parent" && -d "$parent" ]] || { echo "explicit completed parent directory required" >&2; exit 2; }
@@ -58,7 +59,14 @@ if epoch(models[0]) != epoch(states[0]):
     raise SystemExit("parent epochs differ")
 receipt=parent/"parent_receipt.json"
 if receipt.exists():
-    recorded=json.loads(receipt.read_text()).get("sha256", {})
+    payload=json.loads(receipt.read_text())
+    recorded=payload.get("sha256", {})
+    immutable=payload.get("immutable_parent", {})
+    if not recorded and immutable:
+        recorded={
+            immutable.get("model", ""): immutable.get("model_sha256"),
+            immutable.get("state", ""): immutable.get("state_sha256"),
+        }
     for item in (models[0], states[0]):
         if recorded.get(item.name) != sha(item):
             raise SystemExit("parent receipt SHA differs")
@@ -135,7 +143,7 @@ PY
 )
 mkdir "$output/validation10" "$output/dynamic6"
 "${base_cmd[@]}" --mount "type=bind,src=$best,dst=/workspace/checkpoint,readonly" \
-  "$image" python -u scripts/spark_gpu_guard.py --min-free-gib 20 --allocator-fraction .12 --margin-gib 4 -- \
+  "$image" python -u scripts/spark_gpu_guard.py --min-free-gib 20 --allocator-fraction .15 --margin-gib 4 -- \
   python -u scripts/evaluate_tandem_fno.py --data /workspace/base --normalization-data /workspace/base \
   --config /workspace/conf/tandem_fno_full40_h20.yaml --checkpoint-dir /workspace/checkpoint \
   --split validation --horizons 1 10 50 100 --segment-stride 25 --evaluation-batch-size 4 \
