@@ -64,6 +64,28 @@ training or checkpoint selection. PPO is supplied by Stable-Baselines3, not by
 HydroGym; the OpenFOAM transport is a project adapter, not an upstream HydroGym
 CFD backend.
 
+## Fixed-sequence discriminator at b01
+
+A predeclared post-hoc replay applied the immutable 800 `applied_omega`
+endpoints from the b00 feedback run open-loop from the same b01 restart. It used
+the same linear ramps, 0.1 D/U decisions, 0.005 D/U solver step, 80 D/U horizon,
+and final 60 D/U statistics. All endpoints were reproduced exactly and all 800
+solver segments passed numerical checks.
+
+| b01 branch | total mean Cd | change relative to zero | rear Cl' ratio vs zero | mean-bias ratio |
+|---|---:|---:|---:|---:|
+| frozen observation feedback | 2.202531 | -4.2502% | 0.935974 | 0.038667 |
+| fixed b00 action sequence | 2.317412 | +0.7440% | 0.810540 | 0.033997 |
+| zero | 2.300298 | 0 | 1 | — |
+
+Thus the fixed b00 sequence did not reproduce the feedback drag benefit at this
+b01 start; feedback Cd was 4.9573% below the open-loop-sequence reference. This
+supports added value from observation feedback for this single held-out-time
+comparison. It is not proof over statistically independent starts, arbitrary
+phases, disturbances, or multiple policies. Evidence is under
+`artifacts/direct_cfd/b00seq_b01_openloop_v1/`; the immutable audit receipt is
+`audit_receipt.json`.
+
 ## Secondary ideal fluid-power diagnostic
 
 The post-hoc b00 diagnostic at

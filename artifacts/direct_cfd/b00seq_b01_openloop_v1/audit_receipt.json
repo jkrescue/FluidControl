@@ -1,0 +1,49 @@
+{
+  "status": "B00_ACTIONS_B01_OPENLOOP_INDEPENDENT_AUDIT_PASS",
+  "run_id": "b00seq_b01_openloop_v1",
+  "protocol": {
+    "source_action_endpoints": 800,
+    "replay_start": 130.0,
+    "replay_end": 210.0,
+    "analysis_window": [150.0, 210.0],
+    "control_dt": 0.1,
+    "solver_dt": 0.005,
+    "action_sequence_sha256_float64_le": "e81be75c361f2b82afcdccc2151ca7746b76f7133bfea3ae3348c7ab8a7ecb5b"
+  },
+  "integrity": {
+    "predeclaration_sha256": "4ff3a6cf065f2272e4da20a3627c73d039ed4971b32c4a0c4904c4525f8d07d5",
+    "preflight_receipt_sha256": "04499005c33dcaf955514c36353206119ea71a21a017e7ac5d5c9bcbda61ece8",
+    "result_sha256": "5a18f282c44ba803b1544d00fc6f5096ad116cebc20b8e0aac427c4a59b022c1",
+    "worker_journal_sha256": "37f8ab98a86e38be3775e3a317ed19868f9bddfee60677228adf9def5782d0b2",
+    "case_config_sha256": "8930fe0d4409a58f204f673d69e21b19e91c216a059247d4efb99bceaf0031f4",
+    "endpoint_rows": 800,
+    "endpoints_reproduced_exactly": true,
+    "final_force_samples_per_cylinder": 12001,
+    "final_force_dt": 0.005
+  },
+  "solver_safety": {
+    "segments": 800,
+    "all_ended_cleanly": true,
+    "all_20_steps": true,
+    "max_courant": 0.245359253,
+    "max_abs_global_continuity_per_step": 1.17631823e-12,
+    "min_mem_available_gib": 76.23980331420898,
+    "owned_container_cleaned": true,
+    "owned_pimplefoam_cleaned": true
+  },
+  "physical_summary": {
+    "openloop_total_cd_mean": 2.3174123202042076,
+    "b01_feedback_total_cd_mean": 2.2025312838306643,
+    "b01_zero_total_cd_mean": 2.300297596248329,
+    "openloop_drag_reduction_vs_zero": -0.007440221640796274,
+    "feedback_drag_reduction_vs_zero": 0.04250159308826673,
+    "feedback_drag_reduction_vs_openloop_reference": 0.04957298076477823,
+    "openloop_rear_cl_fluctuation_rms_ratio_vs_zero": 0.810539594866042,
+    "openloop_abs_rear_cl_mean_over_zero_fluctuation_rms": 0.033997130981388596,
+    "openloop_canonical_joint_pass": false,
+    "feedback_canonical_joint_pass": true
+  },
+  "interpretation": "At this one held-out-time b01 restart, the immutable b00 sequence did not reproduce the feedback drag benefit. This supports an added value of observation feedback for this comparison, but is not statistical independence or broad phase generalization.",
+  "frozen_test_accessed": false,
+  "training_or_checkpoint_selection_performed": false
+}
