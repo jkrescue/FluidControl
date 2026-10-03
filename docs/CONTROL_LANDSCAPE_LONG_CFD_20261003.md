@@ -34,3 +34,14 @@ Any apparent drag reduction must also be compared with the existing
 constant-rotation coarse/medium-grid checks and the zero baseline. This
 panel establishes feasibility and transient sensitivity, **not** a learned
 feedback controller or broad Reynolds/spacing generalization.
+
+After all three solver runs finish, a fail-closed analysis validates 801
+snapshots and 16,000 force samples per case, the source `U/p` hashes,
+solver ending, Courant and continuity, then reports the predeclared window
+and six non-overlapping force blocks:
+
+```bash
+python3 -m unittest tests.test_control_landscape_long_analysis
+python3 cfd/tandem_cylinders/analyze_control_landscape_long_panel.py \
+  --output artifacts/tandem_cylinders/control_landscape_long_result_20261003.json
+```
