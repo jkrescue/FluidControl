@@ -559,6 +559,13 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("此起点上反馈对减阻有附加价值", page)
         self.assertIn("固定序列更抑制升力波动", page)
         self.assertNotIn("feedback_vs_openloop_reference", page)
+        self.assertIn("串联双圆柱流动控制 · 三层目标现状", page)
+        self.assertIn('id="goal-real-cfd"', page)
+        self.assertIn('id="goal-fno"', page)
+        self.assertIn('id="goal-surrogate-control"', page)
+        self.assertIn("评估配置修复后的完整推理", page)
+        self.assertIn("先前是路径配置错误，不是模型训练失败", page)
+        self.assertIn("尚未产出可训练HDF", page)
 
     def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
