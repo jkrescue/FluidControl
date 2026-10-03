@@ -68,6 +68,84 @@ def window_statistics(times, forces, end_time, duration=6.15):
     }
 
 
+def field_step_statistics(predicted, truth, mask):
+    """Return observational physical-field errors without altering either field."""
+    import numpy as np
+
+    predicted = np.asarray(predicted, dtype=np.float64)
+    truth = np.asarray(truth, dtype=np.float64)
+    mask = np.asarray(mask)
+    if mask.ndim == 3 and mask.shape[0] == 1:
+        mask = mask[0]
+    if (
+        predicted.shape != truth.shape
+        or predicted.ndim != 3
+        or predicted.shape[0] != 3
+        or mask.shape != predicted.shape[1:]
+    ):
+        raise ValueError("expected aligned (u,v,p) fields and one spatial mask")
+    valid = mask.astype(bool)
+    if not valid.any():
+        raise ValueError("field diagnostic requires valid fluid cells")
+    predicted_valid = predicted[:, valid]
+    truth_valid = truth[:, valid]
+    if not np.isfinite(predicted_valid).all() or not np.isfinite(truth_valid).all():
+        raise ValueError("field diagnostic requires finite valid-cell values")
+
+    predicted_pressure = predicted_valid[2]
+    truth_pressure = truth_valid[2]
+    predicted_pressure_mean = float(predicted_pressure.mean())
+    truth_pressure_mean = float(truth_pressure.mean())
+    pressure_error = predicted_pressure - truth_pressure
+    pressure_raw_relative_l2 = float(
+        np.sqrt(np.square(pressure_error).sum())
+        / max(np.sqrt(np.square(truth_pressure).sum()), 1e-12)
+    )
+    predicted_pressure_gauge = predicted_pressure - predicted_pressure_mean
+    truth_pressure_gauge = truth_pressure - truth_pressure_mean
+    pressure_demeaned_relative_l2 = float(
+        np.sqrt(np.square(predicted_pressure_gauge - truth_pressure_gauge).sum())
+        / max(np.sqrt(np.square(truth_pressure_gauge).sum()), 1e-12)
+    )
+    velocity_error = predicted_valid[:2] - truth_valid[:2]
+    velocity_relative_l2 = float(
+        np.sqrt(np.square(velocity_error).sum())
+        / max(np.sqrt(np.square(truth_valid[:2]).sum()), 1e-12)
+    )
+    return {
+        "predicted_pressure_spatial_mean": predicted_pressure_mean,
+        "truth_pressure_spatial_mean": truth_pressure_mean,
+        "pressure_raw_relative_l2": pressure_raw_relative_l2,
+        "pressure_demeaned_relative_l2_diagnostic_only": pressure_demeaned_relative_l2,
+        "velocity_uv_relative_l2": velocity_relative_l2,
+    }
+
+
+def summarize_field_diagnostics(rows):
+    """Summarize stepwise diagnostics while preserving the complete rows."""
+    if not rows:
+        raise ValueError("at least one field diagnostic row is required")
+    keys = (
+        "predicted_pressure_spatial_mean",
+        "truth_pressure_spatial_mean",
+        "pressure_raw_relative_l2",
+        "pressure_demeaned_relative_l2_diagnostic_only",
+        "velocity_uv_relative_l2",
+    )
+    result = {}
+    for key in keys:
+        values = [float(row[key]) for row in rows]
+        if any(not math.isfinite(value) for value in values):
+            raise ValueError("nonfinite field diagnostic summary input")
+        result[key] = {
+            "minimum": min(values),
+            "maximum": max(values),
+            "mean": sum(values) / len(values),
+            "final": values[-1],
+        }
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("data", "normalization-data", "config", "checkpoint-dir", "output"):
@@ -128,7 +206,8 @@ def main():
     reports = []
     for path in files:
         with h5py.File(path, "r") as handle:
-            initial = handle["state"][0]
+            states = handle["state"][:101]
+            initial = states[0]
             mask_np = handle["mask"][:101]
             times = np.asarray(handle["time"][:101], dtype=np.float64).reshape(-1)
             omega = np.asarray(handle["omega"][:101], dtype=np.float64).reshape(-1)
@@ -152,6 +231,7 @@ def main():
         state = torch.as_tensor(initial[None], dtype=torch.float32, device=dist.device)
         predicted = (state - state_mean) / state_std * mask
         predicted_forces = [truth[0].tolist()]
+        field_diagnostics = []
         with torch.no_grad():
             for step in range(100):
                 now = torch.full_like(mask, float(omega[step] / action_scale))
@@ -172,6 +252,18 @@ def main():
                 predicted_forces.append(
                     (force * force_std + force_mean)[0].cpu().tolist()
                 )
+                predicted_physical = predicted * state_std + state_mean
+                field_diagnostics.append(
+                    {
+                        "step": step + 1,
+                        "time": float(times[step + 1]),
+                        **field_step_statistics(
+                            predicted_physical[0].cpu().numpy(),
+                            states[step + 1],
+                            mask_np[step + 1],
+                        ),
+                    }
+                )
         actual_stats = window_statistics(
             times.tolist(), truth.tolist(), float(times[-1])
         )
@@ -190,6 +282,10 @@ def main():
                 "omega_endpoints": omega.tolist(),
                 "true_forces": truth.tolist(),
                 "predicted_forces": predicted_forces,
+                "field_diagnostics": field_diagnostics,
+                "field_diagnostic_summary": summarize_field_diagnostics(
+                    field_diagnostics
+                ),
             }
         )
     by_case = {r["case"]: r for r in reports}
@@ -225,6 +321,11 @@ def main():
         "manifest_sha256": MANIFEST_SHA,
         "script_sha256": sha256(__file__),
         "autoregression": "100 recursive state predictions, no intermediate CFD state correction; observed action endpoints with linear ramp convention",
+        "pressure_gauge_diagnostic": (
+            "observational only: pressure is not demeaned or projected in the recursive "
+            "state, force head, or formal metrics; diagnostic demeaning is applied only "
+            "to copied arrays when computing the separately labelled relative L2"
+        ),
         "pairs": pairs,
         "mean_action_delta_error": sum(r["absolute_error"] for r in pairs) / len(pairs),
         "cases": reports,

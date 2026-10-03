@@ -3,6 +3,8 @@ import math
 from pathlib import Path
 import unittest
 
+import numpy as np
+
 
 path = Path(__file__).resolve().parents[1] / "scripts/diagnose_fno_force_window.py"
 spec = importlib.util.spec_from_file_location("force_window", path)
@@ -51,6 +53,62 @@ class WindowStatisticsTests(unittest.TestCase):
         result = module.window_statistics(times, [[1, 0, 2, 0]] * 101, times[-1])
         self.assertEqual(result["last_sample_time"], times[-1])
         self.assertEqual(result["sample_count"], 62)
+
+
+class FieldStepStatisticsTests(unittest.TestCase):
+    def test_pressure_offset_separates_raw_and_demeaned_error(self):
+        truth = np.zeros((3, 2, 3), dtype=float)
+        truth[0] = 2.0
+        truth[1] = -1.0
+        truth[2] = np.asarray([[1.0, -1.0, 2.0], [-2.0, 0.5, -0.5]])
+        predicted = truth.copy()
+        predicted[2] += 4.0
+        predicted_before = predicted.copy()
+        result = module.field_step_statistics(predicted, truth, np.ones((1, 2, 3)))
+        np.testing.assert_array_equal(predicted, predicted_before)
+        self.assertGreater(result["pressure_raw_relative_l2"], 0.0)
+        self.assertAlmostEqual(
+            result["pressure_demeaned_relative_l2_diagnostic_only"], 0.0
+        )
+        self.assertAlmostEqual(result["velocity_uv_relative_l2"], 0.0)
+        self.assertAlmostEqual(result["predicted_pressure_spatial_mean"], 4.0)
+        self.assertAlmostEqual(result["truth_pressure_spatial_mean"], 0.0)
+
+    def test_mask_excludes_solid_cells(self):
+        truth = np.zeros((3, 2, 2), dtype=float)
+        predicted = truth.copy()
+        predicted[:, 1, 1] = 1e9
+        mask = np.asarray([[1, 1], [1, 0]])
+        result = module.field_step_statistics(predicted, truth, mask)
+        self.assertEqual(result["pressure_raw_relative_l2"], 0.0)
+        self.assertEqual(result["velocity_uv_relative_l2"], 0.0)
+
+    def test_field_diagnostic_rejects_nonfinite_or_shape_mismatch(self):
+        field = np.zeros((3, 2, 2), dtype=float)
+        with self.assertRaises(ValueError):
+            module.field_step_statistics(field[:, :, :1], field, np.ones((2, 2)))
+        bad = field.copy()
+        bad[2, 0, 0] = np.nan
+        with self.assertRaises(ValueError):
+            module.field_step_statistics(bad, field, np.ones((2, 2)))
+
+    def test_summary_records_range_mean_and_final(self):
+        rows = [
+            {
+                "predicted_pressure_spatial_mean": value,
+                "truth_pressure_spatial_mean": 0.0,
+                "pressure_raw_relative_l2": value + 1.0,
+                "pressure_demeaned_relative_l2_diagnostic_only": value + 2.0,
+                "velocity_uv_relative_l2": value + 3.0,
+            }
+            for value in (0.0, 1.0, 2.0)
+        ]
+        result = module.summarize_field_diagnostics(rows)
+        self.assertEqual(
+            result["predicted_pressure_spatial_mean"],
+            {"minimum": 0.0, "maximum": 2.0, "mean": 1.0, "final": 2.0},
+        )
+        self.assertEqual(result["velocity_uv_relative_l2"]["final"], 5.0)
 
 
 if __name__ == "__main__":
