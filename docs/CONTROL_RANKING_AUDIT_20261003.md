@@ -42,6 +42,17 @@ for unguarded PPO/MPC. The long-window matched CFD panel still shows 3.49–
 4.66% open-loop drag reduction for ±1, with side-load penalties. Startup and
 long-run rankings need not coincide. Both must be checked separately.
 
+A completed, independently trained rear-Cd-weighted H10 FNO was checked on
+the **same unchanged validation panel** after restoring primary CUDA
+headroom. It also ranks only 4/6 action pairs correctly and selects `+1`
+instead of CFD's `−1` (artifact
+`control_landscape_fno_ranking_rear_weighted_h10_20261003.json`, SHA-256
+`622f0e25abf0653f8994156fd45a809accc29722fc8de3f8e8abd16b827f0c4f`).
+Its predicted +1/-1 total-Cd costs are `2.403978/2.405374`, a still smaller
+margin than H20's `2.453619/2.456766`. Thus simple rear-force reweighting
+does not resolve this local control-ordering failure. This is an ablation
+diagnostic, not another frozen-test selection or a proof of global failure.
+
 ## Decision and next experiment
 
 Do not launch a surrogate-only learned controller on this failing checkpoint.
