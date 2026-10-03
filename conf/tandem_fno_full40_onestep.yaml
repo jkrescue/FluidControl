@@ -1,0 +1,30 @@
+defaults:
+  - tandem_fno_total_drag
+  - _self_
+
+data:
+  root: data/curated/tandem_cylinders_matched_start_full40_v1
+
+output_dir: artifacts/tandem_fno_full40_onestep_seed20261003_30epoch
+
+# Existing, already exercised official PhysicsNeMo FNO shape. The unbenchmarked
+# 48-mode proposal is intentionally not introduced into the first full40 run.
+model:
+  latent_channels: 48
+  num_fno_layers: 5
+  num_fno_modes: [32, 32]
+  decoder_layers: 2
+  decoder_layer_size: 128
+
+training:
+  epochs: 30
+  checkpoint_interval: 5
+  checkpoint_keep_last: 6
+  best_checkpoint_keep_last: 1
+  batch_size: 16
+  workers: 4
+  # Exact batch/model shape completed a one-epoch forward/backward smoke at
+  # allocator 0.20. There is no historical batch16 measurement at 0.15.
+  gpu_memory_fraction: 0.20
+  seed: 20261003
+  smoke: false

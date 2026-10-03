@@ -1,0 +1,23 @@
+defaults:
+  - tandem_fno_total_drag_rollout_h20_rear_drag
+  - _self_
+
+data:
+  root: data/curated/tandem_cylinders_matched_start_full40_v1
+
+output_dir: artifacts/tandem_fno_full40_h20_seed20261003_10epoch
+
+training:
+  epochs: 10
+  checkpoint_interval: 1
+  checkpoint_keep_last: 10
+  best_checkpoint_keep_last: 1
+  batch_size: 4
+  workers: 4
+  gpu_memory_fraction: 0.15
+  rollout_steps: 20
+  train_stride: 10
+  validation_stride: 25
+  initial_checkpoint: artifacts/tandem_fno_full40_onestep_seed20261003_30epoch/best
+  seed: 20261003
+  smoke: false
