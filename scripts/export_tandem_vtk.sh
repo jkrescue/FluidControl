@@ -32,7 +32,7 @@ from pathlib import Path
 cfg = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 print(f"{cfg.get('start_time', 80):g}")
 print(f"{cfg.get('end_time', 160):g}")
-print(int(cfg.get("expected_frames", 801)))
+print(int(cfg["expected_field_frames"]))
 PY
     )
     start_time="${export_config[0]}"

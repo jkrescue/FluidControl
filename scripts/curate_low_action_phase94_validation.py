@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from collections.abc import Generator, Iterator
 from pathlib import Path
 from typing import Any, ClassVar
@@ -19,11 +20,10 @@ from typing import Any, ClassVar
 import h5py
 import numpy as np
 import torch
+from physicsnemo.mesh.spatial import BVH
 from physicsnemo_curator.core.base import Filter, Param, Sink, Source
 from physicsnemo_curator.domains.mesh.sources.vtk import VTKSource
 from physicsnemo_curator.run import run_pipeline
-from physicsnemo.mesh.spatial import BVH
-
 
 CONSTANT_SPLITS = {
     "control_small_m100": "train",
@@ -42,6 +42,7 @@ PROFILE_COUNTS = {
     "control_gap_v4": {"train": 28, "validation": 4, "test": 5},
     "phase_v1": {"train": 2, "validation": 1, "test": 1},
     "low_action_phase94_validation_v1": {"train": 0, "validation": 2, "test": 0},
+    "matched_start_commissioning_train9_v1": {"train": 9, "validation": 0, "test": 0},
 }
 PROFILE_ACTION_LIMITS = {
     "stage1": 1.0,
@@ -52,6 +53,7 @@ PROFILE_ACTION_LIMITS = {
     "control_gap_v4": 5.0,
     "phase_v1": 5.0,
     "low_action_phase94_validation_v1": 0.75,
+    "matched_start_commissioning_train9_v1": 0.75,
 }
 PROFILE_FRAME_COUNTS = {
     "stage1": 801,
@@ -62,6 +64,7 @@ PROFILE_FRAME_COUNTS = {
     "control_gap_v4": 801,
     "phase_v1": 241,
     "low_action_phase94_validation_v1": 801,
+    "matched_start_commissioning_train9_v1": 801,
 }
 
 
@@ -79,9 +82,38 @@ def load_coefficients(path: Path) -> np.ndarray:
     return result
 
 
+def load_merged_coefficients(paths: list[Path]) -> np.ndarray:
+    """Merge restart-split force files, rejecting conflicting duplicate times."""
+    if not paths:
+        raise FileNotFoundError("no force coefficient files")
+    samples: dict[float, np.ndarray] = {}
+    for path in paths:
+        for row in load_coefficients(path):
+            key = round(float(row[0]), 8)
+            if key in samples and not np.allclose(
+                samples[key], row, rtol=0.0, atol=1.0e-10
+            ):
+                raise ValueError(f"conflicting force restart row at t={key}: {path}")
+            samples[key] = row
+    return np.asarray([samples[key] for key in sorted(samples)], dtype=np.float64)
+
+
 def case_records(
     cases_root: Path, profile: str, selected_names: set[str] | None = None
 ) -> list[dict[str, Any]]:
+    if profile == "matched_start_commissioning_train9_v1":
+        if not selected_names or len(selected_names) != 1:
+            raise ValueError(
+                "commissioning curation requires exactly one explicit --cases name"
+            )
+        name = next(iter(selected_names))
+        case = cases_root / name
+        config = json.loads((case / "case_config.json").read_text(encoding="utf-8"))
+        if config.get("split") != "train":
+            raise ValueError(f"{name}: commissioning case must have split=train")
+        if int(config.get("expected_field_frames", -1)) != 801:
+            raise ValueError(f"{name}: expected_field_frames must equal 801")
+        return [{"name": name, "split": "train", "config": config}]
     records = []
     if profile == "stage1":
         pattern = "dynamic_*"
@@ -222,7 +254,7 @@ class TandemTrajectorySource(Source[dict[str, Any]]):
         reference_cells = None
         for frame_index in range(len(vtk_source)):
             mesh = next(vtk_source[frame_index])
-            if "TimeValue" not in mesh.global_data.keys():
+            if "TimeValue" not in mesh.global_data:
                 raise ValueError(
                     f"{record['name']}:{vtk_source.relative_path(frame_index)} has no TimeValue"
                 )
@@ -244,7 +276,7 @@ class TandemTrajectorySource(Source[dict[str, Any]]):
             sampled = mesh.sample_data_at_points(
                 query_points, data_source="points", bvh=bvh
             )
-            if "U" not in sampled.keys() or "p" not in sampled.keys():
+            if "U" not in sampled or "p" not in sampled:
                 raise ValueError(
                     f"{record['name']}:{vtk_source.relative_path(frame_index)} has no sampled U/p"
                 )
@@ -304,9 +336,18 @@ class TandemTrajectorySource(Source[dict[str, Any]]):
         force_root = f"{start_time:g}" if "source_restart_case" in record["config"] else "0"
         aligned = []
         for object_name in ("forceFront", "forceRear"):
-            raw = load_coefficients(
-                case / "postProcessing" / object_name / force_root / "coefficient.dat"
-            )
+            if self.profile == "matched_start_commissioning_train9_v1":
+                raw = load_merged_coefficients(
+                    sorted(
+                        case.glob(
+                            f"postProcessing/{object_name}/*/coefficient.dat"
+                        )
+                    )
+                )
+            else:
+                raw = load_coefficients(
+                    case / "postProcessing" / object_name / force_root / "coefficient.dat"
+                )
             if times_array[0] < raw[0, 0] - 1e-8:
                 source_name = record["config"].get("source_restart_case")
                 if not source_name:
@@ -391,17 +432,19 @@ class TrajectoryHDF5Sink(Sink[dict[str, Any]]):
     def params(cls) -> list[Param]:
         return [Param(name="output_dir", description="Curated dataset root", type=str)]
 
-    def __init__(self, output_dir: Path) -> None:
+    def __init__(self, output_dir: Path, atomic_tmp: bool = False) -> None:
         self.output_dir = output_dir
+        self.atomic_tmp = bool(atomic_tmp)
 
     def __call__(self, items: Iterator[dict[str, Any]], index: int) -> list[str]:
         paths = []
         for item in items:
             target = self.output_dir / item["split"] / f"{item['case']}.h5"
             target.parent.mkdir(parents=True, exist_ok=True)
-            if target.exists():
+            temporary = target.with_suffix(".h5.tmp") if self.atomic_tmp else target
+            if target.exists() or temporary.exists():
                 raise FileExistsError(f"refusing to overwrite {target}")
-            with h5py.File(target, "w") as handle:
+            with h5py.File(temporary, "w") as handle:
                 handle.create_dataset(
                     "state",
                     data=item["state"],
@@ -434,6 +477,13 @@ class TrajectoryHDF5Sink(Sink[dict[str, Any]]):
                     ["front_cd", "front_cl", "rear_cd", "rear_cl"]
                 )
                 handle.attrs["config_json"] = json.dumps(item["config"])
+                handle.flush()
+            if self.atomic_tmp:
+                # link() is an atomic create-if-absent operation. Unlike
+                # replace(), it cannot silently overwrite a concurrently
+                # created final HDF5 path.
+                os.link(temporary, target)
+                temporary.unlink()
             paths.append(str(target))
         return paths
 
@@ -518,6 +568,11 @@ def main() -> None:
         help="write selected HDF5 files without normalization or manifest",
     )
     parser.add_argument(
+        "--atomic-hdf5",
+        action="store_true",
+        help="write case.h5.tmp and atomically rename only after HDF5 close",
+    )
+    parser.add_argument(
         "--finalize-only",
         action="store_true",
         help="write normalization and manifest after all HDF5 files exist",
@@ -525,6 +580,18 @@ def main() -> None:
     args = parser.parse_args()
     if args.jobs < 1:
         parser.error("--jobs must be at least 1")
+    if args.profile == "matched_start_commissioning_train9_v1":
+        if args.finalize_only:
+            parser.error(
+                "commissioning profile requires finalize_matched_start_commissioning.py"
+            )
+        if (
+            not args.cases or len(args.cases) != 1
+            or not args.defer_finalize or not args.atomic_hdf5
+        ):
+            parser.error(
+                "commissioning requires one --cases name, --defer-finalize, and --atomic-hdf5"
+            )
     if args.backend == "sequential" and args.jobs != 1:
         parser.error("the sequential backend requires --jobs 1")
     if args.finalize_only and (args.cases or args.limit or args.defer_finalize):
@@ -600,7 +667,7 @@ def main() -> None:
     )
     pipeline = source.filter(
         NumericalQualityFilter(PROFILE_ACTION_LIMITS[args.profile])
-    ).write(TrajectoryHDF5Sink(args.output.resolve()))
+    ).write(TrajectoryHDF5Sink(args.output.resolve(), atomic_tmp=args.atomic_hdf5))
     indices = range(min(args.limit, len(source))) if args.limit else None
     results = run_pipeline(
         pipeline, n_jobs=args.jobs, backend=args.backend, indices=indices, use_tui=False

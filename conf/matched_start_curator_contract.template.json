@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "profile": "matched_start_commissioning_train9_v1",
+  "status": "UNBOUND_DO_NOT_CURATE",
+  "phase_manifest": "artifacts/tandem_cylinders/matched_start_phase_restart_predeclared_v3_20261003.json",
+  "phase_manifest_sha256": "TO_BE_BOUND_AFTER_OBJECTIVE_AUDIT",
+  "cases": [
+    {"case": "matched_start_acquisition_train_b00_m075"},
+    {"case": "matched_start_acquisition_train_b00_zero"},
+    {"case": "matched_start_acquisition_train_b00_p075"},
+    {"case": "matched_start_acquisition_train_b02_m075"},
+    {"case": "matched_start_acquisition_train_b02_zero"},
+    {"case": "matched_start_acquisition_train_b02_p075"},
+    {"case": "matched_start_acquisition_train_b04_m075"},
+    {"case": "matched_start_acquisition_train_b04_zero"},
+    {"case": "matched_start_acquisition_train_b04_p075"}
+  ],
+  "guard": "This template intentionally fails preflight until the manifest SHA and status are bound after all nine RAW_TRANSFER_VERIFIED receipts exist."
+}
