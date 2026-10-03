@@ -22,6 +22,22 @@ ARTIFACT_ROOT = PROJECT / "artifacts" / "direct_cfd"
 RUNTIME_IMAGE = "fluid-control-physicsnemo-hydrogym:2.2.2-4ab9854"
 RUNTIME_IMAGE_ID = "sha256:2e45b4e1ac9553ea86aa9148455be9aae30688446039fdee6255a637603acb2c"
 HYDROGYM_COMMIT = "4ab9854dea3d84e38a59c25e0f5835a00cf8225f"
+EVALUATION_PROTOCOLS = {
+    "b00": {
+        "start": 148.0,
+        "end": 228.0,
+        "window": [168.0, 228.0],
+        "source": "matched_start_acquisition_train_b00_zero",
+        "label": "b00_train",
+    },
+    "b01": {
+        "start": 130.0,
+        "end": 210.0,
+        "window": [150.0, 210.0],
+        "source": "matched_start_acquisition_validation_b01_zero",
+        "label": "b01_validation",
+    },
+}
 sys.path.insert(0, str(PROJECT / "scripts"))
 from run_tandem_phase_feedback_pair import (  # noqa: E402
     compare_metrics,
@@ -79,7 +95,7 @@ def wait_ready(paths: list[Path], processes: list[subprocess.Popen]) -> None:
     raise TimeoutError("evaluation workers did not become ready")
 
 
-def validate_rollout_contract(rollout: dict) -> None:
+def validate_rollout_contract(rollout: dict, start_time: float = 148.0) -> None:
     if set(rollout.get("branches", {})) != {"ppo", "zero"}:
         raise ValueError("paired rollout must contain exactly ppo and zero roles")
     rows = rollout.get("rows", [])
@@ -87,7 +103,7 @@ def validate_rollout_contract(rollout: dict) -> None:
         branch = [row for row in rows if row.get("role") == role]
         if len(branch) != 800 or [row["step"] for row in branch] != list(range(1, 801)):
             raise ValueError(f"{role} branch does not contain exactly steps 1..800")
-        expected_time = np.asarray([148.0 + 0.1 * step for step in range(1, 801)])
+        expected_time = np.asarray([start_time + 0.1 * step for step in range(1, 801)])
         if not np.allclose(
             [row["cfd_time"] for row in branch], expected_time, rtol=0.0, atol=2e-6
         ):
@@ -100,16 +116,17 @@ def validate_rollout_contract(rollout: dict) -> None:
             raise ValueError("zero branch applied a nonzero action")
 
 
-def physical_summary(output: Path, rollout: dict) -> dict:
-    validate_rollout_contract(rollout)
+def physical_summary(output: Path, rollout: dict, phase: str) -> dict:
+    protocol = EVALUATION_PROTOCOLS[phase]
+    validate_rollout_contract(rollout, protocol["start"])
     cases = {
         role: PROJECT / "cfd" / "tandem_cylinders" / "cases" / name
         for role, name in rollout["branches"].items()
     }
     metrics = {}
     for role, case in cases.items():
-        front = read_force_window(case, "forceFront", 168.0, 228.0)
-        rear = read_force_window(case, "forceRear", 168.0, 228.0)
+        front = read_force_window(case, "forceFront", *protocol["window"])
+        rear = read_force_window(case, "forceRear", *protocol["window"])
         for label, values in (("front", front), ("rear", rear)):
             if len(values) != 12001 or not np.isfinite(values).all():
                 raise ValueError(f"{role} {label} force window is incomplete/non-finite")
@@ -121,9 +138,9 @@ def physical_summary(output: Path, rollout: dict) -> dict:
     omega = np.asarray([row["applied_omega"] for row in ppo_rows], dtype=float)
     delta = np.asarray([row["applied_delta_omega"] for row in ppo_rows], dtype=float)
     result = {
-        "status": "DIRECT_CFD_B00_FROZEN_PPO_PAIR_EVALUATED",
-        "phase": "b00_train",
-        "window": [168.0, 228.0],
+        "status": f"DIRECT_CFD_{phase.upper()}_FROZEN_PPO_PAIR_EVALUATED",
+        "phase": protocol["label"],
+        "window": protocol["window"],
         "metrics": metrics,
         "comparison": comparison,
         "action": {
@@ -139,6 +156,9 @@ def physical_summary(output: Path, rollout: dict) -> dict:
         "scientific_scope": (
             "training-phase preliminary paired physical validation only; not independent "
             "generalization, frozen-test evidence, net-energy evidence, or final paper claim"
+            if phase == "b00"
+            else "independent validation-phase paired physical validation only; not training "
+            "data, frozen-test evidence, net-energy evidence, or final paper claim"
         ),
     }
     (output / "physical_result.json").write_text(
@@ -148,6 +168,7 @@ def physical_summary(output: Path, rollout: dict) -> dict:
 
 
 def execute(args) -> int:
+    protocol = EVALUATION_PROTOCOLS[args.phase]
     output = args.output.resolve()
     if not output.is_relative_to(ARTIFACT_ROOT.resolve()) or output.exists():
         raise ValueError("new output must stay under artifacts/direct_cfd")
@@ -186,10 +207,36 @@ def execute(args) -> int:
     if hydrogym_commit != HYDROGYM_COMMIT:
         raise ValueError("HydroGym commit mismatch")
     output.mkdir(parents=True)
+    if args.phase == "b00":
+        baseline_payload = json.loads(
+            (training.parent / "train_only_baselines.json").read_text(encoding="utf-8")
+        )
+        baseline_payload = {"b00": baseline_payload["b00"]}
+    else:
+        source = (
+            PROJECT / "cfd" / "tandem_cylinders" / "cases" / protocol["source"]
+        )
+        front = read_force_window(source, "forceFront", *protocol["window"])
+        rear = read_force_window(source, "forceRear", *protocol["window"])
+        metrics = force_metrics(front, rear)
+        baseline_payload = {
+            "b01": {
+                "total_drag": metrics["total_cd_mean"],
+                "rear_cl_fluctuation_rms": metrics["rear_cl_fluctuation_rms"],
+                "source": (
+                    f"{protocol['source']}::predeclared final 60D/U validation-zero "
+                    "baseline; reward logging only, frozen policy does not consume reward"
+                ),
+            }
+        }
+    baseline_path = output / "evaluation_baseline.json"
+    baseline_path.write_text(
+        json.dumps(baseline_payload, indent=2) + "\n", encoding="utf-8"
+    )
     (output / "preflight_receipt.json").write_text(
         json.dumps(
             {
-                "status": "DIRECT_CFD_B00_EVALUATION_PREFLIGHT_PASS",
+                "status": f"DIRECT_CFD_{args.phase.upper()}_EVALUATION_PREFLIGHT_PASS",
                 "runtime_image": RUNTIME_IMAGE,
                 "runtime_image_id": image_id,
                 "hydrogym_commit": hydrogym_commit,
@@ -197,10 +244,12 @@ def execute(args) -> int:
                 "training_result_sha256": sha256(training / "result.json"),
                 "policy_sha256": sha256(policy),
                 "vecnormalize_sha256": sha256(vecnormalize),
-                "phase": "b00_train",
+                "phase": protocol["label"],
                 "steps_per_branch": 800,
-                "analysis_window": [168.0, 228.0],
-                "validation_or_frozen_access": False,
+                "analysis_window": protocol["window"],
+                "baseline_sha256": sha256(baseline_path),
+                "validation_access": args.phase == "b01",
+                "frozen_test_access": False,
             },
             indent=2,
         )
@@ -231,7 +280,7 @@ def execute(args) -> int:
                         "--env-index",
                         str(index),
                         "--phase",
-                        "b00",
+                        args.phase,
                         "--episode-steps",
                         "800",
                     ],
@@ -289,7 +338,7 @@ def execute(args) -> int:
             "--mount",
             f"type=bind,src={training},dst=/input,readonly",
             "--mount",
-            f"type=bind,src={training.parent / 'train_only_baselines.json'},dst=/run/baselines.json,readonly",
+            f"type=bind,src={baseline_path},dst=/run/baselines.json,readonly",
             "--workdir",
             "/workspace",
             RUNTIME_IMAGE,
@@ -308,13 +357,15 @@ def execute(args) -> int:
             f"/input/{vecnormalize.name}",
             "--output",
             "/run/output/rollout",
+            "--phase",
+            args.phase,
         ]
         with (output / "runtime.log").open("w", encoding="utf-8") as log:
             completed = subprocess.run(command, cwd=PROJECT, stdout=log, stderr=subprocess.STDOUT)
         if completed.returncode:
             return completed.returncode
         rollout = json.loads((output / "rollout" / "rollout_result.json").read_text())
-        physical_summary(output, rollout)
+        physical_summary(output, rollout, args.phase)
         return 0
     finally:
         stop_owned(workers, policy_container)
@@ -331,6 +382,7 @@ def main() -> None:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--training", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--phase", choices=tuple(EVALUATION_PROTOCOLS), default="b00")
     args = parser.parse_args()
 
     def interrupt(signum, frame):

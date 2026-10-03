@@ -85,7 +85,7 @@ def make_one(socket_path: str, baseline: dict):
 
 
 def execute(args) -> dict:
-    baseline = json.loads(args.baseline.read_text(encoding="utf-8"))["b00"]
+    baseline = json.loads(args.baseline.read_text(encoding="utf-8"))[args.phase]
     raw = SubprocVecEnv(
         [partial(make_one, path, baseline) for path in args.socket],
         start_method="spawn",
@@ -149,11 +149,14 @@ def execute(args) -> dict:
             "observation_rms_before": obs_rms_before,
             "observation_rms_after": obs_rms_after,
             "observation_rms_unchanged": True,
-            "phase": "b00_train",
+            "phase": "b00_train" if args.phase == "b00" else "b01_validation",
             "rows": rows,
             "scientific_scope": (
                 "training-phase preliminary paired physical validation; not independent "
                 "generalization, frozen-test evidence, or final paper conclusion"
+                if args.phase == "b00"
+                else "independent validation-phase paired physical validation; not training "
+                "data, frozen-test evidence, or final paper conclusion"
             ),
         }
         write_atomic(args.output / "rollout_result.json", result)
@@ -172,9 +175,10 @@ def main() -> None:
     parser.add_argument("--policy", type=Path, required=True)
     parser.add_argument("--vecnormalize", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--phase", choices=("b00", "b01"), default="b00")
     args = parser.parse_args()
     if len(args.socket) != 2:
-        parser.error("exactly two b00 sockets are required: PPO then zero")
+        parser.error("exactly two paired sockets are required: PPO then zero")
     args.output.mkdir(parents=True, exist_ok=False)
     print(execute(args)["status"], flush=True)
 

@@ -95,6 +95,27 @@ class DirectCFDEvaluationTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "zero branch"):
             HOST_MODULE.validate_rollout_contract(rollout)
 
+    def test_b01_validation_protocol_changes_only_phase_clock_and_window(self) -> None:
+        protocol = HOST_MODULE.EVALUATION_PROTOCOLS["b01"]
+        self.assertEqual(protocol["start"], 130.0)
+        self.assertEqual(protocol["end"], 210.0)
+        self.assertEqual(protocol["window"], [150.0, 210.0])
+        rows = []
+        for step in range(1, 801):
+            for role in ("ppo", "zero"):
+                rows.append(
+                    {
+                        "step": step,
+                        "role": role,
+                        "cfd_time": 130.0 + 0.1 * step,
+                        "applied_omega": 0.0,
+                        "applied_delta_omega": 0.0,
+                    }
+                )
+        HOST_MODULE.validate_rollout_contract(
+            {"branches": {"ppo": "p", "zero": "z"}, "rows": rows}, 130.0
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

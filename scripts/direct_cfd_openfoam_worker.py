@@ -50,8 +50,9 @@ MAX_COURANT = 0.8
 MAX_CONTINUITY = 1.0e-5
 HARD_FORCE_LIMIT = 10.0
 ALLOWED_SOURCES = {
-    "b00": "matched_start_acquisition_train_b00_zero",
-    "b02": "matched_start_acquisition_train_b02_zero",
+    "b00": ("matched_start_acquisition_train_b00_zero", "train"),
+    "b02": ("matched_start_acquisition_train_b02_zero", "train"),
+    "b01": ("matched_start_acquisition_validation_b01_zero", "validation"),
 }
 
 
@@ -136,17 +137,21 @@ class OpenFOAMWorker:
         if env_index not in (0, 1):
             raise ValueError("first protocol has exactly env indexes 0 and 1")
         if phase not in ALLOWED_SOURCES:
-            raise ValueError("only fixed train phases b00 and b02 are allowed")
+            raise ValueError("only fixed phases b00, b02, and validation b01 are allowed")
         if episode_steps not in (128, 800):
             raise ValueError("episode_steps must be 128 for train or 800 for eval")
+        if phase == "b01" and episode_steps != 800:
+            raise ValueError("validation b01 is allowed only for the frozen 800-step eval")
         self.run_id = run_id
         self.env_index = env_index
         self.phase = phase
         self.episode_steps = episode_steps
-        self.source = CASES / ALLOWED_SOURCES[phase]
+        source_name, expected_split = ALLOWED_SOURCES[phase]
+        self.source = CASES / source_name
         config = json.loads((self.source / "case_config.json").read_text(encoding="utf-8"))
-        if config.get("split") != "train" or config.get("action_target") != 0.0:
-            raise ValueError("direct-CFD source must be a train-only zero branch")
+        if config.get("split") != expected_split or config.get("action_target") != 0.0:
+            raise ValueError("direct-CFD source split/action differs from fixed protocol")
+        self.split = expected_split
         self.restart_time = float(config["start_time"])
         self.reference = CASES / str(config["source_restart_case"])
         if not math.isclose(float(config["source_restart_time"]), self.restart_time, abs_tol=1e-8):
@@ -279,7 +284,7 @@ class OpenFOAMWorker:
             metadata = {
                 "case": name,
                 "status": "direct_cfd_ppo_episode_initialized",
-                "split": "train",
+                "split": self.split,
                 "phase": self.phase,
                 "source_case": self.source.name,
                 "source_restart_case": self.reference.name,
@@ -292,7 +297,12 @@ class OpenFOAMWorker:
                     "action_limit": ACTION_LIMIT,
                     "max_delta_omega": MAX_DELTA_OMEGA,
                 },
-                "scientific_scope": "train-only direct real-CFD RL; not physical gate evidence",
+                "scientific_scope": (
+                    "independent validation-phase paired physical check; not training data, "
+                    "frozen-test evidence, or final paper claim"
+                    if self.split == "validation"
+                    else "train-only direct real-CFD RL; not physical gate evidence"
+                ),
             }
             (stage / "case_config.json").write_text(
                 json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
