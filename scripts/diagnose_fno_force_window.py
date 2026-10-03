@@ -16,6 +16,7 @@ CASES = tuple(
     for phase in (1, 5)
     for profile in ("minus", "zero", "plus")
 )
+FIXED_SPATIAL_DIAGNOSTIC_STEPS = (1, 10, 50, 100)
 
 
 def sha256(path):
@@ -150,6 +151,19 @@ def summarize_field_diagnostics(rows):
     return result
 
 
+def fixed_spatial_snapshot_diagnostic(
+    step, truth, prediction, x, y, mask, *, diagnostic=None
+):
+    """Return the fixed observational ROI diagnostic, or None for other steps."""
+    if step not in FIXED_SPATIAL_DIAGNOSTIC_STEPS:
+        return None
+    if diagnostic is None:
+        from fno_spatial_diagnostics import spatial_snapshot_diagnostics
+
+        diagnostic = spatial_snapshot_diagnostics
+    return {"step": int(step), **diagnostic(truth, prediction, x, y, mask)}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("data", "normalization-data", "config", "checkpoint-dir", "output"):
@@ -213,6 +227,8 @@ def main():
             states = handle["state"][:101]
             initial = states[0]
             mask_np = handle["mask"][:101]
+            x = np.asarray(handle["x"][:], dtype=np.float64)
+            y = np.asarray(handle["y"][:], dtype=np.float64)
             times = np.asarray(handle["time"][:101], dtype=np.float64).reshape(-1)
             omega = np.asarray(handle["omega"][:101], dtype=np.float64).reshape(-1)
             truth = np.asarray(handle["force"][:101], dtype=np.float64)
@@ -236,6 +252,7 @@ def main():
         predicted = (state - state_mean) / state_std * mask
         predicted_forces = [truth[0].tolist()]
         field_diagnostics = []
+        spatial_diagnostics = []
         with torch.no_grad():
             for step in range(100):
                 now = torch.full_like(mask, float(omega[step] / action_scale))
@@ -257,17 +274,29 @@ def main():
                     (force * force_std + force_mean)[0].cpu().tolist()
                 )
                 predicted_physical = predicted * state_std + state_mean
+                predicted_physical_np = predicted_physical[0].cpu().numpy()
                 field_diagnostics.append(
                     {
                         "step": step + 1,
                         "time": float(times[step + 1]),
                         **field_step_statistics(
-                            predicted_physical[0].cpu().numpy(),
+                            predicted_physical_np,
                             states[step + 1],
                             mask_np[step + 1],
                         ),
                     }
                 )
+                spatial = fixed_spatial_snapshot_diagnostic(
+                    step + 1,
+                    states[step + 1],
+                    predicted_physical_np,
+                    x,
+                    y,
+                    mask_np[step + 1],
+                )
+                if spatial is not None:
+                    spatial["time"] = float(times[step + 1])
+                    spatial_diagnostics.append(spatial)
         actual_stats = window_statistics(
             times.tolist(), truth.tolist(), float(times[-1])
         )
@@ -290,6 +319,7 @@ def main():
                 "field_diagnostic_summary": summarize_field_diagnostics(
                     field_diagnostics
                 ),
+                "fixed_spatial_diagnostics": spatial_diagnostics,
             }
         )
     by_case = {r["case"]: r for r in reports}
@@ -329,6 +359,13 @@ def main():
             "observational only: pressure is not demeaned or projected in the recursive "
             "state, force head, or formal metrics; diagnostic demeaning is applied only "
             "to copied arrays when computing the separately labelled relative L2"
+        ),
+        "spatial_diagnostic": (
+            "observational only at fixed H1/H10/H50/H100 snapshots; finite solid-free "
+            "ROI x/D=[17,24], y/D=[5,10], spatial mean removed and a common 2D Hann "
+            "window used before orthonormal FFT. This is not homogeneous-turbulence "
+            "E(k), defines no scientific pass threshold, does not filter fields, and "
+            "does not feed back into autoregression, forces, gates, or model selection"
         ),
         "pairs": pairs,
         "mean_action_delta_error": sum(r["absolute_error"] for r in pairs) / len(pairs),

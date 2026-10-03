@@ -149,5 +149,42 @@ class FieldStepStatisticsTests(unittest.TestCase):
         self.assertEqual(result["velocity_uv_relative_l2"], expected)
 
 
+class FixedSpatialIntegrationTests(unittest.TestCase):
+    def test_only_predeclared_horizons_invoke_helper(self):
+        calls = []
+
+        def diagnostic(truth, prediction, x, y, mask):
+            calls.append((truth, prediction, x, y, mask))
+            return {"status": "OBSERVATIONAL_FINITE_ROI_SPATIAL_DIAGNOSTIC"}
+
+        arrays = [np.asarray([value]) for value in range(5)]
+        for step in (1, 2, 10, 49, 50, 99, 100):
+            result = module.fixed_spatial_snapshot_diagnostic(
+                step, *arrays, diagnostic=diagnostic
+            )
+            if step in (1, 10, 50, 100):
+                self.assertEqual(result["step"], step)
+                self.assertEqual(
+                    result["status"],
+                    "OBSERVATIONAL_FINITE_ROI_SPATIAL_DIAGNOSTIC",
+                )
+            else:
+                self.assertIsNone(result)
+        self.assertEqual(len(calls), 4)
+
+    def test_integration_preserves_input_arrays(self):
+        arrays = [np.asarray([value], dtype=float) for value in range(5)]
+        before = [array.copy() for array in arrays]
+
+        def diagnostic(*_args):
+            return {"scope": "read_only"}
+
+        module.fixed_spatial_snapshot_diagnostic(
+            100, *arrays, diagnostic=diagnostic
+        )
+        for actual, expected in zip(arrays, before):
+            np.testing.assert_array_equal(actual, expected)
+
+
 if __name__ == "__main__":
     unittest.main()
