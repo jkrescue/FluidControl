@@ -3,8 +3,8 @@
 ## Outcome
 
 The frozen final policy from the fixed 2048-transition direct real-CFD PPO run
-passed the unchanged paired physical checks at both the b00 training phase and
-the independently reserved b01 validation phase. Each comparison used two new
+passed the unchanged paired physical checks at both the b00 training start and
+the held-out-time b01 validation start. Each comparison used two new
 80 D/U OpenFOAM branches from an identical restart and only the final 60 D/U
 for statistics.
 
@@ -43,10 +43,14 @@ before/after fingerprints.
 
 ## What this stage does and does not establish
 
-Implemented and demonstrated here are an official HydroGym/SB3 policy connected
-through the project OpenFOAM adapter to a genuine online CFD loop, actual causal
+Implemented and demonstrated here are an SB3 PPO policy evaluated through the
+pinned upstream HydroGym `FlowEnv` API and the project-specific OpenFOAM adapter
+in a genuine online CFD loop, actual causal
 force history, constrained rear-cylinder rotation, and a beneficial frozen
-policy at one training and one independent validation phase. The final2048
+policy at one training start and one untrained-time validation start. b00 and
+b01 are separated by 18 D/U, about three nominal shedding periods; this is not
+evidence that they are statistically independent physical samples or a broad
+phase-generalization study. The final2048
 policy is therefore retained as the validated CFD-only baseline. An optional
 `std=0.075` continuation path is implemented and tested but was not run, because
 the frozen policy already produced useful physical behavior.
@@ -56,7 +60,9 @@ and the physical benefit is not attributable to FNO. It does not yet provide a
 frozen-test phase, multiple RL seeds, uncertainty intervals across independent
 training runs, hardware closed-loop evidence, CFD computational-efficiency
 evidence, or a standalone novelty claim. The b01 result must not be used for
-training or checkpoint selection.
+training or checkpoint selection. PPO is supplied by Stable-Baselines3, not by
+HydroGym; the OpenFOAM transport is a project adapter, not an upstream HydroGym
+CFD backend.
 
 ## Secondary ideal fluid-power diagnostic
 
