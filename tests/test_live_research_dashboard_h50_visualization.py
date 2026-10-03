@@ -38,6 +38,8 @@ class H50VisualizationTests(unittest.TestCase):
             "v/U∞",
             "p/(ρU∞²)",
             "1–99 百分位显示范围",
+            "空间结构误差",
+            "不能在此归因为 aliasing",
             "Dynamic6 正式动作差值门槛未通过",
             "16 条真实 PPO 交互轨迹已通过官方 DataPipe 读取",
         ):
