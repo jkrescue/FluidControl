@@ -43,3 +43,12 @@ python python /repo/scripts/spark_gpu_guard.py -- python /repo/scripts/evaluate_
 grep grep train_tandem_fno.py
 """
     assert _count(rows) == 4
+
+
+def test_current_h20_and_dynamic6_services_are_fail_stop_monitored() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert 'QS1_H20_SERVICE = "fluid-control-dev30-quickscreen-h20-qs1.service"' in source
+    assert 'DYNAMIC6_SERVICE = "fluid-control-dynamic6-serial-r2-20261003.service"' in source
+    assert 'alerts.append("qs1_h20_stopped_before_epoch_5")' in source
+    assert 'alerts.append("dynamic6_stopped_before_six_cases")' in source
+    assert '"current_services"' in source

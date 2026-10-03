@@ -18,6 +18,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "artifacts/monitor/research_window_20261002"
 WORKER = "USER@WORKER_HOST"
+QS1_H20_HISTORY = Path(
+    "artifacts/tandem_fno_full40_dev30_quickscreen_h20_qs1/training_history.json"
+)
+QS1_H20_SERVICE = "fluid-control-dev30-quickscreen-h20-qs1.service"
+DYNAMIC6_SERVICE = "fluid-control-dynamic6-serial-r2-20261003.service"
+DYNAMIC6_CASES = (
+    "full40_dynamic_validation_b01_zero",
+    "full40_dynamic_validation_b01_minus",
+    "full40_dynamic_validation_b01_plus",
+    "full40_dynamic_validation_b05_zero",
+    "full40_dynamic_validation_b05_minus",
+    "full40_dynamic_validation_b05_plus",
+)
 TRACKED_PROCESS_AWK = r"""awk '
 $1 ~ /^python(3)?$/ {
     args = $0
@@ -104,6 +117,20 @@ def training_epoch(relative: str) -> int | None:
         return None
 
 
+def service_state(unit: str) -> str:
+    try:
+        result = subprocess.run(
+            ["systemctl", "--user", "is-active", unit],
+            capture_output=True,
+            text=True,
+            timeout=3,
+            check=False,
+        )
+        return result.stdout.strip() or "unknown"
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+
+
 def sample(deadline: datetime) -> dict:
     now = datetime.now(timezone.utc)
     primary = probe(False)
@@ -136,6 +163,35 @@ def sample(deadline: datetime) -> dict:
     worker_h20_epoch = worker.get("worker_h20_epoch")
     worker_primary_seed_h20_epoch = worker.get("worker_primary_seed_h20_epoch")
     worker_h20_rear_drag_epoch = worker.get("worker_h20_rear_drag_epoch")
+    qs1_h20_epoch = training_epoch(str(QS1_H20_HISTORY))
+    qs1_h20_state = service_state(QS1_H20_SERVICE)
+    dynamic6_completed = sum(
+        (
+            ROOT
+            / "cfd/tandem_cylinders/cases"
+            / case
+            / "solver_complete.full40_dynamic_validation.json"
+        ).is_file()
+        for case in DYNAMIC6_CASES
+    )
+    dynamic6_started = any(
+        (
+            ROOT
+            / "cfd/tandem_cylinders/cases"
+            / case
+            / "log.pimpleFoam.full40_dynamic_validation"
+        ).is_file()
+        for case in DYNAMIC6_CASES
+    )
+    dynamic6_state = service_state(DYNAMIC6_SERVICE)
+    if (
+        (ROOT / QS1_H20_HISTORY.parent).is_dir()
+        and (qs1_h20_epoch is None or qs1_h20_epoch < 5)
+        and qs1_h20_state != "active"
+    ):
+        alerts.append("qs1_h20_stopped_before_epoch_5")
+    if dynamic6_started and dynamic6_completed < 6 and dynamic6_state != "active":
+        alerts.append("dynamic6_stopped_before_six_cases")
     if primary["reachable"] and primary_epoch is not None and primary_epoch < 10:
         if primary["training_or_evaluation_processes"] == 0:
             alerts.append("primary_multistep_stopped_before_epoch_10")
@@ -181,6 +237,13 @@ def sample(deadline: datetime) -> dict:
         "worker_h20_epoch": worker_h20_epoch,
         "worker_primary_seed_h20_epoch": worker_primary_seed_h20_epoch,
         "worker_h20_rear_drag_epoch": worker_h20_rear_drag_epoch,
+        "current_services": {
+            "qs1_h20": {"state": qs1_h20_state, "epoch": qs1_h20_epoch},
+            "dynamic6": {
+                "state": dynamic6_state,
+                "completed_cases": dynamic6_completed,
+            },
+        },
         "alerts": alerts,
     }
 
