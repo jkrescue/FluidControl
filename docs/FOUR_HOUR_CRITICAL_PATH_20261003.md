@@ -96,7 +96,9 @@ contracts rather than bypassing them under deadline pressure.
 4. Do not shorten epochs or weaken the fixed 10% H100, 0.023 delta-Cd, action
    ordering, lift, or real-CFD gates.
 5. A training retry must use a new run ID. Any pre-existing output directory,
-   including a partial failed run, is immutable and must be rejected.
+   including a partial failed run, is immutable and must be rejected. When an
+   H20 run follows a retried one-step run, its reviewed parent run ID must be
+   supplied explicitly rather than silently falling back to the failed path.
 
 ## Time-varying action seed decision
 
