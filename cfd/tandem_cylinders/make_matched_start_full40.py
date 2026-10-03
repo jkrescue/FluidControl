@@ -39,8 +39,16 @@ PREDECLARATION = (
     / "artifacts/tandem_cylinders/"
     "matched_start_full40_predeclared_20261003.json"
 )
-# Filled only after the JSON artifact has been reviewed and committed.
-APPROVED_PREDECLARATION_SHA256 = "REVIEW_REQUIRED_BEFORE_CASE_GENERATION"
+APPROVED_PREDECLARATION_SHA256 = (
+    "d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b"
+)
+EXTENSION_AUTHORIZATION = (
+    REPO
+    / "artifacts/tandem_cylinders/"
+    "matched_start_full40_extension_authorized_20261003.json"
+)
+# Filled only after the nine-case aggregate passes and the authorization is committed.
+APPROVED_EXTENSION_AUTHORIZATION_SHA256 = "REVIEW_REQUIRED_AFTER_NINE_CASE_AGGREGATE"
 GENERATION_TOKEN = "GENERATE_REVIEWED_FULL40_REMAINDER"
 STATE_FIELDS = ("U", "U_0", "p", "phi", "phi_0")
 PHASE_BINS = tuple(range(8))
@@ -297,13 +305,47 @@ def validate_existing_nine(specs: list[Full40Case]) -> None:
 
 
 def validate_approved_predeclaration(manifest: dict, specs: list[Full40Case]) -> None:
-    if len(APPROVED_PREDECLARATION_SHA256) != 64:
-        raise ValueError("full40 predeclaration has not yet been reviewed and hard-bound")
     if sha256(PREDECLARATION) != APPROVED_PREDECLARATION_SHA256:
         raise ValueError("full40 predeclaration SHA-256 differs from reviewed artifact")
     actual = json.loads(PREDECLARATION.read_text(encoding="utf-8"))
     if actual != predeclaration(manifest, specs):
         raise ValueError("full40 predeclaration content differs from current sources")
+
+
+def validate_extension_authorization(specs: list[Full40Case]) -> dict:
+    if len(APPROVED_EXTENSION_AUTHORIZATION_SHA256) != 64:
+        raise ValueError("full40 extension authorization is not reviewed and hard-bound")
+    if sha256(EXTENSION_AUTHORIZATION) != APPROVED_EXTENSION_AUTHORIZATION_SHA256:
+        raise ValueError("full40 extension authorization SHA-256 differs")
+    authorization = json.loads(EXTENSION_AUTHORIZATION.read_text(encoding="utf-8"))
+    expected = sorted(
+        spec.name for spec in specs if spec.disposition == "planned_new_remainder_case"
+    )
+    expected_nine = sorted(
+        spec.name
+        for spec in specs
+        if spec.disposition == "existing_nine_case_commissioning"
+    )
+    resources = {
+        "worker_start_mem_available_gib_at_least": 64,
+        "worker_running_mem_available_gib_at_least": 40,
+        "worker_free_disk_gib_at_least": 100,
+        "spark_free_disk_gib_at_least": 250,
+    }
+    if (
+        authorization.get("status") != "MATCHED_START_FULL40_EXTENSION_AUTHORIZED"
+        or authorization.get("phase_manifest_sha256") != PHASE_MANIFEST_SHA256
+        or authorization.get("full40_predeclaration_sha256")
+        != APPROVED_PREDECLARATION_SHA256
+        or authorization.get("authorized_cases") != expected
+        or authorization.get("maximum_parallel_cases") != 4
+        or authorization.get("resource_guards") != resources
+        or len(authorization.get("nine_case_aggregate_qc_sha256", "")) != 64
+        or sorted(authorization.get("nine_raw_transfer_receipt_sha256", {}))
+        != expected_nine
+    ):
+        raise ValueError("full40 extension authorization content differs")
+    return authorization
 
 
 def generate(spec: Full40Case) -> Path:
@@ -359,6 +401,12 @@ def generate(spec: Full40Case) -> Path:
             "phase_manifest_sha256": PHASE_MANIFEST_SHA256,
             "full40_predeclaration": str(PREDECLARATION.relative_to(REPO)),
             "full40_predeclaration_sha256": APPROVED_PREDECLARATION_SHA256,
+            "full40_extension_authorization": str(
+                EXTENSION_AUTHORIZATION.relative_to(REPO)
+            ),
+            "full40_extension_authorization_sha256": (
+                APPROVED_EXTENSION_AUTHORIZATION_SHA256
+            ),
             "action_target": spec.action,
             "action_points": points,
             "action_metrics": validate_action(points),
@@ -408,6 +456,7 @@ def main() -> None:
     if args.case not in by_name:
         parser.error("case is outside the frozen full40 matrix")
     validate_approved_predeclaration(manifest, specs)
+    validate_extension_authorization(specs)
     validate_existing_nine(specs)
     print(generate(by_name[args.case]))
 

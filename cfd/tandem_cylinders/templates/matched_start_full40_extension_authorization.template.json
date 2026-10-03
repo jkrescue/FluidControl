@@ -1,0 +1,27 @@
+{
+  "status": "TEMPLATE_ONLY_NOT_AUTHORIZED",
+  "purpose": "Authorize only the 31-case full40 remainder after nine-case commissioning aggregate QC passes",
+  "required_upstream": {
+    "phase_manifest_sha256": "6279492bd3a79eff868a4333e1f642e3be4a4d58a78e46dc47dde040e4e39603",
+    "full40_predeclaration_sha256": "d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b",
+    "nine_case_aggregate_qc_status": "MATCHED_START_9_CASE_COMMISSIONING_QC_PASS",
+    "nine_case_aggregate_qc_sha256": "FILL_ONLY_AFTER_AGGREGATE_EXISTS",
+    "nine_raw_transfer_receipt_sha256": "FILL_EXACT_MAP_AFTER_AGGREGATE_EXISTS"
+  },
+  "authorized_cases": "FILL_EXACT_SORTED_31_CASE_LIST_FROM_COMMITTED_FULL40_PREDECLARATION",
+  "maximum_parallel_cases": 4,
+  "resource_guards": {
+    "worker_start_mem_available_gib_at_least": 64,
+    "worker_running_mem_available_gib_at_least": 40,
+    "worker_free_disk_gib_at_least": 100,
+    "spark_free_disk_gib_at_least": 250
+  },
+  "execution_guards": {
+    "actual_authorization_must_be_committed_before_sha_binding": true,
+    "one_case_per_atomic_generation_invocation": true,
+    "existing_nine_cases_must_not_be_generated_or_rerun": true,
+    "any_failed_or_orphaned_case_stops_new_launches": true,
+    "raw_worker_to_spark_sha256_and_per_case_qc_required": true
+  },
+  "interpretation_guard": "Prescribed constant-rotation data acquisition only; not closed-loop control or evidence of model sufficiency"
+}

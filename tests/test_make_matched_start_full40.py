@@ -63,11 +63,13 @@ def test_predeclaration_has_fixed_windows_and_interpretation_guards() -> None:
     assert "not closed-loop control" in " ".join(artifact["interpretation_guards"])
 
 
-def test_generation_is_disabled_until_predeclaration_hash_is_reviewed() -> None:
+def test_predeclaration_is_bound_but_extension_authorization_is_disabled() -> None:
     manifest, specs = full40.load_plan()
-    assert len(full40.APPROVED_PREDECLARATION_SHA256) != 64
-    with pytest.raises(ValueError, match="not yet been reviewed"):
-        full40.validate_approved_predeclaration(manifest, specs)
+    assert full40.sha256(full40.PREDECLARATION) == full40.APPROVED_PREDECLARATION_SHA256
+    full40.validate_approved_predeclaration(manifest, specs)
+    assert len(full40.APPROVED_EXTENSION_AUTHORIZATION_SHA256) != 64
+    with pytest.raises(ValueError, match="not reviewed and hard-bound"):
+        full40.validate_extension_authorization(specs)
 
 
 def test_predeclaration_serialization_is_deterministic() -> None:
