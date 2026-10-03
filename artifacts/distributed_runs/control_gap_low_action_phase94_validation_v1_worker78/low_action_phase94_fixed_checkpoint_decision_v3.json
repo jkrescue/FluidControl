@@ -1,0 +1,132 @@
+{
+  "status": "LOW_ACTION_PHASE94_FIXED_CHECKPOINT_DECISION_COMPLETE",
+  "profile": "control_gap_low_action_phase94_validation_v1",
+  "scope": "independent validation-only OOD diagnostic; not training or model-selection data",
+  "models": {
+    "v3_h20_parent": {
+      "checkpoint_epoch": 9,
+      "normalization_data": "data/curated/tandem_cylinders_gate_b_aug_v3",
+      "provenance": {
+        "label": "v3_h20_parent",
+        "image_id": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e",
+        "model_dir": "artifacts/distributed_runs/gateb_aug_v3_h20_rear_drag_seed20261002_20261003/formal/tandem_fno_gate_b_aug_v3_h20_rear_drag_seed20261002_10epoch",
+        "checkpoint_tree_sha256": "863f0b5f48742a010289582b6e83721692b740c1364060d1b06b3d86f9f3adc9",
+        "normalization_data": "data/curated/tandem_cylinders_gate_b_aug_v3",
+        "normalization_sha256": "be858979a70c558ae3fca6ee0827e212cad19b71d676af40f9f9619a030649df",
+        "split": "validation",
+        "frozen_test_status": "NOT_ACCESSED",
+        "model_selection_use": "FORBIDDEN"
+      },
+      "horizons": {
+        "1": {
+          "segments": 64,
+          "pooled_total_drag_nrmse": 0.01033875295325799,
+          "state_mae_physical_units": 0.001051847162671038,
+          "total_drag_mae": 0.02157270722091198,
+          "persistence_total_drag_mae": 0.025822432711720467,
+          "beats_persistence_total_drag_mae": true,
+          "rear_cd_mae": 0.01946446718648076,
+          "rear_cl_mae": 0.020467161666601896
+        },
+        "10": {
+          "segments": 64,
+          "pooled_total_drag_nrmse": 0.008727586793335337,
+          "state_mae_physical_units": 0.007824547807103954,
+          "total_drag_mae": 0.016133582219481468,
+          "persistence_total_drag_mae": 0.23220977559685707,
+          "beats_persistence_total_drag_mae": true,
+          "rear_cd_mae": 0.014562671072781086,
+          "rear_cl_mae": 0.041024306206963956
+        },
+        "50": {
+          "segments": 62,
+          "pooled_total_drag_nrmse": 0.06220645975872093,
+          "state_mae_physical_units": 0.02148730761461681,
+          "total_drag_mae": 0.12216079619622999,
+          "persistence_total_drag_mae": 0.2605617046356201,
+          "beats_persistence_total_drag_mae": true,
+          "rear_cd_mae": 0.1257239104278626,
+          "rear_cl_mae": 0.07466850700157304
+        },
+        "100": {
+          "segments": 58,
+          "pooled_total_drag_nrmse": 0.162544321796963,
+          "state_mae_physical_units": 0.04427028447389603,
+          "total_drag_mae": 0.3507973284556948,
+          "persistence_total_drag_mae": 0.21689992115415374,
+          "beats_persistence_total_drag_mae": false,
+          "rear_cd_mae": 0.35778987150767755,
+          "rear_cl_mae": 0.16036955048811846
+        }
+      }
+    },
+    "v4_h20_candidate": {
+      "checkpoint_epoch": 5,
+      "normalization_data": "data/curated/tandem_cylinders_control_gap_v4",
+      "provenance": {
+        "label": "v4_h20_candidate",
+        "image_id": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e",
+        "model_dir": "artifacts/tandem_fno_control_gap_v4_h20_rear_drag_seed20261003_5epoch",
+        "checkpoint_tree_sha256": "e678b745be4fb8e827fa0bb9acd3197a7c06dad0f3a96b4da165559a5b301de9",
+        "normalization_data": "data/curated/tandem_cylinders_control_gap_v4",
+        "normalization_sha256": "701c55b0b909f9a4cf54a4a258ce50d8ec2d4456b7c24c49c6879281a6a7d4d2",
+        "split": "validation",
+        "frozen_test_status": "NOT_ACCESSED",
+        "model_selection_use": "FORBIDDEN"
+      },
+      "horizons": {
+        "1": {
+          "segments": 64,
+          "pooled_total_drag_nrmse": 0.008752051092393886,
+          "state_mae_physical_units": 0.0009609677344997181,
+          "total_drag_mae": 0.018040701746940613,
+          "persistence_total_drag_mae": 0.025822432711720467,
+          "beats_persistence_total_drag_mae": true,
+          "rear_cd_mae": 0.016568389255553484,
+          "rear_cl_mae": 0.017833195277489722
+        },
+        "10": {
+          "segments": 64,
+          "pooled_total_drag_nrmse": 0.005786154592535974,
+          "state_mae_physical_units": 0.007118931891454849,
+          "total_drag_mae": 0.010537203401327133,
+          "persistence_total_drag_mae": 0.23220977559685707,
+          "beats_persistence_total_drag_mae": true,
+          "rear_cd_mae": 0.010350896045565605,
+          "rear_cl_mae": 0.03950806736247614
+        },
+        "50": {
+          "segments": 62,
+          "pooled_total_drag_nrmse": 0.06892331242558862,
+          "state_mae_physical_units": 0.020410262619055087,
+          "total_drag_mae": 0.14201767598429033,
+          "persistence_total_drag_mae": 0.2605617046356201,
+          "beats_persistence_total_drag_mae": true,
+          "rear_cd_mae": 0.14436663302683062,
+          "rear_cl_mae": 0.12382591714061075
+        },
+        "100": {
+          "segments": 58,
+          "pooled_total_drag_nrmse": 0.17858853114800533,
+          "state_mae_physical_units": 0.044851746217444026,
+          "total_drag_mae": 0.3732706513898126,
+          "persistence_total_drag_mae": 0.21689992115415374,
+          "beats_persistence_total_drag_mae": false,
+          "rear_cd_mae": 0.3777341477829835,
+          "rear_cl_mae": 0.22679533141440358
+        }
+      }
+    }
+  },
+  "h100_v4_relative_change_vs_v3": 0.0987066738085347,
+  "decision": "DO_NOT_PROMOTE_V4_TO_CLOSED_LOOP",
+  "decision_checks": {
+    "v4_h100_pooled_total_drag_nrmse_at_most_10pct": false,
+    "v4_h100_beats_persistence_total_drag_mae": false,
+    "v4_h100_pooled_total_drag_nrmse_no_worse_than_v3": false
+  },
+  "reason": "failed derived H100 checks: v4_h100_pooled_total_drag_nrmse_at_most_10pct, v4_h100_beats_persistence_total_drag_mae, v4_h100_pooled_total_drag_nrmse_no_worse_than_v3",
+  "frozen_test_status": "NOT_ACCESSED",
+  "gate_c_status": "NOT_PASSED",
+  "next_required_evidence": "paired same-initial-state action drag-difference/ranking audit followed by matched real-CFD confirmation"
+}

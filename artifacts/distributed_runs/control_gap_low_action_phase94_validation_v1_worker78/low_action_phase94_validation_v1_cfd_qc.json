@@ -1,0 +1,156 @@
+{
+  "status": "LOW_ACTION_PHASE94_VALIDATION_REAL_CFD_OK",
+  "dataset_profile": "control_gap_low_action_phase94_validation_v1",
+  "split": "validation_only_separate_profile",
+  "source_restart": "uncontrolled t=94",
+  "time_window": [
+    94.0,
+    174.0
+  ],
+  "cases": [
+    {
+      "case": "validation_signed_low_pulse_p_phase94_v1_20261003",
+      "split": "validation",
+      "sign": 1.0,
+      "source_restart_u_sha256": "1f321c10b7aa8f80d26440f938c21a390285a62a06b246e6076db5281c6427c3",
+      "source_restart_p_sha256": "f20225035ffda5804a9b1fc7cf331ee265b76560f3fe4fad5a92fc72d9cafc27",
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 0.3750000000000222
+      },
+      "front_force": {
+        "window": [
+          94.0,
+          174.0
+        ],
+        "samples": 16000,
+        "cd_mean": 1.3911249576665625,
+        "cl_mean": -0.005716296274201692,
+        "cl_abs_mean": 0.28479577982182264,
+        "cl_rms": 0.3154812387956073,
+        "cl_min": -0.4539975455,
+        "cl_max": 0.4433856949,
+        "cl_abs_max": 0.4539975455,
+        "period_count": 12,
+        "st_zero_crossing": 0.16116513394692095
+      },
+      "rear_force": {
+        "window": [
+          94.0,
+          174.0
+        ],
+        "samples": 16000,
+        "cd_mean": 0.9069864120031125,
+        "cl_mean": -0.3921966555541919,
+        "cl_abs_mean": 1.0976972697158132,
+        "cl_rms": 1.1995766666557928,
+        "cl_min": -2.369916443,
+        "cl_max": 1.647268845,
+        "cl_abs_max": 2.369916443,
+        "period_count": 12,
+        "st_zero_crossing": 0.1619260175969483
+      },
+      "numerical_health": {
+        "steps": 16000,
+        "max_courant": 0.248258921,
+        "max_abs_global_continuity_per_step": 1.27166544e-12,
+        "solver_ended_cleanly": true
+      },
+      "raw_case_audit": {
+        "case": "validation_signed_low_pulse_p_phase94_v1_20261003",
+        "split": "validation",
+        "source_restart_time": 94.0,
+        "frames": 801,
+        "force": {
+          "forceFront": {
+            "samples": 16000,
+            "final_time": 174.0,
+            "mean_cd": 1.3911249576665623,
+            "cl_rms": 0.315533022162666
+          },
+          "forceRear": {
+            "samples": 16000,
+            "final_time": 174.0,
+            "mean_cd": 0.9069864120031125,
+            "cl_rms": 1.2620627543085632
+          }
+        },
+        "max_courant": 0.248258921,
+        "status": "complete"
+      }
+    },
+    {
+      "case": "validation_signed_low_pulse_m_phase94_v1_20261003",
+      "split": "validation",
+      "sign": -1.0,
+      "source_restart_u_sha256": "1f321c10b7aa8f80d26440f938c21a390285a62a06b246e6076db5281c6427c3",
+      "source_restart_p_sha256": "f20225035ffda5804a9b1fc7cf331ee265b76560f3fe4fad5a92fc72d9cafc27",
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 0.3750000000000222
+      },
+      "front_force": {
+        "window": [
+          94.0,
+          174.0
+        ],
+        "samples": 16000,
+        "cd_mean": 1.3909838760173125,
+        "cl_mean": 0.005459494233867705,
+        "cl_abs_mean": 0.2850154018132583,
+        "cl_rms": 0.31572437994138786,
+        "cl_min": -0.4433467978,
+        "cl_max": 0.4538819258,
+        "cl_abs_max": 0.4538819258,
+        "period_count": 12,
+        "st_zero_crossing": 0.16094052419416202
+      },
+      "rear_force": {
+        "window": [
+          94.0,
+          174.0
+        ],
+        "samples": 16000,
+        "cd_mean": 0.8889813600150313,
+        "cl_mean": 0.3594552982824867,
+        "cl_abs_mean": 1.1095934698098093,
+        "cl_rms": 1.2223079634759662,
+        "cl_min": -1.675781246,
+        "cl_max": 2.37058137,
+        "cl_abs_max": 2.37058137,
+        "period_count": 12,
+        "st_zero_crossing": 0.16113881449495038
+      },
+      "numerical_health": {
+        "steps": 16000,
+        "max_courant": 0.247841221,
+        "max_abs_global_continuity_per_step": 1.26513581e-12,
+        "solver_ended_cleanly": true
+      },
+      "raw_case_audit": {
+        "case": "validation_signed_low_pulse_m_phase94_v1_20261003",
+        "split": "validation",
+        "source_restart_time": 94.0,
+        "frames": 801,
+        "force": {
+          "forceFront": {
+            "samples": 16000,
+            "final_time": 174.0,
+            "mean_cd": 1.3909838760173125,
+            "cl_rms": 0.3157715790989802
+          },
+          "forceRear": {
+            "samples": 16000,
+            "final_time": 174.0,
+            "mean_cd": 0.8889813600150314,
+            "cl_rms": 1.2740662734097137
+          }
+        },
+        "max_courant": 0.247841221,
+        "status": "complete"
+      }
+    }
+  ],
+  "leakage_guard": "do not merge into control_gap_v4 or use for model selection",
+  "scientific_scope": "OOD diagnostic CFD quality/provenance gate; not a training label or control-benefit claim"
+}

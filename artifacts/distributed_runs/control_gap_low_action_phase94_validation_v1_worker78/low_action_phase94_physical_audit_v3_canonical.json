@@ -1,0 +1,120 @@
+{
+  "status": "LOW_ACTION_PHASE94_CANONICAL_PHYSICAL_AUDIT_V3_COMPLETE",
+  "analysis_window_provenance": {
+    "window": [
+      114.0,
+      174.0
+    ],
+    "window_length_D_over_U": 60.0,
+    "discarded_initial_transient_D_over_U": 20.0,
+    "baseline": "alternating_t94_zero_20261003",
+    "inherited_from": "artifacts/tandem_cylinders/two_phase_alternating_predeclared_20261003.json",
+    "inherited_file_sha256": "34355adfe55a019c8615514c1634531c76bcc230940b9c0e80319746374e627b",
+    "inherited_file_mtime_utc": "2026-10-03T04:36:54.157373525Z",
+    "low_action_predeclaration_limitation": "low_action_phase94_validation_v1_predeclared.json declared only the run interval [94,174], not this analysis interval; [114,174] is inherited from the earlier same-phase t94 zero/control audit",
+    "canonical_joint_gate": {
+      "mean_total_cd_reduction_percent_minimum": 2.0,
+      "rear_cl_fluctuation_rms_maximum_ratio_to_zero": 1.05,
+      "abs_mean_rear_cl_maximum_ratio_to_zero_cl_fluctuation_rms": 0.1
+    },
+    "no_posthoc_window_selection": true
+  },
+  "supersedes": [
+    {
+      "file": "low_action_phase94_physical_audit.json",
+      "reason": "v1 used a stricter but non-canonical two-term gate"
+    },
+    {
+      "file": "low_action_phase94_physical_audit_v2_canonical.json",
+      "reason": "v2 overstated the low-action file's own analysis-window predeclaration and omitted torque-work proxies"
+    }
+  ],
+  "shared_provenance": {
+    "source_restart_time": 94.0,
+    "source_restart_u_sha256": "1f321c10b7aa8f80d26440f938c21a390285a62a06b246e6076db5281c6427c3",
+    "source_restart_p_sha256": "f20225035ffda5804a9b1fc7cf331ee265b76560f3fe4fad5a92fc72d9cafc27",
+    "delta_t": 0.005,
+    "geometry_and_mesh": "same copied tandem_backward_dt005 constant/mesh, 19290 cells"
+  },
+  "cases": {
+    "alternating_t94_zero_20261003": {
+      "samples": 12001,
+      "mean_total_cd": 2.301710163648071,
+      "total_cd_fluctuation_rms": 0.13126165931165054,
+      "mean_rear_cd": 0.9102506839979585,
+      "mean_rear_cl": -0.03516512213111442,
+      "abs_mean_rear_cl": 0.03516512213111442,
+      "rear_cl_fluctuation_rms": 1.1759175599477016,
+      "action": {
+        "mean_abs_omega": 0.0,
+        "rms_omega": 0.0,
+        "max_abs_omega": 0.0
+      }
+    },
+    "validation_signed_low_pulse_p_phase94_v1_20261003": {
+      "samples": 12001,
+      "mean_total_cd": 2.311730137654887,
+      "total_cd_fluctuation_rms": 0.21200153515010886,
+      "mean_rear_cd": 0.9205005277132989,
+      "mean_rear_cl": -0.41306755503934134,
+      "abs_mean_rear_cl": 0.41306755503934134,
+      "rear_cl_fluctuation_rms": 1.197967127935563,
+      "action": {
+        "mean_abs_omega": 0.3749687526039497,
+        "rms_omega": 0.5123263061765421,
+        "max_abs_omega": 0.75
+      },
+      "torque_work_proxy": {
+        "mean_signed_minus_omega_cm_pitch_over_zero_cd": -0.011566566686173651,
+        "mean_positive_only_minus_omega_cm_pitch_over_zero_cd": 0.00015978231512076243,
+        "mean_absolute_minus_omega_cm_pitch_over_zero_cd": 0.01188613131641518,
+        "guard": "fluid-torque work proxy only; not electrical motor energy; positive-only assumes no regenerative recovery"
+      }
+    },
+    "validation_signed_low_pulse_m_phase94_v1_20261003": {
+      "samples": 12001,
+      "mean_total_cd": 2.262902798051596,
+      "total_cd_fluctuation_rms": 0.20293628308455988,
+      "mean_rear_cd": 0.8718778564389802,
+      "mean_rear_cl": 0.33661865893323395,
+      "abs_mean_rear_cl": 0.33661865893323395,
+      "rear_cl_fluctuation_rms": 1.2308876740256485,
+      "action": {
+        "mean_abs_omega": 0.3749687526039497,
+        "rms_omega": 0.5123263061765421,
+        "max_abs_omega": 0.75
+      },
+      "torque_work_proxy": {
+        "mean_signed_minus_omega_cm_pitch_over_zero_cd": -0.011175878430447615,
+        "mean_positive_only_minus_omega_cm_pitch_over_zero_cd": 0.0001088017241869478,
+        "mean_absolute_minus_omega_cm_pitch_over_zero_cd": 0.01139348187882151,
+        "guard": "fluid-torque work proxy only; not electrical motor energy; positive-only assumes no regenerative recovery"
+      }
+    }
+  },
+  "comparisons_to_same_phase_zero": {
+    "validation_signed_low_pulse_p_phase94_v1_20261003": {
+      "mean_total_cd_delta": 0.010019974006815868,
+      "mean_total_cd_change_percent": 0.4353273563746539,
+      "rear_cl_fluctuation_rms_delta": 0.022049567987861396,
+      "rear_cl_fluctuation_rms_ratio": 1.0187509471232337,
+      "abs_mean_rear_cl_to_zero_cl_fluctuation_rms_ratio": 0.35127254588979206,
+      "drag_reduction_at_least_2_percent": false,
+      "rear_cl_fluctuation_within_1p05_zero": true,
+      "abs_mean_rear_cl_within_0p1_zero_cl_fluctuation_rms": false,
+      "canonical_joint_gate": "FAIL"
+    },
+    "validation_signed_low_pulse_m_phase94_v1_20261003": {
+      "mean_total_cd_delta": -0.03880736559647513,
+      "mean_total_cd_change_percent": -1.686023123561648,
+      "rear_cl_fluctuation_rms_delta": 0.05497011407794683,
+      "rear_cl_fluctuation_rms_ratio": 1.0467465713160977,
+      "abs_mean_rear_cl_to_zero_cl_fluctuation_rms_ratio": 0.28626042368837906,
+      "drag_reduction_at_least_2_percent": false,
+      "rear_cl_fluctuation_within_1p05_zero": true,
+      "abs_mean_rear_cl_within_0p1_zero_cl_fluctuation_rms": false,
+      "canonical_joint_gate": "FAIL"
+    }
+  },
+  "scientific_scope": "open-loop same-phase CFD diagnostic; not closed-loop control or model-selection evidence"
+}

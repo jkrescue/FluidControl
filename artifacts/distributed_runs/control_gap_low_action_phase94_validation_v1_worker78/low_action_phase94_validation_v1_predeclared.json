@@ -1,0 +1,27 @@
+{
+  "status": "PREDECLARED_VALIDATION_ONLY_ACTIONS_NO_CFD_LABELS",
+  "dataset_profile": "control_gap_low_action_phase94_validation_v1",
+  "split": "validation_only_separate_profile",
+  "source_restart": "tandem_backward_dt005/t=94",
+  "source_restart_u_sha256": "1f321c10b7aa8f80d26440f938c21a390285a62a06b246e6076db5281c6427c3",
+  "source_restart_p_sha256": "f20225035ffda5804a9b1fc7cf331ee265b76560f3fe4fad5a92fc72d9cafc27",
+  "time_window": [
+    94.0,
+    174.0
+  ],
+  "action_design": "paired +/-0.75 pulses every 20 units; two-unit ramps, eight-unit holds, two-unit ramp-downs",
+  "selection_reason": "existing validation has no |omega|max<=1 windows at H100; acquire diagnostic labels without changing frozen v4 holdout",
+  "cases": {
+    "validation_signed_low_pulse_p_phase94_v1_20261003": {
+      "sign": 1.0,
+      "max_abs_omega": 0.75,
+      "max_abs_domega_dt": 0.3750000000000222
+    },
+    "validation_signed_low_pulse_m_phase94_v1_20261003": {
+      "sign": -1.0,
+      "max_abs_omega": 0.75,
+      "max_abs_domega_dt": 0.3750000000000222
+    }
+  },
+  "leakage_guard": "never add these labels to control_gap_v4 or tune the already completed v4 model"
+}

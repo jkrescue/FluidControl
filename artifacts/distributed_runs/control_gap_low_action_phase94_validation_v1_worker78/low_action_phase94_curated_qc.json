@@ -1,0 +1,36 @@
+{
+  "status": "LOW_ACTION_PHASE94_CURATED_VALIDATION_OK",
+  "profile": "low_action_phase94_validation_v1",
+  "trajectory_counts": {
+    "train": 0,
+    "validation": 2,
+    "test": 0
+  },
+  "cases": [
+    {
+      "case": "validation_signed_low_pulse_p_phase94_v1_20261003",
+      "split": "validation",
+      "frames": 801,
+      "coverage": 0.9869384765625,
+      "omega_min": 0.0,
+      "omega_max": 0.75,
+      "max_abs_pressure_mean": 1.6615226293969312e-09,
+      "source_restart_u_sha256": "1f321c10b7aa8f80d26440f938c21a390285a62a06b246e6076db5281c6427c3",
+      "source_restart_p_sha256": "f20225035ffda5804a9b1fc7cf331ee265b76560f3fe4fad5a92fc72d9cafc27",
+      "force_alignment": "exact raw CFD interpolation at 801 field times"
+    },
+    {
+      "case": "validation_signed_low_pulse_m_phase94_v1_20261003",
+      "split": "validation",
+      "frames": 801,
+      "coverage": 0.9869384765625,
+      "omega_min": -0.75,
+      "omega_max": 0.0,
+      "max_abs_pressure_mean": 1.7115746263012185e-09,
+      "source_restart_u_sha256": "1f321c10b7aa8f80d26440f938c21a390285a62a06b246e6076db5281c6427c3",
+      "source_restart_p_sha256": "f20225035ffda5804a9b1fc7cf331ee265b76560f3fe4fad5a92fc72d9cafc27",
+      "force_alignment": "exact raw CFD interpolation at 801 field times"
+    }
+  ],
+  "scientific_scope": "validation-only OOD diagnostic; not used to train or select the fixed model"
+}
