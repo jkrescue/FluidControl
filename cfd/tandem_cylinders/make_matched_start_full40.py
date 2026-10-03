@@ -48,7 +48,7 @@ EXTENSION_AUTHORIZATION = (
     "matched_start_full40_extension_authorized_20261003.json"
 )
 # Filled only after the nine-case aggregate passes and the authorization is committed.
-APPROVED_EXTENSION_AUTHORIZATION_SHA256 = "REVIEW_REQUIRED_AFTER_NINE_CASE_AGGREGATE"
+APPROVED_EXTENSION_AUTHORIZATION_SHA256 = "da8bccaf18a86666ac78804e775c1608d8fc390bfca1484cbd1eaabe93c17151"
 GENERATION_TOKEN = "GENERATE_REVIEWED_FULL40_REMAINDER"
 STATE_FIELDS = ("U", "U_0", "p", "phi", "phi_0")
 PHASE_BINS = tuple(range(8))

@@ -24,7 +24,7 @@ PREDECLARATION = (
     REPO / "artifacts/tandem_cylinders/matched_start_full40_predeclared_20261003.json"
 )
 PREDECLARATION_SHA256 = "d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b"
-AUTHORIZATION_SHA256 = "REVIEW_REQUIRED_AFTER_NINE_CASE_AGGREGATE"
+AUTHORIZATION_SHA256 = "da8bccaf18a86666ac78804e775c1608d8fc390bfca1484cbd1eaabe93c17151"
 AUTHORIZATION = (
     REPO / "artifacts/tandem_cylinders/"
     "matched_start_full40_extension_authorized_20261003.json"

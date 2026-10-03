@@ -40,11 +40,12 @@ def snapshot(default: str = "PENDING", **overrides: str) -> dict:
     }
 
 
-def test_queue_is_exact_31_and_execution_is_unbound() -> None:
+def test_queue_is_exact_31_and_authorized_but_review_blocked() -> None:
     assert len(SCHEDULER.QUEUE) == 31
-    assert len(SCHEDULER.AUTHORIZATION_SHA256) != 64
+    assert len(SCHEDULER.AUTHORIZATION_SHA256) == 64
     report = SCHEDULER.dry_run_report()
     assert report["execution_enabled"] is False
+    assert report["authorization"] == "BOUND_BUT_BLOCKED_PENDING_IMPLEMENTATION_REVIEW"
     assert report["maximum_parallel_cases"] == 4
     assert SCHEDULER.IMPLEMENTATION_REVIEWED is False
     assert all("_train_" in name for name in SCHEDULER.QUEUE[:11])
@@ -129,12 +130,25 @@ def test_baseline_forces_are_synced_from_authorized_sha_only(monkeypatch) -> Non
 
 def test_scheduler_never_plans_more_than_four_and_fail_stops() -> None:
     result = SCHEDULER.plan(snapshot(), set())
-    assert 0 < len(result["start"]) <= 4
-    assert all("_train_b00_" in name for name in result["start"])
+    assert len(result["start"]) == 4
+    assert all("_train_" in name for name in result["start"])
+    assert [SCHEDULER.PREDECLARED[name]["phase_bin"] for name in result["start"]] == [
+        0, 0, 2, 2,
+    ]
     failed = SCHEDULER.QUEUE[0]
     result = SCHEDULER.plan(snapshot(**{failed: "FAILED"}), set())
     assert result["stop"] is True
     assert result["start"] == []
+
+
+def test_current_split_cross_phase_fill_preserves_predeclared_order() -> None:
+    result = SCHEDULER.plan(snapshot(default="NOT_GENERATED"), set())
+    assert result["start"] == []
+    assert result["prepare"] == list(SCHEDULER.QUEUE[:4])
+    assert [SCHEDULER.PREDECLARED[name]["phase_bin"] for name in result["prepare"]] == [
+        0, 0, 2, 2,
+    ]
+    assert all(SCHEDULER.PREDECLARED[name]["split"] == "train" for name in result["prepare"])
 
 
 def test_group_barriers_keep_validation_and_frozen_sealed() -> None:
@@ -243,6 +257,27 @@ def test_mock_one_step_is_transfer_first_and_never_starts(monkeypatch) -> None:
     }
     SCHEDULER.execute_actions(actions, set())
     assert events == [("transfer", completed)]
+
+
+def test_watch_rechecks_until_complete_and_sleeps_between_rounds(monkeypatch) -> None:
+    outcomes = iter((False, False, True))
+    sleeps = []
+    monkeypatch.setattr(SCHEDULER, "iteration", lambda: next(outcomes))
+    monkeypatch.setattr(SCHEDULER.time, "sleep", lambda seconds: sleeps.append(seconds))
+    assert SCHEDULER.run_iterations(watch=True, interval=15.0) is True
+    assert sleeps == [15.0, 15.0]
+
+
+def test_one_step_never_sleeps_or_repeats(monkeypatch) -> None:
+    calls = []
+    monkeypatch.setattr(SCHEDULER, "iteration", lambda: calls.append("iteration") or False)
+    monkeypatch.setattr(
+        SCHEDULER.time,
+        "sleep",
+        lambda seconds: pytest.fail(f"unexpected sleep: {seconds}"),
+    )
+    assert SCHEDULER.run_iterations(watch=False, interval=15.0) is False
+    assert calls == ["iteration"]
 
 
 def test_action_table_parser_rejects_tampered_u(tmp_path) -> None:

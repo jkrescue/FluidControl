@@ -11,8 +11,7 @@ authorization="${4:-}"
 mode="${5:-run}"
 phase_sha='6279492bd3a79eff868a4333e1f642e3be4a4d58a78e46dc47dde040e4e39603'
 predeclaration_sha='d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b'
-# Deliberately non-SHA until the post-commissioning authorization is committed.
-authorization_sha='REVIEW_REQUIRED_AFTER_NINE_CASE_AGGREGATE'
+authorization_sha='da8bccaf18a86666ac78804e775c1608d8fc390bfca1484cbd1eaabe93c17151'
 
 case_pattern='^matched_start_acquisition_(train|validation|frozen_test)_b0[0-7]_'
 case_pattern+='(m075|m0375|zero|p0375|p075)$'

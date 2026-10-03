@@ -14,6 +14,7 @@ import shlex
 import shutil
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -25,7 +26,7 @@ PREDECLARATION_SHA256 = "d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f1
 AUTHORIZATION = (
     REPO / "artifacts/tandem_cylinders/matched_start_full40_extension_authorized_20261003.json"
 )
-AUTHORIZATION_SHA256 = "REVIEW_REQUIRED_AFTER_NINE_CASE_AGGREGATE"
+AUTHORIZATION_SHA256 = "da8bccaf18a86666ac78804e775c1608d8fc390bfca1484cbd1eaabe93c17151"
 PHASE_MANIFEST = (
     "artifacts/tandem_cylinders/"
     "matched_start_phase_restart_predeclared_v3_20261003.json"
@@ -163,7 +164,7 @@ def plan(snapshot: dict, receipts: set[str]) -> dict:
     if failures:
         return {
             "stop": True, "failures": failures, "transfer": [], "start": [],
-            "prepare": [], "current_group": [],
+            "prepare": [], "current_group": [], "eligible_groups": [],
         }
     transfer = [
         name for name in QUEUE if states[name]["status"] == "COMPLETED" and name not in receipts
@@ -174,6 +175,7 @@ def plan(snapshot: dict, receipts: set[str]) -> dict:
     start = []
     prepare = []
     current_group = []
+    eligible_groups = []
     for split in ("train", "validation", "frozen_test"):
         split_names = [name for name in QUEUE if PREDECLARED[name]["split"] == split]
         if all(name in receipts for name in split_names):
@@ -181,17 +183,19 @@ def plan(snapshot: dict, receipts: set[str]) -> dict:
         for phase_bin in sorted({PREDECLARED[name]["phase_bin"] for name in split_names}):
             group = [name for name in split_names if PREDECLARED[name]["phase_bin"] == phase_bin]
             if not all(name in receipts for name in group):
-                current_group = group
-                break
+                eligible_groups.append(group)
         break
-    if not transfer and current_group:
+    if eligible_groups:
+        current_group = eligible_groups[0]
+    eligible = [name for group in eligible_groups for name in group]
+    if not transfer and eligible:
         start = [
-            name for name in current_group
+            name for name in eligible
             if name not in receipts and states[name]["status"] in {"PENDING", "WORKER_STAGED"}
         ][:slots]
         remaining_slots = max(0, slots - len(start))
         prepare = [
-            name for name in current_group
+            name for name in eligible
             if name not in receipts
             and states[name]["status"] in {"NOT_GENERATED", "SPARK_GENERATED"}
         ][:remaining_slots]
@@ -203,6 +207,7 @@ def plan(snapshot: dict, receipts: set[str]) -> dict:
         "prepare": prepare,
         "active": active,
         "current_group": current_group,
+        "eligible_groups": eligible_groups,
     }
 
 
@@ -322,8 +327,13 @@ def dry_run_report(snapshot: dict | None = None) -> dict:
         }
     return {
         "mode": "dry-run",
-        "execution_enabled": len(AUTHORIZATION_SHA256) == 64,
-        "authorization": "BLOCKED_PENDING_NINE_CASE_AGGREGATE_AND_COMMITTED_SHA",
+        "execution_enabled": len(AUTHORIZATION_SHA256) == 64 and IMPLEMENTATION_REVIEWED,
+        "authorization": (
+            "BOUND_BUT_BLOCKED_PENDING_IMPLEMENTATION_REVIEW"
+            if len(AUTHORIZATION_SHA256) == 64 and not IMPLEMENTATION_REVIEWED
+            else "ENABLED" if IMPLEMENTATION_REVIEWED
+            else "BLOCKED_PENDING_COMMITTED_SHA"
+        ),
         "queue_count": len(QUEUE),
         "maximum_parallel_cases": MAX_PARALLEL,
         "resource_guards": {
@@ -569,25 +579,27 @@ def load_auditor():
 def transfer_case(name: str) -> None:
     WORKER_MANIFESTS.mkdir(parents=True, exist_ok=True)
     manifest = WORKER_MANIFESTS / f"{name}.sha256"
-    if manifest.exists():
-        raise FileExistsError(f"refusing existing worker manifest: {name}")
     with tempfile.NamedTemporaryFile(dir=WORKER_MANIFESTS, prefix=f".{name}.", delete=False) as stream:
         temporary_manifest = Path(stream.name)
     run(["scp", "-q", f"{WORKER}:{WORKER_REPO}/artifacts/matched_start_full40_extension/worker_transfer_manifests/{name}.sha256", str(temporary_manifest)])
-    worker_hashes = parse_worker_manifest(temporary_manifest, name)
+    if manifest.exists():
+        if manifest.read_bytes() != temporary_manifest.read_bytes():
+            raise ValueError(f"existing worker manifest differs on resume: {name}")
+        temporary_manifest.unlink()
+    else:
+        os.link(temporary_manifest, manifest)
+        temporary_manifest.unlink()
+    worker_hashes = parse_worker_manifest(manifest, name)
     skeleton = tree_hashes(CASES / name, name)
     mismatched = [path for path, digest in skeleton.items() if worker_hashes.get(path) != digest]
     if mismatched:
         raise ValueError(f"worker would overwrite Spark skeleton: {mismatched[:5]}")
-    os.link(temporary_manifest, manifest)
-    temporary_manifest.unlink(missing_ok=True)
     staging = TRANSFER_STAGING / name
-    if staging.exists():
-        raise FileExistsError(f"refusing existing return staging: {name}")
-    staging.mkdir(parents=True)
-    run(["rsync", "-a", f"{WORKER}:{WORKER_REPO}/cfd/tandem_cylinders/cases/{name}/", f"{staging}/"])
+    if not staging.exists():
+        staging.mkdir(parents=True)
+        run(["rsync", "-a", f"{WORKER}:{WORKER_REPO}/cfd/tandem_cylinders/cases/{name}/", f"{staging}/"])
     if tree_hashes(staging, name) != worker_hashes:
-        raise ValueError(f"returned case differs from worker manifest: {name}")
+        raise ValueError(f"returned case staging is absent, partial, or differs: {name}")
     target = CASES / name
     for path in sorted(staging.rglob("*")):
         if not path.is_file() or any(
@@ -604,7 +616,11 @@ def transfer_case(name: str) -> None:
     auditor = load_auditor()
     result = auditor.audit_case(name, manifest, AUTHORIZATION_SHA256)
     audit_path = CASE_AUDITS / name / "result.json"
-    auditor.write_exclusive(audit_path, result)
+    if audit_path.exists():
+        if json.loads(audit_path.read_text(encoding="utf-8")) != result:
+            raise ValueError(f"existing case audit differs on resume: {name}")
+    else:
+        auditor.write_exclusive(audit_path, result)
     RECEIPTS.mkdir(parents=True, exist_ok=True)
     receipt = RECEIPTS / f"{name}.json"
     if receipt.exists():
@@ -616,6 +632,25 @@ def finalize_aggregate() -> None:
     auditor = load_auditor()
     output = ROOT / "aggregate_qc/result.json"
     auditor.write_exclusive(output, auditor.aggregate(RECEIPTS))
+
+
+def aggregate_complete() -> bool:
+    output = ROOT / "aggregate_qc/result.json"
+    if not output.exists():
+        return False
+    data = json.loads(output.read_text(encoding="utf-8"))
+    required = {
+        "status": "MATCHED_START_FULL40_EXTENSION_31_CASE_RAW_QC_PASS",
+        "case_count": 31,
+        "split_counts": {"train": 11, "validation": 10, "frozen_test": 10},
+        "full40_predeclaration_sha256": PREDECLARATION_SHA256,
+        "full40_extension_authorization_sha256": AUTHORIZATION_SHA256,
+    }
+    if any(data.get(key) != value for key, value in required.items()):
+        raise ValueError("existing full40 aggregate QC differs")
+    if len(valid_receipts()) != len(QUEUE):
+        raise ValueError("aggregate QC exists without 31 strict receipts")
+    return True
 
 
 def execute_actions(actions: dict, receipts: set[str]) -> None:
@@ -635,11 +670,62 @@ def execute_actions(actions: dict, receipts: set[str]) -> None:
         finalize_aggregate()
 
 
+def write_scheduler_state(payload: dict) -> None:
+    path = ROOT / "scheduler_state.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", dir=path.parent,
+        prefix=f".{path.name}.", delete=False,
+    ) as stream:
+        temporary = Path(stream.name)
+        stream.write(json.dumps(payload, indent=2) + "\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.replace(temporary, path)
+
+
+def iteration() -> bool:
+    validate_execution_authorization()
+    if aggregate_complete():
+        return True
+    spark_free = shutil.disk_usage(REPO).free
+    snapshot = enrich_snapshot(worker_snapshot())
+    receipts = valid_receipts()
+    actions = plan(snapshot, receipts)
+    gates = resource_gate(
+        snapshot, spark_free, starting=bool(actions["start"] or actions["prepare"])
+    )
+    write_scheduler_state({
+        "status": "FULL40_EXTENSION_WATCH_ACTIVE",
+        "receipt_count": len(receipts),
+        "snapshot": snapshot,
+        "plan": actions,
+        "resource_failures": gates,
+    })
+    if gates and (actions["start"] or actions["prepare"]):
+        raise RuntimeError(f"resource guards block new work: {gates}")
+    if actions["transfer"] and "spark_free_disk" in gates:
+        raise RuntimeError("Spark disk guard blocks worker return transfer")
+    execute_actions(actions, receipts)
+    return aggregate_complete()
+
+
+def run_iterations(watch: bool, interval: float) -> bool:
+    while True:
+        if iteration():
+            return True
+        if not watch:
+            return False
+        time.sleep(interval)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run-output", type=Path)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--approval-token")
+    parser.add_argument("--watch", action="store_true")
+    parser.add_argument("--interval", type=float, default=15.0)
     args = parser.parse_args()
     if not args.execute:
         report = dry_run_report()
@@ -649,6 +735,8 @@ def main() -> None:
         return
     if args.approval_token != EXECUTION_TOKEN:
         parser.error("execution requires the committed-extension approval token")
+    if args.interval <= 0:
+        parser.error("--interval must be positive")
     validate_execution_authorization()
     if not IMPLEMENTATION_REVIEWED:
         raise SystemExit("execution implementation is complete but blocked pending second review")
@@ -659,19 +747,9 @@ def main() -> None:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
             raise SystemExit("another full40 extension scheduler holds the lock") from error
-        spark_free = shutil.disk_usage(REPO).free
-        snapshot = enrich_snapshot(worker_snapshot())
-        receipts = valid_receipts()
-        actions = plan(snapshot, receipts)
-        gates = resource_gate(
-            snapshot, spark_free, starting=bool(actions["start"] or actions["prepare"])
-        )
-        if gates and (actions["start"] or actions["prepare"]):
-            raise RuntimeError(f"resource guards block new work: {gates}")
-        if actions["transfer"] and "spark_free_disk" in gates:
-            raise RuntimeError("Spark disk guard blocks worker return transfer")
-        execute_actions(actions, receipts)
-        print(json.dumps({"status": "ONE_SAFE_STEP_COMPLETE", "plan": actions}, indent=2))
+        done = run_iterations(args.watch, args.interval)
+        status = "FULL40_EXTENSION_COMPLETE" if done else "ONE_SAFE_STEP_COMPLETE"
+        print(json.dumps({"status": status}, indent=2))
 
 
 if __name__ == "__main__":
