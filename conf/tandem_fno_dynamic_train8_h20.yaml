@@ -1,0 +1,24 @@
+defaults:
+  - tandem_fno_full40_free_ar_h20
+  - _self_
+
+# Official PhysicsNeMo FNO, unchanged architecture and frozen train20 scaling.
+output_dir: /workspace/output
+data:
+  root: /workspace/base
+  additional_train_roots:
+    - /workspace/train8
+training:
+  epochs: 6
+  rollout_steps: 20
+  validation_rollout_steps: 100
+  train_stride: 20
+  additional_train_stride: 2
+  teacher_forcing_start: 0.0
+  teacher_forcing_end: 0.0
+  teacher_forcing_epochs: 1
+  initial_checkpoint: /workspace/parent
+  checkpoint_interval: 1
+  checkpoint_keep_last: 6
+  best_checkpoint_keep_last: 1
+  seed: 20261003

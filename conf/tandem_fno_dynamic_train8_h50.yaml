@@ -1,0 +1,11 @@
+defaults:
+  - tandem_fno_dynamic_train8_h20
+  - _self_
+
+training:
+  epochs: 4
+  rollout_steps: 50
+  validation_rollout_steps: 100
+  batch_size: 4
+  teacher_forcing_start: 0.0
+  teacher_forcing_end: 0.0

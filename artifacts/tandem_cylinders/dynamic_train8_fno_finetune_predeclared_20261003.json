@@ -1,0 +1,42 @@
+{
+  "status": "DYNAMIC_TRAIN8_FNO_FINETUNE_PREDECLARED_NOT_EXECUTED",
+  "scope": "official PhysicsNeMo FNO train-only dynamic-action augmentation; no PPO or control claim",
+  "model": "physicsnemo.models.fno.FNO unchanged from full40 free-AR H20",
+  "data": {
+    "base": "data/curated/tandem_cylinders_matched_start_full40_v1",
+    "base_train_trajectories": 20,
+    "additional": "data/curated/tandem_cylinders_dynamic_train8_v1",
+    "additional_train_trajectories": 8,
+    "normalization": "byte-identical immutable full40 train20 transform",
+    "base_train_stride": 20,
+    "additional_train_stride": 2,
+    "composition": "official physicsnemo.datapipes.MultiDataset",
+    "validation": "unchanged full40 validation10",
+    "dynamic_validation": "unchanged b01/b05 dynamic6 after training only",
+    "frozen_test_access": false
+  },
+  "training_variants": {
+    "h20_parent": {"epochs": 6, "rollout_steps": 20},
+    "h50_parent": {"epochs": 4, "rollout_steps": 50},
+    "validation_rollout_steps": 100,
+    "teacher_forcing_ratio": 0.0,
+    "checkpoint_interval": 1,
+    "checkpoint_selection": "lowest unchanged validation H100 rollout score; never frozen and never dynamic6 waveform selection",
+    "gpu": 0,
+    "minimum_free_unified_memory_GiB": 20,
+    "rule": "continue at the selected parent's training horizon; do not downgrade an H50 parent to H20"
+  },
+  "parent_selection": {
+    "rule": "at launch choose the best already-completed A/B epoch under the same validation10 H100 protocol",
+    "required_input": "explicit immutable directory containing exactly one matching FNO.0.E.mdlus and checkpoint.0.E.pt pair",
+    "launch_action": "copy both files into run/immutable_parent, verify SHA-256, chmod read-only, and train only from that copy",
+    "mutable_best_directory_forbidden": true,
+    "validation_or_frozen_used_to_choose_waveforms": false
+  },
+  "post_training_gates": [
+    "unchanged validation10 H1/H10/H50/H100 including H100 versus persistence",
+    "unchanged dynamic6 validation-only H1/H10/H50/H100 and action-difference gates",
+    "no PPO authorization unless all existing formal gates pass",
+    "final physical benefit requires paired long-window real CFD"
+  ]
+}
