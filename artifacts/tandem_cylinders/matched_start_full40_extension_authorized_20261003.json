@@ -1,0 +1,73 @@
+{
+  "status": "MATCHED_START_FULL40_EXTENSION_AUTHORIZED",
+  "scope": "31-case remainder only; the existing nine cases are excluded",
+  "phase_manifest_sha256": "6279492bd3a79eff868a4333e1f642e3be4a4d58a78e46dc47dde040e4e39603",
+  "full40_predeclaration": "artifacts/tandem_cylinders/matched_start_full40_predeclared_20261003.json",
+  "full40_predeclaration_sha256": "d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b",
+  "nine_case_aggregate_qc": "artifacts/matched_start_acquisition/aggregate_qc/result.json",
+  "nine_case_aggregate_qc_sha256": "703f58323098e9e3c99552f75fad8e40d2e9bc86a48fbe6f7f24377479aadd69",
+  "nine_case_predeclaration": "artifacts/tandem_cylinders/matched_start_acquisition_commissioning_predeclared_20261003.json",
+  "nine_case_predeclaration_sha256": "297556e1113d675da562e63d7269c7e84003ce5a89f08974791859c8c595ef97",
+  "baseline_force_source_sha256": {
+    "forceFront": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+    "forceRear": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b"
+  },
+  "nine_raw_transfer_receipt_sha256": {
+    "matched_start_acquisition_train_b00_m075": "9d5a599a836036f1a54eed0bda99c72d8e238ce92b1eec2bae2a9ea2576525e7",
+    "matched_start_acquisition_train_b00_p075": "cd92a913678effdd1a28f3871591cb983b525904d701009982dc81805ac4d102",
+    "matched_start_acquisition_train_b00_zero": "4ed89122829259c486d8ff86561fe7ddb1a353165b43e89cba2e5a3ca9eb9d17",
+    "matched_start_acquisition_train_b02_m075": "1d529fd8b842dd93121062d634a500750db5965df545972c7ebec1e804480fa9",
+    "matched_start_acquisition_train_b02_p075": "2652fb32a8e47056af40405313afca979f65772ba2c17f46324e38f1a3b25973",
+    "matched_start_acquisition_train_b02_zero": "4f453e8b79477cb22428809c1c0447154017ef403e75777fce1b8b32ad5d0534",
+    "matched_start_acquisition_train_b04_m075": "534e36f724633e768a3334d927b628049a00d612bc0cd03e4fefc09a19322018",
+    "matched_start_acquisition_train_b04_p075": "1c5e79e70eb7ceaa7090820c562c5cefbaa55823587ca9e5c8b35b7c12ec39b3",
+    "matched_start_acquisition_train_b04_zero": "9a69e417d9b58449fbdcc6eda38163b0903398c69eedee516262b162ddec45ba"
+  },
+  "authorized_cases": [
+    "matched_start_acquisition_frozen_test_b03_m0375",
+    "matched_start_acquisition_frozen_test_b03_m075",
+    "matched_start_acquisition_frozen_test_b03_p0375",
+    "matched_start_acquisition_frozen_test_b03_p075",
+    "matched_start_acquisition_frozen_test_b03_zero",
+    "matched_start_acquisition_frozen_test_b07_m0375",
+    "matched_start_acquisition_frozen_test_b07_m075",
+    "matched_start_acquisition_frozen_test_b07_p0375",
+    "matched_start_acquisition_frozen_test_b07_p075",
+    "matched_start_acquisition_frozen_test_b07_zero",
+    "matched_start_acquisition_train_b00_m0375",
+    "matched_start_acquisition_train_b00_p0375",
+    "matched_start_acquisition_train_b02_m0375",
+    "matched_start_acquisition_train_b02_p0375",
+    "matched_start_acquisition_train_b04_m0375",
+    "matched_start_acquisition_train_b04_p0375",
+    "matched_start_acquisition_train_b06_m0375",
+    "matched_start_acquisition_train_b06_m075",
+    "matched_start_acquisition_train_b06_p0375",
+    "matched_start_acquisition_train_b06_p075",
+    "matched_start_acquisition_train_b06_zero",
+    "matched_start_acquisition_validation_b01_m0375",
+    "matched_start_acquisition_validation_b01_m075",
+    "matched_start_acquisition_validation_b01_p0375",
+    "matched_start_acquisition_validation_b01_p075",
+    "matched_start_acquisition_validation_b01_zero",
+    "matched_start_acquisition_validation_b05_m0375",
+    "matched_start_acquisition_validation_b05_m075",
+    "matched_start_acquisition_validation_b05_p0375",
+    "matched_start_acquisition_validation_b05_p075",
+    "matched_start_acquisition_validation_b05_zero"
+  ],
+  "maximum_parallel_cases": 4,
+  "resource_guards": {
+    "worker_start_mem_available_gib_at_least": 64,
+    "worker_running_mem_available_gib_at_least": 40,
+    "worker_free_disk_gib_at_least": 100,
+    "spark_free_disk_gib_at_least": 250
+  },
+  "execution_guards": {
+    "authorization_must_be_committed_before_sha_binding": true,
+    "existing_nine_cases_must_not_be_generated_or_rerun": true,
+    "maximum_parallel_cases": 4,
+    "fail_stop_on_failed_or_orphaned_case": true
+  },
+  "interpretation_guard": "prescribed constant-rotation acquisition only; not closed-loop control or evidence of model sufficiency"
+}
