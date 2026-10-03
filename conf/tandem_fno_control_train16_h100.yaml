@@ -1,0 +1,24 @@
+defaults:
+  - tandem_fno_dynamic_train8_h100
+  - _self_
+
+# Same official FNO, physical normalization, loss and H100 validation as the
+# dynamic-train8 run. Add only finalized real training-PPO CFD trajectories.
+# Historical exploratory PPO policies are not final-policy on-policy samples.
+data:
+  additional_train_roots:
+    - /workspace/train8
+    - /workspace/train16
+  prefetch_factor: 0
+training:
+  epochs: 2
+  batch_size: 2
+  learning_rate: 1.0e-5
+  rollout_steps: 100
+  validation_rollout_steps: 100
+  train_stride: 20
+  additional_train_stride: 2
+  teacher_forcing_start: 0.0
+  teacher_forcing_end: 0.0
+  gpu_memory_fraction: 0.45
+  seed: 20261003
