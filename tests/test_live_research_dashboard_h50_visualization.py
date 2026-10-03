@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib.util
-import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -82,7 +81,13 @@ class H50VisualizationTests(unittest.TestCase):
         self.assertIn('"technical_probe_is_formal_candidate": False', source)
         self.assertIn("DIRECTPPO_TRAIN16_MANIFEST", source)
         self.assertIn("validation_only_roi_not_full_cfd_domain_", source)
-        self.assertNotIn("tandem_fno_control_train16_h100_probe_20261004", source)
+        self.assertIn('"technical_probe_formal_candidate"] = False', source)
+        self.assertIn(
+            '"artifacts/tandem_fno_control_train16_h100_probe_20261004"', source
+        )
+        self.assertIn(
+            'root / "artifacts/tandem_fno_control_train16_h100_20261004"', source
+        )
 
 
 if __name__ == "__main__":

@@ -275,6 +275,20 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
             )
             h20.mkdir(parents=True)
             h50.mkdir(parents=True)
+            formal_train16 = (
+                root / "artifacts/tandem_fno_control_train16_h100_20261004"
+            )
+            formal_train16.mkdir(parents=True)
+            (formal_train16 / "training_history.json").write_text(
+                json.dumps([{"epoch": 1, "selection_score": 0.125}]),
+                encoding="utf-8",
+            )
+            probe = root / "artifacts/tandem_fno_control_train16_h100_probe_20261004"
+            probe.mkdir(parents=True)
+            (probe / "training_history.json").write_text(
+                json.dumps([{"epoch": 99, "selection_score": 0.0}]),
+                encoding="utf-8",
+            )
             (h20 / "training_history.json").write_text(
                 json.dumps(
                     [
@@ -346,6 +360,14 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertEqual(result["h50"]["synced_epochs"], 1)
         self.assertFalse(result["h50"]["final_sync_complete"])
         self.assertEqual(result["dynamic_h100"]["expected_epochs"], 2)
+        self.assertEqual(result["control_train16_h100"]["epoch"], 1)
+        self.assertEqual(
+            result["control_train16_h100"]["last_metrics"]["selection_score"],
+            0.125,
+        )
+        self.assertFalse(
+            result["control_train16_h100"]["technical_probe_formal_candidate"]
+        )
         self.assertEqual(
             result["h50"]["validation10"]["horizons"]["100"][
                 "pooled_total_cd_nrmse"
@@ -566,6 +588,9 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("评估配置修复后的完整推理", page)
         self.assertIn("Dynamic6 正式验收 FAIL", page)
         self.assertIn("16条真实PPO交互轨迹已通过官方DataPipe读取", page)
+        self.assertIn('id="train16-formal-progress"', page)
+        self.assertIn("one-batch技术probe明确排除", page)
+        self.assertIn("tandem_fno_control_train16_h100_20261004", page)
 
     def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
