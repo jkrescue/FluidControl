@@ -1,0 +1,322 @@
+{
+  "status": "TWO_PHASE_LONG_SIGNED_OPENFOAM_AUDIT_COMPLETED",
+  "scope": "cross-phase long-window robustness and drag/lift/torque-cost audit; not tuning, closed-loop benefit, or final acceptance",
+  "predeclared_audit": "artifacts/tandem_cylinders/phase90_long_signed_predeclared_20261003.json",
+  "protocol_reference_correction": "artifacts/tandem_cylinders/phase90_long_signed_reference_correction_20261003.json",
+  "phases": {
+    "phase_a_t80": {
+      "cases": {
+        "zero": "landscape_val_zero_20261003",
+        "positive": "landscape_val_p100_20261003",
+        "negative": "landscape_val_m100_20261003"
+      },
+      "window": [
+        92.0,
+        116.0
+      ],
+      "metrics": {
+        "zero": {
+          "samples": 4801,
+          "window": [
+            92.0,
+            116.0
+          ],
+          "total_cd_mean": 2.302820457637596,
+          "total_cd_block_means_6du": [
+            2.3010208985473333,
+            2.3022033774505,
+            2.3033772381761666,
+            2.304678767784596
+          ],
+          "front_cd_mean": 1.391231785729848,
+          "rear_cd_mean": 0.9115886719077485,
+          "front_cl_mean": -0.012696687156145922,
+          "rear_cl_mean": 0.026376258140200833,
+          "front_cl_fluctuation_rms": 0.31140206170621576,
+          "rear_cl_fluctuation_rms": 1.184943443290561,
+          "total_cl_fluctuation_rms": 1.2502826117333363,
+          "omega_rms": 0.0,
+          "cm_pitch_mean": 8.575657004124889e-05,
+          "cm_pitch_rms": 0.01251989941856026,
+          "mean_omega_times_cm_pitch": 0.0,
+          "torque_cost": {
+            "mean_signed_actuator_power_over_zero_drag_power": 0.0,
+            "mean_positive_only_actuator_power_over_zero_drag_power": 0.0,
+            "mean_abs_rotation_work_over_zero_drag_power": 0.0
+          }
+        },
+        "positive": {
+          "samples": 4801,
+          "window": [
+            92.0,
+            116.0
+          ],
+          "total_cd_mean": 2.219535924860779,
+          "total_cd_block_means_6du": [
+            2.215298079274333,
+            2.218333983430667,
+            2.221284631191,
+            2.2232239322076603
+          ],
+          "front_cd_mean": 1.3905829878914808,
+          "rear_cd_mean": 0.8289529369692981,
+          "front_cl_mean": -0.027544978593493086,
+          "rear_cl_mean": -0.9614036091503843,
+          "front_cl_fluctuation_rms": 0.3110790010824904,
+          "rear_cl_fluctuation_rms": 1.1472067546346778,
+          "total_cl_fluctuation_rms": 1.1955041854652253,
+          "omega_rms": 1.0,
+          "cm_pitch_mean": 0.09642750761112685,
+          "cm_pitch_rms": 0.09728084024271011,
+          "mean_omega_times_cm_pitch": 0.09642750761112685,
+          "torque_cost": {
+            "mean_signed_actuator_power_over_zero_drag_power": -0.04187365423618363,
+            "mean_positive_only_actuator_power_over_zero_drag_power": 0.0,
+            "mean_abs_rotation_work_over_zero_drag_power": 0.04187365423618363
+          }
+        },
+        "negative": {
+          "samples": 4801,
+          "window": [
+            92.0,
+            116.0
+          ],
+          "total_cd_mean": 2.208797496789398,
+          "total_cd_block_means_6du": [
+            2.217937774679333,
+            2.2092768818276665,
+            2.2047942744295,
+            2.203185732691174
+          ],
+          "front_cd_mean": 1.391445693168715,
+          "rear_cd_mean": 0.817351803620683,
+          "front_cl_mean": 0.0022812257663516254,
+          "rear_cl_mean": 1.0249246363548161,
+          "front_cl_fluctuation_rms": 0.31079522142672616,
+          "rear_cl_fluctuation_rms": 1.1482934910779854,
+          "total_cl_fluctuation_rms": 1.2007640075070343,
+          "omega_rms": 1.0,
+          "cm_pitch_mean": -0.09636923351045407,
+          "cm_pitch_rms": 0.09719481414664381,
+          "mean_omega_times_cm_pitch": 0.09636923351045407,
+          "torque_cost": {
+            "mean_signed_actuator_power_over_zero_drag_power": -0.04184834870249363,
+            "mean_positive_only_actuator_power_over_zero_drag_power": 0.0,
+            "mean_abs_rotation_work_over_zero_drag_power": 0.04184834870249363
+          }
+        }
+      },
+      "comparisons": {
+        "positive": {
+          "total_drag_reduction": 0.036166316180053504,
+          "rear_cl_fluctuation_rms_ratio": 0.9681531731581304,
+          "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.8113497860122237,
+          "canonical_checks": {
+            "total_drag_reduction_at_least_2pct": true,
+            "rear_cl_fluctuation_rms_increase_at_most_5pct": true,
+            "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": false
+          },
+          "canonical_joint_check": false
+        },
+        "negative": {
+          "total_drag_reduction": 0.04082947957855709,
+          "rear_cl_fluctuation_rms_ratio": 0.9690702940970756,
+          "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.8649565868803187,
+          "canonical_checks": {
+            "total_drag_reduction_at_least_2pct": true,
+            "rear_cl_fluctuation_rms_increase_at_most_5pct": true,
+            "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": false
+          },
+          "canonical_joint_check": false
+        }
+      },
+      "solver_health": {
+        "zero": {
+          "steps": 7200,
+          "max_courant": 0.245227456,
+          "max_abs_global_continuity_per_step": 1.21894407e-12,
+          "solver_ended_cleanly": true
+        },
+        "positive": {
+          "steps": 7200,
+          "max_courant": 0.260609459,
+          "max_abs_global_continuity_per_step": 1.4826304e-12,
+          "solver_ended_cleanly": true
+        },
+        "negative": {
+          "steps": 7200,
+          "max_courant": 0.261007597,
+          "max_abs_global_continuity_per_step": 8.62299799e-13,
+          "solver_ended_cleanly": true
+        }
+      }
+    },
+    "phase_b_t90": {
+      "cases": {
+        "zero": "phase90_long_zero_20261003",
+        "positive": "phase90_long_p100_20261003",
+        "negative": "phase90_long_m100_20261003"
+      },
+      "window": [
+        102.0,
+        126.0
+      ],
+      "metrics": {
+        "zero": {
+          "samples": 4801,
+          "window": [
+            102.0,
+            126.0
+          ],
+          "total_cd_mean": 2.296688329072464,
+          "total_cd_block_means_6du": [
+            2.2985525977534165,
+            2.2963891735744997,
+            2.2956122991295835,
+            2.2961996530623647
+          ],
+          "front_cd_mean": 1.3909526790558218,
+          "rear_cd_mean": 0.9057356500166425,
+          "front_cl_mean": 0.014525845208699026,
+          "rear_cl_mean": 0.012069515941652805,
+          "front_cl_fluctuation_rms": 0.3094882433474315,
+          "rear_cl_fluctuation_rms": 1.1924401542469785,
+          "total_cl_fluctuation_rms": 1.2442096480508615,
+          "omega_rms": 0.0,
+          "cm_pitch_mean": 0.00023056656263543005,
+          "cm_pitch_rms": 0.012528629844069702,
+          "mean_omega_times_cm_pitch": 0.0,
+          "torque_cost": {
+            "mean_signed_actuator_power_over_zero_drag_power": 0.0,
+            "mean_positive_only_actuator_power_over_zero_drag_power": 0.0,
+            "mean_abs_rotation_work_over_zero_drag_power": 0.0
+          }
+        },
+        "positive": {
+          "samples": 4801,
+          "window": [
+            102.0,
+            126.0
+          ],
+          "total_cd_mean": 2.2086486654629036,
+          "total_cd_block_means_6du": [
+            2.2232373664981666,
+            2.2099405810699166,
+            2.2025349432955,
+            2.198889903289842
+          ],
+          "front_cd_mean": 1.3909813933468027,
+          "rear_cd_mean": 0.8176672721161008,
+          "front_cl_mean": -0.00045099742041733204,
+          "rear_cl_mean": -0.9874433048256338,
+          "front_cl_fluctuation_rms": 0.3089246839708135,
+          "rear_cl_fluctuation_rms": 1.1576773262866513,
+          "total_cl_fluctuation_rms": 1.1962145017063075,
+          "omega_rms": 1.0,
+          "cm_pitch_mean": 0.09668813377690896,
+          "cm_pitch_rms": 0.09751121924383419,
+          "mean_omega_times_cm_pitch": 0.09668813377690896,
+          "torque_cost": {
+            "mean_signed_actuator_power_over_zero_drag_power": -0.04209893547722135,
+            "mean_positive_only_actuator_power_over_zero_drag_power": 0.0,
+            "mean_abs_rotation_work_over_zero_drag_power": 0.04209893547722135
+          }
+        },
+        "negative": {
+          "samples": 4801,
+          "window": [
+            102.0,
+            126.0
+          ],
+          "total_cd_mean": 2.20637106615353,
+          "total_cd_block_means_6du": [
+            2.2039796719819167,
+            2.2045763287841664,
+            2.2067834272529168,
+            2.2101416944049124
+          ],
+          "front_cd_mean": 1.390412442657988,
+          "rear_cd_mean": 0.8159586234955426,
+          "front_cl_mean": 0.029579231378989608,
+          "rear_cl_mean": 0.9990450440349862,
+          "front_cl_fluctuation_rms": 0.3089050803648586,
+          "rear_cl_fluctuation_rms": 1.1583780452992747,
+          "total_cl_fluctuation_rms": 1.1929491576193936,
+          "omega_rms": 1.0,
+          "cm_pitch_mean": -0.0960758524661133,
+          "cm_pitch_rms": 0.09692643736002551,
+          "mean_omega_times_cm_pitch": 0.0960758524661133,
+          "torque_cost": {
+            "mean_signed_actuator_power_over_zero_drag_power": -0.04183234235570584,
+            "mean_positive_only_actuator_power_over_zero_drag_power": 0.0,
+            "mean_abs_rotation_work_over_zero_drag_power": 0.04183234235570584
+          }
+        }
+      },
+      "comparisons": {
+        "positive": {
+          "total_drag_reduction": 0.03833330909340926,
+          "rear_cl_fluctuation_rms_ratio": 0.9708473185538776,
+          "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.8280862576698456,
+          "canonical_checks": {
+            "total_drag_reduction_at_least_2pct": true,
+            "rear_cl_fluctuation_rms_increase_at_most_5pct": true,
+            "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": false
+          },
+          "canonical_joint_check": false
+        },
+        "negative": {
+          "total_drag_reduction": 0.03932499755219698,
+          "rear_cl_fluctuation_rms_ratio": 0.9714349530864181,
+          "abs_rear_cl_mean_over_zero_fluctuation_rms": 0.8378156677102839,
+          "canonical_checks": {
+            "total_drag_reduction_at_least_2pct": true,
+            "rear_cl_fluctuation_rms_increase_at_most_5pct": true,
+            "rear_mean_lift_at_most_10pct_zero_fluctuation_rms": false
+          },
+          "canonical_joint_check": false
+        }
+      },
+      "solver_health": {
+        "zero": {
+          "steps": 7200,
+          "max_courant": 0.245227456,
+          "max_abs_global_continuity_per_step": 1.40345342e-12,
+          "solver_ended_cleanly": true
+        },
+        "positive": {
+          "steps": 7200,
+          "max_courant": 0.261011548,
+          "max_abs_global_continuity_per_step": 1.32607866e-12,
+          "solver_ended_cleanly": true
+        },
+        "negative": {
+          "steps": 7200,
+          "max_courant": 0.260584386,
+          "max_abs_global_continuity_per_step": 1.01133752e-12,
+          "solver_ended_cleanly": true
+        }
+      }
+    }
+  },
+  "robustness": {
+    "positive": {
+      "drag_reduction_phase_a": 0.036166316180053504,
+      "drag_reduction_phase_b": 0.03833330909340926,
+      "absolute_phase_difference_percentage_points": 0.21669929133557586,
+      "same_drag_reduction_sign": true,
+      "canonical_joint_pass_both_phases": false
+    },
+    "negative": {
+      "drag_reduction_phase_a": 0.04082947957855709,
+      "drag_reduction_phase_b": 0.03932499755219698,
+      "absolute_phase_difference_percentage_points": 0.150448202636011,
+      "same_drag_reduction_sign": true,
+      "canonical_joint_pass_both_phases": false
+    }
+  },
+  "torque_definition": "OpenFOAM CmPitch=M_fluid/(0.5*rho*U_inf^2*Aref*lRef); signed ideal actuator proxy=-omega*CmPitch/Cd_total_zero",
+  "torque_guard": "fluid-torque work proxy, not electrical motor power; positive-only assumes no regenerative recovery",
+  "torque_timeseries": "artifacts/tandem_cylinders/phase90_long_signed_robustness_20261003/rear_cylinder_torque_timeseries.csv",
+  "torque_timeseries_sha256": "90c0602762b77e51c4f489915effddab7e2e228b812e62e1dce1eed194d3dc88"
+}

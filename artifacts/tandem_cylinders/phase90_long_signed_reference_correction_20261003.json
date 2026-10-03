@@ -1,0 +1,17 @@
+{
+  "status": "PRE_RESULT_PROTOCOL_REFERENCE_CORRECTION",
+  "recorded_utc": "2026-10-03T04:20:33Z",
+  "original_predeclared_artifact": "artifacts/tandem_cylinders/phase90_long_signed_predeclared_20261003.json",
+  "error": "The phase-A case names used the landscape_long_val prefix even though the frozen phase-A window [92, 116] belongs to the matched 36-D/U landscape_val panel.",
+  "correct_phase_a_cases": [
+    "landscape_val_zero_20261003",
+    "landscape_val_p100_20261003",
+    "landscape_val_m100_20261003"
+  ],
+  "correct_phase_a_window": [92.0, 116.0],
+  "unchanged_phase_b_run_window": [90.0, 126.0],
+  "unchanged_phase_b_analysis_window": [102.0, 126.0],
+  "unchanged_actions": "zero and linear ramps to +1/-1 over the first 2 D/U, then hold",
+  "timing_guard": "Recorded while all three phase-B solvers were still running and before any phase-B force result was analyzed.",
+  "interpretation": "Administrative reference-name correction only; it does not change a CFD action, window, threshold, or result. The original predeclared artifact is retained unchanged."
+}
