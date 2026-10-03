@@ -1,0 +1,215 @@
+{
+  "status": "COMPLETE",
+  "scope": "forward+backward only; no optimizer, parameter update, checkpoint write, validation or frozen-test access",
+  "framework": "official NVIDIA PhysicsNeMo FNO",
+  "runtime": {
+    "physicsnemo_version": "2.2.2",
+    "torch_version": "2.13.0a0+8145d630e8.nv26.06",
+    "device_name": "NVIDIA GB10",
+    "device_total_gib": 121.69016647338867,
+    "pinned_container_image_id": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e"
+  },
+  "precision": "float32; AMP disabled to match current H20 training",
+  "rollout_steps": 20,
+  "model_fixed": {
+    "in_channels": 6,
+    "out_channels": 7,
+    "num_fno_layers": 5,
+    "decoder_layers": 2,
+    "decoder_layer_size": 128,
+    "padding": 8,
+    "coord_features": true
+  },
+  "model_variable": {
+    "num_fno_modes": "recorded per result; original three configurations remain [32, 32]"
+  },
+  "data": {
+    "root": "data/curated/tandem_cylinders_control_gap_v4",
+    "split": "train",
+    "trajectory_count": 28,
+    "trajectory_sha256": {
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_00.h5": "a838245c7075e09d2d62a1ef8c6d52181c468c58116de0509b939f15bcb4aa2d",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_01.h5": "cfe33fe84bdac4ba63190e48e4b1bfe4cb08307135f793cbd67bf4c35c7ce04d",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_02.h5": "a456325469a801cadeecc03fb648f43bda5f1b5e580ab41a994895677cf1faff",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_03.h5": "ab7aed22cce3fdc90efeed525cdd5ab47dcdf57160ea418d4bc1130763fbabc1",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_04.h5": "c61246233eaf5f10a6ce25892ddb5d87d04bf593797e633eefb0b4bcc5059cdc",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_05.h5": "56292c18fa1e5f146e86a51493775bf23d7d3b7f2ee2d22edfcd0f2db5cd8b7f",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_06.h5": "dc758aa7c8856ba85f8bf34986dad043f50fefa1939687140f6400dbe3f64648",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_07.h5": "a1e8c5fdee20dbd4715cfedb1c2121205f1138a4423c7cd353ab91a2ababef8f",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_08.h5": "1f2987b0a423533d9d020259c1f3ad1838ec89582444ab86a194e0d3d17d9297",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_09.h5": "e056863fb99dff7f4fd36058343422c6a1655095268e03e93eca21c220e9cd12",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_10.h5": "5c23e64b79a3e8d633a093049e7f4a130466fef9a401da570a12cfaf9af868ee",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_11.h5": "2ce159fa5f33d66c60d988e3787cd68d4d437e96b4f45798790061da04fd3305",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_12.h5": "f3e82a8196ea318e199fd0a1a34b3c33de06b18f4d783774128903ffd2a6c284",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_13.h5": "2d7081959aa28f2e781772f3a031cfc6553c5fecfb1b56156f03a25abe4449a8",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_14.h5": "7b4f324ca3ee5e7ed468322826906f28c472fb0e51b727adaf0262789b05963c",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_15.h5": "b6dfece324f322eccab0830818af5a6cf1b941af429ee61021730d73be1c76fe",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_16.h5": "7c30455446e0072a50564c2ffe39e1d0b9113ede77ebdd013e114f08be9db726",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_17.h5": "4d80e4051f8f2c5a23db440651c808e839d134930d2bf76caca1028fae646284",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_18.h5": "66f506b2e326c2773db01db00e85dc2b2f23c7b93becd060df3dde27c48a129f",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_19.h5": "718601fb050a18303cc9cefcf1f05b005f316b0f1cbd406bc6a738b9b2ef76d9",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_20.h5": "75026012397b85ea99354e9530a636cccd6ca4e1a770a99d2e18464d3e44704d",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_21.h5": "46c88f9c25955d97b9255f443e761400aeb904d8fa7cdd8e482ab4d66c456d7e",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_22.h5": "52f14c343d7f7e066067ac2df355fe5620556311bb2fd654a579c19a0395ed8c",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_23.h5": "964b898bfd0d09ac2229de00bc91e07619371880816c0cc19678fdee845750e3",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_24.h5": "eba3d88c6c5d4840388061f23dfd54da4c8728d9912d47d396a2f57197d795ae",
+      "data/curated/tandem_cylinders_control_gap_v4/train/expanded_train_25.h5": "d7c7004df8d0dc8b38f376ed0d8c2f6a5c0fe87c8453963e91285d584925768e",
+      "data/curated/tandem_cylinders_control_gap_v4/train/train_signed_pulse_m_v4_20261003.h5": "0b5db14440045b00e4999e15ae2a2dcc86e24c0bd7313b2c595c5dd31cbf8c0d",
+      "data/curated/tandem_cylinders_control_gap_v4/train/train_signed_pulse_p_v4_20261003.h5": "a8f962942d283dc5685632fa0498a710cab6663eed53a27ce357beb6171a2136"
+    },
+    "sample_indices": [
+      0,
+      3123,
+      6247,
+      9371,
+      12495,
+      15619,
+      18743,
+      21867
+    ],
+    "sample_metadata": [
+      {
+        "case": "expanded_train_00",
+        "step": 0,
+        "rollout_steps": 20,
+        "split": "train"
+      },
+      {
+        "case": "expanded_train_03",
+        "step": 780,
+        "rollout_steps": 20,
+        "split": "train"
+      },
+      {
+        "case": "expanded_train_07",
+        "step": 780,
+        "rollout_steps": 20,
+        "split": "train"
+      },
+      {
+        "case": "expanded_train_11",
+        "step": 780,
+        "rollout_steps": 20,
+        "split": "train"
+      },
+      {
+        "case": "expanded_train_15",
+        "step": 780,
+        "rollout_steps": 20,
+        "split": "train"
+      },
+      {
+        "case": "expanded_train_19",
+        "step": 780,
+        "rollout_steps": 20,
+        "split": "train"
+      },
+      {
+        "case": "expanded_train_23",
+        "step": 780,
+        "rollout_steps": 20,
+        "split": "train"
+      },
+      {
+        "case": "train_signed_pulse_p_v4_20261003",
+        "step": 780,
+        "rollout_steps": 20,
+        "split": "train"
+      }
+    ],
+    "real_data_guard": "TandemRolloutDataset reads normalized contiguous H20 windows from curated OpenFOAM HDF5"
+  },
+  "warmup_iterations": 1,
+  "timed_iterations": 2,
+  "minimum_mem_available_gib": 20.0,
+  "results": [
+    {
+      "name": "width48_batch4",
+      "latent_channels": 48,
+      "batch_size": 4,
+      "num_fno_modes": [
+        32,
+        32
+      ],
+      "mem_available_before_gib": 113.27024841308594,
+      "parameter_count": 47222783,
+      "status": "OK",
+      "timed_iterations": 2,
+      "elapsed_seconds": 2.876213015988469,
+      "sequences_per_second": 2.781435156411959,
+      "transitions_per_second": 55.62870312823918,
+      "peak_allocated_gib": 11.410980224609375,
+      "peak_reserved_gib": 11.751953125,
+      "min_mem_available_gib": 100.30339813232422,
+      "final_loss": 0.6617680191993713,
+      "error": null
+    },
+    {
+      "name": "width48_batch8",
+      "latent_channels": 48,
+      "batch_size": 8,
+      "num_fno_modes": [
+        32,
+        32
+      ],
+      "mem_available_before_gib": 111.6796646118164,
+      "parameter_count": 47222783,
+      "status": "OK",
+      "timed_iterations": 2,
+      "elapsed_seconds": 5.33771152398549,
+      "sequences_per_second": 2.9975392877832663,
+      "transitions_per_second": 59.95078575566533,
+      "peak_allocated_gib": 22.547889232635498,
+      "peak_reserved_gib": 23.248046875,
+      "min_mem_available_gib": 87.21602630615234,
+      "final_loss": 0.7294652462005615,
+      "error": null
+    },
+    {
+      "name": "width64_batch4",
+      "latent_channels": 64,
+      "batch_size": 4,
+      "num_fno_modes": [
+        32,
+        32
+      ],
+      "mem_available_before_gib": 110.29372787475586,
+      "parameter_count": 83935015,
+      "status": "OK",
+      "timed_iterations": 2,
+      "elapsed_seconds": 3.7888614000112284,
+      "sequences_per_second": 2.1114522690052193,
+      "transitions_per_second": 42.22904538010439,
+      "peak_allocated_gib": 13.646028995513916,
+      "peak_reserved_gib": 13.919921875,
+      "min_mem_available_gib": 96.95840072631836,
+      "final_loss": 0.6565483808517456,
+      "error": null
+    },
+    {
+      "name": "modes48_width48_batch4",
+      "latent_channels": 48,
+      "batch_size": 4,
+      "num_fno_modes": [
+        48,
+        48
+      ],
+      "mem_available_before_gib": 110.34488677978516,
+      "parameter_count": 106205183,
+      "status": "OK",
+      "timed_iterations": 2,
+      "elapsed_seconds": 3.4102720209921245,
+      "sequences_per_second": 2.345853923310382,
+      "transitions_per_second": 46.917078466207634,
+      "peak_allocated_gib": 11.988212585449219,
+      "peak_reserved_gib": 13.443359375,
+      "min_mem_available_gib": 97.4540023803711,
+      "final_loss": 0.5958014726638794,
+      "error": null
+    }
+  ],
+  "mem_available_after_gib": 110.18009185791016,
+  "checkpoint_write_count": 0,
+  "optimizer_created": false,
+  "frozen_test_status": "NOT_ACCESSED"
+}
