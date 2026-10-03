@@ -154,3 +154,13 @@ fluctuating Cl RMS by `+10.3%`; period 20 changes them by `-0.919%` and
 concrete baselines for a learned controller to beat, but only at one phase
 and one coarse mesh. It does not rescue the current FNO's failed action
 ranking or prove feedback benefit in advance.
+
+A retrospective audit of all **30 existing train/validation** v3 CFD
+trajectories at the same fixed late window found `0/30` meeting all three
+locked physical checks, although four lower total Cd by at least 2%; none
+of 30 meets the rear fluctuating-lift check. The five frozen test trajectories
+were excluded. See `EXISTING_OPEN_LOOP_COHORT_AUDIT_20261003.md`. This is
+evidence that the joint objective is nontrivial for the current open-loop
+cohort, not proof that feedback is necessary or sufficient. Keep the objective
+and its physical safety constraints; repair the surrogate's decision fidelity
+before any learned closed-loop success claim.
