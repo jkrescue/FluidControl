@@ -1,0 +1,28 @@
+{
+  "status": "MATCHED_START_FULL40_CURATOR_PARITY_PREDECLARED",
+  "case": "matched_start_acquisition_train_b00_m0375",
+  "scope": "single train-case infrastructure parity only; not physics validation or model evidence",
+  "spark_input": {
+    "vtk_manifest_sha256": "f8f8d426bde8b4a2a42de7516b0c0fa91ad1543ec827c01bb518429b6b5a2632",
+    "curator_environment": ".venv-curator-py312"
+  },
+  "worker_input": {
+    "vtk_manifest_sha256": "f8f8d426bde8b4a2a42de7516b0c0fa91ad1543ec827c01bb518429b6b5a2632",
+    "curator_image_id": "sha256:0f9007d6e62ba54f83ed7139ac378b251c8b5e6b27591f32919221fdc45ea991",
+    "network": "none",
+    "cpu_limit": 4,
+    "memory_limit_gib": 12
+  },
+  "acceptance": {
+    "frames": 801,
+    "time": "exactly equal",
+    "omega": "exactly equal",
+    "force": {"rtol": 0.0, "atol": 2e-6},
+    "x": "exactly equal",
+    "y": "exactly equal",
+    "mask": "bitwise equal",
+    "valid_state": {"max_abs_difference_at_most": 0.0001, "mae_at_most": 1e-6},
+    "hdf5_sha256": "record only; byte identity is not required"
+  },
+  "failure_policy": "fail closed; do not start batch curation or relax thresholds post hoc"
+}
