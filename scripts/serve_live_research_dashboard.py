@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import subprocess
 import threading
@@ -30,6 +31,15 @@ V3_H20_RUN = Path("artifacts/distributed_runs/gateb_aug_v3_rollout_h20_seed20261
 V3_PRIMARY_SEED_H20_RUN = Path("artifacts/distributed_runs/gateb_aug_v3_rollout_h20_seed20261002_dense_20261002/formal/tandem_fno_gate_b_aug_v3_rollout_h20_seed20261002_dense_10epoch")
 V3_H20_REAR_DRAG_RUN = Path("artifacts/distributed_runs/gateb_aug_v3_h20_rear_drag_seed20261002_20261003/formal/tandem_fno_gate_b_aug_v3_h20_rear_drag_seed20261002_10epoch")
 V4_H20_DEVELOPMENT_RUN = Path("artifacts/tandem_fno_control_gap_v4_h20_rear_drag_seed20261003_5epoch")
+V4_VALIDATION_DECISION = Path(
+    "artifacts/tandem_cylinders/control_gap_v4_validation_only_20261003/decision.json"
+)
+V4_WINDOW_MEAN_CD = Path(
+    "artifacts/tandem_cylinders/control_gap_v4_window_mean_cd_20261003.json"
+)
+TWO_PHASE_ALTERNATING = Path(
+    "artifacts/tandem_cylinders/two_phase_alternating_result_20261003/result.json"
+)
 OLD = Path("artifacts/tandem_fno_total_drag_spark_30epoch")
 SAMPLE_FILE = Path("artifacts/monitor/live_resource_samples.jsonl")
 HOST_COMMAND = (
@@ -51,7 +61,9 @@ HOST_COMMAND = (
     "printf '__V3_H20_REAR_DRAG_EPOCH__\\n'; "
     "jq -r 'length' /tmp/fluid_control_gateb_20261002/artifacts/tandem_fno_gate_b_aug_v3_h20_rear_drag_seed20261002_10epoch/training_history.json 2>/dev/null || true; "
     "printf '__V4_EPOCH__\\n'; "
-    "jq -r 'length' /home/USER/workspace/fluid_control_v4_compute_415a50f/project/artifacts/tandem_fno_control_gap_v4_10epoch_seed20261002/training_history.json 2>/dev/null || true"
+    "jq -r 'length' /home/USER/workspace/fluid_control_v4_compute_415a50f/project/artifacts/tandem_fno_control_gap_v4_10epoch_seed20261002/training_history.json 2>/dev/null || true; "
+    "printf '__V4_SINGLE_VALIDATION__\\n'; "
+    "jq -c '[.cases[].horizons[\"100\"] | {segments,total_drag_rmse,total_drag_target_rms}]' /home/USER/workspace/fluid_control_v4_compute_415a50f/project/artifacts/tandem_fno_control_gap_v4_10epoch_seed20261002/validation_evaluation.json 2>/dev/null || true"
 )
 PAGE = r'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -75,8 +87,9 @@ img{width:100%;height:auto;background:white;border-radius:4px}.row{display:flex;
 </style></head><body><main>
 <div class="top"><div><h1>串列双圆柱流动控制 · 实时进展</h1><div class="muted">目标：降低两圆柱总阻力，同时报告侧向载荷与动作代价</div></div><div class="stamp" id="clock">连接中…</div></div>
 <div class="banner" id="decision">读取阶段判定…</div>
+<h2>最新严格证据</h2><div class="summary"><div class="card"><span class="label">v4 验证集 · 第 100 步终点总阻力</span><b id="v4-terminal">—</b><span class="small" id="v4-terminal-detail">PhysicsNeMo FNO 对真实 CFD；冻结测试未访问</span></div><div class="card"><span class="label">v4 验证集 · 100 步窗口平均总阻力</span><b id="v4-window">—</b><span class="small" id="v4-window-detail">PhysicsNeMo FNO 对真实 CFD；等待独立窗口审计</span></div><div class="card"><span class="label">两相位交替旋转 · 真实 OpenFOAM CFD</span><b id="two-phase">—</b><span class="small" id="two-phase-detail">相位匹配零控制；不是代理预测</span></div><div class="card"><span class="label">三项联合状态</span><b id="joint-status">等待</b><span class="small" id="joint-detail">终点精度、窗口精度、两相位物理收益均须通过</span></div></div>
 <div class="small" id="watchdog">读取科研监控…</div>
-<div class="summary"><div class="card"><span class="label">100 步 CFD 终点阻力误差</span><b id="heldout">—</b><span class="small" id="heldout-scope">五工况合并；目标 ≤10%</span></div><div class="card"><span class="label">PhysicsNeMo FNO</span><b id="epoch">—</b><span class="small" id="second-seed">计算节点：读取中</span></div><div class="card"><span class="label">OpenFOAM CFD</span><b id="cfd-progress">—</b><span class="small" id="cfd-sub">新增 2 条训练、1 条独立测试轨迹</span></div><div class="card"><span class="label">HydroGym / PPO</span><b id="hydro-status">—</b><span class="small">等待可信代理和 CEM 控制筛选</span></div></div>
+<div class="summary"><div class="card"><span class="label">旧 v3 冻结测试 · 第 100 步终点参考</span><b id="heldout">—</b><span class="small" id="heldout-scope">旧模型历史证据，不代表 v4</span></div><div class="card"><span class="label">PhysicsNeMo FNO</span><b id="epoch">—</b><span class="small" id="second-seed">计算节点：读取中</span></div><div class="card"><span class="label">OpenFOAM CFD</span><b id="cfd-progress">—</b><span class="small" id="cfd-sub">真实 CFD 生成与审计</span></div><div class="card"><span class="label">HydroGym / PPO</span><b id="hydro-status">—</b><span class="small">等待可信代理和真实 CFD 联合门槛</span></div></div>
 <h2>真实 CFD 收益与代理决策是否一致</h2><div class="grid"><div class="card"><h3>配对长窗口 · t=120–160</h3><div class="number" id="physical-drag">读取中…</div><div class="small" id="physical-tradeoff">—</div><div class="small" id="periodic-detail">—</div><div class="small" id="cohort-detail">—</div><div class="small" id="feedback-detail">—</div></div><div class="card"><h3>最新 FNO 与 CFD 动作排序 · 100 步</h3><div class="number" id="ranking-score">读取中…</div><div class="small" id="ranking-detail">—</div><div class="small" id="crossphase-ranking">独立相位短窗口：等待审计。</div></div></div>
 <h2>两台 DGX Spark · 当前任务与算力</h2><div class="grid">
 <div class="card"><h3>主节点 · SPARK_HOST</h3><div class="task" id="primary-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="primary-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="primary-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="primary-mem">—</div></div></div><svg id="primary-chart" role="img" aria-label="主节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="primary-more"></div></div>
@@ -91,6 +104,25 @@ img{width:100%;height:auto;background:white;border-radius:4px}.row{display:flex;
 const $=x=>document.getElementById(x);let latest=null;
 function pct(x){return Number.isFinite(x)?(x*100).toFixed(2)+'%':'—'}
 function num(x,d=1){return Number.isFinite(x)?x.toFixed(d):'—'}
+function passText(value){return value===true?'PASS':value===false?'FAIL':'等待'}
+function dragEffect(value){return Number.isFinite(value)?(value>=0?`降阻 ${pct(value)}`:`增阻 ${pct(-value)}`):'—'}
+function renderLatestEvidence(d){
+ let decision=d.v4_validation_decision,terminal=decision?.candidate_terminal_100step,parentTerminal=decision?.v3_parent_terminal_100step;
+ let terminalValue=terminal?.pooled_total_drag_nrmse,terminalReady=decision?.split==='validation'&&Number.isFinite(terminalValue),terminalPass=terminalReady?decision.candidate_meets_fixed_threshold===true:null;
+ let workerSingle=d.resources?.worker?.at(-1)?.v4_single_validation_pooled_nrmse,singleNote=Number.isFinite(workerSingle)?`计算节点v4单步FNO参考为 ${pct(workerSingle)}（不是H20）。`:'';
+ $('v4-terminal').textContent=terminalReady?pct(terminalValue):'等待 H20 pooled';$('v4-terminal').className='number '+(terminalPass===true?'good':terminalPass===false?'bad':'');
+ $('v4-terminal-detail').textContent=terminalReady?`v4 H20验证集4条真实CFD；FNO第100步终点pooled NRMSE；macro ${pct(terminal.macro_total_drag_nrmse)}；v3 parent pooled ${pct(parentTerminal?.pooled_total_drag_nrmse)}，二者均未过10%，candidate ${decision.candidate_minus_parent_pooled_100step_nrmse<0?'改善':'未改善'}。${singleNote} 冻结测试未访问。`:`v4 H20 formal decision.json尚未生成；13.8187% macro只是初值，不能替代pooled判定。${singleNote} 冻结测试未访问。`;
+ let window=d.v4_window_mean_cd,windowValue=window?.pooled_window_mean_cd_nrmse,windowReady=window?.split==='validation'&&Number.isFinite(windowValue),windowPass=windowReady?(window.status==='PASS_VALIDATION_WINDOW_MEAN_CD'):null;
+ $('v4-window').textContent=windowReady?pct(windowValue):'等待正式报告';$('v4-window').className='number '+(windowPass===true?'good':windowPass===false?'bad':'');
+ $('v4-window-detail').textContent=windowReady?`v4 H20，验证集真实CFD对FNO；步骤1–100总Cd算术均值；macro ${pct(window.macro_window_mean_cd_nrmse)}，最差 ${pct(window.worst_case_window_mean_cd_nrmse)}。不是终点指标或控制收益。`:'窗口均值JSON尚未生成；与第100步终点指标分开展示。';
+ let physical=d.two_phase_alternating,phases=physical?.phases||{},t90=phases.t90?.comparison,t94=phases.t94?.comparison,physicalReady=physical?.status==='TWO_PHASE_ALTERNATING_OPENFOAM_AUDIT_COMPLETED'&&t90&&t94,physicalPass=physicalReady?physical.robustness?.canonical_joint_pass_both_phases===true:null;
+ $('two-phase').textContent=physicalReady?`t90 ${dragEffect(t90.total_drag_reduction)} · t94 ${dragEffect(t94.total_drag_reduction)}`:'等待真实 CFD';$('two-phase').className='number '+(physicalPass===true?'good':physicalPass===false?'bad':'');
+ $('two-phase-detail').textContent=physicalReady?`真实OpenFOAM CFD长窗口、各自相位匹配零控制；两相位联合 ${passText(physicalPass)}；后柱Cl′ RMS比 ${num(t90.rear_cl_fluctuation_rms_ratio,2)} / ${num(t94.rear_cl_fluctuation_rms_ratio,2)}。不是代理预测或闭环结果。`:'两相位OpenFOAM result.json尚未生成；不以代理结果代替。';
+ let ready=[terminalReady,windowReady,Boolean(physicalReady)],passes=[terminalPass,windowPass,physicalPass],readyCount=ready.filter(Boolean).length,passCount=passes.filter(x=>x===true).length,jointReady=readyCount===3,jointPass=jointReady&&passCount===3;
+ $('joint-status').textContent=jointReady?(jointPass?'PASS':'FAIL'):`等待 ${readyCount}/3`;$('joint-status').className='number '+(jointReady?(jointPass?'good':'bad'):'');
+ $('joint-detail').textContent=`终点精度 ${passText(terminalPass)} · 窗口均值精度 ${passText(windowPass)} · 两相位真实CFD联合收益 ${passText(physicalPass)}。这是展示层联合状态；v4冻结测试未访问。`;
+ $('decision').textContent=jointReady?`最新严格证据：三项联合 ${jointPass?'PASS':'FAIL'}。终点/窗口是v4 H20验证集上的代理预测误差；物理收益来自两相位真实OpenFOAM CFD；v4冻结测试未访问。`:`最新严格证据已到 ${readyCount}/3 项；尚不能给出联合结论。终点/窗口只读v4 H20验证集，两相位收益只认真实OpenFOAM CFD；冻结测试未访问。`;
+}
 function plot(id,series,ymax=100){const el=$(id),w=Math.max(300,el.clientWidth),h=el.clientHeight;
  el.setAttribute('viewBox',`0 0 ${w} ${h}`);let s=`<line x1="45" y1="${h-30}" x2="${w-12}" y2="${h-30}" stroke="#668096"/>`;
  for(let tick=0;tick<=4;tick++){let y=12+(h-42)*tick/4;s+=`<line x1="45" y1="${y}" x2="${w-12}" y2="${y}" stroke="#25374b"/><text x="39" y="${y+4}" text-anchor="end" fill="#9aafc4" font-size="11">${num(ymax*(1-tick/4),ymax<=1?2:0)}</text>`}
@@ -127,6 +159,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  let worker=d.resources.worker.at(-1)||{};$('second-seed').textContent=worker.v4_epoch>0||worker.tasks?.some(x=>x.includes('新数据训练'))?`计算节点：v4 真实 CFD 新数据 FNO ${worker.v4_epoch||0}/10 轮；可用统一内存 ${num(worker.mem_available_gib,1)} GiB`:`计算节点：20 步＋后柱阻力加权 ${worker.v3_h20_rear_drag_epoch||0}/10 轮已验收`;
  $('heldout-scope').textContent=strict?`五条冻结 CFD 测试合并误差；逐工况平均 ${pct(strict.macro_total_drag_nrmse)}；仅第 100 步瞬时阻力，窗口均值待测`:audited?`${picked.label}；v3 五条 CFD 测试，原始逐工况平均值` :Number.isFinite(preliminary)?`${picked.label}；v3 五条 CFD 测试初评，完整审计中`:'旧数据四条 CFD 测试；目标 ≤10%';
  $('decision').textContent=audited&&a.status==='GATE_B_PASS'?`${picked.label}已通过冻结的 100 步总阻力门槛（${pct(b)}）；下一步做 CEM 控制筛选，再用真实 CFD 验证。`:audited?`${picked.label}五工况 100 步总阻力误差 ${pct(b)}，未达到 10%；其他候选仍在训练或审计。CEM 与 PPO 暂不启动。`:Number.isFinite(preliminary)?`${picked.label}的 100 步五工况初评为 ${pct(b)}；动作扰动与独立相位审计未完成。CEM/PPO 暂不启动。`:`旧数据模型 100 步误差 ${pct(b)}，未达到 10%；v3 FNO 正在完成独立测试。CEM 与 PPO 暂不启动。`;
+ renderLatestEvidence(d);
  resources('primary',d.resources.primary);resources('worker',d.resources.worker);
  let trainHistory=v4primary.length?v4primary:d.history;$('train-title').textContent=v4primary.length?'v4 新数据 20 步 FNO：训练轮次 → 验证误差':'旧数据多步 FNO：训练轮次 → 验证误差';plot('train-chart',[{values:trainHistory.map(x=>x.terminal_state_mae),color:'#60c9fb'},{values:trainHistory.map(x=>x.terminal_force_mae),color:'#e9ae68'}],.05);
  let steps=['1','10','50','100'],v3series=[{result:d.v3_observed,color:'#60c9fb',label:'主节点单步'},{result:d.v3_worker_observed,color:'#79d5a3',label:'计算节点单步'},{result:d.v3_primary_rollout_observed,color:'#dc95e4',label:'主节点 10 步训练'},{result:d.v3_rollout_observed,color:'#e9ae68',label:'计算节点 10 步训练'},{result:d.v3_h20_observed,color:'#f49ab8',label:'计算节点种子 20 步训练'},{result:d.v3_rear_weighted_observed,color:'#97e1e4',label:'主节点后圆柱加权训练'},{result:d.v3_primary_seed_h20_observed,color:'#dce779',label:'主节点种子 20 步训练'},{result:d.v3_h20_rear_drag_observed,color:'#e66ac7',label:'20 步＋后柱阻力加权'}].filter(x=>x.result?.summary);
@@ -146,6 +179,34 @@ def _read_json(path: Path, fallback):
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return fallback
+
+
+def _latest_evidence(root: Path) -> dict:
+    """Load only finalized evidence; missing/incomplete artifacts remain explicit."""
+    return {
+        "v4_validation_decision": _read_json(root / V4_VALIDATION_DECISION, None),
+        "v4_window_mean_cd": _read_json(root / V4_WINDOW_MEAN_CD, None),
+        "two_phase_alternating": _read_json(root / TWO_PHASE_ALTERNATING, None),
+    }
+
+
+def _pooled_terminal_nrmse(rows: object) -> float | None:
+    if not isinstance(rows, list) or not rows:
+        return None
+    try:
+        numerator = sum(
+            int(row["segments"]) * float(row["total_drag_rmse"]) ** 2
+            for row in rows
+        )
+        denominator = sum(
+            int(row["segments"]) * float(row["total_drag_target_rms"]) ** 2
+            for row in rows
+        )
+    except (KeyError, TypeError, ValueError):
+        return None
+    if denominator <= 0 or not math.isfinite(numerator + denominator):
+        return None
+    return math.sqrt(numerator / denominator)
 
 
 def _host_output(worker: bool) -> str:
@@ -181,6 +242,7 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
     primary_h20_start = lines.index("__V3_PRIMARY_SEED_H20_EPOCH__")
     h20_rear_drag_start = lines.index("__V3_H20_REAR_DRAG_EPOCH__")
     v4_start = lines.index("__V4_EPOCH__")
+    v4_single_validation_start = lines.index("__V4_SINGLE_VALIDATION__")
     active = []
     for line in lines[task_start + 1 : epoch_start]:
         fields = line.split(None, 1)
@@ -222,7 +284,11 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
     primary_h20_epoch = int(lines[primary_h20_start + 1]) if len(lines) > primary_h20_start + 1 and lines[primary_h20_start + 1].isdigit() else 0
     h20_rear_drag_epoch = int(lines[h20_rear_drag_start + 1]) if len(lines) > h20_rear_drag_start + 1 and lines[h20_rear_drag_start + 1].isdigit() else 0
     v4_epoch = int(lines[v4_start + 1]) if len(lines) > v4_start + 1 and lines[v4_start + 1].isdigit() else 0
-    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae"), "v3_worker_epoch": v3_epoch, "v3_rollout_epoch": rollout_epoch, "v3_h20_epoch": h20_epoch, "v3_primary_seed_h20_epoch": primary_h20_epoch, "v3_h20_rear_drag_epoch": h20_rear_drag_epoch, "v4_epoch": v4_epoch}, (total, idle)
+    try:
+        v4_single_rows = json.loads(lines[v4_single_validation_start + 1])
+    except (IndexError, ValueError):
+        v4_single_rows = None
+    return {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae"), "v3_worker_epoch": v3_epoch, "v3_rollout_epoch": rollout_epoch, "v3_h20_epoch": h20_epoch, "v3_primary_seed_h20_epoch": primary_h20_epoch, "v3_h20_rear_drag_epoch": h20_rear_drag_epoch, "v4_epoch": v4_epoch, "v4_single_validation_pooled_nrmse": _pooled_terminal_nrmse(v4_single_rows)}, (total, idle)
 
 
 def _cfd_progress(root: Path) -> list[dict]:
@@ -393,6 +459,7 @@ class Handler(BaseHTTPRequestHandler):
             data["control_ranking_h20_rear_drag"] = _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_fno_ranking_h20_rear_drag_20261003.json", None)
             data["v4_h20_history"] = _read_json(self.root / V4_H20_DEVELOPMENT_RUN / "training_history.json", [])
             data["phase_feedback_pilots"] = [_read_json(self.root / "artifacts/tandem_cylinders" / name / "result.json", None) for name in ("phase_feedback_pair_k075_20261003", "phase_feedback_pair_k020_20261003", "phase_feedback_pair_k050_l15_20261003")]
+            data.update(_latest_evidence(self.root))
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
 

@@ -128,6 +128,19 @@ class WindowMeanCdTest(unittest.TestCase):
         self.assertIn("--min-free-gib 20", text)
         self.assertIn("--allocator-fraction 0.20", text)
 
+    def test_wrapper_parent_uses_own_training_normalization(self):
+        text = WRAPPER.read_text(encoding="utf-8")
+        self.assertIn('v3_parent)', text)
+        self.assertIn(
+            'normalization="data/curated/tandem_cylinders_gate_b_aug_v3"', text
+        )
+        self.assertIn(
+            'output="artifacts/tandem_cylinders/'
+            'control_gap_v4_window_mean_cd_v3_parent_20261003.json"',
+            text,
+        )
+        self.assertIn('--normalization-data "${normalization}"', text)
+
 
 if __name__ == "__main__":
     unittest.main()
