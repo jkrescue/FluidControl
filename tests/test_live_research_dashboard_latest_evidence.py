@@ -30,6 +30,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
             fixtures = {
                 MODULE.V4_VALIDATION_DECISION: {"split": "validation"},
                 MODULE.V4_WINDOW_MEAN_CD: {"metric": "window"},
+                MODULE.V3_PARENT_WINDOW_MEAN_CD: {"metric": "parent-window"},
                 MODULE.TWO_PHASE_ALTERNATING: {"status": "real-cfd"},
             }
             for relative, value in fixtures.items():
@@ -41,6 +42,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
                 {
                     "v4_validation_decision": {"split": "validation"},
                     "v4_window_mean_cd": {"metric": "window"},
+                    "v3_parent_window_mean_cd": {"metric": "parent-window"},
                     "two_phase_alternating": {"status": "real-cfd"},
                 },
             )
@@ -51,6 +53,7 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertEqual(set(result), {
             "v4_validation_decision",
             "v4_window_mean_cd",
+            "v3_parent_window_mean_cd",
             "two_phase_alternating",
         })
         self.assertTrue(all(value is None for value in result.values()))
@@ -68,6 +71,8 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
             self.assertIn(label, page)
         self.assertIn("candidate_terminal_100step", page)
         self.assertIn("pooled_window_mean_cd_nrmse", page)
+        self.assertIn("v3_parent_window_mean_cd", page)
+        self.assertIn("NO GAIN", page)
         self.assertIn("canonical_joint_pass_both_phases", page)
 
     def test_negative_drag_reduction_is_presented_as_increase(self) -> None:

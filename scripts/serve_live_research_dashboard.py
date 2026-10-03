@@ -20,7 +20,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
-
 RUN = Path("artifacts/distributed_runs/gateb_multistep_20261002/formal/tandem_fno_total_drag_rollout_seed20261003")
 SECOND_RUN = Path("artifacts/distributed_runs/gateb_multistep_seed20261004_20261002/formal/tandem_fno_total_drag_rollout_seed20261004")
 V3_WORKER_RUN = Path("artifacts/distributed_runs/gateb_aug_v3_seed20261005_20261002/formal/tandem_fno_gate_b_aug_v3_seed20261005_30epoch")
@@ -36,6 +35,9 @@ V4_VALIDATION_DECISION = Path(
 )
 V4_WINDOW_MEAN_CD = Path(
     "artifacts/tandem_cylinders/control_gap_v4_window_mean_cd_20261003.json"
+)
+V3_PARENT_WINDOW_MEAN_CD = Path(
+    "artifacts/tandem_cylinders/control_gap_v4_window_mean_cd_v3_parent_20261003.json"
 )
 TWO_PHASE_ALTERNATING = Path(
     "artifacts/tandem_cylinders/two_phase_alternating_result_20261003/result.json"
@@ -112,16 +114,16 @@ function renderLatestEvidence(d){
  let workerSingle=d.resources?.worker?.at(-1)?.v4_single_validation_pooled_nrmse,singleNote=Number.isFinite(workerSingle)?`计算节点v4单步FNO参考为 ${pct(workerSingle)}（不是H20）。`:'';
  $('v4-terminal').textContent=terminalReady?pct(terminalValue):'等待 H20 pooled';$('v4-terminal').className='number '+(terminalPass===true?'good':terminalPass===false?'bad':'');
  $('v4-terminal-detail').textContent=terminalReady?`v4 H20验证集4条真实CFD；FNO第100步终点pooled NRMSE；macro ${pct(terminal.macro_total_drag_nrmse)}；v3 parent pooled ${pct(parentTerminal?.pooled_total_drag_nrmse)}，二者均未过10%，candidate ${decision.candidate_minus_parent_pooled_100step_nrmse<0?'改善':'未改善'}。${singleNote} 冻结测试未访问。`:`v4 H20 formal decision.json尚未生成；13.8187% macro只是初值，不能替代pooled判定。${singleNote} 冻结测试未访问。`;
- let window=d.v4_window_mean_cd,windowValue=window?.pooled_window_mean_cd_nrmse,windowReady=window?.split==='validation'&&Number.isFinite(windowValue),windowPass=windowReady?(window.status==='PASS_VALIDATION_WINDOW_MEAN_CD'):null;
- $('v4-window').textContent=windowReady?pct(windowValue):'等待正式报告';$('v4-window').className='number '+(windowPass===true?'good':windowPass===false?'bad':'');
- $('v4-window-detail').textContent=windowReady?`v4 H20，验证集真实CFD对FNO；步骤1–100总Cd算术均值；macro ${pct(window.macro_window_mean_cd_nrmse)}，最差 ${pct(window.worst_case_window_mean_cd_nrmse)}。不是终点指标或控制收益。`:'窗口均值JSON尚未生成；与第100步终点指标分开展示。';
+ let window=d.v4_window_mean_cd,parentWindow=d.v3_parent_window_mean_cd,windowValue=window?.pooled_window_mean_cd_nrmse,parentWindowValue=parentWindow?.pooled_window_mean_cd_nrmse,windowReady=window?.split==='validation'&&Number.isFinite(windowValue),parentWindowReady=parentWindow?.split==='validation'&&Number.isFinite(parentWindowValue),windowPass=windowReady?(window.status==='PASS_VALIDATION_WINDOW_MEAN_CD'):null,windowGain=windowReady&&parentWindowReady?windowValue<parentWindowValue:null,windowDeltaPp=windowReady&&parentWindowReady?100*(windowValue-parentWindowValue):null;
+ $('v4-window').textContent=windowReady?`${pct(windowValue)}${parentWindowReady?` · ${windowGain?'GAIN':'NO GAIN'}`:''}`:'等待正式报告';$('v4-window').className='number '+(windowPass===false||windowGain===false?'bad':windowPass===true&&windowGain===true?'good':'');
+ $('v4-window-detail').textContent=windowReady?`v4 H20固定10%阈值 ${passText(windowPass)}；验证集真实CFD对FNO，步骤1–100总Cd算术均值。${parentWindowReady?`v3 parent ${pct(parentWindowValue)}，candidate ${windowGain?'改善':'退化'} ${num(Math.abs(windowDeltaPp),3)}个百分点；`: 'v3 parent对照尚未生成；'}macro ${pct(window.macro_window_mean_cd_nrmse)}，最差 ${pct(window.worst_case_window_mean_cd_nrmse)}。不是终点指标或控制收益。`:'窗口均值JSON尚未生成；与第100步终点指标分开展示。';
  let physical=d.two_phase_alternating,phases=physical?.phases||{},t90=phases.t90?.comparison,t94=phases.t94?.comparison,physicalReady=physical?.status==='TWO_PHASE_ALTERNATING_OPENFOAM_AUDIT_COMPLETED'&&t90&&t94,physicalPass=physicalReady?physical.robustness?.canonical_joint_pass_both_phases===true:null;
  $('two-phase').textContent=physicalReady?`t90 ${dragEffect(t90.total_drag_reduction)} · t94 ${dragEffect(t94.total_drag_reduction)}`:'等待真实 CFD';$('two-phase').className='number '+(physicalPass===true?'good':physicalPass===false?'bad':'');
  $('two-phase-detail').textContent=physicalReady?`真实OpenFOAM CFD长窗口、各自相位匹配零控制；两相位联合 ${passText(physicalPass)}；后柱Cl′ RMS比 ${num(t90.rear_cl_fluctuation_rms_ratio,2)} / ${num(t94.rear_cl_fluctuation_rms_ratio,2)}。不是代理预测或闭环结果。`:'两相位OpenFOAM result.json尚未生成；不以代理结果代替。';
  let ready=[terminalReady,windowReady,Boolean(physicalReady)],passes=[terminalPass,windowPass,physicalPass],readyCount=ready.filter(Boolean).length,passCount=passes.filter(x=>x===true).length,jointReady=readyCount===3,jointPass=jointReady&&passCount===3;
  $('joint-status').textContent=jointReady?(jointPass?'PASS':'FAIL'):`等待 ${readyCount}/3`;$('joint-status').className='number '+(jointReady?(jointPass?'good':'bad'):'');
- $('joint-detail').textContent=`终点精度 ${passText(terminalPass)} · 窗口均值精度 ${passText(windowPass)} · 两相位真实CFD联合收益 ${passText(physicalPass)}。这是展示层联合状态；v4冻结测试未访问。`;
- $('decision').textContent=jointReady?`最新严格证据：三项联合 ${jointPass?'PASS':'FAIL'}。终点/窗口是v4 H20验证集上的代理预测误差；物理收益来自两相位真实OpenFOAM CFD；v4冻结测试未访问。`:`最新严格证据已到 ${readyCount}/3 项；尚不能给出联合结论。终点/窗口只读v4 H20验证集，两相位收益只认真实OpenFOAM CFD；冻结测试未访问。`;
+ $('joint-detail').textContent=`终点精度 ${passText(terminalPass)} · 窗口固定阈值 ${passText(windowPass)}${parentWindowReady?`、相对parent ${windowGain?'GAIN':'NO GAIN'}`:''} · 两相位真实CFD联合收益 ${passText(physicalPass)}。这是展示层联合状态；v4冻结测试未访问。`;
+ $('decision').textContent=jointReady?`最新严格证据：三项联合 ${jointPass?'PASS':'FAIL'}。终点/窗口是v4 H20验证集上的代理预测误差${parentWindowReady?`；窗口虽过固定阈值但相对v3 parent为 ${windowGain?'GAIN':'NO GAIN'}`:''}；物理收益来自两相位真实OpenFOAM CFD；v4冻结测试未访问。`:`最新严格证据已到 ${readyCount}/3 项；尚不能给出联合结论。终点/窗口只读v4 H20验证集，两相位收益只认真实OpenFOAM CFD；冻结测试未访问。`;
 }
 function plot(id,series,ymax=100){const el=$(id),w=Math.max(300,el.clientWidth),h=el.clientHeight;
  el.setAttribute('viewBox',`0 0 ${w} ${h}`);let s=`<line x1="45" y1="${h-30}" x2="${w-12}" y2="${h-30}" stroke="#668096"/>`;
@@ -186,6 +188,9 @@ def _latest_evidence(root: Path) -> dict:
     return {
         "v4_validation_decision": _read_json(root / V4_VALIDATION_DECISION, None),
         "v4_window_mean_cd": _read_json(root / V4_WINDOW_MEAN_CD, None),
+        "v3_parent_window_mean_cd": _read_json(
+            root / V3_PARENT_WINDOW_MEAN_CD, None
+        ),
         "two_phase_alternating": _read_json(root / TWO_PHASE_ALTERNATING, None),
     }
 
@@ -403,7 +408,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def do_GET(self):  # noqa: N802
+    def do_GET(self):
         path = urlparse(self.path).path
         if path in ("/", "/index.html"):
             return self._send(PAGE.encode(), "text/html; charset=utf-8")
