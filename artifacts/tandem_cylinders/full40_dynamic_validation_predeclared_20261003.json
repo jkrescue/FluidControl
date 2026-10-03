@@ -1,0 +1,667 @@
+{
+  "status": "FULL40_DYNAMIC_VALIDATION_PREDECLARED_NOT_EXECUTED",
+  "scope": "real OpenFOAM time-varying-action validation at train-excluded b01/b05 phases",
+  "full40_predeclaration": "artifacts/tandem_cylinders/matched_start_full40_predeclared_20261003.json",
+  "full40_predeclaration_sha256": "d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b",
+  "phase_manifest_sha256": "6279492bd3a79eff868a4333e1f642e3be4a4d58a78e46dc47dde040e4e39603",
+  "frozen_test_accessed": false,
+  "matrix": {
+    "phase_bins": [
+      1,
+      5
+    ],
+    "profiles": [
+      "minus",
+      "zero",
+      "plus"
+    ],
+    "case_count": 6,
+    "duration_D_over_U": 20.0
+  },
+  "cases": {
+    "full40_dynamic_validation_b01_plus": {
+      "split": "validation",
+      "phase_bin": 1,
+      "profile": "plus",
+      "paired_zero": "full40_dynamic_validation_b01_zero",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 130.0,
+      "source_state_sha256": {
+        "U": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+        "U_0": "5491cc64a1d8af0157df371c156c5acebbbb19c6926e4d5cade38c5b798c8fae",
+        "p": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+        "phi": "e8f7b7b5e7cd1130556023cbd58d133edb6294447baf05af2311d3b29898918b",
+        "phi_0": "d835b6b83bece1967a622e51c978bf6146baba9f0c4780418ff31a1f7a40e281"
+      },
+      "action_points": [
+        [
+          130.0,
+          0.0
+        ],
+        [
+          130.8,
+          0.75
+        ],
+        [
+          132.0,
+          0.75
+        ],
+        [
+          133.5,
+          -0.75
+        ],
+        [
+          134.7,
+          -0.75
+        ],
+        [
+          135.5,
+          0.0
+        ],
+        [
+          136.5,
+          0.0
+        ],
+        [
+          136.9,
+          0.375
+        ],
+        [
+          138.0,
+          0.375
+        ],
+        [
+          138.8,
+          -0.375
+        ],
+        [
+          139.9,
+          -0.375
+        ],
+        [
+          140.3,
+          0.0
+        ],
+        [
+          141.5,
+          0.0
+        ],
+        [
+          142.3,
+          0.75
+        ],
+        [
+          143.5,
+          0.75
+        ],
+        [
+          145.0,
+          -0.75
+        ],
+        [
+          146.2,
+          -0.75
+        ],
+        [
+          147.0,
+          0.0
+        ],
+        [
+          150.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_delta_omega_per_0p1": 0.1,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        130.0,
+        150.0
+      ],
+      "fixed_force_windows_elapsed": [
+        [
+          0.0,
+          10.0
+        ],
+        [
+          10.0,
+          20.0
+        ],
+        [
+          0.0,
+          20.0
+        ]
+      ],
+      "horizon_start_frames": [
+        0,
+        20,
+        47,
+        65,
+        80,
+        100
+      ]
+    },
+    "full40_dynamic_validation_b01_minus": {
+      "split": "validation",
+      "phase_bin": 1,
+      "profile": "minus",
+      "paired_zero": "full40_dynamic_validation_b01_zero",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 130.0,
+      "source_state_sha256": {
+        "U": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+        "U_0": "5491cc64a1d8af0157df371c156c5acebbbb19c6926e4d5cade38c5b798c8fae",
+        "p": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+        "phi": "e8f7b7b5e7cd1130556023cbd58d133edb6294447baf05af2311d3b29898918b",
+        "phi_0": "d835b6b83bece1967a622e51c978bf6146baba9f0c4780418ff31a1f7a40e281"
+      },
+      "action_points": [
+        [
+          130.0,
+          -0.0
+        ],
+        [
+          130.8,
+          -0.75
+        ],
+        [
+          132.0,
+          -0.75
+        ],
+        [
+          133.5,
+          0.75
+        ],
+        [
+          134.7,
+          0.75
+        ],
+        [
+          135.5,
+          -0.0
+        ],
+        [
+          136.5,
+          -0.0
+        ],
+        [
+          136.9,
+          -0.375
+        ],
+        [
+          138.0,
+          -0.375
+        ],
+        [
+          138.8,
+          0.375
+        ],
+        [
+          139.9,
+          0.375
+        ],
+        [
+          140.3,
+          -0.0
+        ],
+        [
+          141.5,
+          -0.0
+        ],
+        [
+          142.3,
+          -0.75
+        ],
+        [
+          143.5,
+          -0.75
+        ],
+        [
+          145.0,
+          0.75
+        ],
+        [
+          146.2,
+          0.75
+        ],
+        [
+          147.0,
+          -0.0
+        ],
+        [
+          150.0,
+          -0.0
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_delta_omega_per_0p1": 0.1,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        130.0,
+        150.0
+      ],
+      "fixed_force_windows_elapsed": [
+        [
+          0.0,
+          10.0
+        ],
+        [
+          10.0,
+          20.0
+        ],
+        [
+          0.0,
+          20.0
+        ]
+      ],
+      "horizon_start_frames": [
+        0,
+        20,
+        47,
+        65,
+        80,
+        100
+      ]
+    },
+    "full40_dynamic_validation_b01_zero": {
+      "split": "validation",
+      "phase_bin": 1,
+      "profile": "zero",
+      "paired_zero": "full40_dynamic_validation_b01_zero",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 130.0,
+      "source_state_sha256": {
+        "U": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+        "U_0": "5491cc64a1d8af0157df371c156c5acebbbb19c6926e4d5cade38c5b798c8fae",
+        "p": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+        "phi": "e8f7b7b5e7cd1130556023cbd58d133edb6294447baf05af2311d3b29898918b",
+        "phi_0": "d835b6b83bece1967a622e51c978bf6146baba9f0c4780418ff31a1f7a40e281"
+      },
+      "action_points": [
+        [
+          130.0,
+          0.0
+        ],
+        [
+          150.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.0,
+        "max_abs_delta_omega_per_0p1": 0.0,
+        "max_abs_domega_dt": 0.0
+      },
+      "run_window": [
+        130.0,
+        150.0
+      ],
+      "fixed_force_windows_elapsed": [
+        [
+          0.0,
+          10.0
+        ],
+        [
+          10.0,
+          20.0
+        ],
+        [
+          0.0,
+          20.0
+        ]
+      ],
+      "horizon_start_frames": [
+        0,
+        20,
+        47,
+        65,
+        80,
+        100
+      ]
+    },
+    "full40_dynamic_validation_b05_plus": {
+      "split": "validation",
+      "phase_bin": 5,
+      "profile": "plus",
+      "paired_zero": "full40_dynamic_validation_b05_zero",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 102.0,
+      "source_state_sha256": {
+        "U": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+        "U_0": "64ee5cc617280ea1ffc7bc3896c4a412d7643d6b677d03c0bf54d446fda12bd8",
+        "p": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+        "phi": "7c849fa6400aca978da7d35886d6a90918dfe081aa15bbb6ffbba92f9985d1bf",
+        "phi_0": "37c7acbf30a76e1c04262ab06d08a0ee27eae109cec9d2f1e6d51e849dae4405"
+      },
+      "action_points": [
+        [
+          102.0,
+          0.0
+        ],
+        [
+          102.8,
+          0.75
+        ],
+        [
+          104.0,
+          0.75
+        ],
+        [
+          105.5,
+          -0.75
+        ],
+        [
+          106.7,
+          -0.75
+        ],
+        [
+          107.5,
+          0.0
+        ],
+        [
+          108.5,
+          0.0
+        ],
+        [
+          108.9,
+          0.375
+        ],
+        [
+          110.0,
+          0.375
+        ],
+        [
+          110.8,
+          -0.375
+        ],
+        [
+          111.9,
+          -0.375
+        ],
+        [
+          112.3,
+          0.0
+        ],
+        [
+          113.5,
+          0.0
+        ],
+        [
+          114.3,
+          0.75
+        ],
+        [
+          115.5,
+          0.75
+        ],
+        [
+          117.0,
+          -0.75
+        ],
+        [
+          118.2,
+          -0.75
+        ],
+        [
+          119.0,
+          0.0
+        ],
+        [
+          122.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_delta_omega_per_0p1": 0.1,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        102.0,
+        122.0
+      ],
+      "fixed_force_windows_elapsed": [
+        [
+          0.0,
+          10.0
+        ],
+        [
+          10.0,
+          20.0
+        ],
+        [
+          0.0,
+          20.0
+        ]
+      ],
+      "horizon_start_frames": [
+        0,
+        20,
+        47,
+        65,
+        80,
+        100
+      ]
+    },
+    "full40_dynamic_validation_b05_minus": {
+      "split": "validation",
+      "phase_bin": 5,
+      "profile": "minus",
+      "paired_zero": "full40_dynamic_validation_b05_zero",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 102.0,
+      "source_state_sha256": {
+        "U": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+        "U_0": "64ee5cc617280ea1ffc7bc3896c4a412d7643d6b677d03c0bf54d446fda12bd8",
+        "p": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+        "phi": "7c849fa6400aca978da7d35886d6a90918dfe081aa15bbb6ffbba92f9985d1bf",
+        "phi_0": "37c7acbf30a76e1c04262ab06d08a0ee27eae109cec9d2f1e6d51e849dae4405"
+      },
+      "action_points": [
+        [
+          102.0,
+          -0.0
+        ],
+        [
+          102.8,
+          -0.75
+        ],
+        [
+          104.0,
+          -0.75
+        ],
+        [
+          105.5,
+          0.75
+        ],
+        [
+          106.7,
+          0.75
+        ],
+        [
+          107.5,
+          -0.0
+        ],
+        [
+          108.5,
+          -0.0
+        ],
+        [
+          108.9,
+          -0.375
+        ],
+        [
+          110.0,
+          -0.375
+        ],
+        [
+          110.8,
+          0.375
+        ],
+        [
+          111.9,
+          0.375
+        ],
+        [
+          112.3,
+          -0.0
+        ],
+        [
+          113.5,
+          -0.0
+        ],
+        [
+          114.3,
+          -0.75
+        ],
+        [
+          115.5,
+          -0.75
+        ],
+        [
+          117.0,
+          0.75
+        ],
+        [
+          118.2,
+          0.75
+        ],
+        [
+          119.0,
+          -0.0
+        ],
+        [
+          122.0,
+          -0.0
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_delta_omega_per_0p1": 0.1,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        102.0,
+        122.0
+      ],
+      "fixed_force_windows_elapsed": [
+        [
+          0.0,
+          10.0
+        ],
+        [
+          10.0,
+          20.0
+        ],
+        [
+          0.0,
+          20.0
+        ]
+      ],
+      "horizon_start_frames": [
+        0,
+        20,
+        47,
+        65,
+        80,
+        100
+      ]
+    },
+    "full40_dynamic_validation_b05_zero": {
+      "split": "validation",
+      "phase_bin": 5,
+      "profile": "zero",
+      "paired_zero": "full40_dynamic_validation_b05_zero",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 102.0,
+      "source_state_sha256": {
+        "U": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+        "U_0": "64ee5cc617280ea1ffc7bc3896c4a412d7643d6b677d03c0bf54d446fda12bd8",
+        "p": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+        "phi": "7c849fa6400aca978da7d35886d6a90918dfe081aa15bbb6ffbba92f9985d1bf",
+        "phi_0": "37c7acbf30a76e1c04262ab06d08a0ee27eae109cec9d2f1e6d51e849dae4405"
+      },
+      "action_points": [
+        [
+          102.0,
+          0.0
+        ],
+        [
+          122.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.0,
+        "max_abs_delta_omega_per_0p1": 0.0,
+        "max_abs_domega_dt": 0.0
+      },
+      "run_window": [
+        102.0,
+        122.0
+      ],
+      "fixed_force_windows_elapsed": [
+        [
+          0.0,
+          10.0
+        ],
+        [
+          10.0,
+          20.0
+        ],
+        [
+          0.0,
+          20.0
+        ]
+      ],
+      "horizon_start_frames": [
+        0,
+        20,
+        47,
+        65,
+        80,
+        100
+      ]
+    }
+  },
+  "solver_contract": {
+    "image": "opencfd/openfoam-default@sha256:33fb575aa9980d2bc42fd58c75ae698c489293ba30c991380fe3f899c622f319",
+    "delta_t": 0.005,
+    "field_write_interval": 0.1,
+    "force_write_interval": 0.005,
+    "expected_solver_steps": 4000,
+    "expected_field_frames": 201,
+    "expected_raw_force_samples": 4000
+  },
+  "fno_validation_contract": {
+    "horizons_frames": [
+      1,
+      10,
+      50,
+      100
+    ],
+    "strict_counterfactual_pairs": "only start_frame=0 within each phase",
+    "later_starts": "matched elapsed time but action-diverged states; diagnostic only",
+    "force_channels": [
+      "front_cd",
+      "front_cl",
+      "rear_cd",
+      "rear_cl"
+    ],
+    "terminal_total_cd_pooled_nrmse_max": 0.1,
+    "strict_start0_delta_total_cd_mae_max": 0.023,
+    "fixed_window_total_cd_ranking": "report exact order for minus/zero/plus at both phases",
+    "interpretation": "development validation only; not a formal frozen-test Gate or PPO benefit claim"
+  },
+  "execution_guards": {
+    "one_case_per_invocation": true,
+    "existing_case_or_output_refused": true,
+    "minimum_MemAvailable_GiB": 40,
+    "do_not_run_with_Curator_or_training": true,
+    "approval_token_required": "GENERATE_REVIEWED_FULL40_DYNAMIC_VALIDATION"
+  }
+}
