@@ -45,3 +45,37 @@ python3 -m unittest tests.test_control_landscape_long_analysis
 python3 cfd/tandem_cylinders/analyze_control_landscape_long_panel.py \
   --output artifacts/tandem_cylinders/control_landscape_long_result_20261003.json
 ```
+
+## Completed CFD result (2026-10-03 UTC)
+
+All three OpenFOAM runs ended cleanly. The analyzer checked 801 field snapshots
+and 16,000 force rows per case, identical restart `U/p` hashes, Courant below
+0.261, and maximum per-step global continuity below `1.6e-12`. The result is
+`artifacts/tandem_cylinders/control_landscape_long_result_20261003.json`
+(SHA-256 `db09d044c5dab57cf581977ee73c15b3b64c69dea3e7ec94a6fa231fa30ea8b0`).
+
+| Rear `omega` | Total mean Cd | Change vs paired zero | Front mean Cd | Rear mean Cd | Rear mean Cl | Rear fluctuating Cl RMS | Rear total Cl RMS ratio |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 | 2.299313 | — | 1.39126 | 0.90805 | -0.08005 | 1.17904 | 1.000 |
+| +1 | 2.192260 | -4.656% | 1.39106 | 0.80120 | -1.06594 | 1.14280 | 1.322 |
+| -1 | 2.218997 | -3.493% | 1.39049 | 0.82850 | +0.91422 | 1.14436 | 1.239 |
+
+The total-drag reduction comes almost entirely from the rear cylinder; the
+front-cylinder mean Cd is nearly unchanged. It appears in all six paired
+non-overlapping drag blocks for each controlled case: `+1` ranges from
+`-3.75%` to `-5.23%`, while `-1` ranges from `-4.32%` to `-3.03%`. These
+blocks are correlated time segments, **not** six independent CFD replications
+or a confidence interval. Their trends mean long-run stationarity is not yet
+established.
+
+The fluctuating rear Cl RMS is about 3% below the paired baseline in this
+particular ramp-start, late-window panel. But mean lateral lift is large, so
+the rear total RMS including its mean rises 24–32%, and mean absolute Cl rises
+10–21%. This is a drag/side-load trade-off, not an unqualified improvement.
+The earlier constant-rotation `t=80..160` pilot reported *higher* fluctuating
+Cl RMS at `omega=±1` (~1.517); it used a different action onset and averaging
+window. We do not treat the discrepancy as resolved. Before any lift claim,
+run a matched onset/window replication and inspect cycle-to-cycle statistics.
+These cases have only a coarse-grid check at other conditions, no measured
+wall torque, and no policy feedback. They justify studying a Pareto-constrained
+controller, not claiming one has been achieved.

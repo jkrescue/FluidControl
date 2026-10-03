@@ -104,3 +104,23 @@ never drive acquisition or hyperparameter selection.
    from a training/validation restart. Its actions, solver settings, and
    analysis windows must be fixed before solving. This is for feasibility
    and model ranking, not a claim of a learned policy.
+
+## Update: independent paired-action CFD check
+
+The predeclared long validation-only OpenFOAM panel has completed and passed
+solver/data QC (see `CONTROL_LANDSCAPE_LONG_CFD_20261003.md`). Relative to an
+identical zero-rotation restart, `omega=+1/-1` lowered system-total mean Cd
+by 4.66%/3.49% over `t=120..160`. The reduction is in rear-cylinder Cd,
+whereas front-cylinder mean Cd is nearly unchanged. All six paired drag
+blocks favor the rotating case, but the block trends warn against assuming
+statistical stationarity. This supplies a **physical open-loop feasibility
+signal**, not a learned closed-loop result.
+
+Crucially, rear-cylinder total Cl RMS (including the nonzero mean side load)
+rose by 32%/24%; rear mean absolute Cl rose 21%/10%. The late-window
+fluctuating Cl RMS fell only ~3%, in tension with an earlier constant-rotation
+pilot that found substantially higher fluctuations. Action onset and window
+differ, so neither result establishes a universal lift effect. The research
+target remains *system total drag subject to explicit side-load and effort
+constraints*, with a Pareto-frontier fallback. Do not hide the side-load cost
+inside a single reward or describe the open-loop result as a closed-loop gain.
