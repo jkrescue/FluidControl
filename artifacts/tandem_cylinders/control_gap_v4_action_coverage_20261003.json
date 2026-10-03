@@ -1,0 +1,475 @@
+{
+  "status": "CONTROL_GAP_V4_ACTION_COVERAGE_AUDIT",
+  "profile": "control_gap_v4",
+  "source_manifest": "/workspace/fluid_control/data/curated/tandem_cylinders_control_gap_v4/manifest.json",
+  "source_manifest_sha256": "903dbf80e0c4b831698ece27775f3fdb65a204ad122cc7e28fef8320bcd5de24",
+  "read_contract": {
+    "hdf5_dataset_read": "omega only",
+    "audited_splits": [
+      "train",
+      "validation"
+    ],
+    "excluded_split": "test/frozen test was not enumerated or opened",
+    "flow_fields_read": false
+  },
+  "target_control_range": {
+    "definition": "abs(omega) <= 0.75",
+    "inclusive_boundary": true
+  },
+  "splits": {
+    "train": {
+      "trajectory_count": 28,
+      "frame_count": 22428,
+      "target_range_abs_omega_le_0p75": {
+        "frame_count": 4960,
+        "frame_fraction": 0.22115213126449082,
+        "entirely_target_range_trajectory_count": 0,
+        "majority_target_range_trajectory_count": 2
+      },
+      "frame_fraction_abs_omega_le_threshold": {
+        "0.375": 0.13135366506153023,
+        "0.75": 0.22115213126449082,
+        "1.0": 0.27858034599607634,
+        "2.0": 0.5275102550383449
+      },
+      "frame_fraction_abs_omega_gt_2": 0.4724897449616551,
+      "abs_omega_quantiles": {
+        "0.0": 0.0,
+        "0.25": 0.899993896484375,
+        "0.5": 1.959997534751892,
+        "0.75": 3.17471843957901,
+        "0.9": 4.44000244140625,
+        "0.95": 5.0,
+        "1.0": 5.0
+      },
+      "trajectories": [
+        {
+          "file": "expanded_train_00.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 2.160003662109375,
+          "target_range_frame_count": 165,
+          "target_range_frame_fraction": 0.20599250936329588,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_01.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 1.55999755859375,
+          "target_range_frame_count": 236,
+          "target_range_frame_fraction": 0.29463171036204744,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_02.h5",
+          "frame_count": 801,
+          "min_omega": -4.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 1.4600006341934204,
+          "target_range_frame_count": 198,
+          "target_range_frame_fraction": 0.24719101123595505,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_03.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 1.5,
+          "target_range_frame_count": 213,
+          "target_range_frame_fraction": 0.26591760299625467,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_04.h5",
+          "frame_count": 801,
+          "min_omega": -4.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 2.1999969482421875,
+          "target_range_frame_count": 99,
+          "target_range_frame_fraction": 0.12359550561797752,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_05.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 1.7199981212615967,
+          "target_range_frame_count": 217,
+          "target_range_frame_fraction": 0.27091136079900124,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_06.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 2.760009765625,
+          "target_range_frame_count": 115,
+          "target_range_frame_fraction": 0.14357053682896379,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_07.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 2.359999179840088,
+          "target_range_frame_count": 117,
+          "target_range_frame_fraction": 0.14606741573033707,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_08.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 3.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 1.6400024890899658,
+          "target_range_frame_count": 157,
+          "target_range_frame_fraction": 0.19600499375780275,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_09.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 1.6800018548965454,
+          "target_range_frame_count": 215,
+          "target_range_frame_fraction": 0.26841448189762795,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_10.h5",
+          "frame_count": 801,
+          "min_omega": -3.437525749206543,
+          "max_omega": 2.2833473682403564,
+          "max_abs_omega": 3.437525749206543,
+          "median_abs_omega": 1.6399195194244385,
+          "target_range_frame_count": 129,
+          "target_range_frame_fraction": 0.16104868913857678,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_11.h5",
+          "frame_count": 801,
+          "min_omega": -3.9539568424224854,
+          "max_omega": 4.078887939453125,
+          "max_abs_omega": 4.078887939453125,
+          "median_abs_omega": 1.962821125984192,
+          "target_range_frame_count": 75,
+          "target_range_frame_fraction": 0.09363295880149813,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_12.h5",
+          "frame_count": 801,
+          "min_omega": -4.218668460845947,
+          "max_omega": 4.275641918182373,
+          "max_abs_omega": 4.275641918182373,
+          "median_abs_omega": 2.0446901321411133,
+          "target_range_frame_count": 140,
+          "target_range_frame_fraction": 0.17478152309612985,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_13.h5",
+          "frame_count": 801,
+          "min_omega": -3.779357433319092,
+          "max_omega": 2.7983365058898926,
+          "max_abs_omega": 3.779357433319092,
+          "median_abs_omega": 1.5566112995147705,
+          "target_range_frame_count": 167,
+          "target_range_frame_fraction": 0.20848938826466917,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_14.h5",
+          "frame_count": 801,
+          "min_omega": -3.9659423828125,
+          "max_omega": 3.871884822845459,
+          "max_abs_omega": 3.9659423828125,
+          "median_abs_omega": 2.0320241451263428,
+          "target_range_frame_count": 127,
+          "target_range_frame_fraction": 0.1585518102372035,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_15.h5",
+          "frame_count": 801,
+          "min_omega": -3.646611213684082,
+          "max_omega": 3.7758357524871826,
+          "max_abs_omega": 3.7758357524871826,
+          "median_abs_omega": 1.873096227645874,
+          "target_range_frame_count": 69,
+          "target_range_frame_fraction": 0.08614232209737828,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_16.h5",
+          "frame_count": 801,
+          "min_omega": -4.429137229919434,
+          "max_omega": 4.471843719482422,
+          "max_abs_omega": 4.471843719482422,
+          "median_abs_omega": 2.1416537761688232,
+          "target_range_frame_count": 150,
+          "target_range_frame_fraction": 0.18726591760299627,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_17.h5",
+          "frame_count": 801,
+          "min_omega": -4.697603702545166,
+          "max_omega": 4.812102794647217,
+          "max_abs_omega": 4.812102794647217,
+          "median_abs_omega": 2.1668589115142822,
+          "target_range_frame_count": 124,
+          "target_range_frame_fraction": 0.15480649188514356,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_18.h5",
+          "frame_count": 801,
+          "min_omega": -4.635815143585205,
+          "max_omega": 4.726439952850342,
+          "max_abs_omega": 4.726439952850342,
+          "median_abs_omega": 2.2891080379486084,
+          "target_range_frame_count": 121,
+          "target_range_frame_fraction": 0.15106117353308365,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_19.h5",
+          "frame_count": 801,
+          "min_omega": -4.666123867034912,
+          "max_omega": 4.583901882171631,
+          "max_abs_omega": 4.666123867034912,
+          "median_abs_omega": 2.3598904609680176,
+          "target_range_frame_count": 118,
+          "target_range_frame_fraction": 0.14731585518102372,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_20.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 4.0,
+          "target_range_frame_count": 161,
+          "target_range_frame_fraction": 0.2009987515605493,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_21.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 3.0,
+          "target_range_frame_count": 107,
+          "target_range_frame_fraction": 0.13358302122347065,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_22.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 2.5,
+          "target_range_frame_count": 104,
+          "target_range_frame_fraction": 0.12983770287141075,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_23.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 2.5,
+          "target_range_frame_count": 104,
+          "target_range_frame_fraction": 0.12983770287141075,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_24.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 4.0,
+          "target_range_frame_count": 152,
+          "target_range_frame_fraction": 0.18976279650436953,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_train_25.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 4.0,
+          "target_range_frame_count": 158,
+          "target_range_frame_fraction": 0.1972534332084894,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "train_signed_pulse_m_v4_20261003.h5",
+          "frame_count": 801,
+          "min_omega": -1.25,
+          "max_omega": 0.0,
+          "max_abs_omega": 1.25,
+          "median_abs_omega": 0.4499988555908203,
+          "target_range_frame_count": 611,
+          "target_range_frame_fraction": 0.762796504369538,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": true
+        },
+        {
+          "file": "train_signed_pulse_p_v4_20261003.h5",
+          "frame_count": 801,
+          "min_omega": 0.0,
+          "max_omega": 1.25,
+          "max_abs_omega": 1.25,
+          "median_abs_omega": 0.4499988555908203,
+          "target_range_frame_count": 611,
+          "target_range_frame_fraction": 0.762796504369538,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": true
+        }
+      ]
+    },
+    "validation": {
+      "trajectory_count": 4,
+      "frame_count": 3204,
+      "target_range_abs_omega_le_0p75": {
+        "frame_count": 606,
+        "frame_fraction": 0.1891385767790262,
+        "entirely_target_range_trajectory_count": 0,
+        "majority_target_range_trajectory_count": 0
+      },
+      "frame_fraction_abs_omega_le_threshold": {
+        "0.375": 0.11485642946317104,
+        "0.75": 0.1891385767790262,
+        "1.0": 0.23377028714107365,
+        "2.0": 0.47752808988764045
+      },
+      "frame_fraction_abs_omega_gt_2": 0.5224719101123596,
+      "abs_omega_quantiles": {
+        "0.0": 0.0,
+        "0.25": 1.0845150649547577,
+        "0.5": 2.102534294128418,
+        "0.75": 3.3799986839294434,
+        "0.9": 4.333343505859375,
+        "0.95": 5.0,
+        "1.0": 5.0
+      },
+      "trajectories": [
+        {
+          "file": "expanded_validation_00.h5",
+          "frame_count": 801,
+          "min_omega": -4.5,
+          "max_omega": 4.5,
+          "max_abs_omega": 4.5,
+          "median_abs_omega": 2.140002489089966,
+          "target_range_frame_count": 144,
+          "target_range_frame_fraction": 0.1797752808988764,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_validation_01.h5",
+          "frame_count": 801,
+          "min_omega": -3.5344598293304443,
+          "max_omega": 3.4025793075561523,
+          "max_abs_omega": 3.5344598293304443,
+          "median_abs_omega": 1.629219651222229,
+          "target_range_frame_count": 194,
+          "target_range_frame_fraction": 0.2421972534332085,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_validation_02.h5",
+          "frame_count": 801,
+          "min_omega": -4.4541239738464355,
+          "max_omega": 4.516624450683594,
+          "max_abs_omega": 4.516624450683594,
+          "median_abs_omega": 2.3381540775299072,
+          "target_range_frame_count": 115,
+          "target_range_frame_fraction": 0.14357053682896379,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        },
+        {
+          "file": "expanded_validation_04.h5",
+          "frame_count": 801,
+          "min_omega": -5.0,
+          "max_omega": 5.0,
+          "max_abs_omega": 5.0,
+          "median_abs_omega": 4.0,
+          "target_range_frame_count": 153,
+          "target_range_frame_fraction": 0.19101123595505617,
+          "entire_trajectory_within_target_range": false,
+          "majority_frames_within_target_range": false
+        }
+      ]
+    }
+  },
+  "key_findings": {
+    "train_target_range_frame_fraction": 0.22115213126449082,
+    "train_entirely_target_range_trajectory_count": 0,
+    "validation_target_range_frame_fraction": 0.1891385767790262,
+    "validation_entirely_target_range_trajectory_count": 0
+  },
+  "scientific_limitations": [
+    "Coverage mismatch is evidence of an action-distribution gap, but by itself does not prove that the gap caused any particular prediction error.",
+    "Frames within a trajectory are temporally correlated; frame fractions are not counts of independent training examples.",
+    "Low-action frames inside high-amplitude trajectories do not replace trajectories whose full action history remains in the target range.",
+    "This audit measures omega coverage only; it does not measure state, wake phase, force-response, or action-history coverage.",
+    "No frozen-test data, flow-field tensors, retraining, or model selection was performed."
+  ],
+  "interpretation": "Use this as a dataset-design diagnostic. Targeted matched-start low-action train and independent validation trajectories are needed before making low-action surrogate or closed-loop accuracy claims."
+}
