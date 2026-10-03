@@ -93,6 +93,10 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("不是训练结果或控制收益", page)
         self.assertIn("RAW 已回传验收", page)
         self.assertIn("RAW 待回传验收", page)
+        self.assertIn("VTK_READY 801帧", page)
+        self.assertIn("HDF staging 完成", page)
+        self.assertIn("Curator 实际任务", page)
+        self.assertIn("HDF 完成不等于模型已训练", page)
 
     def test_matched_start_progress_uses_solver_time_and_end_marker(self) -> None:
         lines = [
@@ -165,6 +169,58 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
             rows["matched_start_acquisition_train_b02_zero"][
                 "raw_transfer_verified"
             ]
+        )
+
+    def test_pipeline_status_reads_markers_and_path_metadata_only(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            ready_case = "matched_start_acquisition_train_b00_zero"
+            writing_case = "matched_start_acquisition_train_b00_p075"
+            started_case = "matched_start_acquisition_train_b00_m075"
+            conflict_case = "matched_start_acquisition_train_b02_zero"
+            marker_dir = root / MODULE.MATCHED_START_VTK_READY
+            marker_dir.mkdir(parents=True)
+            (marker_dir / f"{ready_case}.json").write_text(
+                json.dumps(
+                    {"status": "VTK_READY", "case": ready_case, "frames": 801}
+                ),
+                encoding="utf-8",
+            )
+            (marker_dir / f"{writing_case}.json").write_text(
+                json.dumps(
+                    {"status": "VTK_READY", "case": "wrong-case", "frames": 801}
+                ),
+                encoding="utf-8",
+            )
+
+            def staging(case: str) -> Path:
+                path = root / MODULE.MATCHED_START_STAGING / case / "train"
+                path.mkdir(parents=True)
+                return path
+
+            (staging(ready_case) / f"{ready_case}.h5").touch()
+            (staging(writing_case) / f"{writing_case}.h5.tmp").touch()
+            conflict = staging(conflict_case)
+            (conflict / f"{conflict_case}.h5").touch()
+            (conflict / f"{conflict_case}.h5.tmp").touch()
+            logs = root / MODULE.MATCHED_START_CURATOR_LOGS
+            logs.mkdir(parents=True)
+            (logs / f"{started_case}.log").write_text("started\n", encoding="utf-8")
+            rows = {
+                row["case"]: row for row in MODULE._matched_start_pipeline_status(root)
+            }
+        self.assertTrue(rows[ready_case]["vtk_ready"])
+        self.assertEqual(rows[ready_case]["hdf_staging_status"], "complete")
+        self.assertFalse(rows[writing_case]["vtk_ready"])
+        self.assertFalse(rows[writing_case]["vtk_checks"]["case"])
+        self.assertEqual(rows[writing_case]["hdf_staging_status"], "writing")
+        self.assertEqual(rows[started_case]["hdf_staging_status"], "started")
+        self.assertEqual(rows[conflict_case]["hdf_staging_status"], "conflict")
+        self.assertEqual(
+            rows["matched_start_acquisition_train_b02_p075"][
+                "hdf_staging_status"
+            ],
+            "pending",
         )
 
     def test_only_canonical_low_action_audit_is_loaded(self) -> None:

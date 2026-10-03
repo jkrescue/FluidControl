@@ -64,6 +64,11 @@ MATCHED_START_PHASE_MANIFEST_SHA256 = (
     "6279492bd3a79eff868a4333e1f642e3be4a4d58a78e46dc47dde040e4e39603"
 )
 MATCHED_START_RECEIPTS = Path("artifacts/matched_start_acquisition/transfer_verified")
+MATCHED_START_VTK_READY = Path("artifacts/matched_start_acquisition/vtk_ready")
+MATCHED_START_CURATOR_LOGS = Path("artifacts/matched_start_acquisition/curator_logs")
+MATCHED_START_STAGING = (
+    Path("data/curated/.staging") / "matched_start_commissioning_train9_v1"
+)
 MATCHED_START_CASES = {
     "matched_start_acquisition_train_b00_zero": ("b00 · zero", 148.0),
     "matched_start_acquisition_train_b00_p075": ("b00 · +0.75", 148.0),
@@ -136,7 +141,7 @@ img{width:100%;height:auto;background:white;border-radius:4px}.row{display:flex;
 <div class="card"><h3>主节点 · SPARK_HOST</h3><div class="task" id="primary-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="primary-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="primary-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="primary-mem">—</div></div></div><svg id="primary-chart" role="img" aria-label="主节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="primary-more"></div></div>
 <div class="card"><h3>计算节点 · WORKER_HOST</h3><div class="task" id="worker-task">读取中…</div><div class="resources"><div><div class="label">GPU 计算利用率</div><div class="number" id="worker-gpu">—</div></div><div><div class="label">CPU 利用率</div><div class="number" id="worker-cpu">—</div></div><div><div class="label">可用统一内存</div><div class="number" id="worker-mem">—</div></div></div><svg id="worker-chart" role="img" aria-label="计算节点 GPU 与 CPU 利用率历史"></svg><div class="small" id="worker-more"></div></div>
 </div><div class="legend"><span><i class="sw" style="background:#60c9fb"></i>GPU</span><span><i class="sw" style="background:#e9ae68"></i>CPU</span><span>GB10 采用统一内存；训练保护线：至少剩余 20 GiB。</span></div>
-<h2>Matched-start 九案 commissioning</h2><div class="card"><div class="row"><div><div class="number" id="matched-summary">等待真实采样…</div><div class="small">真实 OpenFOAM 求解进度；不是训练结果或控制收益。</div></div><div class="small" id="matched-resource">读取 Worker CPU / 内存与 Spark GPU…</div></div><div class="casegrid" id="matched-cases"></div><div class="small">“求解完成”仅表示日志出现 <code>End</code>；在 RAW_TRANSFER_VERIFIED 前不表示原始文件已回传验收。</div></div>
+<h2>Matched-start 九案 commissioning</h2><div class="card"><div class="row"><div><div class="number" id="matched-summary">等待真实采样…</div><div class="small">真实 OpenFOAM / RAW / VTK / HDF staging 状态；不是训练结果或控制收益。</div></div><div class="small" id="matched-resource">读取 Worker CPU / 内存与 Spark GPU…</div></div><div class="casegrid" id="matched-cases"></div><div class="small">求解 <code>End</code>、RAW_TRANSFER_VERIFIED、VTK_READY 和 staging HDF 是四个独立门槛；模型训练尚未由此 commissioning 启动，HDF 完成不等于模型已训练。</div></div>
 <h2>FNO 训练和推理结果</h2><div class="grid"><div class="card"><h3 id="train-title">FNO：训练轮次 → 预测误差</h3><svg class="tall" id="train-chart" role="img" aria-label="多步训练验证误差"></svg><div class="small">蓝：流场平均绝对误差；橙：四个受力系数平均绝对误差。数值来自验证数据。</div></div><div class="card"><h3 id="error-title">递推步数 → 总阻力预测误差</h3><svg class="tall" id="error-chart" role="img" aria-label="不同预测步长的总阻力误差"></svg><div class="small" id="error-legend">读取评估结果…</div></div></div>
 <div class="small" id="v3-metrics" style="margin-top:8px">正在读取新数据 FNO 训练指标…</div><div class="small" id="infer-speed" style="margin-top:4px">正在读取 FNO 推理耗时…</div>
 <h2>真实流场 / FNO 预测 / 误差</h2><div class="card"><div class="row"><div class="small" id="figure-label">读取图片…</div><div><select id="case"><option value="expanded_test_00">测试 00</option><option value="expanded_test_01">测试 01</option><option value="expanded_test_02">测试 02</option><option value="expanded_test_04">测试 04</option><option value="expanded_test_05">新测试 05</option></select> <select id="horizon"><option value="001">1 步</option><option value="010">10 步</option><option value="050">50 步</option><option value="100" selected>100 步</option></select></div></div><img id="flow" alt="真实 OpenFOAM 流场、FNO 预测、误差对照"></div>
@@ -181,14 +186,14 @@ function resources(name,items){let last=items.at(-1);if(!last)return;
  $(name+'-task').textContent=last.tasks?.length?`${last.tasks.join('、')} ${last.task_count>1?'×'+last.task_count:''}`:(name==='worker'&&last.second_seed_epoch>=10?'10 轮训练已完成；模型在主节点接受独立测试':'当前无计算任务');
  $(name+'-more').textContent=`采样时间 ${last.time} · GPU ${num(last.temp_c,0)}°C${name==='primary'&&Number.isFinite(last.cuda_free_gib)?` · CUDA 当前可直接分配 ${num(last.cuda_free_gib,1)} GiB（不同于上方可回收内存）`:''}`;
  plot(name+'-chart',[{values:items.map(x=>x.gpu),color:'#60c9fb'},{values:items.map(x=>x.cpu),color:'#e9ae68'}])}
-function renderMatchedStart(d){let worker=d.resources?.worker?.at(-1)||{},primary=d.resources?.primary?.at(-1)||{},rows=worker.matched_start||[],receipts=Object.fromEntries((d.matched_start_transfer||[]).map(x=>[x.case,x]));
+function renderMatchedStart(d){let worker=d.resources?.worker?.at(-1)||{},primary=d.resources?.primary?.at(-1)||{},rows=worker.matched_start||[],receipts=Object.fromEntries((d.matched_start_transfer||[]).map(x=>[x.case,x])),pipeline=Object.fromEntries((d.matched_start_pipeline||[]).map(x=>[x.case,x]));
  if(!rows.length){$('matched-summary').textContent='等待 Worker 真实采样';$('matched-cases').textContent='';return}
  let counts={complete:0,running:0,pending:0,stopped_incomplete:0};rows.forEach(x=>counts[x.status]=(counts[x.status]||0)+1);
- let verified=rows.filter(x=>receipts[x.case]?.raw_transfer_verified===true).length;
- $('matched-summary').textContent=`${counts.complete}/9 求解完成 · ${counts.running}/9 运行中 · ${verified}/9 RAW 已验收`;
- $('matched-resource').textContent=`Worker 整机 CPU ${num(worker.cpu,1)}% · 可用内存 ${num(worker.mem_available_gib,1)} GiB；Spark GPU ${num(primary.gpu,0)}% · 可用统一内存 ${num(primary.mem_available_gib,1)} GiB（均为实时采样）`;
+ let verified=rows.filter(x=>receipts[x.case]?.raw_transfer_verified===true).length,vtkReady=rows.filter(x=>pipeline[x.case]?.vtk_ready===true).length,hdfReady=rows.filter(x=>pipeline[x.case]?.hdf_staging_status==='complete').length;
+ $('matched-summary').textContent=`${counts.complete}/9 求解 · ${verified}/9 RAW · ${vtkReady}/9 VTK · ${hdfReady}/9 HDF`;
+ $('matched-resource').textContent=`Curator 实际任务 ${primary.matched_start_curator_tasks||0} · Worker 整机 CPU ${num(worker.cpu,1)}% / 可用 ${num(worker.mem_available_gib,1)} GiB · Spark GPU ${num(primary.gpu,0)}% / 可用 ${num(primary.mem_available_gib,1)} GiB`;
  const state={complete:'求解完成',running:'运行中',pending:'待启动',stopped_incomplete:'异常停止/待核查'};
- $('matched-cases').innerHTML=rows.map(x=>{let accepted=receipts[x.case]?.raw_transfer_verified===true;return `<div class="caseitem"><b>${x.label}</b><span class="${x.status==='complete'?'good':x.status==='stopped_incomplete'?'bad':''}">${state[x.status]||'状态未知'}</span><div>${x.iteration}/16000 · ${num(100*x.iteration/16000,1)}%</div><div class="${accepted?'good':''}">${accepted?'RAW 已回传验收':'RAW 待回传验收'}</div><div class="bar"><i style="width:${Math.min(100,100*x.iteration/16000)}%"></i></div></div>`}).join('');}
+ $('matched-cases').innerHTML=rows.map(x=>{let accepted=receipts[x.case]?.raw_transfer_verified===true,p=pipeline[x.case]||{},hdf=p.hdf_staging_status||'pending',hdfText={complete:'HDF staging 完成',writing:'HDF staging 写入中',started:'Curator 已启动',conflict:'HDF staging 冲突',pending:'HDF staging 待处理'}[hdf]||'HDF staging 状态未知';return `<div class="caseitem"><b>${x.label}</b><span class="${x.status==='complete'?'good':x.status==='stopped_incomplete'?'bad':''}">${state[x.status]||'状态未知'}</span><div>${x.iteration}/16000 · ${num(100*x.iteration/16000,1)}%</div><div class="${accepted?'good':''}">${accepted?'RAW 已回传验收':'RAW 待回传验收'}</div><div class="${p.vtk_ready?'good':''}">${p.vtk_ready?'VTK_READY 801帧':'VTK 待验证'}</div><div class="${hdf==='complete'?'good':hdf==='conflict'?'bad':''}">${hdfText}</div><div class="bar"><i style="width:${Math.min(100,100*x.iteration/16000)}%"></i></div></div>`}).join('');}
 function figure(){if(!latest)return;let key=$('case').value+'/'+$('horizon').value;let found=latest.figures[key];if(found){$('flow').src=found.path+'?v='+found.version;$('flow').hidden=false;$('figure-label').textContent=found.label}else{$('flow').hidden=true;$('figure-label').textContent='该工况暂无导出的对照图'}}
 function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' · 页面每 5 秒更新';let candidates=[{label:'20 步＋后柱阻力加权训练',audit:d.v3_h20_rear_drag_audit,observed:d.v3_h20_rear_drag_observed},{label:'主节点种子 20 步训练',audit:d.v3_primary_seed_h20_audit,observed:d.v3_primary_seed_h20_observed},{label:'主节点后圆柱加权训练',audit:d.v3_rear_weighted_audit,observed:d.v3_rear_weighted_observed},{label:'计算节点种子 20 步训练',audit:d.v3_h20_audit,observed:d.v3_h20_observed},{label:'主节点 10 步训练',audit:d.v3_primary_rollout_audit,observed:d.v3_primary_rollout_observed},{label:'计算节点 10 步训练',audit:d.v3_rollout_audit,observed:d.v3_rollout_observed},{label:'主节点单步训练',audit:d.v3_audit,observed:d.v3_observed},{label:'计算节点单步训练',audit:d.v3_worker_audit,observed:d.v3_worker_observed}];let picked=candidates.find(x=>x.audit?.status==='GATE_B_PASS')||candidates.find(x=>x.observed)||candidates.find(x=>x.audit);let audited=picked?.audit,a=audited||d.audit,c=a?.checks||{};
  let long=d.control_landscape_long?.cases||[],zero=long.find(x=>x.omega_final===0),plus=long.find(x=>x.omega_final===1),minus=long.find(x=>x.omega_final===-1);
@@ -424,6 +429,50 @@ def _matched_start_transfer_receipts(root: Path) -> list[dict]:
     return rows
 
 
+def _matched_start_pipeline_status(root: Path) -> list[dict]:
+    """Read small markers and path metadata without opening VTK or HDF5 data."""
+    rows = []
+    for case, (label, _) in MATCHED_START_CASES.items():
+        vtk_path = root / MATCHED_START_VTK_READY / f"{case}.json"
+        vtk = _read_json(vtk_path, None)
+        vtk_checks = {
+            "status": isinstance(vtk, dict) and vtk.get("status") == "VTK_READY",
+            "case": isinstance(vtk, dict) and vtk.get("case") == case,
+            "frames": isinstance(vtk, dict) and vtk.get("frames") == 801,
+        }
+        staging = root / MATCHED_START_STAGING / case / "train"
+        hdf = staging / f"{case}.h5"
+        temporary = staging / f"{case}.h5.tmp"
+        log = root / MATCHED_START_CURATOR_LOGS / f"{case}.log"
+        hdf_exists = hdf.is_file()
+        temporary_exists = temporary.exists()
+        if hdf_exists and temporary_exists:
+            hdf_status = "conflict"
+        elif hdf_exists:
+            hdf_status = "complete"
+        elif temporary_exists:
+            hdf_status = "writing"
+        elif log.is_file():
+            hdf_status = "started"
+        else:
+            hdf_status = "pending"
+        rows.append(
+            {
+                "case": case,
+                "label": label,
+                "vtk_ready": all(vtk_checks.values()),
+                "vtk_checks": vtk_checks,
+                "vtk_marker_path": str(MATCHED_START_VTK_READY / f"{case}.json"),
+                "hdf_staging_status": hdf_status,
+                "hdf_staging_path": str(
+                    MATCHED_START_STAGING / case / "train" / f"{case}.h5"
+                ),
+                "curator_log_exists": log.is_file(),
+            }
+        )
+    return rows
+
+
 def _parse_host(output: str, previous: tuple[int, int] | None):
     lines = output.strip().splitlines()
     cpu = [int(x) for x in lines[0].split()[1:]]
@@ -441,6 +490,7 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
     v4_start = lines.index("__V4_EPOCH__")
     v4_single_validation_start = lines.index("__V4_SINGLE_VALIDATION__")
     active = []
+    matched_start_curator_tasks = 0
     for line in lines[task_start + 1 : epoch_start]:
         fields = line.split(None, 1)
         if len(fields) != 2:
@@ -465,6 +515,11 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
                 active.append("CEM 控制筛选")
             elif "curate_tandem_cfd.py" in args:
                 active.append("PhysicsNeMo Curator 数据整理")
+            elif "curate_low_action_phase94_validation.py" in args and (
+                "matched_start_commissioning_train9_v1" in args
+            ):
+                active.append("Matched-start Curator 数据整理")
+                matched_start_curator_tasks += 1
     try:
         second_seed = json.loads(lines[epoch_start + 1])
         if not isinstance(second_seed, dict) or not isinstance(second_seed.get("epoch"), int):
@@ -485,7 +540,7 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
         v4_single_rows = json.loads(lines[v4_single_validation_start + 1])
     except (IndexError, ValueError):
         v4_single_rows = None
-    return {"time": datetime.now(UTC).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae"), "v3_worker_epoch": v3_epoch, "v3_rollout_epoch": rollout_epoch, "v3_h20_epoch": h20_epoch, "v3_primary_seed_h20_epoch": primary_h20_epoch, "v3_h20_rear_drag_epoch": h20_rear_drag_epoch, "v4_epoch": v4_epoch, "v4_single_validation_pooled_nrmse": _pooled_terminal_nrmse(v4_single_rows), "matched_start": _matched_start_progress(lines)}, (total, idle)
+    return {"time": datetime.now(UTC).isoformat(timespec="seconds"), "cpu": usage, "gpu": gpu[0], "temp_c": gpu[1], "power_w": gpu[2], "mem_available_gib": memory["MemAvailable"] / 1024**2, "mem_total_gib": memory["MemTotal"] / 1024**2, "tasks": sorted(set(active)), "task_count": len(active), "matched_start_curator_tasks": matched_start_curator_tasks, "second_seed_epoch": second_seed.get("epoch", 0), "second_seed_force_mae": second_seed.get("rollout_force_mae"), "v3_worker_epoch": v3_epoch, "v3_rollout_epoch": rollout_epoch, "v3_h20_epoch": h20_epoch, "v3_primary_seed_h20_epoch": primary_h20_epoch, "v3_h20_rear_drag_epoch": h20_rear_drag_epoch, "v4_epoch": v4_epoch, "v4_single_validation_pooled_nrmse": _pooled_terminal_nrmse(v4_single_rows), "matched_start": _matched_start_progress(lines)}, (total, idle)
 
 
 def _cfd_progress(root: Path) -> list[dict]:
@@ -641,6 +696,9 @@ class Handler(BaseHTTPRequestHandler):
             data = {"server_time": datetime.now(UTC).isoformat(timespec="seconds"), "watchdog": _read_json(self.root / "artifacts/monitor/research_window_20261002/latest.json", None), "audit": audit, "v3_audit": _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/gate_b_audit.json", None), "v3_worker_audit": _read_json(self.root / V3_WORKER_RUN / "gate_b_audit.json", None), "v3_primary_rollout_audit": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "gate_b_audit.json", None), "v3_rollout_audit": _read_json(self.root / V3_ROLLOUT_RUN / "gate_b_audit.json", None), "v3_h20_audit": _read_json(self.root / V3_H20_RUN / "gate_b_audit.json", None), "v3_observed": _read_json(self.root / "artifacts/tandem_fno_gate_b_aug_v3_30epoch/heldout_evaluation.json", None), "v3_worker_observed": _read_json(self.root / V3_WORKER_RUN / "heldout_evaluation.json", None), "v3_primary_rollout_observed": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "heldout_evaluation.json", None), "v3_rollout_observed": _read_json(self.root / V3_ROLLOUT_RUN / "heldout_evaluation.json", None), "v3_primary_rollout_validation": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "validation_long_horizon.json", None), "v3_rollout_validation": _read_json(self.root / V3_ROLLOUT_RUN / "validation_long_horizon.json", None), "v3_h20_observed": _read_json(self.root / V3_H20_RUN / "heldout_evaluation.json", None), "history": history, "v3_training": v3_training, "v3_primary_rollout_history": _read_json(self.root / V3_PRIMARY_ROLLOUT_RUN / "training_history.json", []), "second_seed": _read_json(self.root / SECOND_RUN / "heldout_evaluation.json", None), "evaluations": {"heldout": heldout.get("summary", {}), "independent": independent.get("summary", {})}, "resources": samples, "cfd": _cfd_progress(self.root), "curator": _curator_progress(self.root), "benchmark": _read_json(self.root / "artifacts/monitor/fno_inference_benchmark_seed20261003.json", None), "control_landscape_long": _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_long_result_20261003.json", None), "periodic_benchmark": _read_json(self.root / "artifacts/tandem_cylinders/periodic_rotation_benchmark_result_20261003.json", None), "control_ranking": _read_json(self.root / "artifacts/tandem_cylinders/control_landscape_fno_ranking_h20_20261003.json", None), "figures": figures, "cem": (self.root / "artifacts/distributed_runs/gateb_multistep_20261002/formal/CEM_STAGE_C_COMPLETE").exists(), "ppo": False}
             data["v4_curator"] = _v4_curator_progress(self.root)
             data["matched_start_transfer"] = _matched_start_transfer_receipts(
+                self.root
+            )
+            data["matched_start_pipeline"] = _matched_start_pipeline_status(
                 self.root
             )
             data["gate_b_metric_integrity"] = _read_json(self.root / "artifacts/tandem_cylinders/gate_b_metric_integrity_v3_h20_rear_drag_test_v2_20261003.json", None)

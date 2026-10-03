@@ -1,0 +1,615 @@
+{
+  "status": "MATCHED_START_9_CASE_COMMISSIONING_QC_PASS",
+  "scope": "solver/data-pipeline commissioning only; not training or physical control evidence",
+  "phase_manifest": "artifacts/tandem_cylinders/matched_start_phase_restart_predeclared_v3_20261003.json",
+  "phase_manifest_sha256": "6279492bd3a79eff868a4333e1f642e3be4a4d58a78e46dc47dde040e4e39603",
+  "cases": [
+    {
+      "case": "matched_start_acquisition_train_b00_m075",
+      "phase_bin": 0,
+      "action_target": -0.75,
+      "source_restart_time": 148.0,
+      "source_state_sha256": {
+        "U": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+        "U_0": "6257e54018d03d01d01876e24d511d9c7af5b5caa2318d5da73628d233dec8c0",
+        "p": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+        "phi": "b331ed8547306f874c3de07f0cb2aaefaf7ea59b1d46a2a7cb61b4d45b444215",
+        "phi_0": "be1e19fa6e71200fe57a0d2ba253907ecebbd8d6caf196fd32f7d711969effd9"
+      },
+      "field_frames": 801,
+      "raw_solver_force_samples": 16000,
+      "aligned_force_samples": 16001,
+      "source_force_provenance": {
+        "forceFront": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat",
+          "sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+          "source_t0_row": [
+            148.0,
+            1.401871395,
+            0.6787245418,
+            0.7231468535,
+            0.4442231168,
+            0.2250347638,
+            0.219188353,
+            0.002923205384,
+            -0.02221115584,
+            0.07009356976,
+            -1.873191142e-19,
+            0.07009356976,
+            -0.07009356976
+          ]
+        },
+        "forceRear": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat",
+          "sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+          "source_t0_row": [
+            148.0,
+            1.075239016,
+            0.5314845977,
+            0.5437544186,
+            0.1226982093,
+            0.06641550409,
+            0.05628270516,
+            0.005066399468,
+            -0.006134910463,
+            0.05376195082,
+            -2.918596648e-19,
+            0.05376195082,
+            -0.05376195082
+          ]
+        }
+      },
+      "solver_health": {
+        "steps": 16000,
+        "max_courant": 0.249149766,
+        "max_abs_global_continuity_per_step": 1.22724439e-12,
+        "solver_ended_cleanly": true
+      }
+    },
+    {
+      "case": "matched_start_acquisition_train_b00_zero",
+      "phase_bin": 0,
+      "action_target": 0.0,
+      "source_restart_time": 148.0,
+      "source_state_sha256": {
+        "U": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+        "U_0": "6257e54018d03d01d01876e24d511d9c7af5b5caa2318d5da73628d233dec8c0",
+        "p": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+        "phi": "b331ed8547306f874c3de07f0cb2aaefaf7ea59b1d46a2a7cb61b4d45b444215",
+        "phi_0": "be1e19fa6e71200fe57a0d2ba253907ecebbd8d6caf196fd32f7d711969effd9"
+      },
+      "field_frames": 801,
+      "raw_solver_force_samples": 16000,
+      "aligned_force_samples": 16001,
+      "source_force_provenance": {
+        "forceFront": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat",
+          "sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+          "source_t0_row": [
+            148.0,
+            1.401871395,
+            0.6787245418,
+            0.7231468535,
+            0.4442231168,
+            0.2250347638,
+            0.219188353,
+            0.002923205384,
+            -0.02221115584,
+            0.07009356976,
+            -1.873191142e-19,
+            0.07009356976,
+            -0.07009356976
+          ]
+        },
+        "forceRear": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat",
+          "sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+          "source_t0_row": [
+            148.0,
+            1.075239016,
+            0.5314845977,
+            0.5437544186,
+            0.1226982093,
+            0.06641550409,
+            0.05628270516,
+            0.005066399468,
+            -0.006134910463,
+            0.05376195082,
+            -2.918596648e-19,
+            0.05376195082,
+            -0.05376195082
+          ]
+        }
+      },
+      "solver_health": {
+        "steps": 16000,
+        "max_courant": 0.24522487,
+        "max_abs_global_continuity_per_step": 7.44823089e-13,
+        "solver_ended_cleanly": true
+      }
+    },
+    {
+      "case": "matched_start_acquisition_train_b00_p075",
+      "phase_bin": 0,
+      "action_target": 0.75,
+      "source_restart_time": 148.0,
+      "source_state_sha256": {
+        "U": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+        "U_0": "6257e54018d03d01d01876e24d511d9c7af5b5caa2318d5da73628d233dec8c0",
+        "p": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+        "phi": "b331ed8547306f874c3de07f0cb2aaefaf7ea59b1d46a2a7cb61b4d45b444215",
+        "phi_0": "be1e19fa6e71200fe57a0d2ba253907ecebbd8d6caf196fd32f7d711969effd9"
+      },
+      "field_frames": 801,
+      "raw_solver_force_samples": 16000,
+      "aligned_force_samples": 16001,
+      "source_force_provenance": {
+        "forceFront": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat",
+          "sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+          "source_t0_row": [
+            148.0,
+            1.401871395,
+            0.6787245418,
+            0.7231468535,
+            0.4442231168,
+            0.2250347638,
+            0.219188353,
+            0.002923205384,
+            -0.02221115584,
+            0.07009356976,
+            -1.873191142e-19,
+            0.07009356976,
+            -0.07009356976
+          ]
+        },
+        "forceRear": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat",
+          "sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+          "source_t0_row": [
+            148.0,
+            1.075239016,
+            0.5314845977,
+            0.5437544186,
+            0.1226982093,
+            0.06641550409,
+            0.05628270516,
+            0.005066399468,
+            -0.006134910463,
+            0.05376195082,
+            -2.918596648e-19,
+            0.05376195082,
+            -0.05376195082
+          ]
+        }
+      },
+      "solver_health": {
+        "steps": 16000,
+        "max_courant": 0.2489405,
+        "max_abs_global_continuity_per_step": 1.6078175e-12,
+        "solver_ended_cleanly": true
+      }
+    },
+    {
+      "case": "matched_start_acquisition_train_b02_m075",
+      "phase_bin": 2,
+      "action_target": -0.75,
+      "source_restart_time": 106.0,
+      "source_state_sha256": {
+        "U": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+        "U_0": "30eb1b5f1377eb5644418ea5470828cc94c4d2c8662f21180780a286a88cc494",
+        "p": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+        "phi": "fdc1a6c1eba6669f42f5a663c45fa8b7893511e4cf6ccfad12578a682a79b394",
+        "phi_0": "3ad9aa7c8c12d85c5d18a460cdb29030a179981c300f28b37f8ac6cc2b5cb3ff"
+      },
+      "field_frames": 801,
+      "raw_solver_force_samples": 16000,
+      "aligned_force_samples": 16001,
+      "source_force_provenance": {
+        "forceFront": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat",
+          "sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+          "source_t0_row": [
+            106.0,
+            1.382912826,
+            0.6894396261,
+            0.6934731996,
+            0.04033573473,
+            0.01440414409,
+            0.02593159064,
+            -0.005763723273,
+            -0.002016786737,
+            0.06914564128,
+            6.773600779e-22,
+            0.06914564128,
+            -0.06914564128
+          ]
+        },
+        "forceRear": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat",
+          "sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+          "source_t0_row": [
+            106.0,
+            0.7462372965,
+            0.2909331363,
+            0.4553041602,
+            1.64371024,
+            0.8409235072,
+            0.8027867328,
+            0.01906838721,
+            -0.082185512,
+            0.03731186483,
+            1.295770213e-18,
+            0.03731186483,
+            -0.03731186483
+          ]
+        }
+      },
+      "solver_health": {
+        "steps": 16000,
+        "max_courant": 0.249194638,
+        "max_abs_global_continuity_per_step": 1.08689288e-12,
+        "solver_ended_cleanly": true
+      }
+    },
+    {
+      "case": "matched_start_acquisition_train_b02_zero",
+      "phase_bin": 2,
+      "action_target": 0.0,
+      "source_restart_time": 106.0,
+      "source_state_sha256": {
+        "U": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+        "U_0": "30eb1b5f1377eb5644418ea5470828cc94c4d2c8662f21180780a286a88cc494",
+        "p": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+        "phi": "fdc1a6c1eba6669f42f5a663c45fa8b7893511e4cf6ccfad12578a682a79b394",
+        "phi_0": "3ad9aa7c8c12d85c5d18a460cdb29030a179981c300f28b37f8ac6cc2b5cb3ff"
+      },
+      "field_frames": 801,
+      "raw_solver_force_samples": 16000,
+      "aligned_force_samples": 16001,
+      "source_force_provenance": {
+        "forceFront": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat",
+          "sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+          "source_t0_row": [
+            106.0,
+            1.382912826,
+            0.6894396261,
+            0.6934731996,
+            0.04033573473,
+            0.01440414409,
+            0.02593159064,
+            -0.005763723273,
+            -0.002016786737,
+            0.06914564128,
+            6.773600779e-22,
+            0.06914564128,
+            -0.06914564128
+          ]
+        },
+        "forceRear": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat",
+          "sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+          "source_t0_row": [
+            106.0,
+            0.7462372965,
+            0.2909331363,
+            0.4553041602,
+            1.64371024,
+            0.8409235072,
+            0.8027867328,
+            0.01906838721,
+            -0.082185512,
+            0.03731186483,
+            1.295770213e-18,
+            0.03731186483,
+            -0.03731186483
+          ]
+        }
+      },
+      "solver_health": {
+        "steps": 16000,
+        "max_courant": 0.245227456,
+        "max_abs_global_continuity_per_step": 1.40345349e-12,
+        "solver_ended_cleanly": true
+      }
+    },
+    {
+      "case": "matched_start_acquisition_train_b02_p075",
+      "phase_bin": 2,
+      "action_target": 0.75,
+      "source_restart_time": 106.0,
+      "source_state_sha256": {
+        "U": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+        "U_0": "30eb1b5f1377eb5644418ea5470828cc94c4d2c8662f21180780a286a88cc494",
+        "p": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+        "phi": "fdc1a6c1eba6669f42f5a663c45fa8b7893511e4cf6ccfad12578a682a79b394",
+        "phi_0": "3ad9aa7c8c12d85c5d18a460cdb29030a179981c300f28b37f8ac6cc2b5cb3ff"
+      },
+      "field_frames": 801,
+      "raw_solver_force_samples": 16000,
+      "aligned_force_samples": 16001,
+      "source_force_provenance": {
+        "forceFront": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat",
+          "sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+          "source_t0_row": [
+            106.0,
+            1.382912826,
+            0.6894396261,
+            0.6934731996,
+            0.04033573473,
+            0.01440414409,
+            0.02593159064,
+            -0.005763723273,
+            -0.002016786737,
+            0.06914564128,
+            6.773600779e-22,
+            0.06914564128,
+            -0.06914564128
+          ]
+        },
+        "forceRear": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat",
+          "sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+          "source_t0_row": [
+            106.0,
+            0.7462372965,
+            0.2909331363,
+            0.4553041602,
+            1.64371024,
+            0.8409235072,
+            0.8027867328,
+            0.01906838721,
+            -0.082185512,
+            0.03731186483,
+            1.295770213e-18,
+            0.03731186483,
+            -0.03731186483
+          ]
+        }
+      },
+      "solver_health": {
+        "steps": 16000,
+        "max_courant": 0.248840836,
+        "max_abs_global_continuity_per_step": 1.65032678e-12,
+        "solver_ended_cleanly": true
+      }
+    },
+    {
+      "case": "matched_start_acquisition_train_b04_m075",
+      "phase_bin": 4,
+      "action_target": -0.75,
+      "source_restart_time": 120.0,
+      "source_state_sha256": {
+        "U": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+        "U_0": "483ea88d99c466edb0835d5a70852896952542765bf31f763abb3185b49a95b3",
+        "p": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+        "phi": "c334bd5f7163d8ed65be8d8fa8176a8518fa39270ce41160ac5844de96278b73",
+        "phi_0": "7ae171d161b07e03a64d7a6611956b8956bc9ca54e8da65a58bfc9958d9bf722"
+      },
+      "field_frames": 801,
+      "raw_solver_force_samples": 16000,
+      "aligned_force_samples": 16001,
+      "source_force_provenance": {
+        "forceFront": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat",
+          "sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+          "source_t0_row": [
+            120.0,
+            1.400639425,
+            0.7225221712,
+            0.678117254,
+            -0.4440491714,
+            -0.2253822386,
+            -0.2186669328,
+            -0.00335765293,
+            0.02220245857,
+            0.07003197126,
+            2.044503744e-19,
+            0.07003197126,
+            -0.07003197126
+          ]
+        },
+        "forceRear": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat",
+          "sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+          "source_t0_row": [
+            120.0,
+            1.068796152,
+            0.5344663195,
+            0.5343298324,
+            -0.001364871063,
+            -0.004945719661,
+            0.003580848598,
+            -0.00426328413,
+            6.824355314e-05,
+            0.05343980759,
+            1.14251101e-18,
+            0.05343980759,
+            -0.05343980759
+          ]
+        }
+      },
+      "solver_health": {
+        "steps": 16000,
+        "max_courant": 0.248962653,
+        "max_abs_global_continuity_per_step": 1.09116973e-12,
+        "solver_ended_cleanly": true
+      }
+    },
+    {
+      "case": "matched_start_acquisition_train_b04_zero",
+      "phase_bin": 4,
+      "action_target": 0.0,
+      "source_restart_time": 120.0,
+      "source_state_sha256": {
+        "U": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+        "U_0": "483ea88d99c466edb0835d5a70852896952542765bf31f763abb3185b49a95b3",
+        "p": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+        "phi": "c334bd5f7163d8ed65be8d8fa8176a8518fa39270ce41160ac5844de96278b73",
+        "phi_0": "7ae171d161b07e03a64d7a6611956b8956bc9ca54e8da65a58bfc9958d9bf722"
+      },
+      "field_frames": 801,
+      "raw_solver_force_samples": 16000,
+      "aligned_force_samples": 16001,
+      "source_force_provenance": {
+        "forceFront": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat",
+          "sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+          "source_t0_row": [
+            120.0,
+            1.400639425,
+            0.7225221712,
+            0.678117254,
+            -0.4440491714,
+            -0.2253822386,
+            -0.2186669328,
+            -0.00335765293,
+            0.02220245857,
+            0.07003197126,
+            2.044503744e-19,
+            0.07003197126,
+            -0.07003197126
+          ]
+        },
+        "forceRear": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat",
+          "sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+          "source_t0_row": [
+            120.0,
+            1.068796152,
+            0.5344663195,
+            0.5343298324,
+            -0.001364871063,
+            -0.004945719661,
+            0.003580848598,
+            -0.00426328413,
+            6.824355314e-05,
+            0.05343980759,
+            1.14251101e-18,
+            0.05343980759,
+            -0.05343980759
+          ]
+        }
+      },
+      "solver_health": {
+        "steps": 16000,
+        "max_courant": 0.245227295,
+        "max_abs_global_continuity_per_step": 7.44822976e-13,
+        "solver_ended_cleanly": true
+      }
+    },
+    {
+      "case": "matched_start_acquisition_train_b04_p075",
+      "phase_bin": 4,
+      "action_target": 0.75,
+      "source_restart_time": 120.0,
+      "source_state_sha256": {
+        "U": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+        "U_0": "483ea88d99c466edb0835d5a70852896952542765bf31f763abb3185b49a95b3",
+        "p": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+        "phi": "c334bd5f7163d8ed65be8d8fa8176a8518fa39270ce41160ac5844de96278b73",
+        "phi_0": "7ae171d161b07e03a64d7a6611956b8956bc9ca54e8da65a58bfc9958d9bf722"
+      },
+      "field_frames": 801,
+      "raw_solver_force_samples": 16000,
+      "aligned_force_samples": 16001,
+      "source_force_provenance": {
+        "forceFront": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat",
+          "sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1",
+          "source_t0_row": [
+            120.0,
+            1.400639425,
+            0.7225221712,
+            0.678117254,
+            -0.4440491714,
+            -0.2253822386,
+            -0.2186669328,
+            -0.00335765293,
+            0.02220245857,
+            0.07003197126,
+            2.044503744e-19,
+            0.07003197126,
+            -0.07003197126
+          ]
+        },
+        "forceRear": {
+          "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat",
+          "sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+          "source_t0_row": [
+            120.0,
+            1.068796152,
+            0.5344663195,
+            0.5343298324,
+            -0.001364871063,
+            -0.004945719661,
+            0.003580848598,
+            -0.00426328413,
+            6.824355314e-05,
+            0.05343980759,
+            1.14251101e-18,
+            0.05343980759,
+            -0.05343980759
+          ]
+        }
+      },
+      "solver_health": {
+        "steps": 16000,
+        "max_courant": 0.249147121,
+        "max_abs_global_continuity_per_step": 1.59755834e-12,
+        "solver_ended_cleanly": true
+      }
+    }
+  ],
+  "transfer": {
+    "matched_start_acquisition_train_b00_m075": {
+      "worker_raw_manifest": "artifacts/matched_start_acquisition/worker_transfer_manifests/matched_start_acquisition_train_b00_m075.sha256",
+      "worker_raw_manifest_sha256": "04b644b6467282f964b79d01d918c28c2d64725b5de80a4e59d0384d39b73fb4",
+      "raw_file_count": 6435
+    },
+    "matched_start_acquisition_train_b00_zero": {
+      "worker_raw_manifest": "artifacts/matched_start_acquisition/worker_transfer_manifests/matched_start_acquisition_train_b00_zero.sha256",
+      "worker_raw_manifest_sha256": "654d1dc7f49d2a2c06cfb593064b8252f215291b3da806770352e4f04293ba8b",
+      "raw_file_count": 6435
+    },
+    "matched_start_acquisition_train_b00_p075": {
+      "worker_raw_manifest": "artifacts/matched_start_acquisition/worker_transfer_manifests/matched_start_acquisition_train_b00_p075.sha256",
+      "worker_raw_manifest_sha256": "62602d68903100562e007e80a309a11a71ca4a716667211c823464e64feb539e",
+      "raw_file_count": 6435
+    },
+    "matched_start_acquisition_train_b02_m075": {
+      "worker_raw_manifest": "artifacts/matched_start_acquisition/worker_transfer_manifests/matched_start_acquisition_train_b02_m075.sha256",
+      "worker_raw_manifest_sha256": "34efd1bf5c890d41434788828542f9fbaa7cdaf924451f908f5bec7b70425362",
+      "raw_file_count": 6435
+    },
+    "matched_start_acquisition_train_b02_zero": {
+      "worker_raw_manifest": "artifacts/matched_start_acquisition/worker_transfer_manifests/matched_start_acquisition_train_b02_zero.sha256",
+      "worker_raw_manifest_sha256": "43b22f3ab8c845edc96aa9157ac3cc1f9f95a82f5c9a0e7b61f2590ad17e1583",
+      "raw_file_count": 6435
+    },
+    "matched_start_acquisition_train_b02_p075": {
+      "worker_raw_manifest": "artifacts/matched_start_acquisition/worker_transfer_manifests/matched_start_acquisition_train_b02_p075.sha256",
+      "worker_raw_manifest_sha256": "6180fe891ac4a32b363c27c0fe649f10d0cc14d7cc0318584ce35b93d832f3ca",
+      "raw_file_count": 6435
+    },
+    "matched_start_acquisition_train_b04_m075": {
+      "worker_raw_manifest": "artifacts/matched_start_acquisition/worker_transfer_manifests/matched_start_acquisition_train_b04_m075.sha256",
+      "worker_raw_manifest_sha256": "e42aaee52c6f50729b7c555adc4e5fc00d38c3c974cd58ada8cf1034fadcaddc",
+      "raw_file_count": 6435
+    },
+    "matched_start_acquisition_train_b04_zero": {
+      "worker_raw_manifest": "artifacts/matched_start_acquisition/worker_transfer_manifests/matched_start_acquisition_train_b04_zero.sha256",
+      "worker_raw_manifest_sha256": "16894b80e5142b12f5078da73fcb1cc6f1a9dd6aa63777f77dfc4c1d93a86c25",
+      "raw_file_count": 6435
+    },
+    "matched_start_acquisition_train_b04_p075": {
+      "worker_raw_manifest": "artifacts/matched_start_acquisition/worker_transfer_manifests/matched_start_acquisition_train_b04_p075.sha256",
+      "worker_raw_manifest_sha256": "9ea4368b88d99e063badb0e0ec10a695b5977ec09595c21338f1b17ba03d800a",
+      "raw_file_count": 6435
+    }
+  },
+  "complete_nine_case_panel": true,
+  "matched_source_hashes_for_every_phase_group_present": true
+}

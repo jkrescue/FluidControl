@@ -1,0 +1,292 @@
+{
+  "status": "MATCHED_START_9_CASE_TRAIN_COMMISSIONING_PHYSICS_SUMMARY",
+  "phase_manifest_sha256": "6279492bd3a79eff868a4333e1f642e3be4a4d58a78e46dc47dde040e4e39603",
+  "source_aggregate_qc": "/workspace/fluid_control/artifacts/matched_start_acquisition/aggregate_qc/result.json",
+  "metric_contract": {
+    "analysis_window": "predeclared final 60D/U for every branch",
+    "force_sample_interval": 0.005,
+    "samples_per_branch": 12001,
+    "total_drag": "mean(Cd_front + Cd_rear)",
+    "rear_lift_fluctuation": "RMS(Cl_rear - mean(Cl_rear))",
+    "mean_lift_bias": "abs(mean(Cl_rear)) / zero rear Cl-prime RMS",
+    "power_proxy": "mean(omega * CmPitch_rear); sign/normalization not promoted to physical power"
+  },
+  "phases": {
+    "b00": {
+      "split": "train",
+      "matched_start_branches": {
+        "m075": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.3909012161654029,
+          "mean_cd_rear": 0.8528410451759687,
+          "mean_cd_total": 2.243742261341372,
+          "mean_cl_rear": 0.7299931560397449,
+          "rms_cl_rear_fluctuation": 1.1631767104852486,
+          "mean_cm_pitch_rear": -0.07246236336860094,
+          "mean_omega_times_cm_pitch_rear": 0.05434677252645071,
+          "action_mean": -0.75,
+          "action_rms": 0.75,
+          "action_max_abs": 0.75,
+          "action_configured_max_abs_rate": 1.0,
+          "case": "matched_start_acquisition_train_b00_m075",
+          "action_target": -0.75,
+          "analysis_window": [
+            168.0,
+            228.0
+          ]
+        },
+        "zero": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.3911034721552373,
+          "mean_cd_rear": 0.9064229468397716,
+          "mean_cd_total": 2.2975264189950084,
+          "mean_cl_rear": -0.01937794837142754,
+          "rms_cl_rear_fluctuation": 1.1826535012844825,
+          "mean_cm_pitch_rear": -0.00030301542923854435,
+          "mean_omega_times_cm_pitch_rear": 0.0,
+          "action_mean": 0.0,
+          "action_rms": 0.0,
+          "action_max_abs": 0.0,
+          "action_configured_max_abs_rate": 0.0,
+          "case": "matched_start_acquisition_train_b00_zero",
+          "action_target": 0.0,
+          "analysis_window": [
+            168.0,
+            228.0
+          ]
+        },
+        "p075": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.3907445215140404,
+          "mean_cd_rear": 0.8542768201982835,
+          "mean_cd_total": 2.245021341712324,
+          "mean_cl_rear": -0.7638876079489125,
+          "rms_cl_rear_fluctuation": 1.1620233728044749,
+          "mean_cm_pitch_rear": 0.07181479640312724,
+          "mean_omega_times_cm_pitch_rear": 0.05386109730234543,
+          "action_mean": 0.75,
+          "action_rms": 0.75,
+          "action_max_abs": 0.75,
+          "action_configured_max_abs_rate": 1.0,
+          "case": "matched_start_acquisition_train_b00_p075",
+          "action_target": 0.75,
+          "analysis_window": [
+            168.0,
+            228.0
+          ]
+        }
+      },
+      "same_phase_zero_comparisons": {
+        "m075": {
+          "total_drag_reduction_fraction_positive_is_better": 0.023409592685842973,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9835312787912266,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.617250238761309,
+          "canonical_drag_check_ge_0p02": true,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        },
+        "p075": {
+          "total_drag_reduction_fraction_positive_is_better": 0.022852872049084483,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9825560669650061,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6459099027054438,
+          "canonical_drag_check_ge_0p02": true,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        }
+      }
+    },
+    "b02": {
+      "split": "train",
+      "matched_start_branches": {
+        "m075": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.3910436456781103,
+          "mean_cd_rear": 0.8672249148339055,
+          "mean_cd_total": 2.2582685605120156,
+          "mean_cl_rear": 0.702551901155398,
+          "rms_cl_rear_fluctuation": 1.1491724145988795,
+          "mean_cm_pitch_rear": -0.07256373386883427,
+          "mean_omega_times_cm_pitch_rear": 0.0544228004016257,
+          "action_mean": -0.75,
+          "action_rms": 0.75,
+          "action_max_abs": 0.75,
+          "action_configured_max_abs_rate": 1.0,
+          "case": "matched_start_acquisition_train_b02_m075",
+          "action_target": -0.75,
+          "analysis_window": [
+            126.0,
+            186.0
+          ]
+        },
+        "zero": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.3914893705134572,
+          "mean_cd_rear": 0.9112236638031748,
+          "mean_cd_total": 2.302713034316632,
+          "mean_cl_rear": -0.04503425049595395,
+          "rms_cl_rear_fluctuation": 1.1697400192062322,
+          "mean_cm_pitch_rear": -0.0004240347530158549,
+          "mean_omega_times_cm_pitch_rear": 0.0,
+          "action_mean": 0.0,
+          "action_rms": 0.0,
+          "action_max_abs": 0.0,
+          "action_configured_max_abs_rate": 0.0,
+          "case": "matched_start_acquisition_train_b02_zero",
+          "action_target": 0.0,
+          "analysis_window": [
+            126.0,
+            186.0
+          ]
+        },
+        "p075": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.3913681778076827,
+          "mean_cd_rear": 0.8490150371901758,
+          "mean_cd_total": 2.2403832149978586,
+          "mean_cl_rear": -0.7920215885189185,
+          "rms_cl_rear_fluctuation": 1.1491223003472202,
+          "mean_cm_pitch_rear": 0.07170410508407467,
+          "mean_omega_times_cm_pitch_rear": 0.053778078813056,
+          "action_mean": 0.75,
+          "action_rms": 0.75,
+          "action_max_abs": 0.75,
+          "action_configured_max_abs_rate": 1.0,
+          "case": "matched_start_acquisition_train_b02_p075",
+          "action_target": 0.75,
+          "analysis_window": [
+            126.0,
+            186.0
+          ]
+        }
+      },
+      "same_phase_zero_comparisons": {
+        "m075": {
+          "total_drag_reduction_fraction_positive_is_better": 0.019300917284209462,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9824169437057394,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6006051683451329,
+          "canonical_drag_check_ge_0p02": false,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        },
+        "p075": {
+          "total_drag_reduction_fraction_positive_is_better": 0.027067992576535138,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9823741014922248,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6770919824187706,
+          "canonical_drag_check_ge_0p02": true,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        }
+      }
+    },
+    "b04": {
+      "split": "train",
+      "matched_start_branches": {
+        "m075": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.3907365464574617,
+          "mean_cd_rear": 0.8548825828373137,
+          "mean_cd_total": 2.2456191292947754,
+          "mean_cl_rear": 0.7607870118631117,
+          "rms_cl_rear_fluctuation": 1.1626886866634727,
+          "mean_cm_pitch_rear": -0.0718435220048271,
+          "mean_omega_times_cm_pitch_rear": 0.05388264150362032,
+          "action_mean": -0.75,
+          "action_rms": 0.75,
+          "action_max_abs": 0.75,
+          "action_configured_max_abs_rate": 1.0,
+          "case": "matched_start_acquisition_train_b04_m075",
+          "action_target": -0.75,
+          "analysis_window": [
+            140.0,
+            200.0
+          ]
+        },
+        "zero": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.3911067362809768,
+          "mean_cd_rear": 0.9063555552604281,
+          "mean_cd_total": 2.2974622915414047,
+          "mean_cl_rear": 0.016279802542867948,
+          "rms_cl_rear_fluctuation": 1.1834515218623534,
+          "mean_cm_pitch_rear": 0.0002742619298908124,
+          "mean_omega_times_cm_pitch_rear": 0.0,
+          "action_mean": 0.0,
+          "action_rms": 0.0,
+          "action_max_abs": 0.0,
+          "action_configured_max_abs_rate": 0.0,
+          "case": "matched_start_acquisition_train_b04_zero",
+          "action_target": 0.0,
+          "analysis_window": [
+            140.0,
+            200.0
+          ]
+        },
+        "p075": {
+          "sample_count": 12001,
+          "mean_cd_front": 1.3909169871272393,
+          "mean_cd_rear": 0.852126629188251,
+          "mean_cd_total": 2.2430436163154903,
+          "mean_cl_rear": -0.7330763251142102,
+          "rms_cl_rear_fluctuation": 1.1639012981767989,
+          "mean_cm_pitch_rear": 0.07243275686892259,
+          "mean_omega_times_cm_pitch_rear": 0.05432456765169195,
+          "action_mean": 0.75,
+          "action_rms": 0.75,
+          "action_max_abs": 0.75,
+          "action_configured_max_abs_rate": 1.0,
+          "case": "matched_start_acquisition_train_b04_p075",
+          "action_target": 0.75,
+          "analysis_window": [
+            140.0,
+            200.0
+          ]
+        }
+      },
+      "same_phase_zero_comparisons": {
+        "m075": {
+          "total_drag_reduction_fraction_positive_is_better": 0.02256540289583897,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9824556943691222,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.6428543948009714,
+          "canonical_drag_check_ge_0p02": true,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        },
+        "p075": {
+          "total_drag_reduction_fraction_positive_is_better": 0.02368642803247234,
+          "rear_cl_fluctuation_rms_ratio_to_zero": 0.9834803341544662,
+          "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.61943925169034,
+          "canonical_drag_check_ge_0p02": true,
+          "canonical_rear_cl_fluctuation_check_le_1p05": true,
+          "canonical_mean_rear_cl_check_le_0p10_zero_clprime_rms": false,
+          "canonical_joint_diagnostic_pass": false
+        }
+      }
+    }
+  },
+  "descriptive_macro_across_three_train_phases": {
+    "m075": {
+      "phase_count": 3,
+      "mean_total_drag_reduction_fraction": 0.0217586376219638,
+      "all_three_canonical_joint_diagnostics_pass": false,
+      "interpretation": "descriptive train-phase commissioning aggregate only"
+    },
+    "p075": {
+      "phase_count": 3,
+      "mean_total_drag_reduction_fraction": 0.024535764219363987,
+      "all_three_canonical_joint_diagnostics_pass": false,
+      "interpretation": "descriptive train-phase commissioning aggregate only"
+    }
+  },
+  "interpretation_guards": [
+    "All phase bins are train commissioning bins from one baseline limit cycle.",
+    "This is not independent generalization or validation evidence.",
+    "The actions are prescribed open-loop branches, not learned or online closed-loop control.",
+    "Canonical checks are diagnostics only and do not establish closed-loop success.",
+    "No subwindow selection or post-hoc action selection is performed."
+  ]
+}
