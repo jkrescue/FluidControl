@@ -1,0 +1,1676 @@
+{
+  "status": "MATCHED_START_FULL40_PREDECLARED_NO_NEW_CASES_GENERATED",
+  "scope": "eight real phase restarts by five prescribed constant rear-cylinder rotations",
+  "phase_manifest": "artifacts/tandem_cylinders/matched_start_phase_restart_predeclared_v3_20261003.json",
+  "phase_manifest_sha256": "6279492bd3a79eff868a4333e1f642e3be4a4d58a78e46dc47dde040e4e39603",
+  "phase_force_source_sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+  "matrix": {
+    "phase_bins": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "actions": [
+      -0.75,
+      -0.375,
+      0.0,
+      0.375,
+      0.75
+    ],
+    "case_count": 40,
+    "already_generated_commissioning_cases": 9,
+    "planned_new_remainder_cases": 31,
+    "split_case_counts": {
+      "train": 20,
+      "validation": 10,
+      "frozen_test": 10
+    }
+  },
+  "split_roles": {
+    "train": "model fitting only",
+    "validation": "model selection only; never train fitting",
+    "frozen_test": "one-time final evaluation only; never training or tuning"
+  },
+  "cases": {
+    "matched_start_acquisition_train_b00_m075": {
+      "phase_bin": 0,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 148.0,
+      "source_state_sha256": {
+        "U": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+        "U_0": "6257e54018d03d01d01876e24d511d9c7af5b5caa2318d5da73628d233dec8c0",
+        "p": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+        "phi": "b331ed8547306f874c3de07f0cb2aaefaf7ea59b1d46a2a7cb61b4d45b444215",
+        "phi_0": "be1e19fa6e71200fe57a0d2ba253907ecebbd8d6caf196fd32f7d711969effd9"
+      },
+      "action_target": -0.75,
+      "action_points": [
+        [
+          148.0,
+          0.0
+        ],
+        [
+          148.75,
+          -0.75
+        ],
+        [
+          228.0,
+          -0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        148.0,
+        228.0
+      ],
+      "analysis_window": [
+        168.0,
+        228.0
+      ],
+      "disposition": "existing_nine_case_commissioning"
+    },
+    "matched_start_acquisition_train_b00_m0375": {
+      "phase_bin": 0,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 148.0,
+      "source_state_sha256": {
+        "U": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+        "U_0": "6257e54018d03d01d01876e24d511d9c7af5b5caa2318d5da73628d233dec8c0",
+        "p": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+        "phi": "b331ed8547306f874c3de07f0cb2aaefaf7ea59b1d46a2a7cb61b4d45b444215",
+        "phi_0": "be1e19fa6e71200fe57a0d2ba253907ecebbd8d6caf196fd32f7d711969effd9"
+      },
+      "action_target": -0.375,
+      "action_points": [
+        [
+          148.0,
+          0.0
+        ],
+        [
+          148.375,
+          -0.375
+        ],
+        [
+          228.0,
+          -0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        148.0,
+        228.0
+      ],
+      "analysis_window": [
+        168.0,
+        228.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_train_b00_zero": {
+      "phase_bin": 0,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 148.0,
+      "source_state_sha256": {
+        "U": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+        "U_0": "6257e54018d03d01d01876e24d511d9c7af5b5caa2318d5da73628d233dec8c0",
+        "p": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+        "phi": "b331ed8547306f874c3de07f0cb2aaefaf7ea59b1d46a2a7cb61b4d45b444215",
+        "phi_0": "be1e19fa6e71200fe57a0d2ba253907ecebbd8d6caf196fd32f7d711969effd9"
+      },
+      "action_target": 0.0,
+      "action_points": [
+        [
+          148.0,
+          0.0
+        ],
+        [
+          228.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.0,
+        "max_abs_domega_dt": 0.0
+      },
+      "run_window": [
+        148.0,
+        228.0
+      ],
+      "analysis_window": [
+        168.0,
+        228.0
+      ],
+      "disposition": "existing_nine_case_commissioning"
+    },
+    "matched_start_acquisition_train_b00_p0375": {
+      "phase_bin": 0,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 148.0,
+      "source_state_sha256": {
+        "U": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+        "U_0": "6257e54018d03d01d01876e24d511d9c7af5b5caa2318d5da73628d233dec8c0",
+        "p": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+        "phi": "b331ed8547306f874c3de07f0cb2aaefaf7ea59b1d46a2a7cb61b4d45b444215",
+        "phi_0": "be1e19fa6e71200fe57a0d2ba253907ecebbd8d6caf196fd32f7d711969effd9"
+      },
+      "action_target": 0.375,
+      "action_points": [
+        [
+          148.0,
+          0.0
+        ],
+        [
+          148.375,
+          0.375
+        ],
+        [
+          228.0,
+          0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        148.0,
+        228.0
+      ],
+      "analysis_window": [
+        168.0,
+        228.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_train_b00_p075": {
+      "phase_bin": 0,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 148.0,
+      "source_state_sha256": {
+        "U": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+        "U_0": "6257e54018d03d01d01876e24d511d9c7af5b5caa2318d5da73628d233dec8c0",
+        "p": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+        "phi": "b331ed8547306f874c3de07f0cb2aaefaf7ea59b1d46a2a7cb61b4d45b444215",
+        "phi_0": "be1e19fa6e71200fe57a0d2ba253907ecebbd8d6caf196fd32f7d711969effd9"
+      },
+      "action_target": 0.75,
+      "action_points": [
+        [
+          148.0,
+          0.0
+        ],
+        [
+          148.75,
+          0.75
+        ],
+        [
+          228.0,
+          0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        148.0,
+        228.0
+      ],
+      "analysis_window": [
+        168.0,
+        228.0
+      ],
+      "disposition": "existing_nine_case_commissioning"
+    },
+    "matched_start_acquisition_validation_b01_m075": {
+      "phase_bin": 1,
+      "split": "validation",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 130.0,
+      "source_state_sha256": {
+        "U": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+        "U_0": "5491cc64a1d8af0157df371c156c5acebbbb19c6926e4d5cade38c5b798c8fae",
+        "p": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+        "phi": "e8f7b7b5e7cd1130556023cbd58d133edb6294447baf05af2311d3b29898918b",
+        "phi_0": "d835b6b83bece1967a622e51c978bf6146baba9f0c4780418ff31a1f7a40e281"
+      },
+      "action_target": -0.75,
+      "action_points": [
+        [
+          130.0,
+          0.0
+        ],
+        [
+          130.75,
+          -0.75
+        ],
+        [
+          210.0,
+          -0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        130.0,
+        210.0
+      ],
+      "analysis_window": [
+        150.0,
+        210.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_validation_b01_m0375": {
+      "phase_bin": 1,
+      "split": "validation",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 130.0,
+      "source_state_sha256": {
+        "U": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+        "U_0": "5491cc64a1d8af0157df371c156c5acebbbb19c6926e4d5cade38c5b798c8fae",
+        "p": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+        "phi": "e8f7b7b5e7cd1130556023cbd58d133edb6294447baf05af2311d3b29898918b",
+        "phi_0": "d835b6b83bece1967a622e51c978bf6146baba9f0c4780418ff31a1f7a40e281"
+      },
+      "action_target": -0.375,
+      "action_points": [
+        [
+          130.0,
+          0.0
+        ],
+        [
+          130.375,
+          -0.375
+        ],
+        [
+          210.0,
+          -0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        130.0,
+        210.0
+      ],
+      "analysis_window": [
+        150.0,
+        210.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_validation_b01_zero": {
+      "phase_bin": 1,
+      "split": "validation",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 130.0,
+      "source_state_sha256": {
+        "U": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+        "U_0": "5491cc64a1d8af0157df371c156c5acebbbb19c6926e4d5cade38c5b798c8fae",
+        "p": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+        "phi": "e8f7b7b5e7cd1130556023cbd58d133edb6294447baf05af2311d3b29898918b",
+        "phi_0": "d835b6b83bece1967a622e51c978bf6146baba9f0c4780418ff31a1f7a40e281"
+      },
+      "action_target": 0.0,
+      "action_points": [
+        [
+          130.0,
+          0.0
+        ],
+        [
+          210.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.0,
+        "max_abs_domega_dt": 0.0
+      },
+      "run_window": [
+        130.0,
+        210.0
+      ],
+      "analysis_window": [
+        150.0,
+        210.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_validation_b01_p0375": {
+      "phase_bin": 1,
+      "split": "validation",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 130.0,
+      "source_state_sha256": {
+        "U": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+        "U_0": "5491cc64a1d8af0157df371c156c5acebbbb19c6926e4d5cade38c5b798c8fae",
+        "p": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+        "phi": "e8f7b7b5e7cd1130556023cbd58d133edb6294447baf05af2311d3b29898918b",
+        "phi_0": "d835b6b83bece1967a622e51c978bf6146baba9f0c4780418ff31a1f7a40e281"
+      },
+      "action_target": 0.375,
+      "action_points": [
+        [
+          130.0,
+          0.0
+        ],
+        [
+          130.375,
+          0.375
+        ],
+        [
+          210.0,
+          0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        130.0,
+        210.0
+      ],
+      "analysis_window": [
+        150.0,
+        210.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_validation_b01_p075": {
+      "phase_bin": 1,
+      "split": "validation",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 130.0,
+      "source_state_sha256": {
+        "U": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+        "U_0": "5491cc64a1d8af0157df371c156c5acebbbb19c6926e4d5cade38c5b798c8fae",
+        "p": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+        "phi": "e8f7b7b5e7cd1130556023cbd58d133edb6294447baf05af2311d3b29898918b",
+        "phi_0": "d835b6b83bece1967a622e51c978bf6146baba9f0c4780418ff31a1f7a40e281"
+      },
+      "action_target": 0.75,
+      "action_points": [
+        [
+          130.0,
+          0.0
+        ],
+        [
+          130.75,
+          0.75
+        ],
+        [
+          210.0,
+          0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        130.0,
+        210.0
+      ],
+      "analysis_window": [
+        150.0,
+        210.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_train_b02_m075": {
+      "phase_bin": 2,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 106.0,
+      "source_state_sha256": {
+        "U": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+        "U_0": "30eb1b5f1377eb5644418ea5470828cc94c4d2c8662f21180780a286a88cc494",
+        "p": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+        "phi": "fdc1a6c1eba6669f42f5a663c45fa8b7893511e4cf6ccfad12578a682a79b394",
+        "phi_0": "3ad9aa7c8c12d85c5d18a460cdb29030a179981c300f28b37f8ac6cc2b5cb3ff"
+      },
+      "action_target": -0.75,
+      "action_points": [
+        [
+          106.0,
+          0.0
+        ],
+        [
+          106.75,
+          -0.75
+        ],
+        [
+          186.0,
+          -0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        106.0,
+        186.0
+      ],
+      "analysis_window": [
+        126.0,
+        186.0
+      ],
+      "disposition": "existing_nine_case_commissioning"
+    },
+    "matched_start_acquisition_train_b02_m0375": {
+      "phase_bin": 2,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 106.0,
+      "source_state_sha256": {
+        "U": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+        "U_0": "30eb1b5f1377eb5644418ea5470828cc94c4d2c8662f21180780a286a88cc494",
+        "p": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+        "phi": "fdc1a6c1eba6669f42f5a663c45fa8b7893511e4cf6ccfad12578a682a79b394",
+        "phi_0": "3ad9aa7c8c12d85c5d18a460cdb29030a179981c300f28b37f8ac6cc2b5cb3ff"
+      },
+      "action_target": -0.375,
+      "action_points": [
+        [
+          106.0,
+          0.0
+        ],
+        [
+          106.375,
+          -0.375
+        ],
+        [
+          186.0,
+          -0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        106.0,
+        186.0
+      ],
+      "analysis_window": [
+        126.0,
+        186.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_train_b02_zero": {
+      "phase_bin": 2,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 106.0,
+      "source_state_sha256": {
+        "U": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+        "U_0": "30eb1b5f1377eb5644418ea5470828cc94c4d2c8662f21180780a286a88cc494",
+        "p": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+        "phi": "fdc1a6c1eba6669f42f5a663c45fa8b7893511e4cf6ccfad12578a682a79b394",
+        "phi_0": "3ad9aa7c8c12d85c5d18a460cdb29030a179981c300f28b37f8ac6cc2b5cb3ff"
+      },
+      "action_target": 0.0,
+      "action_points": [
+        [
+          106.0,
+          0.0
+        ],
+        [
+          186.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.0,
+        "max_abs_domega_dt": 0.0
+      },
+      "run_window": [
+        106.0,
+        186.0
+      ],
+      "analysis_window": [
+        126.0,
+        186.0
+      ],
+      "disposition": "existing_nine_case_commissioning"
+    },
+    "matched_start_acquisition_train_b02_p0375": {
+      "phase_bin": 2,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 106.0,
+      "source_state_sha256": {
+        "U": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+        "U_0": "30eb1b5f1377eb5644418ea5470828cc94c4d2c8662f21180780a286a88cc494",
+        "p": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+        "phi": "fdc1a6c1eba6669f42f5a663c45fa8b7893511e4cf6ccfad12578a682a79b394",
+        "phi_0": "3ad9aa7c8c12d85c5d18a460cdb29030a179981c300f28b37f8ac6cc2b5cb3ff"
+      },
+      "action_target": 0.375,
+      "action_points": [
+        [
+          106.0,
+          0.0
+        ],
+        [
+          106.375,
+          0.375
+        ],
+        [
+          186.0,
+          0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        106.0,
+        186.0
+      ],
+      "analysis_window": [
+        126.0,
+        186.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_train_b02_p075": {
+      "phase_bin": 2,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 106.0,
+      "source_state_sha256": {
+        "U": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+        "U_0": "30eb1b5f1377eb5644418ea5470828cc94c4d2c8662f21180780a286a88cc494",
+        "p": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+        "phi": "fdc1a6c1eba6669f42f5a663c45fa8b7893511e4cf6ccfad12578a682a79b394",
+        "phi_0": "3ad9aa7c8c12d85c5d18a460cdb29030a179981c300f28b37f8ac6cc2b5cb3ff"
+      },
+      "action_target": 0.75,
+      "action_points": [
+        [
+          106.0,
+          0.0
+        ],
+        [
+          106.75,
+          0.75
+        ],
+        [
+          186.0,
+          0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        106.0,
+        186.0
+      ],
+      "analysis_window": [
+        126.0,
+        186.0
+      ],
+      "disposition": "existing_nine_case_commissioning"
+    },
+    "matched_start_acquisition_frozen_test_b03_m075": {
+      "phase_bin": 3,
+      "split": "frozen_test",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 144.0,
+      "source_state_sha256": {
+        "U": "7bb667038ffcb6c3fb21e429b7ce29f41d86e4c6835f167670489709570e49b2",
+        "U_0": "28e86a191c2c151817b3d3576843554c0167d27ee7cd0b8c781d70d779be7c03",
+        "p": "0931ff502abc92cb66de4a98fc83c39ced438929531eac1e470a25f31b206665",
+        "phi": "45b42976cacd5cc3a857b010a7643e3cb8fc8bde1133617014076edd2b5d54f1",
+        "phi_0": "f6a90c8739fc79d81b1c6dbb95cd54a44c1794f64936f9c6dfd17e333d7e8a53"
+      },
+      "action_target": -0.75,
+      "action_points": [
+        [
+          144.0,
+          0.0
+        ],
+        [
+          144.75,
+          -0.75
+        ],
+        [
+          224.0,
+          -0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        144.0,
+        224.0
+      ],
+      "analysis_window": [
+        164.0,
+        224.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_frozen_test_b03_m0375": {
+      "phase_bin": 3,
+      "split": "frozen_test",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 144.0,
+      "source_state_sha256": {
+        "U": "7bb667038ffcb6c3fb21e429b7ce29f41d86e4c6835f167670489709570e49b2",
+        "U_0": "28e86a191c2c151817b3d3576843554c0167d27ee7cd0b8c781d70d779be7c03",
+        "p": "0931ff502abc92cb66de4a98fc83c39ced438929531eac1e470a25f31b206665",
+        "phi": "45b42976cacd5cc3a857b010a7643e3cb8fc8bde1133617014076edd2b5d54f1",
+        "phi_0": "f6a90c8739fc79d81b1c6dbb95cd54a44c1794f64936f9c6dfd17e333d7e8a53"
+      },
+      "action_target": -0.375,
+      "action_points": [
+        [
+          144.0,
+          0.0
+        ],
+        [
+          144.375,
+          -0.375
+        ],
+        [
+          224.0,
+          -0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        144.0,
+        224.0
+      ],
+      "analysis_window": [
+        164.0,
+        224.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_frozen_test_b03_zero": {
+      "phase_bin": 3,
+      "split": "frozen_test",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 144.0,
+      "source_state_sha256": {
+        "U": "7bb667038ffcb6c3fb21e429b7ce29f41d86e4c6835f167670489709570e49b2",
+        "U_0": "28e86a191c2c151817b3d3576843554c0167d27ee7cd0b8c781d70d779be7c03",
+        "p": "0931ff502abc92cb66de4a98fc83c39ced438929531eac1e470a25f31b206665",
+        "phi": "45b42976cacd5cc3a857b010a7643e3cb8fc8bde1133617014076edd2b5d54f1",
+        "phi_0": "f6a90c8739fc79d81b1c6dbb95cd54a44c1794f64936f9c6dfd17e333d7e8a53"
+      },
+      "action_target": 0.0,
+      "action_points": [
+        [
+          144.0,
+          0.0
+        ],
+        [
+          224.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.0,
+        "max_abs_domega_dt": 0.0
+      },
+      "run_window": [
+        144.0,
+        224.0
+      ],
+      "analysis_window": [
+        164.0,
+        224.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_frozen_test_b03_p0375": {
+      "phase_bin": 3,
+      "split": "frozen_test",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 144.0,
+      "source_state_sha256": {
+        "U": "7bb667038ffcb6c3fb21e429b7ce29f41d86e4c6835f167670489709570e49b2",
+        "U_0": "28e86a191c2c151817b3d3576843554c0167d27ee7cd0b8c781d70d779be7c03",
+        "p": "0931ff502abc92cb66de4a98fc83c39ced438929531eac1e470a25f31b206665",
+        "phi": "45b42976cacd5cc3a857b010a7643e3cb8fc8bde1133617014076edd2b5d54f1",
+        "phi_0": "f6a90c8739fc79d81b1c6dbb95cd54a44c1794f64936f9c6dfd17e333d7e8a53"
+      },
+      "action_target": 0.375,
+      "action_points": [
+        [
+          144.0,
+          0.0
+        ],
+        [
+          144.375,
+          0.375
+        ],
+        [
+          224.0,
+          0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        144.0,
+        224.0
+      ],
+      "analysis_window": [
+        164.0,
+        224.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_frozen_test_b03_p075": {
+      "phase_bin": 3,
+      "split": "frozen_test",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 144.0,
+      "source_state_sha256": {
+        "U": "7bb667038ffcb6c3fb21e429b7ce29f41d86e4c6835f167670489709570e49b2",
+        "U_0": "28e86a191c2c151817b3d3576843554c0167d27ee7cd0b8c781d70d779be7c03",
+        "p": "0931ff502abc92cb66de4a98fc83c39ced438929531eac1e470a25f31b206665",
+        "phi": "45b42976cacd5cc3a857b010a7643e3cb8fc8bde1133617014076edd2b5d54f1",
+        "phi_0": "f6a90c8739fc79d81b1c6dbb95cd54a44c1794f64936f9c6dfd17e333d7e8a53"
+      },
+      "action_target": 0.75,
+      "action_points": [
+        [
+          144.0,
+          0.0
+        ],
+        [
+          144.75,
+          0.75
+        ],
+        [
+          224.0,
+          0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        144.0,
+        224.0
+      ],
+      "analysis_window": [
+        164.0,
+        224.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_train_b04_m075": {
+      "phase_bin": 4,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 120.0,
+      "source_state_sha256": {
+        "U": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+        "U_0": "483ea88d99c466edb0835d5a70852896952542765bf31f763abb3185b49a95b3",
+        "p": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+        "phi": "c334bd5f7163d8ed65be8d8fa8176a8518fa39270ce41160ac5844de96278b73",
+        "phi_0": "7ae171d161b07e03a64d7a6611956b8956bc9ca54e8da65a58bfc9958d9bf722"
+      },
+      "action_target": -0.75,
+      "action_points": [
+        [
+          120.0,
+          0.0
+        ],
+        [
+          120.75,
+          -0.75
+        ],
+        [
+          200.0,
+          -0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        120.0,
+        200.0
+      ],
+      "analysis_window": [
+        140.0,
+        200.0
+      ],
+      "disposition": "existing_nine_case_commissioning"
+    },
+    "matched_start_acquisition_train_b04_m0375": {
+      "phase_bin": 4,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 120.0,
+      "source_state_sha256": {
+        "U": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+        "U_0": "483ea88d99c466edb0835d5a70852896952542765bf31f763abb3185b49a95b3",
+        "p": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+        "phi": "c334bd5f7163d8ed65be8d8fa8176a8518fa39270ce41160ac5844de96278b73",
+        "phi_0": "7ae171d161b07e03a64d7a6611956b8956bc9ca54e8da65a58bfc9958d9bf722"
+      },
+      "action_target": -0.375,
+      "action_points": [
+        [
+          120.0,
+          0.0
+        ],
+        [
+          120.375,
+          -0.375
+        ],
+        [
+          200.0,
+          -0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        120.0,
+        200.0
+      ],
+      "analysis_window": [
+        140.0,
+        200.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_train_b04_zero": {
+      "phase_bin": 4,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 120.0,
+      "source_state_sha256": {
+        "U": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+        "U_0": "483ea88d99c466edb0835d5a70852896952542765bf31f763abb3185b49a95b3",
+        "p": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+        "phi": "c334bd5f7163d8ed65be8d8fa8176a8518fa39270ce41160ac5844de96278b73",
+        "phi_0": "7ae171d161b07e03a64d7a6611956b8956bc9ca54e8da65a58bfc9958d9bf722"
+      },
+      "action_target": 0.0,
+      "action_points": [
+        [
+          120.0,
+          0.0
+        ],
+        [
+          200.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.0,
+        "max_abs_domega_dt": 0.0
+      },
+      "run_window": [
+        120.0,
+        200.0
+      ],
+      "analysis_window": [
+        140.0,
+        200.0
+      ],
+      "disposition": "existing_nine_case_commissioning"
+    },
+    "matched_start_acquisition_train_b04_p0375": {
+      "phase_bin": 4,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 120.0,
+      "source_state_sha256": {
+        "U": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+        "U_0": "483ea88d99c466edb0835d5a70852896952542765bf31f763abb3185b49a95b3",
+        "p": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+        "phi": "c334bd5f7163d8ed65be8d8fa8176a8518fa39270ce41160ac5844de96278b73",
+        "phi_0": "7ae171d161b07e03a64d7a6611956b8956bc9ca54e8da65a58bfc9958d9bf722"
+      },
+      "action_target": 0.375,
+      "action_points": [
+        [
+          120.0,
+          0.0
+        ],
+        [
+          120.375,
+          0.375
+        ],
+        [
+          200.0,
+          0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        120.0,
+        200.0
+      ],
+      "analysis_window": [
+        140.0,
+        200.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_train_b04_p075": {
+      "phase_bin": 4,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 120.0,
+      "source_state_sha256": {
+        "U": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+        "U_0": "483ea88d99c466edb0835d5a70852896952542765bf31f763abb3185b49a95b3",
+        "p": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+        "phi": "c334bd5f7163d8ed65be8d8fa8176a8518fa39270ce41160ac5844de96278b73",
+        "phi_0": "7ae171d161b07e03a64d7a6611956b8956bc9ca54e8da65a58bfc9958d9bf722"
+      },
+      "action_target": 0.75,
+      "action_points": [
+        [
+          120.0,
+          0.0
+        ],
+        [
+          120.75,
+          0.75
+        ],
+        [
+          200.0,
+          0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        120.0,
+        200.0
+      ],
+      "analysis_window": [
+        140.0,
+        200.0
+      ],
+      "disposition": "existing_nine_case_commissioning"
+    },
+    "matched_start_acquisition_validation_b05_m075": {
+      "phase_bin": 5,
+      "split": "validation",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 102.0,
+      "source_state_sha256": {
+        "U": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+        "U_0": "64ee5cc617280ea1ffc7bc3896c4a412d7643d6b677d03c0bf54d446fda12bd8",
+        "p": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+        "phi": "7c849fa6400aca978da7d35886d6a90918dfe081aa15bbb6ffbba92f9985d1bf",
+        "phi_0": "37c7acbf30a76e1c04262ab06d08a0ee27eae109cec9d2f1e6d51e849dae4405"
+      },
+      "action_target": -0.75,
+      "action_points": [
+        [
+          102.0,
+          0.0
+        ],
+        [
+          102.75,
+          -0.75
+        ],
+        [
+          182.0,
+          -0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        102.0,
+        182.0
+      ],
+      "analysis_window": [
+        122.0,
+        182.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_validation_b05_m0375": {
+      "phase_bin": 5,
+      "split": "validation",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 102.0,
+      "source_state_sha256": {
+        "U": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+        "U_0": "64ee5cc617280ea1ffc7bc3896c4a412d7643d6b677d03c0bf54d446fda12bd8",
+        "p": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+        "phi": "7c849fa6400aca978da7d35886d6a90918dfe081aa15bbb6ffbba92f9985d1bf",
+        "phi_0": "37c7acbf30a76e1c04262ab06d08a0ee27eae109cec9d2f1e6d51e849dae4405"
+      },
+      "action_target": -0.375,
+      "action_points": [
+        [
+          102.0,
+          0.0
+        ],
+        [
+          102.375,
+          -0.375
+        ],
+        [
+          182.0,
+          -0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        102.0,
+        182.0
+      ],
+      "analysis_window": [
+        122.0,
+        182.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_validation_b05_zero": {
+      "phase_bin": 5,
+      "split": "validation",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 102.0,
+      "source_state_sha256": {
+        "U": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+        "U_0": "64ee5cc617280ea1ffc7bc3896c4a412d7643d6b677d03c0bf54d446fda12bd8",
+        "p": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+        "phi": "7c849fa6400aca978da7d35886d6a90918dfe081aa15bbb6ffbba92f9985d1bf",
+        "phi_0": "37c7acbf30a76e1c04262ab06d08a0ee27eae109cec9d2f1e6d51e849dae4405"
+      },
+      "action_target": 0.0,
+      "action_points": [
+        [
+          102.0,
+          0.0
+        ],
+        [
+          182.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.0,
+        "max_abs_domega_dt": 0.0
+      },
+      "run_window": [
+        102.0,
+        182.0
+      ],
+      "analysis_window": [
+        122.0,
+        182.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_validation_b05_p0375": {
+      "phase_bin": 5,
+      "split": "validation",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 102.0,
+      "source_state_sha256": {
+        "U": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+        "U_0": "64ee5cc617280ea1ffc7bc3896c4a412d7643d6b677d03c0bf54d446fda12bd8",
+        "p": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+        "phi": "7c849fa6400aca978da7d35886d6a90918dfe081aa15bbb6ffbba92f9985d1bf",
+        "phi_0": "37c7acbf30a76e1c04262ab06d08a0ee27eae109cec9d2f1e6d51e849dae4405"
+      },
+      "action_target": 0.375,
+      "action_points": [
+        [
+          102.0,
+          0.0
+        ],
+        [
+          102.375,
+          0.375
+        ],
+        [
+          182.0,
+          0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        102.0,
+        182.0
+      ],
+      "analysis_window": [
+        122.0,
+        182.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_validation_b05_p075": {
+      "phase_bin": 5,
+      "split": "validation",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 102.0,
+      "source_state_sha256": {
+        "U": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+        "U_0": "64ee5cc617280ea1ffc7bc3896c4a412d7643d6b677d03c0bf54d446fda12bd8",
+        "p": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+        "phi": "7c849fa6400aca978da7d35886d6a90918dfe081aa15bbb6ffbba92f9985d1bf",
+        "phi_0": "37c7acbf30a76e1c04262ab06d08a0ee27eae109cec9d2f1e6d51e849dae4405"
+      },
+      "action_target": 0.75,
+      "action_points": [
+        [
+          102.0,
+          0.0
+        ],
+        [
+          102.75,
+          0.75
+        ],
+        [
+          182.0,
+          0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        102.0,
+        182.0
+      ],
+      "analysis_window": [
+        122.0,
+        182.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_train_b06_m075": {
+      "phase_bin": 6,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 134.0,
+      "source_state_sha256": {
+        "U": "e56f3ff419313fdabe878a24ee16470f658480d590d56a7168ecbc0e87d7a24c",
+        "U_0": "56e68a2eee180a8939dfdd2972da6c88776a296510ddcff85ace97a1f2a4892d",
+        "p": "7db300cce53760e6118045083391a53d15fbbdd6251117e58d7512be484a54d1",
+        "phi": "4fdf3eaaf07a3f9c29f6a9f843adc82eb4be32187e09577994881c8ebddefcbc",
+        "phi_0": "b7dd563b1e14ecb10a1354443d38a851ff5afe9e769b0bfc6844f9bbf2b82623"
+      },
+      "action_target": -0.75,
+      "action_points": [
+        [
+          134.0,
+          0.0
+        ],
+        [
+          134.75,
+          -0.75
+        ],
+        [
+          214.0,
+          -0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        134.0,
+        214.0
+      ],
+      "analysis_window": [
+        154.0,
+        214.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_train_b06_m0375": {
+      "phase_bin": 6,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 134.0,
+      "source_state_sha256": {
+        "U": "e56f3ff419313fdabe878a24ee16470f658480d590d56a7168ecbc0e87d7a24c",
+        "U_0": "56e68a2eee180a8939dfdd2972da6c88776a296510ddcff85ace97a1f2a4892d",
+        "p": "7db300cce53760e6118045083391a53d15fbbdd6251117e58d7512be484a54d1",
+        "phi": "4fdf3eaaf07a3f9c29f6a9f843adc82eb4be32187e09577994881c8ebddefcbc",
+        "phi_0": "b7dd563b1e14ecb10a1354443d38a851ff5afe9e769b0bfc6844f9bbf2b82623"
+      },
+      "action_target": -0.375,
+      "action_points": [
+        [
+          134.0,
+          0.0
+        ],
+        [
+          134.375,
+          -0.375
+        ],
+        [
+          214.0,
+          -0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        134.0,
+        214.0
+      ],
+      "analysis_window": [
+        154.0,
+        214.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_train_b06_zero": {
+      "phase_bin": 6,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 134.0,
+      "source_state_sha256": {
+        "U": "e56f3ff419313fdabe878a24ee16470f658480d590d56a7168ecbc0e87d7a24c",
+        "U_0": "56e68a2eee180a8939dfdd2972da6c88776a296510ddcff85ace97a1f2a4892d",
+        "p": "7db300cce53760e6118045083391a53d15fbbdd6251117e58d7512be484a54d1",
+        "phi": "4fdf3eaaf07a3f9c29f6a9f843adc82eb4be32187e09577994881c8ebddefcbc",
+        "phi_0": "b7dd563b1e14ecb10a1354443d38a851ff5afe9e769b0bfc6844f9bbf2b82623"
+      },
+      "action_target": 0.0,
+      "action_points": [
+        [
+          134.0,
+          0.0
+        ],
+        [
+          214.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.0,
+        "max_abs_domega_dt": 0.0
+      },
+      "run_window": [
+        134.0,
+        214.0
+      ],
+      "analysis_window": [
+        154.0,
+        214.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_train_b06_p0375": {
+      "phase_bin": 6,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 134.0,
+      "source_state_sha256": {
+        "U": "e56f3ff419313fdabe878a24ee16470f658480d590d56a7168ecbc0e87d7a24c",
+        "U_0": "56e68a2eee180a8939dfdd2972da6c88776a296510ddcff85ace97a1f2a4892d",
+        "p": "7db300cce53760e6118045083391a53d15fbbdd6251117e58d7512be484a54d1",
+        "phi": "4fdf3eaaf07a3f9c29f6a9f843adc82eb4be32187e09577994881c8ebddefcbc",
+        "phi_0": "b7dd563b1e14ecb10a1354443d38a851ff5afe9e769b0bfc6844f9bbf2b82623"
+      },
+      "action_target": 0.375,
+      "action_points": [
+        [
+          134.0,
+          0.0
+        ],
+        [
+          134.375,
+          0.375
+        ],
+        [
+          214.0,
+          0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        134.0,
+        214.0
+      ],
+      "analysis_window": [
+        154.0,
+        214.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_train_b06_p075": {
+      "phase_bin": 6,
+      "split": "train",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 134.0,
+      "source_state_sha256": {
+        "U": "e56f3ff419313fdabe878a24ee16470f658480d590d56a7168ecbc0e87d7a24c",
+        "U_0": "56e68a2eee180a8939dfdd2972da6c88776a296510ddcff85ace97a1f2a4892d",
+        "p": "7db300cce53760e6118045083391a53d15fbbdd6251117e58d7512be484a54d1",
+        "phi": "4fdf3eaaf07a3f9c29f6a9f843adc82eb4be32187e09577994881c8ebddefcbc",
+        "phi_0": "b7dd563b1e14ecb10a1354443d38a851ff5afe9e769b0bfc6844f9bbf2b82623"
+      },
+      "action_target": 0.75,
+      "action_points": [
+        [
+          134.0,
+          0.0
+        ],
+        [
+          134.75,
+          0.75
+        ],
+        [
+          214.0,
+          0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        134.0,
+        214.0
+      ],
+      "analysis_window": [
+        154.0,
+        214.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_frozen_test_b07_m075": {
+      "phase_bin": 7,
+      "split": "frozen_test",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 110.0,
+      "source_state_sha256": {
+        "U": "4573d15859d34acaa27dcf16959730d3f6574c95ce93c87199a24a0373c32963",
+        "U_0": "b2d3624f12dafa47d8c493111b8afd95c120589eba52c0a6e26bff78df190797",
+        "p": "606b05613f479d9ad1cdd68b133c7f373ee0a51fffc171d6816b372f11569751",
+        "phi": "657ab75a58f18f6ccf87b2dc83e064346c3131fd8342e477d16cbb42cb92a080",
+        "phi_0": "84910664934dd6521a094229d70c1201080da0bfd0f115b3899c4b18ec361df7"
+      },
+      "action_target": -0.75,
+      "action_points": [
+        [
+          110.0,
+          0.0
+        ],
+        [
+          110.75,
+          -0.75
+        ],
+        [
+          190.0,
+          -0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        110.0,
+        190.0
+      ],
+      "analysis_window": [
+        130.0,
+        190.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_frozen_test_b07_m0375": {
+      "phase_bin": 7,
+      "split": "frozen_test",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 110.0,
+      "source_state_sha256": {
+        "U": "4573d15859d34acaa27dcf16959730d3f6574c95ce93c87199a24a0373c32963",
+        "U_0": "b2d3624f12dafa47d8c493111b8afd95c120589eba52c0a6e26bff78df190797",
+        "p": "606b05613f479d9ad1cdd68b133c7f373ee0a51fffc171d6816b372f11569751",
+        "phi": "657ab75a58f18f6ccf87b2dc83e064346c3131fd8342e477d16cbb42cb92a080",
+        "phi_0": "84910664934dd6521a094229d70c1201080da0bfd0f115b3899c4b18ec361df7"
+      },
+      "action_target": -0.375,
+      "action_points": [
+        [
+          110.0,
+          0.0
+        ],
+        [
+          110.375,
+          -0.375
+        ],
+        [
+          190.0,
+          -0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        110.0,
+        190.0
+      ],
+      "analysis_window": [
+        130.0,
+        190.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_frozen_test_b07_zero": {
+      "phase_bin": 7,
+      "split": "frozen_test",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 110.0,
+      "source_state_sha256": {
+        "U": "4573d15859d34acaa27dcf16959730d3f6574c95ce93c87199a24a0373c32963",
+        "U_0": "b2d3624f12dafa47d8c493111b8afd95c120589eba52c0a6e26bff78df190797",
+        "p": "606b05613f479d9ad1cdd68b133c7f373ee0a51fffc171d6816b372f11569751",
+        "phi": "657ab75a58f18f6ccf87b2dc83e064346c3131fd8342e477d16cbb42cb92a080",
+        "phi_0": "84910664934dd6521a094229d70c1201080da0bfd0f115b3899c4b18ec361df7"
+      },
+      "action_target": 0.0,
+      "action_points": [
+        [
+          110.0,
+          0.0
+        ],
+        [
+          190.0,
+          0.0
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.0,
+        "max_abs_domega_dt": 0.0
+      },
+      "run_window": [
+        110.0,
+        190.0
+      ],
+      "analysis_window": [
+        130.0,
+        190.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_frozen_test_b07_p0375": {
+      "phase_bin": 7,
+      "split": "frozen_test",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 110.0,
+      "source_state_sha256": {
+        "U": "4573d15859d34acaa27dcf16959730d3f6574c95ce93c87199a24a0373c32963",
+        "U_0": "b2d3624f12dafa47d8c493111b8afd95c120589eba52c0a6e26bff78df190797",
+        "p": "606b05613f479d9ad1cdd68b133c7f373ee0a51fffc171d6816b372f11569751",
+        "phi": "657ab75a58f18f6ccf87b2dc83e064346c3131fd8342e477d16cbb42cb92a080",
+        "phi_0": "84910664934dd6521a094229d70c1201080da0bfd0f115b3899c4b18ec361df7"
+      },
+      "action_target": 0.375,
+      "action_points": [
+        [
+          110.0,
+          0.0
+        ],
+        [
+          110.375,
+          0.375
+        ],
+        [
+          190.0,
+          0.375
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.375,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        110.0,
+        190.0
+      ],
+      "analysis_window": [
+        130.0,
+        190.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    },
+    "matched_start_acquisition_frozen_test_b07_p075": {
+      "phase_bin": 7,
+      "split": "frozen_test",
+      "source_restart_case": "tandem_backward_dt005",
+      "source_restart_time": 110.0,
+      "source_state_sha256": {
+        "U": "4573d15859d34acaa27dcf16959730d3f6574c95ce93c87199a24a0373c32963",
+        "U_0": "b2d3624f12dafa47d8c493111b8afd95c120589eba52c0a6e26bff78df190797",
+        "p": "606b05613f479d9ad1cdd68b133c7f373ee0a51fffc171d6816b372f11569751",
+        "phi": "657ab75a58f18f6ccf87b2dc83e064346c3131fd8342e477d16cbb42cb92a080",
+        "phi_0": "84910664934dd6521a094229d70c1201080da0bfd0f115b3899c4b18ec361df7"
+      },
+      "action_target": 0.75,
+      "action_points": [
+        [
+          110.0,
+          0.0
+        ],
+        [
+          110.75,
+          0.75
+        ],
+        [
+          190.0,
+          0.75
+        ]
+      ],
+      "action_metrics": {
+        "max_abs_omega": 0.75,
+        "max_abs_domega_dt": 1.0
+      },
+      "run_window": [
+        110.0,
+        190.0
+      ],
+      "analysis_window": [
+        130.0,
+        190.0
+      ],
+      "disposition": "planned_new_remainder_case"
+    }
+  },
+  "solver_contract": {
+    "image": "opencfd/openfoam-default@sha256:33fb575aa9980d2bc42fd58c75ae698c489293ba30c991380fe3f899c622f319",
+    "network": "none",
+    "delta_t": 0.005,
+    "duration": 80.0,
+    "field_write_interval": 0.1,
+    "force_write_interval": 0.005,
+    "expected_steps": 16000,
+    "expected_field_frames": 801,
+    "expected_raw_force_samples": 16000,
+    "expected_aligned_force_samples_with_source_t0": 16001,
+    "analysis_window": "fixed final 60D/U; no post-hoc subwindow selection"
+  },
+  "generation_guards": {
+    "one_case_per_invocation": true,
+    "exclusive_atomic_case_directory": true,
+    "existing_nine_cases_are_validate_only_and_never_overwritten_or_rerun": true,
+    "new_case_directory_must_not_exist": true,
+    "predeclaration_exact_sha256_must_be_hard_bound_after_review_commit": true,
+    "no_case_generation_authorized_by_this_artifact_alone": true
+  },
+  "interpretation_guards": [
+    "This matrix contains prescribed constant rotations and is not closed-loop control.",
+    "Coverage of eight phases and five actions is not evidence of training sufficiency.",
+    "All starts come from one real baseline limit cycle and are not independent flows.",
+    "The nine commissioning cases retain their original provenance and are not regenerated."
+  ]
+}
