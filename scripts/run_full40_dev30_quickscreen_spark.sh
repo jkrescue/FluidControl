@@ -10,6 +10,7 @@ run_id="${3:-}"
 image="fluid-control-physicsnemo:2.2.2"
 expected_image="sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e"
 data_host="$root/data/curated/tandem_cylinders_matched_start_full40_dev30_v1"
+actual_parent_sha=""
 
 case "$stage" in
   onestep)
@@ -124,6 +125,50 @@ fi
   echo "explicit reviewed quick-screen token is required" >&2; exit 2;
 }
 mkdir "$output_host"
+python3 - \
+  "$output_host/run_provenance.json" "$stage" "$run_id" "$expected_image" \
+  "$(sha256sum "$data_host/manifest.json" | awk '{print $1}')" \
+  "$(sha256sum "$data_host/normalization.json" | awk '{print $1}')" \
+  "$(sha256sum "$root/conf/$config.yaml" | awk '{print $1}')" \
+  "$(sha256sum "$root/scripts/run_full40_dev30_quickscreen_spark.sh" | awk '{print $1}')" \
+  "$(git rev-parse HEAD)" "$actual_parent_sha" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+(
+    output,
+    stage,
+    run_id,
+    image_id,
+    manifest_sha,
+    normalization_sha,
+    config_sha,
+    runner_sha,
+    git_commit,
+    parent_sha,
+) = sys.argv[1:]
+payload = {
+    "status": "DEV30_QUICKSCREEN_RUN_PREDECLARED",
+    "scope": "stage_candidate_only",
+    "stage": stage,
+    "run_id": run_id,
+    "expected_epochs": 10 if stage == "onestep" else 5,
+    "physicsnemo_image_id": image_id,
+    "dev30_manifest_sha256": manifest_sha,
+    "train_only_normalization_sha256": normalization_sha,
+    "hydra_config_sha256": config_sha,
+    "runner_sha256": runner_sha,
+    "git_commit": git_commit,
+    "parent_fno_sha256": parent_sha or None,
+    "frozen_test_mounted_or_accessed": False,
+    "formal_gate_authorized": False,
+    "ppo_authorized": False,
+}
+with Path(output).open("x", encoding="utf-8") as stream:
+    json.dump(payload, stream, indent=2, sort_keys=True)
+    stream.write("\n")
+PY
 if [[ "$stage" == "h20" ]]; then
   printf '%s  %s\n' "$actual_parent_sha" "${parent_models[0]##*/}" > "$output_host/parent_fno_sha256.txt"
 fi

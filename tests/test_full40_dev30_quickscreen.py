@@ -35,7 +35,8 @@ def test_quickscreen_runner_is_frozen_blind_guarded_and_nonformal() -> None:
     for mount in ("scripts", "src", "conf"):
         assert f"src=$root/{mount},dst=/workspace/{mount},readonly" in text
     assert "src=$data_host,dst=/workspace/devdata,readonly" in text
-    assert "frozen_test" not in text
+    assert "matched_start_full40_v1/frozen" not in text
+    assert "dst=/workspace/frozen" not in text
     assert "--min-free-gib 20" in text
     assert "--gpus device=0" in text
     assert "refusing existing quick-screen output" in text
@@ -46,6 +47,12 @@ def test_quickscreen_runner_is_frozen_blind_guarded_and_nonformal() -> None:
     assert "STAGE_CANDIDATE_ONLY" in text
     assert "tandem_fno_full40_quickscreen_onestep" in text
     assert "tandem_fno_full40_quickscreen_h20" in text
+    assert "run_provenance.json" in text
+    assert "dev30_manifest_sha256" in text
+    assert "train_only_normalization_sha256" in text
+    assert '"frozen_test_mounted_or_accessed": False' in text
+    assert '"formal_gate_authorized": False' in text
+    assert '"ppo_authorized": False' in text
 
 
 def test_formal_configs_are_not_shortened() -> None:
