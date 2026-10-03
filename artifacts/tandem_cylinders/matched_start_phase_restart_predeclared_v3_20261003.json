@@ -1,0 +1,487 @@
+{
+  "status": "MATCHED_START_PHASE_RESTART_AUDIT_COMPLETE",
+  "decision": "GO_9_CASE_COMMISSIONING",
+  "scope": "baseline restart phase feasibility only; no controlled CFD and no frozen-test fields read",
+  "algorithm": {
+    "phase_signal": "rear-cylinder raw Cl from forceRear coefficient.dat",
+    "phase_window": [
+      80.0,
+      160.0
+    ],
+    "centering": "arithmetic mean over fixed phase window",
+    "phase_origin": "positive-going mean crossing; scalar crossing time linearly interpolated",
+    "phase_between_crossings": "piecewise linear fraction between adjacent observed crossings",
+    "state_interpolation": false,
+    "candidate_window": [
+      100.0,
+      160.0
+    ],
+    "restart_cadence": 2.0,
+    "observed_crossing_bracket_required": true,
+    "phase_bins": 8,
+    "max_absolute_phase_error_rad": 0.19634954084936207,
+    "split_by_bin": {
+      "0": "train",
+      "1": "validation",
+      "2": "train",
+      "3": "frozen_test",
+      "4": "train",
+      "5": "validation",
+      "6": "train",
+      "7": "frozen_test"
+    }
+  },
+  "signal_qc": {
+    "force_path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat",
+    "force_sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b",
+    "sample_dt": 0.0049999999999954525,
+    "samples": 16001,
+    "rear_cl_mean": -0.0007853625410546224,
+    "positive_crossing_times": [
+      85.83385099482777,
+      92.0572385488465,
+      98.2704044321188,
+      104.47981073393046,
+      110.68781196706757,
+      116.89520683815387,
+      123.1023462273948,
+      129.30929125946895,
+      135.5162061338926,
+      141.72299236505933,
+      147.92976233957384,
+      154.13651101138572
+    ],
+    "periods": [
+      6.2233875540187285,
+      6.213165883272296,
+      6.2094063018116685,
+      6.208001233137111,
+      6.207394871086294,
+      6.207139389240936,
+      6.206945032074145,
+      6.20691487442366,
+      6.206786231166717,
+      6.206769974514515,
+      6.20674867181188
+    ],
+    "median_period": 6.207139389240936,
+    "period_std": 0.004803903104839367,
+    "periodicity_at_nearest_sample_lags": {
+      "1": {
+        "lag_samples": 1241,
+        "correlation": 0.9999591906401342,
+        "nrmse": 0.009113096820512583
+      },
+      "2": {
+        "lag_samples": 2483,
+        "correlation": 0.9999379456421947,
+        "nrmse": 0.011289932517043827
+      },
+      "3": {
+        "lag_samples": 3724,
+        "correlation": 0.9999049961310377,
+        "nrmse": 0.013980806246099441
+      }
+    }
+  },
+  "restart_qc": {
+    "eligible_real_restart_count": 28,
+    "selected_restart_times_unique": true,
+    "selected_state_hashes_unique": true,
+    "selected_phase_gap_min_rad": 0.6280935111039204,
+    "selected_phase_gap_max_rad": 0.9744381403394273,
+    "all_selected_have_real_u_and_p": true
+  },
+  "selections": [
+    {
+      "phase_bin": 0,
+      "target_phase_rad": 0.0,
+      "split": "train",
+      "commissioning": true,
+      "coverage_pass": true,
+      "selected": {
+        "restart_time": 148.0,
+        "phase_rad": 0.07110264316075172,
+        "u_sha256": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+        "p_sha256": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+        "state_sha256": "d19aa30f745c3ce4ea9be36d348f6b88a947f6fb238955f960ef493dfdaf47b8",
+        "signed_phase_error_rad": 0.07110264316075172,
+        "absolute_phase_error_rad": 0.07110264316075172
+      },
+      "three_nearest_real_restarts": [
+        {
+          "restart_time": 148.0,
+          "phase_rad": 0.07110264316075172,
+          "u_sha256": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+          "p_sha256": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+          "state_sha256": "d19aa30f745c3ce4ea9be36d348f6b88a947f6fb238955f960ef493dfdaf47b8",
+          "signed_phase_error_rad": 0.07110264316075172,
+          "absolute_phase_error_rad": 0.07110264316075172
+        },
+        {
+          "restart_time": 154.0,
+          "phase_rad": 6.144993151131386,
+          "u_sha256": "28eaa8ea4e7edb5dc78f4ef1ab33bc2f786cf90e250fc04d1c135970c9c7cc15",
+          "p_sha256": "4220627096b5e37566fc21fcd25f0d363b3ca20c7fd1014feed93f2a4cebb4de",
+          "state_sha256": "508e3dcce09433754739fe4c220c89c42a438ee75c52a5aa0025c1dd7736613b",
+          "signed_phase_error_rad": -0.13819215604820048,
+          "absolute_phase_error_rad": 0.13819215604820048
+        },
+        {
+          "restart_time": 142.0,
+          "phase_rad": 0.2804180449706364,
+          "u_sha256": "81e803e623f577a66ea6eca4b304efc755c8592ea94997680e60890c62be2f1f",
+          "p_sha256": "b2cb7a4b2198587772ce6a41e05dc3762476cd9eac005fb5fc252e110918cf97",
+          "state_sha256": "3222aa55a392a178947eee97a3c4e75e126e4be8959488b3188a162af7e8ec49",
+          "signed_phase_error_rad": 0.2804180449706364,
+          "absolute_phase_error_rad": 0.2804180449706364
+        }
+      ]
+    },
+    {
+      "phase_bin": 1,
+      "target_phase_rad": 0.7853981633974483,
+      "split": "validation",
+      "commissioning": false,
+      "coverage_pass": true,
+      "selected": {
+        "restart_time": 130.0,
+        "phase_rad": 0.6991961542646722,
+        "u_sha256": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+        "p_sha256": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+        "state_sha256": "73550fdefdeadfa7b040c52a6627813ca593203e1eb23b1bdbc3388fc7137354",
+        "signed_phase_error_rad": -0.08620200913277609,
+        "absolute_phase_error_rad": 0.08620200913277609
+      },
+      "three_nearest_real_restarts": [
+        {
+          "restart_time": 130.0,
+          "phase_rad": 0.6991961542646722,
+          "u_sha256": "ac412e9e3de151253dd3006a70ab195ef8f49f9c81edeeef28086b808fe9d230",
+          "p_sha256": "1ddc27110bacd814e31b3425e3550927ba7fee3f57112e62a4cb2a18288aa52c",
+          "state_sha256": "73550fdefdeadfa7b040c52a6627813ca593203e1eb23b1bdbc3388fc7137354",
+          "signed_phase_error_rad": -0.08620200913277609,
+          "absolute_phase_error_rad": 0.08620200913277609
+        },
+        {
+          "restart_time": 124.0,
+          "phase_rad": 0.9086797072991893,
+          "u_sha256": "9ed4956297d26eacf1d4002b6d5c4f6b107de4f99af24b908907aa7d0d93cf5c",
+          "p_sha256": "fc14e99eaa86dde1c99219633b1dcc111a016216f80e9f67d3c4f4af0f264364",
+          "state_sha256": "d09d556a737119e0d746c0dd46d6bb7de03de39fe4b7d407c097eec8acf287f2",
+          "signed_phase_error_rad": 0.12328154390174106,
+          "absolute_phase_error_rad": 0.12328154390174106
+        },
+        {
+          "restart_time": 136.0,
+          "phase_rad": 0.48974886487401487,
+          "u_sha256": "a57de28510c3b29626f94a85f411369fafb05e8dc4f9925b61e2755d056bfcbe",
+          "p_sha256": "86e0b0a1a30c296addfe9a1eeee6b76c4c0f50d7732fdf49d618f26516180164",
+          "state_sha256": "d73aa1dc2ea1f275c265f6e048b2159e5d80c603400d20dd52af8f09bb818c64",
+          "signed_phase_error_rad": -0.2956492985234334,
+          "absolute_phase_error_rad": 0.2956492985234334
+        }
+      ]
+    },
+    {
+      "phase_bin": 2,
+      "target_phase_rad": 1.5707963267948966,
+      "split": "train",
+      "commissioning": true,
+      "coverage_pass": true,
+      "selected": {
+        "restart_time": 106.0,
+        "phase_rad": 1.5386000263201416,
+        "u_sha256": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+        "p_sha256": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+        "state_sha256": "626da800358d75646ea5a79e132faca412c74e9274ef23bc5e6e16d145ecc099",
+        "signed_phase_error_rad": -0.03219630047475497,
+        "absolute_phase_error_rad": 0.03219630047475497
+      },
+      "three_nearest_real_restarts": [
+        {
+          "restart_time": 106.0,
+          "phase_rad": 1.5386000263201416,
+          "u_sha256": "538bede1ee9dba2328cee125508ac0746bf83a0d94d932b650a2663b2c253d6b",
+          "p_sha256": "62b6c33b451ccb626844649858768fe469ffafa479c2bb976a665309bcb787b2",
+          "state_sha256": "626da800358d75646ea5a79e132faca412c74e9274ef23bc5e6e16d145ecc099",
+          "signed_phase_error_rad": -0.03219630047475497,
+          "absolute_phase_error_rad": 0.03219630047475497
+        },
+        {
+          "restart_time": 100.0,
+          "phase_rad": 1.7501462992208183,
+          "u_sha256": "230582f4e748192a0c2b2e2049a8197a77c513ed76a00319095b32a4d992dd85",
+          "p_sha256": "753fa3b089a9f789b591c7ad87304d9e2e7bdf7dc6556c48d607aa68bcc5ba9e",
+          "state_sha256": "869448e9631ae9a230ba0042c4bfcdd48477945e340304d930e60a768bd6ded0",
+          "signed_phase_error_rad": 0.17934997242592177,
+          "absolute_phase_error_rad": 0.17934997242592177
+        },
+        {
+          "restart_time": 112.0,
+          "phase_rad": 1.3282094566242848,
+          "u_sha256": "b0f67ac6dc7290066d4c088d8fcc509ac389fadba29f828dab4b4d8aecce2001",
+          "p_sha256": "9d71220f6b5e2fcea1bfb426ce09a2fcf64aab04ca8f2ea0dd38f3d450a38031",
+          "state_sha256": "d189a4a5a2f4a6be77219cef0a4812ee01d1859a98a6ca3dd9a5ce92f91e7f8a",
+          "signed_phase_error_rad": -0.24258687017061176,
+          "absolute_phase_error_rad": 0.24258687017061176
+        }
+      ]
+    },
+    {
+      "phase_bin": 3,
+      "target_phase_rad": 2.356194490192345,
+      "split": "frozen_test",
+      "commissioning": false,
+      "coverage_pass": true,
+      "selected": {
+        "restart_time": 144.0,
+        "phase_rad": 2.3050412654150345,
+        "u_sha256": "7bb667038ffcb6c3fb21e429b7ce29f41d86e4c6835f167670489709570e49b2",
+        "p_sha256": "0931ff502abc92cb66de4a98fc83c39ced438929531eac1e470a25f31b206665",
+        "state_sha256": "33268f0b52b35212b61fb72986ebed9020d5b64869862e81646671d97fe73746",
+        "signed_phase_error_rad": -0.051153224777310324,
+        "absolute_phase_error_rad": 0.051153224777310324
+      },
+      "three_nearest_real_restarts": [
+        {
+          "restart_time": 144.0,
+          "phase_rad": 2.3050412654150345,
+          "u_sha256": "7bb667038ffcb6c3fb21e429b7ce29f41d86e4c6835f167670489709570e49b2",
+          "p_sha256": "0931ff502abc92cb66de4a98fc83c39ced438929531eac1e470a25f31b206665",
+          "state_sha256": "33268f0b52b35212b61fb72986ebed9020d5b64869862e81646671d97fe73746",
+          "signed_phase_error_rad": -0.051153224777310324,
+          "absolute_phase_error_rad": 0.051153224777310324
+        },
+        {
+          "restart_time": 138.0,
+          "phase_rad": 2.514366782478214,
+          "u_sha256": "2da27c152d99846f9073ef4806ba42eb1d7efb77db36a68fa344e63c6a949ed5",
+          "p_sha256": "759e0f9e41723537d4babf75c555765ff4f47b7d187ad6d37c0d3fffccfedb7b",
+          "state_sha256": "742948d68c29c49bd5b7f0e938e3e59ce376fd93267ad0aca93ec940c086be43",
+          "signed_phase_error_rad": 0.1581722922858693,
+          "absolute_phase_error_rad": 0.1581722922858693
+        },
+        {
+          "restart_time": 150.0,
+          "phase_rad": 2.095732812484296,
+          "u_sha256": "a2a05674473e675a69c926351d99086b896112a59594af9ff27160a8cd082f53",
+          "p_sha256": "b84433c903a5bf3ee62df1649d159fe88550a77a9539a60c770ea2c5352a8ddc",
+          "state_sha256": "e0273afd820fe8b9e2e24d8460ecf9474492b36a8b9d7cb902d49cc65fd656b4",
+          "signed_phase_error_rad": -0.2604616777080486,
+          "absolute_phase_error_rad": 0.2604616777080486
+        }
+      ]
+    },
+    {
+      "phase_bin": 4,
+      "target_phase_rad": 3.141592653589793,
+      "split": "train",
+      "commissioning": true,
+      "coverage_pass": true,
+      "selected": {
+        "restart_time": 120.0,
+        "phase_rad": 3.1428311099565747,
+        "u_sha256": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+        "p_sha256": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+        "state_sha256": "262ba82267d3b9eb25f774f4931f72b1370555e37cc252deae28ab8151e6fcc9",
+        "signed_phase_error_rad": 0.0012384563667815487,
+        "absolute_phase_error_rad": 0.0012384563667815487
+      },
+      "three_nearest_real_restarts": [
+        {
+          "restart_time": 120.0,
+          "phase_rad": 3.1428311099565747,
+          "u_sha256": "c1fb2a0e0e2771daccf99e42b041a3e6c21afc5a2d4335ce2f4d46a7a64814ab",
+          "p_sha256": "651a6078437b2cadf2714311b2540e04a9758fda8d8670d16eefbdb8302215e3",
+          "state_sha256": "262ba82267d3b9eb25f774f4931f72b1370555e37cc252deae28ab8151e6fcc9",
+          "signed_phase_error_rad": 0.0012384563667815487,
+          "absolute_phase_error_rad": 0.0012384563667815487
+        },
+        {
+          "restart_time": 126.0,
+          "phase_rad": 2.933245826287346,
+          "u_sha256": "35dedbc3a881dc803babeff4feb4a0e542fd0f436fea50f2a0df2e5341233b14",
+          "p_sha256": "ba7da4fa0512388c400c7ddf538905884719eb512514d260c27898c039272c1c",
+          "state_sha256": "5ad2ef059fad5933931e7177090247aeb91a4c9c0c2d5043880d54e57b9db219",
+          "signed_phase_error_rad": -0.20834682730244714,
+          "absolute_phase_error_rad": 0.20834682730244714
+        },
+        {
+          "restart_time": 114.0,
+          "phase_rad": 3.3526288588589717,
+          "u_sha256": "f2f52dad8027d0df263d281cb2b5cc100bf4b714191a54fb7c71f766fbec1dee",
+          "p_sha256": "bbd85d6721e9143f4f3e0490f89f6c0f8b459db56c95a4ba4c63c34436cbe80c",
+          "state_sha256": "15f8733b5bcaf15362112970e2af70a7c57ba48509aba56dad546a196fc84a2b",
+          "signed_phase_error_rad": 0.21103620526917855,
+          "absolute_phase_error_rad": 0.21103620526917855
+        }
+      ]
+    },
+    {
+      "phase_bin": 5,
+      "target_phase_rad": 3.9269908169872414,
+      "split": "validation",
+      "commissioning": false,
+      "coverage_pass": true,
+      "selected": {
+        "restart_time": 102.0,
+        "phase_rad": 3.7739099254942,
+        "u_sha256": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+        "p_sha256": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+        "state_sha256": "69305ecdda71b5f9906d2dfd0ec224b273c26e99febfd16065c9b84b43592b28",
+        "signed_phase_error_rad": -0.15308089149304127,
+        "absolute_phase_error_rad": 0.15308089149304127
+      },
+      "three_nearest_real_restarts": [
+        {
+          "restart_time": 102.0,
+          "phase_rad": 3.7739099254942,
+          "u_sha256": "4336d15d0f7aea0897c7c563aa910910589d17d8f3d6b6aa6eb031f20986808a",
+          "p_sha256": "13183349a07cbf81a065901cdb25433ca8dc4399466cd9f7fc314f58c03db067",
+          "state_sha256": "69305ecdda71b5f9906d2dfd0ec224b273c26e99febfd16065c9b84b43592b28",
+          "signed_phase_error_rad": -0.15308089149304127,
+          "absolute_phase_error_rad": 0.15308089149304127
+        },
+        {
+          "restart_time": 152.0,
+          "phase_rad": 4.120362981807841,
+          "u_sha256": "0cb3aaa04508f4ac8ed7c71ba294f60c63e87fc166012f642b31339ff3d3423c",
+          "p_sha256": "b95265505bf21b620e70df0d845b7758f3c4c8e4d9ce095c0ef6093ab3ecfaeb",
+          "state_sha256": "4a775d74589bd3a7d9771ac1e5f2facb5bd6bc90542bec6a6107e3a3225131a2",
+          "signed_phase_error_rad": 0.19337216482059993,
+          "absolute_phase_error_rad": 0.19337216482059993
+        },
+        {
+          "restart_time": 108.0,
+          "phase_rad": 3.5628216948472535,
+          "u_sha256": "5fb2c882bcfea54c69b89f90e53767060343aa07b91eb799ec40aa97a5235c84",
+          "p_sha256": "a9743e04f8921c1685dc3c69d119af9deddb2d3d214f16f0ee744b6ea701d72c",
+          "state_sha256": "41f06de334c4f409369d4d0894fc1c13378dc8515ff6d2dad02d561f9876ebb1",
+          "signed_phase_error_rad": -0.36416912213998787,
+          "absolute_phase_error_rad": 0.36416912213998787
+        }
+      ]
+    },
+    {
+      "phase_bin": 6,
+      "target_phase_rad": 4.71238898038469,
+      "split": "train",
+      "commissioning": false,
+      "coverage_pass": true,
+      "selected": {
+        "restart_time": 134.0,
+        "phase_rad": 4.7483480658336275,
+        "u_sha256": "e56f3ff419313fdabe878a24ee16470f658480d590d56a7168ecbc0e87d7a24c",
+        "p_sha256": "7db300cce53760e6118045083391a53d15fbbdd6251117e58d7512be484a54d1",
+        "state_sha256": "8ea410dcb6ddb6964edf05d7b269f88d8f440f6c541eb767b60c4469585e08a5",
+        "signed_phase_error_rad": 0.03595908544893778,
+        "absolute_phase_error_rad": 0.03595908544893778
+      },
+      "three_nearest_real_restarts": [
+        {
+          "restart_time": 134.0,
+          "phase_rad": 4.7483480658336275,
+          "u_sha256": "e56f3ff419313fdabe878a24ee16470f658480d590d56a7168ecbc0e87d7a24c",
+          "p_sha256": "7db300cce53760e6118045083391a53d15fbbdd6251117e58d7512be484a54d1",
+          "state_sha256": "8ea410dcb6ddb6964edf05d7b269f88d8f440f6c541eb767b60c4469585e08a5",
+          "signed_phase_error_rad": 0.03595908544893778,
+          "absolute_phase_error_rad": 0.03595908544893778
+        },
+        {
+          "restart_time": 140.0,
+          "phase_rad": 4.538984700082413,
+          "u_sha256": "7047a706b81f5e1c19ae7bbfcb4c78991df0b3fbdfa1c4bcaabd5c06da588879",
+          "p_sha256": "d012c61087ad52b661ee48568cfea668fcb73cbb3789e62c3e192d6b505dbc48",
+          "state_sha256": "26e3a12b4cd3008b69dbffb5516e00f20ef72dde71d58430387fc7feb451f85d",
+          "signed_phase_error_rad": -0.17340428030227706,
+          "absolute_phase_error_rad": 0.17340428030227706
+        },
+        {
+          "restart_time": 128.0,
+          "phase_rad": 4.957811945275503,
+          "u_sha256": "40be0272516dfd4aea70004a32436fe034daf1db21e9db25aa55d04e12df50b8",
+          "p_sha256": "38a3f2de40c7d49ea8c6bf21523f714b35ae06a040bb0d7b94773ab10cc2d80f",
+          "state_sha256": "40034086964cecb8bccc3132e870637df87515b132eafae4379da8209e841aac",
+          "signed_phase_error_rad": 0.24542296489081306,
+          "absolute_phase_error_rad": 0.24542296489081306
+        }
+      ]
+    },
+    {
+      "phase_bin": 7,
+      "target_phase_rad": 5.497787143782138,
+      "split": "frozen_test",
+      "commissioning": false,
+      "coverage_pass": true,
+      "selected": {
+        "restart_time": 110.0,
+        "phase_rad": 5.587043363374366,
+        "u_sha256": "4573d15859d34acaa27dcf16959730d3f6574c95ce93c87199a24a0373c32963",
+        "p_sha256": "606b05613f479d9ad1cdd68b133c7f373ee0a51fffc171d6816b372f11569751",
+        "state_sha256": "79b2656463b5ecdfe44b2ee11fe706ae78834734e315f8d314183ccf1134c710",
+        "signed_phase_error_rad": 0.08925621959222774,
+        "absolute_phase_error_rad": 0.08925621959222774
+      },
+      "three_nearest_real_restarts": [
+        {
+          "restart_time": 110.0,
+          "phase_rad": 5.587043363374366,
+          "u_sha256": "4573d15859d34acaa27dcf16959730d3f6574c95ce93c87199a24a0373c32963",
+          "p_sha256": "606b05613f479d9ad1cdd68b133c7f373ee0a51fffc171d6816b372f11569751",
+          "state_sha256": "79b2656463b5ecdfe44b2ee11fe706ae78834734e315f8d314183ccf1134c710",
+          "signed_phase_error_rad": 0.08925621959222774,
+          "absolute_phase_error_rad": 0.08925621959222774
+        },
+        {
+          "restart_time": 116.0,
+          "phase_rad": 5.377048261093658,
+          "u_sha256": "362e89583366a1a6e4101b8bea07dfeebe4115ebf1c9d73642fc195295ef5f36",
+          "p_sha256": "9a919fa8e4e017fc96e2c488acf4fe2b07aea28931ac3e163491c7c5967023ef",
+          "state_sha256": "63796e674cbfd512ab9b90e5f8954a6433dd1ebc41d504c5c2e0169a2ccb0c9f",
+          "signed_phase_error_rad": -0.12073888268847988,
+          "absolute_phase_error_rad": 0.12073888268847988
+        },
+        {
+          "restart_time": 104.0,
+          "phase_rad": 5.797673551767582,
+          "u_sha256": "c79f3ca071d94bf093b8ba8e51a0326c9470329666c7ad791bc65c45c62047d4",
+          "p_sha256": "381a99fba680d77ec20d17e91936801416930bccb0af3dae38fd14930ec414c7",
+          "state_sha256": "f0de6759e7e9c3777d993d98116b6b79e4bd0c26335fbe51fbab84ad91b72220",
+          "signed_phase_error_rad": 0.2998864079854444,
+          "absolute_phase_error_rad": 0.2998864079854444
+        }
+      ]
+    }
+  ],
+  "commissioning": {
+    "phase_bins": [
+      0,
+      2,
+      4
+    ],
+    "actions": [
+      -0.75,
+      0.0,
+      0.75
+    ],
+    "case_count": 9
+  },
+  "full_seed_matrix": {
+    "actions": [
+      -0.75,
+      -0.375,
+      0.0,
+      0.375,
+      0.75
+    ],
+    "case_count": 40,
+    "authorization": "not authorized by this audit"
+  },
+  "limitations": [
+    "all phase bins lie on one uncontrolled limit cycle and are not independent physical conditions",
+    "high periodic autocorrelation means cycle-separated states are near repeats",
+    "phase interpolation applies only to the scalar diagnostic; CFD U/p states are existing files",
+    "fixed plateau actions do not cover dynamic closed-loop action primitives"
+  ]
+}
