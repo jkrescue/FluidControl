@@ -1,0 +1,47 @@
+{
+  "status": "VALIDATION_ACTION_RANKING_DIAGNOSTIC",
+  "scientific_scope": "validation-only open-loop FNO-vs-CFD action ranking; not a closed-loop result or Gate-B pass",
+  "checkpoint_epoch": 9,
+  "checkpoint_dir": "artifacts/distributed_runs/gateb_aug_v3_h20_rear_drag_seed20261002_20261003/formal/tandem_fno_gate_b_aug_v3_h20_rear_drag_seed20261002_10epoch/best",
+  "initial_state": "data/curated/tandem_cylinders_gate_b_aug_v3/train/expanded_train_24.h5:frame0",
+  "horizon_steps": 100,
+  "dt_action": 0.1,
+  "objective": "mean system-total Cd over t=80.1..90, lower is better",
+  "state_guard": 39.403000082385134,
+  "cases": [
+    {
+      "case": "landscape_val_zero_20261003",
+      "cfd_mean_total_cd_t80p1_to_t90": 2.3013064463260005,
+      "fno_mean_total_cd_t80p1_to_t90": 2.4299755096435547,
+      "fno_max_abs_normalized_state": 6.062164783477783,
+      "fno_state_guard_exceeded": false
+    },
+    {
+      "case": "landscape_val_p100_20261003",
+      "cfd_mean_total_cd_t80p1_to_t90": 2.303039161522,
+      "fno_mean_total_cd_t80p1_to_t90": 2.3843932151794434,
+      "fno_max_abs_normalized_state": 7.559718608856201,
+      "fno_state_guard_exceeded": false
+    },
+    {
+      "case": "landscape_val_m100_20261003",
+      "cfd_mean_total_cd_t80p1_to_t90": 2.267243623836,
+      "fno_mean_total_cd_t80p1_to_t90": 2.38320255279541,
+      "fno_max_abs_normalized_state": 7.449774742126465,
+      "fno_state_guard_exceeded": false
+    },
+    {
+      "case": "landscape_val_sine_20261003",
+      "cfd_mean_total_cd_t80p1_to_t90": 2.558163133945,
+      "fno_mean_total_cd_t80p1_to_t90": 2.6400275230407715,
+      "fno_max_abs_normalized_state": 8.015792846679688,
+      "fno_state_guard_exceeded": false
+    }
+  ],
+  "pairwise_ranking_accuracy": 0.8333333333333334,
+  "fno_selected_case": "landscape_val_m100_20261003",
+  "cfd_best_case": "landscape_val_m100_20261003",
+  "cfd_regret_of_fno_selection": 0.0,
+  "cfd_change_of_fno_selection_vs_zero_percent": -1.4801515262941822,
+  "interpretation_guard": "10-unit startup window, one phase, coarse mesh; do not extrapolate to late-window or long-horizon control"
+}
