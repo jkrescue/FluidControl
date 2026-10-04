@@ -59,6 +59,7 @@ FC_P003C_FULL_APPROVAL = Path(
     "docs/FC_P003C_FULL_TRAINING_APPROVAL_20261005.json"
 )
 FC_P003C_UNIT = "fluid-control-fcp003c-true-state-step-20261005.service"
+FC_P003C_CONTAINER = "fcp003c-true-state-step-full-20261005"
 FC_P003C_POSTEVAL_UNIT = (
     "fluid-control-fcp003c-posteval-wait-fa08ce0-20261005.service"
 )
@@ -408,6 +409,12 @@ def unit_state(unit: str) -> dict:
         "train_tandem_fno_paired_stats.py",
         required_args=required_training_args,
     )
+    if unit == FC_P003C_UNIT:
+        training_process_pids = local_container_python_pids(
+            FC_P003C_CONTAINER,
+            "train_tandem_fno_paired_stats.py",
+            required_args=required_training_args,
+        )
     posteval_process_pids = sorted(
         set(
             descendant_processes_matching(main_pid, "evaluate_tandem_fno.py")
@@ -439,6 +446,28 @@ def is_python_payload(
     if "spark_gpu_guard.py" in command or needle not in command:
         return False
     return all(value in tokens for value in required_args)
+
+
+def parse_container_python_pids(
+    output: str, needle: str, required_args: tuple[str, ...] = ()
+) -> list[int]:
+    pids = []
+    for line in output.splitlines()[1:]:
+        columns = line.split(maxsplit=1)
+        if len(columns) != 2 or not columns[0].isdigit():
+            continue
+        if is_python_payload(columns[1], needle, required_args):
+            pids.append(int(columns[0]))
+    return sorted(set(pids))
+
+
+def local_container_python_pids(
+    container: str, needle: str, *, required_args: tuple[str, ...] = ()
+) -> list[int]:
+    result = _command(["docker", "top", container, "-eo", "pid,args"])
+    if result.returncode != 0:
+        return []
+    return parse_container_python_pids(result.stdout, needle, required_args)
 
 
 def descendant_processes_matching(

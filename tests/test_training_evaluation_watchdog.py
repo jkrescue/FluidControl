@@ -60,6 +60,15 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         self.assertFalse(MODULE.is_python_payload(guard, needle, required))
         self.assertFalse(MODULE.is_python_payload(wrong, needle, required))
         self.assertTrue(MODULE.is_python_payload(trainer, needle, required))
+        top = (
+            "PID COMMAND\n"
+            f"2515182 {guard}\n"
+            f"2515343 {trainer}\n"
+            f"2515050 {docker}\n"
+        )
+        self.assertEqual(
+            MODULE.parse_container_python_pids(top, needle, required), [2515343]
+        )
 
     def test_worker_container_state_uses_ssh_safe_inspect_format(self) -> None:
         inspect = mock.Mock(returncode=0, stdout="true,3233445\n", stderr="")
