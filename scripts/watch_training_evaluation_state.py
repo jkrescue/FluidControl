@@ -55,6 +55,18 @@ FC_P003_POSTEVAL_UNIT = "fluid-control-fcp003-posteval-queue-v3-20261005.service
 FC_P003_POSTEVAL_PREFIX = "fluid-control-fcp003-posteval-queue-"
 FC_P003B_APPROVAL = Path("docs/FC-P003B_APPROVAL.md")
 FC_P003C_APPROVAL = Path("docs/FC-P003C_APPROVAL.md")
+FC_P003C_FULL_APPROVAL = Path(
+    "docs/FC_P003C_FULL_TRAINING_APPROVAL_20261005.json"
+)
+FC_P003C_UNIT = "fluid-control-fcp003c-true-state-step-20261005.service"
+FC_P003C_POSTEVAL_UNIT = (
+    "fluid-control-fcp003c-posteval-wait-fa08ce0-20261005.service"
+)
+FC_P003C_ROOT = Path("artifacts/tandem_fno_true_state_paired_step_lambda10_20261005")
+FC_P003C_TRAINING_RECEIPT = FC_P003C_ROOT / "completion_receipt.json"
+FC_P003C_POSTEVAL_RECEIPT = FC_P003C_ROOT / "posteval_fc_p003c/receipt.json"
+FC_P003C_TRAINING_STATUS = "FC_P003C_TRAINING_COMPLETE"
+FC_P003C_POSTEVAL_STATUS = "FC_P003C_POSTEVAL_COMPLETE"
 FC_P003B_UNIT = "fluid-control-fcp003b-dynamic-pairs-20261005.service"
 FC_P003B_PROBE_UNIT = "fluid-control-fcp003b-dynamic-pairs-probe-v3-20261005.service"
 FC_P003B_POSTEVAL_UNIT = (
@@ -557,6 +569,7 @@ def discover_related_units() -> list[str]:
             or columns[0].startswith(FC_P003_PREFIX)
             or columns[0].startswith(FC_P003_PROBE_PREFIX)
             or columns[0].startswith(FC_P003_POSTEVAL_PREFIX)
+            or columns[0].startswith("fluid-control-fcp003c-")
         ):
             names.append(columns[0])
     return sorted(
@@ -570,6 +583,8 @@ def discover_related_units() -> list[str]:
                 FC_P003_PROBE_UNIT,
                 FC_P003_POSTEVAL_UNIT,
                 TRUE_STATE_FORCE_PROBE_V2_UNIT,
+                FC_P003C_UNIT,
+                FC_P003C_POSTEVAL_UNIT,
                 *SUPERSEDED_MAIN_UNITS,
                 *names,
             )
@@ -759,6 +774,22 @@ def build_sample(
     fc_p003_approved = (repo / FC_P003_APPROVAL).is_file()
     fc_p003b_approved = (repo / FC_P003B_APPROVAL).is_file()
     fc_p003c_approved = (repo / FC_P003C_APPROVAL).is_file()
+    fc_p003c_full_approved = (repo / FC_P003C_FULL_APPROVAL).is_file()
+    fc_p003c_unit = units.get(FC_P003C_UNIT, {})
+    fc_p003c_posteval_unit = units.get(FC_P003C_POSTEVAL_UNIT, {})
+    fc_p003c_running = (
+        fc_p003c_unit.get("active_state") == "active"
+        and bool(fc_p003c_unit.get("training_process_pids"))
+    )
+    fc_p003c_posteval_running = (
+        fc_p003c_posteval_unit.get("active_state") == "active"
+    )
+    fc_p003c_training_complete, fc_p003c_training_issues = verify_receipt(
+        repo / FC_P003C_TRAINING_RECEIPT, FC_P003C_TRAINING_STATUS
+    )
+    fc_p003c_posteval_complete, fc_p003c_posteval_issues = verify_receipt(
+        repo / FC_P003C_POSTEVAL_RECEIPT, FC_P003C_POSTEVAL_STATUS
+    )
     fc_p003b_unit = units.get(FC_P003B_UNIT, {})
     fc_p003b_probe_unit = units.get(FC_P003B_PROBE_UNIT, {})
     fc_p003b_posteval_unit = units.get(FC_P003B_POSTEVAL_UNIT, {})
@@ -873,11 +904,19 @@ def build_sample(
         fc_p003_posteval_authority,
         FC_P003B_POSTEVAL_UNIT,
         TRUE_STATE_FORCE_PROBE_V2_UNIT,
+        FC_P003C_UNIT,
+        FC_P003C_POSTEVAL_UNIT,
     )
     active_units = sorted(
         name
         for name in authority_names
-        if units.get(name, {}).get("active_state") == "active"
+        if (state := units.get(name, {})).get("active_state") == "active"
+        and (
+            name != TRUE_STATE_FORCE_PROBE_V2_UNIT
+            or bool(state.get("main_pid"))
+            or bool(state.get("training_process_pids"))
+            or bool(state.get("posteval_process_pids"))
+        )
     )
     paired_evaluation_active = any(
         name in active_units
@@ -948,6 +987,29 @@ def build_sample(
             "stage_complete": paired["lambda10_posteval_complete"],
         },
     }
+    if (
+        fc_p003c_full_approved
+        or fc_p003c_running
+        or fc_p003c_posteval_running
+        or fc_p003c_training_complete
+        or fc_p003c_posteval_complete
+    ):
+        tasks.update(
+            {
+                "fc_p003c_training": {
+                    "authority_unit": FC_P003C_UNIT,
+                    "node": "spark",
+                    "receipt_path": str(FC_P003C_TRAINING_RECEIPT),
+                    "stage_complete": fc_p003c_training_complete,
+                },
+                "fc_p003c_posteval": {
+                    "authority_unit": FC_P003C_POSTEVAL_UNIT,
+                    "node": "spark",
+                    "receipt_path": str(FC_P003C_POSTEVAL_RECEIPT),
+                    "stage_complete": fc_p003c_posteval_complete,
+                },
+            }
+        )
     for task_name, task in tasks.items():
         state = units.get(task["authority_unit"], {})
         if task_name in ("paired_lambda0_posteval", "paired_lambda10_posteval"):
@@ -1046,6 +1108,13 @@ def build_sample(
         fc_p003b_posteval_unit.get("active_state") == "active"
     )
     scientific_status = (
+        "FC_P003C_TRAINING_AND_IMMUTABLE_POSTEVAL_WAIT_RUNNING"
+        if fc_p003c_running and fc_p003c_posteval_running
+        else "FC_P003C_TRAINING_RUNNING"
+        if fc_p003c_running
+        else "FC_P003C_POSTEVAL_RUNNING"
+        if fc_p003c_posteval_running
+        else
         "FC_P003B_POSTEVAL_RUNNING_FC_P003_REJECTED"
         if fc_p003b_posteval_running
         else "FC_P003B_SCIENTIFIC_FAIL_FC_P003C_IMPLEMENTATION_APPROVED"
@@ -1097,6 +1166,9 @@ def build_sample(
         "scientific_next_stage": {
             "status": scientific_status,
             "active_work": (
+                "fc_p003c_true_state_force_training_and_immutable_posteval"
+                if fc_p003c_running or fc_p003c_posteval_running
+                else
                 "fc_p003b_unchanged_formal_posteval"
                 if fc_p003b_posteval_running
                 else "fc_p003c_true_state_force_implementation_and_cpu_tests"
@@ -1132,6 +1204,12 @@ def build_sample(
                 )
             ),
             "purpose": (
+                "FC-P003C is executing the separately approved fixed two-epoch "
+                "single-factor training and immutable post-evaluation chain. The "
+                "completed one-step mixed-loss probe established only engineering "
+                "feasibility; no scientific PASS or PPO authorization exists."
+                if fc_p003c_running or fc_p003c_posteval_running
+                else
                 "FC-P003 is a retained scientific rejection; independently approved "
                 "FC-P003B is now completing its unchanged formal post-evaluation and "
                 "cannot be admitted before the dynamic and force-window gates finish"
@@ -1295,14 +1373,42 @@ def build_sample(
                 },
             },
             "fc_p003c": {
-                "approval_state": "LEAD_APPROVED_ENGINEERING_ONLY"
+                "approval_state": "LEAD_APPROVED_FULL_TRAINING"
+                if fc_p003c_full_approved
+                else "LEAD_APPROVED_ENGINEERING_ONLY"
                 if fc_p003c_approved
                 else "NOT_APPROVED",
                 "approval_reference": str(FC_P003C_APPROVAL),
-                "state": "IMPLEMENTATION_AND_CPU_TESTS"
+                "full_training_approval_reference": str(FC_P003C_FULL_APPROVAL),
+                "state": "TRAINING_AND_POSTEVAL_WAIT_RUNNING"
+                if fc_p003c_running and fc_p003c_posteval_running
+                else "TRAINING_RUNNING"
+                if fc_p003c_running
+                else "POSTEVAL_RUNNING"
+                if fc_p003c_posteval_running
+                else "FULL_TRAINING_APPROVED_PREFLIGHT"
+                if fc_p003c_full_approved
+                else "IMPLEMENTATION_AND_CPU_TESTS"
                 if fc_p003c_approved and fc_p003b_terminal_verified
                 else "WAITING_FOR_FC_P003B_REVIEW",
-                "gpu_training_authorized": False,
+                "authority_unit": FC_P003C_UNIT,
+                "posteval_authority_unit": FC_P003C_POSTEVAL_UNIT,
+                "unit_scope": "user",
+                "main_pid": fc_p003c_unit.get("main_pid", 0),
+                "training_process_pids": fc_p003c_unit.get(
+                    "training_process_pids", []
+                ),
+                "posteval_main_pid": fc_p003c_posteval_unit.get("main_pid", 0),
+                "output_root": str(FC_P003C_ROOT),
+                "training_receipt": str(FC_P003C_TRAINING_RECEIPT),
+                "training_receipt_verified": fc_p003c_training_complete,
+                "training_receipt_issues": fc_p003c_training_issues,
+                "posteval_receipt": str(FC_P003C_POSTEVAL_RECEIPT),
+                "posteval_receipt_verified": fc_p003c_posteval_complete,
+                "posteval_receipt_issues": fc_p003c_posteval_issues,
+                "gpu_training_authorized": fc_p003c_full_approved,
+                "training_completion_is_scientific_pass": False,
+                "mixed_probe_is_scientific_pass": False,
                 "ppo_authorized": False,
                 "single_factor": "paired_statistic_to_true_state_endpoint_force_loss",
             },

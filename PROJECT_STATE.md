@@ -83,6 +83,10 @@ FC-P003B的两epoch训练、不可变恢复及同协议后评估已完成。首�
 
 Lead已在`docs/FC-P003C_APPROVAL.md`授权工程实现和CPU测试：保持Main-e2亲本、模型/数据/顺序/归一化/学习率/seed/两epoch/16次update/λ10/通道权重不变，只将旧9个窗口统计配对项替换为true-state每端点action-minus-zero四力误差。实现commit `5ac306a`已通过独立的旧regular objective loss/梯度精确等价、chunked-vs-monolithic、单clip/单step、nonfinite拒绝、两pass配对身份和官方PhysicsNeMo 2.2.2 CPU回归测试。该里程碑仍不包含完整GPU训练；单次混合梯度/内存probe需绑定最终SHA并获Lead单独GO，新候选仍须通过全部field/force/dynamic/window原门槛才能考虑PPO。
 
+FC-P003C 的单步 mixed-loss 技术探针现已完成，completion/result SHA分别为`f95a6f554e20964125628a2d33a88709827daf298e935de653471aaa1708b1cd`/`614264a6626d5411df23d6994c025796c043d8c29f1e2aeb5c5b9f948a0a30ea`。它严格执行一次optimizer step、未保存candidate、未访问validation/frozen，parent前后字节一致；外层guard观测最低`MemAvailable`为94.265 GiB。该结果只证明混合真实DataLoader/梯度/一步更新可执行，不是科研PASS。
+
+Lead随后以commit `f034b15`、审批JSON SHA `4e4c8142b9f243589b042a44ddd99d9a164e1cc0951bc5becd8ec169336766b8`批准固定两epoch正式训练。当前权威user units为`fluid-control-fcp003c-true-state-step-20261005.service`（训练）与`fluid-control-fcp003c-posteval-wait-fa08ce0-20261005.service`（不可变后评估等待链）；候选根为`artifacts/tandem_fno_true_state_paired_step_lambda10_20261005`。训练和后评估正在运行，不得把技术探针成功、训练完成或端点PASS提前写成development admission或PPO授权。
+
 true-state paired-force backward工程探针是独立技术检查，不是训练实验。v1在forward前因mode-600 manifest在原容器UID/cap-drop配置下不可读而`PermissionError`退出，无optimizer、权重保存或候选模型；失败输出已保留，不对更底层的rootless/user-namespace机制作未验证归因。Lead事后明确批准了operational-only v2单次GPU技术预检（immutable launcher SHA `705c6d2f…339e`，CPU mount preflight SHA `6e4f4a0a…c489`），数值合同、数据、模型和容差不变。v2已完成：T20整段/分块loss为0.00853258837/0.00853258773，最大参数梯度绝对差1.86e-9；H100 normalized loss 0.06177457，梯度全部有限且47,210,800/47,222,711个元素非零，CUDA峰值allocated/reserved为5.886/6.537 GiB，最低`MemAvailable`105.921 GiB。模型parameters/buffers前后SHA相同，optimizer step=0，未保存candidate，未访问validation/frozen。result/completion SHA分别为`773af049…f9c8`/`eb23c661…12d4`。这只说明单个配对loss的梯度/内存工程可行，不说明模型改善或科学准入。
 
 最新执行核查（2026-10-04 15:52 UTC）：FC-P001两支总收据均已回主节点并通过内容复核，λ0 SHA `ab90a921…c677`、λ10 SHA `03b7358d…ef4`，两者均为`DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL`。评估执行阶段完成不等于科学假设成立，更不等于项目完成；代理PPO仍被门禁。

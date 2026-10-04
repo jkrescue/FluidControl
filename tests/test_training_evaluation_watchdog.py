@@ -914,6 +914,73 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
             self.assertFalse(verified)
             self.assertTrue(issues)
 
+    def test_fc_p003c_live_training_and_wait_take_current_authority(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(
+                directory, receipts=True, paired=True, paired_posteval=True
+            )
+            for approval in (
+                MODULE.FC_P003B_APPROVAL,
+                MODULE.FC_P003C_APPROVAL,
+                MODULE.FC_P003C_FULL_APPROVAL,
+            ):
+                (repo / approval).parent.mkdir(parents=True, exist_ok=True)
+                (repo / approval).write_text("Lead approved\n")
+            units = {
+                MODULE.MAIN_AUTHORITY_UNIT: unit(),
+                MODULE.WORKER_AUTHORITY_UNIT: unit(),
+                MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT: unit(),
+                MODULE.PAIRED_LAMBDA10_POSTEVAL_UNIT: unit(),
+                MODULE.FC_P003C_UNIT: {
+                    **unit("active"),
+                    "main_pid": 2514756,
+                    "training_process_pids": [2516000],
+                },
+                MODULE.FC_P003C_POSTEVAL_UNIT: {
+                    **unit("active"),
+                    "main_pid": 2514761,
+                    "training_process_pids": [],
+                },
+                MODULE.TRUE_STATE_FORCE_PROBE_V2_UNIT: {
+                    **unit("active"),
+                    "sub_state": "exited",
+                    "main_pid": 0,
+                    "training_process_pids": [],
+                },
+            }
+            result = MODULE.build_sample(
+                repo,
+                None,
+                units,
+                RESOURCES,
+                datetime(2026, 10, 5, 12, 0, tzinfo=UTC),
+            )
+            stage = result["scientific_next_stage"]
+            self.assertEqual(
+                stage["status"],
+                "FC_P003C_TRAINING_AND_IMMUTABLE_POSTEVAL_WAIT_RUNNING",
+            )
+            self.assertEqual(
+                stage["active_work"],
+                "fc_p003c_true_state_force_training_and_immutable_posteval",
+            )
+            self.assertEqual(stage["fc_p003c"]["main_pid"], 2514756)
+            self.assertEqual(stage["fc_p003c"]["posteval_main_pid"], 2514761)
+            self.assertTrue(stage["fc_p003c"]["gpu_training_authorized"])
+            self.assertFalse(stage["fc_p003c"]["ppo_authorized"])
+            self.assertNotIn(
+                MODULE.TRUE_STATE_FORCE_PROBE_V2_UNIT, result["active_units"]
+            )
+            self.assertEqual(
+                result["authority_tasks"]["fc_p003c_training"]["state"],
+                "RUNNING",
+            )
+            self.assertEqual(
+                result["authority_tasks"]["fc_p003c_posteval"]["state"],
+                "RUNNING",
+            )
+            self.assertFalse(result["project_goal_complete"])
+
 
 if __name__ == "__main__":
     unittest.main()
