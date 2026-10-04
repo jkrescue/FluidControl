@@ -14,6 +14,18 @@ dev30="$root/data/curated/tandem_cylinders_matched_start_full40_dev30_v1"
 full40="$root/data/curated/tandem_cylinders_matched_start_full40_v1"
 dynamic="$root/data/curated/tandem_cylinders_full40_dynamic_validation_v1"
 predecl="$root/artifacts/tandem_cylinders/matched_start_full40_predeclared_20261003.json"
+lineage_auditor="$root/scripts/audit_fc_p003_candidate_lineage_immutable.py"
+reuse_validator="$root/scripts/validate_fc_p003_posteval_step_immutable.py"
+base_validator="$root/scripts/validate_control_train16_posteval_step_fc_p003_immutable.py"
+endpoint_auditor="$root/scripts/audit_full40_validation_gate_fc_p003_immutable.py"
+dynamic_auditor="$root/cfd/tandem_cylinders/audit_full40_dynamic6_fno_fc_p003_immutable.py"
+
+sha() { sha256sum "$1" | awk '{print $1}'; }
+[[ "$(sha "$lineage_auditor")" == "9f3a98e7af957863a62cd9c82814c15272aa5bb0091dde3611416fa2d57b95cf" ]] || { echo "lineage auditor differs" >&2; exit 2; }
+[[ "$(sha "$reuse_validator")" == "7a82d68bc79c6ed15d3c99e1ea61686f121fee3f465fc7b9d756c5cca5a2a7e6" ]] || { echo "reuse validator differs" >&2; exit 2; }
+[[ "$(sha "$base_validator")" == "9e3ef79d43fef37ff6a2f41b6d1729f69f82f2bddd9e50e5ecac86e54be389e9" ]] || { echo "base validator differs" >&2; exit 2; }
+[[ "$(sha "$endpoint_auditor")" == "eedc114549eacd787951ef8d8531db6a1ef40c088ce8bff6fcf10d351fa09269" ]] || { echo "endpoint auditor differs" >&2; exit 2; }
+[[ "$(sha "$dynamic_auditor")" == "4e78d8473d1d0f93b25031a3bf9dcc0582f43604f7b1f67c65e6754f032af100" ]] || { echo "dynamic auditor differs" >&2; exit 2; }
 
 [[ "$(docker image inspect "$image" --format '{{.Id}}')" == "$image_id" ]] || {
   echo "pinned PhysicsNeMo image identity differs" >&2; exit 2;
