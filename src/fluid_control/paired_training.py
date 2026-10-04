@@ -28,6 +28,17 @@ def paired_batch_indices(
     return indices
 
 
+def validate_paired_identity_passes(
+    passes: list[list[str]], expected_ids: set[str], repetitions: int
+) -> None:
+    """Require complete, duplicate-free deterministic dataset passes."""
+    if len(passes) != repetitions:
+        raise RuntimeError("paired dataset pass count differs")
+    for identities in passes:
+        if len(identities) != len(expected_ids) or set(identities) != expected_ids:
+            raise RuntimeError("paired loader pass does not cover every identity once")
+
+
 def combine_paired_rollout_batch(pair: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
     """Combine action/zero branches without changing their causal ordering."""
     required = {

@@ -2,7 +2,11 @@ import unittest
 
 import torch
 
-from fluid_control.paired_training import combine_paired_rollout_batch, paired_batch_indices
+from fluid_control.paired_training import (
+    combine_paired_rollout_batch,
+    paired_batch_indices,
+    validate_paired_identity_passes,
+)
 
 
 def fixture(batch=2):
@@ -34,6 +38,16 @@ class PairedTrainingContractTest(unittest.TestCase):
             paired_batch_indices(10, 11, "interleaved")
         with self.assertRaises(ValueError):
             paired_batch_indices(10, 2, "random")
+
+    def test_two_complete_identity_passes_are_required(self):
+        expected = {f"pair-{index}" for index in range(8)}
+        first = [f"pair-{index}" for index in range(8)]
+        second = list(reversed(first))
+        validate_paired_identity_passes([first, second], expected, 2)
+        with self.assertRaisesRegex(RuntimeError, "every identity once"):
+            validate_paired_identity_passes([first, first[:-1] + [first[0]]], expected, 2)
+        with self.assertRaisesRegex(RuntimeError, "pass count"):
+            validate_paired_identity_passes([first], expected, 2)
 
     def test_action_then_zero_order_and_causal_targets(self):
         combined = combine_paired_rollout_batch(fixture())

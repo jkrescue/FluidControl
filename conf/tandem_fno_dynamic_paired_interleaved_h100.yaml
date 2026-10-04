@@ -1,0 +1,15 @@
+defaults:
+  - tandem_fno_paired_stats_interleaved_h100
+  - _self_
+
+# FC-P003B changes only paired-supervision content. Eight unique train-only
+# dynamic pairs are consumed in two complete deterministic passes per epoch.
+data:
+  paired_dataset_kind: dynamic8
+  paired_action_root: /workspace/train8
+  paired_zero_root: /workspace/base
+  paired_manifest: /workspace/dynamic_pair_manifest.json
+training:
+  paired_dataset_repetitions: 2
+  paired_batches_per_epoch: 16
+  max_paired_eval_batches: 8

@@ -22,6 +22,7 @@ from fluid_control.paired_stat_datapipe import MatchedPairStatDataset
 from fluid_control.paired_training import (
     combine_paired_rollout_batch,
     paired_batch_indices,
+    validate_paired_identity_passes,
 )
 from omegaconf import DictConfig, OmegaConf
 from physicsnemo.datapipes import DataLoader
@@ -261,11 +262,32 @@ def main(cfg: DictConfig) -> None:
     paired_horizons = tuple(int(value) for value in cfg.training.paired_stat_horizons)
     if paired_horizons != (20, 50, 100) or rollout_steps != 100:
         raise ValueError("paired-stat experiment requires exact H20/H50/H100 within H100")
-    pair_dataset = MatchedPairStatDataset(
-        cfg.data.paired_root,
-        cfg.data.paired_manifest,
-        num_workers=cfg.training.workers,
-    )
+    paired_dataset_kind = str(cfg.data.get("paired_dataset_kind", "static16"))
+    if paired_dataset_kind == "static16":
+        pair_dataset = MatchedPairStatDataset(
+            cfg.data.paired_root,
+            cfg.data.paired_manifest,
+            num_workers=cfg.training.workers,
+        )
+        expected_pair_ids = {
+            f"{row['phase']}:{row['action']}" for row in pair_dataset.manifest["pairs"]
+        }
+    elif paired_dataset_kind == "dynamic8":
+        from fluid_control.dynamic_pair_stat_datapipe import (
+            DynamicMatchedPairStatDataset,
+        )
+
+        pair_dataset = DynamicMatchedPairStatDataset(
+            cfg.data.paired_action_root,
+            cfg.data.paired_zero_root,
+            cfg.data.paired_manifest,
+            num_workers=cfg.training.workers,
+        )
+        expected_pair_ids = {
+            f"{row['phase']}:{row['profile']}" for row in pair_dataset.manifest["pairs"]
+        }
+    else:
+        raise ValueError(f"unsupported paired_dataset_kind: {paired_dataset_kind}")
     pair_loader = DataLoader(
         pair_dataset,
         batch_size=int(cfg.training.paired_batch_size),
@@ -277,17 +299,22 @@ def main(cfg: DictConfig) -> None:
         seed=int(cfg.training.seed),
     )
     paired_batch_size = int(cfg.training.paired_batch_size)
-    if paired_batch_size < 1 or 16 % paired_batch_size:
-        raise ValueError("paired_batch_size must exactly divide 16 pairs")
-    expected_pair_batches = 16 // paired_batch_size
-    if len(pair_dataset) != 16 or len(pair_loader) != expected_pair_batches:
-        raise ValueError("paired-stat loader does not cover each of 16 pairs once")
+    if paired_batch_size < 1 or len(pair_dataset) % paired_batch_size:
+        raise ValueError("paired_batch_size must exactly divide the paired dataset")
+    expected_pair_batches = len(pair_dataset) // paired_batch_size
+    if len(pair_loader) != expected_pair_batches:
+        raise ValueError("paired-stat loader does not cover each pair once")
+    paired_dataset_repetitions = int(
+        cfg.training.get("paired_dataset_repetitions", 1)
+    )
+    if paired_dataset_repetitions < 1:
+        raise ValueError("paired_dataset_repetitions must be positive")
     paired_batches_per_epoch = int(
         cfg.training.get("paired_batches_per_epoch", expected_pair_batches)
     )
-    if not 1 <= paired_batches_per_epoch <= len(pair_loader):
+    if paired_batches_per_epoch != expected_pair_batches * paired_dataset_repetitions:
         raise ValueError(
-            f"paired_batches_per_epoch must be in [1, {expected_pair_batches}]"
+            "paired_batches_per_epoch must equal complete paired dataset passes"
         )
 
     network: torch.nn.Module = build_model(cfg).to(dist.device)
@@ -455,6 +482,7 @@ def main(cfg: DictConfig) -> None:
         pair_iterator = iter(pair_loader)
         paired_batches = 0
         paired_identities = []
+        paired_identity_passes = [[] for _ in range(paired_dataset_repetitions)]
         with LaunchLogger("train", epoch=epoch, num_mini_batch=train_batches) as logger:
             for batch_index, batch in enumerate(train_loader):
                 if max_train_batches and batch_index >= int(max_train_batches):
@@ -466,10 +494,12 @@ def main(cfg: DictConfig) -> None:
                 if batch_index not in paired_index_set:
                     pair = None
                 else:
+                    if paired_batches and paired_batches % expected_pair_batches == 0:
+                        pair_iterator = iter(pair_loader)
                     try:
                         pair, pair_metadata = next(pair_iterator)
                     except StopIteration:
-                        pair = None
+                        raise RuntimeError("paired loader ended before a complete pass")
                 if pair is None:
                     loss = forward_train(
                         batch["state"], batch["target_state"], batch["omega"],
@@ -489,9 +519,13 @@ def main(cfg: DictConfig) -> None:
                         combined["action_force"], combined["zero_force"],
                     )
                     paired_batches += 1
-                    paired_identities.extend(
-                        f"{item['phase']}:{item['action']}" for item in pair_metadata
-                    )
+                    identities = [
+                        item.get("pair_id", f"{item['phase']}:{item.get('action')}")
+                        for item in pair_metadata
+                    ]
+                    paired_identities.extend(identities)
+                    pass_index = (paired_batches - 1) // expected_pair_batches
+                    paired_identity_passes[pass_index].extend(identities)
                 logger.log_minibatch({"loss": loss.detach()})
                 totals[0] += loss.detach().double()
                 totals[1] += 1
@@ -508,6 +542,11 @@ def main(cfg: DictConfig) -> None:
                 f"consumed {paired_batches} paired batches; expected "
                 f"{paired_batches_per_epoch}"
             )
+        validate_paired_identity_passes(
+            paired_identity_passes,
+            expected_pair_ids,
+            paired_dataset_repetitions,
+        )
         totals = reduce_totals(totals, dist).cpu()
         train_loss = float(totals[0] / totals[1])
 
@@ -630,10 +669,13 @@ def main(cfg: DictConfig) -> None:
             "paired_stat_loss_weight": paired_weight,
             "paired_stat_horizons": list(paired_horizons),
             "paired_pair_count": len(pair_dataset),
+            "paired_dataset_kind": paired_dataset_kind,
+            "paired_dataset_repetitions": paired_dataset_repetitions,
             "paired_batches_per_epoch": paired_batches_per_epoch,
             "paired_batch_schedule": paired_schedule,
             "paired_batch_indices": list(paired_indices),
             "paired_identities": paired_identities,
+            "paired_identity_passes": paired_identity_passes,
             "paired_eval_batches": max_paired_eval_batches,
             "paired_manifest": str(cfg.data.paired_manifest),
             "model_config": OmegaConf.to_container(cfg.model, resolve=True),
@@ -675,6 +717,7 @@ def main(cfg: DictConfig) -> None:
                 "paired_batch_schedule": paired_schedule,
                 "paired_batch_indices": list(paired_indices),
                 "paired_identities": paired_identities,
+                "paired_identity_passes": paired_identity_passes,
                 **metrics,
             }
             history.append(row)
