@@ -121,7 +121,11 @@ def total_drag_error_sums(predicted, target, mean, std, channels):
     ])
 
 
-@hydra.main(version_base="1.3", config_path="../conf", config_name="tandem_fno_rollout")
+@hydra.main(
+    version_base="1.3",
+    config_path="../conf",
+    config_name="tandem_fno_paired_stats_h100",
+)
 def main(cfg: DictConfig) -> None:
     DistributedManager.initialize()
     dist = DistributedManager()

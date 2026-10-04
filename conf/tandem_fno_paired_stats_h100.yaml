@@ -20,3 +20,5 @@ training:
   paired_stat_horizons: [20, 50, 100]
   paired_stat_loss_weight: 0.0
   force_channel_weights: [1.0, 1.0, 4.0, 1.0]
+  max_train_batches: null
+  max_validation_batches: null
