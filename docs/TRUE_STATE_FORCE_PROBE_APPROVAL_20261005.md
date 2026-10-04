@@ -1,7 +1,18 @@
 # True-state paired-force technical preflight
 
 Lead record: 2026-10-05 Asia/Shanghai.
-Status: PLAN APPROVED; EXECUTION PENDING FINAL CODE REVIEW AND LEAD GO.
+Status: LEAD GO for one bounded technical execution, following independent
+Evaluation acceptance (9 tests plus 8 subtests, lint, shell syntax, dry-run and
+diff checks). This does not approve scientific training or PPO.
+
+Approved execution source SHA:
+`d9552f7f96b3c4d73109fcf81c9557c7aaf23492c863f2fbcc9e89b4e2f28331`.
+Approved launcher SHA:
+`d38029a2b08f7a5dec77036a7c15dd78a9bcde1124ecdbac6e8fc8a10df3d264`.
+Approved test SHA:
+`58f262e977974452c25900e455b10b44d5088f58a35e6d0203e3a0725a65c9e6`.
+Launch an immutable copy after recording this approval. No source edits during
+execution; any retry requires diagnosis and separate approval.
 
 ## Purpose and limits
 
@@ -87,5 +98,6 @@ loss/gradient equivalence, finite/nonzero gradients, input/source/image hashes,
 and explicit no-training/no-checkpoint fields. A resource or numerical failure
 requires diagnosis, not a relaxed threshold or a silently repeated run.
 
-Compute owns implementation/execution, Evaluation independently reviews, Lead
-issues final GO after exact source/launcher/test evidence is available.
+Compute owns implementation; Surrogate executes this single approved preflight
+while Compute recovers the unrelated Worker post-evaluation path mismatch.
+Evaluation independently reviews and Lead owns approval and interpretation.
