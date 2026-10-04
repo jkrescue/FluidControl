@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import re
 import tempfile
@@ -27,6 +28,32 @@ MODULE = load_module()
 
 
 class LatestEvidenceDashboardTests(unittest.TestCase):
+    def test_current_candidate_requires_complete_matching_receipt(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.assertIsNone(MODULE._completed_interleaved_candidate(root))
+            base = root / "artifacts/tandem_fno_paired_stats_interleaved_lambda10_20261005/posteval_fc_p003"
+            (base / "validation10").mkdir(parents=True)
+            checkpoint = "a" * 64
+            status = "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL"
+            hashes = {}
+            for relative, payload in (
+                ("validation10/endpoint_gate.json", {"checkpoint_sha256": checkpoint}),
+                ("development_gate.json", {"checkpoint_sha256": checkpoint, "status": status}),
+            ):
+                raw = json.dumps(payload).encode()
+                (base / relative).write_bytes(raw)
+                hashes[relative] = hashlib.sha256(raw).hexdigest()
+            receipt = {"status": "FC_P003_POSTEVAL_COMPLETE", "checkpoint_sha256": checkpoint,
+                       "development_gate_status": status, "sha256": hashes}
+            (base / "receipt.json").write_text(json.dumps(receipt))
+            result = MODULE._completed_interleaved_candidate(root)
+            self.assertTrue(result["receipt_bound"])
+            self.assertEqual(result["development"]["status"], status)
+            self.assertNotIn("ppo_authorized", result)
+            (base / "development_gate.json").write_text("{}")
+            self.assertIsNone(MODULE._completed_interleaved_candidate(root))
+
     def test_resource_sampler_detects_paired_trainer_not_guard(self) -> None:
         lines = ["cpu 1 2 3 4 5", "MemTotal: 128000000 kB", "MemAvailable: 64000000 kB",
                  "96, 64, 42", "__TASKS__",
