@@ -35,7 +35,7 @@ python scripts/audit_candidate_ppo_readiness.py \
   --window-gate artifacts/<candidate>/canonical_window_gate.json \
   --dynamic-gate artifacts/<candidate>/canonical_dynamic_gate.json \
   --development-gate artifacts/<candidate>/posteval/development_gate.json \
-  --validation-manifest data/curated/tandem_cylinders_matched_start_full40_dev30_v1/manifest.json \
+  --validation-manifest data/curated/tandem_cylinders_matched_start_full40_v1/manifest.json \
   --normalization data/curated/tandem_cylinders_matched_start_full40_dev30_v1/normalization.json \
   --data-artifact dev30=data/curated/tandem_cylinders_matched_start_full40_dev30_v1/manifest.json \
   --data-artifact train8=data/curated/tandem_cylinders_dynamic_train8_v1/manifest.json \
@@ -44,7 +44,9 @@ python scripts/audit_candidate_ppo_readiness.py \
   --output artifacts/<candidate>/candidate_ppo_readiness.json
 ```
 
-The validation manifest argument must be the manifest named by the endpoint
-gate. Candidate-specific `--data-artifact` keys must exactly equal the lineage
+The validation manifest argument must be the full40 manifest named by the
+endpoint gate; it is not the development-only dev30 manifest. Candidate-specific
+`--data-artifact` keys must exactly equal the lineage
 `data_lineage` keys other than `normalization`; no unrecorded source is silently
-accepted. The command never walks the dataset tree.
+accepted. Relative producer/evidence paths are resolved from `--repo`, matching
+the existing canonical runner. The command never walks the dataset tree.

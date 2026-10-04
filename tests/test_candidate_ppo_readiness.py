@@ -30,17 +30,24 @@ def fixture(tmp_path: Path) -> dict:
     posteval = candidate / "posteval"
     model = candidate / "best/FNO.0.2.mdlus"
     state = candidate / "best/checkpoint.0.2.pt"
+    model_config = {
+        "in_channels": 6, "out_channels": 7, "latent_channels": 48,
+        "num_fno_layers": 5, "num_fno_modes": [32, 32],
+        "decoder_layers": 2, "decoder_layer_size": 128,
+        "padding": 8, "coord_features": True,
+    }
     model.parent.mkdir(parents=True)
     with zipfile.ZipFile(model, "w") as archive:
         for name, content in (
-            ("model.pt", b"model"), ("args.json", b"{}"),
+            ("model.pt", b"model"),
+            ("args.json", json.dumps({"__args__": {**model_config, "dimension": 2}})),
             ("metadata.json", b"{}"),
         ):
             archive.writestr(name, content)
     state.write_bytes(b"state")
     config = candidate / "resolved_config.yaml"
     config.write_text(yaml.safe_dump({
-        "model": {"in_channels": 6, "out_channels": 7},
+        "model": model_config,
         "training": {"rollout_steps": 100, "validation_rollout_steps": 100},
     }))
     launch, completion = candidate / "launch_receipt.json", candidate / "completion_receipt.json"
@@ -49,16 +56,20 @@ def fixture(tmp_path: Path) -> dict:
     normalization = tmp_path / "normalization.json"
     manifest = tmp_path / "validation_manifest.json"
     dev30, train8 = tmp_path / "dev30.json", tmp_path / "train8.json"
+    write_json(manifest, {
+        "profile": MODULE.PROFILE, "max_abs_omega": 0.75,
+        "max_delta_omega": 0.1,
+        "trajectory_counts": {"train": 20, "validation": 10, "frozen_test": 10},
+    })
     for path, content in (
-        (normalization, b"norm"), (manifest, b"validation"),
-        (dev30, b"dev30"), (train8, b"train8"),
+        (normalization, b"norm"), (dev30, b"dev30"), (train8, b"train8"),
     ):
         path.write_bytes(content)
     lineage = posteval / "lineage.json"
     write_json(lineage, {
         "status": "FIXTURE_CANDIDATE_LINEAGE_PASS",
         "candidate_kind": "fixture_h100",
-        "candidate_root": candidate.name,
+        "candidate_root": "artifacts/candidate",
         "checkpoint_epoch": 2,
         "checkpoint_sha256": digest(model),
         "checkpoint_state_sha256": digest(state),
@@ -140,7 +151,7 @@ def fixture(tmp_path: Path) -> dict:
         },
     })
     return {
-        "candidate_root": candidate, "lineage_path": lineage,
+        "repo_root": tmp_path, "candidate_root": candidate, "lineage_path": lineage,
         "posteval_receipt_path": receipt, "endpoint_gate_path": endpoint,
         "window_gate_path": window, "dynamic_gate_path": dynamic,
         "development_gate_path": development,
@@ -174,6 +185,63 @@ def test_development_gate_cannot_substitute_for_canonical_window(tmp_path: Path)
     result = MODULE.audit(**values)
     assert result["status"].endswith("BLOCKED")
     assert result["blockers"][0]["kind"] == "SCIENTIFIC_FAIL"
+
+
+def test_failed_development_gate_is_scientific_failure(tmp_path: Path) -> None:
+    values = fixture(tmp_path)
+    path = values["development_gate_path"]
+    gate = json.loads(path.read_text())
+    gate["status"] = "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL"
+    write_json(path, gate)
+    receipt = json.loads(values["posteval_receipt_path"].read_text())
+    receipt["sha256"]["development_gate.json"] = digest(path)
+    write_json(values["posteval_receipt_path"], receipt)
+    result = MODULE.audit(**values)
+    assert result["status"].endswith("BLOCKED")
+    assert result["blockers"][0]["kind"] == "SCIENTIFIC_FAIL"
+
+
+def test_relative_gate_evidence_is_resolved_from_repo(tmp_path: Path) -> None:
+    values = fixture(tmp_path)
+    for key in ("window_gate_path", "dynamic_gate_path"):
+        path = values[key]
+        gate = json.loads(path.read_text())
+        gate["producer_script"] = "producer.py"
+        gate["evidence_path"] = "evidence.json"
+        write_json(path, gate)
+    assert MODULE.audit(**values)["status"].endswith("READY")
+
+
+@pytest.mark.parametrize("fault", ["missing", "tampered", "outside"])
+def test_complete_receipt_validates_every_confined_hash(tmp_path: Path, fault: str) -> None:
+    values = fixture(tmp_path)
+    extra = values["posteval_receipt_path"].parent / "extra.json"
+    extra.write_text("{}\n")
+    receipt = json.loads(values["posteval_receipt_path"].read_text())
+    if fault == "outside":
+        receipt["sha256"]["../outside.json"] = "0" * 64
+    else:
+        receipt["sha256"]["extra.json"] = digest(extra)
+        if fault == "missing":
+            extra.unlink()
+        else:
+            extra.write_text('{"tampered":true}\n')
+    write_json(values["posteval_receipt_path"], receipt)
+    result = MODULE.audit(**values)
+    assert result["status"].endswith("BLOCKED")
+    assert result["blockers"][0]["kind"] == "SCHEMA_ERROR"
+
+
+def test_candidate_root_requires_exact_repo_relative_identity(tmp_path: Path) -> None:
+    values = fixture(tmp_path)
+    lineage = json.loads(values["lineage_path"].read_text())
+    lineage["candidate_root"] = "other/location/candidate"
+    write_json(values["lineage_path"], lineage)
+    receipt = json.loads(values["posteval_receipt_path"].read_text())
+    receipt["sha256"]["lineage.json"] = digest(values["lineage_path"])
+    write_json(values["posteval_receipt_path"], receipt)
+    result = MODULE.audit(**values)
+    assert result["blockers"][0]["kind"] == "SCHEMA_ERROR"
 
 
 @pytest.mark.parametrize("fault", ["model", "state", "config", "data", "normalization"])

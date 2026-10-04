@@ -72,6 +72,27 @@ def _receipt_binds(receipt: dict, receipt_root: Path, path: Path) -> None:
         raise ValueError(f"posteval receipt does not bind {relative}")
 
 
+def _validate_receipt_table(receipt: dict, receipt_root: Path) -> None:
+    table = receipt.get("sha256")
+    if not isinstance(table, dict) or not table:
+        raise ValueError("posteval receipt SHA table is missing")
+    root = receipt_root.resolve()
+    for raw, expected in table.items():
+        if not isinstance(raw, str) or not isinstance(expected, str):
+            raise ValueError("posteval receipt SHA entry type differs")
+        relative = Path(raw)
+        if relative.is_absolute() or ".." in relative.parts:
+            raise ValueError(f"posteval receipt path is not confined: {raw}")
+        path = (root / relative).resolve()
+        try:
+            path.relative_to(root)
+        except ValueError as error:
+            raise ValueError(f"posteval receipt path escapes root: {raw}") from error
+        _require_file(path, f"posteval receipt artifact {raw}")
+        if sha256(path) != expected:
+            raise ValueError(f"posteval receipt artifact differs: {raw}")
+
+
 def _common_gate(
     gate: dict,
     *,
@@ -95,12 +116,17 @@ def _common_gate(
             raise ValueError(f"{status} {key} differs")
 
 
-def _bound_evidence(gate: dict, gate_path: Path) -> None:
+def _bound_evidence(gate: dict, repo_root: Path) -> None:
     for prefix in ("producer_script", "evidence"):
         raw = gate.get(f"{prefix}_path" if prefix == "evidence" else prefix)
         path = Path(str(raw or ""))
         if not path.is_absolute():
-            path = gate_path.parent / path
+            path = repo_root / path
+        path = path.resolve()
+        try:
+            path.relative_to(repo_root.resolve())
+        except ValueError as error:
+            raise ValueError(f"{prefix} escapes repository") from error
         _require_file(path, prefix)
         if sha256(path) != gate.get(f"{prefix}_sha256"):
             raise ValueError(f"{prefix} SHA differs")
@@ -108,6 +134,7 @@ def _bound_evidence(gate: dict, gate_path: Path) -> None:
 
 def audit(
     *,
+    repo_root: Path,
     candidate_root: Path,
     lineage_path: Path,
     posteval_receipt_path: Path,
@@ -121,6 +148,12 @@ def audit(
     official_image_id: str = IMAGE_ID,
 ) -> dict:
     """Return READY or BLOCKED without throwing for ordinary bad evidence."""
+    repo_root = repo_root.resolve()
+    candidate_root = (
+        candidate_root.resolve()
+        if candidate_root.is_absolute()
+        else (repo_root / candidate_root).resolve()
+    )
     paths = {
         "candidate_root": candidate_root,
         "lineage": lineage_path,
@@ -153,7 +186,6 @@ def audit(
     if blockers:
         return _result(blockers=blockers, official_image_id=official_image_id)
 
-    candidate_root = candidate_root.resolve()
     try:
         lineage = load(lineage_path)
         receipt = load(posteval_receipt_path)
@@ -161,8 +193,17 @@ def audit(
         window = load(window_gate_path)
         dynamic = load(dynamic_gate_path)
         development = load(development_gate_path)
+        validation_manifest = load(validation_manifest_path)
         validation_manifest_sha = sha256(validation_manifest_path)
         normalization_sha = sha256(normalization_path)
+        if (
+            validation_manifest.get("profile") != PROFILE
+            or validation_manifest.get("max_abs_omega") != 0.75
+            or validation_manifest.get("max_delta_omega") != 0.1
+            or validation_manifest.get("trajectory_counts")
+            != {"train": 20, "validation": 10, "frozen_test": 10}
+        ):
+            raise ValueError("validation manifest action/split contract differs")
 
         if not str(lineage.get("status", "")).endswith("CANDIDATE_LINEAGE_PASS"):
             raise ValueError("candidate lineage status differs")
@@ -172,10 +213,11 @@ def audit(
             or lineage.get("training_performed") is not False
         ):
             raise ValueError("candidate lineage scope differs")
-        if lineage.get("candidate_root") not in (
-            str(candidate_root),
-            str(candidate_root.relative_to(candidate_root.parents[1])),
-        ) and Path(str(lineage.get("candidate_root", ""))).name != candidate_root.name:
+        try:
+            candidate_relative = str(candidate_root.relative_to(repo_root))
+        except ValueError as error:
+            raise ValueError("candidate root escapes repository") from error
+        if lineage.get("candidate_root") not in (str(candidate_root), candidate_relative):
             raise ValueError("candidate root identity differs")
 
         epoch = int(lineage["checkpoint_epoch"])
@@ -206,13 +248,31 @@ def audit(
         if not isinstance(config_value, dict):
             raise ValueError("resolved config is not a mapping")
         training, model_config = config_value.get("training", {}), config_value.get("model", {})
+        expected_model = {
+            "in_channels": 6,
+            "out_channels": 7,
+            "latent_channels": 48,
+            "num_fno_layers": 5,
+            "num_fno_modes": [32, 32],
+            "decoder_layers": 2,
+            "decoder_layer_size": 128,
+            "padding": 8,
+            "coord_features": True,
+        }
+        if any(model_config.get(key) != value for key, value in expected_model.items()):
+            raise ValueError("candidate FNO architecture differs")
         if (
             training.get("rollout_steps") != 100
             or training.get("validation_rollout_steps") != 100
-            or model_config.get("in_channels") != 6
-            or model_config.get("out_channels") != 7
         ):
             raise ValueError("candidate is not the canonical H100 six-input/seven-output FNO")
+        with zipfile.ZipFile(model) as archive:
+            args = json.loads(archive.read("args.json"))
+        archive_args = args.get("__args__", {})
+        if any(archive_args.get(key) != value for key, value in expected_model.items()):
+            raise ValueError("candidate model archive architecture differs")
+        if archive_args.get("dimension") != 2:
+            raise ValueError("candidate model archive dimension differs")
 
         data_lineage = lineage.get("data_lineage")
         if not isinstance(data_lineage, dict):
@@ -239,6 +299,13 @@ def audit(
         ):
             raise ValueError("posteval receipt scope differs")
         receipt_root = posteval_receipt_path.parent
+        if receipt_root.resolve() != posteval_receipt_path.resolve().parent:
+            raise ValueError("posteval receipt root differs")
+        try:
+            receipt_root.resolve().relative_to(candidate_root)
+        except ValueError as error:
+            raise ValueError("posteval receipt is outside candidate root") from error
+        _validate_receipt_table(receipt, receipt_root)
         for path in (lineage_path, endpoint_gate_path, development_gate_path):
             _receipt_binds(receipt, receipt_root, path)
 
@@ -266,7 +333,7 @@ def audit(
             )
             if gate.get("validation_phases") != ["b01", "b05"]:
                 raise ValueError(f"{status} validation phases differ")
-            _bound_evidence(gate, path)
+            _bound_evidence(gate, repo_root)
         if any(window.get(key) is not True for key in (
             "total_drag_window_fidelity_pass",
             "rear_cl_fluctuation_window_fidelity_pass",
@@ -383,6 +450,7 @@ def write_exclusive(path: Path, payload: dict) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--candidate-root", type=Path, required=True)
     parser.add_argument("--lineage", type=Path, required=True)
     parser.add_argument("--posteval-receipt", type=Path, required=True)
@@ -399,6 +467,7 @@ def main() -> None:
     if args.output.exists():
         raise FileExistsError(f"refusing to overwrite {args.output}")
     result = audit(
+        repo_root=args.repo,
         candidate_root=args.candidate_root,
         lineage_path=args.lineage,
         posteval_receipt_path=args.posteval_receipt,
