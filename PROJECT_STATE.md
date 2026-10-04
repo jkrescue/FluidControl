@@ -83,5 +83,6 @@ FNO 当前不是 FNO-3D，也不是直接编码长段历史的模型。输入6�
 - 本轮训练：`artifacts/tandem_fno_paired_stats_lambda0_20261004/`、`artifacts/tandem_fno_paired_stats_lambda10_20261004/`
 - 实验定义、精确协议和指标：`EXPERIMENTS.md`、`experiments/results.csv`
 - 决策与下一步：`DECISIONS.md`、`docs/RESEARCH_ROADMAP.md`
+- 实时展示：commit `d8d0d71` 的目标/agent/资源/模型状态看板已通过33项测试、Ruff和JS语法检查并在Chrome刷新；它是证据展示层，不改变FC-P001协议、MPC/FNO闭环未完成状态或项目验收结论。
 
 Lead负责目标/批准/综合证据；Physics/Data负责真实数据与参数覆盖；Surrogate负责可复现模型实验；Control/Evaluation负责控制合同与独立验收。四并发槽中控制与评价职责错峰承担，不扩张代理数量。
