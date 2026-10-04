@@ -17,7 +17,6 @@ import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
-
 TRAINING_UNIT = "fluid-control-train16-h100-full-v1-20261004.service"
 MAIN_AUTHORITY_UNIT = "fluid-control-train16-posteval-main-v3-20261004.service"
 WORKER_AUTHORITY_UNIT = (
@@ -69,6 +68,23 @@ FC_P003C_POSTEVAL_RECEIPT = FC_P003C_ROOT / "posteval_fc_p003c/receipt.json"
 FC_P003C_DEVELOPMENT_GATE = FC_P003C_ROOT / "posteval_fc_p003c/development_gate.json"
 FC_P003C_TRAINING_STATUS = "FC_P003C_TRAINING_COMPLETE"
 FC_P003C_POSTEVAL_STATUS = "FC_P003C_POSTEVAL_COMPLETE"
+D015_ROOT = Path("artifacts/fcp003c_train_vs_validation_true_state_h1_20261005")
+D015_RESULT = D015_ROOT / "result.json"
+D015_EXECUTION_RECEIPT = D015_ROOT / "execution_receipt.json"
+D015_RESULT_STATUS = "FCP003C_TRAIN_VS_VALIDATION_TRUE_STATE_H1_DIAGNOSTIC_COMPLETE"
+D015_TRANSFER_STATUS = "FCP003C_D015_SPARK_TRANSFER_VERIFIED"
+D015_RESULT_SHA256 = (
+    "b311715724287c34aa496405f0381fb034089123d5dcf3bec51f80633f293b54"
+)
+D015_MODEL_SHA256 = (
+    "f78c2f3341663ed2f6e7f4c64a0bf6539a065d2e7f11ada8f19f493320697eb4"
+)
+D015_CALIBRATION_CONTRACT = Path(
+    "docs/D015_CONDITIONAL_TRAIN_FIT_CALIBRATION_DRAFT_20261005.md"
+)
+D015_CALIBRATION_CONTRACT_SHA256 = (
+    "ddf6e9ae3b72f88d8f3e16db321d9a680f5f4a981debe7a575e8a41474c9902b"
+)
 FC_P003B_UNIT = "fluid-control-fcp003b-dynamic-pairs-20261005.service"
 FC_P003B_PROBE_UNIT = "fluid-control-fcp003b-dynamic-pairs-probe-v3-20261005.service"
 FC_P003B_POSTEVAL_UNIT = (
@@ -293,6 +309,48 @@ def verify_true_state_force_probe(root: Path) -> tuple[bool, list[str]]:
     if not before or before != after:
         issues.append("technical probe model parameter/buffer SHA differs")
     return not issues, issues
+
+
+def verify_d015_terminal(repo: Path) -> tuple[bool, list[str]]:
+    """Verify the immutable D015 result and its Spark transfer receipt."""
+    result_path = repo / D015_RESULT
+    receipt_path = repo / D015_EXECUTION_RECEIPT
+    result = read_json(result_path, None)
+    receipt = read_json(receipt_path, None)
+    issues = []
+    if not isinstance(result, dict):
+        return False, ["D015 result missing or invalid JSON"]
+    if not isinstance(receipt, dict):
+        return False, ["D015 execution receipt missing or invalid JSON"]
+    if not result_path.is_file() or file_sha256(result_path) != D015_RESULT_SHA256:
+        issues.append("D015 result SHA differs")
+    if result.get("status") != D015_RESULT_STATUS:
+        issues.append("D015 result status differs")
+    if result.get("model_sha256") != D015_MODEL_SHA256:
+        issues.append("D015 result model SHA differs")
+    expected_receipt = {
+        "status": D015_TRANSFER_STATUS,
+        "result_sha256": D015_RESULT_SHA256,
+        "model_sha256": D015_MODEL_SHA256,
+        "optimizer_steps": 0,
+        "candidate_saved": False,
+        "frozen_test_accessed": False,
+        "ppo_executed": False,
+    }
+    for key, expected in expected_receipt.items():
+        if receipt.get(key) != expected:
+            issues.append(f"D015 execution receipt {key} differs")
+    return not issues, issues
+
+
+def verify_d015_calibration_contract(repo: Path) -> tuple[bool, list[str]]:
+    """Bind the current train-only calibration engineering contract by SHA."""
+    path = repo / D015_CALIBRATION_CONTRACT
+    if not path.is_file():
+        return False, ["D015 calibration contract missing"]
+    if file_sha256(path) != D015_CALIBRATION_CONTRACT_SHA256:
+        return False, ["D015 calibration contract SHA differs"]
+    return True, []
 
 
 def verify_fc_p003b_terminal(repo: Path) -> tuple[bool, list[str]]:
@@ -848,6 +906,10 @@ def build_sample(
         fc_p003c_posteval_complete
         and fc_p003c_gate_status == PAIRED_DEVELOPMENT_FAIL_STATUS
     )
+    d015_verified, d015_issues = verify_d015_terminal(repo)
+    calibration_contract_verified, calibration_contract_issues = (
+        verify_d015_calibration_contract(repo)
+    )
     fc_p003b_unit = units.get(FC_P003B_UNIT, {})
     fc_p003b_probe_unit = units.get(FC_P003B_PROBE_UNIT, {})
     fc_p003b_posteval_unit = units.get(FC_P003B_POSTEVAL_UNIT, {})
@@ -1139,6 +1201,12 @@ def build_sample(
         alerts.append(
             "PAIRED_POSTEVAL_APPROVED_WITH_NO_RUNNING_UNIT_FOR_300_SECONDS"
             if paired_wait
+            else "D015_COMPLETE_CALIBRATION_ENGINEERING_WITH_NO_RUNNING_TASK_FOR_300_SECONDS"
+            if fc_p003c_rejected
+            and d015_verified
+            and calibration_contract_verified
+            else "D015_COMPLETE_AWAITING_CALIBRATION_CONTRACT_WITH_NO_RUNNING_TASK_FOR_300_SECONDS"
+            if fc_p003c_rejected and d015_verified
             else "FC_P003C_REJECTED_D015_IMPLEMENTATION_WITH_NO_RUNNING_TASK_FOR_300_SECONDS"
             if fc_p003c_rejected
             else "TRAIN16_PENDING_WITH_NO_RUNNING_UNIT_FOR_300_SECONDS"
@@ -1172,7 +1240,11 @@ def build_sample(
         fc_p003b_posteval_unit.get("active_state") == "active"
     )
     scientific_status = (
-        "C_POSTEVAL_COMPLETE_REJECTED_D015_IMPLEMENTATION"
+        "D015_COMPLETE_TRAIN_FIT_CALIBRATION_ENGINEERING"
+        if fc_p003c_rejected and d015_verified and calibration_contract_verified
+        else "D015_COMPLETE_AWAITING_CALIBRATION_CONTRACT"
+        if fc_p003c_rejected and d015_verified
+        else "C_POSTEVAL_COMPLETE_REJECTED_D015_IMPLEMENTATION"
         if fc_p003c_rejected
         else "FC_P003C_TRAINING_AND_IMMUTABLE_POSTEVAL_WAIT_RUNNING"
         if fc_p003c_running and fc_p003c_posteval_running
@@ -1232,7 +1304,13 @@ def build_sample(
         "scientific_next_stage": {
             "status": scientific_status,
             "active_work": (
-                "fc_p003c_rejected_d015_implementation_and_cpu_validation"
+                "d015_complete_train_fit_calibration_implementation_and_cpu_validation"
+                if fc_p003c_rejected
+                and d015_verified
+                and calibration_contract_verified
+                else "d015_complete_calibration_contract_review"
+                if fc_p003c_rejected and d015_verified
+                else "fc_p003c_rejected_d015_implementation_and_cpu_validation"
                 if fc_p003c_rejected
                 else "fc_p003c_true_state_force_training_and_immutable_posteval"
                 if fc_p003c_running or fc_p003c_posteval_running
@@ -1272,7 +1350,18 @@ def build_sample(
                 )
             ),
             "purpose": (
-                "FC-P003C completed its immutable post-evaluation but failed the "
+                "D015 is complete and SHA-verified: the existing FC-P003C checkpoint "
+                "also misses rear-Cl on its train paired window. The current stage is "
+                "CPU implementation and validation of the bounded train-only "
+                "calibration contract; no calibration run, scientific improvement, "
+                "PPO authorization, or project completion is claimed."
+                if fc_p003c_rejected
+                and d015_verified
+                and calibration_contract_verified
+                else "D015 is complete and SHA-verified, but the calibration contract "
+                "is absent or differs; calibration work remains fail-closed."
+                if fc_p003c_rejected and d015_verified
+                else "FC-P003C completed its immutable post-evaluation but failed the "
                 "unchanged force-window development gate. PPO remains blocked; "
                 "only the approved D015 implementation and CPU validation may proceed."
                 if fc_p003c_rejected
@@ -1454,6 +1543,12 @@ def build_sample(
                 "full_training_approval_reference": str(FC_P003C_FULL_APPROVAL),
                 "state": "TRAINING_AND_POSTEVAL_WAIT_RUNNING"
                 if fc_p003c_running and fc_p003c_posteval_running
+                else "POSTEVAL_REJECTED_D015_COMPLETE_CALIBRATION_ENGINEERING"
+                if fc_p003c_rejected
+                and d015_verified
+                and calibration_contract_verified
+                else "POSTEVAL_REJECTED_D015_COMPLETE_AWAITING_CALIBRATION_CONTRACT"
+                if fc_p003c_rejected and d015_verified
                 else "POSTEVAL_COMPLETE_REJECTED_D015_IMPLEMENTATION"
                 if fc_p003c_rejected
                 else "TRAINING_RUNNING"
@@ -1485,6 +1580,28 @@ def build_sample(
                 "mixed_probe_is_scientific_pass": False,
                 "ppo_authorized": False,
                 "single_factor": "paired_statistic_to_true_state_endpoint_force_loss",
+            },
+            "d015": {
+                "state": (
+                    "COMPLETE_CALIBRATION_ENGINEERING"
+                    if d015_verified and calibration_contract_verified
+                    else "COMPLETE_AWAITING_CALIBRATION_CONTRACT"
+                    if d015_verified
+                    else "IMPLEMENTATION_OR_EXECUTION_PENDING"
+                ),
+                "result": str(D015_RESULT),
+                "result_sha256": D015_RESULT_SHA256,
+                "execution_receipt": str(D015_EXECUTION_RECEIPT),
+                "completion_verified": d015_verified,
+                "completion_issues": d015_issues,
+                "calibration_contract": str(D015_CALIBRATION_CONTRACT),
+                "calibration_contract_sha256": D015_CALIBRATION_CONTRACT_SHA256,
+                "calibration_contract_verified": calibration_contract_verified,
+                "calibration_contract_issues": calibration_contract_issues,
+                "calibration_execution_authorized": False,
+                "gpu_running": False,
+                "ppo_authorized": False,
+                "project_goal_complete": False,
             },
             "true_state_force_technical_probe": {
                 "state": (

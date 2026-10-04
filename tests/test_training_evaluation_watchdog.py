@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import importlib.util
 import hashlib
+import importlib.util
 import json
 import tempfile
 import unittest
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest import mock
-
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/watch_training_evaluation_state.py"
 assert SCRIPT.exists(), "watchdog implementation must be tracked in the repository"
@@ -1070,6 +1069,118 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                 "FC_P003C_REJECTED_D015_IMPLEMENTATION_WITH_NO_RUNNING_TASK_FOR_300_SECONDS",
                 result["alerts"],
             )
+
+    def test_sha_bound_d015_advances_to_calibration_engineering(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(
+                directory, receipts=True, paired=True, paired_posteval=True
+            )
+            for approval in (
+                MODULE.FC_P003C_APPROVAL,
+                MODULE.FC_P003C_FULL_APPROVAL,
+            ):
+                (repo / approval).parent.mkdir(parents=True, exist_ok=True)
+                (repo / approval).write_text("Lead approved\n")
+            self.write_verified_receipt(
+                repo,
+                MODULE.FC_P003C_TRAINING_RECEIPT,
+                MODULE.FC_P003C_TRAINING_STATUS,
+            )
+            self.write_verified_receipt(
+                repo,
+                MODULE.FC_P003C_POSTEVAL_RECEIPT,
+                MODULE.FC_P003C_POSTEVAL_STATUS,
+            )
+            gate = repo / MODULE.FC_P003C_DEVELOPMENT_GATE
+            gate.write_text(
+                json.dumps({"status": MODULE.PAIRED_DEVELOPMENT_FAIL_STATUS})
+            )
+            d015_result = repo / MODULE.D015_RESULT
+            d015_result.parent.mkdir(parents=True, exist_ok=True)
+            d015_result.write_text(
+                json.dumps(
+                    {
+                        "status": MODULE.D015_RESULT_STATUS,
+                        "model_sha256": MODULE.D015_MODEL_SHA256,
+                    },
+                    sort_keys=True,
+                )
+            )
+            result_sha = hashlib.sha256(d015_result.read_bytes()).hexdigest()
+            execution_receipt = repo / MODULE.D015_EXECUTION_RECEIPT
+            execution_receipt.write_text(
+                json.dumps(
+                    {
+                        "status": MODULE.D015_TRANSFER_STATUS,
+                        "result_sha256": result_sha,
+                        "model_sha256": MODULE.D015_MODEL_SHA256,
+                        "optimizer_steps": 0,
+                        "candidate_saved": False,
+                        "frozen_test_accessed": False,
+                        "ppo_executed": False,
+                    }
+                )
+            )
+            calibration = repo / MODULE.D015_CALIBRATION_CONTRACT
+            calibration.parent.mkdir(parents=True, exist_ok=True)
+            calibration.write_text("bounded train-only calibration design\n")
+            calibration_sha = hashlib.sha256(calibration.read_bytes()).hexdigest()
+            now = datetime(2026, 10, 5, 14, 0, tzinfo=UTC)
+            previous = {
+                "no_running_since_utc": (now - timedelta(seconds=301)).isoformat()
+            }
+            with (
+                mock.patch.object(MODULE, "D015_RESULT_SHA256", result_sha),
+                mock.patch.object(
+                    MODULE,
+                    "D015_CALIBRATION_CONTRACT_SHA256",
+                    calibration_sha,
+                ),
+            ):
+                result = MODULE.build_sample(repo, previous, {}, RESOURCES, now)
+                stage = result["scientific_next_stage"]
+                self.assertEqual(
+                    stage["status"],
+                    "D015_COMPLETE_TRAIN_FIT_CALIBRATION_ENGINEERING",
+                )
+                self.assertEqual(
+                    stage["active_work"],
+                    "d015_complete_train_fit_calibration_implementation_and_cpu_validation",
+                )
+                self.assertEqual(
+                    stage["fc_p003c"]["state"],
+                    "POSTEVAL_REJECTED_D015_COMPLETE_CALIBRATION_ENGINEERING",
+                )
+                self.assertTrue(stage["d015"]["completion_verified"])
+                self.assertTrue(
+                    stage["d015"]["calibration_contract_verified"]
+                )
+                self.assertFalse(stage["d015"]["calibration_execution_authorized"])
+                self.assertFalse(stage["d015"]["gpu_running"])
+                self.assertFalse(result["project_goal_complete"])
+                self.assertEqual(result["active_units"], [])
+                self.assertIn(
+                    "D015_COMPLETE_CALIBRATION_ENGINEERING_WITH_NO_RUNNING_TASK_FOR_300_SECONDS",
+                    result["alerts"],
+                )
+
+                d015_result.write_text(d015_result.read_text() + "\n")
+                tampered = MODULE.build_sample(repo, previous, {}, RESOURCES, now)
+                self.assertFalse(
+                    tampered["scientific_next_stage"]["d015"][
+                        "completion_verified"
+                    ]
+                )
+                self.assertIn(
+                    "D015 result SHA differs",
+                    tampered["scientific_next_stage"]["d015"][
+                        "completion_issues"
+                    ],
+                )
+                self.assertEqual(
+                    tampered["scientific_next_stage"]["status"],
+                    "C_POSTEVAL_COMPLETE_REJECTED_D015_IMPLEMENTATION",
+                )
 
 
 if __name__ == "__main__":
