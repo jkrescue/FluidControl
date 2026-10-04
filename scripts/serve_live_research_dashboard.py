@@ -277,6 +277,10 @@ function renderLead(d){
  $('lead-resources').innerHTML=['primary','worker'].map((k,i)=>{const r=(d.resources?.[k]||[]).at(-1)||{}, stale=age(r.time)>60;return `<div class="card"><h3>${i?'计算节点 · WORKER_HOST':'主节点 · SPARK_HOST'}</h3><div class="resources"><div><div class="label">GPU 利用率</div><div class="number">${stale?'—':num(r.gpu)}%</div></div><div><div class="label">CPU 整机利用率</div><div class="number">${stale?'—':num(r.cpu)}%</div></div><div><div class="label">可用统一内存</div><div class="number">${stale?'—':num(r.mem_available_gib)} GiB</div></div></div><p>${stale?'采样过期，不能确认当前负载':esc((r.tasks||[]).join('；')||'未检测到项目计算进程')}</p><div class="small">采样 ${esc(r.time)} · ${!stale&&r.mem_available_gib<20?'警告：低于 20 GiB 保留要求':'保留要求：至少 20 GiB'}</div></div>`}).join('');
  $('lead-models').innerHTML=['lambda0','lambda10'].map((k,i)=>{const c=d.research_overview?.[k]||{}, g=c.endpoint||{}, f=g.h100_force_gate||{}, a=g.h100_start0_action_difference||{};return `<div class="card"><h3>${i?'λ=10 · 配对统计训练':'λ=0 · 对照训练'}</h3><p>本轮训练：${p[k+'_training_complete']?'2 / 2 轮完成':'待核实'}；完整评估：${p[k+'_posteval_complete']?'记录已完成，需查看科学判定':'未完成或结果尚未回传'}</p><div class="number">${pct(f.pooled_total_cd_nrmse)}</div><div class="label">验证集 · 第 100 步总阻力归一化误差（越低越好）</div><p class="small">动作间阻力差预测误差：${num(a.pairwise_delta_cd_mae,5)}；已评估 100 步片段：${f.segments??'待回传'}。</p><div>${g.status==='FULL40_VALIDATION_SURROGATE_READINESS_PASS'?'静态动作终点检验通过；不代表动态／窗口检验通过':g.status?'静态动作终点检验未通过':'等待验证记录回传'}</div><div class="small">证据：${esc(c.path)} · ${esc(c.updated_at)}</div></div>`}).join('');
 }
+function renderAdmission(d){
+ const cards=$('lead-models').children;
+ ['lambda0','lambda10'].forEach((k,i)=>{const g=d.research_overview?.[k]?.development;if(!g||!cards[i])return;const line=document.createElement('p');const branches=g.window_gate?.branches||[];line.className=g.ppo_authorized===true?'good':'bad';line.textContent=`完整控制精度检验：${g.status==='DYNAMIC_FNO_DEVELOPMENT_ADMISSION_PASS'?'通过':g.status==='DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL'?'未通过':'待核实'}；时间窗口 ${branches.filter(x=>x.joint_pass===true).length}/${branches.length} 案通过。${g.ppo_authorized===true?'仍需策略训练和真实 CFD 验证。':'当前候选不得进入代理 PPO 训练，继续分析误差。'}`;cards[i].appendChild(line)});
+}
 function pct(x){return Number.isFinite(x)?(x*100).toFixed(2)+'%':'—'}
 function num(x,d=1){return Number.isFinite(x)?x.toFixed(d):'—'}
 function passText(value){return value===true?'PASS':value===false?'FAIL':'等待'}
@@ -403,7 +407,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  $('infer-speed').textContent=d.benchmark?.status==='FNO_REAL_CFD_INFERENCE_BENCHMARK_OK'?`旧数据多步 FNO、真实 CFD 输入：单步中位 ${num(d.benchmark.step_median_ms,2)} ms；连续 100 步 ${num(d.benchmark.rollout_100_step_seconds,2)} s。仅模型前向，不含 CFD 或控制通信。`:'FNO 推理耗时尚未测量。';
  $('cem').textContent=d.cem?'CEM 控制筛选已完成，结果待审计。':`CEM：等待 FNO 的 100 步总阻力误差降至 10% 以下。新增 CFD 平均求解进度 ${num(average,0)}%。`;
  $('ppo').textContent=d.ppo?'HydroGym PPO 有当前目标的新记录。':'当前总阻力目标的 HydroGym PPO 尚未启动。历史末柱目标的 PPO 曾完成 32 步真实 CFD 闭环，但目标差 +0.003855（更差），不能视为当前控制收益。';figure()}
-async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();renderLead(d);render(d)}catch(e){$('clock').textContent='连接失败：'+e.message;$('lead-now').textContent='连接失败，当前页面数值仅是上次采样，不代表实时状态。'}}
+async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();renderLead(d);renderAdmission(d);render(d)}catch(e){$('clock').textContent='连接失败：'+e.message;$('lead-now').textContent='连接失败，当前页面数值仅是上次采样，不代表实时状态。'}}
 $('case').onchange=figure;$('horizon').onchange=figure;$('h50-horizon').onchange=()=>{if(latest)renderH50Figures(latest)};window.onresize=()=>{if(latest)render(latest)};refresh();setInterval(refresh,5000);
 </script></body></html>'''
 
@@ -431,7 +435,12 @@ def _research_overview(root: Path):
                 updated = datetime.fromtimestamp(path.stat().st_mtime, UTC).isoformat()
             except OSError:
                 payload = None
-        result[candidate] = {"endpoint": payload, "path": relative, "updated_at": updated}
+        result[candidate] = {
+            "endpoint": payload,
+            "path": relative,
+            "updated_at": updated,
+            "development": _read_json(path.parent.parent / "development_gate.json", None),
+        }
     return result
 
 
