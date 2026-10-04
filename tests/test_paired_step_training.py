@@ -4,7 +4,10 @@ from unittest import mock
 
 import torch
 
-from fluid_control.paired_step_force import paired_step_force_delta_loss
+from fluid_control.paired_step_force import (
+    paired_step_force_absolute_loss,
+    paired_step_force_delta_loss,
+)
 from fluid_control.paired_step_training import (
     paired_objective_kind,
     prepare_true_state_training_model,
@@ -57,6 +60,39 @@ def make_pair(steps=5):
 
 
 class TestTrueStatePairedOptimizerStep(unittest.TestCase):
+    def test_absolute_sees_common_bias_that_delta_cancels(self):
+        target_action = torch.zeros(1, 2, 4)
+        target_zero = torch.ones(1, 2, 4)
+        common_bias = torch.tensor([1.0, 2.0, 3.0, 4.0])[None, None]
+        predicted_action = target_action + common_bias
+        predicted_zero = target_zero + common_bias
+        weights = torch.tensor([1 / 7, 1 / 7, 4 / 7, 1 / 7])
+        self.assertEqual(
+            float(
+                paired_step_force_delta_loss(
+                    predicted_action,
+                    predicted_zero,
+                    target_action,
+                    target_zero,
+                    weights,
+                )
+            ),
+            0.0,
+        )
+        expected = float((common_bias.square() * weights).sum(-1).mean())
+        self.assertAlmostEqual(
+            float(
+                paired_step_force_absolute_loss(
+                    predicted_action,
+                    predicted_zero,
+                    target_action,
+                    target_zero,
+                    weights,
+                )
+            ),
+            expected,
+        )
+
     def test_old_objective_remains_default_and_schedule_contract_is_unchanged(self):
         self.assertEqual(paired_objective_kind(), "paired_statistics")
         self.assertEqual(
@@ -67,7 +103,11 @@ class TestTrueStatePairedOptimizerStep(unittest.TestCase):
             paired_objective_kind("unknown")
         indices = paired_batch_indices(1368, 16, "interleaved")
         self.assertEqual(indices, tuple(index * 1367 // 15 for index in range(16)))
-        identities = {f"b{phase:02d}:{profile}" for phase in (0, 2, 4, 6) for profile in ("prbs", "multisine")}
+        identities = {
+            f"b{phase:02d}:{profile}"
+            for phase in (0, 2, 4, 6)
+            for profile in ("prbs", "multisine")
+        }
         first = sorted(identities)
         second = list(reversed(first))
         validate_paired_identity_passes([first, second], identities, 2)
@@ -92,9 +132,7 @@ class TestTrueStatePairedOptimizerStep(unittest.TestCase):
 
         chunked_optimizer = CountingSGD(chunked.parameters(), lr=0.03)
         original_clip = torch.nn.utils.clip_grad_norm_
-        with mock.patch(
-            "torch.nn.utils.clip_grad_norm_", wraps=original_clip
-        ) as clip:
+        with mock.patch("torch.nn.utils.clip_grad_norm_", wraps=original_clip) as clip:
             result = true_state_paired_optimizer_step(
                 model=chunked,
                 optimizer=chunked_optimizer,
@@ -137,6 +175,86 @@ class TestTrueStatePairedOptimizerStep(unittest.TestCase):
         for actual, expected in zip(chunked.parameters(), monolithic.parameters()):
             torch.testing.assert_close(actual, expected, rtol=2e-6, atol=2e-7)
 
+    def test_absolute_chunked_gradients_equal_monolithic(self):
+        torch.manual_seed(31)
+        chunked = TinyForce()
+        monolithic = copy.deepcopy(chunked)
+        pair = make_pair(steps=5)
+        weights = torch.tensor([1 / 7, 1 / 7, 4 / 7, 1 / 7])
+        base_inputs = torch.randn(3, 6)
+        base_target = torch.randn(3, 4)
+        paired_weight, clip_norm = 2.5, 0.35
+        chunked_optimizer = CountingSGD(chunked.parameters(), lr=0.03)
+        result = true_state_paired_optimizer_step(
+            model=chunked,
+            optimizer=chunked_optimizer,
+            base_loss=(chunked(base_inputs) - base_target).square().mean(),
+            pair=pair,
+            channel_weights=weights,
+            paired_weight=paired_weight,
+            predict_force=predict_force,
+            total_steps=5,
+            chunk_size=2,
+            gradient_clip_norm=clip_norm,
+            force_objective="absolute",
+        )
+        monolithic_optimizer = CountingSGD(monolithic.parameters(), lr=0.03)
+        monolithic_optimizer.zero_grad(set_to_none=True)
+        base_loss = (monolithic(base_inputs) - base_target).square().mean()
+        base_loss.backward()
+        predicted_action, predicted_zero = predict_true_state_force_chunk(
+            monolithic, pair, 0, 5, predict_force
+        )
+        pair_loss = paired_step_force_absolute_loss(
+            predicted_action,
+            predicted_zero,
+            pair["action_force"][:, 1:],
+            pair["zero_force"][:, 1:],
+            weights,
+        )
+        (paired_weight * pair_loss).backward()
+        torch.nn.utils.clip_grad_norm_(monolithic.parameters(), clip_norm)
+        monolithic_optimizer.step()
+        self.assertEqual(result["force_objective"], "absolute")
+        self.assertAlmostEqual(
+            result["paired_step_force_loss"], float(pair_loss.detach()), places=6
+        )
+        for actual, expected in zip(chunked.parameters(), monolithic.parameters()):
+            torch.testing.assert_close(actual, expected, rtol=2e-6, atol=2e-7)
+
+    def test_default_delta_matches_explicit_delta(self):
+        torch.manual_seed(37)
+        default_model = TinyForce()
+        explicit_model = copy.deepcopy(default_model)
+        pair = make_pair(steps=4)
+        weights = torch.tensor([1 / 7, 1 / 7, 4 / 7, 1 / 7])
+        inputs = torch.randn(2, 6)
+        target = torch.randn(2, 4)
+        results = []
+        for model, objective in ((default_model, None), (explicit_model, "delta")):
+            kwargs = {} if objective is None else {"force_objective": objective}
+            optimizer = CountingSGD(model.parameters(), lr=0.02)
+            results.append(
+                true_state_paired_optimizer_step(
+                    model=model,
+                    optimizer=optimizer,
+                    base_loss=(model(inputs) - target).square().mean(),
+                    pair=pair,
+                    channel_weights=weights,
+                    paired_weight=3.0,
+                    predict_force=predict_force,
+                    total_steps=4,
+                    chunk_size=2,
+                    gradient_clip_norm=1.0,
+                    **kwargs,
+                )
+            )
+        self.assertEqual(results[0], results[1])
+        for actual, expected in zip(
+            default_model.parameters(), explicit_model.parameters()
+        ):
+            torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+
     def test_channel_mse_and_endpoint_alignment(self):
         torch.manual_seed(5)
         model = TinyForce()
@@ -168,9 +286,7 @@ class TestTrueStatePairedOptimizerStep(unittest.TestCase):
             expected_channel_mse,
         )
         torch.testing.assert_close(
-            torch.tensor(
-                result["paired_step_force_per_channel_weighted_contribution"]
-            ),
+            torch.tensor(result["paired_step_force_per_channel_weighted_contribution"]),
             expected_channel_mse * weights,
         )
 
@@ -240,7 +356,9 @@ class TestTrueStatePairedOptimizerStep(unittest.TestCase):
         model = TinyForce()
         optimizer = CountingSGD(model.parameters(), lr=0.1)
         model(torch.ones(1, 6)).sum().backward()
-        self.assertTrue(any(parameter.grad is not None for parameter in model.parameters()))
+        self.assertTrue(
+            any(parameter.grad is not None for parameter in model.parameters())
+        )
         pair = make_pair(steps=4)
         pair.pop("zero_force")
         with self.assertRaises(ValueError):

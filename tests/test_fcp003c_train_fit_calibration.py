@@ -136,7 +136,12 @@ class Tests(unittest.TestCase):
                         "panel": "train_paired_window",
                         "identity": "b00:prbs",
                         "pair": pair,
-                    }
+                    },
+                    {
+                        "panel": "train_paired_window",
+                        "identity": "b00:multisine",
+                        "pair": pair,
+                    },
                 ],
                 torch.zeros(1, 1, 3, 1, 1),
                 torch.ones(1, 1, 3, 1, 1),
@@ -154,7 +159,15 @@ class Tests(unittest.TestCase):
         self.assertEqual(
             result["per_pair"]["b00:prbs"]["action_minus_zero"]["front_cd"]["mae"], 1.0
         )
-        self.assertEqual(result["force_absolute"]["rear_cl"]["count"], 200)
+        self.assertEqual(result["force_absolute"]["rear_cl"]["count"], 300)
+        self.assertEqual(result["force_action_absolute"]["rear_cl"]["count"], 200)
+        self.assertEqual(result["force_action_absolute"]["rear_cl"]["mae"], 4.0)
+        self.assertEqual(result["force_zero_absolute"]["rear_cl"]["count"], 100)
+        self.assertEqual(result["force_zero_absolute"]["rear_cl"]["mae"], 0.0)
+        self.assertEqual(
+            result["force_zero_absolute_by_phase"]["b00"]["rear_cl"]["count"],
+            100,
+        )
         self.assertEqual(result["field"]["sums"][0], [0.0, 0.0, 0.0])
         self.assertEqual(
             result["per_pair"]["b00:prbs"]["field_action"]["sums"][0],
@@ -224,6 +237,8 @@ class Tests(unittest.TestCase):
             else:
                 sys.modules["evaluate_tandem_fno"] = old
         self.assertEqual(result["force_absolute"]["rear_cl"]["count"], 202)
+        self.assertEqual(result["force_action_absolute"]["rear_cl"]["count"], 101)
+        self.assertEqual(result["force_zero_absolute"]["rear_cl"]["count"], 101)
         self.assertEqual(result["force_action_minus_zero"]["rear_cl"]["count"], 101)
         self.assertEqual(
             result["per_pair"]["b00:prbs"]["absolute"]["rear_cl"]["mae"], 1.0

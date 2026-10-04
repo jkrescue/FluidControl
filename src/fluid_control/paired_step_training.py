@@ -14,6 +14,7 @@ from typing import Any
 import torch
 
 from fluid_control.paired_step_force import (
+    paired_step_force_absolute_loss,
     paired_step_force_delta_loss,
     true_state_step_input,
 )
@@ -106,8 +107,14 @@ def _validate_pair(pair: Mapping[str, torch.Tensor], total_steps: int) -> None:
         "mask",
     }
     if not required.issubset(pair):
-        raise ValueError(f"paired batch is missing keys: {sorted(required - set(pair))}")
-    if isinstance(total_steps, bool) or not isinstance(total_steps, int) or total_steps < 1:
+        raise ValueError(
+            f"paired batch is missing keys: {sorted(required - set(pair))}"
+        )
+    if (
+        isinstance(total_steps, bool)
+        or not isinstance(total_steps, int)
+        or total_steps < 1
+    ):
         raise ValueError("total_steps must be a positive integer")
     action_state = pair["action_state"]
     zero_state = pair["zero_state"]
@@ -138,7 +145,9 @@ def predict_true_state_force_chunk(
     pair: Mapping[str, torch.Tensor],
     start: int,
     stop: int,
-    predict_force: Callable[[torch.nn.Module, torch.Tensor, torch.Tensor], torch.Tensor],
+    predict_force: Callable[
+        [torch.nn.Module, torch.Tensor, torch.Tensor], torch.Tensor
+    ],
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Predict paired forces for endpoints ``start+1`` through ``stop``."""
     action, zero = [], []
@@ -175,10 +184,13 @@ def true_state_paired_optimizer_step(
     pair: Mapping[str, torch.Tensor],
     channel_weights: torch.Tensor,
     paired_weight: float,
-    predict_force: Callable[[torch.nn.Module, torch.Tensor, torch.Tensor], torch.Tensor],
+    predict_force: Callable[
+        [torch.nn.Module, torch.Tensor, torch.Tensor], torch.Tensor
+    ],
     total_steps: int = 100,
     chunk_size: int = 10,
     gradient_clip_norm: float = 1.0,
+    force_objective: str = "delta",
 ) -> dict[str, Any]:
     """Apply one regular-plus-paired update with one final gradient clip.
 
@@ -188,6 +200,8 @@ def true_state_paired_optimizer_step(
     """
     optimizer.zero_grad(set_to_none=True)
     _validate_pair(pair, total_steps)
+    if force_objective not in {"delta", "absolute"}:
+        raise ValueError("force_objective must be 'delta' or 'absolute'")
     if (
         isinstance(chunk_size, bool)
         or not isinstance(chunk_size, int)
@@ -212,7 +226,9 @@ def true_state_paired_optimizer_step(
         device=pair["action_force"].device,
     )
     batch = pair["action_force"].shape[0]
-    parameters = [parameter for parameter in model.parameters() if parameter.requires_grad]
+    parameters = [
+        parameter for parameter in model.parameters() if parameter.requires_grad
+    ]
     try:
         if not torch.isfinite(base_loss):
             raise FloatingPointError("non-finite regular loss")
@@ -224,25 +240,47 @@ def true_state_paired_optimizer_step(
             )
             target_action = pair["action_force"][:, 1 + start : 1 + stop]
             target_zero = pair["zero_force"][:, 1 + start : 1 + stop]
-            error = (predicted_action - predicted_zero) - (
-                target_action - target_zero
-            )
-            channel_sse += error.detach().double().square().sum(dim=(0, 1))
-            raw_loss = paired_step_force_delta_loss(
-                predicted_action,
-                predicted_zero,
-                target_action,
-                target_zero,
-                channel_weights,
-            )
+            if force_objective == "delta":
+                error = (predicted_action - predicted_zero) - (
+                    target_action - target_zero
+                )
+                channel_sse += error.detach().double().square().sum(dim=(0, 1))
+                raw_loss = paired_step_force_delta_loss(
+                    predicted_action,
+                    predicted_zero,
+                    target_action,
+                    target_zero,
+                    channel_weights,
+                )
+            else:
+                action_error = predicted_action - target_action
+                zero_error = predicted_zero - target_zero
+                channel_sse += (
+                    0.5
+                    * (
+                        action_error.detach().double().square()
+                        + zero_error.detach().double().square()
+                    )
+                ).sum(dim=(0, 1))
+                raw_loss = paired_step_force_absolute_loss(
+                    predicted_action,
+                    predicted_zero,
+                    target_action,
+                    target_zero,
+                    channel_weights,
+                )
             scaled_loss = raw_loss * paired_weight * ((stop - start) / total_steps)
             if not torch.isfinite(scaled_loss):
                 raise FloatingPointError("non-finite true-state paired chunk loss")
             scaled_loss.backward()
             pair_loss_value += float(raw_loss.detach()) * ((stop - start) / total_steps)
 
-        gradients = [parameter.grad for parameter in parameters if parameter.grad is not None]
-        if not gradients or any(not torch.isfinite(gradient).all() for gradient in gradients):
+        gradients = [
+            parameter.grad for parameter in parameters if parameter.grad is not None
+        ]
+        if not gradients or any(
+            not torch.isfinite(gradient).all() for gradient in gradients
+        ):
             raise FloatingPointError("missing or non-finite accumulated gradients")
         preclip_norm = torch.nn.utils.clip_grad_norm_(parameters, gradient_clip_norm)
         if not torch.isfinite(preclip_norm):
@@ -261,9 +299,12 @@ def true_state_paired_optimizer_step(
         "paired_step_force_per_channel_mse": channel_mse.cpu().tolist(),
         "paired_step_force_per_channel_weighted_contribution": (
             channel_mse * channel_weights.detach().double()
-        ).cpu().tolist(),
+        )
+        .cpu()
+        .tolist(),
         "preclip_gradient_norm": float(preclip_norm.detach()),
         "optimizer_steps": 1,
         "chunk_size": chunk_size,
         "chunk_count": (total_steps + chunk_size - 1) // chunk_size,
+        "force_objective": force_objective,
     }

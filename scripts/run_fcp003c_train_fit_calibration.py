@@ -173,6 +173,13 @@ def train_h1_readout(model, items, state_mean, state_std, force_std, predict) ->
                 "absolute": {
                     name: [] for name in ("front_cd", "front_cl", "rear_cd", "rear_cl")
                 },
+                "action_absolute": {
+                    name: [] for name in ("front_cd", "front_cl", "rear_cd", "rear_cl")
+                },
+                "zero_absolute": {
+                    name: [] for name in ("front_cd", "front_cl", "rear_cd", "rear_cl")
+                },
+                "zero_by_phase": {},
                 "delta": {
                     name: [] for name in ("front_cd", "front_cl", "rear_cd", "rear_cl")
                 },
@@ -212,6 +219,25 @@ def train_h1_readout(model, items, state_mean, state_std, force_std, predict) ->
                 current["absolute"][channel].extend(values.cpu().reshape(-1).tolist())
         action_error = (ap_force - action_target_force) * force_std
         zero_error = (zp_force - zero_target_force) * force_std
+        for channel, values in zip(
+            current["action_absolute"], action_error.unbind(-1), strict=True
+        ):
+            current["action_absolute"][channel].extend(
+                values.cpu().reshape(-1).tolist()
+            )
+        if phase not in current["zero_by_phase"]:
+            current["zero_by_phase"][phase] = {
+                channel: _summary(values.cpu().reshape(-1).tolist())
+                for channel, values in zip(
+                    current["zero_absolute"], zero_error.unbind(-1), strict=True
+                )
+            }
+            for channel, values in zip(
+                current["zero_absolute"], zero_error.unbind(-1), strict=True
+            ):
+                current["zero_absolute"][channel].extend(
+                    values.cpu().reshape(-1).tolist()
+                )
         delta = action_error - zero_error
         for channel, values in zip(current["delta"], delta.unbind(-1), strict=True):
             current["delta"][channel].extend(values.cpu().reshape(-1).tolist())
@@ -250,6 +276,13 @@ def train_h1_readout(model, items, state_mean, state_std, force_std, predict) ->
             "force_absolute": {
                 k: _summary(v) for k, v in values.pop("absolute").items()
             },
+            "force_action_absolute": {
+                k: _summary(v) for k, v in values.pop("action_absolute").items()
+            },
+            "force_zero_absolute": {
+                k: _summary(v) for k, v in values.pop("zero_absolute").items()
+            },
+            "force_zero_absolute_by_phase": values["zero_by_phase"],
             "force_action_minus_zero": {
                 k: _summary(v) for k, v in values.pop("delta").items()
             },
@@ -306,6 +339,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--paired-force-objective",
+        choices=("delta", "absolute"),
+        default="delta",
+    )
     args = parser.parse_args()
     if args.output.exists():
         raise FileExistsError(args.output)
@@ -478,6 +516,7 @@ def main() -> None:
                 total_steps=100,
                 chunk_size=10,
                 gradient_clip_norm=float(cfg.training.gradient_clip_norm),
+                force_objective=args.paired_force_objective,
             )
             ids = _pair_ids(pair_metadata)
             passes[paired_count // PAIR_SIZE].extend(ids)
@@ -509,6 +548,7 @@ def main() -> None:
             "optimizer_steps",
             "chunk_size",
             "chunk_count",
+            "force_objective",
         ):
             if key in result:
                 record[key] = result[key]
@@ -523,6 +563,7 @@ def main() -> None:
                         "paired_steps_completed": paired_count,
                         "latest_kind": kind,
                         "latest_loss": result["loss"],
+                        "paired_force_objective": args.paired_force_objective,
                     },
                     allow_nan=False,
                     sort_keys=True,
@@ -543,8 +584,14 @@ def main() -> None:
         raise RuntimeError("calibration did not change scratch model")
     args.output.mkdir(parents=True)
     (args.output / "resolved_config.yaml").write_text(OmegaConf.to_yaml(cfg))
+    status = (
+        "FCP003C_TRAIN_FIT_CALIBRATION_COMPLETE_NOT_ADMISSION"
+        if args.paired_force_objective == "delta"
+        else "FCP003C_TRAIN_FIT_ABSOLUTE_CALIBRATION_COMPLETE_NOT_ADMISSION"
+    )
     receipt = {
-        "status": "FCP003C_TRAIN_FIT_CALIBRATION_COMPLETE_NOT_ADMISSION",
+        "status": status,
+        "paired_force_objective": args.paired_force_objective,
         "optimizer_steps": TOTAL_STEPS,
         "paired_steps": paired_count,
         "paired_passes": passes,
@@ -572,6 +619,7 @@ def main() -> None:
             "fixed_learning_rate": float(cfg.training.learning_rate),
             "scheduler_used": False,
             "selection_performed": False,
+            "paired_force_objective": args.paired_force_objective,
             "note": "Effective bounded calibration contract; resolved config retains the parent two-epoch training declaration.",
         },
     }
@@ -585,6 +633,7 @@ def main() -> None:
             "status": receipt["status"],
             "optimizer_steps": TOTAL_STEPS,
             "paired_steps": paired_count,
+            "paired_force_objective": args.paired_force_objective,
             "selection_performed": False,
             "validation_accessed": False,
             "frozen_test_accessed": False,

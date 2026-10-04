@@ -93,3 +93,50 @@ def paired_step_force_delta_loss(
     if not torch.isfinite(loss):
         raise FloatingPointError("non-finite paired step-force loss")
     return loss
+
+
+def paired_step_force_absolute_loss(
+    predicted_action: torch.Tensor,
+    predicted_zero: torch.Tensor,
+    target_action: torch.Tensor,
+    target_zero: torch.Tensor,
+    channel_weights: torch.Tensor,
+) -> torch.Tensor:
+    """Symmetric weighted action/zero force MSE in normalized units.
+
+    The factor one half keeps the loss on a per-branch scale.  Unlike the
+    delta objective, a force bias shared by both branches does not cancel.
+    """
+    shapes = {
+        tuple(predicted_action.shape),
+        tuple(predicted_zero.shape),
+        tuple(target_action.shape),
+        tuple(target_zero.shape),
+    }
+    if len(shapes) != 1 or predicted_action.ndim != 3:
+        raise ValueError("all force tensors must have identical shape [B,T,C]")
+    channels = predicted_action.shape[-1]
+    if channel_weights.shape != (channels,):
+        raise ValueError("channel weights differ from force channels")
+    if (
+        not torch.isfinite(channel_weights).all()
+        or torch.any(channel_weights <= 0)
+        or not torch.isclose(
+            channel_weights.sum(),
+            torch.ones((), dtype=channel_weights.dtype, device=channel_weights.device),
+            rtol=1e-6,
+            atol=1e-7,
+        )
+    ):
+        raise ValueError("channel weights must be positive, finite, and sum to one")
+    action_error = predicted_action - target_action
+    zero_error = predicted_zero - target_zero
+    loss = (
+        0.5
+        * ((action_error.square() + zero_error.square()) * channel_weights)
+        .sum(dim=-1)
+        .mean()
+    )
+    if not torch.isfinite(loss):
+        raise FloatingPointError("non-finite paired absolute step-force loss")
+    return loss
