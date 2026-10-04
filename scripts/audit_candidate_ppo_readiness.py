@@ -133,6 +133,14 @@ def audit(
         "normalization": normalization_path,
     }
     blockers: list[dict[str, str]] = []
+    if official_image_id != IMAGE_ID:
+        blockers.append(
+            {
+                "kind": "SCHEMA_ERROR",
+                "item": "official_image_id",
+                "detail": "official PhysicsNeMo image ID differs from the pinned runtime",
+            }
+        )
     for label, path in paths.items():
         if label == "candidate_root":
             if not path.is_dir():

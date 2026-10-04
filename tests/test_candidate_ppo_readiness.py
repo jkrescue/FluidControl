@@ -214,7 +214,7 @@ def test_scientific_gate_failure_is_not_schema_pass(tmp_path: Path, gate_key: st
 def test_wrong_image_and_frozen_scope_are_blocked(tmp_path: Path) -> None:
     values = fixture(tmp_path)
     result = MODULE.audit(**values, official_image_id="sha256:wrong")
-    assert result["blockers"][0]["kind"] == "SCIENTIFIC_FAIL"
+    assert result["blockers"][0]["kind"] == "SCHEMA_ERROR"
     values = fixture(tmp_path / "second")
     path = values["dynamic_gate_path"]
     gate = json.loads(path.read_text())
