@@ -229,7 +229,7 @@ def select_versioned_authority(
         return max(active, key=lambda name: units[name].get("started_at") or "")
     versioned = []
     for name in candidates:
-        match = re.search(r"-v(\d+)-", name)
+        match = re.search(r"-[vr](\d+)-", name)
         versioned.append((int(match.group(1)) if match else 1, name))
     return max(versioned, default=(0, default))[1]
 

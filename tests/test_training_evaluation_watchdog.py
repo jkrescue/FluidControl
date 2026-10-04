@@ -483,6 +483,18 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
             MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT,
         )
 
+    def test_latest_retry_generation_becomes_authority_when_inactive(self) -> None:
+        units = {
+            MODULE.FC_P003_PROBE_UNIT: unit("failed", "exit-code"),
+            "fluid-control-fcp003-interleaved-probe-r3-20261005.service": unit(),
+        }
+        self.assertEqual(
+            MODULE.select_versioned_authority(
+                units, MODULE.FC_P003_PROBE_PREFIX, MODULE.FC_P003_PROBE_UNIT
+            ),
+            "fluid-control-fcp003-interleaved-probe-r3-20261005.service",
+        )
+
     def test_paired_lambda0_active_is_current_scientific_work(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = self.make_repo(directory, receipts=True)
