@@ -299,15 +299,16 @@ function renderAdmission(d){
  if(fresh&&stage.status==='FC_P003_RUNNING'){const p=d.current_training_log||{};const progress=Number.isFinite(p.batch_percent)?`最近一条批次记录：${num(p.batch_percent,2)}%，时间 ${p.logged_at_utc}；这不是项目完成比例。`:'';$('lead-now').textContent=`正在训练：配对监督均匀调度对照实验（FC-P003）。已完成 ${p.completed_epochs??'待核实'} / 2 轮。${progress} 模型、数据、监督次数保持不变，只把监督分布到整轮训练中，随后进行完整评估。下方 λ=0/λ=10 是上一轮模型结果。`;}
  const cards=$('lead-models').children;
  ['lambda0','lambda10'].forEach((k,i)=>{const g=d.research_overview?.[k]?.development;if(!g||!cards[i])return;const line=document.createElement('p');const branches=g.window_gate?.branches||[];line.className=g.ppo_authorized===true?'good':'bad';line.textContent=`完整控制精度检验：${g.status==='DYNAMIC_FNO_DEVELOPMENT_ADMISSION_PASS'?'通过':g.status==='DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL'?'未通过':'待核实'}；时间窗口 ${branches.filter(x=>x.joint_pass===true).length}/${branches.length} 案通过。${g.ppo_authorized===true?'仍需策略训练和真实 CFD 验证。':'当前候选不得进入代理 PPO 训练，继续分析误差。'}`;cards[i].appendChild(line)});
- const current=d.research_overview?.fc_p003;
+ const isDynamic=!!d.research_overview?.fc_p003b?.receipt_bound;
+ const current=isDynamic?d.research_overview.fc_p003b:d.research_overview?.fc_p003;
  if(current?.receipt_bound){
   const g=current.development, branches=g.window_gate?.branches||[], f=current.endpoint?.h100_force_gate||{}, rejected=g.status==='DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL';
   const card=document.createElement('div');card.className='card';
-  const title=document.createElement('h3');title.textContent='最新结果 · 均匀配对监督（FC-P003）';card.appendChild(title);
+  const title=document.createElement('h3');title.textContent=isDynamic?'最新结果 · 动态动作配对监督（FC-P003B）':'最新结果 · 均匀配对监督（FC-P003）';card.appendChild(title);
   const verdict=document.createElement('p');verdict.className=rejected?'bad':'';verdict.textContent=`训练与完整评估已完成；控制预测精度${rejected?'未通过':'需结合完整记录复核'}。受力时间窗口 ${branches.filter(x=>x.joint_pass===true).length} / ${branches.length} 个工况通过。`;card.appendChild(verdict);
   const detail=document.createElement('p');detail.textContent=`验证集第100步整体阻力归一化误差 ${pct(f.pooled_total_cd_nrmse)}。端点阻力准确不代表升力波动准确；尚未完成新策略与真实CFD闭环验收。下面 λ=0 / λ=10 为历史对照。`;card.appendChild(detail);
   $('lead-models').prepend(card);
-  if(fresh&&rejected)$('lead-now').textContent=`最新候选已完成评估，但旋转动作下的升力波动预测未通过；主节点正在分析误差和准备下一项受力监督实验。${stage.fc_p003b?.state==='TRAINING_RUNNING'?'计算节点仍在进行动态配对训练。':'计算节点实际负载见下方采样。'}尚未启动新模型的PPO。`;
+  if(fresh&&rejected)$('lead-now').textContent=`${isDynamic?'动态动作配对候选':'均匀配对候选'}已完成评估，但旋转动作下的升力波动预测未通过。当前任务以实时监控记录为准；完整评估结束不等于闭环完成。尚未启动新模型的PPO。`;
  }
 }
 function pct(x){return Number.isFinite(x)?(x*100).toFixed(2)+'%':'—'}
@@ -509,14 +510,22 @@ def _research_overview(root: Path):
             ],
         }
     result["fc_p003"] = _completed_interleaved_candidate(root)
+    result["fc_p003b"] = _completed_interleaved_candidate(root, dynamic=True)
     return result
 
 
-def _completed_interleaved_candidate(root: Path) -> dict | None:
+def _completed_interleaved_candidate(root: Path, dynamic: bool = False) -> dict | None:
     """Display finalized candidate evidence only when bound to its receipt."""
     base = root / "artifacts/tandem_fno_paired_stats_interleaved_lambda10_20261005/posteval_fc_p003"
+    expected_status = "FC_P003_POSTEVAL_COMPLETE"
+    if dynamic:
+        base = root / "artifacts/tandem_fno_dynamic_paired_interleaved_lambda10_20261005/posteval_fc_p003b"
+        expected_status = "FC_P003B_POSTEVAL_COMPLETE"
     receipt = _read_json(base / "receipt.json", None)
-    if not isinstance(receipt, dict) or receipt.get("status") != "FC_P003_POSTEVAL_COMPLETE":
+    if not isinstance(receipt, dict) or receipt.get("status") != expected_status:
+        return None
+    if dynamic and (receipt.get("candidate_kind") != "dynamic_paired_interleaved_lambda10"
+                    or receipt.get("frozen_test_accessed") is not False):
         return None
     checkpoint = receipt.get("checkpoint_sha256")
     hashes = receipt.get("sha256")
@@ -535,7 +544,10 @@ def _completed_interleaved_candidate(root: Path) -> dict | None:
         if not isinstance(value, dict) or value.get("checkpoint_sha256") != checkpoint:
             return None
         values[key] = value
-    if values["development"].get("status") != receipt.get("development_gate_status"):
+    gate_status = values["development"].get("status")
+    if gate_status not in {"DYNAMIC_FNO_DEVELOPMENT_ADMISSION_PASS", "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL"}:
+        return None
+    if not dynamic and gate_status != receipt.get("development_gate_status"):
         return None
     return {**values, "receipt_bound": True, "path": str(base.relative_to(root))}
 

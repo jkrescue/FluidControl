@@ -28,6 +28,35 @@ MODULE = load_module()
 
 
 class LatestEvidenceDashboardTests(unittest.TestCase):
+    def test_dynamic_candidate_requires_bound_gate_and_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = root / "artifacts/tandem_fno_dynamic_paired_interleaved_lambda10_20261005/posteval_fc_p003b"
+            (base / "validation10").mkdir(parents=True)
+            self.assertIsNone(MODULE._completed_interleaved_candidate(root, dynamic=True))
+            checkpoint = "b" * 64
+            hashes = {}
+            for relative, payload in (
+                ("validation10/endpoint_gate.json", {"checkpoint_sha256": checkpoint}),
+                ("development_gate.json", {"checkpoint_sha256": checkpoint,
+                 "status": "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL"}),
+            ):
+                raw = json.dumps(payload).encode()
+                (base / relative).write_bytes(raw)
+                hashes[relative] = hashlib.sha256(raw).hexdigest()
+            receipt = {"status": "FC_P003B_POSTEVAL_COMPLETE", "checkpoint_sha256": checkpoint,
+                       "candidate_kind": "dynamic_paired_interleaved_lambda10",
+                       "frozen_test_accessed": False, "sha256": hashes}
+            (base / "receipt.json").write_text(json.dumps(receipt))
+            self.assertTrue(MODULE._completed_interleaved_candidate(root, dynamic=True)["receipt_bound"])
+            receipt["frozen_test_accessed"] = True
+            (base / "receipt.json").write_text(json.dumps(receipt))
+            self.assertIsNone(MODULE._completed_interleaved_candidate(root, dynamic=True))
+            receipt["frozen_test_accessed"] = False
+            (base / "receipt.json").write_text(json.dumps(receipt))
+            (base / "development_gate.json").write_text("{}")
+            self.assertIsNone(MODULE._completed_interleaved_candidate(root, dynamic=True))
+
     def test_current_candidate_requires_complete_matching_receipt(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
