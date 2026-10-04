@@ -28,12 +28,17 @@ minus/zero/plus evidence from the fixed post-evaluation protocol.
   of same-window zero-CFD mean-total-Cd; absolute rear-Cl-prime RMS and mean-Cl
   errors each <=2.5% of same-window zero-CFD rear-Cl-prime RMS. All branches
   must pass; no favorable averaging or endpoint substitution.
-- Dynamic: reuse the existing fixed Dynamic6 endpoint response computation:
-  pooled total-Cd NRMSE <=0.10, action-minus-zero Cd MAE <=0.023, perfect
-  non-tie sign and cross-action ordering with the existing 1e-12 tie tolerance.
-  Verify the actual supported H100 and action contract |omega|<=0.75,
-  |delta omega|<=0.1 per control step. Preserve any additional checks in the
-  existing authoritative audit; do not drop a check to obtain compatibility.
+- Canonical dynamic compatibility: adopt the existing `audit_full40_dynamic6_fno.py`
+  computation predeclared in commit 72b62ac: pooled total-Cd NRMSE over ALL
+  rolling H100 segments <=0.10, plus start0 four action-minus-zero Cd pair
+  MAE <=0.023. Independently verify the actual HDF action sequence contract
+  |omega|<=0.75 and |delta omega|<=0.1 per control step, H100, validation-only
+  b01/b05 scope. Preserve all existing audit checks.
+- The additional development dynamic requirement stays separate: its pooled
+  Cd NRMSE uses only the six start0 H100 terminal points, not all rolling
+  segments; it also requires delta-Cd MAE <=0.023 and perfect non-tie sign/order
+  with the existing 1e-12 tie tolerance. Both contracts must pass. Never label
+  these two differently aggregated NRMSE values as interchangeable.
 - Existing validation10 endpoint gate and additional development admission
   remain required. Receipts may share underlying evidence; they are not
   statistically independent experiments or new CFD observations.
