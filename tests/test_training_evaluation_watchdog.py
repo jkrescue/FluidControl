@@ -493,6 +493,39 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         self.assertEqual(stage["fc_p003"]["main_pid"], 2718)
         self.assertFalse(stage["parallel_cpu_work"]["training_authorized"])
 
+    def test_fc_p003_posteval_running_requires_verified_training_and_process(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(
+                directory, receipts=True, paired=True, paired_posteval=True
+            )
+            self.write_verified_receipt(
+                repo, MODULE.FC_P003_LAUNCH_RECEIPT, MODULE.FC_P003_LAUNCH_STATUS
+            )
+            self.write_verified_receipt(
+                repo,
+                MODULE.FC_P003_COMPLETION_RECEIPT,
+                MODULE.FC_P003_COMPLETION_STATUS,
+            )
+            posteval = unit("active")
+            posteval["main_pid"] = 1618
+            posteval["posteval_process_pids"] = [1619]
+            result = MODULE.build_sample(
+                repo,
+                None,
+                {
+                    MODULE.MAIN_AUTHORITY_UNIT: unit(),
+                    MODULE.WORKER_AUTHORITY_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA10_POSTEVAL_UNIT: unit(),
+                    MODULE.FC_P003_POSTEVAL_UNIT: posteval,
+                },
+                RESOURCES,
+                datetime(2026, 10, 5, 0, 2, tzinfo=UTC),
+            )
+        stage = result["scientific_next_stage"]
+        self.assertEqual(stage["status"], "FC_P003_POSTEVAL_RUNNING")
+        self.assertEqual(stage["fc_p003"]["posteval_gpu_process_pids"], [1619])
+
     def test_latest_active_lambda0_generation_becomes_authority(self) -> None:
         units = {
             "fluid-control-paired-lambda0-posteval-fcp001-20261004.service": unit(

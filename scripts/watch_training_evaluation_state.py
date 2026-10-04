@@ -51,6 +51,8 @@ FC_P003_UNIT = "fluid-control-fcp003-interleaved-lambda10-20261005.service"
 FC_P003_PREFIX = "fluid-control-fcp003-interleaved-lambda10-"
 FC_P003_PROBE_UNIT = "fluid-control-fcp003-interleaved-probe-20261005.service"
 FC_P003_PROBE_PREFIX = "fluid-control-fcp003-interleaved-probe-"
+FC_P003_POSTEVAL_UNIT = "fluid-control-fcp003-posteval-queue-v2-20261005.service"
+FC_P003_POSTEVAL_PREFIX = "fluid-control-fcp003-posteval-queue-"
 FC_P003_ROOT = Path("artifacts/tandem_fno_paired_stats_interleaved_lambda10_20261005")
 FC_P003_PROBE_ROOT = Path(
     "artifacts/tandem_fno_paired_stats_interleaved_lambda10_probe_20261005"
@@ -276,6 +278,12 @@ def unit_state(unit: str) -> dict:
     training_process_pids = descendant_processes_matching(
         main_pid, "train_tandem_fno_paired_stats.py"
     )
+    posteval_process_pids = sorted(
+        set(
+            descendant_processes_matching(main_pid, "evaluate_tandem_fno.py")
+            + descendant_processes_matching(main_pid, "diagnose_fno_force_window.py")
+        )
+    )
     return {
         "unit": unit,
         "active_state": values.get("ActiveState", "unknown"),
@@ -284,6 +292,7 @@ def unit_state(unit: str) -> dict:
         "exec_main_status": values.get("ExecMainStatus", "unknown"),
         "main_pid": main_pid,
         "training_process_pids": training_process_pids,
+        "posteval_process_pids": posteval_process_pids,
         "started_at": values.get("ExecMainStartTimestamp") or None,
         "exited_at": values.get("ExecMainExitTimestamp") or None,
         "last_error_line": error,
@@ -389,6 +398,7 @@ def discover_related_units() -> list[str]:
             or columns[0].startswith(PAIRED_LAMBDA0_POSTEVAL_PREFIX)
             or columns[0].startswith(FC_P003_PREFIX)
             or columns[0].startswith(FC_P003_PROBE_PREFIX)
+            or columns[0].startswith(FC_P003_POSTEVAL_PREFIX)
         ):
             names.append(columns[0])
     return sorted(
@@ -400,6 +410,7 @@ def discover_related_units() -> list[str]:
                 PAIRED_LAMBDA0_POSTEVAL_UNIT,
                 FC_P003_UNIT,
                 FC_P003_PROBE_UNIT,
+                FC_P003_POSTEVAL_UNIT,
                 *SUPERSEDED_MAIN_UNITS,
                 *names,
             )
@@ -595,6 +606,13 @@ def build_sample(
         units, FC_P003_PROBE_PREFIX, FC_P003_PROBE_UNIT
     )
     fc_p003_probe_unit = units.get(fc_p003_probe_authority, {})
+    fc_p003_posteval_authority = select_versioned_authority(
+        units, FC_P003_POSTEVAL_PREFIX, FC_P003_POSTEVAL_UNIT
+    )
+    fc_p003_posteval_unit = units.get(fc_p003_posteval_authority, {})
+    fc_p003_posteval_pids = fc_p003_posteval_unit.get(
+        "posteval_process_pids", []
+    )
     fc_p003_running = (
         fc_p003_unit.get("active_state") == "active"
         and bool(fc_p003_unit.get("training_process_pids"))
@@ -628,6 +646,13 @@ def build_sample(
         fc_p003_state = "RUNNING"
     elif fc_p003_unit.get("active_state") == "failed":
         fc_p003_state = "OPERATIONAL_FAILURE_NEEDS_AGENT_ANALYSIS"
+    elif fc_p003_completion_verified and fc_p003_posteval_pids:
+        fc_p003_state = "POSTEVAL_RUNNING"
+    elif (
+        fc_p003_completion_verified
+        and fc_p003_posteval_unit.get("active_state") == "active"
+    ):
+        fc_p003_state = "POSTEVAL_PREFLIGHT_OR_CPU_AUDIT"
     elif fc_p003_completion_verified:
         fc_p003_state = "TRAINING_COMPLETE_POSTEVAL_PENDING"
     elif fc_p003_completion_present or (
@@ -667,6 +692,7 @@ def build_sample(
         PAIRED_LAMBDA10_POSTEVAL_UNIT,
         fc_p003_authority,
         fc_p003_probe_authority,
+        fc_p003_posteval_authority,
     )
     active_units = sorted(
         name
@@ -888,7 +914,12 @@ def build_sample(
                     else "fc_p003_bounded_resource_probe"
                     if fc_p003_state == "RESOURCE_PROBE_RUNNING"
                     else "fc_p003_unchanged_formal_posteval"
-                    if fc_p003_state == "TRAINING_COMPLETE_POSTEVAL_PENDING"
+                    if fc_p003_state
+                    in {
+                        "TRAINING_COMPLETE_POSTEVAL_PENDING",
+                        "POSTEVAL_RUNNING",
+                        "POSTEVAL_PREFLIGHT_OR_CPU_AUDIT",
+                    }
                     else "fc_p003_scientific_fail_awaiting_lead_next_hypothesis"
                     if fc_p003_state == "SCIENTIFIC_FAIL_NEEDS_LEAD_NEXT_HYPOTHESIS"
                     else "fc_p003_interleaved_paired_supervision_preflight"
@@ -945,6 +976,10 @@ def build_sample(
                 "probe_launch_receipt_issues": fc_p003_probe_launch_issues,
                 "development_gate": str(FC_P003_DEVELOPMENT_GATE),
                 "development_gate_status": fc_p003_gate_status,
+                "posteval_unit": fc_p003_posteval_authority,
+                "posteval_main_pid": fc_p003_posteval_unit.get("main_pid", 0),
+                "posteval_gpu_process_pids": fc_p003_posteval_pids,
+                "posteval_receipt": str(FC_P003_ROOT / "posteval_fc_p003/receipt.json"),
                 "single_factor": "paired_update_schedule_frontloaded_to_interleaved",
                 "automatic_recovery_eligible": False,
             },
