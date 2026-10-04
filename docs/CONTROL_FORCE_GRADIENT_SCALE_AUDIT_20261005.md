@@ -44,12 +44,10 @@ Use the immutable Main-e2 parent and the already approved training seed/order. R
 The diagnostic should record:
 
 - each normalized scalar loss and its multiplier-weighted contribution;
-- global gradient L2/L-infinity norms and finite/nonzero counts;
-- norm ratios `pair / regular` and `pair / regular_force`;
-- cosine similarity of each paired gradient with `g_regular` and `g_regular_force`, plus sign-conflict fraction;
+- at every one of the 16 actual insertion positions, global gradient L2/L-infinity norms, finite/nonzero counts, `pair / regular` and `pair / regular_force` norm ratios, cosine similarities, sign-conflict fraction, and the unchanged clip threshold's implied scale; report min/median/max as well as the individual values;
+- the separately accumulated mean gradients and their cosine/norm diagnostics, explicitly labelled as aggregate diagnostics rather than a replacement for the per-position update evidence;
 - norm of the explicitly summed mixed gradient and numerical agreement with the separately accumulated components;
 - four per-channel loss and gradient norms, especially rear Cl; final output-projection row norms may be reported only after the model parameter layout is explicitly verified;
-- pre-clip norm and the scale that the unchanged clip threshold would apply, without applying an optimizer step;
 - peak accelerator memory and minimum unified `MemAvailable` under the existing 20 GiB guard.
 
-A one-regular-batch plus one-pair run is acceptable only as a resource/smoke check and must not support a scientific gradient-balance claim. The 16-position average is the smallest probe aligned with the actual mixed-update contract. Results must be interpreted together with the eventual FC-P003B failure map; they must not by themselves authorize a lambda change, training run, PPO, or a relaxed surrogate gate.
+Averaging parameter gradients can hide cancellation between positions and cannot reproduce the actual sequence of clipping and optimizer steps. It therefore cannot establish by itself that a paired signal is "overwhelmed." A one-regular-batch plus one-pair run is acceptable only as a resource/smoke check and must not support a scientific gradient-balance claim. The proposed 16-position diagnostic completely covers the paired-update positions in the current training contract; it is not claimed to be mathematically minimal. Results must be interpreted together with the eventual FC-P003B failure map; they must not by themselves authorize a lambda change, training run, PPO, or a relaxed surrogate gate.
