@@ -395,7 +395,9 @@ def worker_container_state(container: str, process_needle: str) -> dict:
     inspect = _command(
         base
         + [
-            "docker", "inspect", "--format={{.State.Running}} {{.State.Pid}}",
+            # SSH concatenates command arguments for a remote shell.  Keep the
+            # template whitespace-free so it remains one docker --format value.
+            "docker", "inspect", "--format={{.State.Running}},{{.State.Pid}}",
             container,
         ]
     )
@@ -406,7 +408,7 @@ def worker_container_state(container: str, process_needle: str) -> dict:
             "container_pid": 0,
             "training_process_pids": [],
         }
-    fields = inspect.stdout.strip().split()
+    fields = inspect.stdout.strip().split(",")
     running = len(fields) == 2 and fields[0].lower() == "true"
     container_pid = int(fields[1]) if running and fields[1].isdigit() else 0
     top = _command(base + ["docker", "top", container, "-eo", "pid,ppid,args"])

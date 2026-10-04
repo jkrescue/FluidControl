@@ -40,6 +40,31 @@ RESOURCES = {
 
 
 class TrainingEvaluationWatchdogTests(unittest.TestCase):
+    def test_worker_container_state_uses_ssh_safe_inspect_format(self) -> None:
+        inspect = mock.Mock(returncode=0, stdout="true,3233445\n", stderr="")
+        top = mock.Mock(
+            returncode=0,
+            stdout=(
+                "PID PPID COMMAND\n"
+                "3233729 3233445 python scripts/spark_gpu_guard.py -- "
+                "python scripts/train_tandem_fno_paired_stats.py\n"
+                "3233861 3233729 python scripts/train_tandem_fno_paired_stats.py\n"
+            ),
+            stderr="",
+        )
+        with mock.patch.object(MODULE, "_command", side_effect=[inspect, top]) as run:
+            state = MODULE.worker_container_state(
+                "fcp003b-dynamic-pairs-full",
+                "train_tandem_fno_paired_stats.py",
+            )
+        self.assertEqual(
+            run.call_args_list[0].args[0][-2],
+            "--format={{.State.Running}},{{.State.Pid}}",
+        )
+        self.assertTrue(state["container_running"])
+        self.assertEqual(state["container_pid"], 3233445)
+        self.assertEqual(state["training_process_pids"], [3233729, 3233861])
+
     def test_reviewed_main_transient_is_retry_eligible(self) -> None:
         with mock.patch.object(MODULE, "PRODUCTION_AUTO_RECOVERY_ENABLED", True):
             state, action = MODULE.classify_authority_task(
