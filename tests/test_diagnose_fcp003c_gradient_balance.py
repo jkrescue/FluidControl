@@ -142,6 +142,7 @@ def test_script_has_no_optimizer_or_checkpoint_write_path():
     assert 'sampling["pair_identity_passes"]' in source
     assert 'pair_identity.get("pair_id") != expected_pair_ids[position_index]' in source
     assert "choices=(1, 16)" in source
+    assert "FC_P003C_TRAIN_ONLY_GRADIENT_DIAGNOSTIC_DEBUG_ONLY" in source
 
 
 def test_launcher_is_bounded_train_only_and_execution_gated():

@@ -731,7 +731,11 @@ def main() -> None:
         if model_state_after != model_state_before:
             raise RuntimeError("model state changed during no-optimizer diagnostic")
         result = {
-            "status": "FC_P003C_TRAIN_ONLY_GRADIENT_DIAGNOSTIC_COMPLETE",
+            "status": (
+                "FC_P003C_TRAIN_ONLY_GRADIENT_DIAGNOSTIC_DEBUG_ONLY"
+                if args.max_positions == 1
+                else "FC_P003C_TRAIN_ONLY_GRADIENT_DIAGNOSTIC_COMPLETE"
+            ),
             "scope": (
                 "fixed Main-e2 model at the audited epoch-1 insertion sequence; "
                 "not the 32 evolving optimizer states from two training epochs"
