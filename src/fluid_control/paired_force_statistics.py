@@ -98,7 +98,13 @@ def paired_statistic_loss(
         tuple(target_zero.shape),
     }
     if len(shapes) != 1:
-        raise ValueError("all paired force sequences must have identical shape")
+        raise ValueError(
+            "all paired force sequences must have identical shape; got "
+            f"pred_action={tuple(predicted_action.shape)}, "
+            f"pred_zero={tuple(predicted_zero.shape)}, "
+            f"target_action={tuple(target_action.shape)}, "
+            f"target_zero={tuple(target_zero.shape)}"
+        )
     stats = [
         physical_force_statistics(value, force_mean, force_std, channels, horizons)
         for value in (predicted_action, predicted_zero, target_action, target_zero)
