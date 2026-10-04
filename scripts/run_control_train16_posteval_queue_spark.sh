@@ -5,7 +5,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 cd "$root"
 mode="${1:---dry-run}"
-case "$mode" in --dry-run|--execute) ;; *) echo "mode must be --dry-run or --execute" >&2; exit 2 ;; esac
+case "$mode" in --dry-run|--execute|--resume) ;; *) echo "mode must be --dry-run, --execute, or --resume" >&2; exit 2 ;; esac
 
 image="fluid-control-physicsnemo:2.2.2"
 image_id="sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e"
@@ -45,7 +45,10 @@ wait_for_main() {
 evaluate_candidate() {
   local label="$1" candidate="$2" expected_kind="$3"
   local out="$candidate/posteval_complete_v2"
-  [[ ! -e "$out" ]] || { echo "$label post-evaluation output already exists" >&2; exit 2; }
+  if [[ "$mode" == "--execute" && -e "$out" ]]; then
+    echo "$label post-evaluation output already exists; reviewed --resume is required" >&2
+    exit 2
+  fi
   [[ -d "$candidate/source_snapshot" && -d "$candidate/best" ]] || {
     echo "$label immutable source/checkpoint absent" >&2; exit 3;
   }
@@ -67,12 +70,59 @@ print(receipt["checkpoint_sha256"])
 PY
 )"
   local checkpoint_sha="$identity"
-  mkdir "$out" "$out/validation10" "$out/dynamic6" "$out/force_window"
-  python3 scripts/audit_dynamic_fno_candidate_lineage.py \
-    --repo "$root" --candidate-root "$candidate" --output "$out/lineage.json"
+  if [[ -f "$out/receipt.json" ]]; then
+    python3 - "$out/receipt.json" "$checkpoint_sha" <<'PY'
+import json,pathlib,sys
+p=json.loads(pathlib.Path(sys.argv[1]).read_text())
+if p.get("status")!="CONTROL_TRAIN16_POSTEVAL_COMPLETE" or p.get("checkpoint_sha256")!=sys.argv[2]:
+ raise SystemExit("completed post-evaluation receipt differs")
+print("CONTROL_TRAIN16_POSTEVAL_ALREADY_COMPLETE")
+PY
+    return
+  fi
+  mkdir -p "$out/validation10" "$out/dynamic6" "$out/force_window"
+  if [[ ! -f "$out/lineage.json" ]]; then
+    python3 scripts/audit_dynamic_fno_candidate_lineage.py \
+      --repo "$root" --candidate-root "$candidate" --output "$out/lineage.json"
+  else
+    python3 - "$root" "$candidate" "$out/lineage.json" <<'PY'
+import importlib.util,json,pathlib,sys
+repo,candidate,stored=map(pathlib.Path,sys.argv[1:])
+spec=importlib.util.spec_from_file_location("lineage",repo/"scripts/audit_dynamic_fno_candidate_lineage.py")
+module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+if json.loads(stored.read_text()) != module.build(repo,candidate):
+ raise SystemExit("stored lineage differs from strict recomputation")
+PY
+  fi
 
   local source="$candidate/source_snapshot"
   local checkpoint="$candidate/best"
+  mkdir -p "$out/step_receipts"
+  step_receipt() {
+    local step="$1"; shift
+    python3 - "$out/step_receipts/$step.json" "$step" "$checkpoint_sha" "$@" <<'PY'
+import hashlib,json,os,pathlib,sys,tempfile
+receipt=pathlib.Path(sys.argv[1]); step=sys.argv[2]; checkpoint=sys.argv[3]
+paths=[pathlib.Path(value) for value in sys.argv[4:]]
+def sha(path):
+ h=hashlib.sha256()
+ with path.open("rb") as f:
+  for block in iter(lambda:f.read(1<<20),b""): h.update(block)
+ return h.hexdigest()
+if not paths or any(not path.is_file() for path in paths):
+ raise SystemExit(f"{step} step artifacts are incomplete")
+payload={"status":"CONTROL_TRAIN16_POSTEVAL_STEP_COMPLETE","step":step,
+         "checkpoint_sha256":checkpoint,"sha256":{str(path):sha(path) for path in paths}}
+if receipt.exists():
+ if json.loads(receipt.read_text()) != payload: raise SystemExit(f"{step} step receipt differs")
+else:
+ with tempfile.NamedTemporaryFile("w",dir=receipt.parent,delete=False) as stream:
+  temporary=pathlib.Path(stream.name); json.dump(payload,stream,indent=2,sort_keys=True); stream.write("\n")
+  stream.flush(); os.fsync(stream.fileno())
+ try: os.link(temporary,receipt)
+ finally: temporary.unlink(missing_ok=True)
+PY
+  }
   local common=(--rm --network none --cpus 8 --memory 64g --shm-size 2g
     --pids-limit 512 --cap-drop ALL --security-opt no-new-privileges --read-only
     --tmpfs /tmp:rw,nosuid,nodev,size=4g --user "$(id -u):$(id -g)"
@@ -86,7 +136,11 @@ PY
     --mount "type=bind,src=$out,dst=/workspace/output"
     --workdir /workspace)
 
-  docker run --gpus device=0 "${common[@]}" \
+  if [[ ! -f "$out/validation10/evaluation.json" || ! -f "$out/validation10/segments.json" ]]; then
+    [[ ! -f "$out/validation10/evaluation.json" && ! -f "$out/validation10/segments.json" ]] || {
+      echo "validation10 has only one of evaluation/segments; refusing ambiguous resume" >&2; exit 3;
+    }
+    docker run --gpus device=0 "${common[@]}" \
     --mount "type=bind,src=$dev30,dst=/workspace/devdata,readonly" "$image" \
     python -u scripts/spark_gpu_guard.py --min-free-gib 20 --allocator-fraction .15 --margin-gib 4 -- \
     python -u scripts/evaluate_tandem_fno.py --data /workspace/devdata \
@@ -95,16 +149,20 @@ PY
     --segment-stride 25 --evaluation-batch-size 4 --action-mode observed \
     --visualizations-per-horizon 0 --output /workspace/output/validation10/evaluation.json \
     --segment-metrics-output /workspace/output/validation10/segments.json \
-    2>&1 | tee "$out/validation10/evaluate.log"
-  python3 "$source/scripts/audit_dev30_validation_diagnostic.py" \
+      2>&1 | tee "$out/validation10/evaluate.resume.log"
+  fi
+  if [[ ! -f "$out/validation10/diagnostic.json" ]]; then
+    python3 "$source/scripts/audit_dev30_validation_diagnostic.py" \
     --report "$out/validation10/evaluation.json" --segments "$out/validation10/segments.json" \
     --data "$dev30" --checkpoint-dir "$checkpoint" --candidate-kind dev30_free_ar_development \
-    --output "$out/validation10/diagnostic.json"
+      --output "$out/validation10/diagnostic.json"
+  fi
 
   # The launch snapshot predates the scoped CLI-key repair in this audit only.
   # Use the current reviewed audit for post-processing and bind its SHA below;
   # inference remains entirely launch-snapshot code.
-  docker run "${common[@]}" \
+  if [[ ! -f "$out/validation10/endpoint_gate.json" ]]; then
+    docker run "${common[@]}" \
     --mount "type=bind,src=$root/scripts/audit_full40_validation_gate.py,dst=/workspace/recovery/audit_full40_validation_gate.py,readonly" \
     --mount "type=bind,src=$full40/validation,dst=/workspace/devdata/validation,readonly" \
     --mount "type=bind,src=$full40/manifest.json,dst=/workspace/devdata/manifest.json,readonly" \
@@ -115,9 +173,17 @@ PY
     --segments /workspace/output/validation10/segments.json \
     --predeclaration /workspace/predeclaration.json --checkpoint-dir /workspace/checkpoint \
     --data /workspace/devdata --config /workspace/conf/tandem_fno_full40_h20.yaml \
-    --image-id "$image_id" --output /workspace/output/validation10/endpoint_gate.json
+      --image-id "$image_id" --output /workspace/output/validation10/endpoint_gate.json
+  fi
+  step_receipt validation10 "$out/validation10/evaluation.json" \
+    "$out/validation10/segments.json" "$out/validation10/diagnostic.json" \
+    "$out/validation10/endpoint_gate.json"
 
-  docker run --gpus device=0 "${common[@]}" \
+  if [[ ! -f "$out/dynamic6/evaluation.json" || ! -f "$out/dynamic6/segments.json" ]]; then
+    [[ ! -f "$out/dynamic6/evaluation.json" && ! -f "$out/dynamic6/segments.json" ]] || {
+      echo "dynamic6 has only one of evaluation/segments; refusing ambiguous resume" >&2; exit 3;
+    }
+    docker run --gpus device=0 "${common[@]}" \
     --mount "type=bind,src=$dynamic,dst=/workspace/dynamic,readonly" \
     --mount "type=bind,src=$dev30,dst=/workspace/devdata,readonly" "$image" \
     python -u scripts/spark_gpu_guard.py --min-free-gib 20 --allocator-fraction .15 --margin-gib 4 -- \
@@ -127,16 +193,22 @@ PY
     --segment-stride 1 --evaluation-batch-size 8 --action-mode observed \
     --visualizations-per-horizon 0 --output /workspace/output/dynamic6/evaluation.json \
     --segment-metrics-output /workspace/output/dynamic6/segments.json \
-    2>&1 | tee "$out/dynamic6/evaluate.log"
-  python3 cfd/tandem_cylinders/audit_full40_dynamic6_fno.py \
+      2>&1 | tee "$out/dynamic6/evaluate.resume.log"
+  fi
+  if [[ ! -f "$out/dynamic6/diagnostic.json" ]]; then
+    python3 cfd/tandem_cylinders/audit_full40_dynamic6_fno.py \
     --data "$dynamic" --checkpoint "$checkpoint" \
     --checkpoint-epoch "$(basename "$checkpoint"/FNO.0.*.mdlus | cut -d. -f3)" \
     --expected-model-sha "$checkpoint_sha" --report "$out/dynamic6/evaluation.json" \
     --segments "$out/dynamic6/segments.json" \
     --physical-qc artifacts/tandem_cylinders/full40_dynamic_validation_real_openfoam_qc_20261003.json \
-    --output "$out/dynamic6/diagnostic.json"
+      --output "$out/dynamic6/diagnostic.json"
+  fi
+  step_receipt dynamic6 "$out/dynamic6/evaluation.json" \
+    "$out/dynamic6/segments.json" "$out/dynamic6/diagnostic.json"
 
-  docker run --gpus device=0 "${common[@]}" \
+  if [[ ! -f "$out/force_window/result.json" ]]; then
+    docker run --gpus device=0 "${common[@]}" \
     --mount "type=bind,src=$dynamic,dst=/workspace/dynamic,readonly" \
     --mount "type=bind,src=$dev30,dst=/workspace/devdata,readonly" "$image" \
     python -u scripts/spark_gpu_guard.py --min-free-gib 20 --allocator-fraction .15 --margin-gib 4 -- \
@@ -144,10 +216,15 @@ PY
     --normalization-data /workspace/devdata --config /workspace/conf/tandem_fno_full40_h20.yaml \
     --checkpoint-dir /workspace/checkpoint --expected-model-sha "$checkpoint_sha" \
     --output /workspace/output/force_window/result.json \
-    2>&1 | tee "$out/force_window/diagnose.log"
-  python3 "$source/scripts/audit_dynamic_fno_development_gates.py" \
+      2>&1 | tee "$out/force_window/diagnose.resume.log"
+  fi
+  if [[ ! -f "$out/development_gate.json" ]]; then
+    python3 "$source/scripts/audit_dynamic_fno_development_gates.py" \
     --force-window "$out/force_window/result.json" --checkpoint-sha256 "$checkpoint_sha" \
-    --output "$out/development_gate.json"
+      --output "$out/development_gate.json"
+  fi
+  step_receipt force_window "$out/force_window/result.json" \
+    "$out/development_gate.json"
 
   python3 - "$root" "$candidate" "$out" "$label" "$expected_kind" "$checkpoint_sha" <<'PY'
 import hashlib,json,pathlib,sys

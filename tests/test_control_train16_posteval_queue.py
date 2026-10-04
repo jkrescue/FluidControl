@@ -18,6 +18,10 @@ def test_queue_runs_main_and_marks_balanced_external_takeover() -> None:
     assert "diagnose_fno_force_window.py" in source
     assert "audit_dynamic_fno_development_gates.py" in source
     assert "--candidate-kind dev30_free_ar_development" in source
+    assert "CONTROL_TRAIN16_POSTEVAL_STEP_COMPLETE" in source
+    assert 'step_receipt validation10' in source
+    assert 'step_receipt dynamic6' in source
+    assert 'step_receipt force_window' in source
 
 
 def test_queue_binds_snapshot_checkpoint_and_never_launches_ppo() -> None:
@@ -29,6 +33,7 @@ def test_queue_binds_snapshot_checkpoint_and_never_launches_ppo() -> None:
     assert '"ppo_auto_launched":False' in source
     assert "train_full40_hydrogym_ppo" not in source
     assert "--allocator-fraction .15" in source
+    assert "--dry-run|--execute|--resume" in source
     assert "frozen_test" not in "\n".join(
         line for line in source.splitlines() if "--mount" in line
     )
