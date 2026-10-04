@@ -28,6 +28,33 @@ MODULE = load_module()
 
 
 class LatestEvidenceDashboardTests(unittest.TestCase):
+    def test_true_state_candidate_requires_bound_dynamic_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = root / "artifacts/tandem_fno_true_state_paired_step_lambda10_20261005/posteval_fc_p003c"
+            (base / "validation10").mkdir(parents=True)
+            (base / "dynamic6").mkdir()
+            self.assertIsNone(MODULE._completed_interleaved_candidate(root, true_state=True))
+            hashes = {}
+            for relative, payload in (
+                ("validation10/endpoint_gate.json", {"checkpoint_sha256": MODULE.C_FINAL_SHA}),
+                ("development_gate.json", {"checkpoint_sha256": MODULE.C_FINAL_SHA,
+                 "status": "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL"}),
+                ("dynamic6/evaluation.json", {"summary": {"100": {"velocity_relative_l2": .09}}}),
+            ):
+                raw = json.dumps(payload).encode()
+                (base / relative).write_bytes(raw)
+                hashes[relative] = hashlib.sha256(raw).hexdigest()
+            receipt = {"status": "FC_P003C_POSTEVAL_COMPLETE", "checkpoint_sha256": MODULE.C_FINAL_SHA,
+                       "candidate_kind": "true_state_paired_step_lambda10", "ppo_auto_launched": False,
+                       "frozen_test_accessed": False, "sha256": hashes}
+            (base / "receipt.json").write_text(json.dumps(receipt))
+            result = MODULE._completed_interleaved_candidate(root, true_state=True)
+            self.assertTrue(result["receipt_bound"])
+            self.assertEqual(result["dynamic_summary"]["100"]["velocity_relative_l2"], .09)
+            (base / "dynamic6/evaluation.json").write_text('{}')
+            self.assertIsNone(MODULE._completed_interleaved_candidate(root, true_state=True))
+
     def test_c_training_log_does_not_reuse_historical_epochs(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
