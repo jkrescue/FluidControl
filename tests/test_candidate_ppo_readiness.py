@@ -183,6 +183,58 @@ def fixture(tmp_path: Path) -> dict:
     }
 
 
+def make_fcp003c(values: dict) -> None:
+    candidate = values["candidate_root"]
+    normalization_sha = digest(values["normalization_path"])
+    train16 = values["repo_root"] / "train16.json"
+    train16.write_bytes(b"train16")
+    values["data_artifacts"]["train16"] = train16
+    sources = candidate / "training_data_sources.json"
+    write_json(sources, {
+        "base_root": "/workspace/base",
+        "base_windows": 720,
+        "total_windows": 1368,
+        "additional_sources": [
+            {
+                "root": "/workspace/train8", "windows": 408, "stride": 2,
+                "manifest_sha256": digest(values["data_artifacts"]["train8"]),
+                "normalization_sha256": normalization_sha,
+                "release_status": "DYNAMIC_TRAIN8_TRAIN_ONLY_CURATED",
+                "trajectory_count": 8,
+            },
+            {
+                "root": "/workspace/train16", "windows": 240, "stride": 2,
+                "manifest_sha256": digest(train16),
+                "normalization_sha256": normalization_sha,
+                "release_status": "DIRECTPPO_TRAIN16_TRAIN_ONLY_CURATED",
+                "trajectory_count": 16,
+            },
+        ],
+    })
+    completion = candidate / "completion_receipt.json"
+    write_json(completion, {
+        "status": "FC_P003C_TRAINING_COMPLETE",
+        "sha256": {"training_data_sources.json": digest(sources)},
+    })
+    lineage_path = values["lineage_path"]
+    lineage = json.loads(lineage_path.read_text())
+    lineage.update({
+        "status": "FC_P003C_CANDIDATE_LINEAGE_PASS",
+        "candidate_kind": MODULE.FC_P003C_KIND,
+        "training_performed": True,
+        "completion_receipt_sha256": digest(completion),
+        "data_lineage": {
+            "dev30": digest(values["data_artifacts"]["dev30"]),
+            "train8": digest(values["data_artifacts"]["train8"]),
+            "train16": digest(train16),
+        },
+    })
+    write_json(lineage_path, lineage)
+    receipt = json.loads(values["posteval_receipt_path"].read_text())
+    receipt["sha256"]["lineage.json"] = digest(lineage_path)
+    write_json(values["posteval_receipt_path"], receipt)
+
+
 def test_complete_candidate_is_ready_but_does_not_authorize_or_run_ppo(tmp_path: Path) -> None:
     result = MODULE.audit(**fixture(tmp_path))
     assert result["status"] == "CANDIDATE_PPO_CPU_DRY_RUN_READY"
@@ -191,6 +243,56 @@ def test_complete_candidate_is_ready_but_does_not_authorize_or_run_ppo(tmp_path:
     assert result["policy_created"] is False
     assert result["ppo_execution_authorized"] is False
     assert result["frozen_test_directory_enumerated_or_opened"] is False
+
+
+def test_fcp003c_candidate_uses_bound_training_sources_and_is_ready(tmp_path: Path) -> None:
+    values = fixture(tmp_path)
+    make_fcp003c(values)
+    result = MODULE.audit(**values)
+    assert result["status"] == "CANDIDATE_PPO_CPU_DRY_RUN_READY"
+    assert result["candidate_identity"]["candidate_kind"] == MODULE.FC_P003C_KIND
+    assert result["training_executed"] is False
+    assert result["ppo_execution_authorized"] is False
+
+
+@pytest.mark.parametrize(
+    "fault", ["missing_receipt", "changed_sha", "wrong_kind", "wrong_norm", "wrong_trained"]
+)
+def test_fcp003c_candidate_rejects_incomplete_or_mismatched_lineage(
+    tmp_path: Path, fault: str
+) -> None:
+    values = fixture(tmp_path)
+    make_fcp003c(values)
+    lineage_path = values["lineage_path"]
+    lineage = json.loads(lineage_path.read_text())
+    completion = values["candidate_root"] / "completion_receipt.json"
+    sources = values["candidate_root"] / "training_data_sources.json"
+    if fault == "missing_receipt":
+        completion.unlink()
+    elif fault == "changed_sha":
+        completion_value = json.loads(completion.read_text())
+        completion_value["sha256"]["training_data_sources.json"] = "0" * 64
+        write_json(completion, completion_value)
+        lineage["completion_receipt_sha256"] = digest(completion)
+    elif fault == "wrong_kind":
+        lineage["candidate_kind"] = "dynamic_paired_interleaved_lambda10"
+    elif fault == "wrong_norm":
+        source_value = json.loads(sources.read_text())
+        source_value["additional_sources"][0]["normalization_sha256"] = "0" * 64
+        write_json(sources, source_value)
+        completion_value = json.loads(completion.read_text())
+        completion_value["sha256"]["training_data_sources.json"] = digest(sources)
+        write_json(completion, completion_value)
+        lineage["completion_receipt_sha256"] = digest(completion)
+    else:
+        lineage["training_performed"] = False
+    write_json(lineage_path, lineage)
+    receipt = json.loads(values["posteval_receipt_path"].read_text())
+    receipt["sha256"]["lineage.json"] = digest(lineage_path)
+    write_json(values["posteval_receipt_path"], receipt)
+    result = MODULE.audit(**values)
+    assert result["status"].endswith("BLOCKED")
+    assert result["blockers"][0]["kind"] in {"MISSING", "SCHEMA_ERROR"}
 
 
 @pytest.mark.parametrize("key", ["window_gate_path", "dynamic_gate_path", "development_gate_path"])

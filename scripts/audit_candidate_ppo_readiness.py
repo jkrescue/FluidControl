@@ -25,6 +25,23 @@ ENDPOINT_STATUS = "FULL40_VALIDATION_SURROGATE_READINESS_PASS"
 WINDOW_STATUS = "FULL40_VALIDATION_CANONICAL_WINDOW_FIDELITY_PASS"
 DYNAMIC_STATUS = "FULL40_VALIDATION_DYNAMIC_ACTION_PASS"
 DEVELOPMENT_STATUS = "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_PASS"
+FC_P003C_KIND = "true_state_paired_step_lambda10"
+FC_P003C_SOURCES = {
+    "/workspace/train8": {
+        "lineage_key": "train8",
+        "windows": 408,
+        "stride": 2,
+        "release_status": "DYNAMIC_TRAIN8_TRAIN_ONLY_CURATED",
+        "trajectory_count": 8,
+    },
+    "/workspace/train16": {
+        "lineage_key": "train16",
+        "windows": 240,
+        "stride": 2,
+        "release_status": "DIRECTPPO_TRAIN16_TRAIN_ONLY_CURATED",
+        "trajectory_count": 16,
+    },
+}
 
 
 def sha256(path: Path) -> str:
@@ -91,6 +108,43 @@ def _validate_receipt_table(receipt: dict, receipt_root: Path) -> None:
         _require_file(path, f"posteval receipt artifact {raw}")
         if sha256(path) != expected:
             raise ValueError(f"posteval receipt artifact differs: {raw}")
+
+
+def _validate_fcp003c_training_sources(
+    *, candidate_root: Path, completion: dict, data_lineage: dict, normalization: str
+) -> None:
+    """Bind FC-P003C's fixed train-only sources without changing legacy semantics."""
+    table = completion.get("sha256")
+    if not isinstance(table, dict):
+        raise ValueError("candidate completion SHA table is missing")
+    relative = "training_data_sources.json"
+    path = candidate_root / relative
+    _require_file(path, "FC-P003C training data sources")
+    if table.get(relative) != sha256(path):
+        raise ValueError("FC-P003C completion does not bind training data sources")
+    value = load(path)
+    if (
+        value.get("base_root") != "/workspace/base"
+        or value.get("base_windows") != 720
+        or value.get("total_windows") != 1368
+    ):
+        raise ValueError("FC-P003C base training source contract differs")
+    sources = value.get("additional_sources")
+    if not isinstance(sources, list) or len(sources) != len(FC_P003C_SOURCES):
+        raise ValueError("FC-P003C additional training source count differs")
+    by_root = {row.get("root"): row for row in sources if isinstance(row, dict)}
+    if set(by_root) != set(FC_P003C_SOURCES):
+        raise ValueError("FC-P003C additional training source roots differ")
+    for root, expected in FC_P003C_SOURCES.items():
+        row = by_root[root]
+        lineage_key = expected["lineage_key"]
+        if row.get("manifest_sha256") != data_lineage.get(lineage_key):
+            raise ValueError(f"FC-P003C {lineage_key} manifest SHA differs")
+        if row.get("normalization_sha256") != normalization:
+            raise ValueError(f"FC-P003C {lineage_key} normalization SHA differs")
+        for key in ("windows", "stride", "release_status", "trajectory_count"):
+            if row.get(key) != expected[key]:
+                raise ValueError(f"FC-P003C {lineage_key} {key} differs")
 
 
 def _common_gate(
@@ -225,10 +279,12 @@ def audit(
 
         if not str(lineage.get("status", "")).endswith("CANDIDATE_LINEAGE_PASS"):
             raise ValueError("candidate lineage status differs")
+        candidate_kind = lineage.get("candidate_kind")
+        expected_training_performed = candidate_kind == FC_P003C_KIND
         if (
             lineage.get("frozen_test_opened_or_enumerated") is not False
             or lineage.get("ppo_auto_launch") is not False
-            or lineage.get("training_performed") is not False
+            or lineage.get("training_performed") is not expected_training_performed
         ):
             raise ValueError("candidate lineage scope differs")
         try:
@@ -259,6 +315,7 @@ def audit(
             raise ValueError("candidate launch receipt SHA differs")
         if sha256(completion) != lineage.get("completion_receipt_sha256"):
             raise ValueError("candidate completion receipt SHA differs")
+        completion_value = load(completion)
         if archive_payload(model) != lineage.get("checkpoint_generation_payload_sha256"):
             raise ValueError("candidate model archive payload differs")
 
@@ -307,13 +364,22 @@ def audit(
         data_lineage = lineage.get("data_lineage")
         if not isinstance(data_lineage, dict):
             raise ValueError("candidate data lineage is missing")
-        if data_lineage.get("normalization") != normalization_sha:
-            raise ValueError("candidate normalization SHA differs")
-        expected_data = {
-            key: value
-            for key, value in data_lineage.items()
-            if key != "normalization"
-        }
+        if candidate_kind == FC_P003C_KIND:
+            _validate_fcp003c_training_sources(
+                candidate_root=candidate_root,
+                completion=completion_value,
+                data_lineage=data_lineage,
+                normalization=normalization_sha,
+            )
+            expected_data = data_lineage
+        else:
+            if data_lineage.get("normalization") != normalization_sha:
+                raise ValueError("candidate normalization SHA differs")
+            expected_data = {
+                key: value
+                for key, value in data_lineage.items()
+                if key != "normalization"
+            }
         if set(data_artifacts) != set(expected_data):
             raise ValueError("candidate data artifact key set differs")
         for key, path in data_artifacts.items():
