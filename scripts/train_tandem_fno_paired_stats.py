@@ -364,8 +364,8 @@ def main(cfg: DictConfig) -> None:
         pair_loss, _, _ = paired_statistic_loss(
             combined_prediction[:pair_batch],
             combined_prediction[pair_batch:],
-            action_force[:, 1:],
-            zero_force[:, 1:],
+            action_force,
+            zero_force,
             force_mean.reshape(-1),
             force_std.reshape(-1),
             tuple(base_train.force_channels),
