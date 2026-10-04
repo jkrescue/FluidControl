@@ -64,7 +64,7 @@ done
 if [[ "$mode" == --dry-run ]]; then echo "FC_P003B_WORKER_READY_NO_GPU"; exit 0; fi
 [[ "${FCP003B_EXECUTION_TOKEN:-}" == EXECUTE_REVIEWED_FC_P003B ]] || { echo "reviewed token required" >&2; exit 2; }
 if [[ "$mode" == --probe ]]; then
-  output="$root/probe_v2"; container="fcp003b-dynamic-pairs-probe-v2"
+  output="$root/probe_v3"; container="fcp003b-dynamic-pairs-probe-v3"
   extra=(training.epochs=1 training.max_train_batches=8 training.max_validation_batches=1 training.expected_regular_batches=8 training.paired_dataset_repetitions=1 training.paired_batches_per_epoch=8 training.max_paired_eval_batches=1)
 else
   output="$root/output"; container="fcp003b-dynamic-pairs-full"; extra=()
@@ -100,10 +100,12 @@ command=(docker run --rm --name "$container" --gpus device=0 --cpus 8 --memory 9
  -v "$root/data/train8:/workspace/train8:ro" -v "$root/data/train16:/workspace/train16:ro"
  -v "$root/evidence/dynamic_pair_manifest.json:/workspace/dynamic_pair_manifest.json:ro"
  -v "$root/immutable_parent:/workspace/parent:ro" -v "$output:/workspace/output:rw"
- -w /workspace "$image" python scripts/train_tandem_fno_paired_stats.py
+ -w /workspace "$image" python -u scripts/spark_gpu_guard.py
+ --min-free-gib 20 --allocator-fraction 0.45 --margin-gib 2 --poll-seconds 2 --
+ python -u scripts/train_tandem_fno_paired_stats.py
  --config-name tandem_fno_dynamic_paired_interleaved_h100
  hydra.run.dir=/tmp/hydra hydra.output_subdir=null output_dir=/workspace/output
  "${extra[@]}")
-python3 "$source/scripts/spark_gpu_guard.py" --min-free-gib 20 --allocator-fraction 0.45 --margin-gib 2 --poll-seconds 2 -- "${command[@]}" 2>&1 | tee "$output/train.log"
+"${command[@]}" 2>&1 | tee "$output/train.log"
 python3 "$root/launch/validate_fcp003b_worker_output.py" output \
   --root "$output" --mode="$mode" --receipt "$output/completion_receipt.json"
