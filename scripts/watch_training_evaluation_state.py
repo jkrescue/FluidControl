@@ -53,6 +53,11 @@ FC_P003_PROBE_UNIT = "fluid-control-fcp003-interleaved-probe-20261005.service"
 FC_P003_PROBE_PREFIX = "fluid-control-fcp003-interleaved-probe-"
 FC_P003_POSTEVAL_UNIT = "fluid-control-fcp003-posteval-queue-v2-20261005.service"
 FC_P003_POSTEVAL_PREFIX = "fluid-control-fcp003-posteval-queue-"
+FC_P003B_APPROVAL = Path("docs/FC-P003B_APPROVAL.md")
+FC_P003B_UNIT = "fluid-control-fcp003b-dynamic-pairs-20261005.service"
+FC_P003B_ROOT = Path(
+    "artifacts/tandem_fno_dynamic_paired_interleaved_lambda10_20261005"
+)
 FC_P003_ROOT = Path("artifacts/tandem_fno_paired_stats_interleaved_lambda10_20261005")
 FC_P003_PROBE_ROOT = Path(
     "artifacts/tandem_fno_paired_stats_interleaved_lambda10_probe_20261005"
@@ -598,6 +603,8 @@ def build_sample(
         repo, paired["paired_posteval_complete"]
     )
     fc_p003_approved = (repo / FC_P003_APPROVAL).is_file()
+    fc_p003b_approved = (repo / FC_P003B_APPROVAL).is_file()
+    fc_p003b_unit = units.get(FC_P003B_UNIT, {})
     fc_p003_authority = select_versioned_authority(
         units, FC_P003_PREFIX, FC_P003_UNIT
     )
@@ -996,6 +1003,28 @@ def build_sample(
                     "artifacts/fc_p003_dynamic8_pair_candidate_20261005/manifest.json"
                 ),
             },
+            "fc_p003b": {
+                "approval_state": "LEAD_APPROVED" if fc_p003b_approved else "PLANNED",
+                "approval_reference": str(FC_P003B_APPROVAL),
+                "state": (
+                    "PRECHECK"
+                    if fc_p003b_approved
+                    and fc_p003b_unit.get("active_state") != "active"
+                    else "UNIT_ACTIVE_AWAITING_PROCESS_EVIDENCE"
+                    if fc_p003b_unit.get("active_state") == "active"
+                    else "PLANNED_NOT_APPROVED"
+                ),
+                "authority_unit": FC_P003B_UNIT,
+                "worker_root": (
+                    "/home/USER/workspace/fluid_control_fcp003b_dynamic_pairs_20261005"
+                ),
+                "canonical_spark_root": str(FC_P003B_ROOT),
+                "single_factor": "paired_supervision_content_static16_to_dynamic8x2",
+                "unique_pair_count": 8,
+                "updates_per_epoch": 16,
+                "training_authorized": fc_p003b_approved,
+                "scientific_result_available": False,
+            },
             "planned_spark_root": str(PAIRED_DATAPIPE_ROOT),
             "planned_worker_unit": PAIRED_DATAPIPE_WORKER_UNIT,
             "lambda0": {
@@ -1094,6 +1123,7 @@ def main() -> None:
     units[PAIRED_LAMBDA10_POSTEVAL_UNIT] = worker_unit_state(
         PAIRED_LAMBDA10_POSTEVAL_UNIT, user_scope=False
     )
+    units[FC_P003B_UNIT] = worker_unit_state(FC_P003B_UNIT, user_scope=False)
     resources = resource_state(previous.get("resources") if previous else None)
     sample = build_sample(repo, previous, units, resources, utc_now())
     output.mkdir(parents=True, exist_ok=True)

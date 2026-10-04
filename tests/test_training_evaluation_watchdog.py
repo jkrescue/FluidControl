@@ -492,6 +492,8 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         self.assertEqual(stage["fc_p003"]["authority_unit"], MODULE.FC_P003_PROBE_UNIT)
         self.assertEqual(stage["fc_p003"]["main_pid"], 2718)
         self.assertFalse(stage["parallel_cpu_work"]["training_authorized"])
+        self.assertEqual(stage["fc_p003b"]["unique_pair_count"], 8)
+        self.assertEqual(stage["fc_p003b"]["updates_per_epoch"], 16)
 
     def test_fc_p003_posteval_running_requires_verified_training_and_process(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
