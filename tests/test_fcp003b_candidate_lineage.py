@@ -9,6 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 
+
 SCRIPT = Path(__file__).parents[1] / "scripts" / "audit_fcp003b_candidate_lineage.py"
 SPEC = importlib.util.spec_from_file_location("fcp003b_lineage", SCRIPT)
 MODULE = importlib.util.module_from_spec(SPEC)
@@ -45,10 +46,14 @@ def fixture(tmp_path: Path, monkeypatch) -> argparse.Namespace:
         {"epoch": 1, "paired_identities": list(range(16)), "paired_identity_passes": [list(range(8)), list(range(8))]},
         {"epoch": 2, "paired_identities": list(range(16)), "paired_identity_passes": [list(range(8)), list(range(8))]},
     ])
-    source_receipt = tmp_path / "source_receipt.json"; source_receipt.write_text("{}")
-    source_required = tmp_path / "required.json"; source_required.write_text("{}")
-    real = tmp_path / "real.json"; real.write_text("{}")
-    baseline = tmp_path / "baseline.json"; baseline.write_text("{}")
+    source_receipt = tmp_path / "source_receipt.json"
+    source_receipt.write_text("{}")
+    source_required = tmp_path / "required.json"
+    source_required.write_text("{}")
+    real = tmp_path / "real.json"
+    real.write_text("{}")
+    baseline = tmp_path / "baseline.json"
+    baseline.write_text("{}")
     validator = SimpleNamespace(
         SOURCE_COMMIT="commit",
         APPROVAL_SHA=MODULE.sha256(files["approval"]),
