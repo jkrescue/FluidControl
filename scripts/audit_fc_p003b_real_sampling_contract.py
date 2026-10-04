@@ -19,6 +19,26 @@ from fluid_control.tandem_datapipe import TandemRolloutDataset
 
 SEED = 20261003
 FC_P003_REGULAR_SHA = "177ebd9523cde918eb0c1fb8026286dac7e95f3d228ae0e349757a2a9a288f9f"
+FC_P003_ORDER_RECEIPT_SHA = "fab043a70652475e0b03aa869eac3445eaec1ec6c66a74cf976a0342a3dbca88"
+
+
+def file_sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def load_fc_p003_reference(path: Path) -> dict:
+    if file_sha(path) != FC_P003_ORDER_RECEIPT_SHA:
+        raise ValueError("FC-P003 order receipt SHA differs")
+    value = json.loads(path.read_text())
+    if (
+        value.get("status")
+        != "FC_P003_OFFICIAL_DATALOADER_ORDER_COUNTERFACTUAL_PASS"
+        or value.get("seed") != SEED
+        or value.get("regular_count") != 1368
+        or value.get("regular_sequence_sha256") != FC_P003_REGULAR_SHA
+    ):
+        raise ValueError("FC-P003 order receipt contract differs")
+    return value
 
 
 def sequence_sha(values: list[int]) -> str:
@@ -31,9 +51,11 @@ def main() -> None:
     parser.add_argument("--train8", type=Path, required=True)
     parser.add_argument("--train16", type=Path, required=True)
     parser.add_argument("--pair-manifest", type=Path, required=True)
+    parser.add_argument("--fc-p003-order-receipt", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
+    reference = load_fc_p003_reference(args.fc_p003_order_receipt)
     base = TandemRolloutDataset(args.base, "train", 100, stride=20, num_workers=1, force_indices=(0, 1, 2, 3))
     regular, _ = compose_training_data(base, [args.train8, args.train16], rollout_steps=100, stride=2, workers=1, force_indices=(0, 1, 2, 3))
     pair = DynamicMatchedPairStatDataset(args.train8, args.base, args.pair_manifest, num_workers=1)
@@ -50,7 +72,7 @@ def main() -> None:
     positions = [index * 1367 // 15 for index in range(16)]
     checks = {
         "real_regular_count_1368": len(regular_indices) == 1368,
-        "regular_order_matches_fc_p003": sequence_sha(regular_indices) == FC_P003_REGULAR_SHA,
+        "regular_order_matches_fc_p003": sequence_sha(regular_indices) == reference["regular_sequence_sha256"],
         "two_complete_pair_passes": len(pair_pass_ids) == 2 and all(len(values) == 8 and set(values) == expected_ids for values in pair_pass_ids),
         "global_torch_rng_unchanged": initial_rng == final_rng,
         "approved_interleaved_positions": positions == [index * 1367 // 15 for index in range(16)],
@@ -65,6 +87,7 @@ def main() -> None:
         "regular_count": len(regular_indices),
         "regular_sequence_sha256": sequence_sha(regular_indices),
         "fc_p003_regular_sequence_sha256": FC_P003_REGULAR_SHA,
+        "fc_p003_order_receipt_sha256": file_sha(args.fc_p003_order_receipt),
         "pair_pass_indices": pair_pass_indices,
         "pair_identity_passes": pair_pass_ids,
         "paired_batch_indices": positions,
