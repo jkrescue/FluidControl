@@ -152,3 +152,25 @@ def test_summarize_rejects_nonfinite_and_reports_signed_bias():
     assert summary["rear_cl"] == {"count": 3, "mae": 4.0, "rmse": 4.0, "bias": -4.0}
     with pytest.raises(ValueError):
         module.summarize_error(np.full((1, 4), np.inf))
+
+
+def test_diagnostic_precision_is_explicit_and_restorable():
+    torch = pytest.importorskip("torch")
+    saved_matmul = torch.backends.cuda.matmul.allow_tf32
+    saved_cudnn = torch.backends.cudnn.allow_tf32
+    saved_precision = torch.get_float32_matmul_precision()
+    try:
+        before, effective = module.configure_fixed_highest_fp32(torch)
+        assert set(before) == {
+            "NVIDIA_TF32_OVERRIDE",
+            "cuda_matmul_allow_tf32",
+            "cudnn_allow_tf32",
+            "float32_matmul_precision",
+        }
+        assert effective["cuda_matmul_allow_tf32"] is False
+        assert effective["cudnn_allow_tf32"] is False
+        assert effective["float32_matmul_precision"] == "highest"
+    finally:
+        torch.backends.cuda.matmul.allow_tf32 = saved_matmul
+        torch.backends.cudnn.allow_tf32 = saved_cudnn
+        torch.set_float32_matmul_precision(saved_precision)

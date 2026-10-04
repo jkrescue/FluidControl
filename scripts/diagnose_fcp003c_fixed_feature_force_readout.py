@@ -37,6 +37,32 @@ RCOND = 1.0e-10
 REPRODUCTION_ATOL = 2.0e-5
 
 
+def configure_fixed_highest_fp32(torch_module) -> tuple[dict, dict]:
+    before = {
+        "NVIDIA_TF32_OVERRIDE": os.environ.get("NVIDIA_TF32_OVERRIDE"),
+        "cuda_matmul_allow_tf32": bool(torch_module.backends.cuda.matmul.allow_tf32),
+        "cudnn_allow_tf32": bool(torch_module.backends.cudnn.allow_tf32),
+        "float32_matmul_precision": torch_module.get_float32_matmul_precision(),
+    }
+    torch_module.backends.cuda.matmul.allow_tf32 = False
+    torch_module.backends.cudnn.allow_tf32 = False
+    torch_module.set_float32_matmul_precision("highest")
+    effective = {
+        "NVIDIA_TF32_OVERRIDE": os.environ.get("NVIDIA_TF32_OVERRIDE"),
+        "cuda_matmul_allow_tf32": bool(torch_module.backends.cuda.matmul.allow_tf32),
+        "cudnn_allow_tf32": bool(torch_module.backends.cudnn.allow_tf32),
+        "float32_matmul_precision": torch_module.get_float32_matmul_precision(),
+    }
+    if effective != {
+        "NVIDIA_TF32_OVERRIDE": before["NVIDIA_TF32_OVERRIDE"],
+        "cuda_matmul_allow_tf32": False,
+        "cudnn_allow_tf32": False,
+        "float32_matmul_precision": "highest",
+    }:
+        raise ValueError("could not establish fixed highest-FP32 diagnostic precision")
+    return before, effective
+
+
 def summarize_error(error: np.ndarray) -> dict:
     error = np.asarray(error, dtype=np.float64)
     if error.ndim != 2 or error.shape[1] != 4 or error.size == 0:
@@ -277,6 +303,7 @@ def main() -> None:
     if dist.distributed or not dist.cuda:
         raise RuntimeError("single-GPU CUDA diagnostic required")
     torch.cuda.set_per_process_memory_fraction(0.15, device=dist.device)
+    precision_before, precision_effective = configure_fixed_highest_fp32(torch)
     config = load_composed_config(args.config)
     if tuple(configured_force_indices(config)) != (0, 1, 2, 3):
         raise ValueError("four force outputs required")
@@ -412,6 +439,12 @@ def main() -> None:
         "original_readout_metrics_physical": original,
         "original_output_reproduction_max_abs_normalized": reproduction_max,
         "original_output_reproduction_atol": REPRODUCTION_ATOL,
+        "numerical_protocol": {
+            "precision_before": precision_before,
+            "precision_effective": precision_effective,
+            "scope": "diagnostic-only fixed highest-FP32; differs from the historical C training/formal-evaluation default TF32 protocol",
+            "formal_c_bitwise_equivalence_claimed": False,
+        },
         "field_repeat_bitwise_identical": field_repeat_bitwise,
         "model_tensor_state_sha256_before": state_sha_before,
         "model_tensor_state_sha256_after": state_sha_after,
