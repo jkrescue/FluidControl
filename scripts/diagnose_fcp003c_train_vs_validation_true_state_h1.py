@@ -258,7 +258,7 @@ def _rows(panel, phase, profile, endpoints, action, zero, pa, pz):
                 "profile": profile,
                 "target_index": target,
                 "start_index": target - 1,
-                "target_time": float(action["time"][target]),
+                "target_time": float(action["time"][target].item()),
                 "extra_paired_supervision": panel.startswith("train_")
                 and target <= 100,
                 "regular_training_coverage": panel.startswith("train_"),

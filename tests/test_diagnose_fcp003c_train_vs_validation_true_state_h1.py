@@ -136,6 +136,25 @@ class Tests(unittest.TestCase):
         self.assertEqual(tuple(pa.shape), (101, 4))
         self.assertEqual(float(pa[-1, 0]), 199.0)
 
+    def test_rows_accept_real_singleton_time_axis(self):
+        frames = 201
+        branch = {
+            "time": np.arange(frames, dtype=np.float32)[:, None] / 10,
+            "force": np.zeros((frames, 4), dtype=np.float32),
+        }
+        predicted = np.zeros((1, 4), dtype=np.float32)
+        rows = M._rows(
+            "train_late_window",
+            "b00",
+            "prbs",
+            [200],
+            branch,
+            branch,
+            predicted,
+            predicted,
+        )
+        self.assertEqual(rows[0]["target_time"], 20.0)
+
     def test_segments(self):
         rows = []
         seg = []
