@@ -337,15 +337,17 @@ function renderActiveExperiment(d){
  if(!Number.isFinite(age)||age<0||age>180000){$('lead-now').textContent='任务状态已过期或时间异常，不能确认当前训练或评估是否运行。';return;}
  const training=units.includes('fluid-control-fcp003c-true-state-step-20261005.service');
  const evaluating=units.includes('fluid-control-fcp003c-posteval-wait-fa08ce0-20261005.service');
- const calibrating=units.includes('fluid-control-fcp003c-train-fit-calibration-20261005.service');
+ const absoluteRunning=units.includes('fluid-control-fcp003c-train-fit-absolute-calibration-20261005.service');
+ const calibrating=absoluteRunning||units.includes('fluid-control-fcp003c-train-fit-calibration-20261005.service');
  const cp=w.progress?.train_fit_calibration||{};
+ const absoluteCalibration=absoluteRunning||cp.paired_force_objective==='absolute';
  const calibrationDone=cp.completion_verified===true&&cp.state==='EXECUTION_COMPLETE_NOT_ADMISSION';
  if(!training&&!evaluating&&!calibrating&&!calibrationDone)return;
  const p=d.fc_p003c_training_log||{};
  const progress=Number.isFinite(p.batch_percent)?`最近批次记录为该轮的 ${p.batch_percent.toFixed(2)}%，记录时间 ${p.logged_at_utc}；不是整个项目完成比例。`:'当前尚无批次进度记录，不估算百分比。';
  const validSteps=Number.isInteger(cp.completed_steps)&&cp.completed_steps>=0&&cp.completed_steps<=128&&cp.total_steps===128&&Number.isInteger(cp.paired_steps_completed)&&cp.paired_steps_completed>=0&&cp.paired_steps_completed<=64;
- const calibrationDetail=(validSteps?`最近记录：已完成 ${cp.completed_steps} / 128 次参数更新，其中 ${cp.paired_steps_completed} / 64 次包含旋转配对监督。`:'正在加载模型或计算训练前对照，尚无有效更新步数。')+' 保持原有流场训练，增加旋转响应训练占比；不读取验证集，不据训练 loss 判断成功，完成后比较同一批流场与受力误差。';
- const title=calibrating?'当前训练 · 旋转响应小规模校准':calibrationDone?'小规模校准已完成 · 尚未通过模型验收':training?'当前训练 · 动作响应监督（FC-P003C）':'当前任务 · FC-P003C 评估队列';
+ const calibrationDetail=(validSteps?`最近记录：已完成 ${cp.completed_steps} / 128 次参数更新，其中 ${cp.paired_steps_completed} / 64 次包含旋转配对监督。`:'正在加载模型或计算训练前对照，尚无有效更新步数。')+(absoluteCalibration?' 保持流场训练和预算不变，分别监督旋转与不旋转时的真实受力；':' 保持原有流场训练，增加旋转响应训练占比；')+'不读取验证集，不据训练 loss 判断成功，完成后比较同一批流场与受力误差。';
+ const title=calibrating?(absoluteCalibration?'当前训练 · 绝对受力监督对照':'当前训练 · 旋转响应小规模校准'):calibrationDone?(absoluteCalibration?'绝对受力监督对照已完成 · 尚未通过模型验收':'小规模校准已完成 · 尚未通过模型验收'):training?'当前训练 · 动作响应监督（FC-P003C）':'当前任务 · FC-P003C 评估队列';
  const detail=calibrating?calibrationDetail:calibrationDone?'128 次更新和 64 次旋转配对监督已完成，训练进程已结束。仍需依据训练前后流场与受力误差判断效果，不能据运行成功认定闭环目标达成。':training?`已记录 ${p.completed_epochs??'待核实'} / 2 个完整训练轮次。${progress} 保持现有模型和数据，调整动作引起的受力差训练项；训练后检查流场、阻力和升力预测。`:'训练服务当前不在运行；评估队列正在运行或等待模型完成记录，不能仅凭队列存活认定 GPU 正在评估。';
  $('lead-now').textContent=title+'。'+detail+' 尚未完成新模型的 PPO 与真实 CFD 闭环验收。';
  const card=document.createElement('div');card.className='card';
@@ -354,7 +356,7 @@ function renderActiveExperiment(d){
  $('lead-models').prepend(card);
  $('train16-formal-progress').textContent=title;
  $('train16-formal-progress').className='number';
- $('train16-formal-detail').textContent=detail+((calibrating||calibrationDone)?' 本轮目录：fcp003c_train_fit_calibration_20261005。':' 本轮目录：tandem_fno_true_state_paired_step_lambda10_20261005。');
+ $('train16-formal-detail').textContent=detail+((calibrating||calibrationDone)?(absoluteCalibration?' 本轮目录：fcp003c_train_fit_absolute_calibration_20261005。':' 本轮目录：fcp003c_train_fit_calibration_20261005。'):' 本轮目录：tandem_fno_true_state_paired_step_lambda10_20261005。');
 }
 function pct(x){return Number.isFinite(x)?(x*100).toFixed(2)+'%':'—'}
 function num(x,d=1){return Number.isFinite(x)?x.toFixed(d):'—'}
