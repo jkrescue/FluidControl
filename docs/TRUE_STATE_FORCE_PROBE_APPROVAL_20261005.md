@@ -75,7 +75,8 @@ These are FP32 numerical-equivalence checks, not scientific accuracy gates.
 Do not change them after observing a failure; first diagnose any discrepancy.
 Verify loss and all parameter gradients, not just a scalar gradient norm. Full-run gradients
 must be finite and nonzero. Confirm weights and model buffers are unchanged.
-Report unweighted normalized loss and per-channel normalized MSE; retaining
+Report channel-weighted normalized loss without any future lambda multiplier,
+and unweighted per-channel normalized MSE; retaining
 lambda=10 in a future experiment would not make this loss numerically
 equivalent to the previous window-statistic objective.
 
