@@ -90,7 +90,7 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         ]
         self.assertEqual(MODULE.most_specific_error(lines), lines[0])
 
-    def make_repo(self, directory: str, *, receipts=False) -> Path:
+    def make_repo(self, directory: str, *, receipts=False, paired=False) -> Path:
         repo = Path(directory)
         for run in (MODULE.MAIN_RUN, MODULE.BALANCED_RUN):
             root = repo / run
@@ -126,6 +126,38 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                     ),
                     encoding="utf-8",
                 )
+        if paired:
+            for root in (MODULE.PAIRED_LAMBDA0_ROOT, MODULE.PAIRED_LAMBDA10_ROOT):
+                target = repo / root / "completion_receipt.json"
+                target.parent.mkdir(parents=True, exist_ok=True)
+                evidence = target.parent / "training_history.json"
+                evidence.write_text('[{"epoch":1},{"epoch":2}]\n')
+                target.write_text(
+                    json.dumps(
+                        {
+                            "status": MODULE.PAIRED_TRAINING_STATUS,
+                            "sha256": {
+                                "training_history.json": hashlib.sha256(
+                                    evidence.read_bytes()
+                                ).hexdigest()
+                            },
+                        }
+                    )
+                )
+            transfer = repo / MODULE.PAIRED_LAMBDA10_ROOT / "worker_transfer_complete.json"
+            completion = transfer.parent / "completion_receipt.json"
+            transfer.write_text(
+                json.dumps(
+                    {
+                        "status": MODULE.PAIRED_LAMBDA10_TRANSFER_STATUS,
+                        "sha256": {
+                            "completion_receipt.json": hashlib.sha256(
+                                completion.read_bytes()
+                            ).hexdigest()
+                        },
+                    }
+                )
+            )
         return repo
 
     def test_failed_posteval_is_immediate_explicit_blocker(self) -> None:
@@ -193,7 +225,7 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
 
     def test_complete_receipts_end_operational_pending_without_science_claim(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            repo = self.make_repo(directory, receipts=True)
+            repo = self.make_repo(directory, receipts=True, paired=True)
             result = MODULE.build_sample(
                 repo,
                 None,
@@ -204,17 +236,47 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                 RESOURCES,
                 datetime(2026, 10, 4, 1, 0, tzinfo=UTC),
             )
-        self.assertFalse(result["workflow_pending"])
-        self.assertTrue(result["stage_complete"])
+        self.assertTrue(result["workflow_pending"])
+        self.assertFalse(result["stage_complete"])
+        self.assertTrue(result["prior_posteval_stage_complete"])
         self.assertFalse(result["project_goal_complete"])
         self.assertEqual(result["project_status"], "NEEDS_MODEL_IMPROVEMENT")
         self.assertEqual(
             result["scientific_next_stage"]["status"],
-            "PAIRED_STATS_CONTROLLED_TRAINING_AND_POSTEVAL_PENDING",
+            "PAIRED_POSTEVAL_PENDING",
         )
         self.assertFalse(
             result["scientific_next_stage"]["automatic_restart_allowed"]
         )
+        self.assertTrue(result["progress"]["paired_training_complete"])
+        self.assertFalse(result["progress"]["paired_posteval_complete"])
+        self.assertEqual(result["progress"]["next_owner"], "Lead")
+        self.assertEqual(result["progress"]["approval_required"], "FC-P001")
+        self.assertEqual(
+            result["scientific_next_stage"]["active_work"],
+            "paired_posteval_pending",
+        )
+
+    def test_paired_posteval_idle_alert_names_owner_and_experiment(self) -> None:
+        now = datetime(2026, 10, 4, 14, 0, tzinfo=UTC)
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(directory, receipts=True, paired=True)
+            result = MODULE.build_sample(
+                repo,
+                {"no_running_since_utc": (now - timedelta(seconds=301)).isoformat()},
+                {
+                    MODULE.MAIN_AUTHORITY_UNIT: unit(),
+                    MODULE.WORKER_AUTHORITY_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA0_UNIT: unit(),
+                },
+                RESOURCES,
+                now,
+            )
+        self.assertIn(
+            "PAIRED_POSTEVAL_PENDING_WITH_NO_RUNNING_UNIT_FOR_300_SECONDS",
+            result["alerts"],
+        )
+        self.assertIn("FC-P001", result["blocker_reasons"][-1])
 
     def test_paired_lambda0_active_is_current_scientific_work(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

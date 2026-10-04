@@ -41,6 +41,10 @@ PAIRED_DATAPIPE_WORKER_UNIT = "fluid-control-train20-paired-datapipe-probe-20261
 PAIRED_LAMBDA0_UNIT = "fluid-control-paired-stats-lambda0-full-v1-20261004.service"
 PAIRED_LAMBDA0_ROOT = Path("artifacts/tandem_fno_paired_stats_lambda0_20261004")
 PAIRED_LAMBDA10_ROOT = Path("artifacts/tandem_fno_paired_stats_lambda10_20261004")
+PAIRED_TRAINING_STATUS = "PAIRED_STATS_CONTROLLED_TRAINING_COMPLETE"
+PAIRED_LAMBDA10_TRANSFER_STATUS = (
+    "PAIRED_STATS_LAMBDA10_WORKER_TO_SPARK_TRANSFER_VERIFIED"
+)
 REVIEWED_MAIN_RESUME_ACTION = "main-posteval-resume-78d827f"
 PRODUCTION_AUTO_RECOVERY_ENABLED = True
 
@@ -319,7 +323,12 @@ def resource_state(previous: dict | None) -> dict:
 
 def latest_relevant_file(repo: Path) -> dict | None:
     candidates = []
-    for root in (repo / MAIN_RUN, repo / BALANCED_RUN):
+    for root in (
+        repo / MAIN_RUN,
+        repo / BALANCED_RUN,
+        repo / PAIRED_LAMBDA0_ROOT,
+        repo / PAIRED_LAMBDA10_ROOT,
+    ):
         if not root.is_dir():
             continue
         for pattern in (
@@ -333,6 +342,10 @@ def latest_relevant_file(repo: Path) -> dict | None:
             "posteval_complete_v2/**/*.json",
             "posteval_worker_v1/**/*.log",
             "posteval_worker_v1/**/*.json",
+            "completion_receipt.json",
+            "worker_transfer_complete.json",
+            "training_history.json",
+            "train.log",
         ):
             candidates.extend(path for path in root.glob(pattern) if path.is_file())
     if not candidates:
@@ -378,6 +391,36 @@ def workflow_progress(repo: Path) -> dict:
     }
 
 
+def paired_training_progress(repo: Path) -> dict:
+    lambda0_complete, lambda0_issues = verify_receipt(
+        repo / PAIRED_LAMBDA0_ROOT / "completion_receipt.json",
+        PAIRED_TRAINING_STATUS,
+    )
+    lambda10_complete, lambda10_issues = verify_receipt(
+        repo / PAIRED_LAMBDA10_ROOT / "completion_receipt.json",
+        PAIRED_TRAINING_STATUS,
+    )
+    lambda10_transfer_complete, lambda10_transfer_issues = verify_receipt(
+        repo / PAIRED_LAMBDA10_ROOT / "worker_transfer_complete.json",
+        PAIRED_LAMBDA10_TRANSFER_STATUS,
+    )
+    return {
+        "lambda0_training_complete": lambda0_complete,
+        "lambda0_receipt_issues": lambda0_issues,
+        "lambda10_training_complete": lambda10_complete,
+        "lambda10_receipt_issues": lambda10_issues,
+        "lambda10_transfer_complete": lambda10_transfer_complete,
+        "lambda10_transfer_issues": lambda10_transfer_issues,
+        "paired_training_complete": (
+            lambda0_complete and lambda10_complete and lambda10_transfer_complete
+        ),
+        "paired_posteval_complete": False,
+        "paired_posteval_status": "PAIRED_POSTEVAL_PENDING",
+        "next_owner": "Lead",
+        "approval_required": "FC-P001",
+    }
+
+
 def build_sample(
     repo: Path,
     previous: dict | None,
@@ -386,9 +429,16 @@ def build_sample(
     now: datetime,
 ) -> dict:
     progress = workflow_progress(repo)
-    stage_complete = (
+    prior_posteval_stage_complete = (
         progress["main_posteval_complete"]
         and progress["balanced_posteval_complete"]
+    )
+    paired = paired_training_progress(repo)
+    progress.update(paired)
+    stage_complete = (
+        prior_posteval_stage_complete
+        and paired["paired_training_complete"]
+        and paired["paired_posteval_complete"]
     )
     pending = not stage_complete
     main_authority = select_main_authority(units)
@@ -414,8 +464,10 @@ def build_sample(
         if (state := units.get(name, {}))
         if state["active_state"] == "failed" or state["result"] == "exit-code"
     )
-    failed_units = authority_failures if pending else []
-    post_completion_incidents = authority_failures if stage_complete else []
+    failed_units = authority_failures if not prior_posteval_stage_complete else []
+    post_completion_incidents = (
+        authority_failures if prior_posteval_stage_complete else []
+    )
     superseded_failures = sorted(
         name
         for name, state in units.items()
@@ -482,16 +534,25 @@ def build_sample(
             + ", ".join(retryable)
         )
     if pending and not active_units and idle_seconds >= IDLE_ALERT_SECONDS:
-        alerts.append("TRAIN16_PENDING_WITH_NO_RUNNING_UNIT_FOR_300_SECONDS")
+        paired_wait = (
+            prior_posteval_stage_complete
+            and paired["paired_training_complete"]
+            and not paired["paired_posteval_complete"]
+        )
+        alerts.append(
+            "PAIRED_POSTEVAL_PENDING_WITH_NO_RUNNING_UNIT_FOR_300_SECONDS"
+            if paired_wait
+            else "TRAIN16_PENDING_WITH_NO_RUNNING_UNIT_FOR_300_SECONDS"
+        )
+        if paired_wait:
+            blocker_reasons.append(
+                "FC-P001 paired λ0/λ10 post-evaluation is pending Lead approval; "
+                "no evaluation unit is active"
+            )
     if resources["mem_available_gib"] < 20.0:
         alerts.append("SPARK_MEMORY_BELOW_20_GIB")
     lambda0_receipt_path = PAIRED_LAMBDA0_ROOT / "completion_receipt.json"
-    lambda0_receipt = read_json(repo / lambda0_receipt_path, None)
-    lambda0_complete = (
-        isinstance(lambda0_receipt, dict)
-        and lambda0_receipt.get("status")
-        == "PAIRED_STATS_CONTROLLED_TRAINING_COMPLETE"
-    )
+    lambda0_complete = paired["lambda0_training_complete"]
     lambda0_unit = units.get(PAIRED_LAMBDA0_UNIT, {})
     if lambda0_complete:
         lambda0_state = "TRAINING_STAGE_COMPLETE_POSTEVAL_PENDING"
@@ -509,7 +570,11 @@ def build_sample(
     scientific_status = (
         "PAIRED_STATS_CONTROLLED_TRAINING_RUNNING"
         if lambda0_state == "RUNNING"
-        else "PAIRED_STATS_CONTROLLED_TRAINING_AND_POSTEVAL_PENDING"
+        else (
+            "PAIRED_POSTEVAL_PENDING"
+            if paired["paired_training_complete"]
+            else "PAIRED_STATS_CONTROLLED_TRAINING_AND_POSTEVAL_PENDING"
+        )
     )
     return {
         "status": "ALERT" if alerts else "MONITORING",
@@ -526,13 +591,20 @@ def build_sample(
             "scientific_failure_is_never_bypassed": True,
         },
         "stage_complete": stage_complete,
+        "prior_posteval_stage_complete": prior_posteval_stage_complete,
         "project_goal_complete": False,
         "project_status": (
-            "NEEDS_MODEL_IMPROVEMENT" if stage_complete else "POSTEVAL_INCOMPLETE"
+            "NEEDS_MODEL_IMPROVEMENT"
+            if prior_posteval_stage_complete
+            else "POSTEVAL_INCOMPLETE"
         ),
         "scientific_next_stage": {
             "status": scientific_status,
-            "active_work": "paired_stats_controlled_training",
+            "active_work": (
+                "paired_posteval_pending"
+                if paired["paired_training_complete"]
+                else "paired_stats_controlled_training"
+            ),
             "purpose": "train-only paired statistics for the next official PhysicsNeMo surrogate iteration",
             "planned_spark_root": str(PAIRED_DATAPIPE_ROOT),
             "planned_worker_unit": PAIRED_DATAPIPE_WORKER_UNIT,
@@ -544,9 +616,18 @@ def build_sample(
                 "completion_receipt": str(lambda0_receipt_path),
             },
             "lambda10": {
-                "state": "WORKER_HANDOFF_IN_PROGRESS",
+                "state": (
+                    "TRAINING_STAGE_COMPLETE_TRANSFER_VERIFIED"
+                    if paired["lambda10_transfer_complete"]
+                    else "WORKER_TRANSFER_PENDING"
+                ),
                 "output_root": str(PAIRED_LAMBDA10_ROOT),
             },
+            "paired_training_complete": paired["paired_training_complete"],
+            "paired_posteval_complete": paired["paired_posteval_complete"],
+            "paired_posteval_status": paired["paired_posteval_status"],
+            "next_owner": paired["next_owner"],
+            "approval_required": paired["approval_required"],
             "automatic_restart_allowed": False,
             "formal_training_units_assigned": True,
         },
