@@ -63,7 +63,7 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         self.assertEqual(state, "NEEDS_AGENT_ANALYSIS")
         self.assertIsNone(action)
 
-    def test_production_recovery_stays_disabled_until_hash_fix_reviewed(self) -> None:
+    def test_production_recovery_uses_only_reviewed_action(self) -> None:
         state, action = MODULE.classify_authority_task(
             unit(
                 "failed",
@@ -73,8 +73,8 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
             False,
             allow_resume=True,
         )
-        self.assertEqual(state, "NEEDS_AGENT_ANALYSIS")
-        self.assertIsNone(action)
+        self.assertEqual(state, "RETRY_ELIGIBLE")
+        self.assertEqual(action, MODULE.REVIEWED_MAIN_RESUME_ACTION)
 
     def test_specific_exception_wins_over_later_systemd_failure_line(self) -> None:
         lines = [

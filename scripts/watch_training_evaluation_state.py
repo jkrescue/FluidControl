@@ -36,8 +36,8 @@ BALANCED_RUN = Path(
 IDLE_ALERT_SECONDS = 300
 MAIN_RECEIPT = MAIN_RUN / "posteval_complete_v2/receipt.json"
 WORKER_RECEIPT = BALANCED_RUN / "posteval_worker_v1/receipt.json"
-REVIEWED_MAIN_RESUME_ACTION = "main-posteval-resume-979fbd6"
-PRODUCTION_AUTO_RECOVERY_ENABLED = False
+REVIEWED_MAIN_RESUME_ACTION = "main-posteval-resume-78d827f"
+PRODUCTION_AUTO_RECOVERY_ENABLED = True
 
 
 def classify_authority_task(state: dict, complete: bool, *, allow_resume: bool) -> tuple[str, str | None]:
@@ -479,7 +479,7 @@ def build_sample(
             "automatic_restart_or_repair": False,
             "auto_recovery_enabled": PRODUCTION_AUTO_RECOVERY_ENABLED,
             "auto_recovery_reason": (
-                "Disabled pending content-hash verification fixes to reviewed Main resume; "
+                "Main strict content-verified --resume at commit 78d827f, at most once; "
                 "Worker remains external takeover"
             ),
             "scientific_failure_is_never_bypassed": True,

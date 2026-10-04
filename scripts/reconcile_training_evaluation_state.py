@@ -20,7 +20,31 @@ from pathlib import Path
 
 MIN_MEM_AVAILABLE_GIB = 20.0
 MAX_RETRIES_PER_ACTION = 1
-APPROVED_ACTIONS: dict[str, dict] = {}
+REPO = Path("/workspace/fluid_control")
+RUNNER = REPO / "scripts/run_control_train16_posteval_queue_spark.sh"
+VALIDATOR = REPO / "scripts/validate_control_train16_posteval_step.py"
+APPROVED_ACTIONS: dict[str, dict] = {
+    "main-posteval-resume-78d827f": {
+        "required_files": {
+            str(RUNNER): "a80aabb74b783e791cbbe33ea02146643b6395574e3817e8a8be842afcddecea",
+            str(VALIDATOR): "9e3ef79d43fef37ff6a2f41b6d1729f69f82f2bddd9e50e5ecac86e54be389e9",
+        },
+        "max_attempts": 1,
+        "conflict_pattern": "evaluate_tandem_fno.py.*tandem_fno_control_train16_h100_20261004",
+        "command": [
+            "systemd-run",
+            "--user",
+            "--unit=fluid-control-train16-posteval-main-auto-resume1-20261004",
+            "--collect",
+            "--property=Restart=no",
+            "--property=KillMode=mixed",
+            f"--working-directory={REPO}",
+            "--setenv=CONTROL_TRAIN16_POSTEVAL_TOKEN=EXECUTE_REVIEWED_CONTROL_TRAIN16_POSTEVAL",
+            str(RUNNER),
+            "--resume",
+        ],
+    }
+}
 
 
 def read_json(path: Path, fallback):
@@ -121,14 +145,13 @@ def execute_reviewed_resume(
         return decision
     action_id = decision["action_id"]
     action = approved_actions[action_id]
-    script_path = action.get("script_path")
-    if script_path:
-        path = Path(script_path)
-        if not path.is_file() or file_sha256(path) != action.get("script_sha256"):
+    for required_file, expected_sha in action.get("required_files", {}).items():
+        path = Path(required_file)
+        if not path.is_file() or file_sha256(path) != expected_sha:
             return {
                 "decision": "NEEDS_AGENT_ANALYSIS",
                 "action_id": action_id,
-                "reason": "Reviewed resume script SHA differs",
+                "reason": f"Reviewed recovery dependency SHA differs: {path}",
             }
     conflict_pattern = action.get("conflict_pattern")
     if conflict_pattern:

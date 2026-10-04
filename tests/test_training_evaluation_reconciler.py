@@ -110,8 +110,7 @@ class TrainingEvaluationReconcilerTests(unittest.TestCase):
             actions = {
                 "reviewed-resume-v1": {
                     "command": ["/bin/true"],
-                    "script_path": str(script),
-                    "script_sha256": "0" * 64,
+                    "required_files": {str(script): "0" * 64},
                 }
             }
             decision = MODULE.plan_recovery(transient_sample(), ledger, actions)
