@@ -1021,10 +1021,10 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
     def test_current_chain_is_promoted_and_history_is_collapsed(self) -> None:
         page = SCRIPT.read_text(encoding="utf-8")
         self.assertIn('id="current-focus"', page)
-        self.assertIn(
-            "$('page-guide').before($('current-focus'))",
-            page,
-        )
+        self.assertNotIn("$('page-guide').before($('current-focus'))", page)
+        self.assertIn('id="lead-overview"', page)
+        self.assertIn('id="legacy-details"', page)
+        self.assertLess(page.index('id="lead-overview"'), page.index('id="legacy-details"'))
         self.assertIn("历史 v4（非当前 full40/dev30）", page)
         self.assertEqual(page.count('<details class="archive">'), 3)
         self.assertNotIn('<details class="archive" open>', page)
@@ -1032,6 +1032,29 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("历史数据生产与 commissioning 明细", page)
         identifiers = re.findall(r'id="([^"]+)"', page)
         self.assertEqual(len(identifiers), len(set(identifiers)))
+
+    def test_current_candidate_missing_evidence_is_unknown(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            result = MODULE._research_overview(Path(directory))
+            for candidate in ("lambda0", "lambda10"):
+                self.assertIsNone(result[candidate]["endpoint"])
+                self.assertIsNone(result[candidate]["updated_at"])
+                self.assertIn("posteval_fc_p001", result[candidate]["path"])
+
+    def test_current_candidate_endpoint_does_not_imply_closed_loop_success(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            relative = MODULE._research_overview(root)["lambda0"]["path"]
+            path = root / relative
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps({"status": "FULL40_VALIDATION_SURROGATE_READINESS_PASS"}))
+            result = MODULE._research_overview(root)
+            self.assertIsNotNone(result["lambda0"]["updated_at"])
+            self.assertNotIn("project_goal_complete", result["lambda0"])
+            self.assertIsNone(result["lambda10"]["endpoint"])
+        self.assertIn("不代表动态／窗口检验通过", MODULE.PAGE)
+        self.assertIn("尚未启动本轮 MPC 实验", MODULE.PAGE)
+        self.assertIn("不是智能体实时心跳", MODULE.PAGE)
 
     def test_compact_chinese_reading_guide_defines_scientific_layers(self) -> None:
         page = SCRIPT.read_text(encoding="utf-8")

@@ -203,6 +203,26 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 @media(max-width:750px){.grid,.resources,.summary,.casegrid,.guide-grid{grid-template-columns:1fr}main{padding:16px}}
 </style></head><body><main>
 <div class="top"><div><h1>串列双圆柱流动控制 · 实时进展</h1><div class="muted">目标：降低两圆柱总阻力，同时报告侧向载荷与动作代价</div></div><div class="stamp" id="clock">连接中…</div></div>
+<section id="lead-overview">
+<div class="banner"><b>研究目标不变：</b>只研究串列双圆柱、后圆柱旋转控制。最终在真实 CFD 中验证：总阻力降低 ≥2%，后圆柱升力波动不超过无控制的 1.05 倍，平均升力偏置不超过基准波动的 10%。<br><span class="small">保留已有数据、模型和 PPO。当前重点是确认 FNO 能否准确预测控制动作的长期影响，而不只是单步流场。</span></div>
+<div class="card"><h3>当前工作与下一步</h3><div id="lead-now">正在读取实际运行记录…</div><p class="small" id="lead-monitor"></p><div class="small">判断依据：真实任务进程、模型评估结果和实验记录。GPU 忙碌不等于科研目标已完成；训练结束也不等于模型通过验证。</div></div>
+<h2>两台计算节点 · 实际资源</h2><div class="grid" id="lead-resources"></div>
+<p class="small">Spark 的 CPU 与 GPU 共享物理内存；这里显示系统可用统一内存，不把它当作独立显存。至少保留 20 GiB。页面每 5 秒刷新，资源采样约 10 秒，任务监控约 60 秒。</p>
+<h2>当前 FNO 对照实验</h2><div class="grid" id="lead-models"></div>
+<p class="small">λ=0：不加配对统计损失；λ=10：加入配对统计损失，比较同一初态下不同动作的阻力与升力变化。两者使用同一评估协议。100 步表示连续预测 10 D/U，并非 100 轮训练。最终还需动态动作和时间窗口内的受力统计检验。</p>
+<h2>从数据到在线控制 · 哪一步已完成？</h2><div class="grid">
+<div class="card"><h3>1 · CFD 数据与物理检查</h3><p>已有真实 OpenFOAM 数据与固定训练／验证／冻结测试划分。继续检查动作、相位和预测时长的覆盖。</p><div class="small">当前 Re=100；不能据此声称跨雷诺数泛化。冻结测试不用于挑选模型。</div></div>
+<div class="card"><h3>2 · PhysicsNeMo 流场预测</h3><p>官方 FNO 已完成本轮训练，当前进行控制相关精度验证。</p><div class="small">分开看速度、压力、阻力、升力波动和长时间递推。当前候选尚未生成新的流场对照图片；下方历史图明确保留原模型标签。</div></div>
+<div class="card"><h3>3 · MPC / 强化学习</h3><p>MPC 是后续可解释控制对照，尚未启动本轮 MPC 实验。已有 CFD-only PPO 基线保留；当前不是新 PPO 训练。</p><div class="small">HydroGym 提供控制环境接口，SB3 提供 PPO。FNO 通过完整检验后，才开展对应候选模型的策略训练。</div></div>
+<div class="card"><h3>4 · 真实 CFD 在线闭环</h3><p>已有 CFD-only PPO 两个初始相位约 4.22% / 4.25% 减阻证据；不等于 FNO 辅助闭环已经成功。</p><div class="small">最终需要 CFD → 状态 → 策略 → 转速 → CFD 的反馈验证，同时满足三项物理指标。两个相位不足以证明广泛泛化。</div></div></div>
+<h2>Lead 与专业智能体 · 本阶段职责</h2><div class="grid">
+<div class="card"><h3>Lead / Astra · 科研负责人</h3><p>保持研究目标和评估协议，审核实验结论，决定继续控制实验还是先修复模型问题。</p></div>
+<div class="card"><h3>Physics / Data · 物理与数据</h3><p>检查无量纲参数、动作覆盖和数据来源；管理计算节点及结果回传。</p></div>
+<div class="card"><h3>Surrogate · 代理模型</h3><p>检查两组 FNO 多步预测；按工况、动作和预测时长定位误差。</p></div>
+<div class="card"><h3>Control / Evaluation · 控制与评估</h3><p>独立核查协议和指标，维护实验记录与运行监控；判断模型是否可以进入控制阶段。</p></div></div>
+<p class="small">上述是本阶段任务分工，不是智能体实时心跳。实际计算任务与采样时间见上方；已完成的评估会保留证据，不伪装成仍在训练。当前两组评估由监控发现异常后交由 agent 诊断处理，不无条件自动重启，也不自动降低验收要求。</p>
+</section>
+<details class="archive" id="legacy-details"><summary>展开详细证据、真实流场图片、历史实验与术语说明</summary>
 <details class="guide" id="page-guide"><summary>怎么看这页 / 术语说明</summary><div class="guide-grid">
 <div><b>三层结论：</b>数据完成只说明样本已生成；模型准确要看独立验证误差；控制成功还须真实 CFD 同时通过降阻、升力波动和平均升力三项门槛。</div>
 <div><b>epoch：</b>完整看一遍训练数据。<b>H20 / H100：</b>从真实初态连续递推 20 / 100 步，用来检查误差是否随时间累积，不是训练轮数。</div>
@@ -245,9 +265,18 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 <h2>真实流场 / FNO 预测 / 误差</h2><div class="card"><div class="row"><div class="small" id="figure-label">读取图片…</div><div><select id="case"><option value="expanded_test_00">测试 00</option><option value="expanded_test_01">测试 01</option><option value="expanded_test_02">测试 02</option><option value="expanded_test_04">测试 04</option><option value="expanded_test_05">新测试 05</option></select> <select id="horizon"><option value="001">1 步</option><option value="010">10 步</option><option value="050">50 步</option><option value="100" selected>100 步</option></select></div></div><img id="flow" alt="真实 OpenFOAM 流场、FNO 预测、误差对照"></div>
 <h2>HydroGym 闭环控制</h2><div class="card"><div id="cem">—</div><div class="small" id="ppo">—</div></div>
 </details>
-<div class="foot">图表读取原始训练与评估记录。真实 CFD 控制收益仍须通过相位匹配的 OpenFOAM 回放验证。</div>
+</details><div class="foot">图表读取原始训练与评估记录。真实 CFD 控制收益仍须通过相位匹配的 OpenFOAM 回放验证。</div>
 </main><script>
-const $=x=>document.getElementById(x);let latest=null;$('page-guide').before($('current-focus'));
+const $=x=>document.getElementById(x);let latest=null;
+function renderLead(d){
+ const w=d.training_evaluation_watchdog||{}, p=w.progress||{}, age=(t)=>t?Math.max(0,(Date.now()-Date.parse(t))/1000):Infinity;
+ const esc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const active=w.active_units||[];
+ $('lead-now').textContent=age(w.timestamp_utc)>180?'任务状态已过期，等待重新采样；不能确认任务仍在运行。':active.length?`实际运行 ${active.length} 个任务：两组 FNO 候选的预测评估。训练已结束，完整控制精度结论尚须读取最终评估。`:'当前没有监控到运行任务；需检查阶段完成记录及后续安排，不能据此认定项目完成。';
+ $('lead-monitor').textContent=`任务监控：${w.timestamp_utc||'无记录'}；告警 ${ (w.alerts||[]).length } 条；最新输出 ${w.latest_relevant_file?.modified_at_utc||'未知'}。整体目标${w.project_goal_complete?'记录为完成，须核对验收证据':'尚未完成'}。`;
+ $('lead-resources').innerHTML=['primary','worker'].map((k,i)=>{const r=(d.resources?.[k]||[]).at(-1)||{}, stale=age(r.time)>60;return `<div class="card"><h3>${i?'计算节点 · WORKER_HOST':'主节点 · SPARK_HOST'}</h3><div class="resources"><div><div class="label">GPU 利用率</div><div class="number">${stale?'—':num(r.gpu)}%</div></div><div><div class="label">CPU 整机利用率</div><div class="number">${stale?'—':num(r.cpu)}%</div></div><div><div class="label">可用统一内存</div><div class="number">${stale?'—':num(r.mem_available_gib)} GiB</div></div></div><p>${stale?'采样过期，不能确认当前负载':esc((r.tasks||[]).join('；')||'未检测到项目计算进程')}</p><div class="small">采样 ${esc(r.time)} · ${!stale&&r.mem_available_gib<20?'警告：低于 20 GiB 保留要求':'保留要求：至少 20 GiB'}</div></div>`}).join('');
+ $('lead-models').innerHTML=['lambda0','lambda10'].map((k,i)=>{const c=d.research_overview?.[k]||{}, g=c.endpoint||{}, f=g.h100_force_gate||{}, a=g.h100_start0_action_difference||{};return `<div class="card"><h3>${i?'λ=10 · 配对统计训练':'λ=0 · 对照训练'}</h3><p>本轮训练：${p[k+'_training_complete']?'2 / 2 轮完成':'待核实'}；完整评估：${p[k+'_posteval_complete']?'记录已完成，需查看科学判定':'未完成或结果尚未回传'}</p><div class="number">${pct(f.pooled_total_cd_nrmse)}</div><div class="label">验证集 · 第 100 步总阻力归一化误差（越低越好）</div><p class="small">动作间阻力差预测误差：${num(a.pairwise_delta_cd_mae,5)}；已评估 100 步片段：${f.segments??'待回传'}。</p><div>${g.status==='FULL40_VALIDATION_SURROGATE_READINESS_PASS'?'静态动作终点检验通过；不代表动态／窗口检验通过':g.status?'静态动作终点检验未通过':'等待验证记录回传'}</div><div class="small">证据：${esc(c.path)} · ${esc(c.updated_at)}</div></div>`}).join('');
+}
 function pct(x){return Number.isFinite(x)?(x*100).toFixed(2)+'%':'—'}
 function num(x,d=1){return Number.isFinite(x)?x.toFixed(d):'—'}
 function passText(value){return value===true?'PASS':value===false?'FAIL':'等待'}
@@ -374,7 +403,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  $('infer-speed').textContent=d.benchmark?.status==='FNO_REAL_CFD_INFERENCE_BENCHMARK_OK'?`旧数据多步 FNO、真实 CFD 输入：单步中位 ${num(d.benchmark.step_median_ms,2)} ms；连续 100 步 ${num(d.benchmark.rollout_100_step_seconds,2)} s。仅模型前向，不含 CFD 或控制通信。`:'FNO 推理耗时尚未测量。';
  $('cem').textContent=d.cem?'CEM 控制筛选已完成，结果待审计。':`CEM：等待 FNO 的 100 步总阻力误差降至 10% 以下。新增 CFD 平均求解进度 ${num(average,0)}%。`;
  $('ppo').textContent=d.ppo?'HydroGym PPO 有当前目标的新记录。':'当前总阻力目标的 HydroGym PPO 尚未启动。历史末柱目标的 PPO 曾完成 32 步真实 CFD 闭环，但目标差 +0.003855（更差），不能视为当前控制收益。';figure()}
-async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);render(await r.json())}catch(e){$('clock').textContent='连接失败：'+e.message}}
+async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();renderLead(d);render(d)}catch(e){$('clock').textContent='连接失败：'+e.message;$('lead-now').textContent='连接失败，当前页面数值仅是上次采样，不代表实时状态。'}}
 $('case').onchange=figure;$('horizon').onchange=figure;$('h50-horizon').onchange=()=>{if(latest)renderH50Figures(latest)};window.onresize=()=>{if(latest)render(latest)};refresh();setInterval(refresh,5000);
 </script></body></html>'''
 
@@ -384,6 +413,26 @@ def _read_json(path: Path, fallback):
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return fallback
+
+
+def _research_overview(root: Path):
+    """Read current experiment evidence only; absent worker output is unknown."""
+    result = {}
+    for candidate in ("lambda0", "lambda10"):
+        relative = (
+            f"artifacts/tandem_fno_paired_stats_{candidate}_20261004/"
+            "posteval_fc_p001/validation10/endpoint_gate.json"
+        )
+        path = root / relative
+        payload = _read_json(path, None)
+        updated = None
+        if isinstance(payload, dict):
+            try:
+                updated = datetime.fromtimestamp(path.stat().st_mtime, UTC).isoformat()
+            except OSError:
+                payload = None
+        result[candidate] = {"endpoint": payload, "path": relative, "updated_at": updated}
+    return result
 
 
 def _dual_node_watchdog(root: Path):
@@ -1619,6 +1668,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.root, data["full40_extension"]
             )
             data["free_ar_ablation"] = _free_ar_ablation(self.root)
+            data["research_overview"] = _research_overview(self.root)
             data["training_evaluation_watchdog"] = _read_json(
                 self.root / TRAINING_EVALUATION_WATCHDOG, None
             )
