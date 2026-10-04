@@ -50,3 +50,35 @@ endpoint gate; it is not the development-only dev30 manifest. Candidate-specific
 `data_lineage` keys other than `normalization`; no unrecorded source is silently
 accepted. Relative producer/evidence paths are resolved from `--repo`, matching
 the existing canonical runner. The command never walks the dataset tree.
+
+## Candidate launcher
+
+`scripts/run_candidate_full40_canonical_ppo.py` consumes this audit and calls
+the existing `train_full40_hydrogym_ppo_canonical.py`; the historical shell
+entry remains unchanged. The supported host entry is the project-built,
+content-pinned image launcher
+`scripts/run_candidate_full40_canonical_ppo_spark.sh`, which verifies the
+image ID, disables networking, applies container capability and PID limits,
+and places execution behind the existing 20-GiB GPU guard. The image contains
+pinned official PhysicsNeMo and HydroGym libraries; it is not described as an
+officially distributed HydroGym container. Direct-host
+`--execute` is rejected. With no `--execute` flag the Python layer only runs both CPU
+preflights and writes `CANDIDATE_CANONICAL_PPO_DRY_RUN_READY` or `...BLOCKED`.
+
+Execution additionally requires `--approved-preflight` whose complete nested
+readiness and command contract must exactly equal a fresh recomputation. It
+always initializes a new SB3 policy for the exact candidate. The candidate
+path asks the legacy trainer to save `vecnormalize.pkl` with
+`norm_obs=false,norm_reward=false`; this identity wrapper preserves the old PPO
+numerics while giving downstream real-CFD evaluation an explicit, hashed
+policy/environment pair. The final binding receipt hashes both artifacts and
+still states that real-CFD validation is incomplete.
+
+The wrapper fixes the existing contracts at H100, 69 observations,
+`|omega|<=0.75`, `|delta omega|<=0.1`, and unchanged `canonical_joint_v1`
+reward. Current candidates lack the two standalone canonical evidence gates,
+so their real dry-run remains BLOCKED and no PPO process is started.
+
+Focused tests are collected with `PYTHONPATH=src pytest`; the project runtime
+image does not itself bundle pytest. The reviewed CPU probe receipt is
+`artifacts/hydrogym/candidate_wrapper_lambda10_blocked_review_20261005.json`.

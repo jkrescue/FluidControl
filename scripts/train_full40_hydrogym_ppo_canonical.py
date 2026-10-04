@@ -625,7 +625,7 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
     from stable_baselines3 import PPO
     from stable_baselines3.common.callbacks import BaseCallback
     from stable_baselines3.common.monitor import Monitor
-    from stable_baselines3.common.vec_env import DummyVecEnv
+    from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
     from train_tandem_fno import build_model
 
     from fluid_control.full40_canonical_hydrogym import make_full40_canonical_env
@@ -701,12 +701,23 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
             )
         )
 
-    train_env = DummyVecEnv(
+    base_train_env = DummyVecEnv(
         [
             partial(make_case, "train", case, phase)
             for case, phase in zip(TRAIN_CASES, TRAIN_PHASES, strict=True)
         ]
     )
+    if args.vecnormalize_output is not None:
+        expected_vecnormalize = args.output / "vecnormalize.pkl"
+        if args.vecnormalize_output.resolve() != expected_vecnormalize.resolve():
+            raise ValueError("candidate VecNormalize output must be output/vecnormalize.pkl")
+        # Identity normalization preserves the existing canonical PPO numerical
+        # contract while creating an explicitly paired SB3 environment artifact.
+        train_env = VecNormalize(
+            base_train_env, training=True, norm_obs=False, norm_reward=False
+        )
+    else:
+        train_env = base_train_env
     args.output.mkdir(parents=True)
     checkpoint_root = args.output / "checkpoints"
     checkpoint_root.mkdir()
@@ -753,6 +764,8 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
             )
             write_atomic(args.output / "progress.json", {"iterations": iterations})
     finally:
+        if args.vecnormalize_output is not None:
+            train_env.save(args.vecnormalize_output)
         train_env.close()
 
     policies = {
@@ -791,6 +804,16 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
         "training_executed": True,
         "physicsnemo_checkpoint_epoch": epoch,
         "physicsnemo_checkpoint_sha256": readiness["checkpoint_sha256"],
+        "vecnormalize_sha256": (
+            sha256(args.vecnormalize_output)
+            if args.vecnormalize_output is not None
+            else None
+        ),
+        "vecnormalize_contract": (
+            "identity: norm_obs=false, norm_reward=false; preserves legacy PPO numerics"
+            if args.vecnormalize_output is not None
+            else "legacy entry: no VecNormalize artifact"
+        ),
         "iterations": iterations,
         "validation_policy": (
             "not opened in train-only smoke"
@@ -824,6 +847,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--checkpoint-interval", type=int, default=2048)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--gpu-memory-fraction", type=float, default=0.20)
+    parser.add_argument("--vecnormalize-output", type=Path)
     parser.add_argument("--seed", type=int, default=20261003)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--dry-run", action="store_true")
