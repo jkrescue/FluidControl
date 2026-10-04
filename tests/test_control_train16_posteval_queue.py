@@ -17,6 +17,7 @@ def test_queue_runs_main_and_marks_balanced_external_takeover() -> None:
     assert "audit_full40_dynamic6_fno.py" in source
     assert "diagnose_fno_force_window.py" in source
     assert "audit_dynamic_fno_development_gates.py" in source
+    assert "--candidate-kind dev30_free_ar_development" in source
 
 
 def test_queue_binds_snapshot_checkpoint_and_never_launches_ppo() -> None:

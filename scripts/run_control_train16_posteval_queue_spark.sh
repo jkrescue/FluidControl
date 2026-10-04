@@ -44,7 +44,7 @@ wait_for_main() {
 
 evaluate_candidate() {
   local label="$1" candidate="$2" expected_kind="$3"
-  local out="$candidate/posteval_complete"
+  local out="$candidate/posteval_complete_v2"
   [[ ! -e "$out" ]] || { echo "$label post-evaluation output already exists" >&2; exit 2; }
   [[ -d "$candidate/source_snapshot" && -d "$candidate/best" ]] || {
     echo "$label immutable source/checkpoint absent" >&2; exit 3;
@@ -98,7 +98,7 @@ PY
     2>&1 | tee "$out/validation10/evaluate.log"
   python3 "$source/scripts/audit_dev30_validation_diagnostic.py" \
     --report "$out/validation10/evaluation.json" --segments "$out/validation10/segments.json" \
-    --data "$dev30" --checkpoint-dir "$checkpoint" --candidate-kind control_train16_development \
+    --data "$dev30" --checkpoint-dir "$checkpoint" --candidate-kind dev30_free_ar_development \
     --output "$out/validation10/diagnostic.json"
 
   # The launch snapshot predates the scoped CLI-key repair in this audit only.
