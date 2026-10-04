@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
+import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -281,7 +282,8 @@ def test_openfoam_pair_containers_start_once_and_exec_each_segment(
     ):
         launched_1 = session.launch(1)
         launched_2 = session.launch(2)
-        for _, handle, _ in launched_1 + launched_2:
+        for _, handle, _, started_ns in launched_1 + launched_2:
+            assert isinstance(started_ns, int) and started_ns > 0
             handle.close()
     docker_runs = [
         call.args[0] for call in run.call_args_list if call.args[0][:2] == ["docker", "run"]
@@ -314,3 +316,246 @@ def test_final_window_requires_every_exact_solver_time(monkeypatch) -> None:
     rear[2, 0] += 0.001
     with pytest.raises(ValueError, match="force grid differs"):
         MODULE.validate_final_force_grid(front, rear, 10.0)
+
+
+def test_wall_timing_summary_is_observational_and_reports_deadline_misses() -> None:
+    rows = []
+    for total in (2.0, 3.0, 4.0):
+        rows.append(
+            {
+                "wall_timing": {
+                    "policy_inference_wall_seconds": 0.01,
+                    "action_configuration_wall_seconds": 0.02,
+                    "parallel_cfd_wall_seconds": total - 0.05,
+                    "observation_extraction_wall_seconds": 0.01,
+                    "progress_record_wall_seconds": 0.01,
+                    "control_step_wall_seconds": total,
+                    "wall_deadline_seconds": 2.5,
+                    "deadline_missed": total > 2.5,
+                }
+            }
+        )
+    summary = MODULE.timing_summary(rows)
+    assert summary["control_step_wall_seconds"]["median"] == 3.0
+    assert summary["control_step_wall_seconds"]["p95"] == pytest.approx(3.9)
+    assert summary["deadline"] == {
+        "wall_deadline_seconds": 2.5,
+        "missed_steps": 2,
+        "deadline_is_wall_time_not_control_interval": True,
+    }
+
+
+def test_wall_timing_rejects_nonfinite_measurements() -> None:
+    row = {
+        "wall_timing": {
+            "policy_inference_wall_seconds": np.nan,
+            "action_configuration_wall_seconds": 0.1,
+            "parallel_cfd_wall_seconds": 1.0,
+            "observation_extraction_wall_seconds": 0.1,
+            "progress_record_wall_seconds": 0.1,
+            "control_step_wall_seconds": 1.3,
+            "wall_deadline_seconds": None,
+            "deadline_missed": False,
+        }
+    }
+    with pytest.raises(ValueError, match="invalid wall timing"):
+        MODULE.timing_summary([row])
+
+
+def test_pair_wait_collects_both_processes_and_preserves_launch_order() -> None:
+    first, second = MagicMock(), MagicMock()
+
+    def wait_first():
+        time.sleep(0.02)
+        return 3
+
+    def wait_second():
+        time.sleep(0.005)
+        return 4
+
+    first.wait.side_effect = wait_first
+    second.wait.side_effect = wait_second
+    started = time.perf_counter_ns()
+    result = MODULE.wait_solver_processes(
+        [(first, None, Path("feedback.log"), started),
+         (second, None, Path("zero.log"), started)]
+    )
+    assert [item[0] for item in result] == [3, 4]
+    assert all(item[1] > 0.0 for item in result)
+    first.wait.assert_called_once_with()
+    second.wait.assert_called_once_with()
+
+
+def test_final_progress_rewrites_last_row_with_complete_timing(tmp_path: Path) -> None:
+    output = tmp_path / "output"
+    output.mkdir()
+    row = {
+        "wall_timing": {
+            "timing_record_status": "PENDING_PROGRESS_WRITE",
+            "progress_record_wall_seconds": None,
+            "control_step_wall_seconds": None,
+        }
+    }
+    with pytest.raises(ValueError, match="incomplete wall timing"):
+        MODULE.write_final_progress(output, {"policy_sha256": "a" * 64}, [row])
+    row["wall_timing"].update(
+        timing_record_status="COMPLETE",
+        progress_record_wall_seconds=0.01,
+        control_step_wall_seconds=2.0,
+    )
+    MODULE.write_final_progress(output, {"policy_sha256": "a" * 64}, [row])
+    stored = json.loads((output / "progress.json").read_text(encoding="utf-8"))
+    assert stored["timing_rows_complete"] is True
+    assert stored["rows"][-1]["wall_timing"]["timing_record_status"] == "COMPLETE"
+    assert stored["rows"][-1]["wall_timing"]["progress_record_wall_seconds"] == 0.01
+
+
+def test_instrumented_mock_loop_preserves_actions_observations_and_metrics(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.setattr(MODULE, "CASES", tmp_path / "cases")
+    names = ("canonical_ppo_feedback_mock", "canonical_ppo_feedback_mock_zero")
+    configured = []
+    policy_inputs = []
+
+    def stage(name, source_case, start, steps, role):
+        del source_case, steps, role
+        case = MODULE.CASES / name
+        initial = case / f"{start:g}"
+        initial.mkdir(parents=True)
+        for field in MODULE.STATE_FIELDS:
+            (initial / field).write_text(f"same-{field}\n", encoding="utf-8")
+        return case
+
+    def configure(case, start, end, before, after):
+        configured.append((case.name, start, end, before, after))
+        next_time = case / f"{end:g}"
+        next_time.mkdir()
+        (next_time / "U").write_text("next-U\n", encoding="utf-8")
+
+    class FakeInference:
+        def __init__(self, policy, policy_sha):
+            del policy, policy_sha
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def request(self, observation):
+            assert observation.shape == (69,)
+            policy_inputs.append(observation.copy())
+            return 0.75, '{"requested_omega": 0.75}'
+
+    class FakeSolvers:
+        def __init__(self, pair_names):
+            assert pair_names == names
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def launch(self, step):
+            launched = []
+            for name in names:
+                process = MagicMock()
+                process.wait.return_value = 0
+                launched.append(
+                    (
+                        process,
+                        MagicMock(),
+                        tmp_path / f"{name}-{step}.log",
+                        time.perf_counter_ns(),
+                    )
+                )
+            return launched
+
+    observations = []
+    for omega, force in (
+        (0.0, [1.0, 2.0, 3.0, 4.0]),
+        (0.1, [1.1, 2.1, 3.1, 4.1]),
+        (0.0, [1.0, 2.0, 3.0, 4.0]),
+        (0.2, [1.2, 2.2, 3.2, 4.2]),
+        (0.0, [1.0, 2.0, 3.0, 4.0]),
+    ):
+        value = np.zeros(69, dtype=np.float32)
+        value[64:68] = force
+        value[68] = omega
+        observations.append((value, {"mock": True}))
+    feedback_metrics = {"total_cd_mean": 2.0}
+    zero_metrics = {"total_cd_mean": 2.2}
+    comparison = {"canonical_physical_joint_check": True}
+    declaration = {
+        "pair": {"feedback": names[0], "zero": names[1]},
+        "source_restart_case": "source",
+        "source_restart_time": 0.0,
+        "steps": 2,
+    }
+    with (
+        patch.object(MODULE, "stage_case", side_effect=stage),
+        patch.object(MODULE, "configure_interval", side_effect=configure),
+        patch.object(MODULE, "PolicyInferenceSession", FakeInference),
+        patch.object(MODULE, "OpenFOAMPairSession", FakeSolvers),
+        patch.object(MODULE, "total_drag_observation_at", side_effect=observations),
+        patch.object(MODULE, "available_memory_gib", return_value=100.0),
+        patch.object(MODULE, "check_segment", return_value={"clean": True}),
+        patch.object(MODULE, "read_force_window", return_value=np.zeros((2, 3))),
+        patch.object(MODULE, "validate_final_force_grid"),
+        patch.object(
+            MODULE, "force_metrics", side_effect=(feedback_metrics, zero_metrics)
+        ),
+        patch.object(MODULE, "compare_metrics", return_value=comparison),
+    ):
+        result = MODULE.run_feedback(
+            declaration,
+            policy=tmp_path / "policy.zip",
+            lineage={"policy_sha256": "a" * 64},
+            output=tmp_path / "output",
+            wall_deadline_seconds=100.0,
+        )
+
+    assert [row["applied_omega"] for row in result["feedback_evidence_chain"]] == [
+        0.1,
+        0.2,
+    ]
+    np.testing.assert_array_equal(policy_inputs[0], observations[0][0])
+    np.testing.assert_array_equal(policy_inputs[1], observations[1][0])
+    assert [row["requested_omega"] for row in result["feedback_evidence_chain"]] == [
+        0.75,
+        0.75,
+    ]
+    assert [
+        row["input_observation_sha256"] for row in result["feedback_evidence_chain"]
+    ] == [MODULE.array_sha256(observations[0][0]), MODULE.array_sha256(observations[1][0])]
+    assert [
+        row["output_observation_sha256"] for row in result["feedback_evidence_chain"]
+    ] == [MODULE.array_sha256(observations[1][0]), MODULE.array_sha256(observations[3][0])]
+    assert configured == [
+        (names[0], 0.0, 0.1, 0.0, 0.1),
+        (names[1], 0.0, 0.1, 0.0, 0.0),
+        (names[0], 0.1, 0.2, 0.1, 0.2),
+        (names[1], 0.1, 0.2, 0.0, 0.0),
+    ]
+    assert result["metrics"] == {"feedback": feedback_metrics, "zero": zero_metrics}
+    assert result["canonical_joint_gate_pass"] is True
+    for row in result["feedback_evidence_chain"]:
+        assert row["wall_timing"]["timing_record_status"] == "COMPLETE"
+        assert row["wall_timing"]["deadline_missed"] is False
+        for key, value in row["wall_timing"].items():
+            if (
+                key.endswith("_wall_seconds")
+                and value is not None
+                and isinstance(value, int | float)
+            ):
+                assert np.isfinite(value) and value >= 0.0
+    final_progress = json.loads(
+        (tmp_path / "output/progress.json").read_text(encoding="utf-8")
+    )
+    assert final_progress["timing_rows_complete"] is True
+    assert all(
+        row["wall_timing"]["timing_record_status"] == "COMPLETE"
+        for row in final_progress["rows"]
+    )

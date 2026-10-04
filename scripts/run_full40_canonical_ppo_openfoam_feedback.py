@@ -9,6 +9,7 @@ reads the frozen-test split.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import fcntl
 import hashlib
 import json
@@ -21,6 +22,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -90,6 +92,77 @@ def sha256(path: Path) -> str:
 def array_sha256(values: np.ndarray) -> str:
     array = np.asarray(values, dtype="<f4")
     return hashlib.sha256(array.tobytes(order="C")).hexdigest()
+
+
+def seconds(begin_ns: int, end_ns: int) -> float:
+    return (end_ns - begin_ns) / 1e9
+
+
+def timing_summary(rows: list[dict]) -> dict:
+    """Summarize observed wall durations without treating CFD time as wall time."""
+    names = (
+        "policy_inference_wall_seconds",
+        "action_configuration_wall_seconds",
+        "parallel_cfd_wall_seconds",
+        "observation_extraction_wall_seconds",
+        "progress_record_wall_seconds",
+        "control_step_wall_seconds",
+    )
+    result = {}
+    for name in names:
+        values = np.asarray([row["wall_timing"][name] for row in rows], dtype=np.float64)
+        if values.shape != (len(rows),) or not np.isfinite(values).all():
+            raise ValueError(f"invalid wall timing samples: {name}")
+        result[name] = {
+            "samples": len(values),
+            "mean": float(np.mean(values)),
+            "median": float(np.median(values)),
+            "p95": float(np.quantile(values, 0.95)),
+            "maximum": float(np.max(values)),
+        }
+    misses = sum(bool(row["wall_timing"]["deadline_missed"]) for row in rows)
+    result["deadline"] = {
+        "wall_deadline_seconds": rows[0]["wall_timing"]["wall_deadline_seconds"],
+        "missed_steps": misses,
+        "deadline_is_wall_time_not_control_interval": True,
+    }
+    return result
+
+
+def wait_solver_processes(launched: list[tuple]) -> list[tuple[int, float]]:
+    """Collect both already-launched solvers concurrently, preserving pair order."""
+    def wait_one(item):
+        process, _, _, started_ns = item
+        code = process.wait()
+        return code, seconds(started_ns, time.perf_counter_ns())
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        return list(executor.map(wait_one, launched))
+
+
+def write_final_progress(output: Path, lineage: dict, rows: list[dict]) -> None:
+    """Publish a final progress snapshot only after every timing row is complete."""
+    if not rows or any(
+        row.get("wall_timing", {}).get("timing_record_status") != "COMPLETE"
+        or row["wall_timing"].get("progress_record_wall_seconds") is None
+        or row["wall_timing"].get("control_step_wall_seconds") is None
+        for row in rows
+    ):
+        raise ValueError("cannot finalize incomplete wall timing rows")
+    write_atomic(
+        output / "progress.json",
+        {
+            "status": "CANONICAL_REAL_OPENFOAM_FEEDBACK_RUNNING",
+            "completed_steps": len(rows),
+            "lineage": lineage,
+            "runtime_reuse": {
+                "policy_container_starts": 1,
+                "openfoam_container_starts": 2,
+            },
+            "timing_rows_complete": True,
+            "rows": rows,
+        },
+    )
 
 
 def load_json(path: Path) -> dict:
@@ -654,7 +727,7 @@ class OpenFOAMPairSession:
             raise
         return self
 
-    def launch(self, step: int) -> list[tuple[subprocess.Popen, object, Path]]:
+    def launch(self, step: int) -> list[tuple[subprocess.Popen, object, Path, int]]:
         launched = []
         for name, container in zip(self.names, self.containers, strict=True):
             case = CASES / name
@@ -671,17 +744,18 @@ class OpenFOAMPairSession:
                 f"/case/cases/{name}",
             ]
             try:
+                started_ns = time.perf_counter_ns()
                 process = subprocess.Popen(
                     command, cwd=PROJECT, stdout=handle, stderr=subprocess.STDOUT
                 )
             except Exception:
                 handle.close()
-                for earlier, earlier_handle, _ in launched:
+                for earlier, earlier_handle, _, _ in launched:
                     earlier.terminate()
                     earlier.wait(timeout=10)
                     earlier_handle.close()
                 raise
-            launched.append((process, handle, log))
+            launched.append((process, handle, log, started_ns))
         return launched
 
     def close(self) -> None:
@@ -731,7 +805,13 @@ def run_feedback(
     policy: Path,
     lineage: dict,
     output: Path,
+    wall_deadline_seconds: float | None = None,
 ) -> dict:
+    if wall_deadline_seconds is not None and (
+        not math.isfinite(wall_deadline_seconds) or wall_deadline_seconds <= 0.0
+    ):
+        raise ValueError("optional wall deadline must be positive and finite")
+    run_started_ns = time.perf_counter_ns()
     pair = declaration["pair"]
     names = (pair["feedback"], pair["zero"])
     start = float(declaration["source_restart_time"])
@@ -756,6 +836,8 @@ def run_feedback(
         policy, lineage["policy_sha256"]
     ) as inference, OpenFOAMPairSession(names) as solvers:
         for step in range(1, steps + 1):
+            step_started_ns = time.perf_counter_ns()
+            step_started_utc = datetime.now(UTC).isoformat()
             if available_memory_gib() < SPARK_MEMORY_FLOOR_GIB:
                 raise RuntimeError("Spark MemAvailable fell below 40 GiB")
             interval_start = round(start + CONTROL_INTERVAL * (step - 1), 10)
@@ -766,7 +848,10 @@ def run_feedback(
             ):
                 raise ValueError(f"paired restart mismatch before step {step}")
             input_sha = array_sha256(observation)
+            policy_started_ns = time.perf_counter_ns()
             requested, marker = inference.request(observation)
+            policy_ended_ns = time.perf_counter_ns()
+            configuration_started_ns = policy_ended_ns
             action = apply_action_rate_limit(requested, previous)
             applied = float(action["applied_omega"])
             configure_interval(cases[0], interval_start, interval_end, previous, applied)
@@ -775,26 +860,32 @@ def run_feedback(
                 name: sha256(case / f"{interval_start:g}" / "U")
                 for name, case in zip(names, cases, strict=True)
             }
+            configuration_ended_ns = time.perf_counter_ns()
+            cfd_started_ns = configuration_ended_ns
             launched = solvers.launch(step)
             try:
-                codes = [process.wait() for process, _, _ in launched]
+                completed = wait_solver_processes(launched)
             finally:
-                for _, handle, _ in launched:
+                for _, handle, _, _ in launched:
                     handle.close()
+            codes = [item[0] for item in completed]
             if any(codes):
                 raise RuntimeError(f"paired OpenFOAM segment failed: {codes}")
             health = {
                 name: check_segment(case, log, interval_end)
-                for name, case, (_, _, log) in zip(
+                for name, case, (_, _, log, _) in zip(
                     names, cases, launched, strict=True
                 )
             }
+            cfd_ended_ns = time.perf_counter_ns()
+            observation_started_ns = cfd_ended_ns
             observation, feedback_sources = total_drag_observation_at(
                 cases[0], interval_end, applied
             )
             zero_observation, zero_sources = total_drag_observation_at(
                 cases[1], interval_end, 0.0
             )
+            observation_ended_ns = time.perf_counter_ns()
             row = {
                 "step": step,
                 "start_time": interval_start,
@@ -825,9 +916,33 @@ def run_feedback(
                     "zero": zero_sources,
                 },
                 "solver_health": health,
+                "wall_timing": {
+                    "timing_record_status": "PENDING_PROGRESS_WRITE",
+                    "step_started_utc": step_started_utc,
+                    "policy_inference_wall_seconds": seconds(
+                        policy_started_ns, policy_ended_ns
+                    ),
+                    "action_configuration_wall_seconds": seconds(
+                        configuration_started_ns, configuration_ended_ns
+                    ),
+                    "parallel_cfd_wall_seconds": seconds(cfd_started_ns, cfd_ended_ns),
+                    "per_branch_cfd_wall_seconds": {
+                        name: elapsed
+                        for name, (_, elapsed) in zip(names, completed, strict=True)
+                    },
+                    "observation_extraction_wall_seconds": seconds(
+                        observation_started_ns, observation_ended_ns
+                    ),
+                    "progress_record_wall_seconds": None,
+                    "control_step_wall_seconds": None,
+                    "wall_deadline_seconds": wall_deadline_seconds,
+                    "deadline_missed": False,
+                    "control_interval_D_over_U": CONTROL_INTERVAL,
+                },
             }
             rows.append(row)
             previous = applied
+            record_started_ns = time.perf_counter_ns()
             write_atomic(
                 output / "progress.json",
                 {
@@ -841,6 +956,23 @@ def run_feedback(
                     "rows": rows,
                 },
             )
+            step_ended_ns = time.perf_counter_ns()
+            row["wall_timing"]["progress_record_wall_seconds"] = seconds(
+                record_started_ns, step_ended_ns
+            )
+            row["wall_timing"]["control_step_wall_seconds"] = seconds(
+                step_started_ns, step_ended_ns
+            )
+            row["wall_timing"]["deadline_missed"] = bool(
+                wall_deadline_seconds is not None
+                and row["wall_timing"]["control_step_wall_seconds"]
+                > wall_deadline_seconds
+            )
+            row["wall_timing"]["timing_record_status"] = "COMPLETE"
+    # The live progress file briefly contains the current row as PENDING while
+    # its own atomic write is measured. Publish all completed rows once more;
+    # this finalization write is intentionally outside per-step timing.
+    write_final_progress(output, lineage, rows)
     end = start + steps * CONTROL_INTERVAL
     begin = end - ANALYSIS_DURATION
     metrics = {}
@@ -869,6 +1001,13 @@ def run_feedback(
             "openfoam_container_starts": 2,
             "openfoam_exec_segments": 2 * steps,
         },
+        "wall_timing": {
+            "run_wall_seconds": seconds(run_started_ns, time.perf_counter_ns()),
+            "summary": timing_summary(rows),
+            "scope": (
+                "observed execution latency; 0.1 D/U is CFD time, not a wall-time deadline"
+            ),
+        },
         "metrics": metrics,
         "canonical_comparison": comparison,
         "canonical_joint_gate_pass": comparison["canonical_physical_joint_check"],
@@ -896,10 +1035,20 @@ def main() -> None:
     parser.add_argument("--predeclaration", type=Path, required=True)
     parser.add_argument("--predeclaration-sha256", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--wall-deadline-seconds",
+        type=float,
+        help="optional observational wall deadline; unset by default",
+    )
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--dry-run", action="store_true")
     mode.add_argument("--execute", action="store_true")
     args = parser.parse_args()
+    if args.wall_deadline_seconds is not None and (
+        not math.isfinite(args.wall_deadline_seconds)
+        or args.wall_deadline_seconds <= 0.0
+    ):
+        parser.error("--wall-deadline-seconds must be positive and finite")
     output = args.output.resolve()
     if not output.is_relative_to(PROJECT / "artifacts/tandem_cylinders"):
         parser.error("output must stay under artifacts/tandem_cylinders")
@@ -938,6 +1087,7 @@ def main() -> None:
             policy=args.policy.resolve(),
             lineage=preflight["lineage"],
             output=output,
+            wall_deadline_seconds=args.wall_deadline_seconds,
         )
     print(json.dumps({"status": result["status"]}, indent=2))
 
