@@ -416,6 +416,7 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
             )
             state = unit("active")
             state["main_pid"] = 31415
+            state["training_process_pids"] = [31416]
             result = MODULE.build_sample(
                 repo,
                 None,
@@ -437,6 +438,34 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
             "fc_p003_interleaved_paired_supervision_training",
         )
         self.assertEqual(result["scientific_next_stage"]["fc_p003"]["main_pid"], 31415)
+
+    def test_fc_p003_probe_running_is_not_full_training(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(
+                directory, receipts=True, paired=True, paired_posteval=True
+            )
+            state = unit("active")
+            state["main_pid"] = 2718
+            state["training_process_pids"] = [2719]
+            result = MODULE.build_sample(
+                repo,
+                None,
+                {
+                    MODULE.MAIN_AUTHORITY_UNIT: unit(),
+                    MODULE.WORKER_AUTHORITY_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA10_POSTEVAL_UNIT: unit(),
+                    MODULE.FC_P003_PROBE_UNIT: state,
+                },
+                RESOURCES,
+                datetime(2026, 10, 5, 0, 1, tzinfo=UTC),
+            )
+        stage = result["scientific_next_stage"]
+        self.assertEqual(stage["status"], "FC_P003_RESOURCE_PROBE_RUNNING")
+        self.assertEqual(stage["active_work"], "fc_p003_bounded_resource_probe")
+        self.assertEqual(stage["fc_p003"]["authority_unit"], MODULE.FC_P003_PROBE_UNIT)
+        self.assertEqual(stage["fc_p003"]["main_pid"], 2718)
+        self.assertFalse(stage["parallel_cpu_work"]["training_authorized"])
 
     def test_latest_active_lambda0_generation_becomes_authority(self) -> None:
         units = {

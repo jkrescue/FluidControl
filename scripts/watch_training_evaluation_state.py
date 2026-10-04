@@ -48,12 +48,18 @@ PAIRED_LAMBDA10_TRANSFER_STATUS = (
 PAIRED_POSTEVAL_APPROVAL = Path("docs/FC-P001_APPROVAL.md")
 FC_P003_APPROVAL = Path("docs/FC-P003_APPROVAL.md")
 FC_P003_UNIT = "fluid-control-fcp003-interleaved-lambda10-20261005.service"
+FC_P003_PROBE_UNIT = "fluid-control-fcp003-interleaved-probe-20261005.service"
+FC_P003_PROBE_PREFIX = "fluid-control-fcp003-interleaved-probe-"
 FC_P003_ROOT = Path("artifacts/tandem_fno_paired_stats_interleaved_lambda10_20261005")
+FC_P003_PROBE_ROOT = Path(
+    "artifacts/tandem_fno_paired_stats_interleaved_lambda10_probe_20261005"
+)
 FC_P003_LAUNCH_RECEIPT = FC_P003_ROOT / "launch_receipt.json"
 FC_P003_COMPLETION_RECEIPT = FC_P003_ROOT / "completion_receipt.json"
 FC_P003_DEVELOPMENT_GATE = FC_P003_ROOT / "posteval_fc_p003/development_gate.json"
 FC_P003_LAUNCH_STATUS = "FC_P003_INTERLEAVED_LAUNCH_STAGED"
 FC_P003_COMPLETION_STATUS = "FC_P003_INTERLEAVED_TRAINING_COMPLETE"
+FC_P003_PROBE_STATUS = "FC_P003_INTERLEAVED_PROBE_PASS"
 PAIRED_POSTEVAL_STATUS = "PAIRED_STATS_FC_P001_POSTEVAL_COMPLETE"
 PAIRED_LAMBDA0_POSTEVAL_UNIT = (
     "fluid-control-paired-lambda0-posteval-fcp001-v2-20261004.service"
@@ -265,17 +271,53 @@ def unit_state(unit: str) -> dict:
         ["journalctl", "--user", "-u", unit, "--no-pager", "-n", "40"]
     )
     error = most_specific_error(journal.stdout.splitlines())
+    main_pid = int(values.get("MainPID") or 0)
+    training_process_pids = descendant_processes_matching(
+        main_pid, "train_tandem_fno_paired_stats.py"
+    )
     return {
         "unit": unit,
         "active_state": values.get("ActiveState", "unknown"),
         "sub_state": values.get("SubState", "unknown"),
         "result": values.get("Result", "unknown"),
         "exec_main_status": values.get("ExecMainStatus", "unknown"),
-        "main_pid": int(values.get("MainPID") or 0),
+        "main_pid": main_pid,
+        "training_process_pids": training_process_pids,
         "started_at": values.get("ExecMainStartTimestamp") or None,
         "exited_at": values.get("ExecMainExitTimestamp") or None,
         "last_error_line": error,
     }
+
+
+def descendant_processes_matching(root_pid: int, needle: str) -> list[int]:
+    """Return descendants whose command line proves the actual training payload."""
+    if root_pid <= 0:
+        return []
+    children: dict[int, list[int]] = {}
+    commands: dict[int, str] = {}
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            stat = (entry / "stat").read_text(encoding="utf-8")
+            close = stat.rfind(")")
+            parent = int(stat[close + 2 :].split()[1])
+            pid = int(entry.name)
+            children.setdefault(parent, []).append(pid)
+            commands[pid] = (entry / "cmdline").read_bytes().replace(b"\0", b" ").decode(
+                errors="replace"
+            )
+        except (OSError, ValueError, IndexError):
+            continue
+    descendants = []
+    queue = [root_pid]
+    while queue:
+        parent = queue.pop()
+        for pid in children.get(parent, []):
+            queue.append(pid)
+            if needle in commands.get(pid, ""):
+                descendants.append(pid)
+    return sorted(descendants)
 
 
 def worker_unit_state(unit: str, *, user_scope: bool = True) -> dict:
@@ -345,6 +387,7 @@ def discover_related_units() -> list[str]:
             columns[0].startswith("fluid-control-train16-")
             or columns[0].startswith(PAIRED_LAMBDA0_POSTEVAL_PREFIX)
             or columns[0] == FC_P003_UNIT
+            or columns[0].startswith(FC_P003_PROBE_PREFIX)
         ):
             names.append(columns[0])
     return sorted(
@@ -355,6 +398,7 @@ def discover_related_units() -> list[str]:
                 PAIRED_LAMBDA0_UNIT,
                 PAIRED_LAMBDA0_POSTEVAL_UNIT,
                 FC_P003_UNIT,
+                FC_P003_PROBE_UNIT,
                 *SUPERSEDED_MAIN_UNITS,
                 *names,
             )
@@ -543,6 +587,18 @@ def build_sample(
     )
     fc_p003_approved = (repo / FC_P003_APPROVAL).is_file()
     fc_p003_unit = units.get(FC_P003_UNIT, {})
+    fc_p003_probe_authority = select_versioned_authority(
+        units, FC_P003_PROBE_PREFIX, FC_P003_PROBE_UNIT
+    )
+    fc_p003_probe_unit = units.get(fc_p003_probe_authority, {})
+    fc_p003_running = (
+        fc_p003_unit.get("active_state") == "active"
+        and bool(fc_p003_unit.get("training_process_pids"))
+    )
+    fc_p003_probe_running = (
+        fc_p003_probe_unit.get("active_state") == "active"
+        and bool(fc_p003_probe_unit.get("training_process_pids"))
+    )
     fc_p003_launch_present = (repo / FC_P003_LAUNCH_RECEIPT).is_file()
     fc_p003_completion_present = (repo / FC_P003_COMPLETION_RECEIPT).is_file()
     fc_p003_launch_verified, fc_p003_launch_issues = verify_receipt(
@@ -551,6 +607,9 @@ def build_sample(
     fc_p003_completion_verified, fc_p003_completion_issues = verify_receipt(
         repo / FC_P003_COMPLETION_RECEIPT, FC_P003_COMPLETION_STATUS
     )
+    fc_p003_probe_verified, fc_p003_probe_issues = verify_receipt(
+        repo / FC_P003_PROBE_ROOT / "completion_receipt.json", FC_P003_PROBE_STATUS
+    )
     fc_p003_gate_status = read_json(
         repo / FC_P003_DEVELOPMENT_GATE, {}
     ).get("status")
@@ -558,7 +617,7 @@ def build_sample(
         fc_p003_state = "SCIENTIFIC_FAIL_NEEDS_LEAD_NEXT_HYPOTHESIS"
     elif fc_p003_gate_status:
         fc_p003_state = "SCIENTIFIC_RESULT_REQUIRES_AGENT_REVIEW"
-    elif fc_p003_unit.get("active_state") == "active":
+    elif fc_p003_running:
         fc_p003_state = "RUNNING"
     elif fc_p003_unit.get("active_state") == "failed":
         fc_p003_state = "OPERATIONAL_FAILURE_NEEDS_AGENT_ANALYSIS"
@@ -570,6 +629,12 @@ def build_sample(
         fc_p003_state = "OPERATIONAL_FAILURE_NEEDS_AGENT_ANALYSIS"
     elif fc_p003_launch_verified:
         fc_p003_state = "PREFLIGHT_COMPLETE_WAITING_RUN"
+    elif fc_p003_probe_running:
+        fc_p003_state = "RESOURCE_PROBE_RUNNING"
+    elif fc_p003_probe_verified:
+        fc_p003_state = "RESOURCE_PROBE_PASS_FULL_RUN_PENDING"
+    elif fc_p003_probe_unit.get("active_state") == "failed":
+        fc_p003_state = "OPERATIONAL_FAILURE_NEEDS_AGENT_ANALYSIS"
     elif fc_p003_approved:
         fc_p003_state = "PREFLIGHT_IMPLEMENTATION"
     else:
@@ -594,6 +659,7 @@ def build_sample(
         lambda0_posteval_authority,
         PAIRED_LAMBDA10_POSTEVAL_UNIT,
         FC_P003_UNIT,
+        fc_p003_probe_authority,
     )
     active_units = sorted(
         name
@@ -812,6 +878,8 @@ def build_sample(
                 (
                     "fc_p003_interleaved_paired_supervision_training"
                     if fc_p003_state == "RUNNING"
+                    else "fc_p003_bounded_resource_probe"
+                    if fc_p003_state == "RESOURCE_PROBE_RUNNING"
                     else "fc_p003_unchanged_formal_posteval"
                     if fc_p003_state == "TRAINING_COMPLETE_POSTEVAL_PENDING"
                     else "fc_p003_scientific_fail_awaiting_lead_next_hypothesis"
@@ -842,8 +910,17 @@ def build_sample(
                 "state": (
                     fc_p003_state
                 ),
-                "authority_unit": FC_P003_UNIT,
-                "main_pid": fc_p003_unit.get("main_pid", 0),
+                "authority_unit": (
+                    FC_P003_UNIT
+                    if fc_p003_running
+                    else fc_p003_probe_authority
+                    if fc_p003_probe_running
+                    else FC_P003_UNIT
+                ),
+                "main_pid": (
+                    fc_p003_unit.get("main_pid", 0)
+                    or fc_p003_probe_unit.get("main_pid", 0)
+                ),
                 "output_root": str(FC_P003_ROOT),
                 "launch_receipt": str(FC_P003_LAUNCH_RECEIPT),
                 "launch_receipt_present": fc_p003_launch_present,
@@ -853,10 +930,21 @@ def build_sample(
                 "completion_receipt_present": fc_p003_completion_present,
                 "completion_receipt_verified": fc_p003_completion_verified,
                 "completion_receipt_issues": fc_p003_completion_issues,
+                "probe_unit": fc_p003_probe_authority,
+                "probe_receipt": str(FC_P003_PROBE_ROOT / "completion_receipt.json"),
+                "probe_receipt_verified": fc_p003_probe_verified,
+                "probe_receipt_issues": fc_p003_probe_issues,
                 "development_gate": str(FC_P003_DEVELOPMENT_GATE),
                 "development_gate_status": fc_p003_gate_status,
                 "single_factor": "paired_update_schedule_frontloaded_to_interleaved",
                 "automatic_recovery_eligible": False,
+            },
+            "parallel_cpu_work": {
+                "owner": "Physics/Data",
+                "status": "DYNAMIC8_EXISTING_RESTART_PAIR_QC",
+                "scope": "same-restart train-only dynamic8 action/zero pairing audit",
+                "training_authorized": False,
+                "reference": "docs/FC-P003_DYNAMIC8_PAIR_CANDIDATE.md",
             },
             "planned_spark_root": str(PAIRED_DATAPIPE_ROOT),
             "planned_worker_unit": PAIRED_DATAPIPE_WORKER_UNIT,
