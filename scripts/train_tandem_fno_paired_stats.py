@@ -501,8 +501,6 @@ def main(cfg: DictConfig) -> None:
                     "teacher_forcing_ratio": current_teacher_forcing,
                     "paired_stat_loss_weight": paired_weight,
                     "paired_batches": paired_batches,
-                    "paired_batch_schedule": paired_schedule,
-                    "paired_batch_indices": list(paired_indices),
                 }
             )
         if paired_batches != paired_batches_per_epoch:
