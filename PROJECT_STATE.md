@@ -2,7 +2,7 @@
 
 最后重建：2026-10-04 13:40 UTC（北京时间 21:40）；以实际文件/日志为准。本文是科学状态，不是实时资源看板。
 
-当前科学状态（2026-10-05）：FC-P003C及其两项128/64 train-only校准均已完成并被拒绝；代理PPO仍未授权。当前工作是固定C特征的CPU-only仿射受力读出可表达性诊断实现，不训练或保存模型、不读取validation/frozen，也不改变任何准入门槛。协议与解释边界见`docs/FC_P003C_CALIBRATION_AND_READOUT_DIAGNOSTIC_20261005.md`。
+当前科学状态（2026-10-05）：FC-P003C及其两项128/64 train-only校准均已完成并被拒绝；代理PPO仍未授权。当前工作是固定C特征的仿射受力读出可表达性诊断：实现和CPU测试已获批准，特征提取仍须单独批准GPU pass，之后才进行CPU拟合。该诊断不训练或保存模型、不读取validation/frozen，也不改变任何准入门槛。协议与解释边界见`docs/FC_P003C_CALIBRATION_AND_READOUT_DIAGNOSTIC_20261005.md`。
 
 ## 1. 不变的目标
 
