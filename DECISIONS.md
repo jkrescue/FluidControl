@@ -46,7 +46,9 @@ Lead以`docs/FC-P003C_APPROVAL.md`批准单因素下一步的工程实现和CPU�
 
 补充的CPU-only动作端点覆盖审计（receipt SHA `eb19fb2aff2628e2383707b23376201994dd17f29b8651c156d3310d1d1e4074`）在train8的1600个transition与dynamic6的1200个transition之间找到1004个精确局部动作特征匹配，归一化最近距离最大为0.07511075。该审计只读`omega/time`，不支持“明显的局部转速幅值/步长覆盖缺口”解释，但未测state/phase/history/force联合覆盖，不能证明泛化，也不得把ω距离单独当作模型失败的因果。审计产生时FC-P003C仍在epoch2训练，该条本身不触发失败后实验。
 
-时域索引另须明确：train8 action HDF每条201帧，zero HDF每条801帧；paired DataPipe只额外监督索引0–100中的targets 1–100，而常规train8 H100/stride2的408个训练窗口仍覆盖到target200。若D015被触发，必须分成`train_paired_window` targets1–100（800 delta）、`train_late_window` targets100–200（808 delta）和`validation_late_window` targets100–200（606 absolute/404 delta）三个面板；target100重叠，不是独立重复证据。targets101–200未获额外paired监督，但不是“未训练”；不得把前段train与后段validation直接相比造成的时域偏差冒充泛化缺口。此时FC-P003C完整gate仍待定，不启动该诊断。
+时域索引另须明确：train8 action HDF每条201帧，zero HDF每条801帧；paired DataPipe只额外监督索引0–100中的targets 1–100，而常规train8 H100/stride2的408个训练窗口仍覆盖到target200。D015已经在FC-P003C完整gate失败后按固定合同执行，分成`train_paired_window` targets1–100（800 delta）、`train_late_window` targets100–200（808 delta）和`validation_late_window` targets100–200（606 absolute/404 delta）三个面板；target100重叠，不是独立重复证据。targets101–200未获额外paired监督，但不是“未训练”。
+
+结果拒绝了“只有验证分布泛化失败”这一单一解释：rear-Cl delta MAE在额外paired监督窗口、同轨迹late窗口、validation late窗口分别为0.11880/0.10753/0.17185；即使训练前缀也没有被准确拟合，同时validation相对train late仍更差。front-Cd delta MAE仅0.00069/0.00128/0.00133，误差明显集中在后柱受力，尤其rear-Cl。下一项若批准应首先针对train-only rear-Cl拟合/优化暴露做单因素检验，而不是扩大网络或降低门槛；本诊断本身不授权训练、PPO或frozen访问。
 
 ## 新决策格式
 

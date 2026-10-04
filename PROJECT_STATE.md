@@ -136,6 +136,12 @@ true-state paired-force backward工程探针是独立技术检查，不是训练
 
 旧工作清单只覆盖上一轮后评估的问题已修正，FC-P001 paired后评估的完成/失败结论已纳入监控；新运行代次继续接入。单纯“无告警”不作为无待办证据。初次启动为补齐实际归一化/模型/ZIP内容检查而主动终止，保留在`posteval_fc_p001_preflight_gap_v1`；v2使用5534f8d审查后的不可变启动脚本，未修改模型或验收阈值。
 
+### D015 true-state H1训练拟合/验证分解
+
+FC-P003C完整后评估科学FAIL后，Lead批准了固定epoch2模型的D015 no-grad诊断。v1因单元素HDF time数组显式标量转换问题在生成首行前operational fail，原失败保留；v2只修复该转换并在同一模型/数据/窗口下完成。Worker最低`MemAvailable`为112.695 GiB，未创建optimizer或candidate，未读取frozen，未执行PPO。result/worker receipt SHA分别为`b311715724287c34aa496405f0381fb034089123d5dcf3bec51f80633f293b54`/`f8de7c01baf7ab73e63d11ad9d6c11186f3587ae092c1a2edb51bf918ef6049b`。
+
+三窗口rear-Cl absolute MAE为0.08112/0.07332/0.11646，非零action-minus-zero rear-Cl MAE为0.11880/0.10753/0.17185（train paired/train late/validation late）。因此误差并非只在离开extra-paired时间窗后出现：训练前缀本身仍有明显rear-Cl映射误差；同时validation比同索引train late更差，说明还存在分布转移缺口。现有formal dynamic6 H1四通道绝对误差的2424个值被复算到最大差`3.5763e-7`。这些是诊断证据，不改变FC-P003C gate FAIL，不授权PPO或新训练。
+
 ## 7. 证据入口与分工
 
 - 架构：`docs/FNO_HYDROGYM_PPO_OPENFOAM_INTEGRATION_AUDIT_20261004.md`
