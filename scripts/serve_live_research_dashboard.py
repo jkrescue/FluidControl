@@ -203,6 +203,7 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 @media(max-width:750px){.grid,.resources,.summary,.casegrid,.guide-grid{grid-template-columns:1fr}main{padding:16px}}
 </style></head><body><main>
 <div class="top"><div><h1>串列双圆柱流动控制 · 实时进展</h1><div class="muted">目标：降低两圆柱总阻力，同时报告侧向载荷与动作代价</div></div><div class="stamp" id="clock">连接中…</div></div>
+<nav class="guide"><a href="#lead-resources" style="color:#79d5a3">计算资源</a> · <a href="#lead-models" style="color:#79d5a3">当前实验</a> · <a href="#flow-current" style="color:#79d5a3">流场预测与误差图</a> · <a href="#legacy-details" style="color:#79d5a3">完整历史证据</a><span class="small"> · 新版科研总览 / 2026-10-04</span></nav>
 <section id="lead-overview">
 <div class="banner"><b>研究目标不变：</b>只研究串列双圆柱、后圆柱旋转控制。最终在真实 CFD 中验证：总阻力降低 ≥2%，后圆柱升力波动不超过无控制的 1.05 倍，平均升力偏置不超过基准波动的 10%。<br><span class="small">保留已有数据、模型和 PPO。当前重点是确认 FNO 能否准确预测控制动作的长期影响，而不只是单步流场。</span></div>
 <div class="card"><h3>当前工作与下一步</h3><div id="lead-now">正在读取实际运行记录…</div><p class="small" id="lead-monitor"></p><div class="small">判断依据：真实任务进程、模型评估结果和实验记录。GPU 忙碌不等于科研目标已完成；训练结束也不等于模型通过验证。</div></div>
@@ -210,6 +211,10 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 <p class="small">Spark 的 CPU 与 GPU 共享物理内存；这里显示系统可用统一内存，不把它当作独立显存。至少保留 20 GiB。页面每 5 秒刷新，资源采样约 10 秒，任务监控约 60 秒。</p>
 <h2>当前 FNO 对照实验</h2><div class="grid" id="lead-models"></div>
 <p class="small">λ=0：不加配对统计损失；λ=10：加入配对统计损失，比较同一初态下不同动作的阻力与升力变化。两者使用同一评估协议。100 步表示连续预测 10 D/U，并非 100 轮训练。最终还需动态动作和时间窗口内的受力统计检验。</p>
+<section id="flow-current"><h2>流场预测 · 真实 CFD / FNO / 误差</h2>
+<div class="card"><div class="row"><h3>最新模型在动态动作上的预测精度</h3><select id="flow-model"><option value="lambda0">λ=0 对照模型</option><option value="lambda10">λ=10 配对统计模型</option></select></div>
+<div id="flow-metrics">读取最新评估结果…</div><p class="small">速度误差是 u、v 联合相对 L2；压力误差单独计算。这里是六条动态验证轨迹上全部可用起点的汇总，不能与单个起点的终点阻力门槛混用。ROI 是下游局部流场，不是整个 CFD 域。</p></div>
+<div class="card" style="margin-top:12px"><div class="row"><div><h3 id="flow-current-title">流场图片 · 加载中</h3><div class="small" id="flow-current-note"></div></div><div><select id="flow-profile"><option value="zero">无旋转</option><option value="minus">负向起始旋转</option><option value="plus">正向起始旋转</option></select> <select id="flow-step"><option value="001">1 步 / 0.1 D/U</option><option value="010">10 步 / 1 D/U</option><option value="050">50 步 / 5 D/U</option><option value="100" selected>100 步 / 10 D/U</option></select></div></div><img id="flow-current-image" alt="真实 CFD、FNO 流场预测和绝对误差对照" loading="lazy"><p class="small">同一初始流场、相同动作序列下比较；预测越远，误差可能累积。图片仅用于观察流场，控制是否合格仍由阻力和升力统计检验决定。</p></div></section>
 <h2>从数据到在线控制 · 哪一步已完成？</h2><div class="grid">
 <div class="card"><h3>1 · CFD 数据与物理检查</h3><p>已有真实 OpenFOAM 数据与固定训练／验证／冻结测试划分。继续检查动作、相位和预测时长的覆盖。</p><div class="small">当前 Re=100；不能据此声称跨雷诺数泛化。冻结测试不用于挑选模型。</div></div>
 <div class="card"><h3>2 · PhysicsNeMo 流场预测</h3><p>官方 FNO 已完成本轮训练，当前进行控制相关精度验证。</p><div class="small">分开看速度、压力、阻力、升力波动和长时间递推。当前候选尚未生成新的流场对照图片；下方历史图明确保留原模型标签。</div></div>
@@ -276,6 +281,16 @@ function renderLead(d){
  $('lead-monitor').textContent=`任务监控：${w.timestamp_utc||'无记录'}；告警 ${ (w.alerts||[]).length } 条；最新输出 ${w.latest_relevant_file?.modified_at_utc||'未知'}。整体目标${w.project_goal_complete?'记录为完成，须核对验收证据':'尚未完成'}。`;
  $('lead-resources').innerHTML=['primary','worker'].map((k,i)=>{const r=(d.resources?.[k]||[]).at(-1)||{}, stale=age(r.time)>60;return `<div class="card"><h3>${i?'计算节点 · WORKER_HOST':'主节点 · SPARK_HOST'}</h3><div class="resources"><div><div class="label">GPU 利用率</div><div class="number">${stale?'—':num(r.gpu)}%</div></div><div><div class="label">CPU 整机利用率</div><div class="number">${stale?'—':num(r.cpu)}%</div></div><div><div class="label">可用统一内存</div><div class="number">${stale?'—':num(r.mem_available_gib)} GiB</div></div></div><p>${stale?'采样过期，不能确认当前负载':esc((r.tasks||[]).join('；')||'未检测到项目计算进程')}</p><div class="small">采样 ${esc(r.time)} · ${!stale&&r.mem_available_gib<20?'警告：低于 20 GiB 保留要求':'保留要求：至少 20 GiB'}</div></div>`}).join('');
  $('lead-models').innerHTML=['lambda0','lambda10'].map((k,i)=>{const c=d.research_overview?.[k]||{}, g=c.endpoint||{}, f=g.h100_force_gate||{}, a=g.h100_start0_action_difference||{};return `<div class="card"><h3>${i?'λ=10 · 配对统计训练':'λ=0 · 对照训练'}</h3><p>本轮训练：${p[k+'_training_complete']?'2 / 2 轮完成':'待核实'}；完整评估：${p[k+'_posteval_complete']?'记录已完成，需查看科学判定':'未完成或结果尚未回传'}</p><div class="number">${pct(f.pooled_total_cd_nrmse)}</div><div class="label">验证集 · 第 100 步总阻力归一化误差（越低越好）</div><p class="small">动作间阻力差预测误差：${num(a.pairwise_delta_cd_mae,5)}；已评估 100 步片段：${f.segments??'待回传'}。</p><div>${g.status==='FULL40_VALIDATION_SURROGATE_READINESS_PASS'?'静态动作终点检验通过；不代表动态／窗口检验通过':g.status?'静态动作终点检验未通过':'等待验证记录回传'}</div><div class="small">证据：${esc(c.path)} · ${esc(c.updated_at)}</div></div>`}).join('');
+}
+function renderCurrentFlow(d){
+ const k=$('flow-model').value,c=d.research_overview?.[k]||{},s=c.dynamic_summary||{};
+ const rows=['1','10','50','100'].map(h=>{const r=s[h]||{};return `<tr><td>${h} 步</td><td>${pct(r.velocity_relative_l2)}</td><td>${pct(r.field_relative_l2_u_v_p?.[2])}</td><td>${r.segments??'待回传'}</td></tr>`}).join('');
+ $('flow-metrics').innerHTML=`<table style="width:100%;text-align:left;line-height:2"><thead><tr><th>预测时长</th><th>速度相对误差</th><th>压力相对误差</th><th>评估片段</th></tr></thead><tbody>${rows}</tbody></table>`;
+ const profile=$('flow-profile').value,h=$('flow-step').value,key=profile+'/'+h,ready=c.figures?.includes(key),im=$('flow-current-image');
+ $('flow-current-title').textContent=ready?`最新 ${k==='lambda0'?'λ=0':'λ=10'} · b01 初态 · ${Number(h)} 步预测`:'历史 H50 模型流场参考 · 不是最新候选';
+ $('flow-current-note').textContent=ready?'来自本轮候选模型重新生成的真实 CFD / FNO / 误差对照。':'最新候选图片正在生成；暂展示已有真实对比图，模型不同，不能代表上方最新数值。';
+ const url=ready?`/figure/paired/${k}/${profile}/${h}.png`:`/figure/h50-dynamic/${profile}/${h}.png`;
+ if(im.getAttribute('src')!==url)im.src=url;
 }
 function renderAdmission(d){
  const cards=$('lead-models').children;
@@ -407,7 +422,8 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  $('infer-speed').textContent=d.benchmark?.status==='FNO_REAL_CFD_INFERENCE_BENCHMARK_OK'?`旧数据多步 FNO、真实 CFD 输入：单步中位 ${num(d.benchmark.step_median_ms,2)} ms；连续 100 步 ${num(d.benchmark.rollout_100_step_seconds,2)} s。仅模型前向，不含 CFD 或控制通信。`:'FNO 推理耗时尚未测量。';
  $('cem').textContent=d.cem?'CEM 控制筛选已完成，结果待审计。':`CEM：等待 FNO 的 100 步总阻力误差降至 10% 以下。新增 CFD 平均求解进度 ${num(average,0)}%。`;
  $('ppo').textContent=d.ppo?'HydroGym PPO 有当前目标的新记录。':'当前总阻力目标的 HydroGym PPO 尚未启动。历史末柱目标的 PPO 曾完成 32 步真实 CFD 闭环，但目标差 +0.003855（更差），不能视为当前控制收益。';figure()}
-async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();renderLead(d);renderAdmission(d);render(d)}catch(e){$('clock').textContent='连接失败：'+e.message;$('lead-now').textContent='连接失败，当前页面数值仅是上次采样，不代表实时状态。'}}
+async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();renderLead(d);renderAdmission(d);renderCurrentFlow(d);render(d)}catch(e){$('clock').textContent='连接失败：'+e.message;$('lead-now').textContent='连接失败，当前页面数值仅是上次采样，不代表实时状态。'}}
+for(const id of ['flow-model','flow-profile','flow-step'])$(id).onchange=()=>{if(latest)renderCurrentFlow(latest)};
 $('case').onchange=figure;$('horizon').onchange=figure;$('h50-horizon').onchange=()=>{if(latest)renderH50Figures(latest)};window.onresize=()=>{if(latest)render(latest)};refresh();setInterval(refresh,5000);
 </script></body></html>'''
 
@@ -440,6 +456,15 @@ def _research_overview(root: Path):
             "path": relative,
             "updated_at": updated,
             "development": _read_json(path.parent.parent / "development_gate.json", None),
+            "dynamic_summary": (_read_json(path.parent.parent / "dynamic6/evaluation.json", {}) or {}).get("summary", {}),
+            "figures": [
+                f"{profile}/{horizon}"
+                for profile in ("zero", "minus", "plus")
+                for horizon in ("001", "010", "050", "100")
+                if (root / "artifacts" / f"paired_{candidate}_flow_visualization_20261004"
+                    / "figures" / f"full40_dynamic_validation_b01_{profile}"
+                    / f"horizon_{horizon}_start_0000.png").is_file()
+            ],
         }
     return result
 
@@ -1594,6 +1619,19 @@ class Handler(BaseHTTPRequestHandler):
                 / "artifacts/direct_cfd/directppo2048_b00_eval80_v1/"
                 "raw_pair_timeseries.png"
             )
+            try:
+                return self._send(file.read_bytes(), "image/png")
+            except OSError:
+                return self._send(b"not found", "text/plain", 404)
+        if path.startswith("/figure/paired/"):
+            parts = path.removeprefix("/figure/paired/").split("/")
+            if (len(parts) != 3 or parts[0] not in ("lambda0", "lambda10")
+                or parts[1] not in ("zero", "minus", "plus")
+                or parts[2] not in ("001.png", "010.png", "050.png", "100.png")):
+                return self._send(b"not found", "text/plain", 404)
+            file = (self.root / "artifacts" / f"paired_{parts[0]}_flow_visualization_20261004"
+                    / "figures" / f"full40_dynamic_validation_b01_{parts[1]}"
+                    / ("horizon_" + parts[2].removesuffix(".png") + "_start_0000.png"))
             try:
                 return self._send(file.read_bytes(), "image/png")
             except OSError:
