@@ -149,10 +149,12 @@ def recompute_readiness(args) -> dict:
         lineage_path=args.lineage,
         posteval_receipt_path=args.posteval_receipt,
         endpoint_gate_path=args.endpoint_gate,
+        endpoint_evaluation_config_path=args.endpoint_evaluation_config,
         window_gate_path=args.window_gate,
         dynamic_gate_path=args.dynamic_gate,
         development_gate_path=args.development_gate,
         validation_manifest_path=args.data / "manifest.json",
+        dynamic_validation_manifest_path=args.dynamic_data / "manifest.json",
         normalization_path=args.dev30_data / "normalization.json",
         data_artifacts=data_artifacts,
         official_image_id=args.official_image_id,
@@ -173,7 +175,8 @@ def validate_arguments(args) -> None:
     root = args.repo.resolve()
     for name in (
         "candidate_root", "lineage", "posteval_receipt", "endpoint_gate",
-        "window_gate", "dynamic_gate", "development_gate", "data",
+        "endpoint_evaluation_config",
+        "window_gate", "dynamic_gate", "development_gate", "data", "dynamic_data",
         "dev30_data", "promotion_receipt", "validation_report",
         "validation_segments", "predeclaration", "baselines", "output",
     ):
@@ -307,11 +310,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--lineage", type=Path, required=True)
     parser.add_argument("--posteval-receipt", type=Path, required=True)
     parser.add_argument("--endpoint-gate", type=Path, required=True)
+    parser.add_argument("--endpoint-evaluation-config", type=Path, required=True)
     parser.add_argument("--window-gate", type=Path, required=True)
     parser.add_argument("--dynamic-gate", type=Path, required=True)
     parser.add_argument("--development-gate", type=Path, required=True)
     parser.add_argument("--data-artifact", action="append", default=[])
     parser.add_argument("--data", type=Path, required=True)
+    parser.add_argument("--dynamic-data", type=Path, required=True)
     parser.add_argument("--dev30-data", type=Path, required=True)
     parser.add_argument("--promotion-receipt", type=Path, required=True)
     parser.add_argument("--validation-report", type=Path, required=True)
@@ -335,7 +340,8 @@ def normalize_paths(args) -> None:
     args.repo = args.repo.resolve()
     for name in (
         "candidate_root", "lineage", "posteval_receipt", "endpoint_gate",
-        "window_gate", "dynamic_gate", "development_gate", "data",
+        "endpoint_evaluation_config",
+        "window_gate", "dynamic_gate", "development_gate", "data", "dynamic_data",
         "dev30_data", "promotion_receipt", "validation_report",
         "validation_segments", "predeclaration", "baselines", "output",
         "approved_preflight",

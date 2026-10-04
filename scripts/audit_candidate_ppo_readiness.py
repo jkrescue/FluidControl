@@ -139,10 +139,12 @@ def audit(
     lineage_path: Path,
     posteval_receipt_path: Path,
     endpoint_gate_path: Path,
+    endpoint_evaluation_config_path: Path,
     window_gate_path: Path,
     dynamic_gate_path: Path,
     development_gate_path: Path,
     validation_manifest_path: Path,
+    dynamic_validation_manifest_path: Path,
     normalization_path: Path,
     data_artifacts: dict[str, Path],
     official_image_id: str = IMAGE_ID,
@@ -159,10 +161,12 @@ def audit(
         "lineage": lineage_path,
         "posteval_receipt": posteval_receipt_path,
         "endpoint_gate": endpoint_gate_path,
+        "endpoint_evaluation_config": endpoint_evaluation_config_path,
         "canonical_window_gate": window_gate_path,
         "canonical_dynamic_gate": dynamic_gate_path,
         "development_gate": development_gate_path,
         "validation_manifest": validation_manifest_path,
+        "dynamic_validation_manifest": dynamic_validation_manifest_path,
         "normalization": normalization_path,
     }
     blockers: list[dict[str, str]] = []
@@ -194,8 +198,10 @@ def audit(
         dynamic = load(dynamic_gate_path)
         development = load(development_gate_path)
         validation_manifest = load(validation_manifest_path)
+        dynamic_validation_manifest = load(dynamic_validation_manifest_path)
         normalization = load(normalization_path)
         validation_manifest_sha = sha256(validation_manifest_path)
+        dynamic_validation_manifest_sha = sha256(dynamic_validation_manifest_path)
         normalization_sha = sha256(normalization_path)
         if (
             validation_manifest.get("profile") != PROFILE
@@ -204,6 +210,18 @@ def audit(
             != {"train": 20, "validation": 10, "frozen_test": 10}
         ):
             raise ValueError("validation manifest action/split contract differs")
+        if (
+            dynamic_validation_manifest.get("profile")
+            != "full40_dynamic_validation_v1"
+            or dynamic_validation_manifest.get("max_abs_omega") != 0.75
+            or dynamic_validation_manifest.get("trajectory_counts")
+            != {"train": 0, "validation": 6, "frozen_test": 0}
+            or dynamic_validation_manifest.get("training_access") != "FORBIDDEN"
+            or dynamic_validation_manifest.get("frozen_test_accessed") is not False
+            or dynamic_validation_manifest.get("normalization_sha256")
+            != normalization_sha
+        ):
+            raise ValueError("dynamic validation manifest action/split contract differs")
 
         if not str(lineage.get("status", "")).endswith("CANDIDATE_LINEAGE_PASS"):
             raise ValueError("candidate lineage status differs")
@@ -331,7 +349,8 @@ def audit(
             or endpoint.get("joint_terminal_readiness") is not True
             or endpoint.get("h100_force_gate", {}).get("beats_persistence") is not True
             or endpoint.get("physicsnemo_image_id") != official_image_id
-            or endpoint.get("model_config_sha256") != sha256(config)
+            or endpoint.get("model_config_sha256")
+            != sha256(endpoint_evaluation_config_path)
         ):
             raise RuntimeError("scientific endpoint readiness did not pass")
 
@@ -341,7 +360,8 @@ def audit(
         ):
             _common_gate(
                 gate, status=status, checkpoint=checkpoint,
-                normalization=normalization_sha, validation_manifest=validation_manifest_sha,
+                normalization=normalization_sha,
+                validation_manifest=dynamic_validation_manifest_sha,
             )
             if gate.get("validation_phases") != ["b01", "b05"]:
                 raise ValueError(f"{status} validation phases differ")
@@ -389,9 +409,13 @@ def audit(
             "resolved_config_sha256": lineage["resolved_config_sha256"],
             "normalization_sha256": normalization_sha,
             "validation_manifest_sha256": validation_manifest_sha,
+            "dynamic_validation_manifest_sha256": dynamic_validation_manifest_sha,
             "lineage_sha256": sha256(lineage_path),
             "posteval_receipt_sha256": sha256(posteval_receipt_path),
             "endpoint_gate_sha256": sha256(endpoint_gate_path),
+            "endpoint_evaluation_config_sha256": sha256(
+                endpoint_evaluation_config_path
+            ),
             "canonical_window_gate_sha256": sha256(window_gate_path),
             "canonical_dynamic_gate_sha256": sha256(dynamic_gate_path),
             "development_gate_sha256": sha256(development_gate_path),
@@ -467,10 +491,12 @@ def main() -> None:
     parser.add_argument("--lineage", type=Path, required=True)
     parser.add_argument("--posteval-receipt", type=Path, required=True)
     parser.add_argument("--endpoint-gate", type=Path, required=True)
+    parser.add_argument("--endpoint-evaluation-config", type=Path, required=True)
     parser.add_argument("--window-gate", type=Path, required=True)
     parser.add_argument("--dynamic-gate", type=Path, required=True)
     parser.add_argument("--development-gate", type=Path, required=True)
     parser.add_argument("--validation-manifest", type=Path, required=True)
+    parser.add_argument("--dynamic-validation-manifest", type=Path, required=True)
     parser.add_argument("--normalization", type=Path, required=True)
     parser.add_argument("--data-artifact", action="append", default=[], metavar="KEY=PATH")
     parser.add_argument("--official-image-id", default=IMAGE_ID)
@@ -484,10 +510,12 @@ def main() -> None:
         lineage_path=args.lineage,
         posteval_receipt_path=args.posteval_receipt,
         endpoint_gate_path=args.endpoint_gate,
+        endpoint_evaluation_config_path=args.endpoint_evaluation_config,
         window_gate_path=args.window_gate,
         dynamic_gate_path=args.dynamic_gate,
         development_gate_path=args.development_gate,
         validation_manifest_path=args.validation_manifest,
+        dynamic_validation_manifest_path=args.dynamic_validation_manifest,
         normalization_path=args.normalization,
         data_artifacts=parse_data_artifacts(args.data_artifact),
         official_image_id=args.official_image_id,

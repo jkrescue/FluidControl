@@ -51,11 +51,16 @@ def fixture(tmp_path: Path) -> dict:
         "training": {"rollout_steps": 100, "validation_rollout_steps": 100},
         "data": {"force_indices": [0, 1, 2, 3]},
     }))
+    endpoint_evaluation_config = tmp_path / "endpoint_evaluation_config.yaml"
+    endpoint_evaluation_config.write_text(
+        "# evaluator composition identity is distinct from resolved training config\n"
+    )
     launch, completion = candidate / "launch_receipt.json", candidate / "completion_receipt.json"
     write_json(launch, {"status": "fixture"})
     write_json(completion, {"status": "fixture"})
     normalization = tmp_path / "normalization.json"
     manifest = tmp_path / "validation_manifest.json"
+    dynamic_manifest = tmp_path / "dynamic_validation_manifest.json"
     dev30, train8 = tmp_path / "dev30.json", tmp_path / "train8.json"
     write_json(manifest, {
         "profile": MODULE.PROFILE, "max_abs_omega": 0.75,
@@ -67,6 +72,14 @@ def fixture(tmp_path: Path) -> dict:
         "all_force_channels": ["front_cd", "front_cl", "rear_cd", "rear_cl"],
         "all_force_mean": [0.0, 0.0, 0.0, 0.0],
         "all_force_std": [1.0, 1.0, 1.0, 1.0],
+    })
+    write_json(dynamic_manifest, {
+        "profile": "full40_dynamic_validation_v1",
+        "max_abs_omega": 0.75,
+        "trajectory_counts": {"train": 0, "validation": 6, "frozen_test": 0},
+        "training_access": "FORBIDDEN",
+        "frozen_test_accessed": False,
+        "normalization_sha256": digest(normalization),
     })
     for path, content in ((dev30, b"dev30"), (train8, b"train8")):
         path.write_bytes(content)
@@ -106,10 +119,12 @@ def fixture(tmp_path: Path) -> dict:
         "joint_terminal_readiness": True,
         "h100_force_gate": {"beats_persistence": True},
         "physicsnemo_image_id": MODULE.IMAGE_ID,
-        "model_config_sha256": digest(config),
+        "model_config_sha256": digest(endpoint_evaluation_config),
     })
     evidence_common = {
-        **common, "validation_phases": ["b01", "b05"],
+        **common,
+        "data_manifest_sha256": digest(dynamic_manifest),
+        "validation_phases": ["b01", "b05"],
         "producer_script": str(producer),
         "producer_script_sha256": digest(producer),
         "evidence_path": str(evidence),
@@ -158,9 +173,12 @@ def fixture(tmp_path: Path) -> dict:
     return {
         "repo_root": tmp_path, "candidate_root": candidate, "lineage_path": lineage,
         "posteval_receipt_path": receipt, "endpoint_gate_path": endpoint,
+        "endpoint_evaluation_config_path": endpoint_evaluation_config,
         "window_gate_path": window, "dynamic_gate_path": dynamic,
         "development_gate_path": development,
-        "validation_manifest_path": manifest, "normalization_path": normalization,
+        "validation_manifest_path": manifest,
+        "dynamic_validation_manifest_path": dynamic_manifest,
+        "normalization_path": normalization,
         "data_artifacts": {"dev30": dev30, "train8": train8},
     }
 
@@ -247,6 +265,19 @@ def test_candidate_root_requires_exact_repo_relative_identity(tmp_path: Path) ->
     write_json(values["posteval_receipt_path"], receipt)
     result = MODULE.audit(**values)
     assert result["blockers"][0]["kind"] == "SCHEMA_ERROR"
+
+
+def test_endpoint_evaluation_config_has_distinct_bound_semantics(tmp_path: Path) -> None:
+    values = fixture(tmp_path)
+    # It is intentionally not the candidate resolved training config.
+    assert digest(values["endpoint_evaluation_config_path"]) != digest(
+        values["candidate_root"] / "resolved_config.yaml"
+    )
+    assert MODULE.audit(**values)["status"].endswith("READY")
+    values["endpoint_evaluation_config_path"].write_text("tampered\n")
+    result = MODULE.audit(**values)
+    assert result["status"].endswith("BLOCKED")
+    assert result["blockers"][0]["kind"] == "SCIENTIFIC_FAIL"
 
 
 @pytest.mark.parametrize("fault", ["model", "state", "config", "data", "normalization"])

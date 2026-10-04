@@ -33,12 +33,15 @@ def make_args(tmp_path: Path) -> SimpleNamespace:
     (candidate / "best").mkdir(parents=True)
     (candidate / "resolved_config.yaml").write_text("model: {}\n")
     data = repo / "full40"
+    dynamic_data = repo / "dynamic6"
     dev30 = repo / "dev30"
     data.mkdir()
+    dynamic_data.mkdir()
     dev30.mkdir()
     for path, content in (
         (data / "manifest.json", "full-manifest"),
         (data / "normalization.json", "normalization"),
+        (dynamic_data / "manifest.json", "dynamic-manifest"),
         (dev30 / "normalization.json", "normalization"),
     ):
         path.write_text(content)
@@ -47,6 +50,7 @@ def make_args(tmp_path: Path) -> SimpleNamespace:
         "promotion_receipt", "baselines", "validation_report",
         "validation_segments", "predeclaration", "lineage", "posteval_receipt",
         "endpoint_gate", "window_gate", "dynamic_gate", "development_gate",
+        "endpoint_evaluation_config",
     ):
         path = repo / f"{name}.json"
         path.write_text("{}\n")
@@ -57,7 +61,8 @@ def make_args(tmp_path: Path) -> SimpleNamespace:
     (scripts / "train_full40_hydrogym_ppo_canonical.py").write_text("# trainer\n")
     (scripts / "run_candidate_full40_canonical_ppo_spark.sh").write_text("# launcher\n")
     return SimpleNamespace(
-        repo=repo, candidate_root=candidate, data=data, dev30_data=dev30,
+        repo=repo, candidate_root=candidate, data=data, dynamic_data=dynamic_data,
+        dev30_data=dev30,
         output=repo / "artifacts/hydrogym/preflight.json", data_artifact=[],
         runtime_image_id=MODULE.RUNTIME_IMAGE_ID,
         official_image_id="sha256:official", episode_steps=100, timesteps=8192,
