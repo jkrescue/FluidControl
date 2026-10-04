@@ -28,6 +28,20 @@ MODULE = load_module()
 
 
 class LatestEvidenceDashboardTests(unittest.TestCase):
+    def test_c_training_log_does_not_reuse_historical_epochs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            old = root / "artifacts/tandem_fno_paired_stats_interleaved_lambda10_20261005"
+            old.mkdir(parents=True)
+            (old / "training_history.json").write_text('[{"epoch":2}]')
+            current = MODULE._current_training_log(root, "FC-P003C")
+            self.assertEqual(current["completed_epochs"], 0)
+            self.assertIsNone(current["batch_percent"])
+            self.assertIn("true_state_paired_step", current["source"])
+            self.assertEqual(MODULE._current_training_log(root)["completed_epochs"], 2)
+            with self.assertRaises(KeyError):
+                MODULE._current_training_log(root, "../../unknown")
+
     def test_dynamic_candidate_requires_bound_gate_and_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

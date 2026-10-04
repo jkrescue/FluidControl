@@ -311,6 +311,25 @@ function renderAdmission(d){
   if(fresh&&rejected)$('lead-now').textContent=`${isDynamic?'动态动作配对候选':'均匀配对候选'}已完成评估，但旋转动作下的升力波动预测未通过。当前任务以实时监控记录为准；完整评估结束不等于闭环完成。尚未启动新模型的PPO。`;
  }
 }
+function renderActiveExperiment(d){
+ const w=d.training_evaluation_watchdog||{}, units=w.active_units||[];
+ const age=Date.now()-Date.parse(w.timestamp_utc||'');
+ if(!Number.isFinite(age)||age<0||age>180000){$('lead-now').textContent='任务状态已过期或时间异常，不能确认当前训练或评估是否运行。';return;}
+ const training=units.includes('fluid-control-fcp003c-true-state-step-20261005.service');
+ const evaluating=units.includes('fluid-control-fcp003c-posteval-wait-fa08ce0-20261005.service');
+ if(!training&&!evaluating)return;
+ const p=d.fc_p003c_training_log||{};
+ const title=training?'当前训练 · 动作响应监督（FC-P003C）':'当前任务 · FC-P003C 评估队列';
+ const detail=training?`已记录 ${p.completed_epochs??'待核实'} / 2 个完整训练轮次。批次进度尚未记录时不估算百分比。保持现有模型和数据，调整动作引起的受力差训练项；训练后检查流场、阻力和升力预测。`:'训练服务当前不在运行；评估队列正在运行或等待模型完成记录，不能仅凭队列存活认定 GPU 正在评估。';
+ $('lead-now').textContent=title+'。'+detail+' 尚未完成新模型的 PPO 与真实 CFD 闭环验收。';
+ const card=document.createElement('div');card.className='card';
+ const heading=document.createElement('h3');heading.textContent=title;card.appendChild(heading);
+ const note=document.createElement('p');note.textContent=detail+' 下方为已完成候选的结果，不是本轮训练精度。';card.appendChild(note);
+ $('lead-models').prepend(card);
+ $('train16-formal-progress').textContent=title;
+ $('train16-formal-progress').className='number';
+ $('train16-formal-detail').textContent=detail+' 本轮目录：tandem_fno_true_state_paired_step_lambda10_20261005。';
+}
 function pct(x){return Number.isFinite(x)?(x*100).toFixed(2)+'%':'—'}
 function num(x,d=1){return Number.isFinite(x)?x.toFixed(d):'—'}
 function passText(value){return value===true?'PASS':value===false?'FAIL':'等待'}
@@ -437,7 +456,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  $('infer-speed').textContent=d.benchmark?.status==='FNO_REAL_CFD_INFERENCE_BENCHMARK_OK'?`旧数据多步 FNO、真实 CFD 输入：单步中位 ${num(d.benchmark.step_median_ms,2)} ms；连续 100 步 ${num(d.benchmark.rollout_100_step_seconds,2)} s。仅模型前向，不含 CFD 或控制通信。`:'FNO 推理耗时尚未测量。';
  $('cem').textContent=d.cem?'CEM 控制筛选已完成，结果待审计。':`CEM：等待 FNO 的 100 步总阻力误差降至 10% 以下。新增 CFD 平均求解进度 ${num(average,0)}%。`;
  $('ppo').textContent=d.ppo?'HydroGym PPO 有当前目标的新记录。':'当前总阻力目标的 HydroGym PPO 尚未启动。历史末柱目标的 PPO 曾完成 32 步真实 CFD 闭环，但目标差 +0.003855（更差），不能视为当前控制收益。';figure()}
-async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();renderLead(d);renderAdmission(d);renderCurrentFlow(d);render(d)}catch(e){$('clock').textContent='连接失败：'+e.message;$('lead-now').textContent='连接失败，当前页面数值仅是上次采样，不代表实时状态。'}}
+async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();renderLead(d);renderAdmission(d);renderCurrentFlow(d);render(d);renderActiveExperiment(d)}catch(e){$('clock').textContent='连接失败：'+e.message;$('lead-now').textContent='连接失败，当前页面数值仅是上次采样，不代表实时状态。'}}
 for(const id of ['flow-model','flow-profile','flow-step'])$(id).onchange=()=>{if(latest)renderCurrentFlow(latest)};
 $('case').onchange=figure;$('horizon').onchange=figure;$('h50-horizon').onchange=()=>{if(latest)renderH50Figures(latest)};window.onresize=()=>{if(latest)render(latest)};refresh();setInterval(refresh,5000);
 </script></body></html>'''
@@ -450,9 +469,13 @@ def _read_json(path: Path, fallback):
         return fallback
 
 
-def _current_training_log(root: Path) -> dict:
+def _current_training_log(root: Path, experiment: str = "FC-P003") -> dict:
     """Bounded log evidence, never a replacement for live process verification."""
-    run = root / "artifacts/tandem_fno_paired_stats_interleaved_lambda10_20261005"
+    runs = {
+        "FC-P003": "artifacts/tandem_fno_paired_stats_interleaved_lambda10_20261005",
+        "FC-P003C": "artifacts/tandem_fno_true_state_paired_step_lambda10_20261005",
+    }
+    run = root / runs[experiment]
     history = _read_json(run / "training_history.json", [])
     epochs = [row.get("epoch") for row in history if isinstance(row, dict)] if isinstance(history, list) else []
     epochs = [epoch for epoch in epochs if isinstance(epoch, int) and 0 <= epoch <= 2]
@@ -1802,6 +1825,7 @@ class Handler(BaseHTTPRequestHandler):
             data["free_ar_ablation"] = _free_ar_ablation(self.root)
             data["research_overview"] = _research_overview(self.root)
             data["current_training_log"] = _current_training_log(self.root)
+            data["fc_p003c_training_log"] = _current_training_log(self.root, "FC-P003C")
             data["training_evaluation_watchdog"] = _read_json(
                 self.root / TRAINING_EVALUATION_WATCHDOG, None
             )
