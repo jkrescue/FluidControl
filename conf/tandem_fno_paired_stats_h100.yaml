@@ -1,0 +1,20 @@
+defaults:
+  - tandem_fno_control_train16_h100
+  - _self_
+
+# Controlled project-level paired-statistic experiment. The official
+# PhysicsNeMo FNO architecture, standard rollout objective, normalization,
+# train20+train8+train16 data and validation contract are unchanged.
+output_dir: /workspace/output
+probe_output: /workspace/output/parent_scale_audit.json
+data:
+  paired_root: /workspace/data
+  paired_manifest: /workspace/pair_manifest.json
+training:
+  initial_checkpoint: /workspace/parent
+  epochs: 2
+  batch_size: 2
+  paired_batch_size: 2
+  paired_stat_horizons: [20, 50, 100]
+  paired_stat_loss_weight: 0.0
+  force_channel_weights: [1.0, 1.0, 4.0, 1.0]
