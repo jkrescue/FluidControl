@@ -376,12 +376,13 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                 RESOURCES,
                 datetime(2026, 10, 4, 16, 30, tzinfo=UTC),
             )
-        self.assertTrue(result["stage_complete"])
-        self.assertFalse(result["workflow_pending"])
+        self.assertFalse(result["stage_complete"])
+        self.assertTrue(result["fc_p001_stage_complete"])
+        self.assertTrue(result["workflow_pending"])
         self.assertFalse(result["project_goal_complete"])
         self.assertEqual(
             result["scientific_next_stage"]["status"],
-            "FC_P003_LEAD_APPROVED_PREFLIGHT",
+            "FC_P003_PREFLIGHT_IMPLEMENTATION",
         )
         self.assertEqual(
             result["scientific_next_stage"]["active_work"],
@@ -403,6 +404,39 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
             result["scientific_next_stage"]["fc_p003"]["state"],
             "PREFLIGHT_IMPLEMENTATION",
         )
+        self.assertEqual(
+            result["scientific_next_stage"]["fc_p003"]["authority_unit"],
+            MODULE.FC_P003_UNIT,
+        )
+
+    def test_fc_p003_running_requires_authoritative_active_unit_and_pid(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(
+                directory, receipts=True, paired=True, paired_posteval=True
+            )
+            state = unit("active")
+            state["main_pid"] = 31415
+            result = MODULE.build_sample(
+                repo,
+                None,
+                {
+                    MODULE.MAIN_AUTHORITY_UNIT: unit(),
+                    MODULE.WORKER_AUTHORITY_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA10_POSTEVAL_UNIT: unit(),
+                    MODULE.FC_P003_UNIT: state,
+                },
+                RESOURCES,
+                datetime(2026, 10, 5, 0, 0, tzinfo=UTC),
+            )
+        self.assertEqual(
+            result["scientific_next_stage"]["status"], "FC_P003_RUNNING"
+        )
+        self.assertEqual(
+            result["scientific_next_stage"]["active_work"],
+            "fc_p003_interleaved_paired_supervision_training",
+        )
+        self.assertEqual(result["scientific_next_stage"]["fc_p003"]["main_pid"], 31415)
 
     def test_latest_active_lambda0_generation_becomes_authority(self) -> None:
         units = {

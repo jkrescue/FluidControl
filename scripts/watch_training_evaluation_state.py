@@ -47,6 +47,13 @@ PAIRED_LAMBDA10_TRANSFER_STATUS = (
 )
 PAIRED_POSTEVAL_APPROVAL = Path("docs/FC-P001_APPROVAL.md")
 FC_P003_APPROVAL = Path("docs/FC-P003_APPROVAL.md")
+FC_P003_UNIT = "fluid-control-fcp003-interleaved-lambda10-20261005.service"
+FC_P003_ROOT = Path("artifacts/tandem_fno_paired_stats_interleaved_lambda10_20261005")
+FC_P003_LAUNCH_RECEIPT = FC_P003_ROOT / "launch_receipt.json"
+FC_P003_COMPLETION_RECEIPT = FC_P003_ROOT / "completion_receipt.json"
+FC_P003_DEVELOPMENT_GATE = FC_P003_ROOT / "posteval_fc_p003/development_gate.json"
+FC_P003_LAUNCH_STATUS = "FC_P003_INTERLEAVED_LAUNCH_STAGED"
+FC_P003_COMPLETION_STATUS = "FC_P003_INTERLEAVED_TRAINING_COMPLETE"
 PAIRED_POSTEVAL_STATUS = "PAIRED_STATS_FC_P001_POSTEVAL_COMPLETE"
 PAIRED_LAMBDA0_POSTEVAL_UNIT = (
     "fluid-control-paired-lambda0-posteval-fcp001-v2-20261004.service"
@@ -244,7 +251,7 @@ def most_specific_error(lines: list[str]) -> str | None:
 def unit_state(unit: str) -> dict:
     properties = (
         "ActiveState,SubState,Result,ExecMainStatus,ExecMainStartTimestamp,"
-        "ExecMainExitTimestamp"
+        "ExecMainExitTimestamp,MainPID"
     )
     result = _command(
         ["systemctl", "--user", "show", unit, f"--property={properties}"]
@@ -264,6 +271,7 @@ def unit_state(unit: str) -> dict:
         "sub_state": values.get("SubState", "unknown"),
         "result": values.get("Result", "unknown"),
         "exec_main_status": values.get("ExecMainStatus", "unknown"),
+        "main_pid": int(values.get("MainPID") or 0),
         "started_at": values.get("ExecMainStartTimestamp") or None,
         "exited_at": values.get("ExecMainExitTimestamp") or None,
         "last_error_line": error,
@@ -336,6 +344,7 @@ def discover_related_units() -> list[str]:
         if columns and (
             columns[0].startswith("fluid-control-train16-")
             or columns[0].startswith(PAIRED_LAMBDA0_POSTEVAL_PREFIX)
+            or columns[0] == FC_P003_UNIT
         ):
             names.append(columns[0])
     return sorted(
@@ -345,6 +354,7 @@ def discover_related_units() -> list[str]:
                 MAIN_AUTHORITY_UNIT,
                 PAIRED_LAMBDA0_UNIT,
                 PAIRED_LAMBDA0_POSTEVAL_UNIT,
+                FC_P003_UNIT,
                 *SUPERSEDED_MAIN_UNITS,
                 *names,
             )
@@ -532,13 +542,48 @@ def build_sample(
         repo, paired["paired_posteval_complete"]
     )
     fc_p003_approved = (repo / FC_P003_APPROVAL).is_file()
+    fc_p003_unit = units.get(FC_P003_UNIT, {})
+    fc_p003_launch_present = (repo / FC_P003_LAUNCH_RECEIPT).is_file()
+    fc_p003_completion_present = (repo / FC_P003_COMPLETION_RECEIPT).is_file()
+    fc_p003_launch_verified, fc_p003_launch_issues = verify_receipt(
+        repo / FC_P003_LAUNCH_RECEIPT, FC_P003_LAUNCH_STATUS
+    )
+    fc_p003_completion_verified, fc_p003_completion_issues = verify_receipt(
+        repo / FC_P003_COMPLETION_RECEIPT, FC_P003_COMPLETION_STATUS
+    )
+    fc_p003_gate_status = read_json(
+        repo / FC_P003_DEVELOPMENT_GATE, {}
+    ).get("status")
+    if fc_p003_gate_status == PAIRED_DEVELOPMENT_FAIL_STATUS:
+        fc_p003_state = "SCIENTIFIC_FAIL_NEEDS_LEAD_NEXT_HYPOTHESIS"
+    elif fc_p003_gate_status:
+        fc_p003_state = "SCIENTIFIC_RESULT_REQUIRES_AGENT_REVIEW"
+    elif fc_p003_unit.get("active_state") == "active":
+        fc_p003_state = "RUNNING"
+    elif fc_p003_unit.get("active_state") == "failed":
+        fc_p003_state = "OPERATIONAL_FAILURE_NEEDS_AGENT_ANALYSIS"
+    elif fc_p003_completion_verified:
+        fc_p003_state = "TRAINING_COMPLETE_POSTEVAL_PENDING"
+    elif fc_p003_completion_present or (
+        fc_p003_launch_present and not fc_p003_launch_verified
+    ):
+        fc_p003_state = "OPERATIONAL_FAILURE_NEEDS_AGENT_ANALYSIS"
+    elif fc_p003_launch_verified:
+        fc_p003_state = "PREFLIGHT_COMPLETE_WAITING_RUN"
+    elif fc_p003_approved:
+        fc_p003_state = "PREFLIGHT_IMPLEMENTATION"
+    else:
+        fc_p003_state = "PLANNED_NOT_APPROVED"
     progress.update(paired)
-    stage_complete = (
+    fc_p001_stage_complete = (
         prior_posteval_stage_complete
         and paired["paired_training_complete"]
         and paired["paired_posteval_complete"]
     )
-    pending = not stage_complete
+    stage_complete = (
+        fc_p003_gate_status is not None if fc_p003_approved else fc_p001_stage_complete
+    )
+    pending = True  # The accepted surrogate/controller/real-CFD project goal is unmet.
     main_authority = select_main_authority(units)
     lambda0_posteval_authority = select_versioned_authority(
         units, PAIRED_LAMBDA0_POSTEVAL_PREFIX, PAIRED_LAMBDA0_POSTEVAL_UNIT
@@ -548,6 +593,7 @@ def build_sample(
         WORKER_AUTHORITY_UNIT,
         lambda0_posteval_authority,
         PAIRED_LAMBDA10_POSTEVAL_UNIT,
+        FC_P003_UNIT,
     )
     active_units = sorted(
         name
@@ -641,6 +687,13 @@ def build_sample(
             task["approved_action_id"] = action_id
     alerts = []
     blocker_reasons = []
+    if fc_p003_state == "OPERATIONAL_FAILURE_NEEDS_AGENT_ANALYSIS":
+        alerts.append("FC_P003_OPERATIONAL_FAILURE_NEEDS_AGENT_ANALYSIS")
+        blocker_reasons.append(
+            f"{FC_P003_UNIT}: approved FC-P003 has no scientific gate; "
+            f"result={fc_p003_unit.get('result')} "
+            f"status={fc_p003_unit.get('exec_main_status')}; blind restart forbidden"
+        )
     needs_analysis = [name for name, task in tasks.items() if task["state"] == "NEEDS_AGENT_ANALYSIS"]
     retryable = [name for name, task in tasks.items() if task["state"] == "RETRY_ELIGIBLE"]
     if pending and needs_analysis:
@@ -711,7 +764,7 @@ def build_sample(
     else:
         lambda0_state = "PENDING"
     scientific_status = (
-        "FC_P003_LEAD_APPROVED_PREFLIGHT"
+        f"FC_P003_{fc_p003_state}"
         if paired_verdict["status"] == "FC_P001_SCIENTIFIC_REJECTED"
         and fc_p003_approved
         else paired["paired_posteval_status"]
@@ -745,6 +798,7 @@ def build_sample(
             "scientific_failure_is_never_bypassed": True,
         },
         "stage_complete": stage_complete,
+        "fc_p001_stage_complete": fc_p001_stage_complete,
         "prior_posteval_stage_complete": prior_posteval_stage_complete,
         "project_goal_complete": False,
         "project_status": (
@@ -755,7 +809,15 @@ def build_sample(
         "scientific_next_stage": {
             "status": scientific_status,
             "active_work": (
-                "fc_p003_interleaved_paired_supervision_preflight"
+                (
+                    "fc_p003_interleaved_paired_supervision_training"
+                    if fc_p003_state == "RUNNING"
+                    else "fc_p003_unchanged_formal_posteval"
+                    if fc_p003_state == "TRAINING_COMPLETE_POSTEVAL_PENDING"
+                    else "fc_p003_scientific_fail_awaiting_lead_next_hypothesis"
+                    if fc_p003_state == "SCIENTIFIC_FAIL_NEEDS_LEAD_NEXT_HYPOTHESIS"
+                    else "fc_p003_interleaved_paired_supervision_preflight"
+                )
                 if paired_verdict["status"] == "FC_P001_SCIENTIFIC_REJECTED"
                 and fc_p003_approved
                 else "fc_p002_failure_map"
@@ -769,19 +831,30 @@ def build_sample(
                 )
             ),
             "purpose": (
-                "FC-P001 is scientifically rejected when both receipt-bound development "
-                "gates fail; next work is FC-P002 failure mapping before one Lead-approved "
-                "single-factor FC-P003 hypothesis"
+                "Lead-approved FC-P003 changes only paired-update timing from frontloaded "
+                "to uniformly interleaved; training completion is not scientific admission, "
+                "and a failed gate returns control to Lead for the next hypothesis"
             ),
             "fc_p001_verdict": paired_verdict,
             "fc_p003": {
                 "approval_state": "LEAD_APPROVED" if fc_p003_approved else "PLANNED",
                 "approval_reference": str(FC_P003_APPROVAL),
                 "state": (
-                    "PREFLIGHT_IMPLEMENTATION"
-                    if fc_p003_approved
-                    else "PLANNED_NOT_APPROVED"
+                    fc_p003_state
                 ),
+                "authority_unit": FC_P003_UNIT,
+                "main_pid": fc_p003_unit.get("main_pid", 0),
+                "output_root": str(FC_P003_ROOT),
+                "launch_receipt": str(FC_P003_LAUNCH_RECEIPT),
+                "launch_receipt_present": fc_p003_launch_present,
+                "launch_receipt_verified": fc_p003_launch_verified,
+                "launch_receipt_issues": fc_p003_launch_issues,
+                "completion_receipt": str(FC_P003_COMPLETION_RECEIPT),
+                "completion_receipt_present": fc_p003_completion_present,
+                "completion_receipt_verified": fc_p003_completion_verified,
+                "completion_receipt_issues": fc_p003_completion_issues,
+                "development_gate": str(FC_P003_DEVELOPMENT_GATE),
+                "development_gate_status": fc_p003_gate_status,
                 "single_factor": "paired_update_schedule_frontloaded_to_interleaved",
                 "automatic_recovery_eligible": False,
             },
