@@ -82,9 +82,34 @@ D015_MODEL_SHA256 = (
 D015_CALIBRATION_CONTRACT = Path(
     "docs/D015_CONDITIONAL_TRAIN_FIT_CALIBRATION_DRAFT_20261005.md"
 )
-D015_CALIBRATION_CONTRACT_SHA256 = (
-    "ddf6e9ae3b72f88d8f3e16db321d9a680f5f4a981debe7a575e8a41474c9902b"
+CALIBRATION_UNIT = "fluid-control-fcp003c-train-fit-calibration-20261005.service"
+CALIBRATION_CONTAINER = "fcp003c-train-fit-calibration-20261005"
+CALIBRATION_ROOT = Path("artifacts/fcp003c_train_fit_calibration_20261005")
+CALIBRATION_LOG = CALIBRATION_ROOT / "run.log"
+CALIBRATION_APPROVAL = CALIBRATION_ROOT / "evidence/execution_approval.json"
+CALIBRATION_CPU_PREFLIGHT = CALIBRATION_ROOT / "evidence/cpu_preflight.json"
+CALIBRATION_COMPLETION_RECEIPT = CALIBRATION_ROOT / "completion_receipt.json"
+CALIBRATION_COMPLETION_STATUS = (
+    "FCP003C_TRAIN_FIT_CALIBRATION_EXECUTION_COMPLETE_NOT_ADMISSION"
 )
+CALIBRATION_APPROVAL_SHA256 = (
+    "6cd1ffca319ea734ceec3726c6cedb3919e6aff0d45e636ff3b7e6cc4a45d515"
+)
+CALIBRATION_IMPLEMENTATION_COMMIT = "ff34a1cf402a12832ad8bedc9d4aa9c4971e6758"
+CALIBRATION_IMPLEMENTATION_SHA256 = (
+    "576790749f731f3cfff06666efe97772ed61c5a11573ea47559aaf00f57675f8"
+)
+CALIBRATION_LAUNCHER_SHA256 = (
+    "fc81504d55b60d7ff6a73ec1e1d7d22a5bb25119212863af34d180104e843bf9"
+)
+CALIBRATION_PREFLIGHT_SHA256 = (
+    "e45b68810382d56b3126193d8ff159f4cca613649ab40a47a8b1e3a1708f753e"
+)
+CALIBRATION_CPU_PREFLIGHT_SHA256 = (
+    "43deb62e24a18d6f99d7379dc0e2483a8fd2595ea4b84b54fa4da879014cd2e8"
+)
+CALIBRATION_TOTAL_STEPS = 128
+CALIBRATION_PAIRED_STEPS = 64
 FC_P003B_UNIT = "fluid-control-fcp003b-dynamic-pairs-20261005.service"
 FC_P003B_PROBE_UNIT = "fluid-control-fcp003b-dynamic-pairs-probe-v3-20261005.service"
 FC_P003B_POSTEVAL_UNIT = (
@@ -343,14 +368,102 @@ def verify_d015_terminal(repo: Path) -> tuple[bool, list[str]]:
     return not issues, issues
 
 
-def verify_d015_calibration_contract(repo: Path) -> tuple[bool, list[str]]:
-    """Bind the current train-only calibration engineering contract by SHA."""
-    path = repo / D015_CALIBRATION_CONTRACT
-    if not path.is_file():
-        return False, ["D015 calibration contract missing"]
-    if file_sha256(path) != D015_CALIBRATION_CONTRACT_SHA256:
-        return False, ["D015 calibration contract SHA differs"]
-    return True, []
+def verify_d015_calibration_authorization(repo: Path) -> tuple[bool, list[str]]:
+    """Verify immutable calibration approval and executing code, not a draft doc."""
+    approval_path = repo / CALIBRATION_APPROVAL
+    approval = read_json(approval_path, None)
+    if not isinstance(approval, dict):
+        return False, ["D015 calibration execution approval missing or invalid"]
+    issues = []
+    if file_sha256(approval_path) != CALIBRATION_APPROVAL_SHA256:
+        issues.append("D015 calibration approval SHA differs")
+    expected = {
+        "status": "FCP003C_TRAIN_FIT_CALIBRATION_EXECUTION_APPROVED",
+        "gpu_execution_authorized": True,
+        "scope": "single_bounded_train_only_calibration",
+        "optimizer_steps": CALIBRATION_TOTAL_STEPS,
+        "paired_steps": CALIBRATION_PAIRED_STEPS,
+        "implementation_commit": CALIBRATION_IMPLEMENTATION_COMMIT,
+        "implementation_sha256": CALIBRATION_IMPLEMENTATION_SHA256,
+        "launcher_sha256": CALIBRATION_LAUNCHER_SHA256,
+        "preflight_script_sha256": CALIBRATION_PREFLIGHT_SHA256,
+        "cpu_preflight_sha256": CALIBRATION_CPU_PREFLIGHT_SHA256,
+        "minimum_mem_available_gib": 20,
+        "validation_accessed": False,
+        "frozen_test_accessed": False,
+        "ppo_executed": False,
+        "scientific_admission": False,
+    }
+    for key, value in expected.items():
+        if approval.get(key) != value:
+            issues.append(f"D015 calibration approval {key} differs")
+    files = {
+        CALIBRATION_ROOT / "source_snapshot/scripts/run_fcp003c_train_fit_calibration.py": CALIBRATION_IMPLEMENTATION_SHA256,
+        Path("scripts/run_fcp003c_train_fit_calibration_spark_2aaec85_immutable.sh"): CALIBRATION_LAUNCHER_SHA256,
+        Path("scripts/preflight_fcp003c_train_fit_calibration.py"): CALIBRATION_PREFLIGHT_SHA256,
+        CALIBRATION_CPU_PREFLIGHT: CALIBRATION_CPU_PREFLIGHT_SHA256,
+    }
+    for relative, expected_sha in files.items():
+        path = repo / relative
+        if not path.is_file() or file_sha256(path) != expected_sha:
+            issues.append(f"D015 calibration input SHA differs: {relative}")
+    return not issues, issues
+
+
+def calibration_log_progress(repo: Path) -> dict:
+    """Read only complete JSON events already flushed by the guarded run."""
+    path = repo / CALIBRATION_LOG
+    progress = []
+    gpu_preflight = None
+    guard_exit = None
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        lines = []
+    for line in lines:
+        if not line.startswith("{"):
+            continue
+        try:
+            event = json.loads(line)
+        except (TypeError, ValueError):
+            continue
+        if event.get("event") == "fcp003c_train_fit_progress":
+            completed = event.get("completed_steps")
+            paired = event.get("paired_steps_completed")
+            total = event.get("total_steps")
+            if (
+                isinstance(completed, int)
+                and isinstance(paired, int)
+                and total == CALIBRATION_TOTAL_STEPS
+                and 0 <= completed <= CALIBRATION_TOTAL_STEPS
+                and 0 <= paired <= CALIBRATION_PAIRED_STEPS
+            ):
+                progress.append(event)
+        elif event.get("event") == "gpu_preflight":
+            gpu_preflight = event
+        elif event.get("event") == "gpu_guard_exit":
+            guard_exit = event
+    latest = progress[-1] if progress else {}
+    observed = guard_exit or gpu_preflight or {}
+    return {
+        "log": str(CALIBRATION_LOG),
+        "completed_steps": latest.get("completed_steps", 0),
+        "total_steps": CALIBRATION_TOTAL_STEPS,
+        "paired_steps_completed": latest.get("paired_steps_completed", 0),
+        "paired_steps_total": CALIBRATION_PAIRED_STEPS,
+        "latest_kind": latest.get("latest_kind"),
+        "latest_loss": latest.get("latest_loss"),
+        "progress_event_count": len(progress),
+        "minimum_required_mem_available_gib": 20.0,
+        "latest_logged_mem_available_gib": observed.get(
+            "min_observed_mem_available_gib",
+            observed.get("mem_available_gib"),
+        ),
+        "latest_logged_cuda_free_gib": observed.get(
+            "min_observed_cuda_free_gib", observed.get("cuda_free_gib")
+        ),
+        "guard_exit_code": guard_exit.get("exit_code") if guard_exit else None,
+    }
 
 
 def verify_fc_p003b_terminal(repo: Path) -> tuple[bool, list[str]]:
@@ -461,17 +574,30 @@ def unit_state(unit: str) -> dict:
     required_training_args = (
         ("--config-name", "tandem_fno_dynamic_paired_true_state_step_h100")
         if unit == FC_P003C_UNIT
+        else ("--output", "/workspace/output/calibration")
+        if unit == CALIBRATION_UNIT
         else ()
+    )
+    training_needle = (
+        "run_fcp003c_train_fit_calibration.py"
+        if unit == CALIBRATION_UNIT
+        else "train_tandem_fno_paired_stats.py"
     )
     training_process_pids = descendant_processes_matching(
         main_pid,
-        "train_tandem_fno_paired_stats.py",
+        training_needle,
         required_args=required_training_args,
     )
     if unit == FC_P003C_UNIT:
         training_process_pids = local_container_python_pids(
             FC_P003C_CONTAINER,
             "train_tandem_fno_paired_stats.py",
+            required_args=required_training_args,
+        )
+    elif unit == CALIBRATION_UNIT:
+        training_process_pids = local_container_python_pids(
+            CALIBRATION_CONTAINER,
+            training_needle,
             required_args=required_training_args,
         )
     posteval_process_pids = sorted(
@@ -694,6 +820,7 @@ def discover_related_units() -> list[str]:
                 TRUE_STATE_FORCE_PROBE_V2_UNIT,
                 FC_P003C_UNIT,
                 FC_P003C_POSTEVAL_UNIT,
+                CALIBRATION_UNIT,
                 *SUPERSEDED_MAIN_UNITS,
                 *names,
             )
@@ -908,7 +1035,17 @@ def build_sample(
     )
     d015_verified, d015_issues = verify_d015_terminal(repo)
     calibration_contract_verified, calibration_contract_issues = (
-        verify_d015_calibration_contract(repo)
+        verify_d015_calibration_authorization(repo)
+    )
+    calibration_unit = units.get(CALIBRATION_UNIT, {})
+    calibration_progress = calibration_log_progress(repo)
+    calibration_complete, calibration_completion_issues = verify_receipt(
+        repo / CALIBRATION_COMPLETION_RECEIPT, CALIBRATION_COMPLETION_STATUS
+    )
+    calibration_running = (
+        calibration_unit.get("active_state") == "active"
+        and bool(calibration_unit.get("training_process_pids"))
+        and calibration_contract_verified
     )
     fc_p003b_unit = units.get(FC_P003B_UNIT, {})
     fc_p003b_probe_unit = units.get(FC_P003B_PROBE_UNIT, {})
@@ -1030,6 +1167,7 @@ def build_sample(
         TRUE_STATE_FORCE_PROBE_V2_UNIT,
         FC_P003C_UNIT,
         FC_P003C_POSTEVAL_UNIT,
+        CALIBRATION_UNIT,
     )
     active_units = sorted(
         name
@@ -1041,6 +1179,7 @@ def build_sample(
             or bool(state.get("training_process_pids"))
             or bool(state.get("posteval_process_pids"))
         )
+        and (name != CALIBRATION_UNIT or calibration_running)
     )
     paired_evaluation_active = any(
         name in active_units
@@ -1055,6 +1194,27 @@ def build_sample(
     elif paired_evaluation_active:
         paired["paired_posteval_status"] = "PAIRED_POSTEVAL_RUNNING"
     progress["paired_posteval_status"] = paired["paired_posteval_status"]
+    progress["train_fit_calibration"] = {
+        **calibration_progress,
+        "state": (
+            "RUNNING"
+            if calibration_running
+            else "EXECUTION_COMPLETE_NOT_ADMISSION"
+            if calibration_complete
+            else "APPROVED_NOT_RUNNING"
+            if calibration_contract_verified
+            else "APPROVAL_OR_CODE_BINDING_INVALID"
+        ),
+        "authority_unit": CALIBRATION_UNIT,
+        "active_state": calibration_unit.get("active_state", "unknown"),
+        "main_pid": calibration_unit.get("main_pid", 0),
+        "training_process_pids": calibration_unit.get("training_process_pids", []),
+        "approval_verified": calibration_contract_verified,
+        "completion_verified": calibration_complete,
+        "completion_issues": calibration_completion_issues,
+        "current_mem_available_gib": resources.get("mem_available_gib"),
+        "guard_active": calibration_running,
+    }
     if not pending or active_units:
         idle_since = None
         idle_seconds = 0
@@ -1134,6 +1294,13 @@ def build_sample(
                 },
             }
         )
+    if calibration_contract_verified or calibration_running or calibration_complete:
+        tasks["train_fit_calibration"] = {
+            "authority_unit": CALIBRATION_UNIT,
+            "node": "spark",
+            "receipt_path": str(CALIBRATION_COMPLETION_RECEIPT),
+            "stage_complete": calibration_complete,
+        }
     for task_name, task in tasks.items():
         state = units.get(task["authority_unit"], {})
         if task_name in ("paired_lambda0_posteval", "paired_lambda10_posteval"):
@@ -1240,7 +1407,11 @@ def build_sample(
         fc_p003b_posteval_unit.get("active_state") == "active"
     )
     scientific_status = (
-        "D015_COMPLETE_TRAIN_FIT_CALIBRATION_ENGINEERING"
+        "D015_TRAIN_FIT_CALIBRATION_RUNNING"
+        if calibration_running
+        else "D015_TRAIN_FIT_CALIBRATION_COMPLETE_NOT_ADMISSION"
+        if calibration_complete
+        else "D015_COMPLETE_TRAIN_FIT_CALIBRATION_ENGINEERING"
         if fc_p003c_rejected and d015_verified and calibration_contract_verified
         else "D015_COMPLETE_AWAITING_CALIBRATION_CONTRACT"
         if fc_p003c_rejected and d015_verified
@@ -1304,7 +1475,11 @@ def build_sample(
         "scientific_next_stage": {
             "status": scientific_status,
             "active_work": (
-                "d015_complete_train_fit_calibration_implementation_and_cpu_validation"
+                "d015_train_fit_calibration_bounded_execution"
+                if calibration_running
+                else "d015_train_fit_calibration_complete_awaiting_scientific_review"
+                if calibration_complete
+                else "d015_complete_train_fit_calibration_implementation_and_cpu_validation"
                 if fc_p003c_rejected
                 and d015_verified
                 and calibration_contract_verified
@@ -1350,7 +1525,15 @@ def build_sample(
                 )
             ),
             "purpose": (
-                "D015 is complete and SHA-verified: the existing FC-P003C checkpoint "
+                "The separately approved bounded train-only calibration is running "
+                "under the 128/64-step contract and 20 GiB memory guard. Progress is "
+                "reported only from flushed run.log events; this run is not scientific "
+                "admission and does not authorize PPO."
+                if calibration_running
+                else "The bounded train-only calibration execution is complete but is "
+                "not scientific admission; its train-only result still requires review."
+                if calibration_complete
+                else "D015 is complete and SHA-verified: the existing FC-P003C checkpoint "
                 "also misses rear-Cl on its train paired window. The current stage is "
                 "CPU implementation and validation of the bounded train-only "
                 "calibration contract; no calibration run, scientific improvement, "
@@ -1543,6 +1726,10 @@ def build_sample(
                 "full_training_approval_reference": str(FC_P003C_FULL_APPROVAL),
                 "state": "TRAINING_AND_POSTEVAL_WAIT_RUNNING"
                 if fc_p003c_running and fc_p003c_posteval_running
+                else "D015_TRAIN_FIT_CALIBRATION_RUNNING"
+                if calibration_running
+                else "D015_TRAIN_FIT_CALIBRATION_COMPLETE_NOT_ADMISSION"
+                if calibration_complete
                 else "POSTEVAL_REJECTED_D015_COMPLETE_CALIBRATION_ENGINEERING"
                 if fc_p003c_rejected
                 and d015_verified
@@ -1583,7 +1770,11 @@ def build_sample(
             },
             "d015": {
                 "state": (
-                    "COMPLETE_CALIBRATION_ENGINEERING"
+                    "TRAIN_FIT_CALIBRATION_RUNNING"
+                    if calibration_running
+                    else "TRAIN_FIT_CALIBRATION_COMPLETE_NOT_ADMISSION"
+                    if calibration_complete
+                    else "COMPLETE_CALIBRATION_ENGINEERING"
                     if d015_verified and calibration_contract_verified
                     else "COMPLETE_AWAITING_CALIBRATION_CONTRACT"
                     if d015_verified
@@ -1594,12 +1785,13 @@ def build_sample(
                 "execution_receipt": str(D015_EXECUTION_RECEIPT),
                 "completion_verified": d015_verified,
                 "completion_issues": d015_issues,
-                "calibration_contract": str(D015_CALIBRATION_CONTRACT),
-                "calibration_contract_sha256": D015_CALIBRATION_CONTRACT_SHA256,
-                "calibration_contract_verified": calibration_contract_verified,
-                "calibration_contract_issues": calibration_contract_issues,
-                "calibration_execution_authorized": False,
-                "gpu_running": False,
+                "calibration_approval": str(CALIBRATION_APPROVAL),
+                "calibration_approval_sha256": CALIBRATION_APPROVAL_SHA256,
+                "calibration_code_binding_verified": calibration_contract_verified,
+                "calibration_binding_issues": calibration_contract_issues,
+                "design_reference": str(D015_CALIBRATION_CONTRACT),
+                "calibration_execution_authorized": calibration_contract_verified,
+                "gpu_running": calibration_running,
                 "ppo_authorized": False,
                 "project_goal_complete": False,
             },

@@ -1121,10 +1121,6 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                     }
                 )
             )
-            calibration = repo / MODULE.D015_CALIBRATION_CONTRACT
-            calibration.parent.mkdir(parents=True, exist_ok=True)
-            calibration.write_text("bounded train-only calibration design\n")
-            calibration_sha = hashlib.sha256(calibration.read_bytes()).hexdigest()
             now = datetime(2026, 10, 5, 14, 0, tzinfo=UTC)
             previous = {
                 "no_running_since_utc": (now - timedelta(seconds=301)).isoformat()
@@ -1133,8 +1129,8 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                 mock.patch.object(MODULE, "D015_RESULT_SHA256", result_sha),
                 mock.patch.object(
                     MODULE,
-                    "D015_CALIBRATION_CONTRACT_SHA256",
-                    calibration_sha,
+                    "verify_d015_calibration_authorization",
+                    return_value=(True, []),
                 ),
             ):
                 result = MODULE.build_sample(repo, previous, {}, RESOURCES, now)
@@ -1153,9 +1149,9 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                 )
                 self.assertTrue(stage["d015"]["completion_verified"])
                 self.assertTrue(
-                    stage["d015"]["calibration_contract_verified"]
+                    stage["d015"]["calibration_code_binding_verified"]
                 )
-                self.assertFalse(stage["d015"]["calibration_execution_authorized"])
+                self.assertTrue(stage["d015"]["calibration_execution_authorized"])
                 self.assertFalse(stage["d015"]["gpu_running"])
                 self.assertFalse(result["project_goal_complete"])
                 self.assertEqual(result["active_units"], [])
@@ -1163,6 +1159,67 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                     "D015_COMPLETE_CALIBRATION_ENGINEERING_WITH_NO_RUNNING_TASK_FOR_300_SECONDS",
                     result["alerts"],
                 )
+
+                run_log = repo / MODULE.CALIBRATION_LOG
+                run_log.parent.mkdir(parents=True, exist_ok=True)
+                run_log.write_text(
+                    json.dumps(
+                        {
+                            "event": "gpu_preflight",
+                            "mem_available_gib": 100.0,
+                            "cuda_free_gib": 40.0,
+                        }
+                    )
+                    + "\n"
+                    + json.dumps(
+                        {
+                            "event": "fcp003c_train_fit_progress",
+                            "completed_steps": 40,
+                            "total_steps": 128,
+                            "paired_steps_completed": 20,
+                            "latest_kind": "regular_plus_paired",
+                            "latest_loss": 0.125,
+                        }
+                    )
+                    + "\n"
+                )
+                running = MODULE.build_sample(
+                    repo,
+                    previous,
+                    {
+                        MODULE.CALIBRATION_UNIT: {
+                            **unit("active"),
+                            "main_pid": 2752382,
+                            "training_process_pids": [2753000],
+                        }
+                    },
+                    RESOURCES,
+                    now,
+                )
+                running_stage = running["scientific_next_stage"]
+                calibration_progress = running["progress"][
+                    "train_fit_calibration"
+                ]
+                self.assertEqual(
+                    running_stage["status"], "D015_TRAIN_FIT_CALIBRATION_RUNNING"
+                )
+                self.assertEqual(calibration_progress["completed_steps"], 40)
+                self.assertEqual(calibration_progress["total_steps"], 128)
+                self.assertEqual(calibration_progress["paired_steps_completed"], 20)
+                self.assertEqual(calibration_progress["paired_steps_total"], 64)
+                self.assertTrue(calibration_progress["guard_active"])
+                self.assertEqual(
+                    calibration_progress["minimum_required_mem_available_gib"],
+                    20.0,
+                )
+                self.assertEqual(
+                    running["active_units"], [MODULE.CALIBRATION_UNIT]
+                )
+                self.assertNotIn(
+                    "D015_COMPLETE_CALIBRATION_ENGINEERING_WITH_NO_RUNNING_TASK_FOR_300_SECONDS",
+                    running["alerts"],
+                )
+                self.assertFalse(running["project_goal_complete"])
 
                 d015_result.write_text(d015_result.read_text() + "\n")
                 tampered = MODULE.build_sample(repo, previous, {}, RESOURCES, now)
