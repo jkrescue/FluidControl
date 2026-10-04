@@ -33,6 +33,34 @@ def base_module(repo: Path):
     return module
 
 
+def validate_step_receipt(
+    receipt_path: Path,
+    *,
+    step: str,
+    checkpoint: str,
+    expected_paths: tuple[Path, ...],
+    output_root: Path,
+) -> None:
+    step_receipt = load(receipt_path)
+    if (
+        step_receipt.get("status") != "CONTROL_TRAIN16_POSTEVAL_STEP_COMPLETE"
+        or step_receipt.get("step") != step
+        or step_receipt.get("checkpoint_sha256") != checkpoint
+    ):
+        raise ValueError(f"FC-P003 {step} receipt contract differs")
+    hashes = step_receipt.get("sha256")
+    expected = {str(path): path for path in expected_paths}
+    if not isinstance(hashes, dict) or set(hashes) != set(expected):
+        raise ValueError(f"FC-P003 {step} receipt artifact set differs")
+    root = output_root.resolve()
+    for name, path in expected.items():
+        resolved = path.resolve()
+        if root not in resolved.parents or Path(name).resolve() != resolved:
+            raise ValueError(f"FC-P003 {step} receipt path escapes output")
+        if not path.is_file() or sha256(path) != hashes[name]:
+            raise ValueError(f"FC-P003 {step} receipt artifact differs")
+
+
 def validate_complete(out: Path, checkpoint: str) -> None:
     receipt = load(out / "receipt.json")
     if (
@@ -69,21 +97,27 @@ def validate_complete(out: Path, checkpoint: str) -> None:
     lineage = load(out / "lineage.json")
     if lineage.get("checkpoint_sha256") != checkpoint:
         raise ValueError("FC-P003 lineage checkpoint differs")
-    for step in ("validation10", "dynamic6", "force_window"):
-        step_receipt = load(out / "step_receipts" / f"{step}.json")
-        if (
-            step_receipt.get("status") != "CONTROL_TRAIN16_POSTEVAL_STEP_COMPLETE"
-            or step_receipt.get("step") != step
-            or step_receipt.get("checkpoint_sha256") != checkpoint
-        ):
-            raise ValueError(f"FC-P003 {step} receipt contract differs")
-        hashes = step_receipt.get("sha256")
-        if not isinstance(hashes, dict) or not hashes:
-            raise ValueError(f"FC-P003 {step} receipt hashes are missing")
-        for name, digest in hashes.items():
-            path = Path(name)
-            if not path.is_file() or sha256(path) != digest:
-                raise ValueError(f"FC-P003 {step} receipt artifact differs")
+    expected_by_step = {
+        "validation10": tuple(out / name for name in (
+            "validation10/evaluation.json", "validation10/segments.json",
+            "validation10/diagnostic.json", "validation10/endpoint_gate.json",
+        )),
+        "dynamic6": tuple(out / name for name in (
+            "dynamic6/evaluation.json", "dynamic6/segments.json",
+            "dynamic6/diagnostic.json",
+        )),
+        "force_window": (
+            out / "force_window/result.json", out / "development_gate.json",
+        ),
+    }
+    for step, expected_paths in expected_by_step.items():
+        validate_step_receipt(
+            out / "step_receipts" / f"{step}.json",
+            step=step,
+            checkpoint=checkpoint,
+            expected_paths=expected_paths,
+            output_root=out,
+        )
     development = load(out / "development_gate.json")
     if (
         development.get("status")
