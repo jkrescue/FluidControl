@@ -87,6 +87,43 @@ FC-P003C 的单步 mixed-loss 技术探针现已完成，completion/result SHA�
 
 Lead随后以commit `f034b15`、审批JSON SHA `4e4c8142b9f243589b042a44ddd99d9a164e1cc0951bc5becd8ec169336766b8`批准固定两epoch正式训练。当前权威user units为`fluid-control-fcp003c-true-state-step-20261005.service`（训练）与`fluid-control-fcp003c-posteval-wait-fa08ce0-20261005.service`（不可变后评估等待链）；候选根为`artifacts/tandem_fno_true_state_paired_step_lambda10_20261005`。训练和后评估正在运行，不得把技术探针成功、训练完成或端点PASS提前写成development admission或PPO授权。
 
+2026-10-04 21:11 UTC的实时证据显示：epoch 1已完成，epoch 2正在计算，训练和不可变后评估等待unit均为active。epoch 1的训练内selection score为0.0265716、terminal-total-Cd pooled NRMSE为0.0132990；这些数值只来自epoch内validation，不能替代固定validation10、dynamic6、force-window或development admission。辅助的16位置梯度诊断在第一个位置的regular-total梯度分解一致性检查处fail-closed；首位置debug测得相对残差`3.9183e-5`，超过未改变的`2e-5`容差，且未产生optimizer step、候选checkpoint或validation/frozen访问。该独立失败没有终止或改变主训练，不能被写成FC-P003C的科学结论，也不授权放宽容差或重试。
+
+FC-P003C训练完成后，独立评价按以下原始路径读取，不从训练日志推断正式结果：字段及逐通道误差位于`posteval_fc_p003c/validation10/evaluation.json`、`posteval_fc_p003c/dynamic6/evaluation.json`及相应`segments.json`；端点受力/动作诊断位于`validation10/endpoint_gate.json`和`dynamic6/diagnostic.json`；6.15 D/U力窗口和最终开发门禁位于`force_window/result.json`及`development_gate.json`。只有`posteval_fc_p003c/receipt.json`完整绑定上述文件、checkpoint、未访问frozen且未启动PPO后才进入D012兼容重算。commit `5f495c8`仅补FC-P003C专用外部step-receipt binder及candidate-readiness的严格trained-source合同，软件兼容完成不等于任何科学门槛通过。
+
+后评估完整且经独立SHA复核之后，允许的CPU-only C→D012顺序是：先运行`derive_d012_fcp003c_step_receipts.py`，输入`posteval_fc_p003c/receipt.json`和其中lineage绑定的checkpoint SHA，在原bundle之外生成`derived_step_receipts/{dynamic6,force_window}.json`；再运行`produce_canonical_surrogate_compatibility_gates.py`，输入同一posteval的`force_window/result.json`、`dynamic6/{evaluation,segments,diagnostic}.json`、两个派生step receipt、真实dynamic6数据、physical-QC、预声明、D012协议及同一best checkpoint，输出独占的`canonical_window_gate.json`与`dynamic_action_gate.json`。两步都只重算兼容证据，不启动PPO；任一canonical或development gate失败仍保持PPO阻断。
+
+以下命令只作为complete receipt出现并独立验证后的固定CPU handoff；当前不得提前执行：
+
+```bash
+CANDIDATE=artifacts/tandem_fno_true_state_paired_step_lambda10_20261005
+POSTEVAL="$CANDIDATE/posteval_fc_p003c"
+COMPAT=artifacts/canonical_surrogate_protocol_completion_fc_p003c_20261005
+CHECKPOINT_SHA=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["checkpoint_sha256"])' "$POSTEVAL/lineage.json")
+CHECKPOINT_EPOCH=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["checkpoint_epoch"])' "$POSTEVAL/lineage.json")
+python3 scripts/derive_d012_fcp003c_step_receipts.py \
+  --posteval-receipt "$POSTEVAL/receipt.json" \
+  --checkpoint-sha256 "$CHECKPOINT_SHA" \
+  --dynamic-output "$COMPAT/derived_step_receipts/dynamic6.json" \
+  --force-output "$COMPAT/derived_step_receipts/force_window.json"
+python3 scripts/produce_canonical_surrogate_compatibility_gates.py \
+  --force-window "$POSTEVAL/force_window/result.json" \
+  --force-step-receipt "$COMPAT/derived_step_receipts/force_window.json" \
+  --evaluation "$POSTEVAL/dynamic6/evaluation.json" \
+  --segments "$POSTEVAL/dynamic6/segments.json" \
+  --dynamic-diagnostic "$POSTEVAL/dynamic6/diagnostic.json" \
+  --posteval-receipt "$POSTEVAL/receipt.json" \
+  --dynamic-step-receipt "$COMPAT/derived_step_receipts/dynamic6.json" \
+  --dynamic-data data/curated/tandem_cylinders_full40_dynamic_validation_v1 \
+  --physical-qc artifacts/tandem_cylinders/full40_dynamic_validation_real_openfoam_qc_20261003.json \
+  --predeclaration artifacts/tandem_cylinders/full40_dynamic_validation_predeclared_20261003.json \
+  --protocol docs/CANONICAL_SURROGATE_PROTOCOL_COMPLETION_20261005.md \
+  --checkpoint-dir "$CANDIDATE/best" --checkpoint-epoch "$CHECKPOINT_EPOCH" \
+  --checkpoint-sha256 "$CHECKPOINT_SHA" \
+  --window-output "$COMPAT/canonical_window_gate.json" \
+  --dynamic-output "$COMPAT/dynamic_action_gate.json"
+```
+
 true-state paired-force backward工程探针是独立技术检查，不是训练实验。v1在forward前因mode-600 manifest在原容器UID/cap-drop配置下不可读而`PermissionError`退出，无optimizer、权重保存或候选模型；失败输出已保留，不对更底层的rootless/user-namespace机制作未验证归因。Lead事后明确批准了operational-only v2单次GPU技术预检（immutable launcher SHA `705c6d2f…339e`，CPU mount preflight SHA `6e4f4a0a…c489`），数值合同、数据、模型和容差不变。v2已完成：T20整段/分块loss为0.00853258837/0.00853258773，最大参数梯度绝对差1.86e-9；H100 normalized loss 0.06177457，梯度全部有限且47,210,800/47,222,711个元素非零，CUDA峰值allocated/reserved为5.886/6.537 GiB，最低`MemAvailable`105.921 GiB。模型parameters/buffers前后SHA相同，optimizer step=0，未保存candidate，未访问validation/frozen。result/completion SHA分别为`773af049…f9c8`/`eb23c661…12d4`。这只说明单个配对loss的梯度/内存工程可行，不说明模型改善或科学准入。
 
 最新执行核查（2026-10-04 15:52 UTC）：FC-P001两支总收据均已回主节点并通过内容复核，λ0 SHA `ab90a921…c677`、λ10 SHA `03b7358d…ef4`，两者均为`DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL`。评估执行阶段完成不等于科学假设成立，更不等于项目完成；代理PPO仍被门禁。
