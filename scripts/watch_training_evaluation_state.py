@@ -59,7 +59,10 @@ def _command(args: list[str]) -> subprocess.CompletedProcess:
 
 def most_specific_error(lines: list[str]) -> str | None:
     """Prefer the runtime exception over systemd's later generic failure line."""
-    specific = re.compile(r"ValueError:|RuntimeError:|Traceback \(most recent call last\)")
+    specific = re.compile(
+        r"ValueError:|RuntimeError:|Traceback \(most recent call last\)|error: argument",
+        re.I,
+    )
     generic = re.compile(r"Error:|FAILED|failed", re.I)
     for pattern in (specific, generic):
         for line in reversed(lines):

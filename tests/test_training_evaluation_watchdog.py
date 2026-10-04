@@ -46,6 +46,13 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         ]
         self.assertEqual(MODULE.most_specific_error(lines), lines[0])
 
+    def test_argparse_contract_error_wins_over_systemd_failure_line(self) -> None:
+        lines = [
+            "audit.py: error: argument --candidate-kind: invalid choice: control",
+            "systemd: service failed with result exit-code",
+        ]
+        self.assertEqual(MODULE.most_specific_error(lines), lines[0])
+
     def make_repo(self, directory: str, *, receipts=False) -> Path:
         repo = Path(directory)
         for run in (MODULE.MAIN_RUN, MODULE.BALANCED_RUN):
