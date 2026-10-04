@@ -27,6 +27,19 @@ MODULE = load_module()
 
 
 class LatestEvidenceDashboardTests(unittest.TestCase):
+    def test_resource_sampler_detects_paired_trainer_not_guard(self) -> None:
+        lines = ["cpu 1 2 3 4 5", "MemTotal: 128000000 kB", "MemAvailable: 64000000 kB",
+                 "96, 64, 42", "__TASKS__",
+                 "python python -u scripts/spark_gpu_guard.py -- python scripts/train_tandem_fno_paired_stats.py",
+                 "python python -u scripts/train_tandem_fno_paired_stats.py --config-name tandem_fno_dynamic_paired_interleaved_h100"]
+        for marker in ("__EPOCH__", "__V3_WORKER_EPOCH__", "__V3_ROLLOUT_EPOCH__",
+                       "__V3_H20_EPOCH__", "__V3_PRIMARY_SEED_H20_EPOCH__",
+                       "__V3_H20_REAR_DRAG_EPOCH__", "__V4_EPOCH__", "__V4_SINGLE_VALIDATION__"):
+            lines.extend([marker, "0"])
+        result, _ = MODULE._parse_host("\n".join(lines), None)
+        self.assertEqual(result["tasks"], ["PhysicsNeMo FNO 动态配对训练"])
+        self.assertEqual(result["task_count"], 1)
+
     def test_current_training_log_is_bounded_evidence_not_live_status(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

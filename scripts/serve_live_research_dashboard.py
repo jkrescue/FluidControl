@@ -1491,7 +1491,9 @@ def _parse_host(output: str, previous: tuple[int, int] | None):
         elif command == "bash" and "finalize_tandem_multistep_worker.sh" in args:
             active.append("模型训练完成后自动回传与验收")
         elif command in ("python", "python3") and "spark_gpu_guard.py" not in args:
-            if "train_tandem_fno_rollout.py" in args:
+            if "train_tandem_fno_paired_stats.py" in args:
+                active.append("PhysicsNeMo FNO 动态配对训练" if "dynamic_paired" in args else "PhysicsNeMo FNO 配对监督训练")
+            elif "train_tandem_fno_rollout.py" in args:
                 active.append("PhysicsNeMo FNO 训练")
             elif "train_tandem_fno.py" in args:
                 active.append("PhysicsNeMo FNO 新数据训练")
