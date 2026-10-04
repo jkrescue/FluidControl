@@ -17,10 +17,14 @@ full40="$eval_root/data/curated/tandem_cylinders_matched_start_full40_v1"
 predecl="$eval_root/artifacts/tandem_cylinders/matched_start_full40_predeclared_20261003.json"
 physical_qc="$eval_root/artifacts/tandem_cylinders/full40_dynamic_validation_real_openfoam_qc_20261003.json"
 lineage="$root/launch/audit_fcp003b_candidate_lineage.py"
+lineage_sha="0730690dfce369d3c9b6a84725aa7ed1720d3692a1094ccd2521f3dd515ef99d"
+validator_sha="11885f2a54e9e82cf75c82855137b13005b43adf74a554b26e2e699c7aa3f468"
 
 [[ "$(docker image inspect "$image" --format '{{.Id}}')" == "$image_id" ]]
 for path in "$source" "$dev30" "$dynamic" "$full40/validation"; do [[ -e "$path" ]]; done
 for path in "$predecl" "$physical_qc" "$lineage"; do [[ -f "$path" ]]; done
+[[ "$(sha256sum "$lineage" | cut -d' ' -f1)" == "$lineage_sha" ]] || { echo "immutable lineage differs" >&2; exit 2; }
+[[ "$(sha256sum "$root/launch/validate_fcp003b_worker_output.py" | cut -d' ' -f1)" == "$validator_sha" ]] || { echo "immutable validator differs" >&2; exit 2; }
 [[ "$(sha256sum "$dev30/normalization.json" | cut -d' ' -f1)" == f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1 ]]
 [[ "$(sha256sum "$dynamic/manifest.json" | cut -d' ' -f1)" == bfa49031a1ab2b8e10a5cc5d95f1fbd8713e289c3ac8155838334e3c3d007dae ]]
 if [[ "$mode" == --dry-run ]]; then
@@ -104,9 +108,9 @@ docker run "${common[@]}" "$image" python -u scripts/audit_dynamic_fno_developme
   --force-window /workspace/output/force_window/result.json --checkpoint-sha256 "$checkpoint_sha" \
   --output /workspace/output/development_gate.json
 
-python3 - "$out" "$checkpoint_sha" <<'PY'
+python3 - "$out" "$checkpoint_sha" "$image_id" <<'PY'
 import hashlib,json,os,pathlib,sys,tempfile
-root=pathlib.Path(sys.argv[1]); checkpoint=sys.argv[2]
+root=pathlib.Path(sys.argv[1]); checkpoint=sys.argv[2]; image=sys.argv[3]
 def sha(path):
  h=hashlib.sha256()
  with path.open('rb') as stream:
@@ -118,8 +122,13 @@ required={'lineage.json','validation10/evaluation.json','validation10/segments.j
  'validation10/diagnostic.json','validation10/endpoint_gate.json','dynamic6/evaluation.json',
  'dynamic6/segments.json','dynamic6/diagnostic.json','force_window/result.json','development_gate.json'}
 if not required.issubset(files): raise SystemExit('posteval artifacts incomplete')
+lineage=json.loads((root/'lineage.json').read_text())
 payload={'status':'FC_P003B_POSTEVAL_COMPLETE','candidate_kind':'dynamic_paired_interleaved_lambda10',
- 'checkpoint_sha256':checkpoint,'sha256':files,'frozen_test_accessed':False,'ppo_auto_launched':False}
+ 'checkpoint_sha256':checkpoint,'checkpoint_epoch':lineage['checkpoint_epoch'],
+ 'official_image_id':image,'normalization_sha256':'f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1',
+ 'protocol':['validation10_H1_H10_H50_H100_stride25_batch4','dynamic6_H1_H10_H50_H100_stride1_batch8','force_window6','unchanged_development_gate'],
+ 'case_counts':{'validation10':10,'dynamic6':6},'sha256':files,
+ 'frozen_test_accessed':False,'ppo_auto_launched':False}
 target=root/'receipt.json'
 with tempfile.NamedTemporaryFile('w',dir=root,delete=False) as stream:
  tmp=pathlib.Path(stream.name); json.dump(payload,stream,indent=2,sort_keys=True); stream.write('\n'); stream.flush(); os.fsync(stream.fileno())
