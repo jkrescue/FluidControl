@@ -90,7 +90,9 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         ]
         self.assertEqual(MODULE.most_specific_error(lines), lines[0])
 
-    def make_repo(self, directory: str, *, receipts=False, paired=False) -> Path:
+    def make_repo(
+        self, directory: str, *, receipts=False, paired=False, paired_posteval=False
+    ) -> Path:
         repo = Path(directory)
         for run in (MODULE.MAIN_RUN, MODULE.BALANCED_RUN):
             root = repo / run
@@ -158,6 +160,27 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                     }
                 )
             )
+        if paired_posteval:
+            for receipt in (
+                MODULE.PAIRED_LAMBDA0_POSTEVAL_RECEIPT,
+                MODULE.PAIRED_LAMBDA10_POSTEVAL_RECEIPT,
+            ):
+                target = repo / receipt
+                target.parent.mkdir(parents=True, exist_ok=True)
+                evidence = target.parent / "evaluation.json"
+                evidence.write_text('{"finite":true}\n')
+                target.write_text(
+                    json.dumps(
+                        {
+                            "status": MODULE.PAIRED_POSTEVAL_STATUS,
+                            "sha256": {
+                                "evaluation.json": hashlib.sha256(
+                                    evidence.read_bytes()
+                                ).hexdigest()
+                            },
+                        }
+                    )
+                )
         return repo
 
     def test_failed_posteval_is_immediate_explicit_blocker(self) -> None:
@@ -243,18 +266,24 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         self.assertEqual(result["project_status"], "NEEDS_MODEL_IMPROVEMENT")
         self.assertEqual(
             result["scientific_next_stage"]["status"],
-            "PAIRED_POSTEVAL_PENDING",
+            "PAIRED_POSTEVAL_APPROVED_PREFLIGHT",
         )
         self.assertFalse(
             result["scientific_next_stage"]["automatic_restart_allowed"]
         )
         self.assertTrue(result["progress"]["paired_training_complete"])
         self.assertFalse(result["progress"]["paired_posteval_complete"])
-        self.assertEqual(result["progress"]["next_owner"], "Lead")
-        self.assertEqual(result["progress"]["approval_required"], "FC-P001")
+        self.assertEqual(
+            result["progress"]["next_owner"], "Surrogate + Physics/Data"
+        )
+        self.assertIsNone(result["progress"]["approval_required"])
+        self.assertEqual(result["progress"]["approval_state"], "LEAD_APPROVED")
+        self.assertEqual(
+            result["progress"]["approval_reference"], "docs/FC-P001_APPROVAL.md"
+        )
         self.assertEqual(
             result["scientific_next_stage"]["active_work"],
-            "paired_posteval_pending",
+            "paired_posteval_approved_preflight",
         )
 
     def test_paired_posteval_idle_alert_names_owner_and_experiment(self) -> None:
@@ -273,10 +302,87 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                 now,
             )
         self.assertIn(
-            "PAIRED_POSTEVAL_PENDING_WITH_NO_RUNNING_UNIT_FOR_300_SECONDS",
+            "PAIRED_POSTEVAL_APPROVED_WITH_NO_RUNNING_UNIT_FOR_300_SECONDS",
             result["alerts"],
         )
         self.assertIn("FC-P001", result["blocker_reasons"][-1])
+        self.assertIn("Lead-approved", result["blocker_reasons"][-1])
+        self.assertNotIn("pending Lead approval", result["blocker_reasons"][-1])
+
+    def test_active_paired_units_are_authoritative_running_work(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(directory, receipts=True, paired=True)
+            result = MODULE.build_sample(
+                repo,
+                None,
+                {
+                    MODULE.MAIN_AUTHORITY_UNIT: unit(),
+                    MODULE.WORKER_AUTHORITY_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT: unit("active"),
+                    MODULE.PAIRED_LAMBDA10_POSTEVAL_UNIT: unit("active"),
+                },
+                RESOURCES,
+                datetime(2026, 10, 4, 15, 30, tzinfo=UTC),
+            )
+        self.assertEqual(
+            result["scientific_next_stage"]["status"], "PAIRED_POSTEVAL_RUNNING"
+        )
+        self.assertEqual(
+            result["scientific_next_stage"]["active_work"],
+            "paired_posteval_running",
+        )
+        self.assertIn(MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT, result["active_units"])
+        self.assertIn(MODULE.PAIRED_LAMBDA10_POSTEVAL_UNIT, result["active_units"])
+        self.assertEqual(result["alerts"], [])
+        review = result["scientific_next_stage"]["protocol_review"]
+        self.assertEqual(
+            review["status"], "LAMBDA0_LAMBDA10_PROTOCOL_MATCH_VERIFIED"
+        )
+        self.assertEqual(review["validation10_expected_segments"]["H100"], 290)
+        self.assertEqual(review["dynamic6_expected_segments"]["all"], 3858)
+        self.assertFalse(review["training_epoch_metrics_used_for_verdict"])
+        self.assertFalse(review["frozen_test_accessed"])
+
+    def test_both_strict_paired_receipts_complete_stage_not_project(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(
+                directory, receipts=True, paired=True, paired_posteval=True
+            )
+            result = MODULE.build_sample(
+                repo,
+                None,
+                {
+                    MODULE.MAIN_AUTHORITY_UNIT: unit(),
+                    MODULE.WORKER_AUTHORITY_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA10_POSTEVAL_UNIT: unit(),
+                },
+                RESOURCES,
+                datetime(2026, 10, 4, 16, 30, tzinfo=UTC),
+            )
+        self.assertTrue(result["stage_complete"])
+        self.assertFalse(result["workflow_pending"])
+        self.assertFalse(result["project_goal_complete"])
+        self.assertEqual(
+            result["scientific_next_stage"]["status"],
+            "PAIRED_POSTEVAL_COMPLETE_AWAITING_LEAD_VERDICT",
+        )
+
+    def test_latest_active_lambda0_generation_becomes_authority(self) -> None:
+        units = {
+            "fluid-control-paired-lambda0-posteval-fcp001-20261004.service": unit(
+                "failed", "exit-code"
+            ),
+            MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT: unit("active"),
+        }
+        self.assertEqual(
+            MODULE.select_versioned_authority(
+                units,
+                MODULE.PAIRED_LAMBDA0_POSTEVAL_PREFIX,
+                MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT,
+            ),
+            MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT,
+        )
 
     def test_paired_lambda0_active_is_current_scientific_work(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
