@@ -1,0 +1,9 @@
+defaults:
+  - tandem_fno_dynamic_paired_interleaved_h100
+  - _self_
+
+# FC-P003C preserves the FC-P003B data/schedule and changes only the paired
+# objective.  Execution requires a separate Lead-approved immutable runner.
+training:
+  paired_objective_kind: true_state_step_force
+  paired_step_chunk_size: 10

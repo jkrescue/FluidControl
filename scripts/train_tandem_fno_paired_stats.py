@@ -19,6 +19,12 @@ import torch
 from fluid_control.tandem_datapipe import TandemRolloutDataset
 from fluid_control.paired_force_statistics import paired_statistic_loss
 from fluid_control.paired_stat_datapipe import MatchedPairStatDataset
+from fluid_control.paired_step_training import (
+    paired_objective_kind as resolve_paired_objective_kind,
+    prepare_true_state_training_model,
+    summarize_true_state_step_updates,
+    true_state_paired_optimizer_step,
+)
 from fluid_control.paired_training import (
     combine_paired_rollout_batch,
     paired_batch_indices,
@@ -75,6 +81,40 @@ def rollout(
         predictions.append(predicted)
         forces.append(force)
     return torch.stack(predictions, dim=1), torch.stack(forces, dim=1)
+
+
+def regular_rollout_objective(
+    network: torch.nn.Module,
+    state: torch.Tensor,
+    target_state: torch.Tensor,
+    omega: torch.Tensor,
+    target_force: torch.Tensor,
+    mask: torch.Tensor,
+    channel_weights: torch.Tensor,
+    *,
+    force_loss_weight: float,
+    rollout_discount: float,
+    teacher_forcing_ratio: float,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Return the unchanged regular total, field, and force rollout losses."""
+    predicted_state, predicted_force = rollout(
+        network, state, mask, omega, target_state, teacher_forcing_ratio
+    )
+    steps = predicted_state.shape[1]
+    weights = torch.pow(
+        torch.as_tensor(rollout_discount, device=state.device),
+        torch.arange(steps, device=state.device, dtype=state.dtype),
+    )
+    weights = weights / weights.sum()
+    field_by_step = ((predicted_state - target_state).square() * mask[:, None]).sum(
+        dim=(2, 3, 4)
+    ) / (mask.sum(dim=(1, 2, 3)).clamp_min(1)[:, None] * 3)
+    force_by_step = (
+        (predicted_force - target_force).square() * channel_weights[None, None]
+    ).sum(dim=2)
+    field_loss = (field_by_step * weights[None]).sum(dim=1).mean()
+    force_loss = (force_by_step * weights[None]).sum(dim=1).mean()
+    return field_loss + force_loss_weight * force_loss, field_loss, force_loss
 
 
 def teacher_forcing_ratio(cfg: DictConfig, epoch: int) -> float:
@@ -156,6 +196,12 @@ def main(cfg: DictConfig) -> None:
             "initial_checkpoint": str(cfg.training.initial_checkpoint),
             "paired_stat_loss_weight": float(cfg.training.paired_stat_loss_weight),
             "paired_stat_horizons": list(cfg.training.paired_stat_horizons),
+            "paired_objective_kind": str(
+                cfg.training.get("paired_objective_kind", "paired_statistics")
+            ),
+            "paired_step_chunk_size": int(
+                cfg.training.get("paired_step_chunk_size", 10)
+            ),
             "paired_root": str(cfg.data.paired_root),
             "paired_manifest": str(cfg.data.paired_manifest),
             "nccl_environment": {
@@ -262,6 +308,10 @@ def main(cfg: DictConfig) -> None:
     paired_horizons = tuple(int(value) for value in cfg.training.paired_stat_horizons)
     if paired_horizons != (20, 50, 100) or rollout_steps != 100:
         raise ValueError("paired-stat experiment requires exact H20/H50/H100 within H100")
+    paired_objective_kind = resolve_paired_objective_kind(
+        cfg.training.get("paired_objective_kind")
+    )
+    paired_step_chunk_size = int(cfg.training.get("paired_step_chunk_size", 10))
     paired_dataset_kind = str(cfg.data.get("paired_dataset_kind", "static16"))
     if paired_dataset_kind == "static16":
         pair_dataset = MatchedPairStatDataset(
@@ -316,6 +366,21 @@ def main(cfg: DictConfig) -> None:
         raise ValueError(
             "paired_batches_per_epoch must equal complete paired dataset passes"
         )
+    if paired_objective_kind == "true_state_step_force":
+        if dist.distributed or dist.world_size != 1:
+            raise ValueError("true_state_step_force is supported on exactly one GPU")
+        if (
+            paired_dataset_kind != "dynamic8"
+            or paired_dataset_repetitions != 2
+            or paired_batches_per_epoch != 16
+            or paired_step_chunk_size != 10
+            or float(cfg.training.teacher_forcing_start) != 0.0
+            or float(cfg.training.teacher_forcing_end) != 0.0
+        ):
+            raise ValueError(
+                "true_state_step_force requires dynamic8, two complete passes, "
+                "16 updates, chunk10, and zero teacher forcing"
+            )
 
     network: torch.nn.Module = build_model(cfg).to(dist.device)
     if dist.distributed:
@@ -337,25 +402,23 @@ def main(cfg: DictConfig) -> None:
     current_teacher_forcing = 0.0
 
     def base_objective(state, target_state, omega, target_force, mask):
-        predicted_state, predicted_force = rollout(
-            network, state, mask, omega, target_state, current_teacher_forcing
+        loss, _, _ = regular_rollout_objective(
+            network,
+            state,
+            target_state,
+            omega,
+            target_force,
+            mask,
+            channel_weights,
+            force_loss_weight=float(cfg.training.force_loss_weight),
+            rollout_discount=float(cfg.training.rollout_discount),
+            teacher_forcing_ratio=current_teacher_forcing,
         )
-        steps = predicted_state.shape[1]
-        weights = torch.pow(
-            torch.as_tensor(float(cfg.training.rollout_discount), device=state.device),
-            torch.arange(steps, device=state.device, dtype=state.dtype),
-        )
-        weights = weights / weights.sum()
-        field_by_step = ((predicted_state - target_state).square() * mask[:, None]).sum(
-            dim=(2, 3, 4)
-        ) / (mask.sum(dim=(1, 2, 3)).clamp_min(1)[:, None] * 3)
-        force_by_step = (
-            (predicted_force - target_force).square()
-            * channel_weights[None, None]
-        ).sum(dim=2)
-        field_loss = (field_by_step * weights[None]).sum(dim=1).mean()
-        force_loss = (force_by_step * weights[None]).sum(dim=1).mean()
-        return field_loss + float(cfg.training.force_loss_weight) * force_loss
+        return loss
+
+    def predict_force_only(model, inputs, mask):
+        _, force = predict(model, inputs, mask)
+        return force
 
     @StaticCaptureTraining(
         model=network,
@@ -483,6 +546,9 @@ def main(cfg: DictConfig) -> None:
         paired_batches = 0
         paired_identities = []
         paired_identity_passes = [[] for _ in range(paired_dataset_repetitions)]
+        paired_step_records = []
+        if paired_objective_kind == "true_state_step_force":
+            prepare_true_state_training_model(network)
         with LaunchLogger("train", epoch=epoch, num_mini_batch=train_batches) as logger:
             for batch_index, batch in enumerate(train_loader):
                 if max_train_batches and batch_index >= int(max_train_batches):
@@ -510,14 +576,35 @@ def main(cfg: DictConfig) -> None:
                         key: value.to(dist.device, non_blocking=True)
                         for key, value in pair.items()
                     }
-                    combined = combine_paired_rollout_batch(pair)
-                    loss = forward_train_paired(
-                        batch["state"], batch["target_state"], batch["omega"],
-                        batch["target_force"], batch["mask"],
-                        combined["state"], combined["target_state"],
-                        combined["omega"], combined["mask"],
-                        combined["action_force"], combined["zero_force"],
-                    )
+                    if paired_objective_kind == "paired_statistics":
+                        combined = combine_paired_rollout_batch(pair)
+                        loss = forward_train_paired(
+                            batch["state"], batch["target_state"], batch["omega"],
+                            batch["target_force"], batch["mask"],
+                            combined["state"], combined["target_state"],
+                            combined["omega"], combined["mask"],
+                            combined["action_force"], combined["zero_force"],
+                        )
+                    else:
+                        step_metrics = true_state_paired_optimizer_step(
+                            model=network,
+                            optimizer=optimizer,
+                            base_loss=base_objective(
+                                batch["state"], batch["target_state"],
+                                batch["omega"], batch["target_force"], batch["mask"],
+                            ),
+                            pair=pair,
+                            channel_weights=channel_weights,
+                            paired_weight=paired_weight,
+                            predict_force=predict_force_only,
+                            total_steps=rollout_steps,
+                            chunk_size=paired_step_chunk_size,
+                            gradient_clip_norm=float(cfg.training.gradient_clip_norm),
+                        )
+                        loss = torch.as_tensor(
+                            step_metrics["loss"], dtype=torch.float32, device=dist.device
+                        )
+                        paired_step_records.append(step_metrics)
                     paired_batches += 1
                     identities = [
                         item.get("pair_id", f"{item['phase']}:{item.get('action')}")
@@ -643,6 +730,15 @@ def main(cfg: DictConfig) -> None:
         metrics["train_only_paired_stat_loss"] = float(
             paired_eval_total[0] / paired_eval_total[1]
         )
+        if paired_objective_kind == "true_state_step_force":
+            metrics.update(summarize_true_state_step_updates(
+                paired_step_records,
+                expected_updates=paired_batches_per_epoch,
+                force_channels=len(force_indices),
+            ))
+            metrics["train_only_paired_stat_loss_role"] = (
+                "diagnostic_not_optimized"
+            )
 
         scheduler.step()
         score = (
@@ -667,6 +763,8 @@ def main(cfg: DictConfig) -> None:
             "additional_training_sources": additional_sources,
             "force_channel_weights": channel_weights.detach().cpu().tolist(),
             "paired_stat_loss_weight": paired_weight,
+            "paired_objective_kind": paired_objective_kind,
+            "paired_step_chunk_size": paired_step_chunk_size,
             "paired_stat_horizons": list(paired_horizons),
             "paired_pair_count": len(pair_dataset),
             "paired_dataset_kind": paired_dataset_kind,
@@ -713,6 +811,8 @@ def main(cfg: DictConfig) -> None:
                 "validation_rollout_steps": validation_rollout_steps,
                 "selection_score": score,
                 "paired_stat_loss_weight": paired_weight,
+                "paired_objective_kind": paired_objective_kind,
+                "paired_step_chunk_size": paired_step_chunk_size,
                 "paired_batches": paired_batches,
                 "paired_batch_schedule": paired_schedule,
                 "paired_batch_indices": list(paired_indices),
