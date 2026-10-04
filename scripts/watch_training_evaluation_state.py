@@ -60,6 +60,13 @@ PAIRED_LAMBDA10_POSTEVAL_UNIT = (
 PAIRED_LAMBDA10_POSTEVAL_RECEIPT = (
     PAIRED_LAMBDA10_ROOT / "posteval_fc_p001/receipt.json"
 )
+PAIRED_LAMBDA0_DEVELOPMENT_GATE = (
+    PAIRED_LAMBDA0_ROOT / "posteval_fc_p001/development_gate.json"
+)
+PAIRED_LAMBDA10_DEVELOPMENT_GATE = (
+    PAIRED_LAMBDA10_ROOT / "posteval_fc_p001/development_gate.json"
+)
+PAIRED_DEVELOPMENT_FAIL_STATUS = "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL"
 PAIRED_PROTOCOL_SHA256 = {
     "evaluator": "eb93ec1e95ee5ac491bcf929e9e00bc9da83d2c97240c0d9c87d517faffe9d5f",
     "force_window": "4ef0a878ac6f3ab3a8e0a957b7b16882731b2aff8093d0efa46cb4e29a954df8",
@@ -123,6 +130,20 @@ def read_json(path: Path, fallback):
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError, TypeError):
         return fallback
+
+
+def paired_scientific_verdict(repo: Path, paired_complete: bool) -> dict:
+    """Read receipt-bound development gates without turning a science fail into a retry."""
+    if not paired_complete:
+        return {"status": "PENDING", "lambda0": None, "lambda10": None}
+    lambda0 = read_json(repo / PAIRED_LAMBDA0_DEVELOPMENT_GATE, {}).get("status")
+    lambda10 = read_json(repo / PAIRED_LAMBDA10_DEVELOPMENT_GATE, {}).get("status")
+    status = (
+        "FC_P001_SCIENTIFIC_REJECTED"
+        if lambda0 == lambda10 == PAIRED_DEVELOPMENT_FAIL_STATUS
+        else "FC_P001_COMPLETE_REQUIRES_AGENT_REVIEW"
+    )
+    return {"status": status, "lambda0": lambda0, "lambda10": lambda10}
 
 
 def atomic_json(path: Path, payload: dict) -> None:
@@ -506,6 +527,9 @@ def build_sample(
         and progress["balanced_posteval_complete"]
     )
     paired = paired_training_progress(repo)
+    paired_verdict = paired_scientific_verdict(
+        repo, paired["paired_posteval_complete"]
+    )
     progress.update(paired)
     stage_complete = (
         prior_posteval_stage_complete
@@ -534,7 +558,9 @@ def build_sample(
     )
     if paired["paired_posteval_complete"]:
         paired["paired_posteval_status"] = (
-            "PAIRED_POSTEVAL_COMPLETE_AWAITING_LEAD_VERDICT"
+            "PAIRED_POSTEVAL_COMPLETE_SCIENTIFIC_REJECTED"
+            if paired_verdict["status"] == "FC_P001_SCIENTIFIC_REJECTED"
+            else "PAIRED_POSTEVAL_COMPLETE_REQUIRES_AGENT_REVIEW"
         )
     elif paired_evaluation_active:
         paired["paired_posteval_status"] = "PAIRED_POSTEVAL_RUNNING"
@@ -667,7 +693,9 @@ def build_sample(
     lambda0_receipt_path = PAIRED_LAMBDA0_ROOT / "completion_receipt.json"
     lambda0_complete = paired["lambda0_training_complete"]
     lambda0_unit = units.get(PAIRED_LAMBDA0_UNIT, {})
-    if lambda0_complete:
+    if paired["lambda0_posteval_complete"]:
+        lambda0_state = "TRAINING_AND_POSTEVAL_STAGE_COMPLETE"
+    elif lambda0_complete:
         lambda0_state = "TRAINING_STAGE_COMPLETE_POSTEVAL_PENDING"
     elif lambda0_unit.get("active_state") == "active":
         lambda0_state = "RUNNING"
@@ -681,7 +709,7 @@ def build_sample(
     else:
         lambda0_state = "PENDING"
     scientific_status = (
-        "PAIRED_POSTEVAL_COMPLETE_AWAITING_LEAD_VERDICT"
+        paired["paired_posteval_status"]
         if paired["paired_posteval_complete"]
         else (
             "PAIRED_POSTEVAL_RUNNING"
@@ -722,7 +750,7 @@ def build_sample(
         "scientific_next_stage": {
             "status": scientific_status,
             "active_work": (
-                "paired_posteval_complete_awaiting_lead_verdict"
+                "fc_p002_failure_map"
                 if paired["paired_posteval_complete"]
                 else (
                     "paired_posteval_running"
@@ -733,9 +761,11 @@ def build_sample(
                 )
             ),
             "purpose": (
-                "same-protocol FC-P001 post-evaluation of existing lambda0/lambda10 "
-                "PhysicsNeMo candidates"
+                "FC-P001 is scientifically rejected when both receipt-bound development "
+                "gates fail; next work is FC-P002 failure mapping before one Lead-approved "
+                "single-factor FC-P003 hypothesis"
             ),
+            "fc_p001_verdict": paired_verdict,
             "planned_spark_root": str(PAIRED_DATAPIPE_ROOT),
             "planned_worker_unit": PAIRED_DATAPIPE_WORKER_UNIT,
             "lambda0": {
@@ -750,9 +780,13 @@ def build_sample(
             },
             "lambda10": {
                 "state": (
-                    "TRAINING_STAGE_COMPLETE_TRANSFER_VERIFIED"
-                    if paired["lambda10_transfer_complete"]
-                    else "WORKER_TRANSFER_PENDING"
+                    "TRAINING_AND_POSTEVAL_STAGE_COMPLETE"
+                    if paired["lambda10_posteval_complete"]
+                    else (
+                        "TRAINING_STAGE_COMPLETE_TRANSFER_VERIFIED"
+                        if paired["lambda10_transfer_complete"]
+                        else "WORKER_TRANSFER_PENDING"
+                    )
                 ),
                 "output_root": str(PAIRED_LAMBDA10_ROOT),
                 "posteval_unit": PAIRED_LAMBDA10_POSTEVAL_UNIT,

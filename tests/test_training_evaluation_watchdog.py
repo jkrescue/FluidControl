@@ -161,14 +161,24 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                 )
             )
         if paired_posteval:
-            for receipt in (
-                MODULE.PAIRED_LAMBDA0_POSTEVAL_RECEIPT,
-                MODULE.PAIRED_LAMBDA10_POSTEVAL_RECEIPT,
+            for receipt, gate in (
+                (
+                    MODULE.PAIRED_LAMBDA0_POSTEVAL_RECEIPT,
+                    MODULE.PAIRED_LAMBDA0_DEVELOPMENT_GATE,
+                ),
+                (
+                    MODULE.PAIRED_LAMBDA10_POSTEVAL_RECEIPT,
+                    MODULE.PAIRED_LAMBDA10_DEVELOPMENT_GATE,
+                ),
             ):
                 target = repo / receipt
                 target.parent.mkdir(parents=True, exist_ok=True)
                 evidence = target.parent / "evaluation.json"
                 evidence.write_text('{"finite":true}\n')
+                gate_path = repo / gate
+                gate_path.write_text(
+                    json.dumps({"status": MODULE.PAIRED_DEVELOPMENT_FAIL_STATUS})
+                )
                 target.write_text(
                     json.dumps(
                         {
@@ -176,7 +186,10 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                             "sha256": {
                                 "evaluation.json": hashlib.sha256(
                                     evidence.read_bytes()
-                                ).hexdigest()
+                                ).hexdigest(),
+                                "development_gate.json": hashlib.sha256(
+                                    gate_path.read_bytes()
+                                ).hexdigest(),
                             },
                         }
                     )
@@ -365,7 +378,22 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         self.assertFalse(result["project_goal_complete"])
         self.assertEqual(
             result["scientific_next_stage"]["status"],
-            "PAIRED_POSTEVAL_COMPLETE_AWAITING_LEAD_VERDICT",
+            "PAIRED_POSTEVAL_COMPLETE_SCIENTIFIC_REJECTED",
+        )
+        self.assertEqual(
+            result["scientific_next_stage"]["active_work"], "fc_p002_failure_map"
+        )
+        self.assertEqual(
+            result["scientific_next_stage"]["fc_p001_verdict"]["status"],
+            "FC_P001_SCIENTIFIC_REJECTED",
+        )
+        self.assertEqual(
+            result["scientific_next_stage"]["lambda0"]["state"],
+            "TRAINING_AND_POSTEVAL_STAGE_COMPLETE",
+        )
+        self.assertEqual(
+            result["scientific_next_stage"]["lambda10"]["state"],
+            "TRAINING_AND_POSTEVAL_STAGE_COMPLETE",
         )
 
     def test_latest_active_lambda0_generation_becomes_authority(self) -> None:
