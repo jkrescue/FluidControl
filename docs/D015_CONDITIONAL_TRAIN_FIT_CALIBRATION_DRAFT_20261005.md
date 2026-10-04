@@ -1,6 +1,6 @@
 # Conditional train-fit calibration after D015
 
-Status: design only. D015 result SHA `b311715724287c34aa496405f0381fb034089123d5dcf3bec51f80633f293b54` shows that FC-P003C remains inaccurate on the exact `train_paired_window`: rear-Cl action-minus-zero MAE is 0.118801 there, 0.107526 on train-late, and 0.171848 on validation-late. The corresponding absolute values 0.081124/0.073322/0.116464 include deduplicated zero branches and must not be compared as action-only errors. Thus train fit is already inadequate, with an additional validation gap. This draft is not approved for execution, is not a new admission gate, and does not authorize validation-driven tuning, PPO, or frozen-test access.
+Status: CPU implementation and nine focused tests complete in commit `ff34a1c`; GPU execution remains subject to separate review and approval. D015 result SHA `b311715724287c34aa496405f0381fb034089123d5dcf3bec51f80633f293b54` shows that FC-P003C remains inaccurate on the exact `train_paired_window`: rear-Cl action-minus-zero MAE is 0.118801 there, 0.107526 on train-late, and 0.171848 on validation-late. The corresponding absolute values 0.081124/0.073322/0.116464 include deduplicated zero branches and must not be compared as action-only errors. Thus train fit is already inadequate, with an additional validation gap. This implementation is not a new admission gate and does not authorize validation-driven tuning, PPO, or frozen-test access.
 
 ## What can be reused
 
@@ -12,24 +12,24 @@ There is no honest invocation of the current full trainer for this diagnostic. I
 
 Start from the immutable C epoch-2 model SHA `f78c2f3341663ed2f6e7f4c64a0bf6539a065d2e7f11ada8f19f493320697eb4` as `training.initial_checkpoint`, with a fresh optimizer exactly as the existing initialization path does.
 
-Use four short epochs with:
+Use one continuous train-only iterator for exactly 128 optimizer steps. Insert 64 paired updates at the fixed interleaved positions, including positions 0 and 127, so the eight dynamic pairs are each consumed exactly eight times. Do not reset the regular iterator, optimizer, or pair schedule at artificial short-epoch boundaries. Use a fresh AdamW optimizer at the fixed FC-P003C initial learning rate, with no learning-rate scheduler and no checkpoint selection.
 
 ```yaml
-training:
-  epochs: 4
-  max_train_batches: 32
-  expected_regular_batches: 32
-  paired_dataset_repetitions: 2
-  paired_batches_per_epoch: 16
+effective_calibration:
+  optimizer_steps: 128
+  regular_iterator_restarts: 0
+  paired_steps: 64
+  paired_complete_passes: 8
   paired_batch_schedule: interleaved
   paired_batch_size: 1
   paired_objective_kind: true_state_step_force
   paired_step_chunk_size: 10
-  teacher_forcing_start: 0.0
-  teacher_forcing_end: 0.0
+  teacher_forcing_ratio: 0.0
+  scheduler_steps: 0
+  selection_performed: false
 ```
 
-All other resolved values must be byte/field identical to the C configuration. This uses the already-supported per-epoch contract without weakening its guard: exactly 128 optimizer steps, comprising 64 regular-only and 64 regular-plus-paired steps. All 128 steps retain the regular rollout loss; the 64 paired steps form eight complete deterministic passes over dynamic8. Compared with completed C, paired exposure doubles from 32 to 64 while regular computation is bounded to 128 rather than another 1368-step epoch. The wrapper must import `TandemRolloutDataset`/`compose_training_data`, `DynamicMatchedPairStatDataset`, PhysicsNeMo `DataLoader`, `regular_rollout_objective`, and `true_state_paired_optimizer_step`; it must not instantiate validation data. It records all regular sample identities, all eight ordered pair passes, finite/clip/memory telemetry, parent/output SHA, and zero validation/frozen access.
+All other resolved values must be byte/field identical to the C configuration; the wrapper records the distinct effective 128/64 contract so the parent configuration's two-epoch declaration cannot be mistaken for this calibration schedule. Exactly 64 steps are regular-only and 64 are regular-plus-paired. All 128 steps retain the regular rollout loss; the 64 paired steps form eight complete deterministic passes over dynamic8. Compared with completed C, paired exposure doubles from 32 to 64 while regular computation is bounded to 128 rather than another 1368-step epoch. The wrapper imports `TandemRolloutDataset`/`compose_training_data`, `DynamicMatchedPairStatDataset`, PhysicsNeMo `DataLoader`, `regular_rollout_objective`, and `true_state_paired_optimizer_step`; it does not instantiate validation data. It records all regular sample identities, all eight ordered pair passes, per-channel paired losses, finite/clip telemetry, parent/output/config/source SHA, fixed learning rate, and zero validation/frozen access.
 
 ## Train-only readout and exit rule
 
