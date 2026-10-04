@@ -16,6 +16,8 @@ import numpy as np
 PHASES = (0, 2, 4, 6)
 PROFILES = ("multisine", "prbs")
 STATE_ATOL = 3e-7
+HORIZONS = (20, 50, 100)
+FORCE_CHANNELS = ("front_cd", "front_cl", "rear_cd", "rear_cl")
 
 
 def sha256(path: Path) -> str:
@@ -67,6 +69,24 @@ def audit_pair(action: dict[str, np.ndarray], zero: dict[str, np.ndarray]) -> di
     }
 
 
+def physical_targets(action_force: np.ndarray, zero_force: np.ndarray) -> dict:
+    result = {}
+    for horizon in HORIZONS:
+        action = action_force[1 : horizon + 1]
+        zero = zero_force[1 : horizon + 1]
+        action_rear = action[:, 3]
+        zero_rear = zero[:, 3]
+        result[str(horizon)] = {
+            "mean_total_cd": float((action[:, 0] + action[:, 2]).mean() - (zero[:, 0] + zero[:, 2]).mean()),
+            "mean_rear_cl": float(action_rear.mean() - zero_rear.mean()),
+            "rear_cl_fluctuation_rms": float(
+                np.sqrt(np.mean((action_rear - action_rear.mean()) ** 2))
+                - np.sqrt(np.mean((zero_rear - zero_rear.mean()) ** 2))
+            ),
+        }
+    return result
+
+
 def atomic_json(path: Path, value: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
@@ -110,7 +130,8 @@ def main() -> None:
             action_source = authorization["cases"][action_case]["source_state_sha256"]
             if action_source != zero_source:
                 raise ValueError(f"source restart SHA differs: {action_case}")
-            metrics = audit_pair(load_prefix(action_file), zero)
+            action = load_prefix(action_file)
+            metrics = audit_pair(action, zero)
             pairs.append({
                 "phase": f"b{phase:02d}", "profile": profile, "split": "train",
                 "start": 0, "horizon": 100,
@@ -118,7 +139,10 @@ def main() -> None:
                 "zero_file": str(zero_file.relative_to(args.static_root)),
                 "action_hdf_sha256": sha256(action_file),
                 "zero_hdf_sha256": sha256(zero_file),
-                "source_state_sha256": action_source, "qc": metrics,
+                "action_source_state_sha256": action_source,
+                "zero_source_state_sha256": zero_source,
+                "targets": physical_targets(action["force"], zero["force"]),
+                "qc": metrics,
             })
 
     result = {
@@ -126,7 +150,11 @@ def main() -> None:
         "scope": "train-only existing-data candidate; not approved for training",
         "split": "train", "pair_count": len(pairs), "sequence_length": 101,
         "horizon": 100, "state0_tolerance": {"rtol": 0.0, "atol": STATE_ATOL},
+        "horizons": list(HORIZONS),
+        "force_channels": list(FORCE_CHANNELS),
         "validation_or_frozen_accessed": False,
+        "unique_initial_restart_count": 4,
+        "profiles_per_phase": list(PROFILES),
         "dynamic_manifest_sha256": sha256(dynamic_manifest_path),
         "dynamic_authorization_sha256": sha256(args.dynamic_authorization),
         "full40_predeclaration_sha256": sha256(args.full40_predeclaration),

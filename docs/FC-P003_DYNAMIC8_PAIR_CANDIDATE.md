@@ -17,3 +17,10 @@ data. It does not add phases, Reynolds numbers, geometries, validation data or
 frozen-test data. It must not be used unless FC-P003 is evaluated and a new
 Lead approval binds the candidate manifest. Passing this QC is not evidence
 of surrogate or control improvement.
+
+The adapter intentionally emits metadata keys `pair_id`, `phase`, and
+`profile`. It does not call a PRBS or multisine history a constant `action`.
+The current static16 trainer trace reads `metadata["action"]`; a future,
+separately reviewed integration must read canonical `pair_id` (or `profile`)
+before this adapter can be used. The tensor keys remain compatible with
+`combine_paired_rollout_batch`.
