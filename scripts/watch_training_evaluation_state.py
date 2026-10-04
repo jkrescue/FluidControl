@@ -110,6 +110,35 @@ CALIBRATION_CPU_PREFLIGHT_SHA256 = (
 )
 CALIBRATION_TOTAL_STEPS = 128
 CALIBRATION_PAIRED_STEPS = 64
+ABSOLUTE_CALIBRATION_UNIT = (
+    "fluid-control-fcp003c-train-fit-absolute-calibration-20261005.service"
+)
+ABSOLUTE_CALIBRATION_CONTAINER = "fcp003c-train-fit-absolute-calibration-20261005"
+ABSOLUTE_CALIBRATION_ROOT = Path(
+    "artifacts/fcp003c_train_fit_absolute_calibration_20261005"
+)
+ABSOLUTE_CALIBRATION_LOG = ABSOLUTE_CALIBRATION_ROOT / "run.log"
+ABSOLUTE_CALIBRATION_APPROVAL = Path(
+    "docs/FCP003C_TRAIN_FIT_ABSOLUTE_CALIBRATION_APPROVAL_20261005.json"
+)
+ABSOLUTE_CALIBRATION_COMPLETION_RECEIPT = (
+    ABSOLUTE_CALIBRATION_ROOT / "completion_receipt.json"
+)
+ABSOLUTE_CALIBRATION_COMPLETION_STATUS = (
+    "FCP003C_TRAIN_FIT_ABSOLUTE_CALIBRATION_EXECUTION_COMPLETE_NOT_ADMISSION"
+)
+ABSOLUTE_CALIBRATION_APPROVAL_SHA256 = (
+    "191e0276e4f51a53d6387c239a295f7648989daaf428d83dba6af3ded26c1201"
+)
+ABSOLUTE_CALIBRATION_IMPLEMENTATION_COMMIT = (
+    "5cb65bb9a02d308b1de5243f0ac14957aa8bb567"
+)
+ABSOLUTE_CALIBRATION_IMPLEMENTATION_SHA256 = (
+    "069ce14157d2bee9b7b3adc9f47125c47247fe0bcd280ef51cf3167da4b3b421"
+)
+ABSOLUTE_CALIBRATION_LAUNCHER_SHA256 = (
+    "a2bd69d367eef8bfc97ff5feba54531aa2f8b9e35d137c70fd85a0a7bbe40523"
+)
 FC_P003B_UNIT = "fluid-control-fcp003b-dynamic-pairs-20261005.service"
 FC_P003B_PROBE_UNIT = "fluid-control-fcp003b-dynamic-pairs-probe-v3-20261005.service"
 FC_P003B_POSTEVAL_UNIT = (
@@ -410,9 +439,55 @@ def verify_d015_calibration_authorization(repo: Path) -> tuple[bool, list[str]]:
     return not issues, issues
 
 
-def calibration_log_progress(repo: Path) -> dict:
+def verify_absolute_calibration_authorization(repo: Path) -> tuple[bool, list[str]]:
+    """Verify the immutable absolute-force approval and executing code."""
+    approval_path = repo / ABSOLUTE_CALIBRATION_APPROVAL
+    approval = read_json(approval_path, None)
+    if not isinstance(approval, dict):
+        return False, ["absolute calibration approval missing or invalid"]
+    issues = []
+    if file_sha256(approval_path) != ABSOLUTE_CALIBRATION_APPROVAL_SHA256:
+        issues.append("absolute calibration approval SHA differs")
+    expected = {
+        "status": "FCP003C_TRAIN_FIT_ABSOLUTE_CALIBRATION_EXECUTION_APPROVED",
+        "gpu_execution_authorized": True,
+        "scope": "single_bounded_train_only_absolute_force_calibration",
+        "optimizer_steps": CALIBRATION_TOTAL_STEPS,
+        "paired_steps": CALIBRATION_PAIRED_STEPS,
+        "paired_force_objective": "absolute",
+        "implementation_commit": ABSOLUTE_CALIBRATION_IMPLEMENTATION_COMMIT,
+        "implementation_sha256": ABSOLUTE_CALIBRATION_IMPLEMENTATION_SHA256,
+        "launcher_sha256": ABSOLUTE_CALIBRATION_LAUNCHER_SHA256,
+        "cpu_preflight_sha256": CALIBRATION_CPU_PREFLIGHT_SHA256,
+        "minimum_mem_available_gib": 20,
+        "validation_accessed": False,
+        "frozen_test_accessed": False,
+        "ppo_executed": False,
+        "scientific_admission": False,
+    }
+    for key, value in expected.items():
+        if approval.get(key) != value:
+            issues.append(f"absolute calibration approval {key} differs")
+    files = {
+        Path("scripts/run_fcp003c_train_fit_calibration.py"): ABSOLUTE_CALIBRATION_IMPLEMENTATION_SHA256,
+        Path("scripts/run_fcp003c_train_fit_absolute_calibration_spark.sh"): ABSOLUTE_CALIBRATION_LAUNCHER_SHA256,
+        Path("scripts/preflight_fcp003c_train_fit_calibration.py"): CALIBRATION_PREFLIGHT_SHA256,
+        CALIBRATION_CPU_PREFLIGHT: CALIBRATION_CPU_PREFLIGHT_SHA256,
+    }
+    for relative, expected_sha in files.items():
+        path = repo / relative
+        if not path.is_file() or file_sha256(path) != expected_sha:
+            issues.append(f"absolute calibration input SHA differs: {relative}")
+    return not issues, issues
+
+
+def calibration_log_progress(
+    repo: Path,
+    log: Path = CALIBRATION_LOG,
+    paired_force_objective: str | None = None,
+) -> dict:
     """Read only complete JSON events already flushed by the guarded run."""
-    path = repo / CALIBRATION_LOG
+    path = repo / log
     progress = []
     gpu_preflight = None
     guard_exit = None
@@ -437,6 +512,11 @@ def calibration_log_progress(repo: Path) -> dict:
                 and total == CALIBRATION_TOTAL_STEPS
                 and 0 <= completed <= CALIBRATION_TOTAL_STEPS
                 and 0 <= paired <= CALIBRATION_PAIRED_STEPS
+                and (
+                    paired_force_objective is None
+                    or event.get("paired_force_objective")
+                    == paired_force_objective
+                )
             ):
                 progress.append(event)
         elif event.get("event") == "gpu_preflight":
@@ -446,7 +526,7 @@ def calibration_log_progress(repo: Path) -> dict:
     latest = progress[-1] if progress else {}
     observed = guard_exit or gpu_preflight or {}
     return {
-        "log": str(CALIBRATION_LOG),
+        "log": str(log),
         "completed_steps": latest.get("completed_steps", 0),
         "total_steps": CALIBRATION_TOTAL_STEPS,
         "paired_steps_completed": latest.get("paired_steps_completed", 0),
@@ -463,6 +543,7 @@ def calibration_log_progress(repo: Path) -> dict:
             "min_observed_cuda_free_gib", observed.get("cuda_free_gib")
         ),
         "guard_exit_code": guard_exit.get("exit_code") if guard_exit else None,
+        "paired_force_objective": paired_force_objective,
     }
 
 
@@ -575,12 +656,12 @@ def unit_state(unit: str) -> dict:
         ("--config-name", "tandem_fno_dynamic_paired_true_state_step_h100")
         if unit == FC_P003C_UNIT
         else ("--output", "/workspace/output/calibration")
-        if unit == CALIBRATION_UNIT
+        if unit in (CALIBRATION_UNIT, ABSOLUTE_CALIBRATION_UNIT)
         else ()
     )
     training_needle = (
         "run_fcp003c_train_fit_calibration.py"
-        if unit == CALIBRATION_UNIT
+        if unit in (CALIBRATION_UNIT, ABSOLUTE_CALIBRATION_UNIT)
         else "train_tandem_fno_paired_stats.py"
     )
     training_process_pids = descendant_processes_matching(
@@ -594,9 +675,14 @@ def unit_state(unit: str) -> dict:
             "train_tandem_fno_paired_stats.py",
             required_args=required_training_args,
         )
-    elif unit == CALIBRATION_UNIT:
+    elif unit in (CALIBRATION_UNIT, ABSOLUTE_CALIBRATION_UNIT):
+        container = (
+            ABSOLUTE_CALIBRATION_CONTAINER
+            if unit == ABSOLUTE_CALIBRATION_UNIT
+            else CALIBRATION_CONTAINER
+        )
         training_process_pids = local_container_python_pids(
-            CALIBRATION_CONTAINER,
+            container,
             training_needle,
             required_args=required_training_args,
         )
@@ -821,6 +907,7 @@ def discover_related_units() -> list[str]:
                 FC_P003C_UNIT,
                 FC_P003C_POSTEVAL_UNIT,
                 CALIBRATION_UNIT,
+                ABSOLUTE_CALIBRATION_UNIT,
                 *SUPERSEDED_MAIN_UNITS,
                 *names,
             )
@@ -1047,6 +1134,22 @@ def build_sample(
         and bool(calibration_unit.get("training_process_pids"))
         and calibration_contract_verified
     )
+    absolute_contract_verified, absolute_contract_issues = (
+        verify_absolute_calibration_authorization(repo)
+    )
+    absolute_unit = units.get(ABSOLUTE_CALIBRATION_UNIT, {})
+    absolute_progress = calibration_log_progress(
+        repo, ABSOLUTE_CALIBRATION_LOG, paired_force_objective="absolute"
+    )
+    absolute_complete, absolute_completion_issues = verify_receipt(
+        repo / ABSOLUTE_CALIBRATION_COMPLETION_RECEIPT,
+        ABSOLUTE_CALIBRATION_COMPLETION_STATUS,
+    )
+    absolute_running = (
+        absolute_unit.get("active_state") == "active"
+        and bool(absolute_unit.get("training_process_pids"))
+        and absolute_contract_verified
+    )
     fc_p003b_unit = units.get(FC_P003B_UNIT, {})
     fc_p003b_probe_unit = units.get(FC_P003B_PROBE_UNIT, {})
     fc_p003b_posteval_unit = units.get(FC_P003B_POSTEVAL_UNIT, {})
@@ -1168,6 +1271,7 @@ def build_sample(
         FC_P003C_UNIT,
         FC_P003C_POSTEVAL_UNIT,
         CALIBRATION_UNIT,
+        ABSOLUTE_CALIBRATION_UNIT,
     )
     active_units = sorted(
         name
@@ -1180,6 +1284,7 @@ def build_sample(
             or bool(state.get("posteval_process_pids"))
         )
         and (name != CALIBRATION_UNIT or calibration_running)
+        and (name != ABSOLUTE_CALIBRATION_UNIT or absolute_running)
     )
     paired_evaluation_active = any(
         name in active_units
@@ -1215,6 +1320,34 @@ def build_sample(
         "current_mem_available_gib": resources.get("mem_available_gib"),
         "guard_active": calibration_running,
     }
+    progress["train_fit_absolute_calibration"] = {
+        **absolute_progress,
+        "state": (
+            "RUNNING"
+            if absolute_running
+            else "EXECUTION_COMPLETE_NOT_ADMISSION"
+            if absolute_complete
+            else "APPROVED_NOT_RUNNING"
+            if absolute_contract_verified
+            else "APPROVAL_OR_CODE_BINDING_INVALID"
+        ),
+        "authority_unit": ABSOLUTE_CALIBRATION_UNIT,
+        "active_state": absolute_unit.get("active_state", "unknown"),
+        "main_pid": absolute_unit.get("main_pid", 0),
+        "training_process_pids": absolute_unit.get("training_process_pids", []),
+        "approval_verified": absolute_contract_verified,
+        "approval_issues": absolute_contract_issues,
+        "completion_verified": absolute_complete,
+        "completion_issues": absolute_completion_issues,
+        "current_mem_available_gib": resources.get("mem_available_gib"),
+        "guard_active": absolute_running,
+    }
+    if absolute_contract_verified or absolute_running or absolute_complete:
+        # Keep the established dashboard contract; the objective tag distinguishes
+        # this approved successor from the completed delta-objective calibration.
+        progress["train_fit_calibration"] = progress[
+            "train_fit_absolute_calibration"
+        ]
     if not pending or active_units:
         idle_since = None
         idle_seconds = 0
@@ -1300,6 +1433,13 @@ def build_sample(
             "node": "spark",
             "receipt_path": str(CALIBRATION_COMPLETION_RECEIPT),
             "stage_complete": calibration_complete,
+        }
+    if absolute_contract_verified or absolute_running or absolute_complete:
+        tasks["train_fit_absolute_calibration"] = {
+            "authority_unit": ABSOLUTE_CALIBRATION_UNIT,
+            "node": "spark",
+            "receipt_path": str(ABSOLUTE_CALIBRATION_COMPLETION_RECEIPT),
+            "stage_complete": absolute_complete,
         }
     for task_name, task in tasks.items():
         state = units.get(task["authority_unit"], {})
@@ -1407,7 +1547,11 @@ def build_sample(
         fc_p003b_posteval_unit.get("active_state") == "active"
     )
     scientific_status = (
-        "D015_TRAIN_FIT_CALIBRATION_RUNNING"
+        "D015_TRAIN_FIT_ABSOLUTE_CALIBRATION_RUNNING"
+        if absolute_running
+        else "D015_TRAIN_FIT_ABSOLUTE_CALIBRATION_COMPLETE_NOT_ADMISSION"
+        if absolute_complete
+        else "D015_TRAIN_FIT_CALIBRATION_RUNNING"
         if calibration_running
         else "D015_TRAIN_FIT_CALIBRATION_COMPLETE_NOT_ADMISSION"
         if calibration_complete
@@ -1475,7 +1619,11 @@ def build_sample(
         "scientific_next_stage": {
             "status": scientific_status,
             "active_work": (
-                "d015_train_fit_calibration_bounded_execution"
+                "d015_train_fit_absolute_calibration_bounded_execution"
+                if absolute_running
+                else "d015_train_fit_absolute_calibration_complete_awaiting_scientific_review"
+                if absolute_complete
+                else "d015_train_fit_calibration_bounded_execution"
                 if calibration_running
                 else "d015_train_fit_calibration_complete_awaiting_scientific_review"
                 if calibration_complete
@@ -1525,7 +1673,15 @@ def build_sample(
                 )
             ),
             "purpose": (
-                "The separately approved bounded train-only calibration is running "
+                "The separately approved absolute-force train-only calibration is "
+                "running under the 128/64-step contract and 20 GiB memory guard. "
+                "Progress requires flushed events tagged paired_force_objective=absolute; "
+                "this run is not scientific admission and does not authorize PPO."
+                if absolute_running
+                else "The bounded absolute-force train-only calibration execution is "
+                "complete but is not scientific admission; its result still requires review."
+                if absolute_complete
+                else "The separately approved bounded train-only calibration is running "
                 "under the 128/64-step contract and 20 GiB memory guard. Progress is "
                 "reported only from flushed run.log events; this run is not scientific "
                 "admission and does not authorize PPO."

@@ -39,6 +39,84 @@ RESOURCES = {
 
 
 class TrainingEvaluationWatchdogTests(unittest.TestCase):
+    def test_absolute_calibration_progress_requires_objective_tag(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            log = Path("absolute/run.log")
+            path = repo / log
+            path.parent.mkdir(parents=True)
+            events = [
+                {
+                    "event": "fcp003c_train_fit_progress",
+                    "completed_steps": 120,
+                    "total_steps": 128,
+                    "paired_steps_completed": 60,
+                    "paired_force_objective": "delta",
+                },
+                {
+                    "event": "fcp003c_train_fit_progress",
+                    "completed_steps": 64,
+                    "total_steps": 128,
+                    "paired_steps_completed": 32,
+                    "paired_force_objective": "absolute",
+                    "latest_loss": 0.25,
+                },
+            ]
+            path.write_text("".join(json.dumps(event) + "\n" for event in events))
+            progress = MODULE.calibration_log_progress(
+                repo, log, paired_force_objective="absolute"
+            )
+            self.assertEqual(progress["completed_steps"], 64)
+            self.assertEqual(progress["paired_steps_completed"], 32)
+            self.assertEqual(progress["progress_event_count"], 1)
+            self.assertEqual(progress["paired_force_objective"], "absolute")
+
+    def test_absolute_calibration_reuses_canonical_progress_field(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(directory)
+            log = repo / MODULE.ABSOLUTE_CALIBRATION_LOG
+            log.parent.mkdir(parents=True, exist_ok=True)
+            log.write_text(
+                json.dumps(
+                    {
+                        "event": "fcp003c_train_fit_progress",
+                        "completed_steps": 24,
+                        "total_steps": 128,
+                        "paired_steps_completed": 12,
+                        "paired_force_objective": "absolute",
+                    }
+                )
+                + "\n"
+            )
+            state = {
+                **unit("active"),
+                "main_pid": 2789224,
+                "training_process_pids": [2789631],
+            }
+            with mock.patch.object(
+                MODULE,
+                "verify_absolute_calibration_authorization",
+                return_value=(True, []),
+            ):
+                result = MODULE.build_sample(
+                    repo,
+                    None,
+                    {MODULE.ABSOLUTE_CALIBRATION_UNIT: state},
+                    RESOURCES,
+                    datetime(2026, 10, 5, 16, 0, tzinfo=UTC),
+                )
+            progress = result["progress"]["train_fit_calibration"]
+            self.assertEqual(progress["paired_force_objective"], "absolute")
+            self.assertEqual(progress["completed_steps"], 24)
+            self.assertEqual(progress["state"], "RUNNING")
+            self.assertEqual(
+                result["active_units"], [MODULE.ABSOLUTE_CALIBRATION_UNIT]
+            )
+            self.assertEqual(
+                result["scientific_next_stage"]["status"],
+                "D015_TRAIN_FIT_ABSOLUTE_CALIBRATION_RUNNING",
+            )
+
     def test_python_payload_filter_rejects_wrapper_guard_and_wrong_config(self) -> None:
         needle = "train_tandem_fno_paired_stats.py"
         required = (
