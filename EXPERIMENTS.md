@@ -8,10 +8,10 @@ The entries below are retrospective reconstructions from immutable artifacts and
 
 - One CSV row is one `experiment × protocol × metric` observation. Protocol names are deliberately distinct: epoch-internal validation, validation10 H100, dynamic6 H100, force-window6, and paired 80D CFD are not interchangeable.
 - Blank numeric values mean unknown. `NOT_EVALUATED` means the protocol has not produced verified evidence; it never means zero.
-- `checkpoint_sha256` is the model/policy identity. `artifact_sha256` identifies the cited receipt when one exists. A blank commit or receipt hash is preserved as unknown rather than inferred from the current tree.
+- `checkpoint_sha256` is the model/policy identity. `artifact_sha256` identifies the cited receipt when one exists; `evaluation_manifest_sha256` binds a validation or dynamic panel where one manifest applies. A blank commit or hash is preserved as unknown rather than inferred from the current tree.
 - Epoch-internal metrics are training diagnostics only. Admission uses independently produced post-evaluation evidence and unchanged gates.
 - FNO development admission and the final physical CFD gate are separate. Passing an endpoint metric cannot override a failed force window, and surrogate metrics cannot substitute for paired OpenFOAM verification.
-- The 16 matched training pairs contain only four distinct initial states. The reserved frozen10 split has not been materialized and was not used here.
+- The 16 matched training pairs contain only four distinct initial states. Frozen10 is materialized and sealed in full40, but excluded from the development dev30 view and was not opened for this ledger.
 
 ## Historical experiments
 
@@ -39,7 +39,7 @@ The entries below are retrospective reconstructions from immutable artifacts and
 | fixed normalization | `f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1` | train-only normalization shared by listed FNO candidates |
 | direct-PPO baseline summary | `b5b7923f30600eba25c837f3b8d6781f37afbb6fcb1649e0c0d410f32a101ed7` | b00/b02 training baselines |
 
-The reserved frozen10 split is excluded because it has not been materialized. No frozen metric appears in the CSV.
+Frozen10 is materialized and sealed in full40, but is excluded from dev30 development and was not opened here. No frozen metric appears in the CSV.
 
 ## Current boundary
 
