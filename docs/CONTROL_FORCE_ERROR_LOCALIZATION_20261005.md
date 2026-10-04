@@ -49,3 +49,33 @@ Reproduction algorithm: build a lookup keyed by (case,horizon,start); for every
 entry with horizon=100, select lookup[(case,1,start+99)], verify equal recorded
 target_total_drag, then group both entries' rear_cl_mae by case. Do not compare
 unmatched H1 all200 windows against H100 all101 windows to infer accumulation.
+
+## Reusable diagnostic and lambda10 check
+
+`scripts/audit_same_endpoint_force_error.py` now reproduces this comparison
+from existing segments, requiring all six cases and 101 matched targets per
+case. It rejects duplicate/missing segments, non-finite or negative absolute
+errors and unequal recorded target drag. Two unit-test methods cover the
+complete panel and six negative cases. It is not an admission gate and does
+not infer live training state, read HDF data or execute a model.
+
+Outputs for both candidates are stored alongside their existing posteval
+directories as `same_endpoint_force_diagnostic.json`; these new diagnostics
+do not alter the original posteval receipts. Each binds input and script SHA.
+The lambda10 input segments SHA is
+`b4ff4054b2bf05027e866e775c72b8fa81ec35d76a426b176227b76446dc5255`.
+
+| Lambda10 case | True-state H1 rear Cl MAE | H100 rear Cl MAE |
+|---|---:|---:|
+| b01 minus | 0.191083650 | 0.229264502 |
+| b01 plus | 0.158144568 | 0.126616576 |
+| b01 zero | 0.009242329 | 0.036977714 |
+| b05 minus | 0.160360092 | 0.137777317 |
+| b05 plus | 0.191175673 | 0.231911528 |
+| b05 zero | 0.006995319 | 0.036586417 |
+
+The same qualitative failure persists with lambda10: large controlled-force
+error exists already in true-state H1. This adds no evidence that simply
+extending rollout training would fix the issue. FC-P003/P003B remain unchanged;
+repeat this diagnostic after their standard posteval, without selecting a
+checkpoint by this additional diagnostic or substituting it for window gates.
