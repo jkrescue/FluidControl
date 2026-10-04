@@ -24,7 +24,7 @@ development_gate="$parent_candidate/posteval_complete_v2/development_gate.json"
 approval="$root/docs/FC-P003_APPROVAL.md"
 approval_sha="cb06e31b11c4f9b8292687eff7917ad2d13d83d881e22cba63fea1a2a92ec3a0"
 order_audit="$root/artifacts/fc_p003_dataloader_order_20261005/result.json"
-order_audit_sha="d1c229e6c7bd15bb8b6b4108c42af890bf4530847bfe5d26120afc7e4d546b27"
+order_audit_sha="fab043a70652475e0b03aa869eac3445eaec1ec6c66a74cf976a0342a3dbca88"
 pair_manifest_sha="15bfa7a47e3195afad59884f96fd4e305c8ba0001dd6eb043be2412b2b9ce2b7"
 pair_probe_sha="8453a2836a14fb271ad9fdfe3205915d15b6414ade916434a5713e068a185ec4"
 scale_audit_sha="8feda2a4ea86c9dabf9d7e8d4d8c8bf4a1a967123ab0dd790b9b7893aa059296"
@@ -95,7 +95,7 @@ payload={"status":"FC_P003_INTERLEAVED_LAUNCH_STAGED","branch":branch,
  "paired_batch_schedule":"interleaved","paired_batches_per_epoch":16,
  "approved_batch_index_rule":"floor(i*(N-1)/15), i=0..15",
  "approval_sha256":"cb06e31b11c4f9b8292687eff7917ad2d13d83d881e22cba63fea1a2a92ec3a0",
- "loader_order_audit_sha256":"d1c229e6c7bd15bb8b6b4108c42af890bf4530847bfe5d26120afc7e4d546b27",
+ "loader_order_audit_sha256":"fab043a70652475e0b03aa869eac3445eaec1ec6c66a74cf976a0342a3dbca88",
  "validation_or_frozen_used_to_choose_schedule":False,
  "ppo_auto_launch":False}
 with tempfile.NamedTemporaryFile("w",dir=target.parent,delete=False) as f:
