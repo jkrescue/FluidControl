@@ -13,10 +13,13 @@ data:
 training:
   initial_checkpoint: /workspace/parent
   epochs: 2
-  batch_size: 2
-  paired_batch_size: 2
-  paired_batches_per_epoch: 8
-  max_paired_eval_batches: 8
+  # One regular trajectory plus one matched action/zero pair keeps the
+  # combined H100 graph below the measured 0.45 unified-memory allocator cap.
+  # Both lambda branches use this exact batch contract.
+  batch_size: 1
+  paired_batch_size: 1
+  paired_batches_per_epoch: 16
+  max_paired_eval_batches: 16
   paired_stat_horizons: [20, 50, 100]
   paired_stat_loss_weight: 0.0
   force_channel_weights: [1.0, 1.0, 4.0, 1.0]

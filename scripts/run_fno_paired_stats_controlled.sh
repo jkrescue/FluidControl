@@ -54,7 +54,7 @@ fi
 [[ "${PAIRED_STATS_TRAIN_TOKEN:-}" == "EXECUTE_REVIEWED_PAIRED_STATS" ]] || { echo "reviewed token required" >&2; exit 2; }
 
 suffix=""
-[[ "$mode" == "--probe" ]] && suffix="_probe_v3"
+[[ "$mode" == "--probe" ]] && suffix="_probe_v4"
 output="$root/artifacts/tandem_fno_paired_stats_${branch}${suffix}_20261004"
 [[ ! -e "$output" ]] || { echo "output already exists: $output" >&2; exit 2; }
 commit="$(git rev-parse HEAD)"

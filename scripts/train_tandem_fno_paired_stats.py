@@ -272,13 +272,19 @@ def main(cfg: DictConfig) -> None:
         use_streams=True,
         seed=int(cfg.training.seed),
     )
-    if len(pair_dataset) != 16 or len(pair_loader) != 8:
-        raise ValueError("paired-stat experiment requires 16 pairs in 8 batches")
+    paired_batch_size = int(cfg.training.paired_batch_size)
+    if paired_batch_size < 1 or 16 % paired_batch_size:
+        raise ValueError("paired_batch_size must exactly divide 16 pairs")
+    expected_pair_batches = 16 // paired_batch_size
+    if len(pair_dataset) != 16 or len(pair_loader) != expected_pair_batches:
+        raise ValueError("paired-stat loader does not cover each of 16 pairs once")
     paired_batches_per_epoch = int(
-        cfg.training.get("paired_batches_per_epoch", len(pair_loader))
+        cfg.training.get("paired_batches_per_epoch", expected_pair_batches)
     )
     if not 1 <= paired_batches_per_epoch <= len(pair_loader):
-        raise ValueError("paired_batches_per_epoch must be in [1, 8]")
+        raise ValueError(
+            f"paired_batches_per_epoch must be in [1, {expected_pair_batches}]"
+        )
 
     network: torch.nn.Module = build_model(cfg).to(dist.device)
     if dist.distributed:
@@ -544,10 +550,12 @@ def main(cfg: DictConfig) -> None:
 
         paired_eval_total = torch.zeros(2, dtype=torch.float64, device=dist.device)
         max_paired_eval_batches = int(
-            cfg.training.get("max_paired_eval_batches", len(pair_loader))
+            cfg.training.get("max_paired_eval_batches", expected_pair_batches)
         )
         if not 1 <= max_paired_eval_batches <= len(pair_loader):
-            raise ValueError("max_paired_eval_batches must be in [1, 8]")
+            raise ValueError(
+                f"max_paired_eval_batches must be in [1, {expected_pair_batches}]"
+            )
         for pair_index, pair in enumerate(pair_loader):
             if pair_index >= max_paired_eval_batches:
                 break
