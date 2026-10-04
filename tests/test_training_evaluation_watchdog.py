@@ -1011,6 +1011,66 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
             )
             self.assertFalse(result["project_goal_complete"])
 
+    def test_fc_p003c_terminal_failure_advances_to_d015_without_ppo(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(
+                directory, receipts=True, paired=True, paired_posteval=True
+            )
+            for approval in (
+                MODULE.FC_P003C_APPROVAL,
+                MODULE.FC_P003C_FULL_APPROVAL,
+            ):
+                (repo / approval).parent.mkdir(parents=True, exist_ok=True)
+                (repo / approval).write_text("Lead approved\n")
+            self.write_verified_receipt(
+                repo,
+                MODULE.FC_P003C_TRAINING_RECEIPT,
+                MODULE.FC_P003C_TRAINING_STATUS,
+            )
+            self.write_verified_receipt(
+                repo,
+                MODULE.FC_P003C_POSTEVAL_RECEIPT,
+                MODULE.FC_P003C_POSTEVAL_STATUS,
+            )
+            gate = repo / MODULE.FC_P003C_DEVELOPMENT_GATE
+            gate.write_text(
+                json.dumps({"status": MODULE.PAIRED_DEVELOPMENT_FAIL_STATUS})
+            )
+            result = MODULE.build_sample(
+                repo,
+                {
+                    "no_running_since_utc": datetime(
+                        2026, 10, 5, 13, 54, 59, tzinfo=UTC
+                    ).isoformat()
+                },
+                {
+                    MODULE.FC_P003C_UNIT: unit(),
+                    MODULE.FC_P003C_POSTEVAL_UNIT: unit(),
+                },
+                RESOURCES,
+                datetime(2026, 10, 5, 14, 0, tzinfo=UTC),
+            )
+            stage = result["scientific_next_stage"]
+            self.assertEqual(
+                stage["status"],
+                "C_POSTEVAL_COMPLETE_REJECTED_D015_IMPLEMENTATION",
+            )
+            self.assertEqual(
+                stage["active_work"],
+                "fc_p003c_rejected_d015_implementation_and_cpu_validation",
+            )
+            self.assertEqual(
+                stage["fc_p003c"]["state"],
+                "POSTEVAL_COMPLETE_REJECTED_D015_IMPLEMENTATION",
+            )
+            self.assertTrue(result["stage_complete"])
+            self.assertFalse(stage["fc_p003c"]["ppo_authorized"])
+            self.assertFalse(result["project_goal_complete"])
+            self.assertIn(
+                "FC_P003C_REJECTED_D015_IMPLEMENTATION_WITH_NO_RUNNING_TASK_FOR_300_SECONDS",
+                result["alerts"],
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -66,6 +66,7 @@ FC_P003C_POSTEVAL_UNIT = (
 FC_P003C_ROOT = Path("artifacts/tandem_fno_true_state_paired_step_lambda10_20261005")
 FC_P003C_TRAINING_RECEIPT = FC_P003C_ROOT / "completion_receipt.json"
 FC_P003C_POSTEVAL_RECEIPT = FC_P003C_ROOT / "posteval_fc_p003c/receipt.json"
+FC_P003C_DEVELOPMENT_GATE = FC_P003C_ROOT / "posteval_fc_p003c/development_gate.json"
 FC_P003C_TRAINING_STATUS = "FC_P003C_TRAINING_COMPLETE"
 FC_P003C_POSTEVAL_STATUS = "FC_P003C_POSTEVAL_COMPLETE"
 FC_P003B_UNIT = "fluid-control-fcp003b-dynamic-pairs-20261005.service"
@@ -840,6 +841,13 @@ def build_sample(
     fc_p003c_posteval_complete, fc_p003c_posteval_issues = verify_receipt(
         repo / FC_P003C_POSTEVAL_RECEIPT, FC_P003C_POSTEVAL_STATUS
     )
+    fc_p003c_gate_status = read_json(
+        repo / FC_P003C_DEVELOPMENT_GATE, {}
+    ).get("status")
+    fc_p003c_rejected = (
+        fc_p003c_posteval_complete
+        and fc_p003c_gate_status == PAIRED_DEVELOPMENT_FAIL_STATUS
+    )
     fc_p003b_unit = units.get(FC_P003B_UNIT, {})
     fc_p003b_probe_unit = units.get(FC_P003B_PROBE_UNIT, {})
     fc_p003b_posteval_unit = units.get(FC_P003B_POSTEVAL_UNIT, {})
@@ -937,7 +945,11 @@ def build_sample(
         and paired["paired_posteval_complete"]
     )
     stage_complete = (
-        fc_p003_gate_status is not None if fc_p003_approved else fc_p001_stage_complete
+        fc_p003c_posteval_complete
+        if fc_p003c_full_approved
+        else fc_p003_gate_status is not None
+        if fc_p003_approved
+        else fc_p001_stage_complete
     )
     pending = True  # The accepted surrogate/controller/real-CFD project goal is unmet.
     main_authority = select_main_authority(units)
@@ -1127,6 +1139,8 @@ def build_sample(
         alerts.append(
             "PAIRED_POSTEVAL_APPROVED_WITH_NO_RUNNING_UNIT_FOR_300_SECONDS"
             if paired_wait
+            else "FC_P003C_REJECTED_D015_IMPLEMENTATION_WITH_NO_RUNNING_TASK_FOR_300_SECONDS"
+            if fc_p003c_rejected
             else "TRAIN16_PENDING_WITH_NO_RUNNING_UNIT_FOR_300_SECONDS"
         )
         if paired_wait:
@@ -1158,7 +1172,9 @@ def build_sample(
         fc_p003b_posteval_unit.get("active_state") == "active"
     )
     scientific_status = (
-        "FC_P003C_TRAINING_AND_IMMUTABLE_POSTEVAL_WAIT_RUNNING"
+        "C_POSTEVAL_COMPLETE_REJECTED_D015_IMPLEMENTATION"
+        if fc_p003c_rejected
+        else "FC_P003C_TRAINING_AND_IMMUTABLE_POSTEVAL_WAIT_RUNNING"
         if fc_p003c_running and fc_p003c_posteval_running
         else "FC_P003C_TRAINING_RUNNING"
         if fc_p003c_running
@@ -1216,7 +1232,9 @@ def build_sample(
         "scientific_next_stage": {
             "status": scientific_status,
             "active_work": (
-                "fc_p003c_true_state_force_training_and_immutable_posteval"
+                "fc_p003c_rejected_d015_implementation_and_cpu_validation"
+                if fc_p003c_rejected
+                else "fc_p003c_true_state_force_training_and_immutable_posteval"
                 if fc_p003c_running or fc_p003c_posteval_running
                 else
                 "fc_p003b_unchanged_formal_posteval"
@@ -1254,7 +1272,11 @@ def build_sample(
                 )
             ),
             "purpose": (
-                "FC-P003C is executing the separately approved fixed two-epoch "
+                "FC-P003C completed its immutable post-evaluation but failed the "
+                "unchanged force-window development gate. PPO remains blocked; "
+                "only the approved D015 implementation and CPU validation may proceed."
+                if fc_p003c_rejected
+                else "FC-P003C is executing the separately approved fixed two-epoch "
                 "single-factor training and immutable post-evaluation chain. The "
                 "completed one-step mixed-loss probe established only engineering "
                 "feasibility; no scientific PASS or PPO authorization exists."
@@ -1432,6 +1454,8 @@ def build_sample(
                 "full_training_approval_reference": str(FC_P003C_FULL_APPROVAL),
                 "state": "TRAINING_AND_POSTEVAL_WAIT_RUNNING"
                 if fc_p003c_running and fc_p003c_posteval_running
+                else "POSTEVAL_COMPLETE_REJECTED_D015_IMPLEMENTATION"
+                if fc_p003c_rejected
                 else "TRAINING_RUNNING"
                 if fc_p003c_running
                 else "POSTEVAL_RUNNING"
