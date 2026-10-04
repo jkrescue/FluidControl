@@ -118,6 +118,41 @@ class FCP003LineageTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "required files"):
                 module.validate_complete(root, checkpoint)
 
+    def test_step_receipt_requires_exact_internal_artifact_set(self) -> None:
+        import tempfile
+        module = load_module("scripts/validate_fc_p003_posteval_step.py", "step_set")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "out"; root.mkdir()
+            first, second = root / "first.json", root / "second.json"
+            first.write_text("first\n"); second.write_text("second\n")
+            outside = Path(directory) / "outside.json"; outside.write_text("outside\n")
+            receipt = root / "step.json"; checkpoint = "c" * 64
+
+            def write(paths):
+                receipt.write_text(json.dumps({
+                    "status": "CONTROL_TRAIN16_POSTEVAL_STEP_COMPLETE",
+                    "step": "example", "checkpoint_sha256": checkpoint,
+                    "sha256": {str(path): module.sha256(path) for path in paths},
+                }))
+
+            write((first,))
+            with self.assertRaisesRegex(ValueError, "artifact set"):
+                module.validate_step_receipt(
+                    receipt, step="example", checkpoint=checkpoint,
+                    expected_paths=(first, second), output_root=root,
+                )
+            write((first, outside))
+            with self.assertRaisesRegex(ValueError, "artifact set"):
+                module.validate_step_receipt(
+                    receipt, step="example", checkpoint=checkpoint,
+                    expected_paths=(first, second), output_root=root,
+                )
+            with self.assertRaisesRegex(ValueError, "escapes output"):
+                module.validate_step_receipt(
+                    receipt, step="example", checkpoint=checkpoint,
+                    expected_paths=(first, outside), output_root=root,
+                )
+
     def test_archive_payload_rejects_unexpected_member_set(self) -> None:
         import tempfile
         import zipfile
