@@ -27,7 +27,7 @@ done
 
 if [[ "$mode" == "--dry-run" ]]; then
   printf 'CONTROL_TRAIN16_POSTEVAL_QUEUE_READY_NO_GPU\n'
-  printf 'order=main,balanced suites=validation10,dynamic6,force-window,development-gate ppo_auto_launch=false\n'
+  printf 'spark_branch=main balanced_branch=external_worker_takeover suites=validation10,dynamic6,force-window,development-gate ppo_auto_launch=false\n'
   printf 'main=%s\nbalanced=%s\n' "$main" "$balanced"
   exit 0
 fi
@@ -40,21 +40,6 @@ wait_for_main() {
   [[ "$(systemctl --user show "$main_unit" -p Result --value)" == "success" ]] || {
     echo "main training unit did not finish successfully" >&2; exit 3;
   }
-}
-
-wait_for_balanced() {
-  while [[ ! -f "$balanced/worker_transfer_complete.json" ]]; do sleep 30; done
-  python3 - "$balanced/worker_transfer_complete.json" <<'PY'
-import json, pathlib, sys
-p=json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-if (
-    p.get("status") != "CONTROL_TRAIN16_H100_LIFT_BALANCED_WORKER_TRANSFER_COMPLETE"
-    or p.get("training_exit_code") != 0
-    or p.get("source_commit") != "0bc1f3de5d3bdd74babdccc81082665c4f968670"
-    or p.get("frozen_test_accessed") is not False
-):
-    raise SystemExit("balanced Worker transfer receipt differs")
-PY
 }
 
 evaluate_candidate() {
@@ -209,5 +194,4 @@ PY
 
 wait_for_main
 evaluate_candidate main "$main" control_train16_h100
-wait_for_balanced
-evaluate_candidate balanced "$balanced" control_train16_h100_lift_balanced
+printf 'BALANCED_POSTEVAL_EXTERNAL_WORKER_TAKEOVER_NO_DUPLICATE_SPARK_EXECUTION\n'

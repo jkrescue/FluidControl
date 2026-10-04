@@ -8,6 +8,7 @@ import json
 import math
 import shutil
 import subprocess
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -175,7 +176,7 @@ def test_h50_lineage_binds_unique_best_and_detects_mismatch(tmp_path, monkeypatc
         result["current_recovery_and_validation_implementation_sha256"]
     )
     (candidate / "best/FNO.0.4.mdlus").write_bytes(b"different")
-    with pytest.raises(ValueError, match="best files differ"):
+    with pytest.raises(ValueError, match="valid ZIP archive"):
         module.build(repo, candidate)
 
 
@@ -449,6 +450,48 @@ def test_train16_lift_balanced_lineage_is_single_declared_weight_change(
     config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
     with pytest.raises(ValueError, match="training contract differs"):
         module.build(repo, balanced)
+
+
+def test_mdlus_generation_ignores_only_zip_container_metadata(tmp_path) -> None:
+    module = load_module("audit_dynamic_fno_candidate_lineage")
+    first = tmp_path / "first.mdlus"
+    second = tmp_path / "second.mdlus"
+    members = {
+        "model.pt": b"identical serialized tensor state",
+        "args.json": b"{}",
+        "metadata.json": b"{}",
+    }
+    for path, year in ((first, 2025), (second, 2026)):
+        with zipfile.ZipFile(path, "w") as archive:
+            for name, content in members.items():
+                info = zipfile.ZipInfo(name, date_time=(year, 1, 1, 0, 0, 0))
+                archive.writestr(info, content)
+    assert module.sha256(first) != module.sha256(second)
+    result = module.model_generation_equivalence(first, second)
+    assert result["policy"].startswith("complete_mdlus_member_sha256_equal")
+    assert set(result["member_sha256"]) == set(module.MDLUS_MEMBERS)
+
+    with zipfile.ZipFile(second, "w") as archive:
+        for name, content in members.items():
+            archive.writestr(name, content + (b"changed" if name == "model.pt" else b""))
+    with pytest.raises(ValueError, match="model payload differs"):
+        module.model_generation_equivalence(first, second)
+
+
+def test_mdlus_generation_rejects_incomplete_payload(tmp_path) -> None:
+    module = load_module("audit_dynamic_fno_candidate_lineage")
+    first = tmp_path / "first.mdlus"
+    second = tmp_path / "second.mdlus"
+    with zipfile.ZipFile(first, "w") as archive:
+        archive.writestr(
+            zipfile.ZipInfo("model.pt", date_time=(2025, 1, 1, 0, 0, 0)), b"same"
+        )
+    with zipfile.ZipFile(second, "w") as archive:
+        archive.writestr(
+            zipfile.ZipInfo("model.pt", date_time=(2026, 1, 1, 0, 0, 0)), b"same"
+        )
+    with pytest.raises(ValueError, match="member set"):
+        module.model_generation_equivalence(first, second)
 
 
 def test_control_train16_runner_is_fail_closed_and_training_only():

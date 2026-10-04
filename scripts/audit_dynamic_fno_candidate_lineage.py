@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import tempfile
+import zipfile
 from pathlib import Path
 
 import yaml
@@ -26,6 +27,7 @@ TRAIN16_PROBE = Path(
 )
 MODEL = re.compile(r"FNO\.0\.(\d+)\.mdlus")
 STATE = re.compile(r"checkpoint\.0\.(\d+)\.pt")
+MDLUS_MEMBERS = ("model.pt", "args.json", "metadata.json")
 
 
 def sha256(path: Path) -> str:
@@ -34,6 +36,49 @@ def sha256(path: Path) -> str:
         for block in iter(lambda: stream.read(1 << 20), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def mdlus_member_sha256(path: Path) -> dict[str, str]:
+    """Hash the complete official mdlus payload, excluding ZIP container metadata."""
+    try:
+        with zipfile.ZipFile(path) as archive:
+            infos = archive.infolist()
+            names = [info.filename for info in infos]
+            if tuple(sorted(names)) != tuple(sorted(MDLUS_MEMBERS)):
+                raise ValueError("mdlus member set differs from the official FNO archive")
+            if len(names) != len(set(names)) or any(
+                info.is_dir() or info.flag_bits & 0x1 for info in infos
+            ):
+                raise ValueError("mdlus contains duplicate, directory, or encrypted members")
+            return {
+                name: hashlib.sha256(archive.read(name)).hexdigest()
+                for name in MDLUS_MEMBERS
+            }
+    except zipfile.BadZipFile as error:
+        raise ValueError("mdlus is not a valid ZIP archive") from error
+
+
+def model_generation_equivalence(best: Path, checkpoint: Path) -> dict:
+    """Prove identical model payload while retaining both container identities."""
+    best_archive = sha256(best)
+    checkpoint_archive = sha256(checkpoint)
+    if best_archive == checkpoint_archive:
+        return {
+            "policy": "byte_identical_mdlus_archive",
+            "best_archive_sha256": best_archive,
+            "checkpoint_archive_sha256": checkpoint_archive,
+            "member_sha256": None,
+        }
+    best_members = mdlus_member_sha256(best)
+    checkpoint_members = mdlus_member_sha256(checkpoint)
+    if best_members != checkpoint_members:
+        raise ValueError("best model payload differs from its checkpoint generation")
+    return {
+        "policy": "complete_mdlus_member_sha256_equal_ignoring_zip_container_metadata",
+        "best_archive_sha256": best_archive,
+        "checkpoint_archive_sha256": checkpoint_archive,
+        "member_sha256": best_members,
+    }
 
 
 def git_blob_sha256(repo: Path, commit: str, relative: str) -> str:
@@ -177,11 +222,9 @@ def build(repo: Path, candidate_root: Path) -> dict:
         raise ValueError("best files do not match the unique selected epoch")
     checkpoint_model = root / "checkpoints" / model.name
     checkpoint_state = root / "checkpoints" / state.name
-    if (
-        sha256(model) != sha256(checkpoint_model)
-        or sha256(state) != sha256(checkpoint_state)
-    ):
-        raise ValueError("best files differ from their checkpoint generation")
+    model_equivalence = model_generation_equivalence(model, checkpoint_model)
+    if sha256(state) != sha256(checkpoint_state):
+        raise ValueError("best training state differs from its checkpoint generation")
 
     base = repo / "data/curated/tandem_cylinders_matched_start_full40_dev30_v1"
     train8 = repo / "data/curated/tandem_cylinders_dynamic_train8_v1"
@@ -488,6 +531,8 @@ def build(repo: Path, candidate_root: Path) -> dict:
         "checkpoint_sha256": sha256(model),
         "checkpoint_state": str(state.relative_to(repo)),
         "checkpoint_state_sha256": sha256(state),
+        "checkpoint_generation_model_equivalence": model_equivalence,
+        "checkpoint_generation_state_sha256": sha256(checkpoint_state),
         "resolved_config_sha256": sha256(config_path),
         "training_history_sha256": sha256(root / "training_history.json"),
         "training_data_sources_sha256": sha256(sources_path),
