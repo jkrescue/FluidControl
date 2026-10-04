@@ -58,9 +58,11 @@ gradients between reference, chunked prefix and full H100 runs. After the
 prefix check, run H100 in ten time chunks of 10, releasing each graph after
 backward. Do not vectorize all 200 branch states or retain all time graphs.
 
-Equivalence tolerances must be recorded and independently approved before
-GPU execution, never chosen after seeing the probe result. Verify loss and
-all parameter gradients, not just a scalar gradient norm. Full-run gradients
+Equivalence tolerances are fixed before GPU execution: scalar loss
+rtol=2e-5, atol=1e-7; every parameter-gradient tensor rtol=3e-4, atol=3e-6.
+These are FP32 numerical-equivalence checks, not scientific accuracy gates.
+Do not change them after observing a failure; first diagnose any discrepancy.
+Verify loss and all parameter gradients, not just a scalar gradient norm. Full-run gradients
 must be finite and nonzero. Confirm weights and model buffers are unchanged.
 Report unweighted normalized loss and per-channel normalized MSE; retaining
 lambda=10 in a future experiment would not make this loss numerically
