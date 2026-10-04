@@ -16,6 +16,16 @@
 | D010 | 以持久状态和实验台账协调代理；accepted now | 多次流程结束、后处理失败与旧状态导致进展混淆 | 每关键节点更新并独立复核；阶段完成不得改project_goal_complete |
 | D011 | 区分港理工相关研究背景、独立实现与严格论文复现；accepted now | `docs/POLYU_ZHAO_2024_SOURCE_AUDIT_20261003.md`记录部分原文参数尚未核实，而旧`docs/PAPER_REPRODUCTION.md`含较具体及较早阶段描述 | 不把旧文档更肯定的说法当证据；建立原文页码/公式对照后才宣称一致。当前整体减阻+升力约束是项目目标，不能冒称论文原奖励 |
 
+## D012 — 补全 canonical 代理验证的数值生成程序
+
+2026-10-05 Asia/Shanghai，accepted before FC-P003/P003B完整后评估。
+独立源码和历史审计确认：旧window/dynamic receipt仅有consumer字段合同，
+没有历史数值producer。采用2026-10-04已经固定的development误差标准补全，
+不降低阈值、不将今日定义追认成历史预注册，也不把共享证据的receipt描述为
+独立科学实验。实现须从校验后的原始评估证据重算，而非改名PASS布尔值。
+详见`docs/CANONICAL_SURROGATE_PROTOCOL_COMPLETION_20261005.md`。
+只授权CPU producer/诊断；PPO及最终真实CFD物理验收要求不变。
+
 ## 新决策格式
 
 ID、记录时间、状态、待检验假设、对应实验ID、所依据证据/协议、可选方案、取舍原因、保留的不确定性、撤销/调整条件。只有读取过的产物可作为事实；代理口头报告是待核信息。
