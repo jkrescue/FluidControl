@@ -86,7 +86,7 @@ def test_gradient_vector_math_and_direction_metrics():
     assert undefined["left_over_right_l2"] is None
 
 
-def test_gradient_decomposition_is_checked_against_independent_total():
+def test_gradient_decomposition_is_checked_and_emits_numeric_evidence(capsys):
     value = module()
     expected = [torch.tensor([1.0, 2.0])]
     residual = value.assert_gradient_close(
@@ -95,6 +95,13 @@ def test_gradient_decomposition_is_checked_against_independent_total():
     assert residual["l2"] == 0
     with pytest.raises(RuntimeError, match="gradient decomposition differs"):
         value.assert_gradient_close([torch.tensor([2.0, 2.0])], expected, label="test")
+    evidence = json.loads(capsys.readouterr().out)
+    assert evidence["status"] == "GRADIENT_DECOMPOSITION_MISMATCH"
+    assert evidence["label"] == "test"
+    assert evidence["residual_l2"] > 0
+    assert evidence["reference_l2"] > 0
+    assert evidence["actual_l2"] > 0
+    assert evidence["relative_residual_l2"] > evidence["relative_tolerance"]
 
 
 def test_gradient_aggregation_rejects_shape_mismatch_and_summarizes_even_rows():
@@ -134,6 +141,7 @@ def test_script_has_no_optimizer_or_checkpoint_write_path():
     assert "regular_force_decomposition_gradient_residual" in source
     assert 'sampling["pair_identity_passes"]' in source
     assert 'pair_identity.get("pair_id") != expected_pair_ids[position_index]' in source
+    assert "choices=(1, 16)" in source
 
 
 def test_launcher_is_bounded_train_only_and_execution_gated():

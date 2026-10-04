@@ -146,7 +146,29 @@ def assert_gradient_close(
     """Require a decomposed gradient to reproduce its independent definition."""
     residual = vector_stats(add(actual, scale(expected, -1.0)))
     reference = float(vector_stats(expected)["l2"])
-    if float(residual["l2"]) > rtol * max(reference, 1e-12):
+    actual_stats = vector_stats(actual)
+    relative = float(residual["l2"]) / max(reference, 1e-12)
+    if relative > rtol:
+        print(
+            json.dumps(
+                {
+                    "status": "GRADIENT_DECOMPOSITION_MISMATCH",
+                    "scope": "train_only_no_optimizer_debug_evidence",
+                    "label": label,
+                    "residual_l2": residual["l2"],
+                    "residual_linf": residual["linf"],
+                    "reference_l2": reference,
+                    "reference_linf": vector_stats(expected)["linf"],
+                    "actual_l2": actual_stats["l2"],
+                    "actual_linf": actual_stats["linf"],
+                    "relative_residual_l2": relative,
+                    "relative_tolerance": rtol,
+                },
+                sort_keys=True,
+                allow_nan=False,
+            ),
+            flush=True,
+        )
         raise RuntimeError(f"{label} gradient decomposition differs")
     return residual
 
@@ -198,6 +220,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--source-manifest", type=Path, required=True)
     parser.add_argument("--gpu-memory-fraction", type=float, default=0.35)
+    parser.add_argument("--max-positions", type=int, choices=(1, 16), default=16)
     return parser.parse_args()
 
 
@@ -289,7 +312,8 @@ def main() -> None:
             seed=20261003,
         )
         regular_indices = list(iter(regular_order_loader.sampler))
-        selected_indices = [regular_indices[position] for position in POSITIONS]
+        positions = POSITIONS[: args.max_positions]
+        selected_indices = [regular_indices[position] for position in positions]
         pair_order_loader = DataLoader(
             pair_dataset,
             batch_size=1,
@@ -327,7 +351,9 @@ def main() -> None:
             regular, sampler=FixedSampler(selected_indices), **loader_args
         )
         selected_pairs = DataLoader(
-            pair_dataset, sampler=FixedSampler(pair_indices), **loader_args
+            pair_dataset,
+            sampler=FixedSampler(pair_indices[: args.max_positions]),
+            **loader_args,
         )
 
         model = build_model(cfg).to(device)
@@ -365,7 +391,7 @@ def main() -> None:
 
         for position_index, (position, (regular_item, pair_item)) in enumerate(
             zip(
-                POSITIONS,
+                positions,
                 zip(selected_regular, selected_pairs, strict=True),
                 strict=True,
             )
@@ -697,7 +723,8 @@ def main() -> None:
             model.zero_grad(set_to_none=True)
 
         mean_vectors = {
-            name: scale(value, 1 / 16) for name, value in mean_gradients.items()
+            name: scale(value, 1 / args.max_positions)
+            for name, value in mean_gradients.items()
         }
         aggregate = {name: vector_stats(value) for name, value in mean_vectors.items()}
         model_state_after = model_state_sha256(model)
@@ -733,7 +760,8 @@ def main() -> None:
                 "pair_manifest": sha256(args.pair_manifest),
                 "source_manifest": sha256(args.source_manifest),
             },
-            "positions": list(POSITIONS),
+            "positions": list(positions),
+            "max_positions": args.max_positions,
             "rows": rows,
             "mean_gradient": aggregate,
             "mean_gradient_directions": {
