@@ -91,7 +91,6 @@ def make_output(root: Path, *, nonfinite: bool = False, omit_state: bool = False
             {
                 "epoch": 1,
                 "selection_score": float("nan") if nonfinite else 0.5,
-                "paired_dataset_kind": "dynamic8",
                 "paired_batch_schedule": "interleaved",
                 "paired_batch_indices": list(range(8)),
                 "paired_identity_passes": [identities],
@@ -154,6 +153,16 @@ def make_output(root: Path, *, nonfinite: bool = False, omit_state: bool = False
     if not omit_state:
         (root / "checkpoints/checkpoint.0.1.pt").parent.mkdir(parents=True, exist_ok=True)
         (root / "checkpoints/checkpoint.0.1.pt").write_bytes(b"state")
+    dump(
+        root / "checkpoint_metadata_receipt.json",
+        {
+            "status": "FC_P003B_CHECKPOINT_METADATA_PASS",
+            "mode": "--probe",
+            "checkpoint_state_sha256": MODULE.sha256(root / "best/checkpoint.0.1.pt"),
+            "paired_dataset_kind": "dynamic8",
+            "paired_dataset_repetitions": 1,
+        },
+    )
 
 
 def test_output_passes_and_records_exact_checkpoint_pair(tmp_path: Path) -> None:

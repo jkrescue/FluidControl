@@ -161,6 +161,7 @@ def validate_output(root: Path, mode: str) -> dict:
         "runtime_metadata.json",
         "training_data_sources.json",
         "training_history.json",
+        "checkpoint_metadata_receipt.json",
         "train.log",
     ]
     required = [root / name for name in required_names]
@@ -203,8 +204,6 @@ def validate_output(root: Path, mode: str) -> dict:
     for epoch, row in enumerate(history, 1):
         if row.get("epoch") != epoch:
             raise ValueError("epoch numbering differs")
-        if row.get("paired_dataset_kind") != "dynamic8":
-            raise ValueError("paired dataset kind differs")
         if row.get("paired_batch_schedule") != "interleaved":
             raise ValueError("paired schedule differs")
         if row.get("paired_batch_indices") != expected_indices:
@@ -303,6 +302,15 @@ def validate_output(root: Path, mode: str) -> dict:
         raise ValueError("best model differs from selected checkpoint payload")
     if sha256(best_state) != sha256(checkpoint_state):
         raise ValueError("best state differs from selected checkpoint generation")
+    checkpoint_receipt = load_json(root / "checkpoint_metadata_receipt.json")
+    if (
+        checkpoint_receipt.get("status") != "FC_P003B_CHECKPOINT_METADATA_PASS"
+        or checkpoint_receipt.get("mode") != mode
+        or checkpoint_receipt.get("paired_dataset_kind") != "dynamic8"
+        or checkpoint_receipt.get("paired_dataset_repetitions") != repetitions
+        or checkpoint_receipt.get("checkpoint_state_sha256") != sha256(best_state)
+    ):
+        raise ValueError("checkpoint metadata receipt differs")
     artifacts = {path.relative_to(root).as_posix(): sha256(path) for path in required}
     for path in (best_model, best_state, checkpoint_model, checkpoint_state):
         artifacts[path.relative_to(root).as_posix()] = sha256(path)
@@ -318,6 +326,7 @@ def validate_output(root: Path, mode: str) -> dict:
         "checkpoint_model_sha256": sha256(best_model),
         "checkpoint_state_sha256": sha256(best_state),
         "checkpoint_generation_payload_sha256": archive_payload(best_model),
+        "completion_validator_sha256": sha256(Path(__file__)),
         "sha256": artifacts,
         "training_exit_code": 0,
         "frozen_test_accessed": False,

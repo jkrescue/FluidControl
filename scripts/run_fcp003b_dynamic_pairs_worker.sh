@@ -17,7 +17,8 @@ baseline_order_sha="fab043a70652475e0b03aa869eac3445eaec1ec6c66a74cf976a0342a3db
 real_sampling_sha="da078a1c43f03bf86ee71a5010632c05a4868b169dc8f8c7c341c78134873242"
 source_receipt_sha="48df52c75be6a974ba2d1d9827c0897e4e5335981d7fa300d8663dc821723dab"
 source_required_sha="ab519370c43c72d1f3247919ca36cd3c6b1c1da681356f89e5bea7da0e22d79b"
-validator_sha="4d2cec37659c98d9aac873893af9b15e16a3af94e46cb71d75e2e8e80aaba9d8"
+validator_sha="11885f2a54e9e82cf75c82855137b13005b43adf74a554b26e2e699c7aa3f468"
+checkpoint_inspector_sha="6eb31b7da9112330a8f42e95ff1cf16c90d8adb0401ccc37a2df4d1ed7cbdb62"
 parent_model_sha="8466bd47f2de188f5e741197832ec3bee1223f72f54d8956e584c586a2774240"
 parent_state_sha="1e5d4c055812d8f92bc55f58708e839f7cc776071849544f6a26d3d62053cbd0"
 normalization_sha="f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
@@ -36,6 +37,7 @@ sha() { sha256sum "$1" | awk '{print $1}'; }
 [[ "$(sha "$receipt")" == "$source_receipt_sha" ]] || { echo "source receipt differs" >&2; exit 2; }
 [[ "$(sha "$root/evidence/source_required_hashes.json")" == "$source_required_sha" ]] || { echo "source dependency map differs" >&2; exit 2; }
 [[ "$(sha "$root/launch/validate_fcp003b_worker_output.py")" == "$validator_sha" ]] || { echo "output validator differs" >&2; exit 2; }
+[[ "$(sha "$root/launch/inspect_fcp003b_checkpoint_metadata.py")" == "$checkpoint_inspector_sha" ]] || { echo "checkpoint inspector differs" >&2; exit 2; }
 [[ "$(sha "$root/immutable_parent/FNO.0.2.mdlus")" == "$parent_model_sha" ]] || { echo "parent model differs" >&2; exit 2; }
 [[ "$(sha "$root/immutable_parent/checkpoint.0.2.pt")" == "$parent_state_sha" ]] || { echo "parent state differs" >&2; exit 2; }
 for path in "$root/data/dev30" "$root/data/train8" "$root/data/train16"; do
@@ -107,5 +109,15 @@ command=(docker run --rm --name "$container" --gpus device=0 --cpus 8 --memory 9
  hydra.run.dir=/tmp/hydra hydra.output_subdir=null output_dir=/workspace/output
  "${extra[@]}")
 "${command[@]}" 2>&1 | tee "$output/train.log"
+mapfile -t best_states < <(find "$output/best" -maxdepth 1 -type f -name 'checkpoint.0.*.pt' -print)
+[[ "${#best_states[@]}" -eq 1 ]] || { echo "expected exactly one best checkpoint state" >&2; exit 2; }
+docker run --rm --name "${container}-metadata" --cpus 2 --memory 8g --pids-limit 256 \
+  --cap-drop ALL --security-opt no-new-privileges --user "$(id -u):$(id -g)" \
+  -e "USER=$(id -un)" -e "LOGNAME=$(id -un)" -e HOME=/tmp \
+  --tmpfs /tmp:rw,nosuid,nodev,size=1g \
+  -v "$root/launch:/workspace/launch:ro" -v "$output:/workspace/output:rw" \
+  -w /workspace "$image" python -u /workspace/launch/inspect_fcp003b_checkpoint_metadata.py \
+  --checkpoint "/workspace/output/best/${best_states[0]##*/}" --mode="$mode" \
+  --output /workspace/output/checkpoint_metadata_receipt.json
 python3 "$root/launch/validate_fcp003b_worker_output.py" output \
   --root "$output" --mode="$mode" --receipt "$output/completion_receipt.json"
