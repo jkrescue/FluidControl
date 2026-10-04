@@ -54,7 +54,7 @@ fi
 [[ "${PAIRED_STATS_TRAIN_TOKEN:-}" == "EXECUTE_REVIEWED_PAIRED_STATS" ]] || { echo "reviewed token required" >&2; exit 2; }
 
 suffix=""
-[[ "$mode" == "--probe" ]] && suffix="_probe_v2"
+[[ "$mode" == "--probe" ]] && suffix="_probe_v3"
 output="$root/artifacts/tandem_fno_paired_stats_${branch}${suffix}_20261004"
 [[ ! -e "$output" ]] || { echo "output already exists: $output" >&2; exit 2; }
 commit="$(git rev-parse HEAD)"
@@ -99,7 +99,7 @@ command=(docker run --rm --name "paired-stats-${branch}-${mode#--}-20261004" --g
  -e "USER=$(id -un)" -e "LOGNAME=$(id -un)" -e HOME=/tmp
  -e PYTHONPATH=/workspace/src:/workspace/scripts --tmpfs /tmp:rw,nosuid,nodev,size=4g
  -v "$source/src:/workspace/src:ro" -v "$source/scripts:/workspace/scripts:ro"
- -v "$source/conf:/workspace/conf:ro" -v "$dev30:/workspace/data:ro"
+ -v "$source/conf:/workspace/conf:ro" -v "$dev30:/workspace/base:ro"
  -v "$train8:/workspace/train8:ro" -v "$train16:/workspace/train16:ro"
  -v "$pair_manifest:/workspace/pair_manifest.json:ro"
  -v "$output/immutable_parent:/workspace/parent:ro" -v "$output:/workspace/output:rw"

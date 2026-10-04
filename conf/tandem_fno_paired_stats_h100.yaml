@@ -8,7 +8,7 @@ defaults:
 output_dir: /workspace/output
 probe_output: /workspace/output/parent_scale_audit.json
 data:
-  paired_root: /workspace/data
+  paired_root: /workspace/base
   paired_manifest: /workspace/pair_manifest.json
 training:
   initial_checkpoint: /workspace/parent
