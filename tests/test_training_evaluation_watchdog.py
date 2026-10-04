@@ -63,7 +63,7 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         )
         self.assertTrue(state["container_running"])
         self.assertEqual(state["container_pid"], 3233445)
-        self.assertEqual(state["training_process_pids"], [3233729, 3233861])
+        self.assertEqual(state["training_process_pids"], [3233861])
 
     def test_reviewed_main_transient_is_retry_eligible(self) -> None:
         with mock.patch.object(MODULE, "PRODUCTION_AUTO_RECOVERY_ENABLED", True):

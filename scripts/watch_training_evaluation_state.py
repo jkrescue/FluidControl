@@ -416,7 +416,14 @@ def worker_container_state(container: str, process_needle: str) -> dict:
     if top.returncode == 0:
         for line in top.stdout.splitlines()[1:]:
             columns = line.strip().split(maxsplit=2)
-            if len(columns) == 3 and columns[0].isdigit() and process_needle in columns[2]:
+            if (
+                len(columns) == 3
+                and columns[0].isdigit()
+                and process_needle in columns[2]
+                # Wrapper and guard argv repeat the child command after ``--``.
+                # They are not evidence that the trainer itself is still alive.
+                and "spark_gpu_guard.py" not in columns[2]
+            ):
                 pids.append(int(columns[0]))
     return {
         "container": container,
