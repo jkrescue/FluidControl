@@ -817,6 +817,14 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                 datetime(2026, 10, 5, 0, 0, tzinfo=UTC),
             )
         stage = result["scientific_next_stage"]["fc_p003b"]
+        self.assertEqual(
+            result["scientific_next_stage"]["status"],
+            "FC_P003B_POSTEVAL_RUNNING_FC_P003_REJECTED",
+        )
+        self.assertEqual(
+            result["scientific_next_stage"]["active_work"],
+            "fc_p003b_unchanged_formal_posteval",
+        )
         self.assertEqual(stage["state"], "POSTEVAL_RUNNING")
         self.assertEqual(stage["authority_unit"], MODULE.FC_P003B_POSTEVAL_UNIT)
         self.assertEqual(stage["main_pid"], 4242)

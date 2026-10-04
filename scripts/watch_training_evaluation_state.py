@@ -995,8 +995,13 @@ def build_sample(
         )
     else:
         lambda0_state = "PENDING"
+    fc_p003b_posteval_running = (
+        fc_p003b_posteval_unit.get("active_state") == "active"
+    )
     scientific_status = (
-        f"FC_P003_{fc_p003_state}"
+        "FC_P003B_POSTEVAL_RUNNING_FC_P003_REJECTED"
+        if fc_p003b_posteval_running
+        else f"FC_P003_{fc_p003_state}"
         if paired_verdict["status"] == "FC_P001_SCIENTIFIC_REJECTED"
         and fc_p003_approved
         else paired["paired_posteval_status"]
@@ -1041,7 +1046,9 @@ def build_sample(
         "scientific_next_stage": {
             "status": scientific_status,
             "active_work": (
-                (
+                "fc_p003b_unchanged_formal_posteval"
+                if fc_p003b_posteval_running
+                else (
                     "fc_p003_interleaved_paired_supervision_training"
                     if fc_p003_state == "RUNNING"
                     else "fc_p003_bounded_resource_probe"
@@ -1070,9 +1077,14 @@ def build_sample(
                 )
             ),
             "purpose": (
-                "Lead-approved FC-P003 changes only paired-update timing from frontloaded "
-                "to uniformly interleaved; training completion is not scientific admission, "
-                "and a failed gate returns control to Lead for the next hypothesis"
+                "FC-P003 is a retained scientific rejection; independently approved "
+                "FC-P003B is now completing its unchanged formal post-evaluation and "
+                "cannot be admitted before the dynamic and force-window gates finish"
+                if fc_p003b_posteval_running
+                else "Lead-approved FC-P003 changes only paired-update timing from "
+                "frontloaded to uniformly interleaved; training completion is not "
+                "scientific admission, and a failed gate returns control to Lead for "
+                "the next hypothesis"
             ),
             "fc_p001_verdict": paired_verdict,
             "fc_p003": {
