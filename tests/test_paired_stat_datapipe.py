@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import copy
+import gc
+import json
 import tempfile
 import threading
 import unittest
@@ -76,6 +78,17 @@ class PairManifestRejectionTests(unittest.TestCase):
         value["pairs"][0]["split"] = "validation"
         with self.assertRaisesRegex(ValueError, "train/start0"):
             self.dataset(value)._validate_manifest(False)
+
+    def test_failed_constructor_cleanup_is_safe(self) -> None:
+        value = manifest()
+        value["pairs"][0]["split"] = "validation"
+        manifest_path = self.root / "manifest.json"
+        manifest_path.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, "train/start0"):
+            MatchedPairStatDataset(
+                self.root, manifest_path, num_workers=1, verify_hdf_sha256=False
+            )
+        gc.collect()
 
     def test_rejects_wrong_phase_pair(self) -> None:
         value = manifest()

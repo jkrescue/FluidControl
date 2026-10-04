@@ -70,6 +70,10 @@ class MatchedPairStatDataset(DatasetBase):
         verify_hdf_sha256: bool = True,
     ) -> None:
         super().__init__(num_workers=num_workers)
+        # Initialize cleanup-owned members before any fail-closed validation.
+        # A rejected manifest must not cause a secondary exception in __del__.
+        self._readers: dict[Path, HDF5Reader] = {}
+        self._reader_lock = threading.Lock()
         self.root = Path(root).resolve()
         self.manifest_path = Path(pair_manifest).resolve()
         self.manifest = json.loads(self.manifest_path.read_text(encoding="utf-8"))
@@ -95,8 +99,6 @@ class MatchedPairStatDataset(DatasetBase):
         self.force_std = torch.tensor(normalization["all_force_std"], dtype=torch.float32)
         self.action_scale = float(self.manifest["max_abs_omega"])
         self.pairs = self.manifest["pairs"]
-        self._readers: dict[Path, HDF5Reader] = {}
-        self._reader_lock = threading.Lock()
 
     def _validate_manifest(self, verify_hdf_sha256: bool) -> None:
         required = {
