@@ -192,5 +192,14 @@ def test_dynamic_rejects_truncated_or_duplicate_start0_segments():
     _, segments = dynamic_documents()
     duplicate = dict(segments["segments"][0])
     segments["segments"][1] = duplicate
-    with pytest.raises(ValueError, match="exactly six"):
+    with pytest.raises(ValueError, match="start indices must equal 0..100"):
+        MODULE.recompute_dynamic(evaluation, segments)
+
+
+def test_dynamic_rejects_duplicate_nonzero_start_with_count_unchanged():
+    evaluation, segments = dynamic_documents()
+    assert segments["segments"][1]["start"] == 1
+    assert segments["segments"][2]["start"] == 2
+    segments["segments"][2]["start"] = 1
+    with pytest.raises(ValueError, match="start indices must equal 0..100"):
         MODULE.recompute_dynamic(evaluation, segments)

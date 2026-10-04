@@ -326,10 +326,15 @@ def recompute_dynamic(evaluation: dict, segments: dict) -> dict:
     h100_rows = [row for row in source_segments if row.get("horizon") == 100]
     if len(h100_rows) != 606:
         raise ValueError("dynamic segments must contain exactly 606 rolling H100 rows")
-    if any(
-        sum(row.get("case") == name for row in h100_rows) != 101 for name in CASES
-    ):
-        raise ValueError("dynamic segments must contain 101 rolling H100 rows per case")
+    for name in CASES:
+        case_rows = [row for row in h100_rows if row.get("case") == name]
+        if len(case_rows) != 101:
+            raise ValueError("dynamic segments must contain 101 rolling H100 rows per case")
+        starts_for_case = [row.get("start") for row in case_rows]
+        if any(isinstance(start, bool) or not isinstance(start, int) for start in starts_for_case):
+            raise ValueError(f"rolling H100 start indices must be integers: {name}")
+        if sorted(starts_for_case) != list(range(101)):
+            raise ValueError(f"rolling H100 start indices must equal 0..100: {name}")
     start_rows = [row for row in h100_rows if row.get("start") == 0]
     if len(start_rows) != len(CASES):
         raise ValueError("strict start0 H100 rows must contain exactly six records")
