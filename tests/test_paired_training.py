@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from fluid_control.paired_training import combine_paired_rollout_batch
+from fluid_control.paired_training import combine_paired_rollout_batch, paired_batch_indices
 
 
 def fixture(batch=2):
@@ -19,6 +19,22 @@ def fixture(batch=2):
 
 
 class PairedTrainingContractTest(unittest.TestCase):
+    def test_frontloaded_schedule_is_backward_compatible(self):
+        self.assertEqual(paired_batch_indices(1368, 16), tuple(range(16)))
+
+    def test_interleaved_schedule_uses_fixed_floor_rule_and_endpoints(self):
+        expected = tuple(i * 1367 // 15 for i in range(16))
+        actual = paired_batch_indices(1368, 16, "interleaved")
+        self.assertEqual(actual, expected)
+        self.assertEqual((actual[0], actual[-1]), (0, 1367))
+        self.assertEqual(len(actual), len(set(actual)))
+
+    def test_invalid_schedule_fails_closed(self):
+        with self.assertRaises(ValueError):
+            paired_batch_indices(10, 11, "interleaved")
+        with self.assertRaises(ValueError):
+            paired_batch_indices(10, 2, "random")
+
     def test_action_then_zero_order_and_causal_targets(self):
         combined = combine_paired_rollout_batch(fixture())
         self.assertEqual(combined["state"].shape, (4, 3, 4, 5))

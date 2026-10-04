@@ -1,0 +1,9 @@
+defaults:
+  - tandem_fno_paired_stats_h100
+  - _self_
+
+# FC-P003 changes only placement of the same 16 lambda=10 paired batches.
+training:
+  paired_stat_loss_weight: 10.0
+  paired_batch_schedule: interleaved
+  expected_regular_batches: 1368

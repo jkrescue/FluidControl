@@ -5,6 +5,29 @@ from __future__ import annotations
 import torch
 
 
+def paired_batch_indices(
+    train_batches: int, paired_batches: int, schedule: str = "frontloaded"
+) -> tuple[int, ...]:
+    """Return deterministic regular-batch indices carrying paired updates."""
+    if train_batches < 1:
+        raise ValueError("train_batches must be positive")
+    if not 1 <= paired_batches <= train_batches:
+        raise ValueError("paired_batches must be in [1, train_batches]")
+    if schedule == "frontloaded":
+        return tuple(range(paired_batches))
+    if schedule != "interleaved":
+        raise ValueError(f"unsupported paired batch schedule: {schedule}")
+    if paired_batches == 1:
+        return (0,)
+    indices = tuple(
+        index * (train_batches - 1) // (paired_batches - 1)
+        for index in range(paired_batches)
+    )
+    if len(set(indices)) != paired_batches:
+        raise ValueError("interleaved paired batch indices are not unique")
+    return indices
+
+
 def combine_paired_rollout_batch(pair: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
     """Combine action/zero branches without changing their causal ordering."""
     required = {

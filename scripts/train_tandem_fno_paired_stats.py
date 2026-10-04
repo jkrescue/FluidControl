@@ -19,7 +19,10 @@ import torch
 from fluid_control.tandem_datapipe import TandemRolloutDataset
 from fluid_control.paired_force_statistics import paired_statistic_loss
 from fluid_control.paired_stat_datapipe import MatchedPairStatDataset
-from fluid_control.paired_training import combine_paired_rollout_batch
+from fluid_control.paired_training import (
+    combine_paired_rollout_batch,
+    paired_batch_indices,
+)
 from omegaconf import DictConfig, OmegaConf
 from physicsnemo.datapipes import DataLoader
 from physicsnemo.distributed import DistributedManager
@@ -267,6 +270,7 @@ def main(cfg: DictConfig) -> None:
         pair_dataset,
         batch_size=int(cfg.training.paired_batch_size),
         shuffle=True,
+        collate_metadata=True,
         prefetch_factor=int(cfg.data.prefetch_factor),
         num_streams=int(cfg.data.num_streams),
         use_streams=True,
@@ -435,8 +439,22 @@ def main(cfg: DictConfig) -> None:
             if max_train_batches
             else len(train_loader)
         )
+        expected_regular_batches = cfg.training.get("expected_regular_batches")
+        if expected_regular_batches and train_batches != int(expected_regular_batches):
+            raise RuntimeError(
+                f"regular batch count differs: {train_batches} != "
+                f"{expected_regular_batches}"
+            )
+        paired_schedule = str(
+            cfg.training.get("paired_batch_schedule", "frontloaded")
+        )
+        paired_indices = paired_batch_indices(
+            train_batches, paired_batches_per_epoch, paired_schedule
+        )
+        paired_index_set = set(paired_indices)
         pair_iterator = iter(pair_loader)
         paired_batches = 0
+        paired_identities = []
         with LaunchLogger("train", epoch=epoch, num_mini_batch=train_batches) as logger:
             for batch_index, batch in enumerate(train_loader):
                 if max_train_batches and batch_index >= int(max_train_batches):
@@ -445,11 +463,11 @@ def main(cfg: DictConfig) -> None:
                     key: value.to(dist.device, non_blocking=True)
                     for key, value in batch.items()
                 }
-                if paired_batches >= paired_batches_per_epoch:
+                if batch_index not in paired_index_set:
                     pair = None
                 else:
                     try:
-                        pair = next(pair_iterator)
+                        pair, pair_metadata = next(pair_iterator)
                     except StopIteration:
                         pair = None
                 if pair is None:
@@ -471,6 +489,9 @@ def main(cfg: DictConfig) -> None:
                         combined["action_force"], combined["zero_force"],
                     )
                     paired_batches += 1
+                    paired_identities.extend(
+                        f"{item['phase']}:{item['action']}" for item in pair_metadata
+                    )
                 logger.log_minibatch({"loss": loss.detach()})
                 totals[0] += loss.detach().double()
                 totals[1] += 1
@@ -480,6 +501,8 @@ def main(cfg: DictConfig) -> None:
                     "teacher_forcing_ratio": current_teacher_forcing,
                     "paired_stat_loss_weight": paired_weight,
                     "paired_batches": paired_batches,
+                    "paired_batch_schedule": paired_schedule,
+                    "paired_batch_indices": list(paired_indices),
                 }
             )
         if paired_batches != paired_batches_per_epoch:
@@ -556,7 +579,7 @@ def main(cfg: DictConfig) -> None:
             raise ValueError(
                 f"max_paired_eval_batches must be in [1, {expected_pair_batches}]"
             )
-        for pair_index, pair in enumerate(pair_loader):
+        for pair_index, (pair, _) in enumerate(pair_loader):
             if pair_index >= max_paired_eval_batches:
                 break
             pair = {
@@ -610,6 +633,9 @@ def main(cfg: DictConfig) -> None:
             "paired_stat_horizons": list(paired_horizons),
             "paired_pair_count": len(pair_dataset),
             "paired_batches_per_epoch": paired_batches_per_epoch,
+            "paired_batch_schedule": paired_schedule,
+            "paired_batch_indices": list(paired_indices),
+            "paired_identities": paired_identities,
             "paired_eval_batches": max_paired_eval_batches,
             "paired_manifest": str(cfg.data.paired_manifest),
             "model_config": OmegaConf.to_container(cfg.model, resolve=True),
@@ -648,6 +674,9 @@ def main(cfg: DictConfig) -> None:
                 "selection_score": score,
                 "paired_stat_loss_weight": paired_weight,
                 "paired_batches": paired_batches,
+                "paired_batch_schedule": paired_schedule,
+                "paired_batch_indices": list(paired_indices),
+                "paired_identities": paired_identities,
                 **metrics,
             }
             history.append(row)
