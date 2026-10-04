@@ -293,6 +293,7 @@ function renderCurrentFlow(d){
  if(im.getAttribute('src')!==url)im.src=url;
 }
 function renderAdmission(d){
+ if(['lambda0','lambda10'].every(k=>d.research_overview?.[k]?.development?.status==='DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL'))$('lead-now').textContent='两组完整评估已结束：终点指标通过，但旋转动作的升力波动预测未通过。当前进行误差诊断与流场可视化，尚未开始新一轮 PPO。实际计算负载见下方采样。';
  const cards=$('lead-models').children;
  ['lambda0','lambda10'].forEach((k,i)=>{const g=d.research_overview?.[k]?.development;if(!g||!cards[i])return;const line=document.createElement('p');const branches=g.window_gate?.branches||[];line.className=g.ppo_authorized===true?'good':'bad';line.textContent=`完整控制精度检验：${g.status==='DYNAMIC_FNO_DEVELOPMENT_ADMISSION_PASS'?'通过':g.status==='DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL'?'未通过':'待核实'}；时间窗口 ${branches.filter(x=>x.joint_pass===true).length}/${branches.length} 案通过。${g.ppo_authorized===true?'仍需策略训练和真实 CFD 验证。':'当前候选不得进入代理 PPO 训练，继续分析误差。'}`;cards[i].appendChild(line)});
 }
