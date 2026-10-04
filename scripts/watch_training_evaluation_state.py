@@ -614,6 +614,9 @@ def build_sample(
     fc_p003_probe_verified, fc_p003_probe_issues = verify_receipt(
         repo / FC_P003_PROBE_ROOT / "completion_receipt.json", FC_P003_PROBE_STATUS
     )
+    fc_p003_probe_launch_verified, fc_p003_probe_launch_issues = verify_receipt(
+        repo / FC_P003_PROBE_ROOT / "launch_receipt.json", FC_P003_LAUNCH_STATUS
+    )
     fc_p003_gate_status = read_json(
         repo / FC_P003_DEVELOPMENT_GATE, {}
     ).get("status")
@@ -621,7 +624,7 @@ def build_sample(
         fc_p003_state = "SCIENTIFIC_FAIL_NEEDS_LEAD_NEXT_HYPOTHESIS"
     elif fc_p003_gate_status:
         fc_p003_state = "SCIENTIFIC_RESULT_REQUIRES_AGENT_REVIEW"
-    elif fc_p003_running:
+    elif fc_p003_running and fc_p003_launch_verified:
         fc_p003_state = "RUNNING"
     elif fc_p003_unit.get("active_state") == "failed":
         fc_p003_state = "OPERATIONAL_FAILURE_NEEDS_AGENT_ANALYSIS"
@@ -633,7 +636,7 @@ def build_sample(
         fc_p003_state = "OPERATIONAL_FAILURE_NEEDS_AGENT_ANALYSIS"
     elif fc_p003_launch_verified:
         fc_p003_state = "PREFLIGHT_COMPLETE_WAITING_RUN"
-    elif fc_p003_probe_running:
+    elif fc_p003_probe_running and fc_p003_probe_launch_verified:
         fc_p003_state = "RESOURCE_PROBE_RUNNING"
     elif fc_p003_probe_verified:
         fc_p003_state = "RESOURCE_PROBE_PASS_FULL_RUN_PENDING"
@@ -938,6 +941,8 @@ def build_sample(
                 "probe_receipt": str(FC_P003_PROBE_ROOT / "completion_receipt.json"),
                 "probe_receipt_verified": fc_p003_probe_verified,
                 "probe_receipt_issues": fc_p003_probe_issues,
+                "probe_launch_receipt_verified": fc_p003_probe_launch_verified,
+                "probe_launch_receipt_issues": fc_p003_probe_launch_issues,
                 "development_gate": str(FC_P003_DEVELOPMENT_GATE),
                 "development_gate_status": fc_p003_gate_status,
                 "single_factor": "paired_update_schedule_frontloaded_to_interleaved",

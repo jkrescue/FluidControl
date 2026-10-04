@@ -199,6 +199,22 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                 )
         return repo
 
+    def write_verified_receipt(self, repo: Path, path: Path, status: str) -> None:
+        target = repo / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        evidence = target.parent / "launch_evidence.json"
+        evidence.write_text('{"ok":true}\n')
+        target.write_text(
+            json.dumps(
+                {
+                    "status": status,
+                    "sha256": {
+                        evidence.name: hashlib.sha256(evidence.read_bytes()).hexdigest()
+                    },
+                }
+            )
+        )
+
     def test_failed_posteval_is_immediate_explicit_blocker(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = self.make_repo(directory)
@@ -414,6 +430,11 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
             repo = self.make_repo(
                 directory, receipts=True, paired=True, paired_posteval=True
             )
+            self.write_verified_receipt(
+                repo,
+                MODULE.FC_P003_LAUNCH_RECEIPT,
+                MODULE.FC_P003_LAUNCH_STATUS,
+            )
             state = unit("active")
             state["main_pid"] = 31415
             state["training_process_pids"] = [31416]
@@ -443,6 +464,11 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo = self.make_repo(
                 directory, receipts=True, paired=True, paired_posteval=True
+            )
+            self.write_verified_receipt(
+                repo,
+                MODULE.FC_P003_PROBE_ROOT / "launch_receipt.json",
+                MODULE.FC_P003_LAUNCH_STATUS,
             )
             state = unit("active")
             state["main_pid"] = 2718
