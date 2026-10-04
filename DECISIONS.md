@@ -54,6 +54,8 @@ Lead以`docs/FC-P003C_APPROVAL.md`批准单因素下一步的工程实现和CPU�
 
 2026-10-05 Asia/Shanghai。固定C亲本的128/64有界校准使paired/late rear-Cl delta MAE仅下降3.02%/2.57%，但absolute MAE与u/v/p场误差均退化；zero rear-Cl MAE约恶化3–4倍。由于action与zero共享的force偏差会在delta loss中严格抵消，Lead批准一个单因素CPU实现：将paired项替换为`0.5 * (weighted action absolute MSE + weighted zero absolute MSE)`，其余亲本、数据、regular loss、预算、λ、权重、学习率、seed、clip及门槛不变。若未来获批执行，必须分别报告action、zero、delta四力与paired/late场误差；zero改善而action/delta无一致改善，或force改善伴随field退化，均反证该机制。当前commit `5cb65bb`仅为CPU-tested代码，不授权GPU、正式后评估或PPO。
 
+该实验已按固定合同执行并触发反证条件：zero rear-Cl误差显著恶化，delta改善很小，且所有field通道退化，因此absolute监督分支也被拒绝，不做正式后评估。现有64个paired update中，四通道加权贡献占比约为front-Cd 2.83%、front-Cl 0.31%、rear-Cd 93.01%、rear-Cl 3.85%，64个pre-clip norm全部大于1（中位26.46、均值30.96）。action与zero的有符号bias变化在每个通道上数值接近，说明存在共同移动的相关模式；但这与贡献/裁剪统计都不是因果证明，不授权继续增大λ、曝光量或模型。
+
 ## 新决策格式
 
 ID、记录时间、状态、待检验假设、对应实验ID、所依据证据/协议、可选方案、取舍原因、保留的不确定性、撤销/调整条件。只有读取过的产物可作为事实；代理口头报告是待核信息。

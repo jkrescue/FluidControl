@@ -159,3 +159,5 @@ Lead负责目标/批准/综合证据；Physics/Data负责真实数据与参数�
 固定C epoch2亲本的128步train-only校准已完成，completion/result SHA分别为`7703e2b1b94dd64be706c64099a5355fd1c2d7dfa9280643c0ffd6cff5873bfa`/`f2397fed145f604892a18edf94d3e690efeddaa2ea2ddae71fd4fa41ca4ce423`。执行包含连续128个regular update、64个paired update和dynamic8的八轮完整遍历，未访问validation/frozen且未执行PPO。rear-Cl action-minus-zero MAE在paired/late窗口仅下降3.02%/2.57%，但absolute MAE上升4.92%/5.89%，velocity relative-L2上升6.80%/5.28%，u/v/p均退化。由已记录计数分离出的zero rear-Cl MAE从0.005973/0.006371恶化到0.025236/0.024862。因此增加相同delta-only监督曝光的假设被拒绝，不进入正式后评估或PPO。
 
 Lead只批准了下一单因素的CPU实现：保持亲本、128/64预算、regular field loss、数据、seed、学习率、λ10和通道权重不变，仅将paired项改为对称的true-state action/zero绝对四力误差。实现commit `5cb65bb`默认仍为原delta路径，并显式记录objective；20项官方PhysicsNeMo 2.2.2 CPU测试通过。该里程碑不授权GPU或说明绝对监督有效。
+
+该absolute单因素随后经单次批准执行并被拒绝。completion/result SHA为`20c19387802ed2297dabb903477ceea6b924171c320c50d65d5f5120a35fa8ed`/`38687ccca3594af8aff6082d57dd090c0765df1dc56cc11850e92b35d1216fdb`；128/64顺序及before readout与delta实验一致，未访问validation/frozen/PPO。paired/late窗口action rear-Cl MAE下降5.68%/5.13%，但zero rear-Cl MAE上升174.9%/145.0%，delta只下降2.19%/1.82%，u/v/p均退化。因此不进入formal validation或PPO。
