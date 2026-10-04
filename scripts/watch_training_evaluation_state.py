@@ -54,6 +54,7 @@ FC_P003_PROBE_PREFIX = "fluid-control-fcp003-interleaved-probe-"
 FC_P003_POSTEVAL_UNIT = "fluid-control-fcp003-posteval-queue-v3-20261005.service"
 FC_P003_POSTEVAL_PREFIX = "fluid-control-fcp003-posteval-queue-"
 FC_P003B_APPROVAL = Path("docs/FC-P003B_APPROVAL.md")
+FC_P003C_APPROVAL = Path("docs/FC-P003C_APPROVAL.md")
 FC_P003B_UNIT = "fluid-control-fcp003b-dynamic-pairs-20261005.service"
 FC_P003B_PROBE_UNIT = "fluid-control-fcp003b-dynamic-pairs-probe-v3-20261005.service"
 FC_P003B_POSTEVAL_UNIT = (
@@ -73,6 +74,11 @@ FC_P003B_PROBE_CONTAINER = "fcp003b-dynamic-pairs-probe-v3"
 FC_P003B_ROOT = Path(
     "artifacts/tandem_fno_dynamic_paired_interleaved_lambda10_20261005"
 )
+FC_P003B_POSTEVAL_RECEIPT = FC_P003B_ROOT / "posteval_fc_p003b/receipt.json"
+FC_P003B_DEVELOPMENT_GATE = FC_P003B_ROOT / "posteval_fc_p003b/development_gate.json"
+FC_P003B_TRANSFER_RECEIPT = FC_P003B_ROOT / "worker_transfer_complete.json"
+FC_P003B_POSTEVAL_STATUS = "FC_P003B_POSTEVAL_COMPLETE"
+FC_P003B_TRANSFER_STATUS = "FC_P003B_WORKER_TO_SPARK_TRANSFER_VERIFIED"
 FC_P003_ROOT = Path("artifacts/tandem_fno_paired_stats_interleaved_lambda10_20261005")
 FC_P003_PROBE_ROOT = Path(
     "artifacts/tandem_fno_paired_stats_interleaved_lambda10_probe_20261005"
@@ -272,6 +278,43 @@ def verify_true_state_force_probe(root: Path) -> tuple[bool, list[str]]:
     )
     if not before or before != after:
         issues.append("technical probe model parameter/buffer SHA differs")
+    return not issues, issues
+
+
+def verify_fc_p003b_terminal(repo: Path) -> tuple[bool, list[str]]:
+    """Verify the transferred FC-P003B result, not merely an inactive unit."""
+    root = repo / FC_P003B_ROOT
+    posteval_path = repo / FC_P003B_POSTEVAL_RECEIPT
+    transfer_path = repo / FC_P003B_TRANSFER_RECEIPT
+    gate_path = repo / FC_P003B_DEVELOPMENT_GATE
+    posteval_ok, issues = verify_receipt(posteval_path, FC_P003B_POSTEVAL_STATUS)
+    transfer = read_json(transfer_path, None)
+    posteval = read_json(posteval_path, None)
+    gate = read_json(gate_path, None)
+    issues = list(issues)
+    if not posteval_ok:
+        return False, issues
+    if not isinstance(transfer, dict):
+        return False, issues + ["FC-P003B transfer receipt missing or invalid"]
+    if transfer.get("status") != FC_P003B_TRANSFER_STATUS:
+        issues.append("FC-P003B transfer status differs")
+    if transfer.get("file_count") != 36:
+        issues.append("FC-P003B transfer file count differs")
+    if transfer.get("frozen_test_accessed") is not False:
+        issues.append("FC-P003B transfer says frozen data were accessed")
+    if transfer.get("ppo_auto_launched") is not False:
+        issues.append("FC-P003B transfer says PPO was launched")
+    if transfer.get("posteval_receipt_sha256") != file_sha256(posteval_path):
+        issues.append("FC-P003B transferred posteval receipt SHA differs")
+    if transfer.get("checkpoint_sha256") != posteval.get("checkpoint_sha256"):
+        issues.append("FC-P003B transfer/checkpoint identity differs")
+    if not isinstance(gate, dict) or gate.get("status") != PAIRED_DEVELOPMENT_FAIL_STATUS:
+        issues.append("FC-P003B development gate is absent or not the reviewed FAIL")
+    expected_gate_sha = posteval.get("sha256", {}).get("development_gate.json")
+    if expected_gate_sha != file_sha256(gate_path):
+        issues.append("FC-P003B development gate SHA differs from receipt")
+    if root.resolve() not in posteval_path.resolve().parents:
+        issues.append("FC-P003B posteval receipt escapes canonical root")
     return not issues, issues
 
 
@@ -715,6 +758,7 @@ def build_sample(
     )
     fc_p003_approved = (repo / FC_P003_APPROVAL).is_file()
     fc_p003b_approved = (repo / FC_P003B_APPROVAL).is_file()
+    fc_p003c_approved = (repo / FC_P003C_APPROVAL).is_file()
     fc_p003b_unit = units.get(FC_P003B_UNIT, {})
     fc_p003b_probe_unit = units.get(FC_P003B_PROBE_UNIT, {})
     fc_p003b_posteval_unit = units.get(FC_P003B_POSTEVAL_UNIT, {})
@@ -728,6 +772,9 @@ def build_sample(
     fc_p003b_probe_running = (
         fc_p003b_probe_unit.get("active_state") == "active"
         and bool(fc_p003b_probe_unit.get("training_process_pids"))
+    )
+    fc_p003b_terminal_verified, fc_p003b_terminal_issues = verify_fc_p003b_terminal(
+        repo
     )
     fc_p003_authority = select_versioned_authority(
         units, FC_P003_PREFIX, FC_P003_UNIT
@@ -1001,6 +1048,10 @@ def build_sample(
     scientific_status = (
         "FC_P003B_POSTEVAL_RUNNING_FC_P003_REJECTED"
         if fc_p003b_posteval_running
+        else "FC_P003B_SCIENTIFIC_FAIL_FC_P003C_IMPLEMENTATION_APPROVED"
+        if fc_p003b_terminal_verified and fc_p003c_approved
+        else "FC_P003B_SCIENTIFIC_FAIL_NEEDS_MODEL_IMPROVEMENT"
+        if fc_p003b_terminal_verified
         else f"FC_P003_{fc_p003_state}"
         if paired_verdict["status"] == "FC_P001_SCIENTIFIC_REJECTED"
         and fc_p003_approved
@@ -1048,6 +1099,10 @@ def build_sample(
             "active_work": (
                 "fc_p003b_unchanged_formal_posteval"
                 if fc_p003b_posteval_running
+                else "fc_p003c_true_state_force_implementation_and_cpu_tests"
+                if fc_p003b_terminal_verified and fc_p003c_approved
+                else "fc_p003b_scientific_fail_awaiting_lead_next_hypothesis"
+                if fc_p003b_terminal_verified
                 else (
                     "fc_p003_interleaved_paired_supervision_training"
                     if fc_p003_state == "RUNNING"
@@ -1081,6 +1136,14 @@ def build_sample(
                 "FC-P003B is now completing its unchanged formal post-evaluation and "
                 "cannot be admitted before the dynamic and force-window gates finish"
                 if fc_p003b_posteval_running
+                else "FC-P003 and FC-P003B are retained scientific rejections. "
+                "FC-P003C is approved only for implementation and CPU tests of one "
+                "true-state per-endpoint paired-force objective; GPU training and PPO "
+                "remain unauthorized"
+                if fc_p003b_terminal_verified and fc_p003c_approved
+                else "FC-P003B completed the reviewed protocol but failed the force-window "
+                "development gate; PPO remains blocked and the project remains incomplete"
+                if fc_p003b_terminal_verified
                 else "Lead-approved FC-P003 changes only paired-update timing from "
                 "frontloaded to uniformly interleaved; training completion is not "
                 "scientific admission, and a failed gate returns control to Lead for "
@@ -1153,6 +1216,8 @@ def build_sample(
                     if fc_p003b_running
                     else "POSTEVAL_RUNNING"
                     if fc_p003b_posteval_unit.get("active_state") == "active"
+                    else "SCIENTIFIC_FAIL_NEEDS_MODEL_IMPROVEMENT"
+                    if fc_p003b_terminal_verified
                     else "TECHNICAL_PROBE_RUNNING"
                     if fc_p003b_probe_running
                     else "PROBE_UNIT_ACTIVE_AWAITING_PROCESS_EVIDENCE"
@@ -1168,6 +1233,7 @@ def build_sample(
                     if fc_p003b_running
                     else FC_P003B_POSTEVAL_UNIT
                     if fc_p003b_posteval_unit.get("active_state") == "active"
+                    or fc_p003b_terminal_verified
                     else FC_P003B_PROBE_UNIT
                     if fc_p003b_probe_unit.get("active_state") == "active"
                     else FC_P003B_UNIT
@@ -1201,7 +1267,15 @@ def build_sample(
                 "unique_pair_count": 8,
                 "updates_per_epoch": 16,
                 "training_authorized": fc_p003b_approved,
-                "scientific_result_available": False,
+                "scientific_result_available": fc_p003b_terminal_verified,
+                "terminal_receipt": str(FC_P003B_POSTEVAL_RECEIPT),
+                "terminal_receipt_verified": fc_p003b_terminal_verified,
+                "terminal_receipt_issues": fc_p003b_terminal_issues,
+                "development_gate": str(FC_P003B_DEVELOPMENT_GATE),
+                "development_gate_status": read_json(
+                    repo / FC_P003B_DEVELOPMENT_GATE, {}
+                ).get("status"),
+                "transfer_receipt": str(FC_P003B_TRANSFER_RECEIPT),
                 "posteval": {
                     "authority_unit": FC_P003B_POSTEVAL_UNIT,
                     "unit_scope": "system",
@@ -1212,11 +1286,25 @@ def build_sample(
                         and fc_p003b_running
                         else "POSTEVAL_RUNNING"
                         if fc_p003b_posteval_unit.get("active_state") == "active"
+                        else "SCIENTIFIC_FAIL"
+                        if fc_p003b_terminal_verified
                         else "POSTEVAL_NOT_ACTIVE"
                     ),
-                    "scientific_result_available": False,
+                    "scientific_result_available": fc_p003b_terminal_verified,
                     "automatic_recovery_eligible": False,
                 },
+            },
+            "fc_p003c": {
+                "approval_state": "LEAD_APPROVED_ENGINEERING_ONLY"
+                if fc_p003c_approved
+                else "NOT_APPROVED",
+                "approval_reference": str(FC_P003C_APPROVAL),
+                "state": "IMPLEMENTATION_AND_CPU_TESTS"
+                if fc_p003c_approved and fc_p003b_terminal_verified
+                else "WAITING_FOR_FC_P003B_REVIEW",
+                "gpu_training_authorized": False,
+                "ppo_authorized": False,
+                "single_factor": "paired_statistic_to_true_state_endpoint_force_loss",
             },
             "true_state_force_technical_probe": {
                 "state": (

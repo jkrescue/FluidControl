@@ -829,6 +829,91 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         self.assertEqual(stage["authority_unit"], MODULE.FC_P003B_POSTEVAL_UNIT)
         self.assertEqual(stage["main_pid"], 4242)
 
+    def test_fc_p003b_verified_terminal_fail_advances_to_p003c_engineering(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(
+                directory, receipts=True, paired=True, paired_posteval=True
+            )
+            for approval in (MODULE.FC_P003B_APPROVAL, MODULE.FC_P003C_APPROVAL):
+                (repo / approval).parent.mkdir(parents=True, exist_ok=True)
+                (repo / approval).write_text("Lead approved\n")
+            post_root = repo / MODULE.FC_P003B_ROOT / "posteval_fc_p003b"
+            post_root.mkdir(parents=True)
+            gate = {
+                "status": MODULE.PAIRED_DEVELOPMENT_FAIL_STATUS,
+                "frozen_test_accessed": False,
+                "ppo_authorized": False,
+            }
+            gate_path = post_root / "development_gate.json"
+            gate_path.write_text(json.dumps(gate))
+            payload_path = post_root / "validation.json"
+            payload_path.write_text("validated\n")
+
+            def digest(path: Path) -> str:
+                return hashlib.sha256(path.read_bytes()).hexdigest()
+
+            checkpoint = "c" * 64
+            posteval = {
+                "status": MODULE.FC_P003B_POSTEVAL_STATUS,
+                "checkpoint_sha256": checkpoint,
+                "frozen_test_accessed": False,
+                "ppo_auto_launched": False,
+                "sha256": {
+                    "development_gate.json": digest(gate_path),
+                    "validation.json": digest(payload_path),
+                },
+            }
+            posteval_path = post_root / "receipt.json"
+            posteval_path.write_text(json.dumps(posteval))
+            transfer = {
+                "status": MODULE.FC_P003B_TRANSFER_STATUS,
+                "file_count": 36,
+                "frozen_test_accessed": False,
+                "ppo_auto_launched": False,
+                "checkpoint_sha256": checkpoint,
+                "posteval_receipt_sha256": digest(posteval_path),
+                "tree_sha256": "d" * 64,
+            }
+            (repo / MODULE.FC_P003B_TRANSFER_RECEIPT).write_text(
+                json.dumps(transfer)
+            )
+            result = MODULE.build_sample(
+                repo,
+                None,
+                {
+                    MODULE.MAIN_AUTHORITY_UNIT: unit(),
+                    MODULE.WORKER_AUTHORITY_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA10_POSTEVAL_UNIT: unit(),
+                    MODULE.FC_P003B_POSTEVAL_UNIT: unit("inactive"),
+                },
+                RESOURCES,
+                datetime(2026, 10, 5, 0, 0, tzinfo=UTC),
+            )
+            stage = result["scientific_next_stage"]
+            self.assertEqual(
+                stage["status"],
+                "FC_P003B_SCIENTIFIC_FAIL_FC_P003C_IMPLEMENTATION_APPROVED",
+            )
+            self.assertEqual(
+                stage["active_work"],
+                "fc_p003c_true_state_force_implementation_and_cpu_tests",
+            )
+            self.assertEqual(
+                stage["fc_p003b"]["state"],
+                "SCIENTIFIC_FAIL_NEEDS_MODEL_IMPROVEMENT",
+            )
+            self.assertTrue(stage["fc_p003b"]["terminal_receipt_verified"])
+            self.assertFalse(stage["fc_p003c"]["gpu_training_authorized"])
+            self.assertFalse(stage["fc_p003c"]["ppo_authorized"])
+            self.assertFalse(result["project_goal_complete"])
+
+            gate["status"] = "PASS"
+            gate_path.write_text(json.dumps(gate))
+            verified, issues = MODULE.verify_fc_p003b_terminal(repo)
+            self.assertFalse(verified)
+            self.assertTrue(issues)
+
 
 if __name__ == "__main__":
     unittest.main()

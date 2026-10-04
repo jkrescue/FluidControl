@@ -30,7 +30,8 @@ P5不是“已有PPO必须作废”的依赖；P4不通过时MPC和surrogate PPO
 | FC-P001 / COMPLETE — 干预未获支持 | 配对时间统计监督改善动作引起的受力变化 | λ0/10同协议后评估已完成；端点通过，但两支力窗口均仅2/6零动作分支通过，旋转分支失败 | 保留FC-E006/007负结果；不启动代理PPO，不放松验收要求 |
 | FC-P002 / COMPLETE — 诊断范围内 | 固定Re100下，失败与动作历程、相位和预测时域有关 | 覆盖审计和失败图已完成；参数幅度覆盖不等于动作历程覆盖；同物理时刻H1/H100对齐进一步表明非零动作的一步升力误差已明显存在 | 不把全部误差归因递推累积或网络容量；跨Re仍未评估 |
 | FC-P003 / COMPLETE — 干预未获支持 | 将16次配对监督均匀分布到epoch，减少早期监督被后续更新冲淡的可能 | 两epoch和完整后评估已完成；validation10与dynamic6组件通过，但force-window仍仅2/6 zero分支通过，四个旋转分支Cl′ RMS误差与旧λ10基本不变，development FAIL | 保留FC-E011负结果；不启动代理PPO，等待已独立批准的FC-P003B完整同协议结果后再决定下一单因素实验 |
-| FC-P003B / RUNNING — Worker | 动态动作/零动作同初态配对监督，比常值动作配对更适合控制相关预测 | 双pass、regular顺序/RNG和真实GPU probe已通过独立核验；正式两轮训练已启动。依据`FC-P003B_APPROVAL.md`，相对FC-P003只改变配对监督内容：8条动态配对每epoch各用两次；不是16条独立轨迹 | Worker隔离执行并校验回传Main；正式亲本仍是Main-e2，不使用probe模型。完整同协议后评估前不判断改善，不使用冻结集 |
+| FC-P003B / COMPLETE — 干预未获支持 | 动态动作/零动作同初态配对监督，比常值动作配对更适合控制相关预测 | 两epoch、SHA回传和完整同协议后评估已完成。端点组件通过，但force-window仅2/6 zero分支通过；四个旋转分支rear-Cl′ RMS误差比FC-P003仅降2.53--3.16%，仍约为限值5.9倍。true-state H1旋转分支rear-Cl MAE仍为0.156--0.192 | 保留FC-E012负结果；不启动代理PPO，不放松门槛 |
+| FC-P003C / IMPLEMENTATION+CPU TESTS APPROVED | 将配对窗口统计项替换为true-state每端点action-minus-zero四力监督，可直接改善一步动作-受力映射 | 只允许实现、CPU单测及后续单次混合梯度/内存probe申请。保持Main-e2亲本、dynamic8×2、16个interleaved updates、λ10、w=[1,1,4,1]/7、模型/数据/归一化/学习率/seed/两epoch和所有评价门槛不变 | GPU正式训练须Lead另行批准。反证包括H1与window旋转升力误差仍基本不变，或改善只来自其他通道；任一原准入门槛失败仍拒绝PPO |
 | FC-P004 / GATED | 合格代理上的短时域显式动作规划可提供解释性控制对照 | 可选MPC候选序列受相同动作约束，在真实CFD配对评价；预先规定时域和计算预算 | 用于区分代理/控制器问题，不因为MPC可解释就视为安全可靠 |
 | FC-P005 / GATED | 合格新代理支持学到有物理收益的PPO策略 | 新policy仅在准确绑定的FNO中训练，随后真实CFD配对；指标沿用原标准 | 通过后才能主张surrogate-assisted闭环，而不是CFD-only成果 |
 | FC-P006 / LATER | 收益在未参与开发的样本/随机种子上可重复 | 固定候选后开展冻结集/新独立样本、多seed，报告区间及失效 | 扩大或收缩稳健性结论；反复开发用的validation不当最终test |
