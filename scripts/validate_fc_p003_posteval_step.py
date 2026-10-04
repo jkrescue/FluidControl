@@ -26,7 +26,7 @@ def load(path: Path) -> dict:
 
 
 def base_module(repo: Path):
-    path = repo / "scripts/validate_control_train16_posteval_step.py"
+    path = repo / "scripts/validate_control_train16_posteval_step_fc_p003_immutable.py"
     spec = importlib.util.spec_from_file_location("base_posteval_validator", path)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)

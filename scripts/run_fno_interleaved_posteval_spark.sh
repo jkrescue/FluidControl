@@ -65,7 +65,7 @@ evaluate_candidate() {
   identity="$(python3 - "$root" "$candidate" "$expected_kind" <<'PY'
 import importlib.util, json, pathlib, sys
 repo,candidate=map(pathlib.Path,sys.argv[1:3]); expected=sys.argv[3]
-spec=importlib.util.spec_from_file_location("lineage",repo/"scripts/audit_fc_p003_candidate_lineage.py")
+spec=importlib.util.spec_from_file_location("lineage",repo/"scripts/audit_fc_p003_candidate_lineage_immutable.py")
 module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
 receipt=module.build(repo,candidate)
 if receipt.get("candidate_kind") != expected: raise SystemExit("candidate kind differs")
@@ -79,20 +79,20 @@ PY
 )"
   local checkpoint_sha="$identity"
   if [[ -f "$out/receipt.json" ]]; then
-    python3 scripts/validate_fc_p003_posteval_step.py --repo "$root" \
+    python3 scripts/validate_fc_p003_posteval_step_immutable.py --repo "$root" \
       --candidate "$candidate" --output "$out" --checkpoint-sha256 "$checkpoint_sha" \
       --step complete
     return
   fi
   mkdir -p "$out/validation10" "$out/dynamic6" "$out/force_window"
   if [[ ! -f "$out/lineage.json" ]]; then
-    python3 scripts/audit_fc_p003_candidate_lineage.py \
+    python3 scripts/audit_fc_p003_candidate_lineage_immutable.py \
       --repo "$root" --candidate-root "$candidate" --output "$out/lineage.json"
   else
     python3 - "$root" "$candidate" "$out/lineage.json" <<'PY'
 import importlib.util,json,pathlib,sys
 repo,candidate,stored=map(pathlib.Path,sys.argv[1:])
-spec=importlib.util.spec_from_file_location("lineage",repo/"scripts/audit_fc_p003_candidate_lineage.py")
+spec=importlib.util.spec_from_file_location("lineage",repo/"scripts/audit_fc_p003_candidate_lineage_immutable.py")
 module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
 if json.loads(stored.read_text()) != module.build(repo,candidate):
  raise SystemExit("stored lineage differs from strict recomputation")
@@ -102,7 +102,7 @@ PY
   local source="$candidate/source_snapshot"
   local checkpoint="$candidate/best"
   validate_step() {
-    python3 scripts/validate_fc_p003_posteval_step.py --repo "$root" \
+    python3 scripts/validate_fc_p003_posteval_step_immutable.py --repo "$root" \
       --candidate "$candidate" --output "$out" --checkpoint-sha256 "$checkpoint_sha" \
       --step "$1"
   }
@@ -172,7 +172,7 @@ PY
   # inference remains entirely launch-snapshot code.
   if [[ ! -f "$out/validation10/endpoint_gate.json" ]]; then
     docker run "${common[@]}" \
-    --mount "type=bind,src=$root/scripts/audit_full40_validation_gate.py,dst=/workspace/recovery/audit_full40_validation_gate.py,readonly" \
+    --mount "type=bind,src=$root/scripts/audit_full40_validation_gate_fc_p003_immutable.py,dst=/workspace/recovery/audit_full40_validation_gate.py,readonly" \
     --mount "type=bind,src=$full40/validation,dst=/workspace/devdata/validation,readonly" \
     --mount "type=bind,src=$full40/manifest.json,dst=/workspace/devdata/manifest.json,readonly" \
     --mount "type=bind,src=$full40/normalization.json,dst=/workspace/devdata/normalization.json,readonly" \
@@ -206,7 +206,7 @@ PY
       2>&1 | tee "$out/dynamic6/evaluate.resume.log"
   fi
   if [[ ! -f "$out/dynamic6/diagnostic.json" ]]; then
-    python3 cfd/tandem_cylinders/audit_full40_dynamic6_fno.py \
+    python3 cfd/tandem_cylinders/audit_full40_dynamic6_fno_fc_p003_immutable.py \
     --data "$dynamic" --checkpoint "$checkpoint" \
     --checkpoint-epoch "$(basename "$checkpoint"/FNO.0.*.mdlus | cut -d. -f3)" \
     --expected-model-sha "$checkpoint_sha" --report "$out/dynamic6/evaluation.json" \
@@ -239,7 +239,7 @@ PY
     "$out/development_gate.json"
 
   python3 - "$root" "$candidate" "$out" "$label" "$expected_kind" "$checkpoint_sha" <<'PY'
-import hashlib,json,pathlib,sys
+import hashlib,json,os,pathlib,sys,tempfile
 repo,candidate,out=map(pathlib.Path,sys.argv[1:4]); label,kind,checkpoint=sys.argv[4:]
 def sha(path):
  h=hashlib.sha256()
@@ -259,12 +259,20 @@ runtime={
  "lineage_sha256":sha(out/"lineage.json"),
  "launch_receipt_sha256":lineage["launch_receipt_sha256"],
  "completion_receipt_sha256":lineage["completion_receipt_sha256"],
- "endpoint_audit_recovery_sha256":sha(repo/"scripts/audit_full40_validation_gate.py"),
- "dynamic6_audit_sha256":sha(repo/"cfd/tandem_cylinders/audit_full40_dynamic6_fno.py"),
- "reuse_validator_sha256":sha(repo/"scripts/validate_fc_p003_posteval_step.py"),
+ "lineage_auditor_sha256":sha(repo/"scripts/audit_fc_p003_candidate_lineage_immutable.py"),
+ "endpoint_audit_recovery_sha256":sha(repo/"scripts/audit_full40_validation_gate_fc_p003_immutable.py"),
+ "dynamic6_audit_sha256":sha(repo/"cfd/tandem_cylinders/audit_full40_dynamic6_fno_fc_p003_immutable.py"),
+ "reuse_validator_sha256":sha(repo/"scripts/validate_fc_p003_posteval_step_immutable.py"),
+ "base_reuse_validator_sha256":sha(repo/"scripts/validate_control_train16_posteval_step_fc_p003_immutable.py"),
  "sha256":files,
 }
-(out/"receipt.json").write_text(json.dumps(runtime,indent=2,sort_keys=True)+"\n")
+receipt=out/"receipt.json"
+with tempfile.NamedTemporaryFile("w",dir=out,delete=False) as stream:
+ temporary=pathlib.Path(stream.name)
+ json.dump(runtime,stream,indent=2,sort_keys=True); stream.write("\n")
+ stream.flush(); os.fsync(stream.fileno())
+try: os.link(temporary,receipt)
+finally: temporary.unlink(missing_ok=True)
 PY
 }
 
