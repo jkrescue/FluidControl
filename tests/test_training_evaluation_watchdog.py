@@ -1182,6 +1182,16 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                         }
                     )
                     + "\n"
+                    + json.dumps(
+                        {
+                            "event": "gpu_guard_complete",
+                            "exit_code": 0,
+                            "min_observed_mem_available_gib": 93.0,
+                            "min_observed_cuda_free_gib": 3.4,
+                            "min_required_mem_available_gib": 20.0,
+                        }
+                    )
+                    + "\n"
                 )
                 running = MODULE.build_sample(
                     repo,
@@ -1211,6 +1221,14 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                 self.assertEqual(
                     calibration_progress["minimum_required_mem_available_gib"],
                     20.0,
+                )
+                self.assertEqual(calibration_progress["guard_exit_code"], 0)
+                self.assertEqual(
+                    calibration_progress["latest_logged_mem_available_gib"],
+                    93.0,
+                )
+                self.assertEqual(
+                    calibration_progress["latest_logged_cuda_free_gib"], 3.4
                 )
                 self.assertEqual(
                     running["active_units"], [MODULE.CALIBRATION_UNIT]

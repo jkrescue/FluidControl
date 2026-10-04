@@ -441,7 +441,7 @@ def calibration_log_progress(repo: Path) -> dict:
                 progress.append(event)
         elif event.get("event") == "gpu_preflight":
             gpu_preflight = event
-        elif event.get("event") == "gpu_guard_exit":
+        elif event.get("event") in {"gpu_guard_exit", "gpu_guard_complete"}:
             guard_exit = event
     latest = progress[-1] if progress else {}
     observed = guard_exit or gpu_preflight or {}
