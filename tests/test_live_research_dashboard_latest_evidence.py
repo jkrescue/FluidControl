@@ -591,6 +591,19 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn('id="train16-formal-progress"', page)
         self.assertIn("one-batch技术probe明确排除", page)
         self.assertIn("tandem_fno_control_train16_h100_20261004", page)
+        self.assertIn("红色阻塞", page)
+        self.assertIn("后评估运行中", page)
+        self.assertIn("旧失败unit仍保留审计", page)
+        self.assertIn("监控不自动重启或绕过科学FAIL", page)
+        self.assertIn("training_evaluation_watchdog", page)
+
+    def test_training_evaluation_watchdog_uses_fixed_latest_path(self) -> None:
+        self.assertEqual(
+            MODULE.TRAINING_EVALUATION_WATCHDOG,
+            Path("artifacts/monitor/training_evaluation_watchdog/latest.json"),
+        )
+        source = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn('data["training_evaluation_watchdog"]', source)
 
     def test_dual_node_watchdog_reads_only_valid_latest_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
