@@ -658,6 +658,21 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
             "fluid-control-fcp003-interleaved-probe-r3-20261005.service",
         )
 
+    def test_fc_p003_terminal_fallback_keeps_successful_r2_v3_provenance(self) -> None:
+        """Completed stages must not fall back to superseded unit generations."""
+        self.assertEqual(
+            MODULE.select_versioned_authority(
+                {}, MODULE.FC_P003_PREFIX, MODULE.FC_P003_UNIT
+            ),
+            "fluid-control-fcp003-interleaved-lambda10-r2-20261005.service",
+        )
+        self.assertEqual(
+            MODULE.select_versioned_authority(
+                {}, MODULE.FC_P003_POSTEVAL_PREFIX, MODULE.FC_P003_POSTEVAL_UNIT
+            ),
+            "fluid-control-fcp003-posteval-queue-v3-20261005.service",
+        )
+
     def test_paired_lambda0_active_is_current_scientific_work(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = self.make_repo(directory, receipts=True)

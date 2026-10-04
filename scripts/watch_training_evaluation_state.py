@@ -47,11 +47,11 @@ PAIRED_LAMBDA10_TRANSFER_STATUS = (
 )
 PAIRED_POSTEVAL_APPROVAL = Path("docs/FC-P001_APPROVAL.md")
 FC_P003_APPROVAL = Path("docs/FC-P003_APPROVAL.md")
-FC_P003_UNIT = "fluid-control-fcp003-interleaved-lambda10-20261005.service"
+FC_P003_UNIT = "fluid-control-fcp003-interleaved-lambda10-r2-20261005.service"
 FC_P003_PREFIX = "fluid-control-fcp003-interleaved-lambda10-"
 FC_P003_PROBE_UNIT = "fluid-control-fcp003-interleaved-probe-20261005.service"
 FC_P003_PROBE_PREFIX = "fluid-control-fcp003-interleaved-probe-"
-FC_P003_POSTEVAL_UNIT = "fluid-control-fcp003-posteval-queue-v2-20261005.service"
+FC_P003_POSTEVAL_UNIT = "fluid-control-fcp003-posteval-queue-v3-20261005.service"
 FC_P003_POSTEVAL_PREFIX = "fluid-control-fcp003-posteval-queue-"
 FC_P003B_APPROVAL = Path("docs/FC-P003B_APPROVAL.md")
 FC_P003B_UNIT = "fluid-control-fcp003b-dynamic-pairs-20261005.service"
