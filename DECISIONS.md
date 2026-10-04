@@ -38,6 +38,12 @@ true-state paired-force GPU工程探针只被批准检查固定真实train-only 
 
 Lead以`docs/FC-P003C_APPROVAL.md`批准单因素下一步的工程实现和CPU测试：保持所有数据、顺序、模型、归一化、超参数及验收不变，只将配对损失替换为true-state每端点action-minus-zero四力误差。固定`w=[1,1,4,1]/7`和λ10不意味新旧损失梯度等强；必须报告通道损失/梯度贡献，不得看到validation结果后再改权重。完整GPU训练需另行批准，原准入门槛不变。
 
+## D015 — FC-P003C若完整失败，先分解训练拟合与泛化缺口
+
+2026-10-05 Asia/Shanghai，conditional，只在FC-P003C完整后评估仍失败后执行。epoch1 `training_history.json`显示true-state paired的rear-Cd/rear-Cl加权贡献为0.0589506/0.00223312（约26.40倍），16个组合更新的pre-clip norm均大于1（最小11.7792）。源码证明这16个组合更新占用1368个regular batch中的预定位置，每epoch总optimizer step仍为1368，不是1384。这些是诊断现象，不足以把clipping定为因果。
+
+若触发本决策，优先用相同true-state H1协议比较现有train8与dynamic6数据，并按动作/相位分组，区分训练拟合失败与泛化失败。不盲目增大λ或网络，不改准入门槛，不授权新readout拟合或GPU实验。
+
 ## 新决策格式
 
 ID、记录时间、状态、待检验假设、对应实验ID、所依据证据/协议、可选方案、取舍原因、保留的不确定性、撤销/调整条件。只有读取过的产物可作为事实；代理口头报告是待核信息。
