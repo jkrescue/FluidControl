@@ -49,6 +49,7 @@ def fixture(tmp_path: Path) -> dict:
     config.write_text(yaml.safe_dump({
         "model": model_config,
         "training": {"rollout_steps": 100, "validation_rollout_steps": 100},
+        "data": {"force_indices": [0, 1, 2, 3]},
     }))
     launch, completion = candidate / "launch_receipt.json", candidate / "completion_receipt.json"
     write_json(launch, {"status": "fixture"})
@@ -58,12 +59,16 @@ def fixture(tmp_path: Path) -> dict:
     dev30, train8 = tmp_path / "dev30.json", tmp_path / "train8.json"
     write_json(manifest, {
         "profile": MODULE.PROFILE, "max_abs_omega": 0.75,
-        "max_delta_omega": 0.1,
         "trajectory_counts": {"train": 20, "validation": 10, "frozen_test": 10},
     })
-    for path, content in (
-        (normalization, b"norm"), (dev30, b"dev30"), (train8, b"train8"),
-    ):
+    write_json(normalization, {
+        "state_channels": ["u", "v", "gauge_pressure"],
+        "state_mean": [0.0, 0.0, 0.0], "state_std": [1.0, 1.0, 1.0],
+        "all_force_channels": ["front_cd", "front_cl", "rear_cd", "rear_cl"],
+        "all_force_mean": [0.0, 0.0, 0.0, 0.0],
+        "all_force_std": [1.0, 1.0, 1.0, 1.0],
+    })
+    for path, content in ((dev30, b"dev30"), (train8, b"train8")):
         path.write_bytes(content)
     lineage = posteval / "lineage.json"
     write_json(lineage, {

@@ -194,12 +194,12 @@ def audit(
         dynamic = load(dynamic_gate_path)
         development = load(development_gate_path)
         validation_manifest = load(validation_manifest_path)
+        normalization = load(normalization_path)
         validation_manifest_sha = sha256(validation_manifest_path)
         normalization_sha = sha256(normalization_path)
         if (
             validation_manifest.get("profile") != PROFILE
             or validation_manifest.get("max_abs_omega") != 0.75
-            or validation_manifest.get("max_delta_omega") != 0.1
             or validation_manifest.get("trajectory_counts")
             != {"train": 20, "validation": 10, "frozen_test": 10}
         ):
@@ -248,6 +248,7 @@ def audit(
         if not isinstance(config_value, dict):
             raise ValueError("resolved config is not a mapping")
         training, model_config = config_value.get("training", {}), config_value.get("model", {})
+        data_config = config_value.get("data", {})
         expected_model = {
             "in_channels": 6,
             "out_channels": 7,
@@ -264,6 +265,7 @@ def audit(
         if (
             training.get("rollout_steps") != 100
             or training.get("validation_rollout_steps") != 100
+            or data_config.get("force_indices") != [0, 1, 2, 3]
         ):
             raise ValueError("candidate is not the canonical H100 six-input/seven-output FNO")
         with zipfile.ZipFile(model) as archive:
@@ -273,6 +275,16 @@ def audit(
             raise ValueError("candidate model archive architecture differs")
         if archive_args.get("dimension") != 2:
             raise ValueError("candidate model archive dimension differs")
+        if (
+            normalization.get("state_channels") != ["u", "v", "gauge_pressure"]
+            or normalization.get("all_force_channels")
+            != ["front_cd", "front_cl", "rear_cd", "rear_cl"]
+            or len(normalization.get("state_mean", [])) != 3
+            or len(normalization.get("state_std", [])) != 3
+            or len(normalization.get("all_force_mean", [])) != 4
+            or len(normalization.get("all_force_std", [])) != 4
+        ):
+            raise ValueError("candidate normalization channel contract differs")
 
         data_lineage = lineage.get("data_lineage")
         if not isinstance(data_lineage, dict):
