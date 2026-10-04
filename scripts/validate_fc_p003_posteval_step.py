@@ -42,6 +42,21 @@ def validate_complete(out: Path, checkpoint: str) -> None:
         or receipt.get("frozen_test_accessed") is not False
     ):
         raise ValueError("paired completion receipt differs")
+    required = {
+        "lineage.json",
+        "step_receipts/validation10.json",
+        "step_receipts/dynamic6.json",
+        "step_receipts/force_window.json",
+        "validation10/evaluation.json",
+        "validation10/segments.json",
+        "validation10/diagnostic.json",
+        "validation10/endpoint_gate.json",
+        "dynamic6/evaluation.json",
+        "dynamic6/segments.json",
+        "dynamic6/diagnostic.json",
+        "force_window/result.json",
+        "development_gate.json",
+    }
     actual = {
         str(path.relative_to(out)): sha256(path)
         for path in sorted(out.rglob("*"))
@@ -49,6 +64,37 @@ def validate_complete(out: Path, checkpoint: str) -> None:
     }
     if receipt.get("sha256") != actual:
         raise ValueError("paired completion hash table differs")
+    if not required.issubset(actual):
+        raise ValueError("FC-P003 completion required files are missing")
+    lineage = load(out / "lineage.json")
+    if lineage.get("checkpoint_sha256") != checkpoint:
+        raise ValueError("FC-P003 lineage checkpoint differs")
+    for step in ("validation10", "dynamic6", "force_window"):
+        step_receipt = load(out / "step_receipts" / f"{step}.json")
+        if (
+            step_receipt.get("status") != "CONTROL_TRAIN16_POSTEVAL_STEP_COMPLETE"
+            or step_receipt.get("step") != step
+            or step_receipt.get("checkpoint_sha256") != checkpoint
+        ):
+            raise ValueError(f"FC-P003 {step} receipt contract differs")
+        hashes = step_receipt.get("sha256")
+        if not isinstance(hashes, dict) or not hashes:
+            raise ValueError(f"FC-P003 {step} receipt hashes are missing")
+        for name, digest in hashes.items():
+            path = Path(name)
+            if not path.is_file() or sha256(path) != digest:
+                raise ValueError(f"FC-P003 {step} receipt artifact differs")
+    development = load(out / "development_gate.json")
+    if (
+        development.get("status")
+        not in {
+            "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_PASS",
+            "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL",
+        }
+        or development.get("ppo_authorized") is not False
+        or development.get("frozen_test_accessed") is not False
+    ):
+        raise ValueError("FC-P003 development gate contract differs")
 
 
 def main() -> None:
