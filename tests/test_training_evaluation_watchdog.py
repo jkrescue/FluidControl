@@ -208,6 +208,13 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         self.assertTrue(result["stage_complete"])
         self.assertFalse(result["project_goal_complete"])
         self.assertEqual(result["project_status"], "NEEDS_MODEL_IMPROVEMENT")
+        self.assertEqual(
+            result["scientific_next_stage"]["status"],
+            "PAIRED_DATAPIPE_IMPLEMENTATION_IN_PROGRESS",
+        )
+        self.assertFalse(
+            result["scientific_next_stage"]["automatic_restart_allowed"]
+        )
         self.assertEqual(result["alerts"], [])
         self.assertFalse(result["progress"]["scientific_gate_bypassed"])
 

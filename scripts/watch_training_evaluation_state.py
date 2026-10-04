@@ -36,6 +36,8 @@ BALANCED_RUN = Path(
 IDLE_ALERT_SECONDS = 300
 MAIN_RECEIPT = MAIN_RUN / "posteval_complete_v2/receipt.json"
 WORKER_RECEIPT = BALANCED_RUN / "posteval_worker_v1/receipt.json"
+PAIRED_DATAPIPE_ROOT = Path("artifacts/train20_paired_stat_datapipe_v1")
+PAIRED_DATAPIPE_WORKER_UNIT = "fluid-control-train20-paired-datapipe-probe-20261004.service"
 REVIEWED_MAIN_RESUME_ACTION = "main-posteval-resume-78d827f"
 PRODUCTION_AUTO_RECOVERY_ENABLED = True
 
@@ -489,6 +491,14 @@ def build_sample(
         "project_status": (
             "NEEDS_MODEL_IMPROVEMENT" if stage_complete else "POSTEVAL_INCOMPLETE"
         ),
+        "scientific_next_stage": {
+            "status": "PAIRED_DATAPIPE_IMPLEMENTATION_IN_PROGRESS",
+            "purpose": "train-only paired statistics for the next official PhysicsNeMo surrogate iteration",
+            "planned_spark_root": str(PAIRED_DATAPIPE_ROOT),
+            "planned_worker_unit": PAIRED_DATAPIPE_WORKER_UNIT,
+            "automatic_restart_allowed": False,
+            "formal_training_units_assigned": False,
+        },
         "workflow_pending": pending,
         "no_running_since_utc": idle_since,
         "no_running_duration_seconds": idle_seconds,

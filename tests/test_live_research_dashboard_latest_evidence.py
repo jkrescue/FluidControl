@@ -597,6 +597,8 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("未知故障需要agent分析", page)
         self.assertIn("模型仍需改进", page)
         self.assertIn("auto_recovery_enabled", page)
+        self.assertIn("paired统计DataPipe", page)
+        self.assertIn("不虚称GPU在训", page)
         self.assertIn("training_evaluation_watchdog", page)
 
     def test_training_evaluation_watchdog_uses_fixed_latest_path(self) -> None:
