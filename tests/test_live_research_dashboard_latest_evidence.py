@@ -27,6 +27,26 @@ MODULE = load_module()
 
 
 class LatestEvidenceDashboardTests(unittest.TestCase):
+    def test_current_training_log_is_bounded_evidence_not_live_status(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.assertIsNone(MODULE._current_training_log(root)["batch_percent"])
+            run = root / "artifacts/tandem_fno_paired_stats_interleaved_lambda10_20261005"
+            run.mkdir(parents=True)
+            (run / "training_history.json").write_text('[{"epoch": 1}]')
+            (run / "train.log").write_text(
+                '[2026-10-04 16:35:52,915][train][INFO] - [43.86%] Mini-Batch Losses: loss = 1.471e-02\n'
+            )
+            result = MODULE._current_training_log(root)
+            self.assertEqual(result["completed_epochs"], 1)
+            self.assertEqual(result["batch_percent"], 43.86)
+            self.assertEqual(result["logged_at_utc"], "2026-10-04T16:35:52.915000+00:00")
+            self.assertNotIn("running", result)
+            (run / "train.log").write_text(
+                '[2026-10-04 16:35:52,915][train][INFO] - [143.86%] Mini-Batch Losses: loss = 1\n'
+            )
+            self.assertIsNone(MODULE._current_training_log(root)["batch_percent"])
+
     def test_latest_evidence_uses_only_declared_final_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
