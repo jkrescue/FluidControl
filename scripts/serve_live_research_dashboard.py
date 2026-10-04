@@ -319,8 +319,9 @@ function renderActiveExperiment(d){
  const evaluating=units.includes('fluid-control-fcp003c-posteval-wait-fa08ce0-20261005.service');
  if(!training&&!evaluating)return;
  const p=d.fc_p003c_training_log||{};
+ const progress=Number.isFinite(p.batch_percent)?`最近批次记录为该轮的 ${p.batch_percent.toFixed(2)}%，记录时间 ${p.logged_at_utc}；不是整个项目完成比例。`:'当前尚无批次进度记录，不估算百分比。';
  const title=training?'当前训练 · 动作响应监督（FC-P003C）':'当前任务 · FC-P003C 评估队列';
- const detail=training?`已记录 ${p.completed_epochs??'待核实'} / 2 个完整训练轮次。批次进度尚未记录时不估算百分比。保持现有模型和数据，调整动作引起的受力差训练项；训练后检查流场、阻力和升力预测。`:'训练服务当前不在运行；评估队列正在运行或等待模型完成记录，不能仅凭队列存活认定 GPU 正在评估。';
+ const detail=training?`已记录 ${p.completed_epochs??'待核实'} / 2 个完整训练轮次。${progress} 保持现有模型和数据，调整动作引起的受力差训练项；训练后检查流场、阻力和升力预测。`:'训练服务当前不在运行；评估队列正在运行或等待模型完成记录，不能仅凭队列存活认定 GPU 正在评估。';
  $('lead-now').textContent=title+'。'+detail+' 尚未完成新模型的 PPO 与真实 CFD 闭环验收。';
  const card=document.createElement('div');card.className='card';
  const heading=document.createElement('h3');heading.textContent=title;card.appendChild(heading);
