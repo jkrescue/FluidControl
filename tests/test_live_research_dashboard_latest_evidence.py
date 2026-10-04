@@ -593,8 +593,10 @@ class LatestEvidenceDashboardTests(unittest.TestCase):
         self.assertIn("tandem_fno_control_train16_h100_20261004", page)
         self.assertIn("红色阻塞", page)
         self.assertIn("后评估运行中", page)
-        self.assertIn("旧失败unit仍保留审计", page)
-        self.assertIn("监控不自动重启或绕过科学FAIL", page)
+        self.assertIn("历史superseded失败", page)
+        self.assertIn("未知故障需要agent分析", page)
+        self.assertIn("模型仍需改进", page)
+        self.assertIn("auto_recovery_enabled", page)
         self.assertIn("training_evaluation_watchdog", page)
 
     def test_training_evaluation_watchdog_uses_fixed_latest_path(self) -> None:
