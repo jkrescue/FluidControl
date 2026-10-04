@@ -85,6 +85,8 @@ def audit() -> dict:
         "status": "FC_P003_OFFICIAL_DATALOADER_ORDER_COUNTERFACTUAL_PASS",
         "scope": "synthetic identities test sampling mechanics only; not scientific CFD data",
         "physicsnemo_dataloader": "physicsnemo.datapipes.DataLoader",
+        "official_image_id": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e",
+        "audit_script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "seed": 20261003,
         "regular_count": 1368,
         "pair_count": 16,
