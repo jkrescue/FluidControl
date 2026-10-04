@@ -102,3 +102,31 @@ requires diagnosis, not a relaxed threshold or a silently repeated run.
 Compute owns implementation; Surrogate executes this single approved preflight
 while Compute recovers the unrelated Worker post-evaluation path mismatch.
 Evaluation independently reviews and Lead owns approval and interpretation.
+
+## Execution record (retrospective; not preregistration)
+
+The first approved execution retained all evidence but stopped before model
+forward: the mode-600 manifest was not readable under the original container
+UID/cap-drop configuration. This observation does not establish a deeper
+rootless or user-namespace root cause. No optimizer, checkpoint save, model
+candidate, validation access, or frozen access occurred.
+
+Lead subsequently approved one operational-only v2 retry after review. The
+numerical script, helper, pair, data, model, normalization, fixed tolerances,
+and resource contract were unchanged. V2 used a new exclusive output and
+reviewed host UID/GID plus writable temporary HOME/XDG paths. Immutable
+launcher SHA is `705c6d2f8016ab670b3dc1116eb752cb61415c259ed2c13140649ec2d6ce339e`;
+the no-GPU 13-input mount preflight SHA is
+`6e4f4a0ad83947d9630314da960c682a2b1cb811c0cecdffe424d420d757c489`.
+
+V2 completed the technical contract. T20 monolithic/chunked losses were
+0.008532588370/0.008532587730 and the maximum parameter-gradient absolute
+difference was 1.86e-9. H100 normalized loss was 0.0617745727; all gradients
+were finite and 47,210,800 of 47,222,711 elements were nonzero. Peak CUDA
+allocated/reserved memory was 5.886/6.537 GiB and minimum unified
+`MemAvailable` was 105.9207 GiB. Parameters and buffers had identical pre/post
+SHA; optimizer steps were zero and no candidate was saved. Result/completion
+receipt SHAs are `773af0496e4a4eba50ac4f50728805ac25db8c0e6e86e6ac1e4fb1b970edf9c8`
+and `eb23c6619d589798b2aa7f629601c52b1c86d50269626a011e087a2b721512d4`.
+This PASS closes only the technical gradient/memory preflight and does not
+authorize integration, scientific training, PPO, or a control claim.

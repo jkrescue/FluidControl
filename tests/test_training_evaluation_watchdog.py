@@ -748,6 +748,79 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         self.assertFalse(progress["main_posteval_complete"])
         self.assertIn("payload SHA differs: evidence.json", progress["main_receipt_issues"])
 
+    def test_true_state_probe_complete_requires_bound_result_and_unchanged_model(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "results").mkdir()
+            result = {
+                "status": "TRUE_STATE_PAIRED_FORCE_BACKWARD_TECHNICAL_PROBE_PASS",
+                "training_executed": False,
+                "optimizer_constructed": False,
+                "optimizer_steps": 0,
+                "candidate_weights_saved": False,
+                "validation_or_frozen_accessed": False,
+                "input_sha256": {
+                    "model_parameters_and_buffers_before": "a" * 64,
+                    "model_parameters_and_buffers_after": "a" * 64,
+                },
+            }
+            result_path = root / "results/result.json"
+            launch = root / "launch_receipt.json"
+            launcher = root / "immutable_launcher.sh"
+            result_path.write_text(json.dumps(result))
+            launch.write_text("launch\n")
+            launcher.write_text("launcher\n")
+            def digest(path: Path) -> str:
+                return hashlib.sha256(path.read_bytes()).hexdigest()
+            receipt = {
+                "status": MODULE.TRUE_STATE_FORCE_PROBE_V2_STATUS,
+                "scientific_result": False,
+                "optimizer_steps": 0,
+                "validation_or_frozen_accessed": False,
+                "result_sha256": digest(result_path),
+                "launch_receipt_sha256": digest(launch),
+                "immutable_launcher_sha256": digest(launcher),
+            }
+            (root / "completion_receipt.json").write_text(json.dumps(receipt))
+            valid, issues = MODULE.verify_true_state_force_probe(root)
+            self.assertTrue(valid, issues)
+            result["input_sha256"]["model_parameters_and_buffers_after"] = "b" * 64
+            result_path.write_text(json.dumps(result))
+            receipt["result_sha256"] = digest(result_path)
+            (root / "completion_receipt.json").write_text(json.dumps(receipt))
+            valid, issues = MODULE.verify_true_state_force_probe(root)
+            self.assertFalse(valid)
+            self.assertIn(
+                "technical probe model parameter/buffer SHA differs", issues
+            )
+
+    def test_fc_p003b_resume_is_authority_during_posteval(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(
+                directory, receipts=True, paired=True, paired_posteval=True
+            )
+            (repo / MODULE.FC_P003B_APPROVAL).parent.mkdir(parents=True, exist_ok=True)
+            (repo / MODULE.FC_P003B_APPROVAL).write_text("Lead approved\n")
+            resumed = unit("active")
+            resumed["main_pid"] = 4242
+            result = MODULE.build_sample(
+                repo,
+                None,
+                {
+                    MODULE.MAIN_AUTHORITY_UNIT: unit(),
+                    MODULE.WORKER_AUTHORITY_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA10_POSTEVAL_UNIT: unit(),
+                    MODULE.FC_P003B_POSTEVAL_UNIT: resumed,
+                },
+                RESOURCES,
+                datetime(2026, 10, 5, 0, 0, tzinfo=UTC),
+            )
+        stage = result["scientific_next_stage"]["fc_p003b"]
+        self.assertEqual(stage["state"], "POSTEVAL_RUNNING")
+        self.assertEqual(stage["authority_unit"], MODULE.FC_P003B_POSTEVAL_UNIT)
+        self.assertEqual(stage["main_pid"], 4242)
+
 
 if __name__ == "__main__":
     unittest.main()

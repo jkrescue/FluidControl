@@ -56,7 +56,18 @@ FC_P003_POSTEVAL_PREFIX = "fluid-control-fcp003-posteval-queue-"
 FC_P003B_APPROVAL = Path("docs/FC-P003B_APPROVAL.md")
 FC_P003B_UNIT = "fluid-control-fcp003b-dynamic-pairs-20261005.service"
 FC_P003B_PROBE_UNIT = "fluid-control-fcp003b-dynamic-pairs-probe-v3-20261005.service"
-FC_P003B_POSTEVAL_UNIT = "fluid-control-fcp003b-posteval-wait-20261005.service"
+FC_P003B_POSTEVAL_UNIT = (
+    "fluid-control-fcp003b-posteval-resume-2331301-r2-20261005.service"
+)
+TRUE_STATE_FORCE_PROBE_V2_UNIT = (
+    "fluid-control-true-state-paired-force-backward-probe-v2-20261005.service"
+)
+TRUE_STATE_FORCE_PROBE_V2_ROOT = Path(
+    "artifacts/true_state_paired_force_backward_probe_v2_20261005"
+)
+TRUE_STATE_FORCE_PROBE_V2_STATUS = (
+    "TRUE_STATE_PAIRED_FORCE_BACKWARD_TECHNICAL_PROBE_COMPLETE"
+)
 FC_P003B_CONTAINER = "fcp003b-dynamic-pairs-full"
 FC_P003B_PROBE_CONTAINER = "fcp003b-dynamic-pairs-probe-v3"
 FC_P003B_ROOT = Path(
@@ -213,6 +224,54 @@ def verify_receipt(path: Path, expected_status: str) -> tuple[bool, list[str]]:
             issues.append(f"missing/unsafe payload: {relative}")
         elif file_sha256(target) != expected:
             issues.append(f"payload SHA differs: {relative}")
+    return not issues, issues
+
+
+def verify_true_state_force_probe(root: Path) -> tuple[bool, list[str]]:
+    """Verify the non-scientific v2 technical probe without a generic SHA table."""
+    receipt_path = root / "completion_receipt.json"
+    result_path = root / "results/result.json"
+    launch_path = root / "launch_receipt.json"
+    launcher_path = root / "immutable_launcher.sh"
+    receipt = read_json(receipt_path, None)
+    result = read_json(result_path, None)
+    if not isinstance(receipt, dict) or not isinstance(result, dict):
+        return False, ["technical probe receipt/result missing or invalid"]
+    issues = []
+    expected = {
+        "status": TRUE_STATE_FORCE_PROBE_V2_STATUS,
+        "scientific_result": False,
+        "optimizer_steps": 0,
+        "validation_or_frozen_accessed": False,
+    }
+    for key, value in expected.items():
+        if receipt.get(key) != value:
+            issues.append(f"technical probe receipt {key} differs")
+    if (
+        result.get("status")
+        != "TRUE_STATE_PAIRED_FORCE_BACKWARD_TECHNICAL_PROBE_PASS"
+        or result.get("training_executed") is not False
+        or result.get("optimizer_constructed") is not False
+        or result.get("optimizer_steps") != 0
+        or result.get("candidate_weights_saved") is not False
+        or result.get("validation_or_frozen_accessed") is not False
+    ):
+        issues.append("technical probe result scope/status differs")
+    for path, key in (
+        (result_path, "result_sha256"),
+        (launch_path, "launch_receipt_sha256"),
+        (launcher_path, "immutable_launcher_sha256"),
+    ):
+        if not path.is_file() or receipt.get(key) != file_sha256(path):
+            issues.append(f"technical probe {key} differs")
+    before = result.get("input_sha256", {}).get(
+        "model_parameters_and_buffers_before"
+    )
+    after = result.get("input_sha256", {}).get(
+        "model_parameters_and_buffers_after"
+    )
+    if not before or before != after:
+        issues.append("technical probe model parameter/buffer SHA differs")
     return not issues, issues
 
 
@@ -467,6 +526,7 @@ def discover_related_units() -> list[str]:
                 FC_P003_UNIT,
                 FC_P003_PROBE_UNIT,
                 FC_P003_POSTEVAL_UNIT,
+                TRUE_STATE_FORCE_PROBE_V2_UNIT,
                 *SUPERSEDED_MAIN_UNITS,
                 *names,
             )
@@ -658,6 +718,9 @@ def build_sample(
     fc_p003b_unit = units.get(FC_P003B_UNIT, {})
     fc_p003b_probe_unit = units.get(FC_P003B_PROBE_UNIT, {})
     fc_p003b_posteval_unit = units.get(FC_P003B_POSTEVAL_UNIT, {})
+    true_state_probe_verified, true_state_probe_issues = (
+        verify_true_state_force_probe(repo / TRUE_STATE_FORCE_PROBE_V2_ROOT)
+    )
     fc_p003b_running = (
         fc_p003b_unit.get("active_state") == "active"
         and bool(fc_p003b_unit.get("training_process_pids"))
@@ -762,6 +825,7 @@ def build_sample(
         fc_p003_probe_authority,
         fc_p003_posteval_authority,
         FC_P003B_POSTEVAL_UNIT,
+        TRUE_STATE_FORCE_PROBE_V2_UNIT,
     )
     active_units = sorted(
         name
@@ -1075,6 +1139,8 @@ def build_sample(
                 "state": (
                     "TRAINING_RUNNING"
                     if fc_p003b_running
+                    else "POSTEVAL_RUNNING"
+                    if fc_p003b_posteval_unit.get("active_state") == "active"
                     else "TECHNICAL_PROBE_RUNNING"
                     if fc_p003b_probe_running
                     else "PROBE_UNIT_ACTIVE_AWAITING_PROCESS_EVIDENCE"
@@ -1086,13 +1152,20 @@ def build_sample(
                     else "PLANNED_NOT_APPROVED"
                 ),
                 "authority_unit": (
-                    FC_P003B_PROBE_UNIT
+                    FC_P003B_UNIT
+                    if fc_p003b_running
+                    else FC_P003B_POSTEVAL_UNIT
+                    if fc_p003b_posteval_unit.get("active_state") == "active"
+                    else FC_P003B_PROBE_UNIT
                     if fc_p003b_probe_unit.get("active_state") == "active"
                     else FC_P003B_UNIT
                 ),
                 "unit_scope": "system",
                 "main_pid": (
-                    fc_p003b_probe_unit.get("main_pid", 0)
+                    fc_p003b_unit.get("main_pid", 0)
+                    if fc_p003b_running
+                    else fc_p003b_posteval_unit.get("main_pid", 0)
+                    or fc_p003b_probe_unit.get("main_pid", 0)
                     or fc_p003b_unit.get("main_pid", 0)
                 ),
                 "container": (
@@ -1132,6 +1205,28 @@ def build_sample(
                     "scientific_result_available": False,
                     "automatic_recovery_eligible": False,
                 },
+            },
+            "true_state_force_technical_probe": {
+                "state": (
+                    "TECHNICAL_PROBE_COMPLETE"
+                    if true_state_probe_verified
+                    else "TECHNICAL_PROBE_RUNNING"
+                    if units.get(TRUE_STATE_FORCE_PROBE_V2_UNIT, {}).get(
+                        "active_state"
+                    )
+                    == "active"
+                    else "TECHNICAL_PROBE_NEEDS_REVIEW"
+                ),
+                "authority_unit": TRUE_STATE_FORCE_PROBE_V2_UNIT,
+                "unit_scope": "user",
+                "receipt": str(
+                    TRUE_STATE_FORCE_PROBE_V2_ROOT / "completion_receipt.json"
+                ),
+                "receipt_verified": true_state_probe_verified,
+                "receipt_issues": true_state_probe_issues,
+                "scientific_result": False,
+                "training_authorized": False,
+                "ppo_authorized": False,
             },
             "planned_spark_root": str(PAIRED_DATAPIPE_ROOT),
             "planned_worker_unit": PAIRED_DATAPIPE_WORKER_UNIT,
