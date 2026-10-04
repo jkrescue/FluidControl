@@ -105,7 +105,9 @@ PY
 
 extra=()
 if [[ "$mode" == "--probe" ]]; then
-  extra=(training.epochs=1 training.max_train_batches=1 training.max_validation_batches=1 training.paired_batches_per_epoch=1 training.max_paired_eval_batches=1 training.expected_regular_batches=1)
+  # A bounded probe still consumes one complete static16 paired pass. This
+  # preserves the trainer's fail-closed complete-pass contract.
+  extra=(training.epochs=1 training.max_train_batches=16 training.max_validation_batches=1 training.paired_dataset_repetitions=1 training.paired_batches_per_epoch=16 training.max_paired_eval_batches=1 training.expected_regular_batches=16)
 fi
 source="$output/source_snapshot"
 command=(docker run --rm --name "paired-stats-${branch}-${mode#--}-20261004" --gpus device=0
@@ -144,10 +146,10 @@ if len(history) != expected_epochs: raise SystemExit("epoch count differs")
 for row in history:
  if row.get("paired_batch_schedule") != "interleaved": raise SystemExit("schedule differs")
  indices=row.get("paired_batch_indices")
- expected=[0] if mode == "--probe" else [i*1367//15 for i in range(16)]
+ expected=[i*15//15 for i in range(16)] if mode == "--probe" else [i*1367//15 for i in range(16)]
  if indices != expected: raise SystemExit(f"paired indices differ: {indices}")
  if len(row.get("paired_identities",[])) != len(indices): raise SystemExit("paired identity trace differs")
- if mode == "--execute" and set(row["paired_identities"]) != expected_identities: raise SystemExit("paired identity set differs")
+ if set(row["paired_identities"]) != expected_identities: raise SystemExit("paired identity set differs")
 artifacts=[]
 if mode == "--execute":
  for pattern in ("best/*.mdlus","best/*.pt"):
