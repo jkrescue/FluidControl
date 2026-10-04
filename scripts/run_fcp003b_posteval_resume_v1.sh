@@ -46,17 +46,19 @@ fi
 [[ -d "$out" && ! -e "$out/receipt.json" ]] || { echo "resume output state differs" >&2; exit 2; }
 
 [[ -f "$candidate/completion_receipt.json" ]] || { echo "formal completion timeout" >&2; exit 3; }
-mkdir -p "$out/dynamic6" "$out/force_window" "$out/recovery"
-cp -a "$0" "$out/recovery/immutable_resume_runner.sh"
-cmp -s "$0" "$out/recovery/immutable_resume_runner.sh" || { echo "resume runner copy differs" >&2; exit 3; }
+recovery="$out/recovery_v2"
+mkdir "$recovery"
+mkdir -p "$out/dynamic6" "$out/force_window"
+cp -a "$0" "$recovery/immutable_resume_runner.sh"
+cmp -s "$0" "$recovery/immutable_resume_runner.sh" || { echo "resume runner copy differs" >&2; exit 3; }
 python3 "$lineage" --candidate "$candidate" \
   --validator "$root/launch/validate_fcp003b_worker_output.py" --source "$source" \
   --source-receipt "$root/source_receipt.json" --source-required "$root/evidence/source_required_hashes.json" \
   --approval "$root/evidence/FC-P003B_APPROVAL.md" --dynamic-manifest "$root/evidence/dynamic_pair_manifest.json" \
   --real-sampling "$root/evidence/real_sampling_contract_v2.json" \
   --baseline-order "$root/evidence/fc_p003_dataloader_order_result.json" \
-  --parent "$root/immutable_parent" --output "$out/recovery/lineage.recomputed.json"
-cmp -s "$out/lineage.json" "$out/recovery/lineage.recomputed.json" || { echo "stored lineage differs from recomputation" >&2; exit 3; }
+  --parent "$root/immutable_parent" --output "$recovery/lineage.recomputed.json"
+cmp -s "$out/lineage.json" "$recovery/lineage.recomputed.json" || { echo "stored lineage differs from recomputation" >&2; exit 3; }
 checkpoint_sha="$(jq -er .checkpoint_sha256 "$out/lineage.json")"
 
 common=(--rm --network none --cpus 8 --memory 64g --shm-size 2g --pids-limit 512
@@ -69,7 +71,7 @@ common=(--rm --network none --cpus 8 --memory 64g --shm-size 2g --pids-limit 512
   -v "$out:/workspace/output:rw" -w /workspace)
 write_step_receipt() {
   local step="$1"; shift
-  python3 - "$out/recovery/${step}.json" "$step" "$checkpoint_sha" "$@" <<'PY'
+  python3 - "$recovery/${step}.json" "$step" "$checkpoint_sha" "$@" <<'PY'
 import hashlib,json,os,pathlib,sys,tempfile
 target=pathlib.Path(sys.argv[1]); step,checkpoint=sys.argv[2:4]; paths=list(map(pathlib.Path,sys.argv[4:]))
 if not paths or any(not p.is_file() for p in paths): raise SystemExit(f'{step} artifacts incomplete')
@@ -173,7 +175,7 @@ payload={'status':'FC_P003B_POSTEVAL_COMPLETE','candidate_kind':'dynamic_paired_
  'case_counts':{'validation10':10,'dynamic6':6},'sha256':files,
  'recovery':{'validation10_inference_reused':True,
              'original_failed_unit':'fluid-control-fcp003b-posteval-wait-20261005.service',
-             'resume_runner_sha256':sha(root/'recovery/immutable_resume_runner.sh')},
+             'resume_runner_sha256':sha(root/'recovery_v2/immutable_resume_runner.sh')},
  'frozen_test_accessed':False,'ppo_auto_launched':False}
 target=root/'receipt.json'
 with tempfile.NamedTemporaryFile('w',dir=root,delete=False) as stream:
