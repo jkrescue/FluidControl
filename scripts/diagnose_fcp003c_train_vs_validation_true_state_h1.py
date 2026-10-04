@@ -372,17 +372,17 @@ def main():
         values = [(r["target_index"], r["target_time"], r["channels"]) for r in rows]
         if key in zero_cache:
             if any(
-                l[:2] != r[:2]
+                left[:2] != right[:2]
                 or any(
                     not math.isclose(
-                        l[2][c]["zero_error"],
-                        r[2][c]["zero_error"],
+                        left[2][c]["zero_error"],
+                        right[2][c]["zero_error"],
                         rel_tol=0,
                         abs_tol=2e-6,
                     )
                     for c in CHANNELS
                 )
-                for l, r in zip(zero_cache[key], values, strict=True)
+                for left, right in zip(zero_cache[key], values, strict=True)
             ):
                 raise ValueError("repeated zero differs")
         else:
