@@ -210,11 +210,30 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         self.assertEqual(result["project_status"], "NEEDS_MODEL_IMPROVEMENT")
         self.assertEqual(
             result["scientific_next_stage"]["status"],
-            "PAIRED_DATAPIPE_IMPLEMENTATION_IN_PROGRESS",
+            "PAIRED_STATS_CONTROLLED_TRAINING_AND_POSTEVAL_PENDING",
         )
         self.assertFalse(
             result["scientific_next_stage"]["automatic_restart_allowed"]
         )
+
+    def test_paired_lambda0_active_is_current_scientific_work(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(directory, receipts=True)
+            result = MODULE.build_sample(
+                repo,
+                None,
+                {
+                    MODULE.MAIN_AUTHORITY_UNIT: unit(),
+                    MODULE.WORKER_AUTHORITY_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA0_UNIT: unit("active"),
+                },
+                RESOURCES,
+                datetime(2026, 10, 4, 2, 0, tzinfo=UTC),
+            )
+        next_stage = result["scientific_next_stage"]
+        self.assertEqual(next_stage["status"], "PAIRED_STATS_CONTROLLED_TRAINING_RUNNING")
+        self.assertEqual(next_stage["lambda0"]["state"], "RUNNING")
+        self.assertFalse(result["project_goal_complete"])
         self.assertEqual(result["alerts"], [])
         self.assertFalse(result["progress"]["scientific_gate_bypassed"])
 

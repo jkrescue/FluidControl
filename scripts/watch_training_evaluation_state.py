@@ -38,6 +38,9 @@ MAIN_RECEIPT = MAIN_RUN / "posteval_complete_v2/receipt.json"
 WORKER_RECEIPT = BALANCED_RUN / "posteval_worker_v1/receipt.json"
 PAIRED_DATAPIPE_ROOT = Path("artifacts/train20_paired_stat_datapipe_v1")
 PAIRED_DATAPIPE_WORKER_UNIT = "fluid-control-train20-paired-datapipe-probe-20261004.service"
+PAIRED_LAMBDA0_UNIT = "fluid-control-paired-stats-lambda0-full-v1-20261004.service"
+PAIRED_LAMBDA0_ROOT = Path("artifacts/tandem_fno_paired_stats_lambda0_20261004")
+PAIRED_LAMBDA10_ROOT = Path("artifacts/tandem_fno_paired_stats_lambda10_20261004")
 REVIEWED_MAIN_RESUME_ACTION = "main-posteval-resume-78d827f"
 PRODUCTION_AUTO_RECOVERY_ENABLED = True
 
@@ -258,7 +261,17 @@ def discover_related_units() -> list[str]:
         columns = line.lstrip("● ").split()
         if columns and columns[0].startswith("fluid-control-train16-"):
             names.append(columns[0])
-    return sorted(set((TRAINING_UNIT, MAIN_AUTHORITY_UNIT, *SUPERSEDED_MAIN_UNITS, *names)))
+    return sorted(
+        set(
+            (
+                TRAINING_UNIT,
+                MAIN_AUTHORITY_UNIT,
+                PAIRED_LAMBDA0_UNIT,
+                *SUPERSEDED_MAIN_UNITS,
+                *names,
+            )
+        )
+    )
 
 
 def _cpu_counters() -> list[int]:
@@ -472,6 +485,32 @@ def build_sample(
         alerts.append("TRAIN16_PENDING_WITH_NO_RUNNING_UNIT_FOR_300_SECONDS")
     if resources["mem_available_gib"] < 20.0:
         alerts.append("SPARK_MEMORY_BELOW_20_GIB")
+    lambda0_receipt_path = PAIRED_LAMBDA0_ROOT / "completion_receipt.json"
+    lambda0_receipt = read_json(repo / lambda0_receipt_path, None)
+    lambda0_complete = (
+        isinstance(lambda0_receipt, dict)
+        and lambda0_receipt.get("status")
+        == "PAIRED_STATS_CONTROLLED_TRAINING_COMPLETE"
+    )
+    lambda0_unit = units.get(PAIRED_LAMBDA0_UNIT, {})
+    if lambda0_complete:
+        lambda0_state = "TRAINING_STAGE_COMPLETE_POSTEVAL_PENDING"
+    elif lambda0_unit.get("active_state") == "active":
+        lambda0_state = "RUNNING"
+    elif lambda0_unit.get("active_state") == "failed":
+        lambda0_state = "NEEDS_AGENT_ANALYSIS"
+        alerts.append("PAIRED_LAMBDA0_TRAINING_FAILED_NEEDS_AGENT_ANALYSIS")
+        blocker_reasons.append(
+            f"{PAIRED_LAMBDA0_UNIT}: result={lambda0_unit.get('result')} "
+            f"status={lambda0_unit.get('exec_main_status')}; automatic restart forbidden"
+        )
+    else:
+        lambda0_state = "PENDING"
+    scientific_status = (
+        "PAIRED_STATS_CONTROLLED_TRAINING_RUNNING"
+        if lambda0_state == "RUNNING"
+        else "PAIRED_STATS_CONTROLLED_TRAINING_AND_POSTEVAL_PENDING"
+    )
     return {
         "status": "ALERT" if alerts else "MONITORING",
         "timestamp_utc": now.isoformat(timespec="seconds"),
@@ -492,12 +531,24 @@ def build_sample(
             "NEEDS_MODEL_IMPROVEMENT" if stage_complete else "POSTEVAL_INCOMPLETE"
         ),
         "scientific_next_stage": {
-            "status": "PAIRED_DATAPIPE_IMPLEMENTATION_IN_PROGRESS",
+            "status": scientific_status,
+            "active_work": "paired_stats_controlled_training",
             "purpose": "train-only paired statistics for the next official PhysicsNeMo surrogate iteration",
             "planned_spark_root": str(PAIRED_DATAPIPE_ROOT),
             "planned_worker_unit": PAIRED_DATAPIPE_WORKER_UNIT,
+            "lambda0": {
+                "unit": PAIRED_LAMBDA0_UNIT,
+                "output_root": str(PAIRED_LAMBDA0_ROOT),
+                "source_commit": "b6aada926942161da4430d52664c92db1a2269c7",
+                "state": lambda0_state,
+                "completion_receipt": str(lambda0_receipt_path),
+            },
+            "lambda10": {
+                "state": "WORKER_HANDOFF_IN_PROGRESS",
+                "output_root": str(PAIRED_LAMBDA10_ROOT),
+            },
             "automatic_restart_allowed": False,
-            "formal_training_units_assigned": False,
+            "formal_training_units_assigned": True,
         },
         "workflow_pending": pending,
         "no_running_since_utc": idle_since,
