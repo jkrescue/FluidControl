@@ -71,13 +71,9 @@ PY
 )"
   local checkpoint_sha="$identity"
   if [[ -f "$out/receipt.json" ]]; then
-    python3 - "$out/receipt.json" "$checkpoint_sha" <<'PY'
-import json,pathlib,sys
-p=json.loads(pathlib.Path(sys.argv[1]).read_text())
-if p.get("status")!="CONTROL_TRAIN16_POSTEVAL_COMPLETE" or p.get("checkpoint_sha256")!=sys.argv[2]:
- raise SystemExit("completed post-evaluation receipt differs")
-print("CONTROL_TRAIN16_POSTEVAL_ALREADY_COMPLETE")
-PY
+    python3 scripts/validate_control_train16_posteval_step.py --repo "$root" \
+      --candidate "$candidate" --output "$out" --checkpoint-sha256 "$checkpoint_sha" \
+      --step complete
     return
   fi
   mkdir -p "$out/validation10" "$out/dynamic6" "$out/force_window"
@@ -97,6 +93,11 @@ PY
 
   local source="$candidate/source_snapshot"
   local checkpoint="$candidate/best"
+  validate_step() {
+    python3 scripts/validate_control_train16_posteval_step.py --repo "$root" \
+      --candidate "$candidate" --output "$out" --checkpoint-sha256 "$checkpoint_sha" \
+      --step "$1"
+  }
   mkdir -p "$out/step_receipts"
   step_receipt() {
     local step="$1"; shift
@@ -175,6 +176,7 @@ PY
     --data /workspace/devdata --config /workspace/conf/tandem_fno_full40_h20.yaml \
       --image-id "$image_id" --output /workspace/output/validation10/endpoint_gate.json
   fi
+  validate_step validation10
   step_receipt validation10 "$out/validation10/evaluation.json" \
     "$out/validation10/segments.json" "$out/validation10/diagnostic.json" \
     "$out/validation10/endpoint_gate.json"
@@ -204,6 +206,7 @@ PY
     --physical-qc artifacts/tandem_cylinders/full40_dynamic_validation_real_openfoam_qc_20261003.json \
       --output "$out/dynamic6/diagnostic.json"
   fi
+  validate_step dynamic6
   step_receipt dynamic6 "$out/dynamic6/evaluation.json" \
     "$out/dynamic6/segments.json" "$out/dynamic6/diagnostic.json"
 
@@ -223,6 +226,7 @@ PY
     --force-window "$out/force_window/result.json" --checkpoint-sha256 "$checkpoint_sha" \
       --output "$out/development_gate.json"
   fi
+  validate_step force_window
   step_receipt force_window "$out/force_window/result.json" \
     "$out/development_gate.json"
 
@@ -263,6 +267,7 @@ runtime={
  "source_receipt_sha256":sha(candidate/"source_receipt.json"),
  "endpoint_audit_recovery_sha256":sha(repo/"scripts/audit_full40_validation_gate.py"),
  "dynamic6_audit_sha256":sha(repo/"cfd/tandem_cylinders/audit_full40_dynamic6_fno.py"),
+ "reuse_validator_sha256":sha(repo/"scripts/validate_control_train16_posteval_step.py"),
  "sha256":files,
 }
 (out/"receipt.json").write_text(json.dumps(runtime,indent=2,sort_keys=True)+"\n")

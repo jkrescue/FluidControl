@@ -22,6 +22,10 @@ def test_queue_runs_main_and_marks_balanced_external_takeover() -> None:
     assert 'step_receipt validation10' in source
     assert 'step_receipt dynamic6' in source
     assert 'step_receipt force_window' in source
+    assert "validate_control_train16_posteval_step.py" in source
+    assert "validate_step validation10" in source
+    assert "validate_step dynamic6" in source
+    assert "validate_step force_window" in source
 
 
 def test_queue_binds_snapshot_checkpoint_and_never_launches_ppo() -> None:
