@@ -21,12 +21,12 @@ from pathlib import Path
 MIN_MEM_AVAILABLE_GIB = 20.0
 MAX_RETRIES_PER_ACTION = 1
 REPO = Path("/workspace/fluid_control")
-RUNNER = REPO / "scripts/run_control_train16_posteval_queue_spark.sh"
-VALIDATOR = REPO / "scripts/validate_control_train16_posteval_step.py"
+RUNNER = REPO / "scripts/run_control_train16_posteval_resume_78d827f_immutable.sh"
+VALIDATOR = REPO / "scripts/validate_control_train16_posteval_step_78d827f_immutable.py"
 APPROVED_ACTIONS: dict[str, dict] = {
     "main-posteval-resume-78d827f": {
         "required_files": {
-            str(RUNNER): "a80aabb74b783e791cbbe33ea02146643b6395574e3817e8a8be842afcddecea",
+            str(RUNNER): "e371a3bdaad13b2cd787e6911eca387705113ba36f51ef6ef1d316c282300993",
             str(VALIDATOR): "9e3ef79d43fef37ff6a2f41b6d1729f69f82f2bddd9e50e5ecac86e54be389e9",
         },
         "max_attempts": 1,
@@ -34,12 +34,13 @@ APPROVED_ACTIONS: dict[str, dict] = {
         "command": [
             "systemd-run",
             "--user",
-            "--unit=fluid-control-train16-posteval-main-auto-resume1-20261004",
+            "--unit=fluid-control-train16-posteval-main-resume-r1-20261004",
             "--collect",
             "--property=Restart=no",
             "--property=KillMode=mixed",
             f"--working-directory={REPO}",
             "--setenv=CONTROL_TRAIN16_POSTEVAL_TOKEN=EXECUTE_REVIEWED_CONTROL_TRAIN16_POSTEVAL",
+            "/usr/bin/bash",
             str(RUNNER),
             "--resume",
         ],
