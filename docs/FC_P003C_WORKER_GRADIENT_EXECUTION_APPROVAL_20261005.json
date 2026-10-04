@@ -1,0 +1,34 @@
+{
+  "status": "FC_P003C_WORKER_GRADIENT_DIAGNOSTIC_APPROVED",
+  "node": "USER@WORKER_HOST",
+  "work_root": "/home/USER/workspace/fluid_control_fcp003c_gradient_diagnostic_20261005",
+  "launcher_sha256": "8c63072e526f0e4072bdc3cc06caaac813b23b26b4956f60c303344ac87617c3",
+  "diagnostic_sha256": "abf1a4a76491f86f4a8f6fcb80321c02ae3233b771a600de0ee4a699eee19366",
+  "validator_sha256": "aa42815f2978392aa07b91382e1c9b312a834e61cacc22e54a4b59bdadf20d06",
+  "source_manifest_sha256": "9f665735a2ba93a00133ea43fc0f968042c63b00bad8b1e7bbc3f6871b2a7729",
+  "parent_model_sha256": "8466bd47f2de188f5e741197832ec3bee1223f72f54d8956e584c586a2774240",
+  "parent_state_sha256": "1e5d4c055812d8f92bc55f58708e839f7cc776071849544f6a26d3d62053cbd0",
+  "resolved_config_sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9",
+  "purpose": "Measure component gradient scale and direction on the immutable parent at the 16 epoch-1 paired insertion positions; not the evolving two-epoch training states.",
+  "executions_authorized": 1,
+  "automatic_retry_authorized": false,
+  "optimizer_or_model_save_authorized": false,
+  "validation_or_frozen_access_authorized": false,
+  "ppo_authorized": false,
+  "scientific_admission": false,
+  "minimum_physical_mem_available_gib": 20,
+  "allocator_fraction_max": 0.35,
+  "wall_time_limit_minutes": 20,
+  "conditions": [
+    "Verify exact reviewed launcher SHA in systemd ExecStart before execution.",
+    "Do not alter Main FC-P003C training or its immutable post-evaluation queue.",
+    "Use the staged read-only source and existing train-only inputs; preserve partial output on failure.",
+    "Verify result, progress, completion bindings and unchanged model state before interpretation.",
+    "Return artifacts with SHA verification to Main Spark; Worker storage is temporary.",
+    "No change to model parameters, loss weights, reward or acceptance criteria is authorized by this diagnostic."
+  ],
+  "reviews": {
+    "compute_execution_contract": "FINAL_ACCEPT",
+    "independent_evaluation_math_and_output_contract": "FINAL_ACCEPT"
+  }
+}
