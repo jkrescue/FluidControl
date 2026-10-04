@@ -32,7 +32,33 @@ def model(path: Path, marker: bytes = b"same") -> None:
 
 def make_output(root: Path, *, nonfinite: bool = False, omit_state: bool = False) -> None:
     identities = sorted(MODULE.EXPECTED_IDENTITIES)
-    dump(root / "launch_receipt.json", {})
+    dump(
+        root / "launch_receipt.json",
+        {
+            "status": "FC_P003B_WORKER_LAUNCH_STAGED",
+            "mode": "--probe",
+            "git_commit": MODULE.SOURCE_COMMIT,
+            "approval_sha256": MODULE.APPROVAL_SHA,
+            "dynamic_pair_manifest_sha256": MODULE.DYNAMIC_MANIFEST_SHA,
+            "cpu_probe_sha256": MODULE.CPU_PROBE_SHA,
+            "fc_p003_order_receipt_sha256": MODULE.BASELINE_ORDER_SHA,
+            "real_sampling_receipt_sha256": MODULE.REAL_SAMPLING_SHA,
+            "source_receipt_sha256": MODULE.SOURCE_RECEIPT_SHA,
+            "official_image_id": MODULE.IMAGE_ID,
+            "parent_model_sha256": MODULE.PARENT_MODEL_SHA,
+            "parent_state_sha256": MODULE.PARENT_STATE_SHA,
+            "dev30_manifest_sha256": MODULE.DATA_MANIFESTS["dev30"],
+            "train8_manifest_sha256": MODULE.DATA_MANIFESTS["train8"],
+            "train16_manifest_sha256": MODULE.DATA_MANIFESTS["train16"],
+            "single_factor": "paired_supervision_content_static16_vs_dynamic8_repeated_twice",
+            "paired_dataset_kind": "dynamic8",
+            "unique_pair_count": 8,
+            "paired_updates_per_epoch": 8,
+            "paired_dataset_repetitions": 1,
+            "validation_or_frozen_training_accessed": False,
+            "ppo_auto_launch": False,
+        },
+    )
     dump(
         root / "runtime_metadata.json",
         {
@@ -40,6 +66,8 @@ def make_output(root: Path, *, nonfinite: bool = False, omit_state: bool = False
             "initial_checkpoint": "/workspace/parent",
             "paired_stat_loss_weight": 10.0,
             "paired_stat_horizons": [20, 50, 100],
+            "gpu_memory_fraction": 0.45,
+            "paired_manifest": "/workspace/dynamic_pair_manifest.json",
         },
     )
     dump(
@@ -92,6 +120,12 @@ def make_output(root: Path, *, nonfinite: bool = False, omit_state: bool = False
             "paired_stat_horizons": [20, 50, 100],
             "paired_stat_loss_weight": 10.0,
             "paired_batch_schedule": "interleaved",
+            "learning_rate": 1.0e-5,
+            "force_channel_weights": [1.0, 1.0, 4.0, 1.0],
+            "teacher_forcing_start": 0.0,
+            "teacher_forcing_end": 0.0,
+            "gpu_memory_fraction": 0.45,
+            "validation_stride": 100,
             "epochs": 1,
             "max_train_batches": 8,
             "max_validation_batches": 1,
@@ -100,6 +134,17 @@ def make_output(root: Path, *, nonfinite: bool = False, omit_state: bool = False
             "paired_batches_per_epoch": 8,
             "max_paired_eval_batches": 1,
         },
+    }
+    config["model"] = {
+        "in_channels": 6,
+        "out_channels": 7,
+        "latent_channels": 48,
+        "num_fno_layers": 5,
+        "num_fno_modes": [32, 32],
+        "decoder_layers": 2,
+        "decoder_layer_size": 128,
+        "padding": 8,
+        "coord_features": True,
     }
     (root / "resolved_config.yaml").write_text(yaml.safe_dump(config), encoding="utf-8")
     (root / "train.log").write_text("done\n", encoding="utf-8")
@@ -118,6 +163,21 @@ def test_output_passes_and_records_exact_checkpoint_pair(tmp_path: Path) -> None
     assert result["checkpoint_epoch"] == 1
     assert "best/FNO.0.1.mdlus" in result["sha256"]
     assert "best/checkpoint.0.1.pt" in result["sha256"]
+
+
+def test_output_rejects_tampered_launch_or_model_contract(tmp_path: Path) -> None:
+    make_output(tmp_path)
+    launch = json.loads((tmp_path / "launch_receipt.json").read_text())
+    launch["approval_sha256"] = "tampered"
+    dump(tmp_path / "launch_receipt.json", launch)
+    with pytest.raises(ValueError, match="launch receipt"):
+        MODULE.validate_output(tmp_path, "--probe")
+    make_output(tmp_path)
+    config = yaml.safe_load((tmp_path / "resolved_config.yaml").read_text())
+    config["model"]["latent_channels"] = 64
+    (tmp_path / "resolved_config.yaml").write_text(yaml.safe_dump(config))
+    with pytest.raises(ValueError, match="model contract"):
+        MODULE.validate_output(tmp_path, "--probe")
 
 
 @pytest.mark.parametrize("failure", ["nan", "state", "payload"])
@@ -167,8 +227,9 @@ def test_sampling_requires_bound_baseline(tmp_path: Path) -> None:
         "regular_sequence_sha256": sequence,
         "global_torch_rng_sha256": "rng",
     }
-    dump(tmp_path / "real.json", real)
     dump(tmp_path / "baseline.json", baseline)
+    real["fc_p003_order_receipt_sha256"] = MODULE.sha256(tmp_path / "baseline.json")
+    dump(tmp_path / "real.json", real)
     MODULE.validate_sampling(tmp_path / "real.json", tmp_path / "baseline.json")
     baseline["regular_sequence_sha256"] = "tampered"
     dump(tmp_path / "baseline.json", baseline)

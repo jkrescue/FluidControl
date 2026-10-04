@@ -26,6 +26,21 @@ EXPECTED_MANIFESTS = {
     "/workspace/train16": "7c62dab94e317442cecf7ea3be547cf6e03c594a2c7ec2a1a695caba2445cf5b",
 }
 NORMALIZATION_SHA = "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+APPROVAL_SHA = "b042a8570aec4802f1963392bb90368a2f0428c59d8f7afff76bbfa0417611d8"
+DYNAMIC_MANIFEST_SHA = "b756c6d777b68fe9dc6c5a81e40733e24d2c248b315723ddb40cc3273902d28c"
+CPU_PROBE_SHA = "e549121553e4e1fa0fffe5c0f3080dc1f03db615342530a7a7fcb0a0e45ac7aa"
+BASELINE_ORDER_SHA = "fab043a70652475e0b03aa869eac3445eaec1ec6c66a74cf976a0342a3dbca88"
+REAL_SAMPLING_SHA = "da078a1c43f03bf86ee71a5010632c05a4868b169dc8f8c7c341c78134873242"
+SOURCE_COMMIT = "2816e86d7224d8fe8e39f7cd2225d86c7d897974"
+SOURCE_RECEIPT_SHA = "48df52c75be6a974ba2d1d9827c0897e4e5335981d7fa300d8663dc821723dab"
+IMAGE_ID = "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e"
+PARENT_MODEL_SHA = "8466bd47f2de188f5e741197832ec3bee1223f72f54d8956e584c586a2774240"
+PARENT_STATE_SHA = "1e5d4c055812d8f92bc55f58708e839f7cc776071849544f6a26d3d62053cbd0"
+DATA_MANIFESTS = {
+    "dev30": "5213c7bb07c824c6e601636c3cfa974b80ec7c051633b0c8368a045cea41ddd2",
+    "train8": EXPECTED_MANIFESTS["/workspace/train8"],
+    "train16": EXPECTED_MANIFESTS["/workspace/train16"],
+}
 
 
 def sha256(path: Path) -> str:
@@ -106,6 +121,8 @@ def validate_sampling(real_path: Path, baseline_path: Path) -> dict:
         raise ValueError("real regular sequence is not bound to FC-P003 baseline")
     if real.get("fc_p003_regular_sequence_sha256") != sequence:
         raise ValueError("real audit FC-P003 reference differs")
+    if real.get("fc_p003_order_receipt_sha256") != sha256(baseline_path):
+        raise ValueError("real audit is not bound to the supplied FC-P003 receipt")
     if real.get("global_torch_rng_sha256") != baseline.get("global_torch_rng_sha256"):
         raise ValueError("global RNG digest differs from FC-P003 baseline")
     passes = real.get("pair_identity_passes")
@@ -156,6 +173,33 @@ def validate_output(root: Path, mode: str) -> dict:
         raise ValueError("epoch count differs")
     expected_indices = list(range(8)) if mode == "--probe" else EXPECTED_POSITIONS
     repetitions = expected["paired_dataset_repetitions"]
+    launch = load_json(root / "launch_receipt.json")
+    expected_launch = {
+        "status": "FC_P003B_WORKER_LAUNCH_STAGED",
+        "mode": mode,
+        "git_commit": SOURCE_COMMIT,
+        "approval_sha256": APPROVAL_SHA,
+        "dynamic_pair_manifest_sha256": DYNAMIC_MANIFEST_SHA,
+        "cpu_probe_sha256": CPU_PROBE_SHA,
+        "fc_p003_order_receipt_sha256": BASELINE_ORDER_SHA,
+        "real_sampling_receipt_sha256": REAL_SAMPLING_SHA,
+        "source_receipt_sha256": SOURCE_RECEIPT_SHA,
+        "official_image_id": IMAGE_ID,
+        "parent_model_sha256": PARENT_MODEL_SHA,
+        "parent_state_sha256": PARENT_STATE_SHA,
+        "dev30_manifest_sha256": DATA_MANIFESTS["dev30"],
+        "train8_manifest_sha256": DATA_MANIFESTS["train8"],
+        "train16_manifest_sha256": DATA_MANIFESTS["train16"],
+        "single_factor": "paired_supervision_content_static16_vs_dynamic8_repeated_twice",
+        "paired_dataset_kind": "dynamic8",
+        "unique_pair_count": 8,
+        "paired_updates_per_epoch": 8 if mode == "--probe" else 16,
+        "paired_dataset_repetitions": repetitions,
+        "validation_or_frozen_training_accessed": False,
+        "ppo_auto_launch": False,
+    }
+    if any(launch.get(key) != value for key, value in expected_launch.items()):
+        raise ValueError("launch receipt contract differs")
     for epoch, row in enumerate(history, 1):
         if row.get("epoch") != epoch:
             raise ValueError("epoch numbering differs")
@@ -188,6 +232,12 @@ def validate_output(root: Path, mode: str) -> dict:
         "paired_stat_horizons": [20, 50, 100],
         "paired_stat_loss_weight": 10.0,
         "paired_batch_schedule": "interleaved",
+        "learning_rate": 1.0e-5,
+        "force_channel_weights": [1.0, 1.0, 4.0, 1.0],
+        "teacher_forcing_start": 0.0,
+        "teacher_forcing_end": 0.0,
+        "gpu_memory_fraction": 0.45,
+        "validation_stride": 100,
         **expected,
     }
     if any(train.get(key) != value for key, value in contract.items()):
@@ -202,6 +252,19 @@ def validate_output(root: Path, mode: str) -> dict:
     }
     if any(data.get(key) != value for key, value in expected_data.items()):
         raise ValueError("resolved data contract differs")
+    expected_model = {
+        "in_channels": 6,
+        "out_channels": 7,
+        "latent_channels": 48,
+        "num_fno_layers": 5,
+        "num_fno_modes": [32, 32],
+        "decoder_layers": 2,
+        "decoder_layer_size": 128,
+        "padding": 8,
+        "coord_features": True,
+    }
+    if any(cfg["model"].get(key) != value for key, value in expected_model.items()):
+        raise ValueError("official FNO model contract differs")
     runtime = load_json(root / "runtime_metadata.json")
     require_finite(runtime, "runtime_metadata")
     if (
@@ -209,6 +272,8 @@ def validate_output(root: Path, mode: str) -> dict:
         or runtime.get("initial_checkpoint") != "/workspace/parent"
         or runtime.get("paired_stat_loss_weight") != 10.0
         or runtime.get("paired_stat_horizons") != [20, 50, 100]
+        or runtime.get("gpu_memory_fraction") != 0.45
+        or runtime.get("paired_manifest") != "/workspace/dynamic_pair_manifest.json"
     ):
         raise ValueError("runtime metadata differs")
     sources = load_json(root / "training_data_sources.json")

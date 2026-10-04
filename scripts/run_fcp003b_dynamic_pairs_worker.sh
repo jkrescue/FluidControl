@@ -17,10 +17,13 @@ baseline_order_sha="fab043a70652475e0b03aa869eac3445eaec1ec6c66a74cf976a0342a3db
 real_sampling_sha="da078a1c43f03bf86ee71a5010632c05a4868b169dc8f8c7c341c78134873242"
 source_receipt_sha="48df52c75be6a974ba2d1d9827c0897e4e5335981d7fa300d8663dc821723dab"
 source_required_sha="ab519370c43c72d1f3247919ca36cd3c6b1c1da681356f89e5bea7da0e22d79b"
-validator_sha="080865e83dbcead404afd9a6f8a3c6dabe5c6b40f95806086f531d64ec7a249b"
+validator_sha="4d2cec37659c98d9aac873893af9b15e16a3af94e46cb71d75e2e8e80aaba9d8"
 parent_model_sha="8466bd47f2de188f5e741197832ec3bee1223f72f54d8956e584c586a2774240"
 parent_state_sha="1e5d4c055812d8f92bc55f58708e839f7cc776071849544f6a26d3d62053cbd0"
 normalization_sha="f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+dev30_manifest_sha="5213c7bb07c824c6e601636c3cfa974b80ec7c051633b0c8368a045cea41ddd2"
+train8_manifest_sha="a0bd0e3b79d4d43ace407292c31a595d552dbd6e1a5de1fd149b1ca446f53f35"
+train16_manifest_sha="7c62dab94e317442cecf7ea3be547cf6e03c594a2c7ec2a1a695caba2445cf5b"
 
 sha() { sha256sum "$1" | awk '{print $1}'; }
 [[ "$(docker image inspect "$image" --format '{{.Id}}')" == "$image_id" ]] || { echo "image differs" >&2; exit 2; }
@@ -38,6 +41,9 @@ sha() { sha256sum "$1" | awk '{print $1}'; }
 for path in "$root/data/dev30" "$root/data/train8" "$root/data/train16"; do
   [[ "$(sha "$path/normalization.json")" == "$normalization_sha" ]] || { echo "normalization differs: $path" >&2; exit 2; }
 done
+[[ "$(sha "$root/data/dev30/manifest.json")" == "$dev30_manifest_sha" ]] || { echo "dev30 manifest differs" >&2; exit 2; }
+[[ "$(sha "$root/data/train8/manifest.json")" == "$train8_manifest_sha" ]] || { echo "train8 manifest differs" >&2; exit 2; }
+[[ "$(sha "$root/data/train16/manifest.json")" == "$train16_manifest_sha" ]] || { echo "train16 manifest differs" >&2; exit 2; }
 python3 "$root/launch/validate_fcp003b_worker_output.py" source \
   --source "$source" --receipt "$receipt" --commit "$source_commit" \
   --required-hashes "$root/evidence/source_required_hashes.json"
@@ -65,15 +71,16 @@ else
 fi
 [[ ! -e "$output" ]] || { echo "refusing existing output: $output" >&2; exit 2; }
 mkdir -p "$output"
-python3 - "$output/launch_receipt.json" "$mode" "$source_commit" "$approval_sha" "$manifest_sha" "$probe_sha" "$baseline_order_sha" "$real_sampling_sha" "$source_receipt_sha" "$validator_sha" "$image_id" "$parent_model_sha" "$parent_state_sha" <<'PY'
+python3 - "$output/launch_receipt.json" "$mode" "$source_commit" "$approval_sha" "$manifest_sha" "$probe_sha" "$baseline_order_sha" "$real_sampling_sha" "$source_receipt_sha" "$validator_sha" "$image_id" "$parent_model_sha" "$parent_state_sha" "$dev30_manifest_sha" "$train8_manifest_sha" "$train16_manifest_sha" <<'PY'
 import json,os,pathlib,sys,tempfile
-target=pathlib.Path(sys.argv[1]); mode,commit,approval,manifest,probe,baseline,real_sampling,source_receipt,validator,image,parent_model,parent_state=sys.argv[2:]
+target=pathlib.Path(sys.argv[1]); mode,commit,approval,manifest,probe,baseline,real_sampling,source_receipt,validator,image,parent_model,parent_state,dev30,train8,train16=sys.argv[2:]
 updates=8 if mode=="--probe" else 16
 payload={"status":"FC_P003B_WORKER_LAUNCH_STAGED","mode":mode,"git_commit":commit,
  "approval_sha256":approval,"dynamic_pair_manifest_sha256":manifest,"cpu_probe_sha256":probe,
  "fc_p003_order_receipt_sha256":baseline,"real_sampling_receipt_sha256":real_sampling,
  "source_receipt_sha256":source_receipt,"validator_sha256":validator,"official_image_id":image,
  "parent_model_sha256":parent_model,"parent_state_sha256":parent_state,
+ "dev30_manifest_sha256":dev30,"train8_manifest_sha256":train8,"train16_manifest_sha256":train16,
  "single_factor":"paired_supervision_content_static16_vs_dynamic8_repeated_twice",
  "paired_dataset_kind":"dynamic8","unique_pair_count":8,"paired_updates_per_epoch":updates,
  "paired_dataset_repetitions":2 if mode=="--execute" else 1,
