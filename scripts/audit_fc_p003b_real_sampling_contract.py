@@ -34,7 +34,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
-    base = TandemRolloutDataset(args.base, "train", 100, stride=1, num_workers=1, force_indices=(0, 1, 2, 3))
+    base = TandemRolloutDataset(args.base, "train", 100, stride=20, num_workers=1, force_indices=(0, 1, 2, 3))
     regular, _ = compose_training_data(base, [args.train8, args.train16], rollout_steps=100, stride=2, workers=1, force_indices=(0, 1, 2, 3))
     pair = DynamicMatchedPairStatDataset(args.train8, args.base, args.pair_manifest, num_workers=1)
     torch.manual_seed(99173)
