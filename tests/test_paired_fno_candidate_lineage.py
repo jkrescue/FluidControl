@@ -1,0 +1,67 @@
+from __future__ import annotations
+
+import importlib.util
+import json
+import unittest
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[1]
+
+
+def load_module(relative: str, name: str):
+    spec = importlib.util.spec_from_file_location(name, REPO / relative)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
+
+class PairedLineageTests(unittest.TestCase):
+    def test_approved_roots_and_single_factor_are_explicit(self) -> None:
+        module = load_module("scripts/audit_paired_fno_candidate_lineage.py", "paired_lineage")
+        self.assertEqual(module.ROOTS, {
+            "tandem_fno_paired_stats_lambda0_20261004": ("lambda0", 0.0),
+            "tandem_fno_paired_stats_lambda10_20261004": ("lambda10", 10.0),
+        })
+        self.assertTrue(module.PAIR.startswith("15bfa7a4"))
+        self.assertTrue(module.PARENT_MODEL.startswith("8466bd47"))
+
+    def test_archive_payload_ignores_zip_timestamp_but_not_payload(self) -> None:
+        import tempfile
+        import zipfile
+        module = load_module("scripts/audit_paired_fno_candidate_lineage.py", "paired_zip")
+        with tempfile.TemporaryDirectory() as directory:
+            a, b = Path(directory) / "a.zip", Path(directory) / "b.zip"
+            with zipfile.ZipFile(a, "w") as archive:
+                archive.writestr("model.pt", b"same")
+            with zipfile.ZipFile(b, "w") as archive:
+                info = zipfile.ZipInfo("model.pt", date_time=(2025, 1, 1, 0, 0, 0))
+                archive.writestr(info, b"same")
+            self.assertNotEqual(module.sha256(a), module.sha256(b))
+            self.assertEqual(module.archive_payload(a), module.archive_payload(b))
+            with zipfile.ZipFile(b, "w") as archive:
+                archive.writestr("model.pt", b"different")
+            self.assertNotEqual(module.archive_payload(a), module.archive_payload(b))
+
+    def test_complete_validator_rejects_tamper(self) -> None:
+        import tempfile
+        module = load_module("scripts/validate_paired_posteval_step.py", "paired_validator")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            artifact = root / "result.json"; artifact.write_text("{}\n")
+            checkpoint = "a" * 64
+            receipt = {
+                "status": "PAIRED_STATS_FC_P001_POSTEVAL_COMPLETE",
+                "checkpoint_sha256": checkpoint,
+                "ppo_auto_launched": False,
+                "frozen_test_accessed": False,
+                "sha256": {"result.json": module.sha256(artifact)},
+            }
+            (root / "receipt.json").write_text(json.dumps(receipt))
+            module.validate_complete(root, checkpoint)
+            artifact.write_text("tampered\n")
+            with self.assertRaisesRegex(ValueError, "hash table"):
+                module.validate_complete(root, checkpoint)
+
+
+if __name__ == "__main__":
+    unittest.main()
