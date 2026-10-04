@@ -25,6 +25,7 @@ child_config_sha="17f15f6cb4b4b92a118ea6b4604c5b3b9ce44cb1f50660b8970bad0d7b51c4
 step_test_sha="75207f176dc15431081ce981eb4feba026d6b8f3bfcebd9e43f415dd5c471c4b"
 regular_test_sha="34a619223b0283b151e19c19f8eea85b604fa48f238ae4037e24128a9822c4a9"
 guard_sha="75d14e5fd926f797f3c3ee8b913d07e9d22c7c365344b6de722edb3b40d39195"
+validator_sha="80dfa0240712daabeb3d76a780b218683a9caf52283e7a16ced9de3fc592579c"
 resolved_sha="ebcc839f302cf3eb93eff2a23f9d8ba38f1063e09591668dad3d65d31bc91f4f"
 cpu_equivalence_sha="394c904d9593ada6351d206ed61eb302b6b9f3fca588e2853a676b3db191fe09"
 regular_identity_sha="df03eb42bce7e9a996378d7e2bd5e46cf15f46d6f8628ec9ed80dd24b694b80a"
@@ -35,6 +36,7 @@ check_sha() { local p="$1" e="$2"; [[ -f "$p" && "$(sha256sum "$p"|awk '{print $
 [[ "$(git -C "$repo" rev-parse "$source_commit^{commit}")" == "$source_commit" ]] || { echo "source commit missing" >&2; exit 65; }
 check_sha "$repo/scripts/probe_fcp003c_mixed_loss.py" "$probe_sha"
 check_sha "$repo/scripts/spark_gpu_guard.py" "$guard_sha"
+check_sha "$repo/scripts/validate_fcp003c_mixed_probe_output.py" "$validator_sha"
 check_sha "$resolved_config" "$resolved_sha"
 check_sha "$cpu_equivalence" "$cpu_equivalence_sha"
 check_sha "$regular_identity" "$regular_identity_sha"
@@ -68,7 +70,7 @@ fi
 mkdir "$output"; mkdir "$output/source_snapshot" "$output/container_output"
 git -C "$repo" archive "$source_commit" src conf scripts/train_tandem_fno.py scripts/train_tandem_fno_paired_stats.py tests/test_paired_step_training.py tests/test_fcp003c_regular_objective.py | tar -x -C "$output/source_snapshot"
 mkdir -p "$output/source_snapshot/scripts"; cp "$repo/scripts/probe_fcp003c_mixed_loss.py" "$output/source_snapshot/scripts/"
-cp "$repo/scripts/spark_gpu_guard.py" "$output/immutable_guard.py"; cp "$0" "$output/immutable_launcher.sh"
+cp "$repo/scripts/spark_gpu_guard.py" "$output/immutable_guard.py"; cp "$repo/scripts/validate_fcp003c_mixed_probe_output.py" "$output/immutable_validator.py"; cp "$0" "$output/immutable_launcher.sh"
 cp "$resolved_config" "$output/resolved_config.yaml"; cp "$cpu_equivalence" "$output/cpu_equivalence_receipt.json"; cp "$regular_identity" "$output/cpu_regular_loader_identity.json"
 check_sha "$output/source_snapshot/scripts/train_tandem_fno_paired_stats.py" "$trainer_sha"; check_sha "$output/source_snapshot/src/fluid_control/paired_step_training.py" "$helper_sha"
 check_sha "$output/source_snapshot/conf/tandem_fno_dynamic_paired_true_state_step_h100.yaml" "$child_config_sha"; check_sha "$output/source_snapshot/tests/test_paired_step_training.py" "$step_test_sha"; check_sha "$output/source_snapshot/tests/test_fcp003c_regular_objective.py" "$regular_test_sha"; check_sha "$output/source_snapshot/scripts/probe_fcp003c_mixed_loss.py" "$probe_sha"
@@ -77,24 +79,11 @@ python3 - "$output" "$image_id" "$source_commit" <<'PY'
 import hashlib,json,os,sys
 from pathlib import Path
 r=Path(sys.argv[1]); h=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
-d={"status":"FC_P003C_MIXED_LOSS_PROBE_LAUNCH_BOUND","image_id":sys.argv[2],"source_commit":sys.argv[3],"optimizer_steps_budget":1,"validation_or_frozen_mounted":False,"immutable_launcher_sha256":h(r/"immutable_launcher.sh"),"immutable_guard_sha256":h(r/"immutable_guard.py"),"source_manifest_sha256":h(r/"source_snapshot.sha256"),"resolved_config_sha256":h(r/"resolved_config.yaml"),"cpu_equivalence_receipt_sha256":h(r/"cpu_equivalence_receipt.json"),"regular_identity_receipt_sha256":h(r/"cpu_regular_loader_identity.json")}
+d={"status":"FC_P003C_MIXED_LOSS_PROBE_LAUNCH_BOUND","image_id":sys.argv[2],"source_commit":sys.argv[3],"optimizer_steps_budget":1,"validation_or_frozen_mounted":False,"immutable_launcher_sha256":h(r/"immutable_launcher.sh"),"immutable_guard_sha256":h(r/"immutable_guard.py"),"immutable_validator_sha256":h(r/"immutable_validator.py"),"source_manifest_sha256":h(r/"source_snapshot.sha256"),"resolved_config_sha256":h(r/"resolved_config.yaml"),"cpu_equivalence_receipt_sha256":h(r/"cpu_equivalence_receipt.json"),"regular_identity_receipt_sha256":h(r/"cpu_regular_loader_identity.json")}
 t=r/f"launch_receipt.json.tmp.{os.getpid()}"; t.write_text(json.dumps(d,indent=2)+"\n"); os.link(t,r/"launch_receipt.json"); t.unlink()
 PY
 set +e
 /home/USER/env_isaaclab/bin/python "$output/immutable_guard.py" --min-free-gib 20 --allocator-fraction 0.25 --margin-gib 4 --poll-seconds 2 -- docker run --rm --gpus device=0 --network none --read-only --user 1000:1000 --cap-drop ALL --security-opt no-new-privileges --pids-limit 512 --shm-size 1g --memory 90g --cpus 8 --tmpfs /tmp:rw,nosuid,size=2g --tmpfs /tmp/home:rw,nosuid,size=512m --tmpfs /tmp/xdg:rw,nosuid,size=512m -e HOME=/tmp/home -e XDG_CACHE_HOME=/tmp/xdg -e PYTHONPATH=/workspace/project/src:/workspace/project/scripts -v "$output/source_snapshot:/workspace/project:ro" -v "$base/train:/workspace/base/train:ro" -v "$base/manifest.json:/workspace/base/manifest.json:ro" -v "$base/normalization.json:/workspace/base/normalization.json:ro" -v "$train8/train:/workspace/train8/train:ro" -v "$train8/manifest.json:/workspace/train8/manifest.json:ro" -v "$train8/normalization.json:/workspace/train8/normalization.json:ro" -v "$train16/train:/workspace/train16/train:ro" -v "$train16/manifest.json:/workspace/train16/manifest.json:ro" -v "$train16/normalization.json:/workspace/train16/normalization.json:ro" -v "$pair_manifest:/workspace/pair_manifest.json:ro" -v "$parent:/workspace/parent:ro" -v "$output/resolved_config.yaml:/workspace/resolved_config.yaml:ro" -v "$output/source_snapshot.sha256:/workspace/source_snapshot.sha256:ro" -v "$output/launch_receipt.json:/workspace/launch_receipt.json:ro" -v "$output/cpu_equivalence_receipt.json:/workspace/cpu_equivalence_receipt.json:ro" -v "$output/container_output:/workspace/output:rw" "$image" python /workspace/project/scripts/probe_fcp003c_mixed_loss.py --config /workspace/resolved_config.yaml --base-root /workspace/base --train8-root /workspace/train8 --train16-root /workspace/train16 --pair-manifest /workspace/pair_manifest.json --parent /workspace/parent --output /workspace/output/result_bundle --source-manifest /workspace/source_snapshot.sha256 --launch-receipt /workspace/launch_receipt.json --cpu-equivalence-receipt /workspace/cpu_equivalence_receipt.json --expected-cpu-equivalence-sha256 "$cpu_equivalence_sha" --image-id "$image_id" --gpu-memory-fraction 0.25 --min-mem-available-gib 20 >"$output/outer.log" 2>&1
 rc=$?; set -e; printf '%s\n' "$rc" > "$output/probe_exit_code.txt"; [[ "$rc" -eq 0 ]] || { echo "probe failed; evidence preserved" >&2; exit "$rc"; }
 check_sha "$parent/FNO.0.2.mdlus" "$model_sha"; check_sha "$parent/checkpoint.0.2.pt" "$state_sha"
-python3 - "$output" "$model_sha" "$state_sha" <<'PY'
-import hashlib,json,math,os,sys
-from pathlib import Path
-r=Path(sys.argv[1]); p=r/"container_output/result_bundle/result.json"; d=json.loads(p.read_text()); h=lambda x:hashlib.sha256(Path(x).read_bytes()).hexdigest()
-if d.get("status")!="FC_P003C_MIXED_LOSS_TECHNICAL_PROBE_PASS" or d.get("optimizer_steps")!=1 or d.get("candidate_saved") is not False or d.get("validation_or_frozen_accessed") is not False or d.get("regular_hdf_sha256")!="9fd391090802f7f6a7189d1cbb2ccedf3e667fa4ee78b2f8f1c2c20c1dea0345": raise SystemExit("result contract differs")
-m=d.get("metrics",{}); raw=m.get("paired_step_force_per_channel_mse",[]); weighted=m.get("paired_step_force_per_channel_weighted_contribution",[]); values=[d.get("regular_field_loss"),d.get("regular_force_loss"),m.get("loss"),m.get("base_loss"),m.get("paired_step_force_loss"),m.get("paired_step_force_weighted_loss"),m.get("preclip_gradient_norm"),*raw,*weighted,d.get("cuda_peak_allocated_gib"),d.get("cuda_peak_reserved_gib"),d.get("minimum_mem_available_gib")]
-if len(raw)!=4 or len(weighted)!=4 or any(not isinstance(v,(int,float)) or not math.isfinite(v) for v in values): raise SystemExit("finite metric contract differs")
-expected={"model":sys.argv[2],"state":sys.argv[3]}
-if d.get("parent_file_sha256_before")!=expected or d.get("parent_file_sha256_after")!=expected or d["minimum_mem_available_gib"]<20: raise SystemExit("parent/memory contract differs")
-for suffix in ("*.pt","*.mdlus","*.ckpt","*.pth"):
-    if list((r/"container_output").rglob(suffix)): raise SystemExit("candidate/checkpoint output forbidden")
-v={"status":"FC_P003C_MIXED_LOSS_TECHNICAL_PROBE_COMPLETE","scientific_result":False,"optimizer_steps":1,"candidate_saved":False,"validation_or_frozen_accessed":False,"result_sha256":h(p),"launch_receipt_sha256":h(r/"launch_receipt.json"),"source_manifest_sha256":h(r/"source_snapshot.sha256"),"immutable_launcher_sha256":h(r/"immutable_launcher.sh"),"immutable_guard_sha256":h(r/"immutable_guard.py"),"checkpoint_model_sha256":sys.argv[2],"checkpoint_state_sha256":sys.argv[3]}
-t=r/f"completion_receipt.json.tmp.{os.getpid()}"; t.write_text(json.dumps(v,indent=2)+"\n"); os.link(t,r/"completion_receipt.json"); t.unlink()
-PY
+python3 "$output/immutable_validator.py" --root "$output" --model-sha256 "$model_sha" --state-sha256 "$state_sha" --image-id "$image_id" --output "$output/completion_receipt.json"
