@@ -1,26 +1,26 @@
 # Conditional train-fit calibration after D015
 
-Status: design only. This path is considered only if D015 shows that the FC-P003C checkpoint remains inaccurate on the exact `train_paired_window` targets 1..100. It is not approved for execution, is not a new admission gate, and does not authorize validation-driven tuning, PPO, or frozen-test access.
+Status: design only. D015 result SHA `b311715724287c34aa496405f0381fb034089123d5dcf3bec51f80633f293b54` shows that FC-P003C remains inaccurate on the exact `train_paired_window`: rear-Cl action-minus-zero MAE is 0.118801 there, 0.107526 on train-late, and 0.171848 on validation-late. The corresponding absolute values 0.081124/0.073322/0.116464 include deduplicated zero branches and must not be compared as action-only errors. Thus train fit is already inadequate, with an additional validation gap. This draft is not approved for execution, is not a new admission gate, and does not authorize validation-driven tuning, PPO, or frozen-test access.
 
 ## What can be reused
 
 Reuse `scripts/train_tandem_fno_paired_stats.py`, the official PhysicsNeMo FNO, `DynamicMatchedPairStatDataset`, `true_state_paired_optimizer_step`, the C best checkpoint, train20+train8+train16 regular data, dynamic8 action/zero pairs, train20 normalization, H100/chunk10, batch 1, AdamW settings, zero teacher forcing, lambda 10, force weights `[1,1,4,1]/7`, gradient clipping, and the interleaved schedule. Every paired update already evaluates the unchanged regular field/force rollout objective on its regular batch and adds the paired objective; therefore increasing paired exposure does not remove the regular field loss.
 
-There is no honest config-only execution path today. Lines 369–383 of the trainer deliberately require exactly two dynamic8 passes and 16 paired updates for `true_state_step_force`. Merely adding epochs would keep the ratio at 16 paired updates per 1368 regular updates and would not isolate increased paired exposure. A later approved implementation should make only a narrow fail-closed guard extension for the exact calibration contract below; it must not add a model, loss, loader, optimizer, or training framework.
+There is no honest invocation of the current full trainer for this diagnostic. It always constructs and evaluates validation data, while D015 requires a train-only calibration; `max_validation_batches=0` is false-like and would run the full validation loop. The trainer also locks each epoch to two dynamic8 passes and 16 paired updates. A separate small wrapper is therefore appropriate, but it must import the existing datasets and objective functions rather than copy their mathematics.
 
 ## Fixed bounded contract
 
 Start from the immutable C epoch-2 model SHA `f78c2f3341663ed2f6e7f4c64a0bf6539a065d2e7f11ada8f19f493320697eb4` as `training.initial_checkpoint`, with a fresh optimizer exactly as the existing initialization path does.
 
-Use one epoch with:
+Use four short epochs with:
 
 ```yaml
 training:
-  epochs: 1
-  max_train_batches: 128
-  expected_regular_batches: 128
-  paired_dataset_repetitions: 8
-  paired_batches_per_epoch: 64
+  epochs: 4
+  max_train_batches: 32
+  expected_regular_batches: 32
+  paired_dataset_repetitions: 2
+  paired_batches_per_epoch: 16
   paired_batch_schedule: interleaved
   paired_batch_size: 1
   paired_objective_kind: true_state_step_force
@@ -29,11 +29,11 @@ training:
   teacher_forcing_end: 0.0
 ```
 
-All other resolved values must be byte/field identical to the C configuration. This is exactly 128 optimizer steps: 64 regular-only steps and 64 regular-plus-paired steps. All 128 steps retain the regular rollout loss; the 64 paired steps comprise eight complete deterministic passes over the eight dynamic pairs. Compared with completed C, the diagnostic supplies twice as many paired updates as C's full two-epoch total (64 versus 32), while bounding regular computation to 128 rather than another 1368-step epoch. The runner must record the 128 regular sample identities, eight ordered complete pair passes, per-step finite status, gradient clipping, memory floor, parent/output SHA, and zero validation/frozen access.
+All other resolved values must be byte/field identical to the C configuration. This uses the already-supported per-epoch contract without weakening its guard: exactly 128 optimizer steps, comprising 64 regular-only and 64 regular-plus-paired steps. All 128 steps retain the regular rollout loss; the 64 paired steps form eight complete deterministic passes over dynamic8. Compared with completed C, paired exposure doubles from 32 to 64 while regular computation is bounded to 128 rather than another 1368-step epoch. The wrapper must import `TandemRolloutDataset`/`compose_training_data`, `DynamicMatchedPairStatDataset`, PhysicsNeMo `DataLoader`, `regular_rollout_objective`, and `true_state_paired_optimizer_step`; it must not instantiate validation data. It records all regular sample identities, all eight ordered pair passes, finite/clip/memory telemetry, parent/output SHA, and zero validation/frozen access.
 
 ## Train-only readout and exit rule
 
-Before and after calibration, evaluate the same checkpoint pair on the fixed D015 train panels without gradients:
+Before and after calibration, evaluate the same checkpoint pair on the fixed D015 train panels without gradients. For each endpoint, call `true_state_step_input(q_t, ..., omega_t, omega_t+1)`, then existing `train_tandem_fno.predict`; compute `qhat_{t+1}=(q_t+delta)*mask`. Reuse `evaluate_tandem_fno.field_error_sums` and `relative_field_metrics` with `(qhat-q_target)*state_std` and `q_target*state_std+state_mean`, so pooled `u/v/p` and velocity relative-L2 have exactly the formal evaluator's meaning. The force output from the same call supplies the four physical-force errors after the unchanged force denormalization.
 
 - H1 absolute and action-minus-zero delta MAE/RMSE/bias for all four forces, reported per phase/profile and pooled;
 - H1 `u`, `v`, and `p` field errors on the same targets and masks, reported per phase/profile and pooled with the existing physical normalization;
