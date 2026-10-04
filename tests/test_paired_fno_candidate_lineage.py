@@ -18,10 +18,8 @@ def load_module(relative: str, name: str):
 class PairedLineageTests(unittest.TestCase):
     def test_approved_roots_and_single_factor_are_explicit(self) -> None:
         module = load_module("scripts/audit_paired_fno_candidate_lineage.py", "paired_lineage")
-        self.assertEqual(module.ROOTS, {
-            "tandem_fno_paired_stats_lambda0_20261004": ("lambda0", 0.0),
-            "tandem_fno_paired_stats_lambda10_20261004": ("lambda10", 10.0),
-        })
+        self.assertEqual(module.ROOTS["tandem_fno_paired_stats_lambda0_20261004"][:2], ("lambda0", 0.0))
+        self.assertEqual(module.ROOTS["tandem_fno_paired_stats_lambda10_20261004"][:2], ("lambda10", 10.0))
         self.assertTrue(module.PAIR.startswith("15bfa7a4"))
         self.assertTrue(module.PARENT_MODEL.startswith("8466bd47"))
 
@@ -33,13 +31,19 @@ class PairedLineageTests(unittest.TestCase):
             a, b = Path(directory) / "a.zip", Path(directory) / "b.zip"
             with zipfile.ZipFile(a, "w") as archive:
                 archive.writestr("model.pt", b"same")
+                archive.writestr("args.json", b"args")
+                archive.writestr("metadata.json", b"metadata")
             with zipfile.ZipFile(b, "w") as archive:
                 info = zipfile.ZipInfo("model.pt", date_time=(2025, 1, 1, 0, 0, 0))
                 archive.writestr(info, b"same")
+                archive.writestr("args.json", b"args")
+                archive.writestr("metadata.json", b"metadata")
             self.assertNotEqual(module.sha256(a), module.sha256(b))
             self.assertEqual(module.archive_payload(a), module.archive_payload(b))
             with zipfile.ZipFile(b, "w") as archive:
                 archive.writestr("model.pt", b"different")
+                archive.writestr("args.json", b"args")
+                archive.writestr("metadata.json", b"metadata")
             self.assertNotEqual(module.archive_payload(a), module.archive_payload(b))
 
     def test_complete_validator_rejects_tamper(self) -> None:
@@ -61,6 +65,20 @@ class PairedLineageTests(unittest.TestCase):
             artifact.write_text("tampered\n")
             with self.assertRaisesRegex(ValueError, "hash table"):
                 module.validate_complete(root, checkpoint)
+
+    def test_archive_payload_rejects_unexpected_member_set(self) -> None:
+        import tempfile
+        import zipfile
+        module = load_module("scripts/audit_paired_fno_candidate_lineage.py", "paired_members")
+        with tempfile.TemporaryDirectory() as directory:
+            archive_path = Path(directory) / "bad.zip"
+            with zipfile.ZipFile(archive_path, "w") as archive:
+                archive.writestr("model.pt", b"model")
+                archive.writestr("args.json", b"args")
+                archive.writestr("metadata.json", b"metadata")
+                archive.writestr("unexpected", b"bad")
+            with self.assertRaisesRegex(ValueError, "member set"):
+                module.archive_payload(archive_path)
 
 
 if __name__ == "__main__":

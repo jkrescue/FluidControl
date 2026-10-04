@@ -29,8 +29,14 @@ CONFIG_SHA = "cec8941fbe47ef1830b99e38fb2f2ca16b41dcd9405d58248763c66ece55fd55"
 COMMIT = "b6aada926942161da4430d52664c92db1a2269c7"
 TREE = "6e46d152d2d96017707ac2b3d874debbee46eaf4"
 ROOTS = {
-    "tandem_fno_paired_stats_lambda0_20261004": ("lambda0", 0.0),
-    "tandem_fno_paired_stats_lambda10_20261004": ("lambda10", 10.0),
+    "tandem_fno_paired_stats_lambda0_20261004": (
+        "lambda0", 0.0, "d6738ab0c44317e20493cf02412d72b4098dfda9f994f8d7ac1ca84a40596d4e",
+        "3a222827c9f0b3d39d72cec035c20c7d35411ecfc119415109c9528ea7876de7",
+    ),
+    "tandem_fno_paired_stats_lambda10_20261004": (
+        "lambda10", 10.0, "66a88b3c80751eaa92722ce7f7622eb1f815d7d7d4260798217934c1997b76d8",
+        "b7bd654933c31ca9066cb9c37f2f9071c56b75f09e495c224b996acb1079dc55",
+    ),
 }
 
 
@@ -51,7 +57,12 @@ def load(path: Path) -> dict:
 
 def archive_payload(path: Path) -> dict[str, str]:
     with zipfile.ZipFile(path) as archive:
-        names = sorted(archive.namelist())
+        names = archive.namelist()
+        if len(names) != len(set(names)):
+            raise ValueError("model archive has duplicate members")
+        if set(names) != {"model.pt", "args.json", "metadata.json"}:
+            raise ValueError("model archive member set differs")
+        names = sorted(names)
         return {name: hashlib.sha256(archive.read(name)).hexdigest() for name in names}
 
 
@@ -59,7 +70,7 @@ def build(repo: Path, candidate: Path) -> dict:
     repo, candidate = repo.resolve(), candidate.resolve()
     if candidate.name not in ROOTS or (repo / "artifacts").resolve() not in candidate.parents:
         raise ValueError("candidate is not an approved FC-P001 root")
-    branch, weight = ROOTS[candidate.name]
+    branch, weight, resolved_sha, expected_model_sha = ROOTS[candidate.name]
     launch, completion = load(candidate / "launch_receipt.json"), load(candidate / "completion_receipt.json")
     config = yaml.safe_load((candidate / "resolved_config.yaml").read_text())
     training, data = config["training"], config["data"]
@@ -83,7 +94,8 @@ def build(repo: Path, candidate: Path) -> dict:
     if actual_tree != TREE:
         raise ValueError("launch commit tree differs")
     if (
-        sha256(candidate / "resolved_config.yaml") != completion["sha256"]["resolved_config.yaml"]
+        sha256(candidate / "resolved_config.yaml") != resolved_sha
+        or completion["sha256"].get("resolved_config.yaml") != resolved_sha
         or completion.get("status") != "PAIRED_STATS_CONTROLLED_TRAINING_COMPLETE"
         or completion.get("epochs") != 2
         or completion.get("ppo_auto_launched") is not False
@@ -128,6 +140,13 @@ def build(repo: Path, candidate: Path) -> dict:
     expected_manifest = {"dev30": DEV30, "train8": TRAIN8, "train16": TRAIN16, "paired": PAIR}
     if any(sha256(path) != expected_manifest[name] for name, path in manifests.items()):
         raise ValueError("data manifest differs")
+    normalization_paths = [
+        repo / "data/curated/tandem_cylinders_matched_start_full40_dev30_v1/normalization.json",
+        repo / "data/curated/tandem_cylinders_dynamic_train8_v1/normalization.json",
+        repo / "data/curated/tandem_cylinders_directppo_train16_v1/normalization.json",
+    ]
+    if any(sha256(path) != NORM for path in normalization_paths):
+        raise ValueError("actual training normalization differs")
     if sha256(repo / "artifacts/train20_paired_stat_datapipe_v1/cpu_probe_v3.json") != PAIR_PROBE:
         raise ValueError("paired DataPipe probe differs")
     snapshot = candidate / "source_snapshot"
@@ -147,6 +166,8 @@ def build(repo: Path, candidate: Path) -> dict:
     state = candidate / "best/checkpoint.0.2.pt"
     checkpoint_model = candidate / "checkpoints/FNO.0.2.mdlus"
     checkpoint_state = candidate / "checkpoints/checkpoint.0.2.pt"
+    if sha256(model) != expected_model_sha:
+        raise ValueError("branch best model SHA differs")
     if archive_payload(model) != archive_payload(checkpoint_model) or sha256(state) != sha256(checkpoint_state):
         raise ValueError("best files differ from checkpoint generation payload")
     parent_model = next((candidate / "immutable_parent").glob("FNO.*.mdlus"))
