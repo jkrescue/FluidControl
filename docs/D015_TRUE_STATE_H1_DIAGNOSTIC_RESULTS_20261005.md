@@ -43,6 +43,16 @@ By channel, delta MAE for paired/late/validation is:
 - rear Cd: 0.043887 / 0.049969 / 0.065495
 - rear Cl: 0.118801 / 0.107526 / 0.171848
 
+The absolute rear-Cl values in the main table include each deduplicated zero
+branch. Action-only rear-Cl absolute MAE on the paired window is 0.118696, so it
+must not be compared directly with the zero-inclusive 0.081124. As a descriptive
+check, not a gate, the nonzero rear-Cl action-response correlations for
+paired/late/validation are 0.452600/0.387430/0.542503. Predicted-versus-true
+response RMS is 0.143484/0.153617, 0.110488/0.131581, and
+0.159913/0.249629 respectively. The modest correlations show that the error is
+not explained by one uniform amplitude scale alone; they do not identify a
+cause or define a new threshold.
+
 ## Decision implication
 
 The extra-paired training window itself still has large rear-Cl error, so the
