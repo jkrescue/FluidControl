@@ -270,6 +270,11 @@ def main(cfg: DictConfig) -> None:
     )
     if len(pair_dataset) != 16 or len(pair_loader) != 8:
         raise ValueError("paired-stat experiment requires 16 pairs in 8 batches")
+    paired_batches_per_epoch = int(
+        cfg.training.get("paired_batches_per_epoch", len(pair_loader))
+    )
+    if not 1 <= paired_batches_per_epoch <= len(pair_loader):
+        raise ValueError("paired_batches_per_epoch must be in [1, 8]")
 
     network: torch.nn.Module = build_model(cfg).to(dist.device)
     if dist.distributed:
@@ -430,10 +435,13 @@ def main(cfg: DictConfig) -> None:
                     key: value.to(dist.device, non_blocking=True)
                     for key, value in batch.items()
                 }
-                try:
-                    pair = next(pair_iterator)
-                except StopIteration:
+                if paired_batches >= paired_batches_per_epoch:
                     pair = None
+                else:
+                    try:
+                        pair = next(pair_iterator)
+                    except StopIteration:
+                        pair = None
                 if pair is None:
                     loss = forward_train(
                         batch["state"], batch["target_state"], batch["omega"],
@@ -464,9 +472,10 @@ def main(cfg: DictConfig) -> None:
                     "paired_batches": paired_batches,
                 }
             )
-        if paired_batches != len(pair_loader):
+        if paired_batches != paired_batches_per_epoch:
             raise RuntimeError(
-                f"consumed {paired_batches} paired batches; expected {len(pair_loader)}"
+                f"consumed {paired_batches} paired batches; expected "
+                f"{paired_batches_per_epoch}"
             )
         totals = reduce_totals(totals, dist).cpu()
         train_loss = float(totals[0] / totals[1])
@@ -530,7 +539,14 @@ def main(cfg: DictConfig) -> None:
             logger.log_epoch(metrics)
 
         paired_eval_total = torch.zeros(2, dtype=torch.float64, device=dist.device)
-        for pair in pair_loader:
+        max_paired_eval_batches = int(
+            cfg.training.get("max_paired_eval_batches", len(pair_loader))
+        )
+        if not 1 <= max_paired_eval_batches <= len(pair_loader):
+            raise ValueError("max_paired_eval_batches must be in [1, 8]")
+        for pair_index, pair in enumerate(pair_loader):
+            if pair_index >= max_paired_eval_batches:
+                break
             pair = {
                 key: value.to(dist.device, non_blocking=True)
                 for key, value in pair.items()
@@ -581,7 +597,8 @@ def main(cfg: DictConfig) -> None:
             "paired_stat_loss_weight": paired_weight,
             "paired_stat_horizons": list(paired_horizons),
             "paired_pair_count": len(pair_dataset),
-            "paired_batches_per_epoch": len(pair_loader),
+            "paired_batches_per_epoch": paired_batches_per_epoch,
+            "paired_eval_batches": max_paired_eval_batches,
             "paired_manifest": str(cfg.data.paired_manifest),
             "model_config": OmegaConf.to_container(cfg.model, resolve=True),
         }
