@@ -5,10 +5,14 @@ note. It does not promote a checkpoint, change a threshold, authorize PPO,
 open frozen data, or supersede the historical audit in
 `docs/DYNAMIC_FNO_FORMAL_HANDOFF_AUDIT_20261004.md`.
 
-## Four separate surrogate evidence contracts
+## Four separately consumed surrogate evidence contracts
 
 The existing canonical PPO preflight requires three checkpoint-bound receipts.
-They remain independent scientific protocols:
+They are separate fail-closed interface contracts, but source/history review
+after this note was first written found that receipts 2 and 3 had only consumer
+schemas and boolean fixtures: no historical numerical producer or surrogate-
+error tolerance had been defined. They must not be described as historically
+quantified independent scientific experiments:
 
 1. `FULL40_VALIDATION_SURROGATE_READINESS_PASS`: validation10 endpoint and
    H100 force/action-difference readiness produced by the existing full40 gate
@@ -21,12 +25,21 @@ They remain independent scientific protocols:
    H100 contract. Its producer and evidence must also be SHA-bound.
 
 The newer `development_gate.json` is a fourth, additional development-admission
-contract. It combines the fixed Dynamic6 endpoint response with a six-branch
-sampled force-window check. It has a different status, evidence schema,
-aggregation and stated scientific scope. Its nested endpoint/window decisions
-must not be renamed or mechanically copied into either missing canonical
-receipt. A future candidate must pass the unchanged development admission as
-well as every canonical receipt required by the PPO entry.
+contract. It combines the fixed Dynamic6 start0 endpoint response with a
+six-branch sampled force-window check. It has a different status, evidence
+schema, aggregation and stated scientific scope. In particular, its pooled
+dynamic NRMSE uses six start0 terminal points, while the D012 canonical dynamic
+compatibility check uses all rolling H100 segments. The two quantities are not
+interchangeable.
+
+Lead decision D012, recorded before FC-P003/P003B post-evaluation completed,
+prospectively fills the missing numerical producer definitions using the
+already fixed 2026-10-04 development tolerances. A producer must recompute the
+numbers from SHA-verified evaluation/force evidence and record the D012 source
+and adoption date. It may share evidence with the development gate, but may not
+rename that gate, copy its PASS booleans, or claim the definitions were part of
+the historical predeclaration. A future candidate must pass both the D012
+compatibility receipts and the unchanged development admission.
 
 ## Minimum candidate-aware adapter still needed
 
@@ -50,10 +63,14 @@ must fail closed unless all of the following hold:
 - dry-run output distinguishes missing evidence, scientific failure and an
   operational/schema error. It writes no PPO policy and performs no GPU work.
 
-No new threshold is introduced here. Candidate-specific producers may reuse
-existing evaluators only when their outputs are translated through an audited,
-checkpoint-bound receipt with the original canonical definitions. Otherwise a
-new predeclared producer is required.
+This gap note itself introduces no threshold. D012 now supplies the prospective
+numerical completion: per-branch 1% zero-Cd-scaled drag error and 2.5% zero-
+Cl-prime-scaled lift RMS/mean errors for the sampled window; and, for canonical
+dynamic compatibility, all-rolling H100 total-Cd NRMSE <=0.10, start0 action-
+minus-zero Cd MAE <=0.023, plus explicit action/rate/H100/split verification.
+The separate development dynamic check retains its six-start0-point NRMSE and
+perfect non-tie sign/order requirements. Candidate-specific producers may
+reuse the same evidence only through audited, checkpoint-bound recomputation.
 
 ## Existing code that can be retained
 
@@ -78,4 +95,3 @@ same-start zero-control comparison. Final evidence remains paired real CFD for
 total-drag reduction at least 2%, rear-cylinder Cl-prime ratio at most 1.05,
 and normalized absolute mean rear lift at most 0.10. The CFD-only PPO result is
 preserved as a separate baseline and is not relabelled as FNO-assisted.
-
