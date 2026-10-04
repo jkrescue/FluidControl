@@ -46,6 +46,7 @@ PAIRED_LAMBDA10_TRANSFER_STATUS = (
     "PAIRED_STATS_LAMBDA10_WORKER_TO_SPARK_TRANSFER_VERIFIED"
 )
 PAIRED_POSTEVAL_APPROVAL = Path("docs/FC-P001_APPROVAL.md")
+FC_P003_APPROVAL = Path("docs/FC-P003_APPROVAL.md")
 PAIRED_POSTEVAL_STATUS = "PAIRED_STATS_FC_P001_POSTEVAL_COMPLETE"
 PAIRED_LAMBDA0_POSTEVAL_UNIT = (
     "fluid-control-paired-lambda0-posteval-fcp001-v2-20261004.service"
@@ -530,6 +531,7 @@ def build_sample(
     paired_verdict = paired_scientific_verdict(
         repo, paired["paired_posteval_complete"]
     )
+    fc_p003_approved = (repo / FC_P003_APPROVAL).is_file()
     progress.update(paired)
     stage_complete = (
         prior_posteval_stage_complete
@@ -709,7 +711,10 @@ def build_sample(
     else:
         lambda0_state = "PENDING"
     scientific_status = (
-        paired["paired_posteval_status"]
+        "FC_P003_LEAD_APPROVED_PREFLIGHT"
+        if paired_verdict["status"] == "FC_P001_SCIENTIFIC_REJECTED"
+        and fc_p003_approved
+        else paired["paired_posteval_status"]
         if paired["paired_posteval_complete"]
         else (
             "PAIRED_POSTEVAL_RUNNING"
@@ -750,7 +755,10 @@ def build_sample(
         "scientific_next_stage": {
             "status": scientific_status,
             "active_work": (
-                "fc_p002_failure_map"
+                "fc_p003_interleaved_paired_supervision_preflight"
+                if paired_verdict["status"] == "FC_P001_SCIENTIFIC_REJECTED"
+                and fc_p003_approved
+                else "fc_p002_failure_map"
                 if paired["paired_posteval_complete"]
                 else (
                     "paired_posteval_running"
@@ -766,6 +774,17 @@ def build_sample(
                 "single-factor FC-P003 hypothesis"
             ),
             "fc_p001_verdict": paired_verdict,
+            "fc_p003": {
+                "approval_state": "LEAD_APPROVED" if fc_p003_approved else "PLANNED",
+                "approval_reference": str(FC_P003_APPROVAL),
+                "state": (
+                    "PREFLIGHT_IMPLEMENTATION"
+                    if fc_p003_approved
+                    else "PLANNED_NOT_APPROVED"
+                ),
+                "single_factor": "paired_update_schedule_frontloaded_to_interleaved",
+                "automatic_recovery_eligible": False,
+            },
             "planned_spark_root": str(PAIRED_DATAPIPE_ROOT),
             "planned_worker_unit": PAIRED_DATAPIPE_WORKER_UNIT,
             "lambda0": {

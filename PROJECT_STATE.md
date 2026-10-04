@@ -69,7 +69,7 @@ FNO 当前不是 FNO-3D，也不是直接编码长段历史的模型。输入6�
 
 ## 6. 下一项已优先批准的科学工作
 
-FC-P001已按固定协议完成并拒绝当前λ10干预：两支均未通过力窗口。下一步先完成FC-P002的phase/action/horizon失败图，再由Lead审批一个唯一变更的FC-P003；不同时改架构、数据、归一化和损失，不启动代理PPO。
+FC-P001已按固定协议完成并拒绝当前λ10干预：两支均未通过力窗口。FC-P002已将主要失败定位到动态动作响应的phase/sign交互；Lead已在`docs/FC-P003_APPROVAL.md`批准唯一改变paired监督时序的FC-P003。它保持Main-e2父模型、16次paired update、λ10、数据、归一化、模型、学习率、两epoch、seed和完整后评估不变，仅把原先前16个batch集中施加的paired update均匀分布到整个epoch。不启动代理PPO。
 
 最新执行核查（2026-10-04 15:52 UTC）：FC-P001两支总收据均已回主节点并通过内容复核，λ0 SHA `ab90a921…c677`、λ10 SHA `03b7358d…ef4`，两者均为`DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL`。评估执行阶段完成不等于科学假设成立，更不等于项目完成；代理PPO仍被门禁。
 

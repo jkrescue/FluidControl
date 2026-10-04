@@ -161,6 +161,9 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
                 )
             )
         if paired_posteval:
+            approval = repo / MODULE.FC_P003_APPROVAL
+            approval.parent.mkdir(parents=True, exist_ok=True)
+            approval.write_text("Lead approved FC-P003\n")
             for receipt, gate in (
                 (
                     MODULE.PAIRED_LAMBDA0_POSTEVAL_RECEIPT,
@@ -378,10 +381,11 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         self.assertFalse(result["project_goal_complete"])
         self.assertEqual(
             result["scientific_next_stage"]["status"],
-            "PAIRED_POSTEVAL_COMPLETE_SCIENTIFIC_REJECTED",
+            "FC_P003_LEAD_APPROVED_PREFLIGHT",
         )
         self.assertEqual(
-            result["scientific_next_stage"]["active_work"], "fc_p002_failure_map"
+            result["scientific_next_stage"]["active_work"],
+            "fc_p003_interleaved_paired_supervision_preflight",
         )
         self.assertEqual(
             result["scientific_next_stage"]["fc_p001_verdict"]["status"],
@@ -394,6 +398,10 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         self.assertEqual(
             result["scientific_next_stage"]["lambda10"]["state"],
             "TRAINING_AND_POSTEVAL_STAGE_COMPLETE",
+        )
+        self.assertEqual(
+            result["scientific_next_stage"]["fc_p003"]["state"],
+            "PREFLIGHT_IMPLEMENTATION",
         )
 
     def test_latest_active_lambda0_generation_becomes_authority(self) -> None:
