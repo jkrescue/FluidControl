@@ -104,7 +104,10 @@ models=list((out.parent/'best').glob('FNO.0.2.mdlus'))
 if len(models)!=1 or hashlib.sha256(models[0].read_bytes()).hexdigest()!=checkpoint:
  raise SystemExit('validation10 checkpoint differs')
 manifest=json.loads((data/'manifest.json').read_text())
-if manifest.get('trajectory_counts',{}).get('validation')!=10: raise SystemExit('validation count differs')
+if manifest.get('declared_trajectory_counts',{}).get('validation')!=10 or manifest.get('materialized_trajectory_counts',{}).get('validation')!=10:
+ raise SystemExit('validation count differs')
+if 'frozen_test' in manifest.get('materialized_trajectory_counts',{}):
+ raise SystemExit('frozen test unexpectedly materialized in dev30')
 print(json.dumps({'status':'FC_P003B_VALIDATION10_GPU_REUSE_VERIFIED',
  'sha256':{str(p.relative_to(out)):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}},sort_keys=True))
 PY
