@@ -48,6 +48,7 @@ PAIRED_LAMBDA10_TRANSFER_STATUS = (
 PAIRED_POSTEVAL_APPROVAL = Path("docs/FC-P001_APPROVAL.md")
 FC_P003_APPROVAL = Path("docs/FC-P003_APPROVAL.md")
 FC_P003_UNIT = "fluid-control-fcp003-interleaved-lambda10-20261005.service"
+FC_P003_PREFIX = "fluid-control-fcp003-interleaved-lambda10-"
 FC_P003_PROBE_UNIT = "fluid-control-fcp003-interleaved-probe-20261005.service"
 FC_P003_PROBE_PREFIX = "fluid-control-fcp003-interleaved-probe-"
 FC_P003_ROOT = Path("artifacts/tandem_fno_paired_stats_interleaved_lambda10_20261005")
@@ -386,7 +387,7 @@ def discover_related_units() -> list[str]:
         if columns and (
             columns[0].startswith("fluid-control-train16-")
             or columns[0].startswith(PAIRED_LAMBDA0_POSTEVAL_PREFIX)
-            or columns[0] == FC_P003_UNIT
+            or columns[0].startswith(FC_P003_PREFIX)
             or columns[0].startswith(FC_P003_PROBE_PREFIX)
         ):
             names.append(columns[0])
@@ -586,7 +587,10 @@ def build_sample(
         repo, paired["paired_posteval_complete"]
     )
     fc_p003_approved = (repo / FC_P003_APPROVAL).is_file()
-    fc_p003_unit = units.get(FC_P003_UNIT, {})
+    fc_p003_authority = select_versioned_authority(
+        units, FC_P003_PREFIX, FC_P003_UNIT
+    )
+    fc_p003_unit = units.get(fc_p003_authority, {})
     fc_p003_probe_authority = select_versioned_authority(
         units, FC_P003_PROBE_PREFIX, FC_P003_PROBE_UNIT
     )
@@ -658,7 +662,7 @@ def build_sample(
         WORKER_AUTHORITY_UNIT,
         lambda0_posteval_authority,
         PAIRED_LAMBDA10_POSTEVAL_UNIT,
-        FC_P003_UNIT,
+        fc_p003_authority,
         fc_p003_probe_authority,
     )
     active_units = sorted(
@@ -756,7 +760,7 @@ def build_sample(
     if fc_p003_state == "OPERATIONAL_FAILURE_NEEDS_AGENT_ANALYSIS":
         alerts.append("FC_P003_OPERATIONAL_FAILURE_NEEDS_AGENT_ANALYSIS")
         blocker_reasons.append(
-            f"{FC_P003_UNIT}: approved FC-P003 has no scientific gate; "
+            f"{fc_p003_authority}: approved FC-P003 has no scientific gate; "
             f"result={fc_p003_unit.get('result')} "
             f"status={fc_p003_unit.get('exec_main_status')}; blind restart forbidden"
         )
@@ -911,11 +915,11 @@ def build_sample(
                     fc_p003_state
                 ),
                 "authority_unit": (
-                    FC_P003_UNIT
+                    fc_p003_authority
                     if fc_p003_running
                     else fc_p003_probe_authority
                     if fc_p003_probe_running
-                    else FC_P003_UNIT
+                    else fc_p003_authority
                 ),
                 "main_pid": (
                     fc_p003_unit.get("main_pid", 0)
@@ -941,10 +945,16 @@ def build_sample(
             },
             "parallel_cpu_work": {
                 "owner": "Physics/Data",
-                "status": "DYNAMIC8_EXISTING_RESTART_PAIR_QC",
+                "status": read_json(
+                    repo / "artifacts/fc_p003_dynamic8_pair_candidate_20261005/manifest.json",
+                    {},
+                ).get("status", "DYNAMIC8_EXISTING_RESTART_PAIR_QC"),
                 "scope": "same-restart train-only dynamic8 action/zero pairing audit",
                 "training_authorized": False,
                 "reference": "docs/FC-P003_DYNAMIC8_PAIR_CANDIDATE.md",
+                "artifact": (
+                    "artifacts/fc_p003_dynamic8_pair_candidate_20261005/manifest.json"
+                ),
             },
             "planned_spark_root": str(PAIRED_DATAPIPE_ROOT),
             "planned_worker_unit": PAIRED_DATAPIPE_WORKER_UNIT,
