@@ -40,6 +40,27 @@ RESOURCES = {
 
 
 class TrainingEvaluationWatchdogTests(unittest.TestCase):
+    def test_python_payload_filter_rejects_wrapper_guard_and_wrong_config(self) -> None:
+        needle = "train_tandem_fno_paired_stats.py"
+        required = (
+            "--config-name",
+            "tandem_fno_dynamic_paired_true_state_step_h100",
+        )
+        docker = (
+            "docker run image python scripts/spark_gpu_guard.py -- python "
+            f"scripts/{needle} --config-name {required[1]}"
+        )
+        guard = (
+            "python scripts/spark_gpu_guard.py -- python "
+            f"scripts/{needle} --config-name {required[1]}"
+        )
+        wrong = f"python scripts/{needle} --config-name another_config"
+        trainer = f"python -u scripts/{needle} --config-name {required[1]}"
+        self.assertFalse(MODULE.is_python_payload(docker, needle, required))
+        self.assertFalse(MODULE.is_python_payload(guard, needle, required))
+        self.assertFalse(MODULE.is_python_payload(wrong, needle, required))
+        self.assertTrue(MODULE.is_python_payload(trainer, needle, required))
+
     def test_worker_container_state_uses_ssh_safe_inspect_format(self) -> None:
         inspect = mock.Mock(returncode=0, stdout="true,3233445\n", stderr="")
         top = mock.Mock(

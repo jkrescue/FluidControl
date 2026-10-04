@@ -398,8 +398,15 @@ def unit_state(unit: str) -> dict:
     )
     error = most_specific_error(journal.stdout.splitlines())
     main_pid = int(values.get("MainPID") or 0)
+    required_training_args = (
+        ("--config-name", "tandem_fno_dynamic_paired_true_state_step_h100")
+        if unit == FC_P003C_UNIT
+        else ()
+    )
     training_process_pids = descendant_processes_matching(
-        main_pid, "train_tandem_fno_paired_stats.py"
+        main_pid,
+        "train_tandem_fno_paired_stats.py",
+        required_args=required_training_args,
     )
     posteval_process_pids = sorted(
         set(
@@ -422,7 +429,21 @@ def unit_state(unit: str) -> dict:
     }
 
 
-def descendant_processes_matching(root_pid: int, needle: str) -> list[int]:
+def is_python_payload(
+    command: str, needle: str, required_args: tuple[str, ...] = ()
+) -> bool:
+    """Reject Docker/guard/shell wrappers that merely quote a Python payload."""
+    tokens = command.split()
+    if not tokens or not Path(tokens[0]).name.startswith("python"):
+        return False
+    if "spark_gpu_guard.py" in command or needle not in command:
+        return False
+    return all(value in tokens for value in required_args)
+
+
+def descendant_processes_matching(
+    root_pid: int, needle: str, *, required_args: tuple[str, ...] = ()
+) -> list[int]:
     """Return descendants whose command line proves the actual training payload."""
     if root_pid <= 0:
         return []
@@ -448,7 +469,7 @@ def descendant_processes_matching(root_pid: int, needle: str) -> list[int]:
         parent = queue.pop()
         for pid in children.get(parent, []):
             queue.append(pid)
-            if needle in commands.get(pid, ""):
+            if is_python_payload(commands.get(pid, ""), needle, required_args):
                 descendants.append(pid)
     return sorted(descendants)
 
