@@ -242,7 +242,7 @@ def sha(path):
 lineage=json.loads((out/"lineage.json").read_text())
 development=json.loads((out/"development_gate.json").read_text())
 endpoint=json.loads((out/"validation10/endpoint_gate.json").read_text())
-files={str(p.relative_to(out)):sha(p) for p in sorted(out.rglob("*")) if p.is_file() and p.name!="receipt.json"}
+files={str(p.relative_to(out)):sha(p) for p in sorted(out.rglob("*")) if p.is_file() and p.name not in {"receipt.json","outer.log"}}
 runtime={
  "status":"PAIRED_STATS_FC_P001_POSTEVAL_COMPLETE",
  "branch":label,"candidate_kind":kind,"checkpoint_sha256":checkpoint,

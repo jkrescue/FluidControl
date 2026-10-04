@@ -45,7 +45,7 @@ def validate_complete(out: Path, checkpoint: str) -> None:
     actual = {
         str(path.relative_to(out)): sha256(path)
         for path in sorted(out.rglob("*"))
-        if path.is_file() and path.name != "receipt.json"
+        if path.is_file() and path.name not in {"receipt.json", "outer.log"}
     }
     if receipt.get("sha256") != actual:
         raise ValueError("paired completion hash table differs")

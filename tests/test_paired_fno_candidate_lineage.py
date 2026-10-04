@@ -61,6 +61,7 @@ class PairedLineageTests(unittest.TestCase):
                 "sha256": {"result.json": module.sha256(artifact)},
             }
             (root / "receipt.json").write_text(json.dumps(receipt))
+            (root / "outer.log").write_text("mutable transport log\n")
             module.validate_complete(root, checkpoint)
             artifact.write_text("tampered\n")
             with self.assertRaisesRegex(ValueError, "hash table"):
