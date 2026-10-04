@@ -495,6 +495,48 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         self.assertEqual(stage["fc_p003b"]["unique_pair_count"], 8)
         self.assertEqual(stage["fc_p003b"]["updates_per_epoch"], 16)
 
+    def test_fc_p003b_worker_probe_requires_system_unit_and_container_process(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(
+                directory, receipts=True, paired=True, paired_posteval=True
+            )
+            approval = repo / MODULE.FC_P003B_APPROVAL
+            approval.parent.mkdir(parents=True, exist_ok=True)
+            approval.write_text("Lead approved FC-P003B\n")
+            probe = unit("active")
+            probe.update(
+                main_pid=3198906,
+                container=MODULE.FC_P003B_PROBE_CONTAINER,
+                container_running=True,
+                container_pid=3198991,
+                training_process_pids=[3199281],
+            )
+            result = MODULE.build_sample(
+                repo,
+                None,
+                {
+                    MODULE.MAIN_AUTHORITY_UNIT: unit(),
+                    MODULE.WORKER_AUTHORITY_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA10_POSTEVAL_UNIT: unit(),
+                    MODULE.FC_P003B_UNIT: unit(),
+                    MODULE.FC_P003B_PROBE_UNIT: probe,
+                },
+                RESOURCES,
+                datetime(2026, 10, 5, 0, 2, tzinfo=UTC),
+            )
+        stage = result["scientific_next_stage"]
+        self.assertEqual(stage["approval_reference"], str(MODULE.FC_P003_APPROVAL))
+        self.assertEqual(stage["fc_p003b"]["state"], "TECHNICAL_PROBE_RUNNING")
+        self.assertEqual(
+            stage["fc_p003b"]["authority_unit"], MODULE.FC_P003B_PROBE_UNIT
+        )
+        self.assertEqual(stage["fc_p003b"]["unit_scope"], "system")
+        self.assertEqual(stage["fc_p003b"]["main_pid"], 3198906)
+        self.assertEqual(stage["fc_p003b"]["container_pid"], 3198991)
+        self.assertEqual(stage["fc_p003b"]["training_process_pids"], [3199281])
+        self.assertIn("historical candidate-QC", stage["parallel_cpu_work"]["authorization_scope"])
+
     def test_fc_p003_posteval_running_requires_verified_training_and_process(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = self.make_repo(

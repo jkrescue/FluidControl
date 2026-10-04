@@ -55,6 +55,9 @@ FC_P003_POSTEVAL_UNIT = "fluid-control-fcp003-posteval-queue-v2-20261005.service
 FC_P003_POSTEVAL_PREFIX = "fluid-control-fcp003-posteval-queue-"
 FC_P003B_APPROVAL = Path("docs/FC-P003B_APPROVAL.md")
 FC_P003B_UNIT = "fluid-control-fcp003b-dynamic-pairs-20261005.service"
+FC_P003B_PROBE_UNIT = "fluid-control-fcp003b-dynamic-pairs-probe-v3-20261005.service"
+FC_P003B_CONTAINER = "fcp003b-dynamic-pairs-full"
+FC_P003B_PROBE_CONTAINER = "fcp003b-dynamic-pairs-probe-v3"
 FC_P003B_ROOT = Path(
     "artifacts/tandem_fno_dynamic_paired_interleaved_lambda10_20261005"
 )
@@ -340,7 +343,7 @@ def worker_unit_state(unit: str, *, user_scope: bool = True) -> dict:
     command = (
         "systemctl " + ("--user " if user_scope else "") + "show "
         f"{unit} --property=ActiveState,SubState,Result,ExecMainStatus,"
-        "ExecMainStartTimestamp,ExecMainExitTimestamp --no-pager"
+        "MainPID,ExecMainStartTimestamp,ExecMainExitTimestamp --no-pager"
     )
     result = _command(
         [
@@ -377,9 +380,47 @@ def worker_unit_state(unit: str, *, user_scope: bool = True) -> dict:
         "sub_state": values.get("SubState", "unknown"),
         "result": values.get("Result", "unknown"),
         "exec_main_status": values.get("ExecMainStatus", "unknown"),
+        "main_pid": int(values.get("MainPID", "0") or 0),
         "started_at": values.get("ExecMainStartTimestamp") or None,
         "exited_at": values.get("ExecMainExitTimestamp") or None,
         "last_error_line": None,
+    }
+
+
+def worker_container_state(container: str, process_needle: str) -> dict:
+    """Use the exact owned container to prove a Worker compute payload is live."""
+    base = [
+        "ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", WORKER_HOST,
+    ]
+    inspect = _command(
+        base
+        + [
+            "docker", "inspect", "--format={{.State.Running}} {{.State.Pid}}",
+            container,
+        ]
+    )
+    if inspect.returncode != 0:
+        return {
+            "container": container,
+            "container_running": False,
+            "container_pid": 0,
+            "training_process_pids": [],
+        }
+    fields = inspect.stdout.strip().split()
+    running = len(fields) == 2 and fields[0].lower() == "true"
+    container_pid = int(fields[1]) if running and fields[1].isdigit() else 0
+    top = _command(base + ["docker", "top", container, "-eo", "pid,ppid,args"])
+    pids = []
+    if top.returncode == 0:
+        for line in top.stdout.splitlines()[1:]:
+            columns = line.strip().split(maxsplit=2)
+            if len(columns) == 3 and columns[0].isdigit() and process_needle in columns[2]:
+                pids.append(int(columns[0]))
+    return {
+        "container": container,
+        "container_running": running,
+        "container_pid": container_pid,
+        "training_process_pids": sorted(set(pids)),
     }
 
 
@@ -605,6 +646,15 @@ def build_sample(
     fc_p003_approved = (repo / FC_P003_APPROVAL).is_file()
     fc_p003b_approved = (repo / FC_P003B_APPROVAL).is_file()
     fc_p003b_unit = units.get(FC_P003B_UNIT, {})
+    fc_p003b_probe_unit = units.get(FC_P003B_PROBE_UNIT, {})
+    fc_p003b_running = (
+        fc_p003b_unit.get("active_state") == "active"
+        and bool(fc_p003b_unit.get("training_process_pids"))
+    )
+    fc_p003b_probe_running = (
+        fc_p003b_probe_unit.get("active_state") == "active"
+        and bool(fc_p003b_probe_unit.get("training_process_pids"))
+    )
     fc_p003_authority = select_versioned_authority(
         units, FC_P003_PREFIX, FC_P003_UNIT
     )
@@ -998,6 +1048,10 @@ def build_sample(
                 ).get("status", "DYNAMIC8_EXISTING_RESTART_PAIR_QC"),
                 "scope": "same-restart train-only dynamic8 action/zero pairing audit",
                 "training_authorized": False,
+                "authorization_scope": (
+                    "historical candidate-QC artifact only; FC-P003B training is "
+                    "separately Lead-approved below"
+                ),
                 "reference": "docs/FC-P003_DYNAMIC8_PAIR_CANDIDATE.md",
                 "artifact": (
                     "artifacts/fc_p003_dynamic8_pair_candidate_20261005/manifest.json"
@@ -1007,14 +1061,41 @@ def build_sample(
                 "approval_state": "LEAD_APPROVED" if fc_p003b_approved else "PLANNED",
                 "approval_reference": str(FC_P003B_APPROVAL),
                 "state": (
-                    "PRECHECK"
-                    if fc_p003b_approved
-                    and fc_p003b_unit.get("active_state") != "active"
+                    "TRAINING_RUNNING"
+                    if fc_p003b_running
+                    else "TECHNICAL_PROBE_RUNNING"
+                    if fc_p003b_probe_running
+                    else "PROBE_UNIT_ACTIVE_AWAITING_PROCESS_EVIDENCE"
+                    if fc_p003b_probe_unit.get("active_state") == "active"
                     else "UNIT_ACTIVE_AWAITING_PROCESS_EVIDENCE"
                     if fc_p003b_unit.get("active_state") == "active"
+                    else "PRECHECK"
+                    if fc_p003b_approved
                     else "PLANNED_NOT_APPROVED"
                 ),
-                "authority_unit": FC_P003B_UNIT,
+                "authority_unit": (
+                    FC_P003B_PROBE_UNIT
+                    if fc_p003b_probe_unit.get("active_state") == "active"
+                    else FC_P003B_UNIT
+                ),
+                "unit_scope": "system",
+                "main_pid": (
+                    fc_p003b_probe_unit.get("main_pid", 0)
+                    or fc_p003b_unit.get("main_pid", 0)
+                ),
+                "container": (
+                    fc_p003b_probe_unit.get("container")
+                    if fc_p003b_probe_unit.get("active_state") == "active"
+                    else fc_p003b_unit.get("container")
+                ),
+                "container_pid": (
+                    fc_p003b_probe_unit.get("container_pid", 0)
+                    or fc_p003b_unit.get("container_pid", 0)
+                ),
+                "training_process_pids": (
+                    fc_p003b_probe_unit.get("training_process_pids", [])
+                    or fc_p003b_unit.get("training_process_pids", [])
+                ),
                 "worker_root": (
                     "/home/USER/workspace/fluid_control_fcp003b_dynamic_pairs_20261005"
                 ),
@@ -1058,7 +1139,9 @@ def build_sample(
             "next_owner": paired["next_owner"],
             "approval_required": paired["approval_required"],
             "approval_state": paired["approval_state"],
-            "approval_reference": paired["approval_reference"],
+            "approval_reference": (
+                str(FC_P003_APPROVAL) if fc_p003_approved else paired["approval_reference"]
+            ),
             "protocol_review": {
                 "status": "LAMBDA0_LAMBDA10_PROTOCOL_MATCH_VERIFIED",
                 "physicsnemo_image_id": (
@@ -1124,6 +1207,17 @@ def main() -> None:
         PAIRED_LAMBDA10_POSTEVAL_UNIT, user_scope=False
     )
     units[FC_P003B_UNIT] = worker_unit_state(FC_P003B_UNIT, user_scope=False)
+    units[FC_P003B_UNIT].update(
+        worker_container_state(FC_P003B_CONTAINER, "train_tandem_fno_paired_stats.py")
+    )
+    units[FC_P003B_PROBE_UNIT] = worker_unit_state(
+        FC_P003B_PROBE_UNIT, user_scope=False
+    )
+    units[FC_P003B_PROBE_UNIT].update(
+        worker_container_state(
+            FC_P003B_PROBE_CONTAINER, "train_tandem_fno_paired_stats.py"
+        )
+    )
     resources = resource_state(previous.get("resources") if previous else None)
     sample = build_sample(repo, previous, units, resources, utc_now())
     output.mkdir(parents=True, exist_ok=True)
