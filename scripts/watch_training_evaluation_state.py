@@ -56,6 +56,7 @@ FC_P003_POSTEVAL_PREFIX = "fluid-control-fcp003-posteval-queue-"
 FC_P003B_APPROVAL = Path("docs/FC-P003B_APPROVAL.md")
 FC_P003B_UNIT = "fluid-control-fcp003b-dynamic-pairs-20261005.service"
 FC_P003B_PROBE_UNIT = "fluid-control-fcp003b-dynamic-pairs-probe-v3-20261005.service"
+FC_P003B_POSTEVAL_UNIT = "fluid-control-fcp003b-posteval-wait-20261005.service"
 FC_P003B_CONTAINER = "fcp003b-dynamic-pairs-full"
 FC_P003B_PROBE_CONTAINER = "fcp003b-dynamic-pairs-probe-v3"
 FC_P003B_ROOT = Path(
@@ -656,6 +657,7 @@ def build_sample(
     fc_p003b_approved = (repo / FC_P003B_APPROVAL).is_file()
     fc_p003b_unit = units.get(FC_P003B_UNIT, {})
     fc_p003b_probe_unit = units.get(FC_P003B_PROBE_UNIT, {})
+    fc_p003b_posteval_unit = units.get(FC_P003B_POSTEVAL_UNIT, {})
     fc_p003b_running = (
         fc_p003b_unit.get("active_state") == "active"
         and bool(fc_p003b_unit.get("training_process_pids"))
@@ -759,6 +761,7 @@ def build_sample(
         fc_p003_authority,
         fc_p003_probe_authority,
         fc_p003_posteval_authority,
+        FC_P003B_POSTEVAL_UNIT,
     )
     active_units = sorted(
         name
@@ -1114,6 +1117,21 @@ def build_sample(
                 "updates_per_epoch": 16,
                 "training_authorized": fc_p003b_approved,
                 "scientific_result_available": False,
+                "posteval": {
+                    "authority_unit": FC_P003B_POSTEVAL_UNIT,
+                    "unit_scope": "system",
+                    "main_pid": fc_p003b_posteval_unit.get("main_pid", 0),
+                    "state": (
+                        "WAITING_FOR_TRAINING_COMPLETION"
+                        if fc_p003b_posteval_unit.get("active_state") == "active"
+                        and fc_p003b_running
+                        else "POSTEVAL_RUNNING"
+                        if fc_p003b_posteval_unit.get("active_state") == "active"
+                        else "POSTEVAL_NOT_ACTIVE"
+                    ),
+                    "scientific_result_available": False,
+                    "automatic_recovery_eligible": False,
+                },
             },
             "planned_spark_root": str(PAIRED_DATAPIPE_ROOT),
             "planned_worker_unit": PAIRED_DATAPIPE_WORKER_UNIT,
@@ -1226,6 +1244,9 @@ def main() -> None:
         worker_container_state(
             FC_P003B_PROBE_CONTAINER, "train_tandem_fno_paired_stats.py"
         )
+    )
+    units[FC_P003B_POSTEVAL_UNIT] = worker_unit_state(
+        FC_P003B_POSTEVAL_UNIT, user_scope=False
     )
     resources = resource_state(previous.get("resources") if previous else None)
     sample = build_sample(repo, previous, units, resources, utc_now())

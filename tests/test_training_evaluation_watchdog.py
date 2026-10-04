@@ -562,6 +562,41 @@ class TrainingEvaluationWatchdogTests(unittest.TestCase):
         self.assertEqual(stage["fc_p003b"]["training_process_pids"], [3199281])
         self.assertIn("historical candidate-QC", stage["parallel_cpu_work"]["authorization_scope"])
 
+    def test_fc_p003b_posteval_wait_is_distinct_from_scientific_result(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(
+                directory, receipts=True, paired=True, paired_posteval=True
+            )
+            approval = repo / MODULE.FC_P003B_APPROVAL
+            approval.parent.mkdir(parents=True, exist_ok=True)
+            approval.write_text("Lead approved FC-P003B\n")
+            training = unit("active")
+            training.update(main_pid=3233318, training_process_pids=[3233861])
+            posteval = unit("active")
+            posteval["main_pid"] = 3330235
+            result = MODULE.build_sample(
+                repo,
+                None,
+                {
+                    MODULE.MAIN_AUTHORITY_UNIT: unit(),
+                    MODULE.WORKER_AUTHORITY_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA0_POSTEVAL_UNIT: unit(),
+                    MODULE.PAIRED_LAMBDA10_POSTEVAL_UNIT: unit(),
+                    MODULE.FC_P003B_UNIT: training,
+                    MODULE.FC_P003B_PROBE_UNIT: unit(),
+                    MODULE.FC_P003B_POSTEVAL_UNIT: posteval,
+                },
+                RESOURCES,
+                datetime(2026, 10, 5, 0, 3, tzinfo=UTC),
+            )
+        stage = result["scientific_next_stage"]["fc_p003b"]
+        self.assertEqual(stage["state"], "TRAINING_RUNNING")
+        self.assertEqual(
+            stage["posteval"]["state"], "WAITING_FOR_TRAINING_COMPLETION"
+        )
+        self.assertEqual(stage["posteval"]["main_pid"], 3330235)
+        self.assertFalse(stage["posteval"]["scientific_result_available"])
+
     def test_fc_p003_posteval_running_requires_verified_training_and_process(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = self.make_repo(
