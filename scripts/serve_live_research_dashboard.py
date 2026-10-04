@@ -23,6 +23,8 @@ from urllib.parse import urlparse
 
 C_EPOCH1_PREVIEW = Path("artifacts/fcp003c_epoch1_flow_visualization_preview_20261005")
 C_EPOCH1_SHA = "fac949916859211b24553c410005aaff8ace057ce2bac5e08ac4dec971ecefba"
+C_FINAL_PREVIEW = Path("artifacts/fcp003c_final_flow_visualization_20261005")
+C_FINAL_SHA = "f78c2f3341663ed2f6e7f4c64a0bf6539a065d2e7f11ada8f19f493320697eb4"
 
 RUN = Path("artifacts/distributed_runs/gateb_multistep_20261002/formal/tandem_fno_total_drag_rollout_seed20261003")
 SECOND_RUN = Path("artifacts/distributed_runs/gateb_multistep_seed20261004_20261002/formal/tandem_fno_total_drag_rollout_seed20261004")
@@ -216,6 +218,7 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 <p class="small">λ=0：不加配对统计损失；λ=10：加入配对统计损失，比较同一初态下不同动作的阻力与升力变化。两者使用同一评估协议。100 步表示连续预测 10 D/U，并非 100 轮训练。最终还需动态动作和时间窗口内的受力统计检验。</p>
 <section id="flow-current"><h2>流场预测 · 真实 CFD / FNO / 误差</h2>
 <div class="card"><div class="row"><h3>当前 C 模型 · 第一轮训练中预览</h3><select id="c-preview-step"><option value="001">1 步 / 0.1 D/U</option><option value="010">10 步 / 1 D/U</option><option value="050">50 步 / 5 D/U</option><option value="100" selected>100 步 / 10 D/U</option></select></div><p id="c-preview-status">等待预测图及数据校验完成。</p><img id="c-preview-image" alt="第一轮模型：真实 CFD、连续预测及绝对误差" style="width:100%" hidden><p class="small">仅一条 b01 动态转速验证轨迹，从 tU/D=130 的真实流场出发，之后连续预测；不是完整验证集的精度，也不是最终模型或闭环控制结果。左列：真实 CFD；中列：模型预测；右列：绝对误差。真实值与预测值共用每幅图的 1–99% 色标，误差使用独立色标。</p></div>
+<p><label for="c-preview-profile">当前候选图的动作轨迹：</label><select id="c-preview-profile" disabled><option value="plus" selected>正向起始旋转</option><option value="zero">无旋转</option><option value="minus">负向起始旋转</option></select></p>
 <details><summary>历史模型流场与完整验证结果（不是当前 C 模型）</summary><section>
 <div class="card"><div class="row"><h3>最新模型在动态动作上的预测精度</h3><select id="flow-model"><option value="lambda0">λ=0 对照模型</option><option value="lambda10">λ=10 配对统计模型</option></select></div>
 <div id="flow-metrics">读取最新评估结果…</div><p class="small">速度误差是 u、v 联合相对 L2；压力误差单独计算。这里是六条动态验证轨迹上全部可用起点的汇总，不能与单个起点的终点阻力门槛混用。ROI 是下游局部流场，不是整个 CFD 域。</p></div>
@@ -289,10 +292,15 @@ function renderLead(d){
  $('lead-models').innerHTML=['lambda0','lambda10'].map((k,i)=>{const c=d.research_overview?.[k]||{}, g=c.endpoint||{}, f=g.h100_force_gate||{}, a=g.h100_start0_action_difference||{};return `<div class="card"><h3>${i?'λ=10 · 配对统计训练':'λ=0 · 对照训练'}</h3><p>本轮训练：${p[k+'_training_complete']?'2 / 2 轮完成':'待核实'}；完整评估：${p[k+'_posteval_complete']?'记录已完成，需查看科学判定':'未完成或结果尚未回传'}</p><div class="number">${pct(f.pooled_total_cd_nrmse)}</div><div class="label">验证集 · 第 100 步总阻力归一化误差（越低越好）</div><p class="small">动作间阻力差预测误差：${num(a.pairwise_delta_cd_mae,5)}；已评估 100 步片段：${f.segments??'待回传'}。</p><div>${g.status==='FULL40_VALIDATION_SURROGATE_READINESS_PASS'?'静态动作终点检验通过；不代表动态／窗口检验通过':g.status?'静态动作终点检验未通过':'等待验证记录回传'}</div><div class="small">证据：${esc(c.path)} · ${esc(c.updated_at)}</div></div>`}).join('');
 }
 function renderCurrentFlow(d){
- const preview=d.fc_p003c_epoch1_preview||{}, image=$('c-preview-image'), previewH=$('c-preview-step').value;
- $('c-preview-status').textContent=preview.ready?'第一轮模型预测图已生成并核验；第二轮训练状态见上方。预览不代表最终验收。':'预览尚未生成或文件校验未通过；不展示历史图片代替当前模型。';
+ const finalReady=d.fc_p003c_final_preview?.ready===true;
+ const preview=finalReady?d.fc_p003c_final_preview:(d.fc_p003c_epoch1_preview||{}), image=$('c-preview-image'), previewH=$('c-preview-step').value;
+ const previewProfile=$('c-preview-profile');previewProfile.disabled=!finalReady;if(!finalReady)previewProfile.value='plus';
+ image.closest('.card').querySelector('h3').textContent=finalReady?'当前 C 候选 · 第二轮模型预测图':'当前 C 模型 · 第一轮训练中预览';
+ image.alt=finalReady?'第二轮候选：真实 CFD、连续预测及绝对误差':'第一轮模型：真实 CFD、连续预测及绝对误差';
+ image.closest('.card').querySelector('p.small').textContent='每张图对应一条 b01 动作轨迹，从 tU/D=130 的真实流场出发，之后连续预测；不是完整验证集汇总，也不证明闭环控制通过。左列：真实 CFD；中列：模型预测；右列：绝对误差。真实值与预测值共用每幅图的 1–99% 色标，误差使用独立色标。';
+ $('c-preview-status').textContent=finalReady?'第二轮候选的三条 b01 动作轨迹已核验，可切换查看；均为单起点可视化，不是全部验证集汇总，也不代表闭环验收通过。':preview.ready?'第二轮候选图尚未就绪，明确保留第一轮模型预览；不是最终候选结果。':'预览尚未生成或文件校验未通过；不展示历史图片代替当前模型。';
  image.hidden=!preview.ready;
- if(preview.ready){const url=`/figure/c-epoch1/${previewH}.png`;if(image.getAttribute('src')!==url)image.src=url;}else image.removeAttribute('src');
+ if(preview.ready){const url=finalReady?`/figure/c-final/${previewProfile.value}/${previewH}.png`:`/figure/c-epoch1/${previewH}.png`;if(image.getAttribute('src')!==url)image.src=url;}else image.removeAttribute('src');
  const k=$('flow-model').value,c=d.research_overview?.[k]||{},s=c.dynamic_summary||{};
  const rows=['1','10','50','100'].map(h=>{const r=s[h]||{};return `<tr><td>${h} 步</td><td>${pct(r.velocity_relative_l2)}</td><td>${pct(r.field_relative_l2_u_v_p?.[2])}</td><td>${r.segments??'待回传'}</td></tr>`}).join('');
  $('flow-metrics').innerHTML=`<table style="width:100%;text-align:left;line-height:2"><thead><tr><th>预测时长</th><th>速度相对误差</th><th>压力相对误差</th><th>评估片段</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -468,7 +476,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  $('cem').textContent=d.cem?'CEM 控制筛选已完成，结果待审计。':`CEM：等待 FNO 的 100 步总阻力误差降至 10% 以下。新增 CFD 平均求解进度 ${num(average,0)}%。`;
  $('ppo').textContent=d.ppo?'HydroGym PPO 有当前目标的新记录。':'当前总阻力目标的 HydroGym PPO 尚未启动。历史末柱目标的 PPO 曾完成 32 步真实 CFD 闭环，但目标差 +0.003855（更差），不能视为当前控制收益。';figure()}
 async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();renderLead(d);renderAdmission(d);renderCurrentFlow(d);render(d);renderActiveExperiment(d)}catch(e){$('clock').textContent='连接失败：'+e.message;$('lead-now').textContent='连接失败，当前页面数值仅是上次采样，不代表实时状态。'}}
-for(const id of ['flow-model','flow-profile','flow-step','c-preview-step'])$(id).onchange=()=>{if(latest)renderCurrentFlow(latest)};
+for(const id of ['flow-model','flow-profile','flow-step','c-preview-step','c-preview-profile'])$(id).onchange=()=>{if(latest)renderCurrentFlow(latest)};
 $('case').onchange=figure;$('horizon').onchange=figure;$('h50-horizon').onchange=()=>{if(latest)renderH50Figures(latest)};window.onresize=()=>{if(latest)render(latest)};refresh();setInterval(refresh,5000);
 </script></body></html>'''
 
@@ -513,19 +521,31 @@ def _current_training_log(root: Path, experiment: str = "FC-P003") -> dict:
 
 
 def _c_epoch1_preview(root: Path):
+    return _c_preview(root, final=False)
+
+
+def _c_final_preview(root: Path):
+    return _c_preview(root, final=True)
+
+
+def _c_preview(root: Path, *, final: bool):
     """Expose only a complete, hash-bound interim preview; never a gate result."""
-    base = root / C_EPOCH1_PREVIEW
+    base = root / (C_FINAL_PREVIEW if final else C_EPOCH1_PREVIEW)
+    status = ("FCP003C_FINAL_CANDIDATE_FLOW_VISUALIZATION_COMPLETE" if final
+              else "FCP003C_INTERIM_EPOCH1_FLOW_VISUALIZATION_PREVIEW_COMPLETE")
+    expected_sha = C_FINAL_SHA if final else C_EPOCH1_SHA
     receipt = _read_json(base / "receipt.json", {})
     if not isinstance(receipt, dict):
         return {"ready": False}
-    if (receipt.get("status") != "FCP003C_INTERIM_EPOCH1_FLOW_VISUALIZATION_PREVIEW_COMPLETE"
-        or receipt.get("interim_epoch") != 1
-        or receipt.get("checkpoint_sha256") != C_EPOCH1_SHA
+    if (receipt.get("status") != status
+        or receipt.get("checkpoint_epoch" if final else "interim_epoch") != (2 if final else 1)
+        or receipt.get("checkpoint_sha256") != expected_sha
         or any(receipt.get(key) is not False for key in (
             "formal_gate_modified", "ppo_launched", "training_performed", "frozen_test_accessed"))):
         return {"ready": False}
     required = ["evaluation.json", "segments.json"] + [
-        f"figures/full40_dynamic_validation_b01_plus/horizon_{h}_start_0000.png"
+        f"figures/full40_dynamic_validation_b01_{profile}/horizon_{h}_start_0000.png"
+        for profile in (("zero", "minus", "plus") if final else ("plus",))
         for h in ("001", "010", "050", "100")
     ]
     hashes = receipt.get("output_sha256", {})
@@ -539,7 +559,8 @@ def _c_epoch1_preview(root: Path):
                 return {"ready": False}
     except OSError:
         return {"ready": False}
-    return {"ready": True, "interim_epoch": 1, "checkpoint_sha256": C_EPOCH1_SHA}
+    return {"ready": True, "checkpoint_epoch": 2 if final else 1,
+            "interim_epoch": None if final else 1, "checkpoint_sha256": expected_sha}
 
 
 def _research_overview(root: Path):
@@ -1772,6 +1793,18 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(file.read_bytes(), "image/png")
             except OSError:
                 return self._send(b"not found", "text/plain", 404)
+        if path.startswith("/figure/c-final/"):
+            parts = path.removeprefix("/figure/c-final/").split("/")
+            if (len(parts) != 2 or parts[0] not in ("zero", "minus", "plus")
+                or parts[1] not in ("001.png", "010.png", "050.png", "100.png")
+                or not _c_final_preview(self.root)["ready"]):
+                return self._send(b"not found", "text/plain", 404)
+            file = (self.root / C_FINAL_PREVIEW / f"figures/full40_dynamic_validation_b01_{parts[0]}"
+                    / f"horizon_{parts[1].removesuffix('.png')}_start_0000.png")
+            try:
+                return self._send(file.read_bytes(), "image/png")
+            except OSError:
+                return self._send(b"not found", "text/plain", 404)
         if path.startswith("/figure/c-epoch1/"):
             name = path.removeprefix("/figure/c-epoch1/")
             if name not in ("001.png", "010.png", "050.png", "100.png") or not _c_epoch1_preview(self.root)["ready"]:
@@ -1876,6 +1909,7 @@ class Handler(BaseHTTPRequestHandler):
             data["free_ar_ablation"] = _free_ar_ablation(self.root)
             data["research_overview"] = _research_overview(self.root)
             data["fc_p003c_epoch1_preview"] = _c_epoch1_preview(self.root)
+            data["fc_p003c_final_preview"] = _c_final_preview(self.root)
             data["current_training_log"] = _current_training_log(self.root)
             data["fc_p003c_training_log"] = _current_training_log(self.root, "FC-P003C")
             data["training_evaluation_watchdog"] = _read_json(
