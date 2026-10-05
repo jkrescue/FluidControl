@@ -339,6 +339,20 @@ function renderActiveExperiment(d){
  if(independent?.ready===true){
   const age=Date.now()-Date.parse(independent.sampled_at_utc||'');
   const fresh=Number.isFinite(age)&&age>=0&&age<60000;
+  const terminal=independent.terminal;
+  if(terminal?.verified===true){
+   const title=!fresh?'当前状态采样已过期':terminal.formal.running?'训练完成 · 正式预测精度评估进行中':'训练完成 · 正式评估结果待核';
+   $('lead-now').textContent=title+'。训练窗口诊断未显示受力预测改善；尚未开始新模型 PPO 或真实 CFD 闭环验收。';
+   const card=document.createElement('div');card.className='card';
+   const heading=document.createElement('h3');heading.textContent=title;card.appendChild(heading);
+   const summary=document.createElement('p');summary.className='bad';summary.textContent='1368 次训练更新及模型完整性核验完成。后圆柱升力平均绝对误差：单步在 '+terminal.h1_regressions+'/6 个窗口变大，多步在 '+terminal.ar_regressions+'/6 个窗口变大。流场预测指标'+(terminal.fields_unchanged?'保持一致':'需复核')+'。';card.appendChild(summary);
+   const table=document.createElement('table');
+   table.innerHTML='<tr><th>真实 CFD 训练窗口</th><th>单步 Cl 误差：原 → 新</th><th>连续 100 步 Cl 误差：原 → 新</th></tr>'+terminal.rows.map((r,i)=>'<tr><td>'+['零转速 · b00','变化转速 · b00','变化转速 · b02','变化转速 · b04','变化转速 · b06','历史控制动作 · b00'][i]+'</td><td>'+num(r.h1_parent,4)+' → '+num(r.h1_candidate,4)+'</td><td>'+num(r.ar_parent,4)+' → '+num(r.ar_candidate,4)+'</td></tr>').join('');card.appendChild(table);
+   const note=document.createElement('p');note.textContent='误差越小越好。单步每次输入真实 CFD 流场；连续预测使用模型上一步的流场。这里是六个固定训练窗口的诊断，不是验证集结论、减阻率或闭环成功。正式评估仍使用原指标；下方流场图片属于已标注的历史模型。';card.appendChild(note);
+   $('lead-models').prepend(card);$('train16-formal-progress').textContent=title;
+   $('train16-formal-detail').textContent='阶段：训练完整性已核验 → 训练窗口诊断已完成（存在退步）→ 正式精度评估 → 合格后训练新 PPO → 真实 CFD 在线反馈。最终减阻与升力约束尚未验收。';
+   return;
+  }
   const title=!fresh?'训练状态采样已过期':independent.running?'独立气动力 FNO · 训练进行中':independent.service_state==='unknown'?'训练状态暂时读取失败':'独立气动力 FNO · 训练进程未运行，结果待核';
   $('lead-now').textContent=title+'。原流场FNO保持不变，另一个官方FNO学习阻力和升力；尚未通过独立精度评估。';
   const card=document.createElement('div');card.className='card';
@@ -955,6 +969,68 @@ def _parse_fcp013_live(output: str, now: float, unit: str = "fluid-control-fcp01
             "admission": False}
 
 
+FCP013_TERMINAL_FILES = {
+    "completion_receipt.json": "3c53a7fb94d5ad5f29bed6522317389f02842d078d157d63e20b90b6948e2d90",
+    "candidate_audit.json": "1c280b291ae7ded1f8e63ccc46ba40a7e085e7d7b6fa69f0dddff18ffac704a7",
+    "fixed_six_diagnostics/result.json": "8e0255c955c1b26fdff240a0854fc0a92d3bd247cc38ed6c268fc1d397cec873",
+}
+
+
+def _parse_fcp013_posteval_live(output: str) -> dict:
+    fields = dict(line.split("=", 1) for line in output.splitlines() if "=" in line)
+    try:
+        pid = int(fields.get("MainPID", "0"))
+    except ValueError:
+        pid = 0
+    command = fields.get("ExecStart", "")
+    bound = (fields.get("InvocationID") == "7235b2f06282435a89b84964e384c60f"
+             and "FCP_POSTEVAL_PROFILE=p013" in command
+             and "p013_posteval_chain_f95048c3a786_immutable/scripts/run_fcp008_posteval_spark.sh --execute" in command)
+    return {"state": fields.get("ActiveState", "unknown"),
+            "running": bool(bound and fields.get("ActiveState") == "active"
+                            and fields.get("SubState") == "running" and pid > 0),
+            "admission": False}
+
+
+def _fcp013_terminal_progress(root: Path) -> dict:
+    base = root / "artifacts/fcp013_independent_force_fno_training_r2_20261005"
+    try:
+        evidence = {}
+        for name, digest in FCP013_TERMINAL_FILES.items():
+            raw = (base / name).read_bytes()
+            if hashlib.sha256(raw).hexdigest() != digest:
+                return {"verified": False}
+            evidence[name] = json.loads(raw)
+        completion, audit = evidence["completion_receipt.json"], evidence["candidate_audit.json"]
+        result = evidence["fixed_six_diagnostics/result.json"]
+        if (completion.get("status") != "FC_P013_TRAINING_COMPLETE_NOT_ADMISSION"
+                or completion.get("candidate_audit_sha256") != FCP013_TERMINAL_FILES["candidate_audit.json"]
+                or completion.get("dual_manifest_sha256") != audit.get("dual_manifest_sha256")
+                or result.get("dual_manifest_sha256") != audit.get("dual_manifest_sha256")
+                or result.get("status") != "FC_P013_FIXED_TRAIN_DIAGNOSTICS_COMPLETE_NOT_ADMISSION"
+                or result.get("tensor_sha256_before") != result.get("tensor_sha256_after")):
+            return {"verified": False}
+        parent = result["panels"]["p009_parent"]["windows"]
+        candidate = result["panels"]["p013_terminal"]["windows"]
+        if len(parent) != 6 or len(candidate) != 6 or any(a["identity"] != b["identity"] for a, b in zip(parent, candidate)):
+            return {"verified": False}
+        rows = [{"h1_parent": a["true_state_h1_force_mae"][3],
+                 "h1_candidate": b["true_state_h1_force_mae"][3],
+                 "ar_parent": a["free_ar_force_mae"][3],
+                 "ar_candidate": b["free_ar_force_mae"][3]} for a, b in zip(parent, candidate)]
+        formal = subprocess.run(["systemctl", "--user", "show", "fluid-control-fcp013-posteval-r2-20261005.service",
+                                 "-p", "ActiveState", "-p", "SubState", "-p", "MainPID", "-p", "ExecStart", "-p", "InvocationID"],
+                                capture_output=True, text=True, timeout=2, check=False)
+        return {"verified": True, "rows": rows,
+                "h1_regressions": sum(r["h1_candidate"] > r["h1_parent"] for r in rows),
+                "ar_regressions": sum(r["ar_candidate"] > r["ar_parent"] for r in rows),
+                "fields_unchanged": all(a[k] == b[k] for a, b in zip(parent, candidate)
+                                        for k in ("true_state_h1_field_relative_l2_uvp", "free_ar_field_relative_l2_uvp")),
+                "formal": _parse_fcp013_posteval_live(formal.stdout), "admission": False}
+    except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError, IndexError):
+        return {"verified": False}
+
+
 def _fcp013_training(root: Path) -> dict:
     if FCP013_TRAINING_APPROVAL_SHA is None:
         return {"ready": False}
@@ -974,7 +1050,8 @@ def _fcp013_training(root: Path) -> dict:
         status = _parse_fcp013_live(state.stdout + "\n" + journal.stdout, time.time(), unit)
     except (OSError, subprocess.SubprocessError):
         status = _parse_fcp013_live("", time.time())
-    return {"ready": True, "attempt": 2, "unit": unit, "sampled_at_utc": datetime.now(UTC).isoformat(), **status}
+    return {"ready": True, "attempt": 2, "unit": unit, "sampled_at_utc": datetime.now(UTC).isoformat(),
+            "terminal": _fcp013_terminal_progress(root), **status}
 
 
 def _fcp012_diagnostic(root: Path) -> dict:
