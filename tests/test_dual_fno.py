@@ -175,6 +175,7 @@ def test_official_loader_constructs_two_models_and_checks_aero_metadata(
                 "aerodynamic_initial_model_sha256": MODULE.FLOW_MODEL_SHA256,
                 "aerodynamic_initial_state_sha256": MODULE.FLOW_STATE_SHA256,
                 "optimizer_steps": 1368,
+                "selection_performed": False,
                 "validation_accessed": False,
                 "frozen_test_accessed": False,
                 "ppo_executed": False,

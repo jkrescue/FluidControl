@@ -361,6 +361,7 @@ def load_dual_fno(
         "aerodynamic_initial_model_sha256": FLOW_MODEL_SHA256,
         "aerodynamic_initial_state_sha256": FLOW_STATE_SHA256,
         "optimizer_steps": 1368,
+        "selection_performed": False,
         "validation_accessed": False,
         "frozen_test_accessed": False,
         "ppo_executed": False,
