@@ -1,0 +1,23 @@
+{
+  "status": "FC_P009_JOINT_FORCE_ROW_CANDIDATE_EXECUTION_APPROVED",
+  "approved_by": "project_lead_root",
+  "implementation_sha256": "dbe75763f8c480feefc54cb657f53848c24055e88ecc70a9a0aaaad544d81ecf",
+  "candidate_kind": "FC_P009_TRAIN_ONLY_JOINT_FORCE_ROW_CANDIDATE",
+  "candidate_build_authorized": true,
+  "p009_result_sha256": "1321c30a1e12172b85b269405c208981390f952bdf6f03a7fe2dd21f3bb91daf",
+  "p009_cache_sha256": "fc1b84fdd5a43d2b29e1f068531940bd6c12f320556d767a2540dfb5a238ca84",
+  "joint_analysis_sha256": "931fcd2ddd6901ddfbb3ecdbfe9774d7b1e5fe6d17479c87c44ccaf51ff2b0bc",
+  "parent_model_sha256": "f78c2f3341663ed2f6e7f4c64a0bf6539a065d2e7f11ada8f19f493320697eb4",
+  "parent_training_state_sha256": "a63186685c998115507c423c5db8d467e845469dc0a5b087b47f341b361a8b4a",
+  "resolved_config_sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9",
+  "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+  "alpha": 0.0,
+  "domain_mix": {"free_ar": 0.5, "matched_weight_h1": 0.5},
+  "validation_or_frozen_accessed": false,
+  "ppo_executed": false,
+  "formal_evaluation_authorized": false,
+  "minimum_mem_available_gib": 20,
+  "timeout_minutes": 5,
+  "native_sanity_scope": "Deterministic first base20 train batch4, H1 only; field rows and all non-force tensors unchanged; official save/reload; default TF32/high",
+  "scientific_admission": false
+}
