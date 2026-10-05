@@ -29,6 +29,50 @@ PRECISION = {
     "cudnn_allow_tf32": True,
     "float32_matmul_precision": "high",
 }
+CALIBRATED_KIND = "FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE"
+DIAGNOSTIC_KIND = "fc_p008_force_row_calibrated_epoch0"
+PRECISION_STATUS = "FC_P008_FORMAL_EVALUATION_DEFAULT_TF32_HIGH"
+CHAIN_STATUS = "FC_P008_IMMUTABLE_POSTEVAL_CHAIN_STAGED"
+
+
+def configure_profile(name: str) -> None:
+    """Select an exact identity profile; numerical validation stays shared."""
+    global CANDIDATE_KIND, LINEAGE_STATUS, STEP_STATUS, COMPLETE_STATUS
+    global CALIBRATED_KIND, DIAGNOSTIC_KIND, PRECISION_STATUS, CHAIN_STATUS
+    profiles = {
+        "p008": (
+            "full_train_force_row_recalibration",
+            "FC_P008_CANDIDATE_LINEAGE_PASS",
+            "FC_P008_POSTEVAL_STEP_COMPLETE",
+            "FC_P008_POSTEVAL_COMPLETE",
+            "FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE",
+            "fc_p008_force_row_calibrated_epoch0",
+            "FC_P008_FORMAL_EVALUATION_DEFAULT_TF32_HIGH",
+            "FC_P008_IMMUTABLE_POSTEVAL_CHAIN_STAGED",
+        ),
+        "p009": (
+            "joint_h1_free_ar_force_row_recalibration",
+            "FC_P009_CANDIDATE_LINEAGE_PASS",
+            "FC_P009_POSTEVAL_STEP_COMPLETE",
+            "FC_P009_POSTEVAL_COMPLETE",
+            "FC_P009_TRAIN_ONLY_JOINT_FORCE_ROW_CANDIDATE",
+            "fc_p009_joint_force_row_calibrated_epoch0",
+            "FC_P009_FORMAL_EVALUATION_DEFAULT_TF32_HIGH",
+            "FC_P009_IMMUTABLE_POSTEVAL_CHAIN_STAGED",
+        ),
+    }
+    if name not in profiles:
+        raise ValueError("unknown calibrated post-evaluation profile")
+    (
+        CANDIDATE_KIND,
+        LINEAGE_STATUS,
+        STEP_STATUS,
+        COMPLETE_STATUS,
+        CALIBRATED_KIND,
+        DIAGNOSTIC_KIND,
+        PRECISION_STATUS,
+        CHAIN_STATUS,
+    ) = profiles[name]
 EXPECTED = {
     "validation10": (
         "validation10/evaluation.json",
@@ -132,6 +176,17 @@ def validate_lineage(candidate: Path, lineage_path: Path) -> tuple[dict, Path, P
     return lineage, model, state
 
 
+def calibrated_kwargs(lineage: dict) -> dict:
+    value = {
+        "allow_calibrated_epoch_zero": True,
+        "expected_calibrated_model_sha256": lineage["checkpoint_sha256"],
+        "expected_calibrated_state_sha256": lineage["checkpoint_state_sha256"],
+    }
+    if CALIBRATED_KIND != "FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE":
+        value["expected_calibrated_kind"] = CALIBRATED_KIND
+    return value
+
+
 def validate_science_step(
     repo: Path,
     candidate: Path,
@@ -141,11 +196,7 @@ def validate_science_step(
     numerical_source: Path,
 ) -> None:
     checkpoint = candidate / lineage["checkpoint_relative_directory"]
-    calibrated = {
-        "allow_calibrated_epoch_zero": True,
-        "expected_calibrated_model_sha256": lineage["checkpoint_sha256"],
-        "expected_calibrated_state_sha256": lineage["checkpoint_state_sha256"],
-    }
+    calibrated = calibrated_kwargs(lineage)
     if step == "validation10":
         diagnostic = module(
             numerical_source / "scripts/audit_dev30_validation_diagnostic.py",
@@ -156,7 +207,7 @@ def validate_science_step(
             out / "validation10/segments.json",
             repo / "data/curated/tandem_cylinders_matched_start_full40_dev30_v1",
             checkpoint,
-            "fc_p008_force_row_calibrated_epoch0",
+            DIAGNOSTIC_KIND,
             **calibrated,
         )
         if load(out / "validation10/diagnostic.json") != recomputed:
@@ -329,7 +380,7 @@ def validate_complete(
 def validate_precision(path: Path) -> None:
     value = load(path)
     if value != {
-        "status": "FC_P008_FORMAL_EVALUATION_DEFAULT_TF32_HIGH",
+        "status": PRECISION_STATUS,
         "official_image_id": IMAGE_ID,
         **PRECISION,
     }:
@@ -339,7 +390,7 @@ def validate_precision(path: Path) -> None:
 def validate_chain_receipt(path: Path, numerical_source: Path) -> str:
     value = load(path)
     root = path.parent.resolve()
-    if value.get("status") != "FC_P008_IMMUTABLE_POSTEVAL_CHAIN_STAGED":
+    if value.get("status") != CHAIN_STATUS:
         raise ValueError("FC-P008 posteval chain status differs")
     for key in ("git_commit", "git_tree", "numerical_source_commit", "numerical_source_tree"):
         item = value.get(key)
@@ -367,7 +418,9 @@ def main() -> None:
     parser.add_argument("--chain-receipt", type=Path, required=True)
     parser.add_argument("--formal-approval-sha256", required=True)
     parser.add_argument("--step", choices=(*EXPECTED, "complete"), required=True)
+    parser.add_argument("--profile", choices=("p008", "p009"), default="p008")
     args = parser.parse_args()
+    configure_profile(args.profile)
     lineage, _, _ = validate_lineage(args.candidate, args.lineage)
     chain_sha = validate_chain_receipt(args.chain_receipt, args.numerical_source)
     if len(args.formal_approval_sha256) != 64:
@@ -398,7 +451,7 @@ def main() -> None:
             args.step,
             {**lineage, "lineage_sha256": sha256(args.lineage)},
         )
-    print(f"FC_P008_POSTEVAL_REUSE_VALID step={args.step}")
+    print(f"{COMPLETE_STATUS}_REUSE_VALID step={args.step}")
 
 
 if __name__ == "__main__":
