@@ -64,8 +64,6 @@ def parse_args(argv=None):
     parser.add_argument("--history-k", type=int, choices=(1, 4), default=1)
     parser.add_argument("--receipt-name", choices=RECEIPT_NAMES, default=OUTPUT.name)
     args = parser.parse_args(argv)
-    if args.history_k == 4 and args.receipt_name != RECEIPT_NAMES[0]:
-        parser.error("K4 preparation permits only the fixed r1 receipt")
     return args
 
 

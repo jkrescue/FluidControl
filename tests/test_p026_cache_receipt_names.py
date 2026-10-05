@@ -20,7 +20,7 @@ def test_old_default_is_preparation_only_r1():
     assert args.history_k == 1
 
 
-@pytest.mark.parametrize("k,name", [(1, name) for name in helper.RECEIPT_NAMES] + [(4, helper.RECEIPT_NAMES[0])])
+@pytest.mark.parametrize("k,name", [(k, name) for k in (1, 4) for name in helper.RECEIPT_NAMES])
 def test_explicit_names_stay_in_exact_arm_directory(name, k):
     args = helper.parse_args(["--receipt-name", name, "--history-k", str(k)])
     target = helper.OUTPUTS[args.history_k].with_name(args.receipt_name)
@@ -35,7 +35,7 @@ def test_arbitrary_paths_or_names_rejected(name):
         helper.parse_args(["--receipt-name", name])
 
 
-@pytest.mark.parametrize("k,name", [(1, name) for name in helper.RECEIPT_NAMES] + [(4, helper.RECEIPT_NAMES[0])])
+@pytest.mark.parametrize("k,name", [(k, name) for k in (1, 4) for name in helper.RECEIPT_NAMES])
 def test_existing_selected_receipt_cannot_repeat_advice(tmp_path, monkeypatch, name, k):
     files = {f"data/curated/{family}/train/software_fixture_{i}.h5": "a" * 64
              for family, count in helper.FAMILIES.items() for i in range(count)}
@@ -63,7 +63,7 @@ def test_only_exact_arms_allowed(arm):
         helper.parse_args(["--history-k", arm])
 
 
-@pytest.mark.parametrize("name", helper.RECEIPT_NAMES[1:])
-def test_k4_later_receipts_rejected(name):
+@pytest.mark.parametrize("name", ["cache_advice_20261006_r5.jsonl", "../cache_advice_20261006_r2.jsonl", "/tmp/escape"])
+def test_k4_outside_fixed_receipts_rejected(name):
     with pytest.raises(SystemExit):
         helper.parse_args(["--history-k", "4", "--receipt-name", name])

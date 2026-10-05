@@ -59,3 +59,21 @@ ActiveState `activating`, SubState `start`. Its interim ExecMainStatus 0 is
 not terminal success. The observed training log had reached 81/1368 windows
 and 10 updates. Cache maintenance completed; training and scientific review
 did not. No restart, second pass, model acceptance or PPO authorization follows.
+
+## Separate r2 preparation and authorization
+
+Subsequent live K4 observations showed MemFree declining again to about21.7GiB
+while the same invocation continued training. Root separately authorizes one
+r2 pass after fresh checks; this is not an automatic consequence of r1.
+The reviewed helper now permits fixed r1-r4 names for both arms, retaining
+exclusive creation; this merely removes the two-line K4 r1-only parser check.
+All exact44/path/hash/stat/advice/memory/deadline behavior is unchanged.
+
+Helper SHA: `3ca107dd1ddb2ac70a457f752088b423bf96f438f0b4f963d482929625d77ed9`.
+Tests SHA: `50a3cefd48c596daaf7c4860ea7f8e38e0186e1c78ab92313851ba0365126db0`.
+Implementation30CPU tests0.02s; independent30tests0.03s. These are mocked
+software tests, not cache operations. Original r1 receipt remains unchanged.
+Exact new target:
+`artifacts/fcp026_history_training_k4_20261005/cache_advice_20261006_r2.jsonl`.
+No r3/r4 execution is approved. Record actual r2 completion separately;
+do not restart training or alter its protocol.
