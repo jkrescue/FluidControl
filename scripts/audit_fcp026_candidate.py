@@ -41,6 +41,28 @@ def equal(actual, expected, label):
             json.dumps(expected, sort_keys=True, allow_nan=False), label)
 
 
+def equal_aggregate(actual, expected, label):
+    """Only recomputed diagnostic float leaves admit four binary64 ULPs."""
+    require(type(actual) is type(expected), label)
+    if type(actual) is dict:
+        require(set(actual) == set(expected), label)
+        for key in actual:
+            equal_aggregate(actual[key], expected[key], f"{label}/{key}")
+    elif type(actual) is list:
+        require(len(actual) == len(expected), label)
+        for index, (left, right) in enumerate(zip(actual, expected, strict=True)):
+            equal_aggregate(left, right, f"{label}/{index}")
+    elif type(actual) is float:
+        require(math.isfinite(actual) and math.isfinite(expected), label)
+        require(abs(actual - expected) <= 4 * max(math.ulp(actual), math.ulp(expected)), label)
+    elif type(actual) is int or actual is None:
+        require(actual == expected, label)
+    else:
+        # Aggregate schemas contain only objects/lists, float statistics, integer
+        # counts and optional None; booleans and other leaf types are not metrics.
+        raise ValueError(label)
+
+
 def fields(actual, expected, label):
     require(isinstance(actual, dict), label)
     equal({key: actual.get(key) for key in expected}, expected, label)
@@ -252,8 +274,8 @@ def validate_panel(panel, trainer, p020, identities, k, indices):
                 number(values[key], key)
             require(math.isclose(values["bias_mse"], values["signed_mean_error"]**2, rel_tol=1e-10, abs_tol=1e-14), "bias statistic algebra")
             require(math.isclose(values["rms_error_mse"], (values["predicted_tail_rms"]-values["truth_tail_rms"])**2, rel_tol=1e-9, abs_tol=1e-14), "RMS statistic algebra")
-    equal(panel["aggregate"], p020.aggregate(rows), "panel aggregate recomputation")
-    equal(panel["history_subgroups"], trainer.grouped_panel(rows), "warm/padded aggregate recomputation")
+    equal_aggregate(panel["aggregate"], p020.aggregate(rows), "panel aggregate recomputation")
+    equal_aggregate(panel["history_subgroups"], trainer.grouped_panel(rows), "warm/padded aggregate recomputation")
 
 
 def validate_execution(repo, root, k, approval_sha, observation_path, observation_sha, unit, invocation):
