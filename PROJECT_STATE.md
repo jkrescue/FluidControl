@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**当前阶段：FC-P018原完整正式评估结束，独立复核FAIL（FC-E028，2026-10-05）**。同一formal invocation `ef589f7dbeff4fa0ab064309409971ad`已保留为active/exited、success、MainPID0、ExecMainCode1/Status0；不是运行中的默认exit0。18项receipt文件SHA与三阶段身份全部核对，冻结原审计器从raw force-window重算得到完全相同字典。完整receipt SHA `d4d3f85a79e31d50866bb8dbd23ec90e0453cde39ef6b314e3db80344d33869c`；原联合准入 **1/6，Cd5/6、Cl′RMS2/6、meanCl4/6，FAIL**。仅b01 zero联合通过；四个旋转分支RMS误差0.0683247/0.122662/0.0685903/0.0813667仍超过约0.0294限值。validation10与dynamic6的端点组件通过不能覆盖窗口失败。formal守卫1017个样本最低MemAvailable110.045368GiB/MemFree27.460377GiB，均高于20GiB。
+
+同dynamic6协议P009/P015/P018的H100 pooled Cd NRMSE分别0.01813790/0.01929335/0.01791093，macro分别0.01562564/0.01834680/0.01569608，后Cl MAE分别0.08429627/0.08544903/0.08507009；原flow指标全部不变。P018相对P015部分指标改善，但不构成准入或完整波动幅值修复。详见`docs/FC_P018_TERMINAL_REVIEW_20261005.md`。没有新PPO、frozen-test或代理辅助真实CFD成功，项目未完成。下一步仅准备P019 objective/statistic gradient诊断，尚未批准或执行；不盲目追加训练。
+
+物理平均升力0.10条件与代理均值预测误差门槛保持区分，最早15:20 UTC才进入用户授权的条件复评，本记录不修改任何门槛。以下14:30及更早状态按历史保留，不覆盖上述终态。
+
 **当前阶段：P018训练终态与官方CPU双模型重载已核验，原完整正式评估运行中（2026-10-05 14:30 UTC附近核验）**。训练同一invocation `1ca4654aab074278bb2efdfff8dbc1eb`成功退出，171次AdamW更新/1368窗口、44条真实训练轨迹、固定学习率`1.5625e-7`与协议均通过完整性审计；冻结flow和两项lifting bias保持不变。候选审计SHA `03153fa5…2323b9`、completion SHA `bce5fb46…205bf`，不是科学准入。实际官方镜像CPU双模型重载收据SHA `d3625877…91bdde`；外部容器`79e72220…1a6407`退出0，镜像/命令证据见`docs/FC_P018_CPU_DUAL_RELOAD_EXECUTION_20261005.json`。前两次只读默认缓存目录导致的失败保留，成功尝试只将缓存重定向到容器临时目录。
 
 正式评估于14:20 UTC启动，当前精确service `fluid-control-fcp018-posteval-20261005.service`、invocation `ef589f7dbeff4fa0ab064309409971ad`、MainPID `56992`为`activating/start`：这是oneshot任务正在运行，不是空闲或已完成。审批SHA `7b137d46…ed275b`，冻结评估链SHA `6a97e0b4…0efe3f`，不可变外层守卫SHA `4bb55e02…24a0c`；原validation10→dynamic6→force-window→联合审计协议不变，同时守护MemAvailable和MemFree至少20GiB。输出在`artifacts/fcp018_reduced_rate_training_20261005/posteval_fc_p018`，运行日志/资源在`formal_supervision_r1`。尚无完整正式精度结论；固定六个训练窗H1目标改善3.53%、自回归目标恶化0.126%，不等于收敛或准入。下一步完成并独立复核原完整门槛；只有合格候选才进入兼容新PPO与配对真实CFD反馈。P015联合1/6失败仍保留；没有新的代理辅助真实CFD成功，项目未完成。

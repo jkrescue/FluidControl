@@ -1,5 +1,11 @@
 # Research roadmap and prioritized backlog
 
+## 当前状态：P018完整正式FAIL，P019仅准备（FC-E028，2026-10-05）
+
+P018同一formal invocation `ef589f7dbeff4fa0ab064309409971ad`已成功退出；18项完整receipt SHA和原审计器raw重算全部一致。原联合门槛FAIL：joint1/6、Cd5/6、后Cl′RMS2/6、均值预测4/6，仅b01zero联合通过。receipt SHA `d4d3f85a79e31d50866bb8dbd23ec90e0453cde39ef6b314e3db80344d33869c`。全部formal资源样本通过双20GiB要求，最低available110.045368/free27.460377GiB。四个旋转分支幅值误差仍失败，不能以端点Cd或均值改善代替整体准入。详细比较见`FC_P018_TERMINAL_REVIEW_20261005.md`。
+
+下一步只准备P019 objective/statistic gradient诊断，未批准、未执行；先经独立协议/代码复核与Lead批准再运行。没有新PPO或代理辅助真实CFD成功。物理平均横向载荷0.10与代理均值预测误差分开，本记录不改门槛；用户授权复评最早15:20UTC。下列14:30运行记录为历史，不覆盖终态。
+
 ## 当前状态（2026-10-05 14:30 UTC附近核验）
 
 P018已完成固定171次更新/1368窗口，终态完整性审计及实际官方CPU双模型重载通过，但尚未科学准入。审计/训练completion/重载收据SHA分别为`03153fa5…2323b9`、`bce5fb46…205bf`、`d3625877…91bdde`；实际镜像与退出证据见`FC_P018_CPU_DUAL_RELOAD_EXECUTION_20261005.json`。原完整正式评估已于14:20 UTC启动：service `fluid-control-fcp018-posteval-20261005.service`、invocation `ef589f7dbeff4fa0ab064309409971ad`，当前`activating/start`且PID56992存活，属于运行中。审批SHA `7b137d46…ed275b`、冻结链SHA `6a97e0b4…0efe3f`；validation10、dynamic6、force-window及原联合门槛均不变。完成后先独立复核完整结果，再决定准入或下一项有依据的干预；不自动启动PPO。
@@ -22,7 +28,7 @@ CFD真值 → 代理预测 → 控制决策 → 在线CFD反馈。分开管理�
 | P1 data-space analysis | Re、alpha、L/D、相位和动作时间历程覆盖 | 区分已见参数、未见相位、未见动作历程、参数外推；同初态配对成立 |
 | P2 surrogate accuracy | u/v/p及前后受力固定协议基线 | 明确各动作/相位/时间范围误差，不以单个平均数掩盖失败 |
 | P3 rollout stability | H1/10/50/100时序误差、相位/幅值、必要物理诊断 | 有限输出与准确预测分别判定；不把H100外推为800步稳定 |
-| P4 control-oriented prediction | P015完整评估失败；P016未支持同时改善。P017支持局部首步过冲；P018终态审计及官方CPU双模型重载已通过，原完整正式评估运行中 | 完成并独立核对原validation10、dynamic6、force-window及联合门槛；通过才进入兼容策略训练，失败则根据实测误差制定下一项干预 |
+| P4 control-oriented prediction | P015完整评估失败；P016未支持同时改善；P017支持局部首步过冲；P018完整正式FAIL，joint1/6，旋转分支RMS仍全失败 | 保留FC-E028；仅准备P019目标/统计量梯度诊断，未批准执行；合格候选才进入兼容策略训练 |
 | P5 interpretable control baseline | 条件性MPC/有限动作搜索对照 | 代理准入后才执行；相同物理目标、动作约束和真实CFD对照；不强制推翻PPO |
 | P6 RL integration | 绑定合格新FNO重新训练PPO | 环境/模型/归一化/策略SHA对应，训练及独立评估无数值异常 |
 | P7 real-CFD closed loop | 冻结策略、配对OpenFOAM反馈验证 | 满足原物理指标；再逐步增加未参与开发的测试与多seed证据 |
@@ -46,7 +52,7 @@ P5不是“已有PPO必须作废”的依赖；P4不通过时MPC和surrogate PPO
 | FC-P015 / COMPLETE — DEVELOPMENT FAIL | 八窗口平均梯度是否改善完整控制预测要求 | 171次更新完成，官方双模型重载及完整formal已独立复核；receipt353004af…95a5b，joint1/6、Cd5/6、RMS2/6、meanCl2/6 | 拒绝PPO准入，保留FC-E025。相比P013部分改善仍不能满足要求，不继续无依据单遍训练或仅bias修正 |
 | FC-P016 / COMPLETE — SIMULTANEOUS REPAIR NOT SUPPORTED | 固定训练分布下原非线性受力FNO能否同时降低均值及波形误差 | 独立核验32次更新/192次窗口计算完整，result f760d2e7…54248。H1/AR objective +0.175%/-3.803%，bias² +420.873%/+208.108%；波形与RMS误差下降不足以覆盖偏差恶化 | 保留FC-E026；不保存候选、不启动PPO或自动追加训练。下项检查同批优化机制，不把失败归因容量或ROI |
 | FC-P017 / COMPLETE — LOCAL OVERSHOOT EVIDENCE | 首个AdamW方向局部下降但完整位移过大 | 独立复核完成；同六窗objective初始0.00624614、完整位移0.12793663、正1/64位移0.00614612、负1/64位移0.00640211；结果ebfb80fc…95d。仅训练数据诊断，无候选保存 | 支持该初始步的有限位移过大，不证明全数据收敛、最优学习率或泛化；据此批准P018单因素全量对照，原门槛不变 |
-| FC-P018 / FORMAL RUNNING — NOT ADMITTED | 相同数据、初态、梯度累积与目标下，降低学习率能否改善控制相关预测 | 同44轨迹、1368窗口、171更新已完成，仅lr从1e-5降为1.5625e-7；终态审计与实际官方CPU双模型重载通过。原正式评估invocation ef589f7dbeff4fa0ab064309409971ad运行中；训练六窗H1目标-3.53%、自回归+0.126%仅为诊断 | 完成原完整正式评估及独立审计；通过后再批准兼容新PPO和真实CFD反馈，否则保留负结果并继续有依据的干预。无新策略或代理辅助闭环成功，不以工程完成代替科学准入 |
+| FC-P018 / COMPLETE — ORIGINAL ADMISSION FAIL | 相同数据、初态、梯度累积与目标下，降低学习率能否改善控制相关预测 | 171更新/1368窗口、lr1.5625e-7完整；18SHA和原门槛重算一致。joint1/6、Cd5/6、RMS2/6、mean4/6；端点组件PASS不能覆盖窗口FAIL | 保留FC-E028；不启动PPO，不降低门槛。仅准备P019目标/统计量梯度诊断，需另批执行 |
 | FC-P004 / GATED | 合格代理上的短时域显式动作规划可提供解释性控制对照 | 可选MPC候选序列受相同动作约束，在真实CFD配对评价；预先规定时域和计算预算 | 用于区分代理/控制器问题，不因为MPC可解释就视为安全可靠 |
 | FC-P005 / GATED | 合格新代理支持学到有物理收益的PPO策略 | 新policy仅在准确绑定的FNO中训练，随后真实CFD配对；指标沿用原标准 | 通过后才能主张surrogate-assisted闭环，而不是CFD-only成果 |
 | FC-P006 / LATER | 收益在未参与开发的样本/随机种子上可重复 | 固定候选后开展冻结集/新独立样本、多seed，报告区间及失效 | 扩大或收缩稳健性结论；反复开发用的validation不当最终test |

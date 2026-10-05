@@ -1,5 +1,15 @@
 # Experiment ledger
 
+## FC-E028 — FC-P018 reduced-rate complete formal rejection (2026-10-05)
+
+Same P009 parent, 44 real train trajectories, fixed 1368-window order and eight-window accumulation; the sole optimizer override relative to P015 is learning rate1.5625e-7. All171 actual AdamW steps, finite moments, frozen tensors, protocol and data hashes were independently checked. Actual official CPU dual reload passed; earlier cache failures are preserved.
+
+Original complete evaluation finished on invocation `ef589f7dbeff4fa0ab064309409971ad`, retainedactive/exited with success/0 and MainPID0. All18 receipt hashes and original raw numerical auditor output exactly match. Complete receipt SHA `d4d3f85a79e31d50866bb8dbd23ec90e0453cde39ef6b314e3db80344d33869c`. Verdict **FAIL**: joint1/6, Cd5/6, rearCl fluctuationRMS2/6, rearmeanCl4/6. Only b01zero passes jointly. Four rotating RMS errors0.0683247/0.122662/0.0685903/0.0813667 remain above approximately0.0294. Formal memory minima available110.045368GiB/free27.460377GiB; all1017 samples satisfy both20GiB floors.
+
+Same-protocol dynamic6 pooledH100CdNRMSE0.0179109253 is lower than P0090.0181379026/P0150.0192933478, but H100rearClMAE0.0850700867 remains worse than P0090.0842962672. Flow metrics exactly equal the frozen parent. Do not merge pooled/macro/start0 quantities or claim componentPASS as admission. See `docs/FC_P018_TERMINAL_REVIEW_20261005.md` for full identities and comparisons.
+
+No new PPO, frozen-test access or surrogate-assisted physical success. P019 objective/statistic gradient diagnostic is preparation only, not approved/executed. Physical mean-lift0.10 remains separate from surrogate mean-error limits; no threshold change before the conditional15:20UTC review and none made here. Preserve all earlier results below.
+
 ## FC-E025 — FC-P015 complete formal rejection (2026-10-05)
 
 Eight-window gradient accumulation completed171 updates over the original1368
