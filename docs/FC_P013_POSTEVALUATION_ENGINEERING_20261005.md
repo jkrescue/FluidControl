@@ -2,6 +2,12 @@
 
 This is implementation evidence, not a completed model evaluation or admission.
 
+## Terminal audit automation approval — 2026-10-05
+
+Lead approves one CPU-only finalizer waiting on the exact r2 systemd invocation `d0138175399a40f487493919a674e1a5`. It must see inactive/dead/success with normal exit code zero, then run the complete frozen candidate auditor, verify state remains terminal and atomically persist an audit plus training-completion receipt. The finalizer cannot launch evaluation, PPO, change models, or restart training. An active unit with Result=success is explicitly not completion. Unknown/missing units and observation timeout fail without restarting. Existing receipts must match exactly and are never overwritten.
+
+Execution budget: <=14600 seconds waiting, CPUQuota=100%, MemoryMax=4 GiB, immutable finalizer and audit source, no GPU. This does not change the experiment or scientific criteria. It removes the manual handoff after training; original fixed-six diagnostics and separately approved formal evaluation remain required. Terminal receipt labels scientific_admission=false and diagnostics/evaluation pending.
+
 ## Recovery generation update — 2026-10-05 07:12 UTC
 
 The first training attempt suffered a verified CUDA copy stall and was preserved, not accepted. See `FC_P013_RECOVERY_APPROVAL_20261005.md`. The identical experiment is running in the separate r2 output, observed at 88/1368 updates. No terminal candidate or formal scientific metrics exist yet.
