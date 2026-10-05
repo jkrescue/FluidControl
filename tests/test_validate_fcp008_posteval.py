@@ -84,6 +84,22 @@ def test_lineage_requires_exact_pair_epoch_and_nontraining_scope(tmp_path: Path)
         validator.validate_lineage(candidate, lineage_path)
 
 
+def test_numeric_equivalence_allows_roundoff_but_not_scientific_change() -> None:
+    baseline = {"metric": 0.015410710256854032, "pass": False, "label": "fixed"}
+    assert validator.numerically_equivalent(
+        baseline,
+        {"metric": 0.015410710256854036, "pass": False, "label": "fixed"},
+    )
+    assert not validator.numerically_equivalent(
+        baseline,
+        {"metric": 0.0155, "pass": False, "label": "fixed"},
+    )
+    assert not validator.numerically_equivalent(
+        baseline,
+        {"metric": 0.015410710256854032, "pass": True, "label": "fixed"},
+    )
+
+
 @pytest.mark.parametrize("step", ["validation10", "dynamic6", "force_window"])
 def test_science_steps_delegate_to_reviewed_numerical_validator(
     tmp_path: Path, step: str, monkeypatch: pytest.MonkeyPatch
@@ -91,9 +107,23 @@ def test_science_steps_delegate_to_reviewed_numerical_validator(
     candidate, lineage = candidate_lineage(tmp_path)
     source = candidate / "source_snapshot"
     out = tmp_path / "out"
+    report_path = out / "validation10/evaluation.json"
+    write_json(
+        report_path,
+        {
+            "checkpoint_dir": "/workspace/checkpoint",
+            "evaluation_data": "/workspace/devdata",
+            "normalization_data": "/workspace/devdata",
+        },
+    )
+    write_json(out / "validation10/segments.json", {})
     expected = {
         "validation_diagnostic": {"kind": "validation"},
-        "endpoint_gate": {"kind": "endpoint"},
+        "endpoint_gate": {
+            "kind": "endpoint",
+            "checkpoint_dir": "/workspace/checkpoint",
+            "report_sha256": validator.sha256(report_path),
+        },
         "dynamic6": {"kind": "dynamic"},
         "development": {"kind": "development"},
     }
@@ -117,6 +147,18 @@ def test_science_steps_delegate_to_reviewed_numerical_validator(
                         "checkpoint_state_sha256"
                     ],
                 }
+            if self.value["kind"] == "endpoint":
+                report = json.loads(Path(args[0]).read_text(encoding="utf-8"))
+                assert report["checkpoint_dir"] == str(
+                    candidate / lineage["checkpoint_relative_directory"]
+                )
+                assert report["evaluation_data"] == str(
+                    tmp_path / "data/curated/tandem_cylinders_matched_start_full40_v1"
+                )
+                result = dict(self.value)
+                result["checkpoint_dir"] = report["checkpoint_dir"]
+                result["report_sha256"] = validator.sha256(Path(args[0]))
+                return result
             return self.value
 
     def fake_module(path: Path, name: str):

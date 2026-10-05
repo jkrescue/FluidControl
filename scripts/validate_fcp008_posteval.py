@@ -7,6 +7,8 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import math
+import tempfile
 from pathlib import Path
 from types import ModuleType
 
@@ -56,6 +58,23 @@ def load(path: Path) -> dict:
     if not isinstance(value, dict):
         raise TypeError(f"expected JSON object: {path}")
     return value
+
+
+def numerically_equivalent(left: object, right: object) -> bool:
+    """Compare recomputed JSON while tolerating only machine-roundoff floats."""
+    if isinstance(left, bool) or isinstance(right, bool):
+        return left is right
+    if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+        return math.isclose(float(left), float(right), rel_tol=1e-14, abs_tol=1e-14)
+    if isinstance(left, dict) and isinstance(right, dict):
+        return left.keys() == right.keys() and all(
+            numerically_equivalent(left[key], right[key]) for key in left
+        )
+    if isinstance(left, list) and isinstance(right, list):
+        return len(left) == len(right) and all(
+            numerically_equivalent(a, b) for a, b in zip(left, right, strict=True)
+        )
+    return left == right
 
 
 def module(path: Path, name: str) -> ModuleType:
@@ -146,18 +165,40 @@ def validate_science_step(
             numerical_source / "scripts/audit_full40_validation_gate.py",
             "fcp008_endpoint_gate",
         )
-        recomputed = endpoint.audit(
-            out / "validation10/evaluation.json",
-            out / "validation10/segments.json",
-            repo
-            / "artifacts/tandem_cylinders/matched_start_full40_predeclared_20261003.json",
-            checkpoint,
-            repo / "data/curated/tandem_cylinders_matched_start_full40_v1",
-            numerical_source / "conf/tandem_fno_full40_h20.yaml",
-            IMAGE_ID,
-            **calibrated,
+        report_path = out / "validation10/evaluation.json"
+        report = load(report_path)
+        host_data = repo / "data/curated/tandem_cylinders_matched_start_full40_v1"
+        # The immutable report correctly records its container paths.  Give the
+        # host-side auditor an ephemeral path view, then restore the immutable
+        # container identity and original report digest before comparison.
+        host_view = dict(report)
+        host_view.update(
+            checkpoint_dir=str(checkpoint),
+            evaluation_data=str(host_data),
+            normalization_data=str(host_data),
         )
-        if load(out / "validation10/endpoint_gate.json") != recomputed:
+        with tempfile.TemporaryDirectory(prefix="fcp008-endpoint-view-") as directory:
+            view_path = Path(directory) / "evaluation.json"
+            view_path.write_text(
+                json.dumps(host_view, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            recomputed = endpoint.audit(
+                view_path,
+                out / "validation10/segments.json",
+                repo
+                / "artifacts/tandem_cylinders/matched_start_full40_predeclared_20261003.json",
+                checkpoint,
+                host_data,
+                numerical_source / "conf/tandem_fno_full40_h20.yaml",
+                IMAGE_ID,
+                **calibrated,
+            )
+        recomputed["checkpoint_dir"] = report["checkpoint_dir"]
+        recomputed["report_sha256"] = sha256(report_path)
+        if not numerically_equivalent(
+            load(out / "validation10/endpoint_gate.json"), recomputed
+        ):
             raise ValueError("FC-P008 endpoint gate differs")
     elif step == "dynamic6":
         dynamic = module(
