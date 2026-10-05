@@ -335,6 +335,22 @@ function renderAdmission(d){
  }
 }
 function renderActiveExperiment(d){
+ const ar=d.free_ar_diagnostic;
+ if(ar?.ready===true){
+  const age=Date.now()-Date.parse(ar.sampled_at_utc);
+  const live=Number.isFinite(age)&&age>=0&&age<60000&&ar.service_state==='active';
+  const title=live?'正在计算 · 连续预测受力误差对照':'连续预测受力误差对照 · 当前未确认运行';
+  const detail=`已记录 ${ar.windows} / 1368 个预测窗口（${ar.rows} / 136800 条预测记录）。每个窗口连续预测100步；这些窗口复用已有44条CFD轨迹，不是新增独立仿真。`;
+  $('lead-now').textContent=title+'。'+detail;
+  const card=document.createElement('div');card.className='card';
+  const h=document.createElement('h3');h.textContent=title;card.appendChild(h);
+  const p=document.createElement('p');p.textContent=detail;card.appendChild(p);
+  const note=document.createElement('p');note.textContent='目的：比较真实流场输入与模型连续预测输入下的阻力、升力误差，判断受力输出层是否需要针对连续预测重新拟合。本轮不更新流场模型，不训练PPO；下方保留既有真实CFD与FNO流场对照。';card.appendChild(note);
+  $('lead-models').prepend(card);
+  $('train16-formal-progress').textContent=title;
+  $('train16-formal-detail').textContent=detail+' 最近进度距今 '+num(ar.progress_age_seconds,0)+' 秒。数值有限：'+(ar.finite===true?'是':'未确认')+'。实验完成不代表闭环验收通过。';
+  return;
+ }
  const fc=d.full_train_calibration;
  if(fc?.ready===true){
   const liveAge=Date.now()-Date.parse(fc.sampled_at_utc);
@@ -713,6 +729,35 @@ def _dual_node_watchdog(root: Path):
     }:
         return None
     return payload
+
+
+def _free_ar_diagnostic(root: Path) -> dict:
+    """Bounded progress observation; process liveness is never inferred from logs."""
+    path = root / "artifacts/fcp009_free_ar_force_readout_cache_20261005/run.log"
+    try:
+        with path.open("rb") as stream:
+            stream.seek(0, 2)
+            stream.seek(max(0, stream.tell() - 65536))
+            lines = stream.read().decode("utf-8", errors="replace").splitlines()
+        for line in reversed(lines):
+            try:
+                item = json.loads(line)
+            except ValueError:
+                continue
+            if not isinstance(item, dict) or item.get("event") != "fcp009_extract_progress":
+                continue
+            windows, rows = item.get("windows"), item.get("rows")
+            if type(windows) is not int or not 0 <= windows <= 1368 or type(rows) is not int or rows != windows * 100:
+                continue
+            return {"ready": True, "windows": windows, "rows": rows,
+                    "finite": item.get("finite") is True,
+                    "service_state": _service_state("fluid-control-fcp009-free-ar-cache-20261005.service"),
+                    "sampled_at_utc": datetime.now(UTC).isoformat(),
+                    "progress_age_seconds": max(0, datetime.now(UTC).timestamp() - path.stat().st_mtime),
+                    "admission": False}
+    except OSError:
+        pass
+    return {"ready": False}
 
 
 def _fcp008_service_state() -> str:
@@ -2129,6 +2174,7 @@ class Handler(BaseHTTPRequestHandler):
             data.update(_latest_evidence(self.root))
             data["fixed_feature_readout"] = _fixed_feature_readout(self.root)
             data["full_train_calibration"] = _full_train_calibration(self.root)
+            data["free_ar_diagnostic"] = _free_ar_diagnostic(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
