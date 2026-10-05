@@ -1,5 +1,17 @@
 # Experiment ledger
 
+## P026 engineering prerequisite — synthetic official CPU check, not admission
+
+Adapter2b5b37dc / tests145929fc / verifier647de8e9 are separately named project
+glue around official FNO and existing official HDF5Reader. Thirteen tests pass
+in Root and independent reviews. Actual pinned official CPU container9e4b793a
+exited0 withoutGPU; tiny4x4/modes2 K1/K4 zero-history-weight output differences0,
+finite nonzero historical and shifted-prediction gradients. No optimizer or
+candidate. Report docs/FC_P026_OFFICIAL_CPU_EXECUTION_REVIEW_20261005.md records
+actual provenance and limitations. Next prerequisite: realHDF integration then
+separately reviewed matched full44 training protocol/resource check. No claims
+about scientific accuracy or full-project completion follow from these tests.
+
 ## FC-E035 — P025 isolated statistical supervision complete, unsupported
 
 Result SHA `7648df661439f530984504538bfaef3d1a602c1b960fd914fcba2f016fc4e74c`;
