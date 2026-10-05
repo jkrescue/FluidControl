@@ -88,6 +88,8 @@ FC-P009已完成且未生成候选。completion/result/cache/CPU交叉分析SHA�
 
 上述CPU诊断已完成（SHA `f6c122a6…b626`）。joint full/phase-OOF在free-AR尾62步的Cd/mean-Cl/Cl′ RMS MAE分别为`0.00671/0.01984/0.01760`与`0.00751/0.02195/0.01985`，说明phase留出只解释小部分退化。train8 family pooled RMS为`0.02936`，最差既有train PRBS/PPO cases已达`0.046–0.058`，所以时间窗幅值误差在训练profile内部异质存在；但这既不证明覆盖是唯一原因，也不证明default-TF32数值误差放大了formal失败。下一步若做native-vs-ideal诊断，必须冻结当前候选、case/window和计算协议，且只能作机制定位，不能修改formal门槛或追认PPO。
 
+冻结候选的4窗native-vs-ideal检查已完成（SHA `2dea49fa…b1ef`）。runtime hidden features与cache逐值相同，pointwise wiring为0；保存float32头的native-minus-pooled-affine尾62步Cl′ RMS差为`-0.001942/-0.000292/-0.000851/+0.000152`，而相应native真值误差为`0.00794/0.12561/0.08839/0.06647`。除zero基准外，执行顺序差异远小于旋转窗误差，故不再把TF32/native归约作为该失败的主要解释，也不继续此诊断分支。后续只评估一个明确针对train-only尾窗幅值的监督干预；它仍须保留完整field/force formal协议，不能用训练窗改善替代准入。
+
 Lead随后只批准一个有界CPU-cache判别：将相同136800行、相同canonical targets/source phase/原row weight的H1与free-AR特征各自归一化为总质量1后乘`0.5`，在每个source-phase fold中只用fold-train联合数据计算一个共享scaler，并拟合一个共享`alpha=0`仿射头。held phase必须在两个域分别报告all-step与H1/H10/H50/H100的逐通道物理误差；不得搜索mixture或alpha，也不得用单个平均数建立新准入阈值。该诊断只判断一个共享头能否兼顾两种隐藏状态分布；不要求它逐项支配两个分别优化的专用头。即使训练内改善，也仍须另行批准candidate/native replay并通过原formal gates。
 
 共享头诊断已完成（SHA `931fcd2d…f2b0bc`）。H100 AR域rear-Cd/rear-Cl/total-Cd MAE为`0.01612/0.04610/0.01607`，相对C亲本`0.01637/0.07392/0.01637`改善但不及AR专用头`0.01368/0.04300/0.01367`；H1域为`0.01593/0.03035/0.01572`，优于C亲本`0.02622/0.06333/0.02580`但不及H1专用头`0.01432/0.02447/0.01411`。这支持折中头的train-only可表达性，不证明validation或控制收益。Lead只批准最小候选实现和CPU测试：复用缓存系数，官方加载C-e2，只改四个force rows/bias，保存为独立epoch0后重载并逐tensor核confinement；default-TF32/high下仅用固定base20首个train batch的H1作`2e-5` pointwise wiring sanity和有限性检查，pooled/native差只报告。候选GPU构建、原formal suite与PPO仍分别需要明确批准。
