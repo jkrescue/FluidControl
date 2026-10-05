@@ -40,3 +40,11 @@ def test_retained_exit_never_means_scientific_acceptance():
     terminal = state(); terminal.update(MainPID='0', ActiveState='active', SubState='exited', ExecMainCode='1')
     result = dashboard._parse_fcp020_live(terminal, event(1), False)
     assert result['exited_success'] and not result['running'] and not result['admission']
+
+
+def test_unverified_or_missing_terminal_result_not_promoted(tmp_path):
+    assert dashboard._fcp020_result(tmp_path) == {'verified': False}
+    artifact = tmp_path / 'artifacts/fcp020_symmetric_statistics_20261005/result.json'
+    artifact.parent.mkdir(parents=True)
+    artifact.write_text('{"comparison":{"local_support":true}}')
+    assert dashboard._fcp020_result(tmp_path) == {'verified': False}

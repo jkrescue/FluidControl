@@ -339,9 +339,10 @@ function renderActiveExperiment(d){
  if(p020?.verified===true){
   const age=Date.now()-Date.parse(p020.sampled_at_utc||'');
   const fresh=Number.isFinite(age)&&age>=0&&age<60000;
-  const title=!fresh?'训练对照状态采样已过期':p020.running?'P020 升力预测训练对照进行中':p020.exited_success?'P020 训练对照已结束 · 结果待独立复核':'P020 训练对照未运行 · 正在检查原因';
+  const rejected=p020.terminal_result?.verified===true&&!p020.running;
+  const title=!fresh?'训练对照状态采样已过期':p020.running?'P020 升力预测训练对照进行中':rejected?'P020 对照已复核 · 未同时改善全部预测指标':p020.exited_success?'P020 训练对照已结束 · 结果待独立复核':'P020 训练对照未运行 · 正在检查原因';
   const progress='原损失函数：'+p020.updates.A_original+'/16 次更新；增加升力均值与波动监督：'+p020.updates.B_symmetric_tail+'/16 次更新。';
-  const detail='两组使用同一初始模型和六个真实CFD训练窗口；比较升力均值、波动幅值及连续预测误差，不改变控制验收标准。';
+  const detail=rejected?'新增统计监督相对原损失组更好，但相对训练前，单步平均升力平方误差增加1.37%，去均值后的波形平方误差增加10.53%。不进入全量训练；当前核查加入当前受力输入的数据时序与连续预测方法。':'两组使用同一初始模型和六个真实CFD训练窗口；比较升力均值、波动幅值及连续预测误差，不改变控制验收标准。';
   const note='这是训练诊断，不是新的PPO或CFD闭环成功。下方流场图仍是标注的历史结果。';
   $('lead-now').textContent=title+'。'+progress;
   const card=document.createElement('div');card.className='card';
@@ -1241,8 +1242,24 @@ def _fcp020_live(root: Path) -> dict:
         pid = state.get("MainPID", "0")
         matches = pid.isdigit() and pid != "0" and str(launcher).encode() in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
         log = (root / "artifacts/fcp020_symmetric_statistics_20261005/run.log").read_text()
-        return {**_parse_fcp020_live(state, log, matches), "sampled_at_utc": datetime.now(UTC).isoformat()}
+        return {**_parse_fcp020_live(state, log, matches), "sampled_at_utc": datetime.now(UTC).isoformat(),
+                "terminal_result": _fcp020_result(root)}
     except (OSError, ValueError, subprocess.SubprocessError):
+        return {"verified": False}
+
+
+def _fcp020_result(root: Path) -> dict:
+    try:
+        raw = (root / "artifacts/fcp020_symmetric_statistics_20261005/result.json").read_bytes()
+        if hashlib.sha256(raw).hexdigest() != "a7c0d0c41b35391e22d07fb223a5ed243891ccdd4759815e9bf08b82670b5042":
+            return {"verified": False}
+        result = json.loads(raw)
+        checks = result["comparison"]
+        if checks["conclusion"] != "LOCAL_CONDITIONS_NOT_MET" or checks["local_support"] is not False:
+            return {"verified": False}
+        return {"verified": True, "local_support": False, "admission": False,
+                "h1_bias_delta": checks["checks"]["h1"]["statistics"]["bias_mse"]["delta_initial"]}
+    except (OSError, ValueError, TypeError, KeyError):
         return {"verified": False}
 
 
