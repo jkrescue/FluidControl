@@ -34,14 +34,27 @@ DIAGNOSTIC_KIND = "fc_p008_force_row_calibrated_epoch0"
 PRECISION_STATUS = "FC_P008_FORMAL_EVALUATION_DEFAULT_TF32_HIGH"
 CHAIN_STATUS = "FC_P008_IMMUTABLE_POSTEVAL_CHAIN_STAGED"
 TRAINED_PROFILE = False
+DUAL_PROFILE = False
 
 
 def configure_profile(name: str) -> None:
     """Select an exact identity profile; numerical validation stays shared."""
     global CANDIDATE_KIND, LINEAGE_STATUS, STEP_STATUS, COMPLETE_STATUS
     global CALIBRATED_KIND, DIAGNOSTIC_KIND, PRECISION_STATUS, CHAIN_STATUS
-    global TRAINED_PROFILE
+    global TRAINED_PROFILE, DUAL_PROFILE
+    DUAL_PROFILE = name == "p013"
     profiles = {
+        "p013": (
+            "fcp013_independent_force_dual_fno",
+            "FC_P013_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION",
+            "FC_P013_POSTEVAL_STEP_COMPLETE",
+            "FC_P013_POSTEVAL_COMPLETE",
+            None,
+            "dev30_h20_development",
+            "FC_P013_FORMAL_EVALUATION_DEFAULT_TF32_HIGH",
+            "FC_P013_IMMUTABLE_POSTEVAL_CHAIN_STAGED",
+            True,
+        ),
         "p008": (
             "full_train_force_row_recalibration",
             "FC_P008_CANDIDATE_LINEAGE_PASS",
@@ -178,6 +191,39 @@ def checkpoint_files(candidate: Path, lineage: dict) -> tuple[Path, Path]:
     return model, state
 
 
+def dual_identity_fields(lineage: dict) -> dict:
+    if not DUAL_PROFILE:
+        return {}
+    keys = ("dual_manifest_sha256", "flow_model_sha256", "flow_state_sha256")
+    value = {key: lineage.get(key) for key in keys}
+    if any(not isinstance(v, str) or len(v) != 64 for v in value.values()):
+        raise ValueError("dual system identity is incomplete")
+    return value
+
+
+def validate_dual_report(report: dict, lineage: dict, *, force_window: bool) -> None:
+    if not DUAL_PROFILE:
+        return
+    expected = {
+        "manifest_sha256": lineage["dual_manifest_sha256"],
+        "flow_model_sha256": lineage["flow_model_sha256"],
+        "flow_state_sha256": lineage["flow_state_sha256"],
+        "aerodynamic_model_sha256": lineage["checkpoint_sha256"],
+        "aerodynamic_state_sha256": lineage["checkpoint_state_sha256"],
+    }
+    if force_window:
+        observed = {"manifest_sha256": report.get("dual_fno_manifest_sha256"),
+                    "aerodynamic_model_sha256": report.get("model_sha256"),
+                    **{key: report.get(key) for key in ("flow_model_sha256", "flow_state_sha256", "aerodynamic_state_sha256")}}
+    else:
+        metadata = report.get("checkpoint_metadata", {})
+        if metadata.get("dual_fno") is not True:
+            raise ValueError("report is not a dual FNO execution")
+        observed = {key: metadata.get(key) for key in expected}
+    if observed != expected:
+        raise ValueError("reported dual system identity differs")
+
+
 def validate_lineage(candidate: Path, lineage_path: Path) -> tuple[dict, Path, Path]:
     lineage = load(lineage_path)
     if lineage.get("status") != LINEAGE_STATUS:
@@ -208,6 +254,18 @@ def validate_lineage(candidate: Path, lineage_path: Path) -> tuple[dict, Path, P
     if lineage.get("ppo_auto_launch") is not False:
         raise ValueError("FC-P008 candidate cannot auto-launch PPO")
     model, state = checkpoint_files(candidate, lineage)
+    if DUAL_PROFILE:
+        from fluid_control.dual_fno import validate_dual_fno_manifest
+        identity = validate_dual_fno_manifest(
+            candidate / "candidate/dual_model_manifest.json",
+            expected_sha256=lineage.get("dual_manifest_sha256"),
+        )
+        if (identity.aerodynamic.model != model.resolve()
+            or identity.aerodynamic.state != state.resolve()
+            or identity.flow.model_sha256 != lineage.get("flow_model_sha256")
+            or identity.flow.state_sha256 != lineage.get("flow_state_sha256")):
+            raise ValueError("persisted dual system differs from lineage")
+        dual_identity_fields(lineage)
     return lineage, model, state
 
 
@@ -234,6 +292,9 @@ def validate_science_step(
 ) -> None:
     checkpoint = candidate / lineage["checkpoint_relative_directory"]
     calibrated = calibrated_kwargs(lineage)
+    if DUAL_PROFILE:
+        report_path = out / ("force_window/result.json" if step == "force_window" else f"{step}/evaluation.json")
+        validate_dual_report(load(report_path), lineage, force_window=step == "force_window")
     if step == "validation10":
         diagnostic = module(
             numerical_source / "scripts/audit_dev30_validation_diagnostic.py",
@@ -338,6 +399,7 @@ def validate_step_receipt(path: Path, out: Path, step: str, lineage: dict) -> No
         "posteval_chain_receipt_sha256": lineage["posteval_chain_receipt_sha256"],
         "formal_evaluation_approval_sha256": lineage["formal_evaluation_approval_sha256"],
         "precision_sha256": sha256(out / "precision.json"),
+        **dual_identity_fields(lineage),
     }
     if any(value.get(key) != expected for key, expected in expected_identity.items()):
         raise ValueError(f"{step} receipt identity differs")
@@ -367,6 +429,7 @@ def validate_complete(
         "protocol": PROTOCOL,
         "frozen_test_accessed": False,
         "ppo_auto_launched": False,
+        **dual_identity_fields(lineage),
     }
     if any(receipt.get(key) != expected for key, expected in expected_identity.items()):
         raise ValueError("FC-P008 completion receipt identity differs")
@@ -440,6 +503,14 @@ def validate_chain_receipt(path: Path, numerical_source: Path) -> str:
     }
     if value.get("sha256") != actual:
         raise ValueError("FC-P008 posteval chain files differ")
+    if DUAL_PROFILE:
+        if value.get("numerical_source_commit") != "7216214b545fbbd50b2fb5ed866f231039b06b18" or value.get("overlay_source_commit") != value.get("git_commit"):
+            raise ValueError("dual evaluation numerical source lineage differs")
+        names = ("src/fluid_control/dual_fno.py", "src/fluid_control/calibrated_checkpoint.py",
+                 "scripts/evaluate_tandem_fno.py", "scripts/diagnose_fno_force_window.py")
+        expected = {name: sha256(numerical_source / name) for name in names}
+        if value.get("numerical_source_overlays") != expected:
+            raise ValueError("dual evaluation overlay identities differ")
     if numerical_source.resolve() != (root / "numerical_source").resolve():
         raise ValueError("FC-P008 numerical source does not belong to chain")
     return sha256(path)
@@ -457,7 +528,7 @@ def main() -> None:
     parser.add_argument("--step", choices=(*EXPECTED, "complete"), required=True)
     parser.add_argument(
         "--profile",
-        choices=("p008", "p009", "p011_head_only", "p011_decoder_tail"),
+        choices=("p008", "p009", "p011_head_only", "p011_decoder_tail", "p013"),
         default="p008",
     )
     args = parser.parse_args()

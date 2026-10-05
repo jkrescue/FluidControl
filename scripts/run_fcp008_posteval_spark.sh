@@ -9,6 +9,21 @@ case "$mode" in --dry-run|--execute|--resume|--wait) ;; *) echo "invalid mode" >
 image="fluid-control-physicsnemo:2.2.2"
 image_id="sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e"
 case "$profile" in
+  p013)
+    candidate="${FCP_POSTEVAL_CANDIDATE:-$root/artifacts/fcp013_independent_force_fno_training_20261005}"
+    out="$candidate/posteval_fc_p013"
+    auditor_relative="scripts/audit_fcp013_dual_candidate.py"
+    candidate_kind="fcp013_independent_force_dual_fno"
+    calibrated_kind=""
+    diagnostic_kind="dev30_h20_development"
+    lineage_status="FC_P013_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION"
+    step_status="FC_P013_POSTEVAL_STEP_COMPLETE"
+    complete_status="FC_P013_POSTEVAL_COMPLETE"
+    chain_status="FC_P013_IMMUTABLE_POSTEVAL_CHAIN_STAGED"
+    precision_status="FC_P013_FORMAL_EVALUATION_DEFAULT_TF32_HIGH"
+    formal_status="FC_P013_FORMAL_EVALUATION_APPROVED"
+    token_expected="EXECUTE_APPROVED_FC_P013_POSTEVAL"
+    ;;
   p008)
     candidate="$root/artifacts/fcp008_force_readout_candidate_20261005"
     out="$candidate/posteval_fc_p008"
@@ -76,6 +91,13 @@ checkpoint_epoch=0
 checkpoint_relative_expected="candidate_build/candidate"
 checkpoint_args=()
 auditor_scope_args=()
+dual_args=()
+container_checkpoint=/workspace/checkpoint
+if [[ "$profile" == p013 ]]; then
+  checkpoint_epoch=1
+  checkpoint_relative_expected="candidate/aerodynamic"
+  container_checkpoint=/workspace/dual/aerodynamic
+fi
 if [[ "$profile" == p011_* ]]; then
   checkpoint_epoch=1
   checkpoint_relative_expected="final"
@@ -103,6 +125,17 @@ if [[ "$mode" != --dry-run && -z "${FCP008_POSTEVAL_CHAIN_ROOT:-}" ]]; then
     mkdir -p "$temporary/$(dirname "$relative")"
     git show "$reviewed:$relative" >"$temporary/$relative"
   done
+  if [[ "$profile" == p013 ]]; then
+    for relative in src/fluid_control/dual_fno.py src/fluid_control/calibrated_checkpoint.py scripts/evaluate_tandem_fno.py scripts/diagnose_fno_force_window.py; do
+      git show "$reviewed:$relative" >"$temporary/numerical_source/$relative"
+    done
+    for relative in scripts/audit_fcp011_candidate.py scripts/evaluate_fcp013_fixed_train_windows.py scripts/train_fcp013_independent_force_fno.py; do
+      git show "$reviewed:$relative" >"$temporary/$relative"
+    done
+    training_config="$root/artifacts/fcp011_resource_probe_runtime_20261005/resolved_config.yaml"
+    [[ "$(sha "$training_config")" == 07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9 ]]
+    cp "$training_config" "$temporary/training_config.yaml"
+  fi
   chmod +x "$temporary/scripts/"*.py "$temporary/scripts/"*.sh
   python3 - "$temporary/receipt.json" "$temporary" "$reviewed" "$(git rev-parse "$reviewed^{tree}")" "$numerical_commit" "$(git rev-parse "$numerical_commit^{tree}")" "$chain_status" <<'PY'
 import hashlib,json,os,pathlib,sys,tempfile
@@ -110,6 +143,10 @@ target,root=map(pathlib.Path,sys.argv[1:3]); commit,tree,numerical_commit,numeri
 sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
 files={str(path.relative_to(root)):sha(path) for path in sorted(root.rglob("*")) if path.is_file()}
 payload={"status":status,"git_commit":commit,"git_tree":tree,"numerical_source_commit":numerical_commit,"numerical_source_tree":numerical_tree,"sha256":files}
+if status=="FC_P013_IMMUTABLE_POSTEVAL_CHAIN_STAGED":
+ overlays=("src/fluid_control/dual_fno.py","src/fluid_control/calibrated_checkpoint.py","scripts/evaluate_tandem_fno.py","scripts/diagnose_fno_force_window.py")
+ payload["numerical_source_overlays"]={name:sha(root/"numerical_source"/name) for name in overlays}
+ payload["overlay_source_commit"]=commit
 with tempfile.NamedTemporaryFile("w",dir=root,delete=False) as stream:
  tmp=pathlib.Path(stream.name); json.dump(payload,stream,indent=2,sort_keys=True); stream.write("\n"); stream.flush(); os.fsync(stream.fileno())
 try: os.link(tmp,target)
@@ -124,7 +161,7 @@ fi
 source="$chain_root/numerical_source"
 chain_receipt="$chain_root/receipt.json"
 host_source="$source"; [[ -d "$host_source/src" ]] || host_source="$root"
-host_path="$host_source/src:$host_source/scripts"
+host_path="$chain_root/scripts:$host_source/src:$host_source/scripts"
 
 [[ "$(docker image inspect "$image" --format '{{.Id}}')" == "$image_id" ]] || { echo "pinned image differs" >&2; exit 2; }
 [[ "$(sha "$dev30/manifest.json")" == 5213c7bb07c824c6e601636c3cfa974b80ec7c051633b0c8368a045cea41ddd2 ]]
@@ -135,7 +172,11 @@ host_path="$host_source/src:$host_source/scripts"
 
 if [[ "$mode" == --dry-run ]]; then
   env PYTHONPATH="$host_path" "$host_python" "$auditor" --repo "$root" "${auditor_scope_args[@]}" >/dev/null
-  echo "${complete_status}_DRY_RUN_PASS_NO_GPU"
+  if [[ "$profile" == p013 ]]; then
+    echo "FC_P013_POSTEVAL_INTERFACE_DRY_RUN_PASS_NO_GPU_NO_SCIENTIFIC_RESULT"
+  else
+    echo "${complete_status}_DRY_RUN_PASS_NO_GPU"
+  fi
   echo "candidate=$candidate"
   echo "protocol=validation10_stride25_batch4,dynamic6_stride1_batch8,force_window6,unchanged_development_gate"
   echo "candidate_and_independent_formal_approval_required=true"
@@ -156,12 +197,16 @@ fi
 lineage_json="$(env PYTHONPATH="$host_path" "$host_python" "$auditor" --repo "$root" --candidate "$candidate" --execution-approval-sha256 "$candidate_approval_sha" "${auditor_scope_args[@]}")"
 checkpoint_sha="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["checkpoint_sha256"])' <<<"$lineage_json")"
 checkpoint_state_sha="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["checkpoint_state_sha256"])' <<<"$lineage_json")"
-if [[ "$profile" != p011_* ]]; then
+if [[ "$profile" != p011_* && "$profile" != p013 ]]; then
   checkpoint_args=(--allow-calibrated-epoch-zero --expected-calibrated-model-sha256 "$checkpoint_sha" --expected-calibrated-state-sha256 "$checkpoint_state_sha")
 fi
 checkpoint_relative="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["checkpoint_relative_directory"])' <<<"$lineage_json")"
 checkpoint="$candidate/$checkpoint_relative"
 [[ "$checkpoint_relative" == "$checkpoint_relative_expected" && -d "$checkpoint" ]] || { echo "audited checkpoint directory differs" >&2; exit 2; }
+if [[ "$profile" == p013 ]]; then
+  dual_manifest_sha="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["dual_manifest_sha256"])' <<<"$lineage_json")"
+  dual_args=(--dual-fno-manifest /workspace/dual/dual_model_manifest.json --expected-dual-fno-manifest-sha256 "$dual_manifest_sha" --dual-training-config /workspace/training_config.yaml)
+fi
 python3 - "$formal_approval" "$formal_approval_sha" "$checkpoint_sha" "$checkpoint_state_sha" "$formal_status" "$profile" "$candidate" <<'PY'
 import hashlib,json,pathlib,sys
 path=pathlib.Path(sys.argv[1]); expected,model,state,status,profile=sys.argv[2:7]; candidate=pathlib.Path(sys.argv[7])
@@ -174,6 +219,10 @@ if profile=="p009":
 elif profile.startswith("p011_"):
  sha=lambda item:hashlib.sha256(item.read_bytes()).hexdigest(); scope=profile.removeprefix("p011_")
  required.update(candidate_kind=f"fcp011_{scope}_epoch1",training_scope=scope,checkpoint_epoch=1,candidate_result_sha256=sha(candidate/"result.json"),candidate_completion_receipt_sha256=sha(candidate/"completion_receipt.json"),protocol=["validation10_H1_H10_H50_H100_stride25_batch4","dynamic6_H1_H10_H50_H100_stride1_batch8","force_window6","unchanged_development_gate"])
+elif profile=="p013":
+ sha=lambda item:hashlib.sha256(item.read_bytes()).hexdigest()
+ manifest=json.loads((candidate/"candidate/dual_model_manifest.json").read_text())
+ required.update(candidate_kind="fcp013_independent_force_dual_fno",checkpoint_epoch=1,candidate_result_sha256=sha(candidate/"candidate/result.json"),candidate_completion_receipt_sha256=sha(candidate/"completion_receipt.json"),dual_manifest_sha256=sha(candidate/"candidate/dual_model_manifest.json"),flow_model_sha256=manifest["flow"]["model_sha256"],flow_state_sha256=manifest["flow"]["state_sha256"],protocol=["validation10_H1_H10_H50_H100_stride25_batch4","dynamic6_H1_H10_H50_H100_stride1_batch8","force_window6","unchanged_development_gate"])
 if any(value.get(k)!=v for k,v in required.items()): raise SystemExit("formal approval contract differs")
 PY
 if [[ -f "$out/receipt.json" ]]; then
@@ -202,6 +251,9 @@ common=(--rm --network none --cpus 8 --memory 64g --shm-size 2g --pids-limit 512
  -e PYTHONPATH=/workspace/src:/workspace/scripts -v "$source/scripts:/workspace/scripts:ro" -v "$source/src:/workspace/src:ro"
  -v "$source/conf:/workspace/conf:ro" -v "$source/cfd:/workspace/cfd:ro" -v "$checkpoint:/workspace/checkpoint:ro"
  -v "$out:/workspace/output:rw" -w /workspace)
+if [[ "$profile" == p013 ]]; then
+  common+=(-v "$candidate/candidate:/workspace/dual:ro" -v "$chain_root/training_config.yaml:/workspace/training_config.yaml:ro")
+fi
 
 if [[ ! -f "$out/precision.json" ]]; then
   tmp="$out/.precision.json.tmp"
@@ -219,6 +271,9 @@ target,out=map(pathlib.Path,sys.argv[1:3]); step,model,state,lineage,chain,forma
 sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
 if any(not path.is_file() or out.resolve() not in path.resolve().parents for path in paths): raise SystemExit("step artifacts incomplete or escape output")
 payload={"status":status,"candidate_kind":kind,"step":step,"checkpoint_epoch":epoch,"checkpoint_sha256":model,"checkpoint_state_sha256":state,"lineage_sha256":lineage,"posteval_chain_receipt_sha256":chain,"formal_evaluation_approval_sha256":formal,"precision_sha256":sha(out/"precision.json"),"sha256":{str(path.relative_to(out)):sha(path) for path in paths}}
+if kind=="fcp013_independent_force_dual_fno":
+ identity=json.loads((out/"lineage.json").read_text())
+ payload.update({key:identity[key] for key in ("dual_manifest_sha256","flow_model_sha256","flow_state_sha256")})
 with tempfile.NamedTemporaryFile("w",dir=target.parent,delete=False) as stream:
  tmp=pathlib.Path(stream.name); json.dump(payload,stream,indent=2,sort_keys=True); stream.write("\n"); stream.flush(); os.fsync(stream.fileno())
 try: os.link(tmp,target)
@@ -228,25 +283,25 @@ PY
 
 if [[ ! -f "$out/validation10/evaluation.json" || ! -f "$out/validation10/segments.json" ]]; then
   [[ ! -f "$out/validation10/evaluation.json" && ! -f "$out/validation10/segments.json" ]] || { echo "partial validation pair" >&2; exit 3; }
-  docker run --gpus device=0 "${common[@]}" -v "$dev30:/workspace/devdata:ro" "$image" python -u scripts/spark_gpu_guard.py --min-free-gib 20 --allocator-fraction .15 --margin-gib 4 -- python -u scripts/evaluate_tandem_fno.py --data /workspace/devdata --normalization-data /workspace/devdata --config /workspace/conf/tandem_fno_full40_h20.yaml --checkpoint-dir /workspace/checkpoint "${checkpoint_args[@]}" "${kind_args[@]}" --split validation --horizons 1 10 50 100 --segment-stride 25 --evaluation-batch-size 4 --action-mode observed --visualizations-per-horizon 0 --output /workspace/output/validation10/evaluation.json --segment-metrics-output /workspace/output/validation10/segments.json 2>&1 | tee "$out/validation10/evaluate.log"
+  docker run --gpus device=0 "${common[@]}" -v "$dev30:/workspace/devdata:ro" "$image" python -u scripts/spark_gpu_guard.py --min-free-gib 20 --allocator-fraction .15 --margin-gib 4 -- python -u scripts/evaluate_tandem_fno.py --data /workspace/devdata --normalization-data /workspace/devdata --config /workspace/conf/tandem_fno_full40_h20.yaml --checkpoint-dir "$container_checkpoint" "${checkpoint_args[@]}" "${kind_args[@]}" "${dual_args[@]}" --split validation --horizons 1 10 50 100 --segment-stride 25 --evaluation-batch-size 4 --action-mode observed --visualizations-per-horizon 0 --output /workspace/output/validation10/evaluation.json --segment-metrics-output /workspace/output/validation10/segments.json 2>&1 | tee "$out/validation10/evaluate.log"
 fi
 [[ -f "$out/validation10/diagnostic.json" ]] || env PYTHONPATH="$source/src:$source/scripts" "$host_python" "$source/scripts/audit_dev30_validation_diagnostic.py" --report "$out/validation10/evaluation.json" --segments "$out/validation10/segments.json" --data "$dev30" --checkpoint-dir "$checkpoint" --candidate-kind "$diagnostic_kind" "${checkpoint_args[@]}" "${kind_args[@]}" --output "$out/validation10/diagnostic.json"
 if [[ ! -f "$out/validation10/endpoint_gate.json" ]]; then
-  docker run "${common[@]}" -v "$full40/validation:/workspace/devdata/validation:ro" -v "$full40/manifest.json:/workspace/devdata/manifest.json:ro" -v "$full40/normalization.json:/workspace/devdata/normalization.json:ro" -v "$predecl:/workspace/predecl.json:ro" "$image" python -u scripts/audit_full40_validation_gate.py --report /workspace/output/validation10/evaluation.json --segments /workspace/output/validation10/segments.json --predeclaration /workspace/predecl.json --checkpoint-dir /workspace/checkpoint --data /workspace/devdata --config /workspace/conf/tandem_fno_full40_h20.yaml --image-id "$image_id" "${checkpoint_args[@]}" "${kind_args[@]}" --output /workspace/output/validation10/endpoint_gate.json
+  docker run "${common[@]}" -v "$full40/validation:/workspace/devdata/validation:ro" -v "$full40/manifest.json:/workspace/devdata/manifest.json:ro" -v "$full40/normalization.json:/workspace/devdata/normalization.json:ro" -v "$predecl:/workspace/predecl.json:ro" "$image" python -u scripts/audit_full40_validation_gate.py --report /workspace/output/validation10/evaluation.json --segments /workspace/output/validation10/segments.json --predeclaration /workspace/predecl.json --checkpoint-dir "$container_checkpoint" --data /workspace/devdata --config /workspace/conf/tandem_fno_full40_h20.yaml --image-id "$image_id" "${checkpoint_args[@]}" "${kind_args[@]}" --output /workspace/output/validation10/endpoint_gate.json
 fi
 [[ -f "$out/step_receipts/validation10.json" ]] || step_receipt validation10 "$out/validation10/evaluation.json" "$out/validation10/segments.json" "$out/validation10/diagnostic.json" "$out/validation10/endpoint_gate.json"
 validate_step validation10
 
 if [[ ! -f "$out/dynamic6/evaluation.json" || ! -f "$out/dynamic6/segments.json" ]]; then
   [[ ! -f "$out/dynamic6/evaluation.json" && ! -f "$out/dynamic6/segments.json" ]] || { echo "partial dynamic pair" >&2; exit 3; }
-  docker run --gpus device=0 "${common[@]}" -v "$dynamic:/workspace/dynamic:ro" -v "$dev30:/workspace/devdata:ro" "$image" python -u scripts/spark_gpu_guard.py --min-free-gib 20 --allocator-fraction .15 --margin-gib 4 -- python -u scripts/evaluate_tandem_fno.py --data /workspace/dynamic --normalization-data /workspace/devdata --config /workspace/conf/tandem_fno_full40_h20.yaml --checkpoint-dir /workspace/checkpoint "${checkpoint_args[@]}" "${kind_args[@]}" --split validation --horizons 1 10 50 100 --segment-stride 1 --evaluation-batch-size 8 --action-mode observed --visualizations-per-horizon 0 --output /workspace/output/dynamic6/evaluation.json --segment-metrics-output /workspace/output/dynamic6/segments.json 2>&1 | tee "$out/dynamic6/evaluate.log"
+  docker run --gpus device=0 "${common[@]}" -v "$dynamic:/workspace/dynamic:ro" -v "$dev30:/workspace/devdata:ro" "$image" python -u scripts/spark_gpu_guard.py --min-free-gib 20 --allocator-fraction .15 --margin-gib 4 -- python -u scripts/evaluate_tandem_fno.py --data /workspace/dynamic --normalization-data /workspace/devdata --config /workspace/conf/tandem_fno_full40_h20.yaml --checkpoint-dir "$container_checkpoint" "${checkpoint_args[@]}" "${kind_args[@]}" "${dual_args[@]}" --split validation --horizons 1 10 50 100 --segment-stride 1 --evaluation-batch-size 8 --action-mode observed --visualizations-per-horizon 0 --output /workspace/output/dynamic6/evaluation.json --segment-metrics-output /workspace/output/dynamic6/segments.json 2>&1 | tee "$out/dynamic6/evaluate.log"
 fi
 [[ -f "$out/dynamic6/diagnostic.json" ]] || env PYTHONPATH="$source/src:$source/scripts" "$host_python" "$source/cfd/tandem_cylinders/audit_full40_dynamic6_fno.py" --data "$dynamic" --checkpoint "$checkpoint" --checkpoint-epoch "$checkpoint_epoch" --expected-model-sha "$checkpoint_sha" --report "$out/dynamic6/evaluation.json" --segments "$out/dynamic6/segments.json" --physical-qc "$physical_qc" --output "$out/dynamic6/diagnostic.json"
 [[ -f "$out/step_receipts/dynamic6.json" ]] || step_receipt dynamic6 "$out/dynamic6/evaluation.json" "$out/dynamic6/segments.json" "$out/dynamic6/diagnostic.json"
 validate_step dynamic6
 
 if [[ ! -f "$out/force_window/result.json" ]]; then
-  docker run --gpus device=0 "${common[@]}" -v "$dynamic:/workspace/dynamic:ro" -v "$dev30:/workspace/devdata:ro" "$image" python -u scripts/spark_gpu_guard.py --min-free-gib 20 --allocator-fraction .15 --margin-gib 4 -- python -u scripts/diagnose_fno_force_window.py --data /workspace/dynamic --normalization-data /workspace/devdata --config /workspace/conf/tandem_fno_full40_h20.yaml --checkpoint-dir /workspace/checkpoint --expected-model-sha "$checkpoint_sha" "${checkpoint_args[@]}" "${kind_args[@]}" --output /workspace/output/force_window/result.json 2>&1 | tee "$out/force_window/diagnose.log"
+  docker run --gpus device=0 "${common[@]}" -v "$dynamic:/workspace/dynamic:ro" -v "$dev30:/workspace/devdata:ro" "$image" python -u scripts/spark_gpu_guard.py --min-free-gib 20 --allocator-fraction .15 --margin-gib 4 -- python -u scripts/diagnose_fno_force_window.py --data /workspace/dynamic --normalization-data /workspace/devdata --config /workspace/conf/tandem_fno_full40_h20.yaml --checkpoint-dir "$container_checkpoint" --expected-model-sha "$checkpoint_sha" "${checkpoint_args[@]}" "${kind_args[@]}" "${dual_args[@]}" --output /workspace/output/force_window/result.json 2>&1 | tee "$out/force_window/diagnose.log"
 fi
 [[ -f "$out/development_gate.json" ]] || env PYTHONPATH="$source/src:$source/scripts" "$host_python" "$source/scripts/audit_dynamic_fno_development_gates.py" --force-window "$out/force_window/result.json" --checkpoint-sha256 "$checkpoint_sha" --output "$out/development_gate.json"
 [[ -f "$out/step_receipts/force_window.json" ]] || step_receipt force_window "$out/force_window/result.json" "$out/development_gate.json"
@@ -258,6 +313,9 @@ root=pathlib.Path(sys.argv[1]); model,state,lineage,chain,formal,image,status,ki
 sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
 files={str(path.relative_to(root)):sha(path) for path in sorted(root.rglob("*")) if path.is_file() and path.name not in {"receipt.json","outer.log"}}
 payload={"status":status,"candidate_kind":kind,"checkpoint_epoch":epoch,"checkpoint_sha256":model,"checkpoint_state_sha256":state,"lineage_sha256":lineage,"posteval_chain_receipt_sha256":chain,"formal_evaluation_approval_sha256":formal,"precision_sha256":sha(root/"precision.json"),"official_image_id":image,"protocol":["validation10_H1_H10_H50_H100_stride25_batch4","dynamic6_H1_H10_H50_H100_stride1_batch8","force_window6","unchanged_development_gate"],"sha256":files,"frozen_test_accessed":False,"ppo_auto_launched":False}
+if kind=="fcp013_independent_force_dual_fno":
+ identity=json.loads((root/"lineage.json").read_text())
+ payload.update({key:identity[key] for key in ("dual_manifest_sha256","flow_model_sha256","flow_state_sha256")})
 target=root/"receipt.json"
 with tempfile.NamedTemporaryFile("w",dir=root,delete=False) as stream:
  tmp=pathlib.Path(stream.name); json.dump(payload,stream,indent=2,sort_keys=True); stream.write("\n"); stream.flush(); os.fsync(stream.fileno())
