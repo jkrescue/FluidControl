@@ -1,0 +1,24 @@
+{
+  "status": "FC_P026_FORMAL_SOURCE_FROZEN_NOT_EXECUTION_APPROVAL",
+  "source_directory": "artifacts/fcp026_formal_source_20261005_immutable",
+  "source_chain_receipt": "artifacts/fcp026_formal_source_20261005_immutable/source_chain_receipt.json",
+  "source_chain_receipt_sha256": "ff8b742aac29f86ae10b4202c04df5c2ef3b8de6217fefa540d240fdf682fe24",
+  "numerical_base_commit": "7216214b545fbbd50b2fb5ed866f231039b06b18",
+  "overlay_commit": "c6ce0b1",
+  "base_archive_sha256": "9b81ee07b20b2d09833dfb383c56d395c60cd4e4c43004d477d76107bd61a1fa",
+  "base_files": 408,
+  "final_source_files": 411,
+  "overlay_sha256": {
+    "scripts/audit_dev30_validation_diagnostic.py": "b44407ab3e828d65f99fd079b8b0a0701706849c4f211da021a36b25d682a94b",
+    "scripts/diagnose_fno_force_window.py": "eee1f59fa269a22556048f3fde8fc7ecbc31bb913571e49075dead92618a8576",
+    "scripts/evaluate_tandem_fno.py": "daef4a3a6eb1b9190f5cde728581b0c1b4b9656f56e865cf61a53deb1f37de88",
+    "scripts/p026_history_inference.py": "fd568f6457b980046a0419be96562291e9f96736270d45f20dd2adb2ffc5878c",
+    "scripts/p026_state_history.py": "2b5b37dc79211bb5c4985a1d44d25262080f503011766206c536938f49a6b64c",
+    "src/fluid_control/calibrated_checkpoint.py": "23f004aefb5ab4acf40523b188e1353d48a3cc04d6b2d886b6cdf435353c8a88",
+    "src/fluid_control/dual_fno.py": "3343dba367dd6e45fdc914fc321e90b94efc2d8a00553c61b025ef7d776fc2a8"
+  },
+  "training_config_sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9",
+  "root_verification": "All411finalfiles independently sha256sum-checked; original git archive digest and pinned training configuration independently rechecked.",
+  "formal_execution_performed": false,
+  "scientific_admission": false
+}

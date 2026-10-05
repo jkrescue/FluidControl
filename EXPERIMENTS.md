@@ -1,5 +1,16 @@
 # Experiment ledger
 
+## P026 formal source freeze — actual artifact verified
+
+Exclusive artifacts/fcp026_formal_source_20261005_immutable contains408BASE721
+files plus7reviewed c6ce0b1 overlays (411finalsourcefiles) and pinned config07e55.
+Sourcechainreceiptff8b742aac29f86ae10b4202c04df5c2ef3b8de6217fefa540d240fdf682fe24;
+originalarchiveSHA9b81ee07b20b2d09833dfb383c56d395c60cd4e4c43004d477d76107bd61a1fa.
+Root independently checked all411actualfile hashes, regenerated originalarchive
+digest and checkedconfig. Summary docs/FC_P026_FORMAL_SOURCE_FREEZE_20261005.json.
+This is immutable evaluation preparation only; no formal execution/heldout/model
+reload or scientific admission. K1training continues under its existing service.
+
 ## P026 formal runner — reviewed integration, not executed
 
 Runner afb6144fdb289dc8db7c296358a5f20d9c327d4ba6eb41edc8b64f16b0c27a22;
