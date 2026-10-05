@@ -1,5 +1,38 @@
 # Research roadmap and prioritized backlog
 
+## Current — 2026-10-05 19:46 UTC: matched training live; control integration in parallel
+
+K1 is actually running under service
+`fluid-control-fcp026-history-k1-20261005.service`, invocation
+`b3759e7e1acc4de7a1aa9f6e8d38de9a`, approval755cd99. The earlier CPU-only
+authorization entries below are historical, not the current execution state.
+Latest inspected log has287/1368 completed windows; GPU96%, physical free
+about22.22GiB and available106.89GiB. These are timestamped observations,
+not live promises. The unchanged external and internal20GiB guards remain active.
+
+Next stages, without changing scope or scientific thresholds:
+
+1. Finish this same K1 instance; independently audit terminal tensors, optimizer,
+   data/order and resources, then run the actual official CPU dual reload.
+2. Run the matched K4 arm under a separate reviewed execution approval; preserve
+   its prescribed data, budget and learning rate regardless of interim K1 loss.
+3. Execute the complete original formal evaluation for both candidates using
+   the reviewed immutable evaluation tree. No PPO admission from training loss.
+4. In parallel, implement the reviewed explicit-history HydroGym/PPO interface
+   in staged files with bounded CPU tests. Contract staged at
+   `/tmp/p026_hydrogym_runtime_stage/P026_HYDROGYM_PPO_HISTORY_INTEGRATION_CONTRACT_20261006.md`,
+   SHA256 `0ed861f2458245ce5706986f617621eeb1e4526724dc1eb6f144ad49ffe254d0`.
+   Preserve legacy behavior and direct-CFD baseline; separate FNO state history
+   from reward-force history. Implementation and independent review are assigned
+   separately. This authorizes interface preparation only, not PPO execution.
+5. For a scientifically admitted candidate, train a fresh provenance-bound
+   policy and verify actual paired CFD feedback under the original physical
+   criteria. MPC population-history integration remains a separate pending task.
+
+No new CFD dataset is currently justified. Existing44 real training trajectories
+are reused. The goal remains an accepted surrogate-assisted real-CFD closed loop,
+not completion of software tests or a single training arm.
+
 ## Current — P026 design reviewed; shared history objective under CPU implementation
 
 See docs/FC_P026_HISTORY_COMPARISON_PLAN_20261005.md. Matched full44 K1/K4
