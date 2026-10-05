@@ -25,6 +25,7 @@ C_EPOCH1_PREVIEW = Path("artifacts/fcp003c_epoch1_flow_visualization_preview_202
 C_EPOCH1_SHA = "fac949916859211b24553c410005aaff8ace057ce2bac5e08ac4dec971ecefba"
 C_FINAL_PREVIEW = Path("artifacts/fcp003c_final_flow_visualization_20261005")
 C_FINAL_SHA = "f78c2f3341663ed2f6e7f4c64a0bf6539a065d2e7f11ada8f19f493320697eb4"
+FIXED_READOUT = Path("artifacts/fcp003c_fixed_feature_force_readout_v2_20261005")
 
 RUN = Path("artifacts/distributed_runs/gateb_multistep_20261002/formal/tandem_fno_total_drag_rollout_seed20261003")
 SECOND_RUN = Path("artifacts/distributed_runs/gateb_multistep_seed20261004_20261002/formal/tandem_fno_total_drag_rollout_seed20261004")
@@ -335,6 +336,23 @@ function renderActiveExperiment(d){
  const w=d.training_evaluation_watchdog||{}, units=w.active_units||[];
  const age=Date.now()-Date.parse(w.timestamp_utc||'');
  if(!Number.isFinite(age)||age<0||age>180000){$('lead-now').textContent='任务状态已过期或时间异常，不能确认当前训练或评估是否运行。';return;}
+ const fr=d.fixed_feature_readout;
+ if(fr?.ready===true&&units.length===0){
+  const title='最新受力诊断 · 前段可拟合，后段仍不可靠';
+  const detail='固定原有 FNO 特征，只检查最后一层受力映射。前100步用于拟合，后100步未用于此次拟合，但两段都来自已有训练轨迹；不是独立测试。';
+  $('lead-now').textContent=title+'。下一项是训练数据内的拟合稳定性检查，不是 PPO。当前是否有计算任务，以资源与进程采样为准；闭环目标尚未完成。';
+  const card=document.createElement('div');card.className='card';
+  const heading=document.createElement('h3');heading.textContent=title;card.appendChild(heading);
+  const note=document.createElement('p');note.textContent=detail;card.appendChild(note);
+  const table=document.createElement('div');
+  table.innerHTML='<table><tr><th>数据时段</th><th>后柱阻力 MAE：原映射 → 拟合</th><th>后柱升力 MAE：原映射 → 拟合</th></tr>'+fr.rows.map(r=>`<tr><td>${r.panel==='prefix_targets_1_100'?'前100步（拟合）':'后100步（检查）'}</td><td>${num(r.rear_cd_before,4)} → ${num(r.rear_cd_after,4)}</td><td>${num(r.rear_cl_before,4)} → ${num(r.rear_cl_after,4)}</td></tr>`).join('')+'</table>';card.appendChild(table);
+  const caution=document.createElement('p');caution.textContent='MAE 是力系数的平均绝对误差，越小越好，不是百分比。上表仅旋转工况；后段阻力反而变差，因此不能据前段改善开始控制训练。两方使用同一最高 FP32 精度；下方流场图仍属于原模型，本诊断没有生成新模型。';card.appendChild(caution);
+  $('lead-models').prepend(card);
+  $('train16-formal-progress').textContent='受力拟合诊断完成 · 尚不可用于闭环';
+  $('train16-formal-progress').className='number';
+  $('train16-formal-detail').textContent=detail+' 没有参数更新、模型保存或 PPO 训练。';
+  return;
+ }
  const training=units.includes('fluid-control-fcp003c-true-state-step-20261005.service');
  const evaluating=units.includes('fluid-control-fcp003c-posteval-wait-fa08ce0-20261005.service');
  const absoluteRunning=units.includes('fluid-control-fcp003c-train-fit-absolute-calibration-20261005.service');
@@ -671,6 +689,47 @@ def _dual_node_watchdog(root: Path):
     }:
         return None
     return payload
+
+
+def _fixed_feature_readout(root: Path) -> dict:
+    """Expose only completed, hash-bound diagnostic metrics, never admission."""
+    base = root / FIXED_READOUT
+    try:
+        receipt = json.loads((base / "completion_receipt.json").read_text())
+        result_path = base / "result_bundle/result.json"
+        cache_path = base / "result_bundle/fixed_features.npz"
+        for path, key in ((result_path, "result_sha256"), (cache_path, "cache_sha256")):
+            if not path.resolve().is_relative_to(base.resolve()):
+                return {"ready": False}
+            if hashlib.sha256(path.read_bytes()).hexdigest() != receipt.get(key):
+                return {"ready": False}
+        result = json.loads(result_path.read_text())
+        if receipt.get("status") != "FCP003C_FIXED_FEATURE_FORCE_READOUT_V2_EXECUTION_COMPLETE_NOT_ADMISSION":
+            return {"ready": False}
+        if result.get("status") != "FCP003C_FIXED_FEATURE_FORCE_READOUT_DIAGNOSTIC_COMPLETE" or result.get("model_sha256") != C_FINAL_SHA:
+            return {"ready": False}
+        for item in (receipt, result):
+            if item.get("optimizer_steps") != 0 or any(item.get(k) is not False for k in ("candidate_saved", "validation_accessed", "frozen_test_accessed", "ppo_executed")):
+                return {"ready": False}
+        precision = result["numerical_protocol"]["precision_effective"]
+        if precision["float32_matmul_precision"] != "highest" or precision["cuda_matmul_allow_tf32"] is not False or precision["cudnn_allow_tf32"] is not False:
+            return {"ready": False}
+        if result["model_tensor_state_sha256_before"] != result["model_tensor_state_sha256_after"] or result["field_repeat_bitwise_identical"] is not True:
+            return {"ready": False}
+        rows = []
+        for panel in ("prefix_targets_1_100", "late_targets_101_200"):
+            row = {"panel": panel}
+            for channel in ("rear_cd", "rear_cl"):
+                for side, key in (("before", "original_readout_metrics_physical"), ("after", "fitted_readout_metrics_physical")):
+                    metric = result[key][panel]["action"][channel]
+                    value = metric["mae"]
+                    if metric["count"] != 800 or isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+                        return {"ready": False}
+                    row[f"{channel}_{side}"] = value
+            rows.append(row)
+        return {"ready": True, "rows": rows, "path": str(FIXED_READOUT), "admission": False}
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return {"ready": False}
 
 
 def _latest_evidence(root: Path) -> dict:
@@ -1981,6 +2040,7 @@ class Handler(BaseHTTPRequestHandler):
             data["v4_h20_history"] = _read_json(self.root / V4_H20_DEVELOPMENT_RUN / "training_history.json", [])
             data["phase_feedback_pilots"] = [_read_json(self.root / "artifacts/tandem_cylinders" / name / "result.json", None) for name in ("phase_feedback_pair_k075_20261003", "phase_feedback_pair_k020_20261003", "phase_feedback_pair_k050_l15_20261003")]
             data.update(_latest_evidence(self.root))
+            data["fixed_feature_readout"] = _fixed_feature_readout(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
