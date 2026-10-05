@@ -1,5 +1,19 @@
 # Research roadmap and prioritized backlog
 
+## Current — P025 unsupported; short-history CPU preparation
+
+FC-E035 completed16updates and independent terminal review. End the isolated
+96-coefficient/statistical-loss branch as planned; no coefficient sweep or PPO.
+Next testable hypothesis: three preceding flow states help identify force
+dynamics beyond the current state/action pair. Keep official FNO family,
+frozen flow model, geometry, data/splits/normalization and all evaluation criteria.
+Only staged CPU history-loader/channel-map engineering is currently authorized.
+Matched K1/K4 training needs a separate reviewed budget/protocol and actual
+resource probe; no expensive job is approved by this roadmap entry.
+Use all1368 windows with explicit warm1300/padded68 reporting. No future truth
+in AR; shared action semantics in both arms. No new CFD justified yet.
+
+
 ## 2026-10-05 18:17 UTC — P025 approved and running
 
 Actual invocation124d6521045a41cd9dcf5f35edff6712, source4d12c75, approval6fb2f810.

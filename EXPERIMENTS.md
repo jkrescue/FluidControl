@@ -1,5 +1,23 @@
 # Experiment ledger
 
+## FC-E035 — P025 isolated statistical supervision complete, unsupported
+
+Result SHA `7648df661439f530984504538bfaef3d1a602c1b960fd914fcba2f016fc4e74c`;
+source4d12c75, approval6fb2f810, protocol7f6cc9c6. Same six train windows,
+P018 parent and exact P023 HIGH initial predictions/precision. Fixed sixteen
+updates of96 new coefficients with J0 plus5/16 times four normalized mean/RMS
+terms. Independent audit confirms96 backwards,36 evaluation windows, exact
+initial and zero-input reproduction, frozen parent, finite loss accounting.
+H1 bias squared worsens0.1473296% vsinitial; H1 J0 and AR bias also fail their
+P023 HIGH comparisons. RMS and centered error improvements do not satisfy
+the predeclared joint local test. No saved candidate, heldout or PPO.
+Host minimumfree28.2702827454GiB; internal28.2385482788GiB, guardexit0.
+Interpretation: this fixed statistical intervention did not repair the tradeoff;
+not a proof that all statistical objectives or the official FNO family fail.
+Next: close isolated-block/statistical-loss branch; staged CPU engineering for
+matched K1/K4 causal history, preserving original full admission and CFD criteria.
+
+
 ## P025 running — fixed statistical supervision on isolated96 input coefficients
 
 Source4d12c75; approval6fb2f810, protocol7f6cc9c6; actual invocation
