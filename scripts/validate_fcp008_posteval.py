@@ -35,15 +35,28 @@ PRECISION_STATUS = "FC_P008_FORMAL_EVALUATION_DEFAULT_TF32_HIGH"
 CHAIN_STATUS = "FC_P008_IMMUTABLE_POSTEVAL_CHAIN_STAGED"
 TRAINED_PROFILE = False
 DUAL_PROFILE = False
+ACCUMULATION_PROFILE = False
 
 
 def configure_profile(name: str) -> None:
     """Select an exact identity profile; numerical validation stays shared."""
     global CANDIDATE_KIND, LINEAGE_STATUS, STEP_STATUS, COMPLETE_STATUS
     global CALIBRATED_KIND, DIAGNOSTIC_KIND, PRECISION_STATUS, CHAIN_STATUS
-    global TRAINED_PROFILE, DUAL_PROFILE
-    DUAL_PROFILE = name == "p013"
+    global TRAINED_PROFILE, DUAL_PROFILE, ACCUMULATION_PROFILE
+    DUAL_PROFILE = name in ("p013", "p015")
+    ACCUMULATION_PROFILE = name == "p015"
     profiles = {
+        "p015": (
+            "fcp015_window_accumulation_dual_fno",
+            "FC_P015_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION",
+            "FC_P015_POSTEVAL_STEP_COMPLETE",
+            "FC_P015_POSTEVAL_COMPLETE",
+            None,
+            "fcp015_window_accumulation_dual_fno",
+            "FC_P015_FORMAL_EVALUATION_DEFAULT_TF32_HIGH",
+            "FC_P015_IMMUTABLE_POSTEVAL_CHAIN_STAGED",
+            True,
+        ),
         "p013": (
             "fcp013_independent_force_dual_fno",
             "FC_P013_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION",
@@ -224,6 +237,27 @@ def validate_dual_report(report: dict, lineage: dict, *, force_window: bool) -> 
         raise ValueError("reported dual system identity differs")
 
 
+def validate_p015_unit_exit(observation: dict, unit: dict) -> None:
+    invocation = observation.get("unit", {}).get("InvocationID")
+    if not isinstance(invocation, str) or len(invocation) != 32:
+        raise ValueError("P015 running observation lacks exact invocation")
+    expected = {"InvocationID": invocation, "Result": "success", "ExecMainCode": "1",
+                "ExecMainStatus": "0", "MainPID": "0"}
+    terminal = (unit.get("ActiveState"), unit.get("SubState"))
+    if any(unit.get(k) != v for k, v in expected.items()) or terminal != ("active", "exited"):
+        raise ValueError("P015 outer training unit is not verified exit-zero terminal")
+
+
+def validate_training_experiment(lineage: dict) -> None:
+    if not TRAINED_PROFILE:
+        return
+    expected = {"optimizer_steps": 171 if ACCUMULATION_PROFILE else 1368}
+    if ACCUMULATION_PROFILE:
+        expected.update(training_experiment="FC-P015", accumulation_windows=8, training_windows=1368)
+    if any(lineage.get(k) != v for k, v in expected.items()):
+        raise ValueError("training experiment/update protocol differs")
+
+
 def validate_lineage(candidate: Path, lineage_path: Path) -> tuple[dict, Path, Path]:
     lineage = load(lineage_path)
     if lineage.get("status") != LINEAGE_STATUS:
@@ -235,12 +269,12 @@ def validate_lineage(candidate: Path, lineage_path: Path) -> tuple[dict, Path, P
     if lineage.get("formal_protocol") != PROTOCOL:
         raise ValueError("FC-P008 formal protocol differs")
     if TRAINED_PROFILE:
+        validate_training_experiment(lineage)
         if (
             lineage.get("checkpoint_epoch") != 1
             or lineage.get("training_performed") is not True
             or lineage.get("calibration_fit_performed") is not False
             or lineage.get("optimizer_training_performed") is not True
-            or lineage.get("optimizer_steps") != 1368
         ):
             raise ValueError("FC-P011 positive-epoch training scope differs")
     elif (
@@ -260,6 +294,9 @@ def validate_lineage(candidate: Path, lineage_path: Path) -> tuple[dict, Path, P
             candidate / "candidate/dual_model_manifest.json",
             expected_sha256=lineage.get("dual_manifest_sha256"),
         )
+        expected_kind = "FC_P015_WINDOW_ACCUMULATION_FORCE_FNO" if ACCUMULATION_PROFILE else "FC_P013_INDEPENDENT_FORCE_FNO"
+        if identity.payload.get("kind") != expected_kind:
+            raise ValueError("dual manifest experiment differs from posteval profile")
         if (identity.aerodynamic.model != model.resolve()
             or identity.aerodynamic.state != state.resolve()
             or identity.flow.model_sha256 != lineage.get("flow_model_sha256")
@@ -529,7 +566,7 @@ def main() -> None:
     parser.add_argument("--step", choices=(*EXPECTED, "complete"), required=True)
     parser.add_argument(
         "--profile",
-        choices=("p008", "p009", "p011_head_only", "p011_decoder_tail", "p013"),
+        choices=("p008", "p009", "p011_head_only", "p011_decoder_tail", "p013", "p015"),
         default="p008",
     )
     args = parser.parse_args()
@@ -541,6 +578,14 @@ def main() -> None:
     approval_copy = args.output / "evidence/formal_evaluation_approval.json"
     if not approval_copy.is_file() or sha256(approval_copy) != args.formal_approval_sha256:
         raise ValueError("FC-P008 stored formal approval differs")
+    if ACCUMULATION_PROFILE:
+        reload_receipt = args.candidate / "dual_reload_receipt.json"
+        if load(approval_copy).get("dual_reload_receipt_sha256") != sha256(reload_receipt):
+            raise ValueError("P015 formal approval does not bind actual CPU reload")
+        verifier = module(args.chain_receipt.parent / "scripts/verify_fcp015_dual_reload.py", "p015_reload_receipt")
+        verifier.validate_receipt(reload_receipt, args.candidate / "candidate/dual_model_manifest.json",
+                                  args.chain_receipt.parent / "training_config.yaml",
+                                  args.candidate / "candidate/result.json", args.numerical_source)
     lineage = {
         **lineage,
         "posteval_chain_receipt_sha256": chain_sha,
