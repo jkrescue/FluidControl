@@ -107,3 +107,41 @@ Exact new target:
 `artifacts/fcp026_history_training_k4_20261005/cache_advice_20261006_r2.jsonl`.
 No r3/r4 execution is approved. Record actual r2 completion separately;
 do not restart training or alter its protocol.
+
+## Separate r3 authorization
+
+At 335 consumed training windows, the same K4 invocation remained live and
+the latest host-watch sample recorded MemFree22,736,464KiB (about21.68GiB).
+Root authorizes one additional bounded r3 pass with the unchanged reviewed
+helper `3ca107dd1ddb2ac70a457f752088b423bf96f438f0b4f963d482929625d77ed9`.
+Target is exclusively the same K4 directory's
+`cache_advice_20261006_r3.jsonl`; r1/r2 must remain unchanged.
+The helper rechecks current memory and all44 pinned training files; no global
+cache operation, data/model change, training restart or automatic repeat.
+This paragraph records approval, not execution success. r4 remains unapproved.
+
+## Actual r3 receipt review
+
+Root reports session 82030 exited 0 after the separately approved single pass.
+Independent JSON-only review verified 90 records: one begin, 44 file-begin/
+advised pairs, and one complete. All sorted unique paths and reported hashes
+match the pinned audit; all file-begin and before/hash/advice stat snapshots
+agree. The receipt binds the unchanged helper, K4 and exact r3 output.
+Receipt SHA-256:
+`55d34429f523b2d081dc3d7e7cfba83ef66fcb2cd8a816ebd0960e5e628de533`.
+
+Recorded start/end Unix timestamps were 1791239010.4860294 and
+1791239021.1663043; elapsed time was **10.680523248 seconds**. Recorded memory
+minima were MemFree **21.533192 GiB** and MemAvailable **106.133457 GiB**,
+above every applicable floor. Completion MemFree was **24.242355 GiB**.
+The concurrent, still-growing host-watch snapshot through timestamp1791239050
+contained 682 samples, with minima MemFree **21.171146 GiB** and MemAvailable
+**105.867161 GiB**; snapshot SHA-256:
+`ef091049c40e26f4c6d593ed183fdf824149040385974f5e963c0b2453f426c6`.
+
+Rehashed r1/r2 receipts retain their recorded SHA values (`115ab435…374a6`
+and `ea9ac02c…134cf7`). r4 was absent and remains unapproved. The same actual
+service invocation `eee5a6fbad40411cac2f05e00520b079`, PID941365, remained
+`activating/start`, not terminal. This review performed no HDF rereads or
+cache advice and establishes maintenance completion only, not training
+completion or scientific acceptance.
