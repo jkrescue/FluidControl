@@ -17,6 +17,7 @@ FAMILIES = {
     "tandem_cylinders_directppo_train16_v1": 16,
 }
 OUTPUT = ROOT / "artifacts/fcp026_history_training_k1_20261005/cache_advice_20261006_r1.jsonl"
+RECEIPT_NAMES = tuple(f"cache_advice_20261006_r{i}.jsonl" for i in (1, 2, 3))
 
 
 def require(ok, message):
@@ -56,10 +57,16 @@ def open_confined(relative):
         os.close(directory)
 
 
-def main():
+def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--execute", action="store_true")
-    args = parser.parse_args()
+    parser.add_argument("--receipt-name", choices=RECEIPT_NAMES, default=OUTPUT.name)
+    return parser.parse_args(argv)
+
+
+def main():
+    args = parse_args()
+    output = OUTPUT.with_name(args.receipt_name)
     raw = AUDIT.read_bytes()
     require(hashlib.sha256(raw).hexdigest() == AUDIT_SHA, "approved44 source SHA differs")
     files = json.loads(raw)["train_hdf_sha256"]
@@ -74,10 +81,10 @@ def main():
     require(counts == FAMILIES, "family counts differ")
     if not args.execute:
         print(json.dumps(dict(status="PREPARATION_ONLY_NO_ADVICE", files=44,
-                              audit_sha256=AUDIT_SHA, output=str(OUTPUT), memory=memory())))
+                              audit_sha256=AUDIT_SHA, output=str(output), memory=memory())))
         return
     started = time.monotonic()
-    with OUTPUT.open("x") as log:
+    with output.open("x") as log:
         def emit(event, **values):
             log.write(json.dumps(dict(event=event, timestamp=time.time(), **values), sort_keys=True) + "\n")
             log.flush()
