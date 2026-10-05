@@ -1,5 +1,7 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**FC-P026 K1原始完整正式评估已经实际启动，当前仍在运行而非终态。** Main user unit `fluid-control-fcp026-k1-formal-20261006.service`、invocation `c039836ab63246ff8772dad66e1b46e5` 于21:21:31 UTC启动；观测时处于validation10，实际容器 `4a9cea6bd3a1…43d2` 使用官方镜像 `b40d5888…a22e` 和GPU0。审批SHA `2d15c323…0000`，411文件正式源链 `ff8b742a…fe24`，runner `03c5862e…c0f3`，终态运行时manifest `277ec97a…1f70`。这只是运行中观察：尚无完成receipt、科学准入或PPO授权，Root继续独占监控/UI。
+
 **当前里程碑：P026 K1已完成1368窗/171次更新，真实终态完整性检查及官方CPU双模型重载均已通过独立复核。** 同一训练invocation `b3759e7e1acc4de7a1aa9f6e8d38de9a` 已成功退出、PID0；实际检查收据SHA `fa26bf47b6eb448e36046973a479e771b2d37eb605d9630b9022b392ce30d944`，官方CPU重载收据SHA `980698fd335a7a536e358ced26b9f69236e8d101d1f038a46eaf6a0c84f67028`。七个候选文件、两个模型张量、协议、源码及实际容器身份一致。训练守卫最小CUDA空闲20.7337GiB，主机物理空闲最小20.9367GiB，内部采样最小20.7402GiB；均未低于20GiB。前两次检查失败及其原始unit证据均保留；兼容修复仅处理JSON `1`/`1.0`和诊断汇总最多2ULP的Python版本舍入差，不改训练、模型、数据或科学门槛。
 
 HydroGym历史运行时集成已提交 `23711cc`，运行镜像准备已提交 `e542ff1`，不再是待提交状态。报告 `docs/FC_P026_K1_TERMINAL_REVIEW_20261006.md`；只读执行证据 `artifacts/fcp026_k1_terminal_review_20261006/`。**这只是完整性与可加载性通过：尚无P026正式评估结果、科学准入模型或新PPO。** 正式评估审批另行准备，未凭准备材料宣称已经启动；K4需独立批准并与主机其他重任务错开。尚未增加科学CSV结果行。
