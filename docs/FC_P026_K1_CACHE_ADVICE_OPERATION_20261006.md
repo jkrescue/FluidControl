@@ -129,3 +129,27 @@ tests passed in the canonical repository, including r4 confinement/exclusivity
 and rejection of r5. No HDF reads or cache advice occurred in these tests.
 This prepares a possible post-training clearance only: r4 has not been executed
 or authorized to execute. Any actual pass requires a separate Lead decision.
+
+## Separately authorized r4 after training, 2026-10-05 21:15:55 UTC
+
+Lead subsequently separately authorized and executed one r4 pass after K1
+training, before formal evaluation preparation. The actual helper was the
+reviewed `13bbd587e7a9594ce71133a112d18da09abeb8f7518b799913ba4a2c6b336013`.
+Receipt `cache_advice_20261006_r4.jsonl` in the same K1 output directory has SHA
+`16b6234cd39d6271e92866f5798ee40cefc7e61160460d822d9ac37495d4cffd`.
+Lead reported exit0; the receipt records44 files completed in3.776982523s.
+
+Independent read-only JSONL review verified90 ordered rows,44 unique exact
+approved paths and hashes, matching stat identities before/after hash and after
+advice, `data_writes=false`, and no abort. All startup/per-file headroom and dual20
+checks passed. Logged minima were MemFree27.649776GiB and MemAvailable115.475739GiB.
+Free changed from27.650028GiB to33.802258GiB; available ended at115.519222GiB.
+As before, concurrent system activity prevents exclusive causal attribution.
+No HDF contents or models were read by this independent receipt review, and the
+reviewer did not execute maintenance.
+
+The K1 unit retained its original invocation
+`b3759e7e1acc4de7a1aa9f6e8d38de9a`, now active/exited with Result=success,
+ExecMainCode=1, ExecMainStatus=0 and MainPID=0. The pass did not restart training
+or change its numerical protocol. This operational receipt is not candidate
+admission or authorization for formal evaluation, PPO, CFD, or another cache pass.
