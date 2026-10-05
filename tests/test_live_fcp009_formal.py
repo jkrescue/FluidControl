@@ -19,6 +19,7 @@ def test_actual_service_not_historical_files(tmp_path, monkeypatch):
     result = dashboard._fcp009_formal_status(tmp_path)
     assert result["stage"] == "dynamic6" and result["service_state"] == "inactive"
     assert result["complete_recorded"] is False and result["admission"] is False
+    assert result["verified_fail"] is False
     receipt["checkpoint_sha256"] = "wrong"
     (base / "step_receipts/validation10.json").write_text(json.dumps(receipt))
     assert dashboard._fcp009_formal_status(tmp_path)["stage"] == "validation10"

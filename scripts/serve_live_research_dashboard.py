@@ -340,16 +340,16 @@ function renderActiveExperiment(d){
   const formal=joint.formal||{}, age=Date.now()-Date.parse(formal.sampled_at_utc||'');
   const running=Number.isFinite(age)&&age>=0&&age<60000&&formal.service_state==='active';
   const stage={validation10:'10条验证轨迹',dynamic6:'动态转速轨迹',force_window:'阻力与升力时间窗口'}[formal.stage]||'验证数据';
-  const title=running?'正式模型评估进行中 · '+stage:formal.complete_recorded?'正式评估记录已完成 · 结论待复核':'受力联合拟合已完成 · 当前未确认正式评估运行';
+  const title=formal.verified_fail?'正式评估未达标 · 后圆柱升力波动预测需改进':running?'正式模型评估进行中 · '+stage:formal.complete_recorded?'正式评估记录已完成 · 结论待复核':'受力联合拟合已完成 · 当前未确认正式评估运行';
   $('lead-now').textContent=title+'。单步与连续预测受力误差的训练内改善，不代表独立验证通过；新模型 PPO 和真实 CFD 闭环验收仍未完成。';
   const card=document.createElement('div');card.className='card';
   const h=document.createElement('h3');h.textContent=title;card.appendChild(h);
   const table=document.createElement('div');table.innerHTML='<table><tr><th>预测范围 / 系数平均绝对误差</th><th>原模型</th><th>联合拟合</th></tr>'+joint.rows.map(r=>`<tr><td>${r.label}</td><td>${num(r.before,5)}</td><td>${num(r.after,5)}</td></tr>`).join('')+'</table>';card.appendChild(table);
   const note=document.createElement('p');note.textContent='训练相位留出诊断，数值越低越好；不是减阻比例，也不是最终测试成绩。使用同一批真实CFD目标，单步与连续预测特征各占一半，只拟合既有受力输出。原流场预测保持不变。';card.appendChild(note);
-  const risk=document.createElement('p');risk.className='bad';risk.textContent='仍有不足：第100步总阻力误差仅小幅改善，且一个初始相位有所退化。下一步必须检查实际模型输出并完成原定独立验证，不能据此启动PPO。';card.appendChild(risk);
+  const risk=document.createElement('p');risk.className='bad';risk.textContent=formal.verified_fail?'正式结果：6个时间窗口中，总阻力均值6/6通过，后柱平均升力5/6通过，升力波动幅度仅2/6通过，4个旋转工况均未通过。下一步分析训练窗口与未见相位的波动幅度误差；暂不启动新模型PPO。':'仍有不足：第100步总阻力误差仅小幅改善，且一个初始相位有所退化。必须完成原定独立验证，不能据此启动PPO。';card.appendChild(risk);
   $('lead-models').prepend(card);
   $('train16-formal-progress').textContent=title;
-  $('train16-formal-detail').textContent='候选已保存并通过加载与输出一致性检查。'+(running?'正在评估：'+stage+'；该评估器不逐批输出百分比，实际负载见资源采样。':formal.complete_recorded?'完整结果记录已生成，仍需独立复核科学指标。':'当前服务状态：'+(formal.service_state||'未知')+'，不据历史文件推断正在计算。')+' 下表是此前的训练相位留出诊断，不是当前验证成绩。';
+  $('train16-formal-detail').textContent='候选已保存并通过加载与输出一致性检查。'+(formal.verified_fail?'正式结果已独立复核，整体未达标；当前开展CPU时间窗口诊断，GPU未运行训练。':running?'正在评估：'+stage+'；该评估器不逐批输出百分比，实际负载见资源采样。':formal.complete_recorded?'完整结果记录已生成，仍需独立复核科学指标。':'当前服务状态：'+(formal.service_state||'未知')+'，不据历史文件推断正在计算。')+' 下表是此前的训练相位留出诊断，不是当前验证成绩。';
   return;
  }
  const ar=d.free_ar_diagnostic;
@@ -762,7 +762,18 @@ def _fcp009_formal_status(root: Path) -> dict:
         else:
             break
     complete = _read_json(base / "receipt.json", {})
+    verified_fail = False
+    try:
+        verified_fail = (
+            hashlib.sha256((base / "receipt.json").read_bytes()).hexdigest()
+            == "ac5c0dd047c90fddba884b77cd82bbe4f5147123d0f2f4455fb1b938607e231c"
+            and hashlib.sha256((base / "development_gate.json").read_bytes()).hexdigest()
+            == "1a7526e705b4ed3c56c4facdb6a8ee2e9b26f9f4fec3060df5823a4104499d7e"
+        )
+    except OSError:
+        pass
     return {"service_state": _service_state("fluid-control-fcp009-posteval-20261005.service"),
+            "verified_fail": verified_fail,
             "stage": stage,
             "complete_recorded": isinstance(complete, dict) and complete.get("status") == "FC_P009_POSTEVAL_COMPLETE" and complete.get("checkpoint_sha256") == model,
             "sampled_at_utc": datetime.now(UTC).isoformat(), "admission": False}
