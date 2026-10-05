@@ -1,0 +1,65 @@
+{
+  "status": "FC_P018_CPU_DUAL_RELOAD_EXTERNAL_EXECUTION_VERIFIED",
+  "container_id": "79e72220f2bfa8de88fc0ddf62f3d6d57c7a96844e2987518f7f6bd0201a6407",
+  "image": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e",
+  "path": "python",
+  "args": [
+    "artifacts/p018_posteval_chain_d46622b7cb51_immutable/scripts/verify_fcp018_dual_reload.py",
+    "--numerical-source",
+    "/workspace/artifacts/p018_posteval_chain_d46622b7cb51_immutable/numerical_source",
+    "--manifest",
+    "/output/candidate/dual_model_manifest.json",
+    "--config",
+    "/workspace/artifacts/p018_posteval_chain_d46622b7cb51_immutable/training_config.yaml",
+    "--training-result",
+    "/output/candidate/result.json",
+    "--output",
+    "/output/dual_reload_receipt.json",
+    "--execute-cpu"
+  ],
+  "state": {
+    "Status": "exited",
+    "Running": false,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 0,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-10-05T14:16:51.499679857Z",
+    "FinishedAt": "2026-10-05T14:17:02.574222078Z"
+  },
+  "host_config": {
+    "Memory": 12884901888,
+    "NanoCpus": 4000000000,
+    "ReadonlyRootfs": true,
+    "NetworkMode": "none",
+    "DeviceRequests": null,
+    "SecurityOpt": [
+      "no-new-privileges"
+    ],
+    "Binds": [
+      "/workspace/fluid_control:/workspace:ro",
+      "/workspace/fluid_control/artifacts/fcp018_reduced_rate_training_20261005:/output:rw"
+    ]
+  },
+  "user": "1000:1000",
+  "cache_environment": [
+    "LOCAL_CACHE=/tmp/physicsnemo-cache",
+    "XDG_CACHE_HOME=/tmp/cache",
+    "CUDA_VISIBLE_DEVICES="
+  ],
+  "reload_receipt_sha256": "d36258772d50db8ecdde1bd6437a0abee407df45f778f56830f038215391bdde",
+  "scientific_admission": false,
+  "prior_attempts": [
+    {
+      "container": "fcp018-official-cpu-reload-20261005",
+      "outcome": "exit1 read-only default Warp cache; no receipt"
+    },
+    {
+      "container": "fcp018-official-cpu-reload-r2-20261005",
+      "outcome": "exit1 read-only default PhysicsNeMo cache; no receipt"
+    }
+  ]
+}
