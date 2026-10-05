@@ -2,6 +2,8 @@
 
 最后重建：2026-10-04 13:40 UTC（北京时间 21:40）；以实际文件/日志为准。本文是科学状态，不是实时资源看板。
 
+**当前实施状态（2026-10-05）**：FC-P011两臂decoder-scope对照已获CPU实现与测试批准（approval commit `6eeb755`），目前仍在补齐并独立审查训练代码。Arm A只允许rear-Cl final row/bias变化；Arm B在相同P009亲本、loss、batch=1、1368个train-only窗口及1368次更新下，额外允许最后一个现有decoder hidden linear层变化。只有A→B比较用于解释scope效应；P009→A还包含继续训练和新loss。Worker输入READY receipt SHA为`c41e228…3243`，只证明预备输入可用；CPU工程尚未验收，完整GPU训练未授权、未启动，也没有新的科学结果或PPO准入。
+
 **最新FC-P010结论（2026-10-05）**：纯CPU尾窗幅值监督诊断已完成（result SHA `d69033fd…8f94`）。它只优化rear-Cl仿射行；free-AR四个留出相位的尾62步RMS MAE均小幅改善`1.45%–7.34%`，但H1在三个相位恶化`13.26%–13.58%`，仅b02改善`2.08%`。全量fit同样是free-AR改善`9.02%`、H1恶化`10.51%`。五次LBFGS均达到固定200次上限且最终梯度未达声明容差，故这是固定预算下的多域权衡证据，不是已收敛最优解。FC-P010不支持构建候选或启动formal/PPO；下一步转向现有官方FNO表征内的有界训练干预，并继续要求完整field与原formal门槛。
 
 **独立接口工程注记**：三个既有train-only帧的官方Curator持久进程检查已完成（comparison SHA `ab189aac…b87f5`，timings SHA `01e512…529a2`）。状态最大差`2.384e-7`，mask/coords/time一致，持久采样约`1.1–1.5 s/frame`。该检查没有运行solver、FNO或controller，也未计入在线`foamToVTK`导出成本，只说明单帧提取接口具备工程可行性；不能写成完整在线延迟、闭环成功或FNO控制贡献。
