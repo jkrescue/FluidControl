@@ -2,6 +2,14 @@
 
 This is implementation evidence, not a completed model evaluation or admission.
 
+## Independent review and data-byte enforcement — 2026-10-05
+
+A fresh independent review identified a real P2 provenance weakness: terminal audit previously recorded actual HDF hashes without comparing pinned manifest hashes. Root repaired this for base20 (SHA-pinned train split with stem-keyed HDF hashes) and train8/train16 (filename-keyed manifest hashes), with exact file-set checks before shape/order reconstruction. The diagnostic launcher now rechecks all 44 bytes and current per-directory HDF file sets against the terminal audit before GPU work. Running trainer/data were not changed.
+
+An actual read-only hash pass verified all 20+8+16 training HDFs against their pre-existing pinned release maps: all44 matched. Root's focused tests passed23; independent reviewer reran the extended CPU set with34 passes and confirmed the original gap closed. Reviewer additionally requested the post-audit extra-file check, which Root added. This is provenance verification, not scientific admission. The waiting finalizer must be rebound to a newly frozen audited source before training terminates; the old source must not generate final acceptance evidence.
+
+Independent control review also identified optional-dual omission, downstream normalization/dual-binding enforcement, candidate export plumbing and the distinction between surrogate-trained PPO online feedback versus FNO inference inside each online decision. Omission prevention is assigned to a separate agent; the remaining interface work is pending, not implemented. Do not relabel the existing CFD-only policy or online-PPO path as full dual-FNO online execution.
+
 ## Worker runtime core preflight — 2026-10-05
 
 Worker has the exact pinned PPO dependency image `sha256:2e45b4e1ac9553ea86aa9148455be9aae30688446039fdee6255a637603acb2c`. The clean official HydroGym core (`hydrogym`, LICENSE, pyproject.toml) was archived from commit `4ab9854dea3d84e38a59c25e0f5835a00cf8225f`; archive SHA matched on Main and Worker: `a8c7dc52953b603843ccf2173a98450f886665eccd7cb3b100f2a9e5fb87a59f`. Core tracked source bytes were 598428, not a bulk image/dataset transfer. Main retains `artifacts/worker_hydrogym_source_preflight_20261005/hydrogym_source.tar`; Worker scratch mount is `/home/USER/workspace/fluid_control_runtime_preflight_20261005/hydrogym`.

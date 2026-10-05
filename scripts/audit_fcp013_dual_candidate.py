@@ -124,6 +124,27 @@ def validate_guard(text: str) -> dict:
     return guard
 
 
+def expected_train_hdf_hashes(root: Path, manifest: dict) -> dict[str, str]:
+    if "hdf_sha256" in manifest:
+        expected = manifest["hdf_sha256"]
+    else:
+        entry = manifest["split_manifests"]["train"]
+        split_path = root / entry["path"]
+        if not split_path.resolve().is_relative_to(root.resolve()) or sha256(split_path) != entry["sha256"]:
+            raise ValueError("pinned training split differs")
+        split = json.loads(split_path.read_text())
+        mapping = split["hdf5_sha256"]
+        if split.get("split") != "train" or len(split["cases"]) != len(set(split["cases"])) or set(split["cases"]) != set(mapping):
+            raise ValueError("training split case identities differ")
+        expected = {name + ".h5": value for name, value in mapping.items()}
+    if not isinstance(expected, dict) or not expected:
+        raise ValueError("pinned HDF hashes missing")
+    for name, value in expected.items():
+        if Path(name).name != name or not name.endswith(".h5") or not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
+            raise ValueError("invalid pinned HDF identity")
+    return expected
+
+
 def observed_order_from_hdf(repo: Path, records: list[dict]) -> tuple[str, dict]:
     """Reconstruct global windows from actual HDF shapes, not reported counts."""
     import h5py
@@ -138,12 +159,16 @@ def observed_order_from_hdf(repo: Path, records: list[dict]) -> tuple[str, dict]
         if sha256(root / "manifest.json") != INPUT_SHA[manifest_key] or sha256(root / "normalization.json") != NORMALIZATION_SHA:
             raise ValueError("source manifest or normalization differs")
         files = sorted((root / "train").glob("*.h5"))
-        if len(files) != count:
+        expected = expected_train_hdf_hashes(root, json.loads((root / "manifest.json").read_text()))
+        if len(files) != count or {path.name for path in files} != set(expected):
             raise ValueError("training trajectory count differs")
         for path in files:
+            actual_sha = sha256(path)
+            if actual_sha != expected[path.name]:
+                raise ValueError("training HDF differs from pinned data release: " + path.name)
             with h5py.File(path, "r") as handle:
                 frames = len(handle["state"])
-            source_sha[str(path.relative_to(repo))] = sha256(path)
+            source_sha[str(path.relative_to(repo))] = actual_sha
             for start in range(0, frames - 100, stride):
                 key = (path.stem, start, family)
                 if key in mapping:

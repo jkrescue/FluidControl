@@ -30,7 +30,7 @@ fi
 ! systemctl --user is-active --quiet fluid-control-fcp013-training-r2-20261005.service
 ! docker inspect fcp013-independent-force-training-r2-20261005 >/dev/null 2>&1
 awk '/^MemAvailable:/ {a=$2} /^MemFree:/ {f=$2} END {exit !(a>=50*1024*1024 && f>=30*1024*1024)}' /proc/meminfo
-python3 - "$candidate" <<'PY'
+python3 - "$candidate" "$repo" <<'PY'
 import hashlib,json,pathlib,sys
 root=pathlib.Path(sys.argv[1]); sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
 receipt=json.loads((root/'completion_receipt.json').read_text())
@@ -42,6 +42,14 @@ assert audit['dual_manifest_sha256']==receipt['dual_manifest_sha256']
 for name,expected in audit['sha256'].items():
  p=root/name
  assert p.resolve().is_relative_to(root.resolve()) and sha(p)==expected
+repo=pathlib.Path(sys.argv[2])
+assert len(audit['train_hdf_sha256'])==44
+expected_paths={repo/name for name in audit['train_hdf_sha256']}
+for directory in {p.parent for p in expected_paths}:
+ assert set(directory.glob('*.h5'))=={p for p in expected_paths if p.parent==directory}
+for name,expected in audit['train_hdf_sha256'].items():
+ p=repo/name
+ assert p.resolve().is_relative_to((repo/'data/curated').resolve()) and '/train/' in name and sha(p)==expected
 PY
 [[ ! -e "$output" ]]
 mkdir "$output"
