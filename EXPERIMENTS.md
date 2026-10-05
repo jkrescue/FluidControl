@@ -1,5 +1,16 @@
 # Experiment ledger
 
+## P026 real-HDF integration prerequisite — independently reviewed
+
+Actual official CPU container a8c735d1 exited0. Six realtrain windows cover
+base0/20, train8 0/4, train16 0/4 with originalstrides; exact originaltargets,
+metadata and K1inputs, correct K4 paststates/actions and padding. ScriptSHA
+17ad02b3a9162fa8f746e3ed5671f0a8c50d71c7e0ec1fad1548742e59989179;
+report docs/FC_P026_REAL_HDF_CPU_REVIEW_20261005.md. No model/GPU/datawrites/
+heldout or fullfieldhash. This is bounded integration evidence, not accuracy.
+Next shared history forceobjective tests then separately approved no-update
+resource probe. Full44 K1/K4 design recorded without GPU execution approval.
+
 ## P026 engineering prerequisite — synthetic official CPU check, not admission
 
 Adapter2b5b37dc / tests145929fc / verifier647de8e9 are separately named project
