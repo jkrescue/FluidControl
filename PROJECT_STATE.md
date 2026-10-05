@@ -2,7 +2,7 @@
 
 最后重建：2026-10-04 13:40 UTC（北京时间 21:40）；以实际文件/日志为准。本文是科学状态，不是实时资源看板。
 
-当前科学状态（2026-10-05）：FC-P003C及其两项128/64 train-only校准均已完成并被拒绝；代理PPO仍未授权。固定C特征的仿射受力读出诊断已按单次GPU批准启动，但16个有限特征提取步骤后，原force head的手工仿射复现最大归一化差为`5.1689148e-4`，超过预声明的`2e-5`数值wiring容差，因此在least-squares前fail-closed。当前只进行FP32/FP64/TF32运算路径数值排查；无cache、拟合系数、科学成败结论或准入变更。该诊断不训练或保存模型、不读取validation/frozen，也不改变任何准入门槛。协议与解释边界见`docs/FC_P003C_CALIBRATION_AND_READOUT_DIAGNOSTIC_20261005.md`。
+当前科学状态（2026-10-05）：FC-P003C及其两项128/64 train-only校准均已完成并被拒绝；代理PPO仍未授权。固定C特征仿射受力读出v1在默认TF32数值wiring检查中fail-closed；独立数值probe确认这是TF32非结合运算顺序差异，不是数据错位。经单独批准的v2仅在该诊断内禁用TF32并使用highest FP32，在不改`2e-5`容差下完成（result/cache/completion SHA：`44920594…7654d`/`947309d2…f23ab`/`501a0544…fdabc`）：wiring误差`3.5763e-7`、设计矩阵满秩129但保留条件数`1.9016e5`。prefix rear-Cd/rear-Cl action MAE从`0.04408/0.11869`降至`0.00475/0.00733`，而late rear-Cd反而上升10.15%、rear-Cl仍为`0.08337`。这只支持“highest-FP32固定特征在fit窗内线性可读”，同时显示病态和时间迁移不足；不能与default-TF32正式C/D015直接比改善，也不改变field/window门槛或PPO阻断。
 
 ## 1. 不变的目标
 

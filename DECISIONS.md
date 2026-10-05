@@ -56,6 +56,12 @@ Lead以`docs/FC-P003C_APPROVAL.md`批准单因素下一步的工程实现和CPU�
 
 该实验已按固定合同执行并触发反证条件：zero rear-Cl误差显著恶化，delta改善很小，且所有field通道退化，因此absolute监督分支也被拒绝，不做正式后评估。现有64个paired update中，四通道加权贡献占比约为front-Cd 2.83%、front-Cl 0.31%、rear-Cd 93.01%、rear-Cl 3.85%，64个pre-clip norm全部大于1（中位26.46、均值30.96）。action与zero的有符号bias变化在每个通道上数值接近，说明存在共同移动的相关模式；但这与贡献/裁剪统计都不是因果证明，不授权继续增大λ、曝光量或模型。
 
+## D017 — 固定特征读出显示fit窗可读但病态，先做train-only ridge稳定性诊断
+
+2026-10-05 Asia/Shanghai。v1在默认TF32下因为先空间平均再做仿射与原逐点仿射再平均的非结合数值差异而fail-closed；数值probe中原逐点FP32顺序可bitwise复现，禁用TF32/highest FP32后换序差降至2.38e-7。v2保持原`2e-5`容差，在该独立数值协议下完成。CPU从cache重求的1600行float64 least-squares系数逐值相同，所有action/unique-zero/delta和逐pair指标精确复现。prefix四通道action MAE降84.6%–93.8%，但矩阵条件数为`1.9016e5`、系数L2为`717.87`，late rear-Cd MAE增加10.15%且rear-Cl仍有`0.08337`。因此不将fit窗低残差解释为已修复优化、不生成部署checkpoint、不启动PPO。
+
+Lead只批准下一个CPU-cache诊断：在prefix做4-fold leave-one-phase-out，固定`alpha={0,1e-8,1e-6,1e-4,1e-2,1}`，每fold仅用fold-train标准化及对称zero加权，以归一化四通道等权mean-MSE选alpha（并列选较大alpha）；选定后在全prefix重拟，只查看一次late。不为每个alpha扫描late，late仍是同train轨迹时间检查而非独立验证。该诊断只检验高方差/病态假设，不允许把失败直接归因于覆盖不足。
+
 ## 新决策格式
 
 ID、记录时间、状态、待检验假设、对应实验ID、所依据证据/协议、可选方案、取舍原因、保留的不确定性、撤销/调整条件。只有读取过的产物可作为事实；代理口头报告是待核信息。
