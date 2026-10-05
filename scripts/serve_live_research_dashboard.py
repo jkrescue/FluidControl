@@ -26,6 +26,8 @@ C_EPOCH1_SHA = "fac949916859211b24553c410005aaff8ace057ce2bac5e08ac4dec971ecefba
 C_FINAL_PREVIEW = Path("artifacts/fcp003c_final_flow_visualization_20261005")
 C_FINAL_SHA = "f78c2f3341663ed2f6e7f4c64a0bf6539a065d2e7f11ada8f19f493320697eb4"
 FIXED_READOUT = Path("artifacts/fcp003c_fixed_feature_force_readout_v2_20261005")
+FCP008 = Path("artifacts/fcp008_force_readout_candidate_20261005")
+FCP008_RESULT_SHA = "cbfbf7c395e788a3eb78100d064024031b9bcd4cc8bafefdc007c198be769409"
 
 RUN = Path("artifacts/distributed_runs/gateb_multistep_20261002/formal/tandem_fno_total_drag_rollout_seed20261003")
 SECOND_RUN = Path("artifacts/distributed_runs/gateb_multistep_seed20261004_20261002/formal/tandem_fno_total_drag_rollout_seed20261004")
@@ -333,6 +335,24 @@ function renderAdmission(d){
  }
 }
 function renderActiveExperiment(d){
+ const fc=d.full_train_calibration;
+ if(fc?.ready===true){
+  const liveAge=Date.now()-Date.parse(fc.sampled_at_utc);
+  const fresh=Number.isFinite(liveAge)&&liveAge>=0&&liveAge<60000;
+  const running=fresh&&fc.service_state==='active';
+  const stages={validation10:'独立验证轨迹：1 / 10 / 50 / 100 步预测',dynamic6:'动态旋转动作：多步预测',force_window:'时间窗口内的阻力与升力统计'};
+  const title=running?'当前任务 · '+(stages[fc.stage]||'正式模型评估'):'全量受力校准完成 · '+(fc.formal_complete?'正式评估记录已完成，待科学结论复核':'正式评估未确认运行');
+  $('lead-now').textContent=title+'。尚未完成新模型 PPO 与真实 CFD 闭环验收。';
+  const card=document.createElement('div');card.className='card';
+  const h=document.createElement('h3');h.textContent=title;card.appendChild(h);
+  const t=document.createElement('div');t.innerHTML='<table><tr><th>训练集平均绝对误差</th><th>原模型</th><th>校准后</th></tr>'+fc.rows.map(r=>`<tr><td>${r.channel==='rear_cd'?'后圆柱阻力系数':'后圆柱升力系数'}</td><td>${num(r.before,4)}</td><td>${num(r.after,4)}</td></tr>`).join('')+'</table>';card.appendChild(t);
+  const p=document.createElement('p');p.textContent='44 条真实 CFD 训练轨迹、19,648 个时间步；只校准力输出层，原流场输出不变。表中是训练集误差，不是减阻比例，也不是独立验证成绩。下方流场图仍为原 FNO 的预测。';card.appendChild(p);
+  $('lead-models').prepend(card);
+  $('train16-formal-progress').textContent=title;
+  $('train16-formal-progress').className='number';
+  $('train16-formal-detail').textContent='实际服务状态：'+(fresh?fc.service_state:'采样过期')+'。模型校准已完成，正式评估通过后才能开展新策略训练。';
+  return;
+ }
  const w=d.training_evaluation_watchdog||{}, units=w.active_units||[];
  const age=Date.now()-Date.parse(w.timestamp_utc||'');
  if(!Number.isFinite(age)||age<0||age>180000){$('lead-now').textContent='任务状态已过期或时间异常，不能确认当前训练或评估是否运行。';return;}
@@ -689,6 +709,37 @@ def _dual_node_watchdog(root: Path):
     }:
         return None
     return payload
+
+
+def _full_train_calibration(root: Path) -> dict:
+    """Latest calibrated candidate; process state is sampled, not inferred from files."""
+    base = root / FCP008
+    try:
+        path = base / "candidate_build/result.json"
+        if hashlib.sha256(path.read_bytes()).hexdigest() != FCP008_RESULT_SHA:
+            return {"ready": False}
+        result = json.loads(path.read_text())
+        rows = []
+        for channel in ("rear_cd", "rear_cl"):
+            before = result["full_train_parent_native_metrics_physical"][channel]["mae"]
+            after = result["full_train_native_metrics_physical"][channel]["mae"]
+            if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or v < 0 for v in (before, after)):
+                return {"ready": False}
+            rows.append({"channel": channel, "before": before, "after": after})
+        out = base / "posteval_fc_p008"
+        stage = "validation10"
+        if (out / "step_receipts/validation10.json").is_file():
+            stage = "dynamic6"
+        if (out / "step_receipts/dynamic6.json").is_file():
+            stage = "force_window"
+        receipt = _read_json(out / "receipt.json", {})
+        complete = receipt.get("status") == "FC_P008_POSTEVAL_COMPLETE" and receipt.get("checkpoint_sha256") == result["candidate_model_sha256"]
+        return {"ready": True, "rows": rows, "stage": stage,
+                "formal_complete": complete, "admission": False,
+                "service_state": _service_state("fluid-control-fcp008-posteval-r2-20261005.service"),
+                "sampled_at_utc": datetime.now(UTC).isoformat()}
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return {"ready": False}
 
 
 def _fixed_feature_readout(root: Path) -> dict:
@@ -2041,6 +2092,7 @@ class Handler(BaseHTTPRequestHandler):
             data["phase_feedback_pilots"] = [_read_json(self.root / "artifacts/tandem_cylinders" / name / "result.json", None) for name in ("phase_feedback_pair_k075_20261003", "phase_feedback_pair_k020_20261003", "phase_feedback_pair_k050_l15_20261003")]
             data.update(_latest_evidence(self.root))
             data["fixed_feature_readout"] = _fixed_feature_readout(self.root)
+            data["full_train_calibration"] = _full_train_calibration(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
