@@ -1,5 +1,17 @@
 # Experiment ledger
 
+## P026 formal runner — reviewed integration, not executed
+
+Runner afb6144fdb289dc8db7c296358a5f20d9c327d4ba6eb41edc8b64f16b0c27a22;
+tests480f055e8bb43ef4da532098ffefca33c9cbe9d80a743309fa47e02571830323;
+dev30 identity overlayb44407ab3e828d65f99fd079b8b0a0701706849c4f211da021a36b25d682a94b.
+Root34canonical tests0.11s and independent57combined tests pass. Newloader
+validation precedes preflight; numerical source is exactBASE721 plus7reviewed
+overlays. Main-only retaineduser units are deliberate scope. NoHOMEoverride;
+CPUaudit containers explicitlyexcludeGPU. Report
+docs/P026_FORMAL_RUNNER_INDEPENDENT_REVIEW_20261006.md documents limits.
+K1actualtraining keepsrunning; no formal/GPUlaunch by this preparation milestone.
+
 ## P026 K1 full matched training — actual GPU execution started
 
 Sourcebe4fc7e, approval755cd99/SHA1088285e4e13c7e3553009dd511436e9a5da976e93eed44d6bb0c28ab9515aa3.

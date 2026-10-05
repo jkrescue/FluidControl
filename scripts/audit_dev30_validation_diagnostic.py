@@ -18,6 +18,7 @@ HORIZONS = (1, 10, 50, 100)
 P013_KIND = "fcp013_independent_force_dual_fno"
 P015_KIND = "fcp015_window_accumulation_dual_fno"
 P018_KIND = "fcp018_reduced_rate_dual_fno"
+P026_KINDS = ("FC_P026_K1_HISTORY_FORCE_FNO", "FC_P026_K4_HISTORY_FORCE_FNO")
 ACTIONS = {"m075": -0.75, "m0375": -0.375, "zero": 0.0, "p0375": 0.375, "p075": 0.75}
 CASE = re.compile(
     r"matched_start_acquisition_validation_b(01|05)_"
@@ -125,7 +126,7 @@ def validate_report_contract(
     candidate_kind: str | None = None, checkpoint_dir: Path | None = None,
 ) -> None:
     checkpoint_alias = "/workspace/checkpoint"
-    if candidate_kind in (P013_KIND, P015_KIND, P018_KIND):
+    if candidate_kind in (P013_KIND, P015_KIND, P018_KIND, *P026_KINDS):
         if checkpoint_dir is None:
             raise ValueError("P013 diagnostic requires the actual dual checkpoint")
         from fluid_control.dual_fno import validate_dual_fno_manifest
@@ -134,9 +135,15 @@ def validate_report_contract(
         )
         expected_kind = {P013_KIND: "FC_P013_INDEPENDENT_FORCE_FNO",
                          P015_KIND: "FC_P015_WINDOW_ACCUMULATION_FORCE_FNO",
-                         P018_KIND: "FC_P018_REDUCED_RATE_FORCE_FNO"}[candidate_kind]
+                         P018_KIND: "FC_P018_REDUCED_RATE_FORCE_FNO",
+                         **{kind: kind for kind in P026_KINDS}}[candidate_kind]
         if identity.payload.get("kind") != expected_kind:
             raise ValueError("diagnostic kind differs from actual dual experiment")
+        if candidate_kind in P026_KINDS:
+            profile = "p026_k1" if candidate_kind == P026_KINDS[0] else "p026_k4"
+            if (identity.payload.get("history_input", {}).get("profile") != profile
+                    or report.get("fno_history_profile") != profile):
+                raise ValueError("P026 diagnostic history profile differs")
         metadata = report.get("checkpoint_metadata")
         if (identity.aerodynamic.directory != checkpoint_dir.resolve()
                 or report.get("checkpoint_epoch") != 1
@@ -441,6 +448,7 @@ def main() -> None:
             P013_KIND,
             P015_KIND,
             P018_KIND,
+            *P026_KINDS,
         ),
         required=True,
     )
