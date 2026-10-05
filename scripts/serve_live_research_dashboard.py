@@ -335,6 +335,17 @@ function renderAdmission(d){
  }
 }
 function renderActiveExperiment(d){
+ const active=d.registered_experiment;
+ if(active){
+  const age=Date.now()-Date.parse(active.sampled_at_utc||'');
+  const fresh=active.verified===true&&Number.isFinite(age)&&age>=0&&age<60000;
+  const title=!fresh?'当前任务状态暂未核实':active.label+(active.running?' · 正在运行':active.exited_success?' · 计算结束，结果待复核':' · 已停止，正在检查原因');
+  const progress=fresh?Object.entries(active.planned_updates).map(([arm,total])=>'已完成 '+active.updates[arm]+'/'+total+' 次更新').join('；'):'不使用历史任务代替未知状态。';
+  $('lead-now').textContent=title+'。'+progress;
+  const card=document.createElement('div');card.className='card';
+  for(const [tag,text] of [['h3',title],['p',progress],['p',fresh?active.description:''],['p','计算完成不等于模型通过验收；尚无新的代理辅助CFD闭环结论。下方流场图是已标注的历史结果。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
+  $('lead-models').prepend(card);$('train16-formal-progress').textContent=title;$('train16-formal-detail').textContent=progress;return;
+ }
  const p024=d.p024_live;
  if(p024?.verified===true){
   const age=Date.now()-Date.parse(p024.sampled_at_utc||'');
@@ -1267,6 +1278,64 @@ def _parse_fcp023_live(state: dict, log: str, process_matches: bool) -> dict:
         return {"verified": False}
     return {"verified": True, "running": running, "exited_success": terminal,
             "updates": {key: len(value) for key, value in updates.items()}, "admission": False}
+
+
+def _parse_registered_progress(state: dict, log: str, matches: bool, registration: dict) -> dict:
+    if state.get("InvocationID") != registration["invocation"]:
+        return {"verified": False}
+    pid = state.get("MainPID", "0")
+    if pid != "0" and not matches:
+        return {"verified": False}
+    plan = registration["planned_updates"]
+    if not isinstance(plan, dict) or not plan or any(type(n) is not int or not 1 <= n <= 10000 for n in plan.values()):
+        return {"verified": False}
+    counts = {key: set() for key in plan}
+    for line in log.splitlines():
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(row, dict) or row.get("event") != "arm_update_complete":
+            continue
+        arm, step = row.get("arm"), row.get("update")
+        if arm not in plan or type(step) is not int or not 1 <= step <= plan[arm] or step in counts[arm]:
+            return {"verified": False}
+        counts[arm].add(step)
+    if any(steps != set(range(1, len(steps)+1)) for steps in counts.values()):
+        return {"verified": False}
+    running = state.get("ActiveState") == "active" and state.get("SubState") == "running" and pid != "0" and matches
+    terminal = state.get("ActiveState") == "active" and state.get("SubState") == "exited" and pid == "0" and state.get("Result") == "success" and state.get("ExecMainCode") == "1" and state.get("ExecMainStatus") == "0"
+    return {"verified": True, "running": running, "exited_success": terminal,
+            "updates": {k: len(v) for k, v in counts.items()}, "planned_updates": plan,
+            "label": registration["label"], "description": registration["description"], "admission": False}
+
+
+def _registered_experiment_live(root: Path) -> dict:
+    sampled = datetime.now(UTC).isoformat()
+    try:
+        registration = json.loads((root / "docs/LIVE_EXPERIMENT.json").read_text())
+        def confined(name):
+            p = Path(name)
+            if p.is_absolute() or not (root / p).resolve().is_relative_to(root.resolve()):
+                raise ValueError("registration path outside project")
+            return root / p
+        unit = registration["unit"]
+        if not unit.startswith("fluid-control-") or not unit.endswith(".service") or any(c not in "abcdefghijklmnopqrstuvwxyz0123456789-." for c in unit):
+            raise ValueError("unexpected unit")
+        launcher = confined(registration["launcher"])
+        for key in ("approval", "launcher"):
+            if hashlib.sha256(confined(registration[key]).read_bytes()).hexdigest() != registration[key+"_sha256"]:
+                raise ValueError("registration identity mismatch")
+        fields = ("InvocationID", "MainPID", "ActiveState", "SubState", "Result", "ExecMainCode", "ExecMainStatus")
+        raw = subprocess.check_output(["systemctl", "--user", "show", unit,
+             *[arg for key in fields for arg in ("-p", key)]], text=True, timeout=5)
+        state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+        pid = state.get("MainPID", "0")
+        matches = pid.isdigit() and pid != "0" and str(launcher).encode() in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+        log = confined(registration["log"]).read_text()
+        return {**_parse_registered_progress(state, log, matches, registration), "sampled_at_utc": sampled}
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
+        return {"verified": False, "sampled_at_utc": sampled}
 
 
 def _fcp024_live(root: Path) -> dict:
@@ -3185,6 +3254,7 @@ class Handler(BaseHTTPRequestHandler):
             data["p022_live"] = _fcp022_live(self.root)
             data["p023_live"] = _fcp023_live(self.root)
             data["p024_live"] = _fcp024_live(self.root)
+            data["registered_experiment"] = _registered_experiment_live(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")

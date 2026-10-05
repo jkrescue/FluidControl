@@ -1,0 +1,13 @@
+{
+  "experiment": "P025",
+  "label": "平均升力与波动幅值联合监督训练",
+  "description": "固定原模型权重，仅训练新增96个受力输入系数；在原预测目标中加入均值和波动幅值监督，与上一组原目标训练比较。",
+  "unit": "fluid-control-fcp025-isolated-statistics-20261005.service",
+  "invocation": "124d6521045a41cd9dcf5f35edff6712",
+  "approval": "docs/FC_P025_EXECUTION_APPROVAL_20261005.json",
+  "approval_sha256": "6fb2f810e395fdc477339352d677616ad782b7edca6535f282710e2ae2573700",
+  "launcher": "artifacts/fcp025_isolated_statistics_source_20261005_immutable/scripts/run_fcp025_isolated_statistics_spark.sh",
+  "launcher_sha256": "98d4fa9d23d065f3af1f954e94dbf8458b0dd7b68344950c98344effc9cdd127",
+  "log": "artifacts/fcp025_isolated_statistics_20261005/run.log",
+  "planned_updates": {"STAT": 16}
+}
