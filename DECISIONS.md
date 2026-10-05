@@ -70,6 +70,8 @@ Lead只批准下一个CPU-cache诊断：在prefix做4-fold leave-one-phase-out�
 
 source mapping artifact `57ed2a25…3b92`把四个canonical phase固定为b00/t148、b02/t106、b04/t120、b06/t134；train16只可凭source case/time和curated frame-0 identity并入b00/b02，不能按episode名或标签顺序推断。数值协议固定为正式default TF32/high，不沿用highest-FP32诊断路线。alpha grid、并列取较大值、fold-train-only统计、全train单次refit均预先固定；先前train8 late端点在本次属于全train的一部分，但不得用既往late结果事后调整grid或选择规则。最终只允许改新checkpoint的四个force rows，其余tensor须字节不变；default TF32的严格`2e-5` wiring采用captured pointwise-head→mask-mean执行顺序，ideal pooled-affine与native差异只逐通道报告，不假定严格代数等价。当前批准不包含GPU提取、候选执行、validation/frozen、PPO或真实CFD；完整科学准入仍需后续独立评估。
 
+实现已通过独立CPU审查：9项测试及真实44轨迹inventory验证family权重、缺family的fold聚合、fold-train统计、误导性train16名字不决定phase、去标准化、official fresh reload和force-row confinement。Lead随后只批准一次受守卫的Main全train校准执行；这项执行可生成train-only候选和原生replay证据，但不能自行开启formal evaluation或PPO。执行结果须从真实feature cache独立重算CV与native指标后再决定是否申请后续评估。
+
 ## 新决策格式
 
 ID、记录时间、状态、待检验假设、对应实验ID、所依据证据/协议、可选方案、取舍原因、保留的不确定性、撤销/调整条件。只有读取过的产物可作为事实；代理口头报告是待核信息。
