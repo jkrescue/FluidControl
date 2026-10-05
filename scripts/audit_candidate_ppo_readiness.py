@@ -30,6 +30,7 @@ DEVELOPMENT_STATUS = "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_PASS"
 FC_P003C_KIND = "true_state_paired_step_lambda10"
 FC_P008_KIND = "full_train_force_row_recalibration"
 FC_P013_KIND = "fcp013_independent_force_dual_fno"
+FC_P015_KIND = "fcp015_window_accumulation_dual_fno"
 FC_P013_CONFIG = Path("artifacts/fcp011_resource_probe_runtime_20261005/resolved_config.yaml")
 HOST_REPO = Path("/workspace/fluid_control")
 FC_P008_CONFIG = Path(
@@ -204,22 +205,32 @@ def _bound_evidence(gate: dict, repo_root: Path) -> None:
 
 
 def p013_candidate_identity(*, repo_root, candidate_root, lineage, receipt_path,
-                            normalization_path, data_artifacts):
-    """Bind actual P013 evidence without adapting it into a legacy training schema."""
+                            normalization_path, data_artifacts, profile="P013"):
+    """Bind explicit P013/P015 evidence using their distinct terminal schemas.
+
+    The historical function name/default preserve existing P013 callers. P015
+    must be requested explicitly and can never inherit P013 step/status fields.
+    """
     from fluid_control.dual_control_contract import verify_dual_control_binding
     from fluid_control.dual_fno import ARCHITECTURE, validate_dual_fno_manifest, validate_dual_runtime_files
 
+    if profile not in ("P013", "P015"):
+        raise ValueError("unsupported dual candidate profile")
+    kind = FC_P015_KIND if profile == "P015" else FC_P013_KIND
+    steps = 171 if profile == "P015" else 1368
     required = {
-        "status": "FC_P013_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION",
-        "candidate_kind": FC_P013_KIND, "checkpoint_epoch": 1,
+        "status": f"FC_{profile}_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION",
+        "candidate_kind": kind, "checkpoint_epoch": 1,
         "checkpoint_relative_directory": "candidate/aerodynamic",
         "checkpoint_model_file": "FNO.0.1.mdlus",
         "checkpoint_state_file": "checkpoint.0.1.pt",
         "training_performed": True, "optimizer_training_performed": True,
-        "calibration_fit_performed": False, "optimizer_steps": 1368,
+        "calibration_fit_performed": False, "optimizer_steps": steps,
         "validation_or_frozen_accessed": False, "ppo_auto_launch": False,
         "official_image_id": IMAGE_ID,
     }
+    if profile == "P015":
+        required.update(training_experiment="FC-P015", training_windows=1368, accumulation_windows=8)
     if any(lineage.get(k) != v for k, v in required.items()):
         raise ValueError("P013 lineage identity/scope differs")
     relative = candidate_root.relative_to(repo_root)
@@ -248,9 +259,9 @@ def p013_candidate_identity(*, repo_root, candidate_root, lineage, receipt_path,
     completion = load(candidate_root / "completion_receipt.json")
     audit_path = candidate_root / "candidate_audit.json"
     candidate_audit = load(audit_path)
-    if (completion.get("status") != "FC_P013_TRAINING_COMPLETE_NOT_ADMISSION"
+    if (completion.get("status") != f"FC_{profile}_TRAINING_COMPLETE_NOT_ADMISSION"
             or completion.get("candidate_audit_sha256") != sha256(audit_path)
-            or completion.get("optimizer_steps") != 1368
+            or completion.get("optimizer_steps") != steps
             or completion.get("scientific_admission") is not False
             or completion.get("ppo_executed") is not False
             or any(lineage.get(k) != v for k, v in candidate_audit.items())):
@@ -264,6 +275,19 @@ def p013_candidate_identity(*, repo_root, candidate_root, lineage, receipt_path,
         "aerodynamic_state_sha256": identity.aerodynamic.state_sha256,
         "candidate_result_sha256": lineage["candidate_result_sha256"],
     }
+    if profile == "P015":
+        completion_expected.pop("aerodynamic_model_sha256")
+        completion_expected.pop("aerodynamic_state_sha256")
+        completion_expected.update(
+            checkpoint_sha256=identity.aerodynamic.model_sha256,
+            checkpoint_state_sha256=identity.aerodynamic.state_sha256,
+            training_experiment="FC-P015", training_windows=1368, accumulation_windows=8,
+            training_approval_sha256=sha256(candidate_root / "execution_approval.json"),
+            execution_observation_sha256=sha256(candidate_root / "running_execution_evidence.json"),
+        )
+        for key in ("training_approval_sha256", "execution_observation_sha256"):
+            if lineage.get(key) != completion_expected[key]:
+                raise ValueError("P015 execution evidence binding differs")
     if any(completion.get(k) != v for k, v in completion_expected.items()):
         raise ValueError("P013 completion model/result identity differs")
     from audit_fcp011_candidate import INPUT_SHA
@@ -283,15 +307,17 @@ def p013_candidate_identity(*, repo_root, candidate_root, lineage, receipt_path,
         development_auditor=repo_root / "scripts/audit_dynamic_fno_development_gates.py",
     )
     precision = load(receipt_path.parent / "precision.json")
-    if precision != {"status": "FC_P013_FORMAL_EVALUATION_DEFAULT_TF32_HIGH",
+    if precision != {"status": f"FC_{profile}_FORMAL_EVALUATION_DEFAULT_TF32_HIGH",
                      "official_image_id": IMAGE_ID, **FC_P008_PRECISION}:
         raise ValueError("P013 formal precision evidence differs")
     approval = load(receipt_path.parent / "evidence/formal_evaluation_approval.json")
-    if (approval.get("candidate_kind") != FC_P013_KIND
+    if (approval.get("candidate_kind") != kind
             or approval.get("candidate_completion_receipt_sha256") != sha256(candidate_root / "completion_receipt.json")
             or approval.get("candidate_result_sha256") != lineage["candidate_result_sha256"]
             or approval.get("dual_manifest_sha256") != identity.manifest_sha256):
         raise ValueError("P013 formal approval belongs to another candidate")
+    if profile == "P015" and approval.get("dual_reload_receipt_sha256") != sha256(candidate_root / "dual_reload_receipt.json"):
+        raise ValueError("P015 actual CPU reload receipt differs from formal approval")
     return {
         "config": config, "epoch": 1,
         "checkpoint_relative_directory": Path("candidate/aerodynamic"),
@@ -396,11 +422,12 @@ def audit(
 
         candidate_kind = lineage.get("candidate_kind")
         p013 = None
-        if candidate_kind == FC_P013_KIND:
+        if candidate_kind in (FC_P013_KIND, FC_P015_KIND):
             p013 = p013_candidate_identity(
                 repo_root=repo_root, candidate_root=candidate_root, lineage=lineage,
                 receipt_path=posteval_receipt_path, normalization_path=normalization_path,
                 data_artifacts=data_artifacts,
+                profile="P015" if candidate_kind == FC_P015_KIND else "P013",
             )
             config, epoch = p013["config"], p013["epoch"]
             config_sha = sha256(config)
@@ -663,7 +690,7 @@ def audit(
             "checkpoint_model_file": model_file,
             "checkpoint_state_file": state_file,
             "precision_protocol": (
-                FC_P008_PRECISION if candidate_kind in (FC_P008_KIND, FC_P013_KIND) else None
+                FC_P008_PRECISION if candidate_kind in (FC_P008_KIND, FC_P013_KIND, FC_P015_KIND) else None
             ),
             "normalization_sha256": normalization_sha,
             "validation_manifest_sha256": validation_manifest_sha,

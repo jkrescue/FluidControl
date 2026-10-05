@@ -19,6 +19,7 @@ from pathlib import Path
 
 
 RUNTIME_IMAGE_ID = "sha256:2e45b4e1ac9553ea86aa9148455be9aae30688446039fdee6255a637603acb2c"
+DUAL_KINDS = ("fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno")
 
 
 def sha256(path: Path) -> str:
@@ -104,7 +105,7 @@ def command_contract(args, readiness: dict) -> dict:
         "reward_contract": "canonical_joint_v1 unchanged",
         "new_policy_required": True,
     }
-    if identity.get("candidate_kind") == "fcp013_independent_force_dual_fno":
+    if identity.get("candidate_kind") in DUAL_KINDS:
         contract["endpoint_evaluation_config_sha256"] = sha256(args.endpoint_evaluation_config)
         if identity.get("endpoint_evaluation_config_sha256") != contract["endpoint_evaluation_config_sha256"]:
             raise ValueError("P013 endpoint evaluation config differs from readiness")
@@ -134,7 +135,7 @@ def build_trainer_command(
     ).resolve()
     evaluation_config = (
         args.endpoint_evaluation_config
-        if identity.get("candidate_kind") == "fcp013_independent_force_dual_fno"
+        if identity.get("candidate_kind") in DUAL_KINDS
         else config
     )
     command = [
@@ -172,7 +173,7 @@ def build_trainer_command(
                 str(identity.get("checkpoint_state_sha256")),
             )
         )
-    if identity.get("candidate_kind") == "fcp013_independent_force_dual_fno":
+    if identity.get("candidate_kind") in DUAL_KINDS:
         binding = identity["dual_control_binding"]
         command.extend((
             "--dual-fno-manifest", str(args.repo / identity["dual_manifest_path"]),
@@ -328,7 +329,7 @@ def execute(args, readiness: dict) -> dict:
         or audit.get("vecnormalize_contract")
         != "identity: norm_obs=false, norm_reward=false; preserves legacy PPO numerics"
         or (
-            contract["candidate_kind"] in ("full_train_force_row_recalibration", "fcp013_independent_force_dual_fno")
+            contract["candidate_kind"] in ("full_train_force_row_recalibration", *DUAL_KINDS)
             and audit.get("precision_protocol") != contract["precision_protocol"]
         )
         or not isinstance(iterations, list)

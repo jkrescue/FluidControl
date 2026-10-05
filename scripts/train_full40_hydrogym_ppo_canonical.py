@@ -466,7 +466,7 @@ def recompute_p013_endpoint_view(
     validation_report: Path, validation_segments: Path, predeclaration: Path,
     checkpoint_dir: Path, data: Path, config: Path, image_id: str,
 ) -> tuple[dict, dict]:
-    """Use an identity-verified temporary path view of an unchanged P013 report."""
+    """Use an identity-verified P013/P015 report view; retain the legacy API name."""
     if set(dual_options) != set(DUAL_OPTION_NAMES) or any(
         dual_options[name] is None for name in DUAL_OPTION_NAMES
     ):
@@ -486,6 +486,13 @@ def recompute_p013_endpoint_view(
     )
     receipt_path = dual_options["dual_posteval_receipt"].resolve()
     receipt = read_json(receipt_path)
+    # The binding verifier above already checked the real manifest/receipt
+    # experiment. The default preserves old P013 synthetic helper callers.
+    receipt_status = receipt.get("status", "FC_P013_POSTEVAL_COMPLETE")
+    profiles = {"FC_P013_POSTEVAL_COMPLETE": "P013", "FC_P015_POSTEVAL_COMPLETE": "P015"}
+    if receipt_status not in profiles:
+        raise ValueError("endpoint path view requires a verified dual experiment")
+    profile = profiles[receipt_status]
     sources = {
         "validation10/evaluation.json": validation_report,
         "validation10/segments.json": validation_segments,
@@ -523,7 +530,7 @@ def recompute_p013_endpoint_view(
         "evaluation_data": str(data.resolve()), "normalization_data": str(data.resolve()),
     }
     view = {**report, **runtime}
-    with tempfile.TemporaryDirectory(prefix="p013-canonical-endpoint-view-") as directory:
+    with tempfile.TemporaryDirectory(prefix=f"{profile.lower()}-canonical-endpoint-view-") as directory:
         view_path = Path(directory) / "evaluation.json"
         view_path.write_text(json.dumps(view, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         recomputed = gate_module.audit(
@@ -533,7 +540,7 @@ def recompute_p013_endpoint_view(
     recomputed["checkpoint_dir"] = original["checkpoint_dir"]
     recomputed["report_sha256"] = source_hashes["validation10/evaluation.json"]
     return recomputed, {
-        "status": "P013_ENDPOINT_PATH_VIEW_IDENTITY_VERIFIED",
+        "status": f"{profile}_ENDPOINT_PATH_VIEW_IDENTITY_VERIFIED",
         "original_paths": original, "runtime_paths": runtime,
         "source_sha256": source_hashes,
         "posteval_receipt_sha256": binding["posteval_receipt_sha256"],
@@ -747,9 +754,10 @@ def require_single_model_identity(value) -> None:
         if dual_keys.intersection(value):
             raise ValueError("dual FNO evidence requires the complete dual arguments")
         for key, item in value.items():
-            if key in {"status", "kind", "candidate_kind", "metadata_kind"} and isinstance(item, str):
-                if item.startswith("FC_P013_") or item == "fcp013_independent_force_dual_fno":
-                    raise ValueError("P013 checkpoint/evidence requires the complete dual arguments")
+            if key in {"status", "kind", "candidate_kind", "metadata_kind", "training_experiment"} and isinstance(item, str):
+                if (item.startswith(("FC_P013_", "FC_P015_"))
+                        or item in {"fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "FC-P015"}):
+                    raise ValueError("dual checkpoint/evidence requires the complete dual arguments")
             require_single_model_identity(item)
     elif isinstance(value, list):
         for item in value:
@@ -765,7 +773,7 @@ def verify_single_model_selection(args, readiness: dict) -> None:
     checkpoint_dir = getattr(args, "checkpoint_dir", None)
     if checkpoint_dir is None:
         return
-    # Official state metadata identifies P013 even if no dual-aware report was
+    # Official state metadata identifies P013/P015 even if no dual-aware report was
     # supplied. Meta storage avoids materializing historical optimizer tensors.
     import torch
 
