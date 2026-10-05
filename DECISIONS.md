@@ -82,6 +82,12 @@ formal suite已完成并反证准入：总receipt SHA为`14fd24d9…edcb5`，dev
 
 family顺序固定为base20/train8/train16，share仍为`(720,408,240)/1368`，而不是按端点数分配；对应window-step行数为72000/40800/24000，唯一CFD端点数为16000/1600/2048。四折按canonical source phase进行，OOF须按预定全局row weight汇总，不能在缺family的fold内重新等权。原regular sampler暴露保持，但这不是严格单因素消融：相对FC-P008，隐藏状态从true-state H1换成free-AR，同时同一真实端点因AR起点/relative horizon重复出现，row权重结构也随之改变。为分离该权重混杂，CPU阶段必须从现有P008 H1 cache将相同19648个目标映射成同一136800个window-step目标、保持目标值与phase逐项相同，并以固定`alpha=0`计算matched-weight H1对照；AR fit只能与这个对照和原P008两者并列解释。两种fit必须共用从同一HDF raw四力按P008 canonical NumPy-float64规范化后转float32得到的标签；官方DataPipe的torch-float32规范化另作同raw端点审计并记录两条算术路径的差异，不能用直接`array_equal`误判舍入差，也不能放宽容差掩盖case/step错配。不得读取validation/frozen选参，也不得因validation10已FAIL而事后改变阈值或权重。实施先限于一次cache-only特征提取及CPU拟合；生成候选、native replay、formal和PPO均须另审。
 
+FC-P009已完成且未生成候选。completion/result/cache/CPU交叉分析SHA分别为`0893ec75…c214f`/`1321c30a…91daf`/`fc1b84fd…8ca84`/`ffd48eba…7516`。固定`alpha=0`下，free-AR fit在held free-AR域的all-step rear-Cd/rear-Cl MAE为`0.013660/0.039128`，优于matched-H1 fit的`0.026794/0.056831`；H100为`0.013683/0.043003`对`0.032974/0.067989`。但同一free-AR fit在held H1域的all-step误差为`0.022449/0.053706`，明显差于H1 fit的`0.013412/0.022520`；H1-step为`0.020044/0.042925`对`0.011691/0.019504`。因此证据支持状态分布特异的可读性，而不是可部署的共同受力头；不生成P009候选、不申请formal或PPO。
+
+Lead随后只批准一个有界CPU-cache判别：将相同136800行、相同canonical targets/source phase/原row weight的H1与free-AR特征各自归一化为总质量1后乘`0.5`，在每个source-phase fold中只用fold-train联合数据计算一个共享scaler，并拟合一个共享`alpha=0`仿射头。held phase必须在两个域分别报告all-step与H1/H10/H50/H100的逐通道物理误差；不得搜索mixture或alpha，也不得用单个平均数建立新准入阈值。该诊断只判断一个共享头能否兼顾两种隐藏状态分布；不要求它逐项支配两个分别优化的专用头。即使训练内改善，也仍须另行批准candidate/native replay并通过原formal gates。
+
+共享头诊断已完成（SHA `931fcd2d…f2b0bc`）。H100 AR域rear-Cd/rear-Cl/total-Cd MAE为`0.01612/0.04610/0.01607`，相对C亲本`0.01637/0.07392/0.01637`改善但不及AR专用头`0.01368/0.04300/0.01367`；H1域为`0.01593/0.03035/0.01572`，优于C亲本`0.02622/0.06333/0.02580`但不及H1专用头`0.01432/0.02447/0.01411`。这支持折中头的train-only可表达性，不证明validation或控制收益。Lead只批准最小候选实现和CPU测试：复用缓存系数，官方加载C-e2，只改四个force rows/bias，保存为独立epoch0后重载并逐tensor核confinement；default-TF32/high下仅用固定base20首个train batch的H1作`2e-5` pointwise wiring sanity和有限性检查，pooled/native差只报告。候选GPU构建、原formal suite与PPO仍分别需要明确批准。
+
 ## 新决策格式
 
 ID、记录时间、状态、待检验假设、对应实验ID、所依据证据/协议、可选方案、取舍原因、保留的不确定性、撤销/调整条件。只有读取过的产物可作为事实；代理口头报告是待核信息。
