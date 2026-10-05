@@ -102,7 +102,11 @@ FC-P010在固定P009 train-only cache上保持H1/free-AR逐步rear-Cl损失各�
 
 ## D021 — FC-P011训练完成但固定train诊断为权衡，以原formal裁决而非训练指标挑选
 
-FC-P011两臂均按同一1368-window顺序完成且scope auditor通过。A只训练rear-Cl行，free-AR rear-Cl逐步/RMS约改善1.5%，但true-state H1退化；B额外训练最后decoder hidden linear层，free-AR rear-Cl逐步/RMS反而恶化6.65%/3.37%，同时free-AR field与H1 RMS改善。该结果既不支持按训练指标直接接受任一臂，也不允许把A→B之外的变化归因于scope。Lead已分别以`ef6af31`和`f76402b`批准两臂运行完全相同的原formal suite；只有完整field、endpoint、dynamic与force-window结果能作准入判断，当前formal active且无结论，PPO继续禁止。
+FC-P011两臂均按同一1368-window顺序完成且scope auditor通过。A只训练rear-Cl行，free-AR rear-Cl逐步/RMS约改善1.5%，但true-state H1退化；B额外训练最后decoder hidden linear层，free-AR rear-Cl逐步/RMS反而恶化6.65%/3.37%，同时free-AR field与H1 RMS改善。该结果既不支持按训练指标直接接受任一臂，也不允许把A→B之外的变化归因于scope。两臂原formal现均已完成并FAIL：A/B窗口都只通过两个zero分支，旋转rear-Cl′ RMS误差分别为`0.070312/0.122247/0.068076/0.083214`和`0.062584/0.119208/0.075209/0.076236`；B的validation10 delta-Cd还以`0.024318>0.023`失败。故A、B均拒绝进入PPO，原门槛保持不变。
+
+## D022 — FC-P011后先做train-only梯度分解，不自动切换路线或增加训练
+
+FC-P011的局部scope干预未修复formal窗口失败，但训练记录显示A从不clip、B每步都clip；这些统计不能单独证明是field还是force梯度造成。下一优先只准备一个no-optimizer、no-save、无validation/frozen/PPO的train-only诊断：固定既有6个窗口，在P009亲本与P011B终态上分别重建相同H100 loss graph，独立计算field与weighted-force梯度的范数、夹角和合成前后clip尺度，并按允许tensor组报告。它只用于判断B的scope权衡是否伴随梯度竞争/尺度失衡，不构成新gate，也不从梯度相关性宣称因果。用户最终目标和force/world-model→PPO→真实CFD路线不变；任何训练干预仍须另行审批并通过原formal。
 
 canonical surrogate的reward warm-up与direct-CFD reset不一致属于接口缺陷而非新科学变量。commit `962c165`只让canonical路径从同一绝对restart时钟恢复真实62点prehistory，并严格绑定来源；32项CPU回归及两次独立复核均PASS。该修复不追认历史候选、不放宽门槛，也不等于控制执行授权。
 
