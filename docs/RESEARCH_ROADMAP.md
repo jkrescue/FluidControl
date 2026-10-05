@@ -1,5 +1,45 @@
 # Research roadmap and prioritized backlog
 
+## Current — 2026-10-05 21:43 UTC: K1 evaluation live; matched K4 next
+
+K1 training completed 1,368 windows / 171 optimizer updates. Actual candidate
+integrity and official CPU dual reload are verified; see
+`FC_P026_K1_TERMINAL_REVIEW_20261006.md`. The unchanged formal evaluation is
+running under `fluid-control-fcp026-k1-formal-20261006.service`, invocation
+`c039836ab63246ff8772dad66e1b46e5`, currently in `dynamic6`. The validation10
+endpoint component passed, but the complete force-window and development
+decision are not yet available. A component PASS is not surrogate admission.
+
+Next executable sequence:
+
+1. Finish and independently review this same K1 formal invocation and its
+   complete output hashes, metrics and resource evidence. Do not restart a live
+   stage because its log lacks per-window updates.
+2. Issue a separate K4 execution approval after formal termination and resource
+   clearance. Its reviewed draft is preparation only. Use the original P018
+   aerodynamic parent, not the K1 terminal; keep the matched 1,368-window,
+   171-update protocol and all acceptance criteria unchanged. The training lock
+   alone does not exclude a concurrent formal-evaluation process: inspect actual
+   GPU processes before launch. Startup requires free >=30 GiB and available
+   >=50 GiB; execution retains the original 20 GiB floors.
+3. Independently audit/reload K4 and execute the original full formal suite.
+   Compare both terminal candidates under the same protocol; do not select an
+   intermediate training snapshot or relax prediction gates.
+4. HydroGym explicit-history integration is now committed (`23711cc`) and its
+   runtime-image fingerprint is verified (`e542ff1`). These are software
+   prerequisites, not a newly trained policy. An admitted candidate still needs
+   a fresh compatible PPO policy and actual paired CFD closed-loop validation.
+5. If neither candidate is admitted, retain both negative results and review the
+   measured failure before approving another experiment. Existing train16
+   already contains real historical exploratory-PPO CFD; additional data must
+   address a demonstrated gap. A short-horizon MPC route would additionally
+   require full-field state feedback, not merely the existing sparse observation.
+
+The physical mean-lift 10% criterion and the conditional 15% review in
+`../DECISIONS.md` are distinct from surrogate prediction accuracy. No changed
+physical threshold, new PPO or completed surrogate-assisted closed loop is
+claimed. Older sections below are dated history, not current execution status.
+
 ## Current — 2026-10-05 19:46 UTC: matched training live; control integration in parallel
 
 K1 is actually running under service
