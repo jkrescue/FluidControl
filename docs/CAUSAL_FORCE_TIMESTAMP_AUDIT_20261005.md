@@ -1,5 +1,9 @@
 # Six-window current-force timestamp audit
 
+Persistent experiment record: **FC-E031**. Primary evidence now resides in `artifacts/causal_force_input_audit_20261005/`: timestamp_audit.json SHA `72d9117922ef5dbbd3b9f9a5ae193d01c19ac44a39aea30b4dbe5eaf3189d4e2`, persistence.json SHA `c6f71f1ad90b6c2b952ce5fa0ba4752e4c3bd2bfc8a34e5388f75751817ce146`, official_source.json SHA `e8c6ea9feaaf0d7828d3c976891c70ea8e8028c0d1b2a5639127571c5177aec1`. Temporary paths below retain the original investigation provenance.
+
+Independent reviewer recomputed the complete timestamp-audit dictionary in memory from actual raw sources, omitting only file-writing and printing: exact equality, including274 freshly hashed raw/config files, unique606 endpoints per cylinder, interpolation brackets and reconstructed values. Observed exact raw-to-nominal timestamp difference is zero. Source fallback appears only at initial frame for windows975/1077/1233. Root subsequently authorized isolated P021 CPU engineering in commit`225d99f`, not GPU execution, training or deployment; see `FC_P021_CPU_ENGINEERING_APPROVAL_20261005.md`. This updates the earlier pending-authorization wording below without changing scientific scope.
+
 Read-only CPU work, 2026-10-05 UTC. No HDF, targets, normalization, models or repository files changed. This is input provenance evidence, not admission.
 
 Evidence: timestamp_audit.json SHA 72d9117922ef5dbbd3b9f9a5ae193d01c19ac44a39aea30b4dbe5eaf3189d4e2; producer timestamp_audit.py SHA c3d97ba8ac5b85d505086da18509e392369df1704a936b4375da90af430b0047. Both reside in /tmp/force-conditioning-review.hMRnOP. Input six-window force/time extraction is persistence.json SHA c6f71f1ad90b6c2b952ce5fa0ba4752e4c3bd2bfc8a34e5388f75751817ce146. HDF hashes remain inherited from pinned prior audit; no bulk HDF scan repeated.

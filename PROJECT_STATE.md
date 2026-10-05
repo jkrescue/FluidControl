@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**当前阶段：六窗因果力输入审计完成（FC-E031），P021仅CPU工程获批**。独立从实际raw系数与配置重算完整时间审计，274个源文件SHA和完整结果一致；六窗606个名义端点、每圆柱均有唯一同时间raw力。base/train8的505帧中200帧HDF力实际含下一solver样本的微小插值贡献；train16的101帧使用精确端点，不含该依赖。六个初始力均精确，因此旧AR initial persistence不受影响；旧HDF-lag H1 persistence只能称描述性滞后一帧基线，不能称严格在线因果。精确raw sidecar只覆盖这六窗，不外推到44轨迹/heldout，HDF目标与归一化不改。
+
+审计主结果`artifacts/causal_force_input_audit_20261005/timestamp_audit.json` SHA `72d9117922ef5dbbd3b9f9a5ae193d01c19ac44a39aea30b4dbe5eaf3189d4e2`；详见`docs/CAUSAL_FORCE_TIMESTAMP_AUDIT_20261005.md`。Root提交`225d99f`仅授权P021隔离暂存CPU适配器/梯度与warm-start工程测试，不授权GPU、训练或架构部署。P020局部条件未满足和P018正式FAIL保持有效，无新候选/准入/PPO；所有指标不变。以下早期状态保留为历史。
+
 **当前阶段：P020两组有限步数对照完整结束，但预声明局部支持条件未满足（FC-E030，2026-10-05）**。同一invocation `4567f6d393414bba8baf2239d16960a7`已active/exited、success、MainPID0、code1/status0；guard exit0。独立复核32次更新、192个唯一六窗反向事件、全部有限数值、源/候选/审批身份、44HDF启动核验，以及八次端点panel的聚合与判据重算。两臂初态及所有端点重复逐窗数值完全一致，但重复差为零不是严格误差上界。结果SHA `a7c0d0c41b35391e22d07fb223a5ed243891ccdd4759815e9bf08b82670b5042`。
 
 B统计监督组相对A原目标组的H1/AR均值平方误差与RMS幅值平方误差四项均改善；相对共同初态，B的H1均值平方误差增加`4.8015515e-6`，H1 centered residual MSE增加`0.0002363738182`，所以`LOCAL_CONDITIONS_NOT_MET`、local_support=false。两域原目标均下降仍不能覆盖这些失败。382个host样本最低available106.712757/free24.620411GiB，内层CUDAfree最低24.622280GiB，双20GiB满足。无候选保存、无heldout/PPO或科学准入；P018原正式FAIL继续有效，所有门槛未改。下一科学方向由Root分析决定，当前力条件化仅待分析，不是已批准执行。详见`docs/FC_P020_TERMINAL_REVIEW_20261005.md`。以下运行与准备描述保留为历史。

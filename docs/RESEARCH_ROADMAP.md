@@ -1,5 +1,11 @@
 # Research roadmap and prioritized backlog
 
+## 当前状态：FC-E031因果力输入审计完成，P021仅CPU工程
+
+六窗606个raw端点可构建显式因果输入；base/train8旧HDF的200/505帧含真实微小未来插值，train16精确。旧H1 HDF-lag persistence不是严格因果，六初始力精确故AR initial baseline不受影响。完整审计与274来源SHA独立重算一致，报告`CAUSAL_FORCE_TIMESTAMP_AUDIT_20261005.md`，主SHA`72d9117922ef5dbbd3b9f9a5ae193d01c19ac44a39aea30b4dbe5eaf3189d4e2`。
+
+下一步按Root225d99f只进行隔离CPU适配器/官方warm-start映射/完整递归checkpoint梯度测试；不授权GPU、训练、部署、准入或PPO。sidecar仅六窗，HDF目标不改；全44轨迹与heldout仍需各自授权和时序证明。P020局部失败、P018正式FAIL和原指标保持。以下为历史。
+
 ## 当前状态：P020完成但局部支持条件未满足（FC-E030）
 
 两组从同一P018终态、fresh AdamW、固定六训练窗各16更新，32更新/192反向事件与资源/源数据身份独立核验。B相对A四项五非零窗尾统计均改善，但相对初态H1bias MSE增加4.8015515e-6、H1 centered residual MSE增加0.0002363738182，原预声明结论`LOCAL_CONDITIONS_NOT_MET`。零端点重复差仅为观测，不是严格误差界。没有候选保存、heldout或PPO；P018正式FAIL与原门槛保持。

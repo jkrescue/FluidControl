@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E031 — Six-window causal force-input audit (2026-10-05)
+
+Descriptive CPU data/source audit only, no model training. Actual persisted evidence is `artifacts/causal_force_input_audit_20261005/{persistence.json,timestamp_audit.json,official_source.json}`. Primary timestamp SHA `72d9117922ef5dbbd3b9f9a5ae193d01c19ac44a39aea30b4dbe5eaf3189d4e2`. Independent in-memory recomputation from actual raw files matches the full timestamp result, including274 source/config hashes. All606 endpoints per cylinder uniquely match nominal time exactly; restart-source fallback occurs only selected initial frames975/1077/1233.
+
+Actual future interpolation affects200/505 base/train8 HDF frames; train16's101 frames use exact endpoints, not its hypothetical stored-time interpolation. Six initial forces are exact: AR-initial persistence unchanged, HDF-lag H1 persistence is not strictly causal. H1 persistence's smaller mean/RMS-amplitude errors do not fix waveform error (five-nonzero rearCl MAE0.107195 versus FNO0.038682). Remedy is an explicit exact-raw six-window input sidecar with unchanged targets/normalization, not recuration or a full-data claim.
+
+Root225d99f authorizes P021 staged CPU engineering only; no GPU, training, deployment or admission. Full report `docs/CAUSAL_FORCE_TIMESTAMP_AUDIT_20261005.md`. Preserve all earlier records below.
+
 ## FC-E030 — FC-P020 symmetric tail-statistic finite-update comparison (2026-10-05)
 
 Operationally complete: identical P018 initial tensors and fresh AdamW for both arms, fixed SIX training windows, 16 updates per arm, six raw gradients averaged before one clip. All192 unique window backwards and32 update records verified. Four endpoint panels repeated twice; all repeat rows and A/B initial rows exactly equal. Source/dependency/candidate/approval hashes, journal44-HDF mapping, resource guard exit0, finite output and aggregate/criterion recomputation verified independently. Result SHA `a7c0d0c41b35391e22d07fb223a5ed243891ccdd4759815e9bf08b82670b5042`.
