@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+
 TRAINER_SHA = "9c761cfcb3d4f18dbe35aed1b3defe0614b29db867006055dae63d9fa94485a5"
 CONFIG_SHA = "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
 NORMALIZATION_SHA = "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
@@ -48,6 +49,15 @@ def tensor_state_sha256(module) -> str:
     return digest.hexdigest()
 
 
+def tensor_sha256(value) -> str:
+    tensor = value.detach().cpu().contiguous()
+    digest = hashlib.sha256()
+    digest.update(str(tensor.dtype).encode())
+    digest.update(str(tuple(tensor.shape)).encode())
+    digest.update(tensor.numpy().tobytes())
+    return digest.hexdigest()
+
+
 def load_frozen_trainer(path: Path):
     if sha256(path) != TRAINER_SHA:
         raise ValueError("FC-P011 trainer SHA differs")
@@ -63,13 +73,20 @@ def balanced_force_objective(predicted, target):
     """P011's exact balanced normalized four-force loss, without field loss."""
     import torch
 
-    if predicted.shape != target.shape or predicted.ndim != 3 or predicted.shape[-1] != 4:
+    if (
+        predicted.shape != target.shape
+        or predicted.ndim != 3
+        or predicted.shape[-1] != 4
+    ):
         raise ValueError("force tensors must have identical [B,T,4] shapes")
     channel_mse = (predicted - target).square().mean(dim=(0, 1))
     equal_four = channel_mse.mean()
     rear_cl = channel_mse[3]
     balanced = 0.5 * equal_four + 0.5 * rear_cl
-    if not all(torch.isfinite(value).all() for value in (channel_mse, equal_four, rear_cl, balanced)):
+    if not all(
+        torch.isfinite(value).all()
+        for value in (channel_mse, equal_four, rear_cl, balanced)
+    ):
         raise FloatingPointError("non-finite force objective")
     return {
         "balanced": balanced,
@@ -148,13 +165,17 @@ def chunk_force_objective(
         h1 = h1_states[:, begin:end].reshape(batch * length, *h1_states.shape[2:])
         ar = flow_states[:, begin:end].reshape(batch * length, *flow_states.shape[2:])
         states = torch.cat((h1, ar), dim=0)
-        masks = mask[:, None].expand(-1, length, -1, -1, -1).reshape(
-            batch * length, *mask.shape[1:]
+        masks = (
+            mask[:, None]
+            .expand(-1, length, -1, -1, -1)
+            .reshape(batch * length, *mask.shape[1:])
         )
         masks = torch.cat((masks, masks), dim=0)
         now = omega[:, begin:end].reshape(-1)
         nxt = omega[:, begin + 1 : end + 1].reshape(-1)
-        inputs = make_inputs(states, masks, torch.cat((now, now)), torch.cat((nxt, nxt)))
+        inputs = make_inputs(
+            states, masks, torch.cat((now, now)), torch.cat((nxt, nxt))
+        )
         _, forces = predict_fn(aerodynamic_model, inputs, masks)
         h1_force, ar_force = forces[: batch * length], forces[batch * length :]
         targets = target_force[:, begin:end].reshape(batch * length, 4)
@@ -195,6 +216,41 @@ def run_window(flow_model, aerodynamic_model, batch, predict_fn, *, backward: bo
     )
 
 
+def evaluate_fixed_windows(flow_model, aerodynamic_model, items, device, predict_fn):
+    """Evaluate all six fixed train windows without selection or model changes."""
+    import torch
+
+    flow_was_training = flow_model.training
+    aerodynamic_was_training = aerodynamic_model.training
+    flow_model.eval()
+    aerodynamic_model.eval()
+    rows = []
+    with torch.no_grad():
+        for item in items:
+            batch = {
+                key: value[None].to(device) for key, value in item["sample"].items()
+            }
+            rows.append(
+                {
+                    "global_index": item["global_index"],
+                    "family": item["family"],
+                    "identity": item["identity"],
+                    **run_window(
+                        flow_model,
+                        aerodynamic_model,
+                        batch,
+                        predict_fn,
+                        backward=False,
+                    ),
+                }
+            )
+    flow_model.train(flow_was_training)
+    aerodynamic_model.train(aerodynamic_was_training)
+    if len(rows) != 6:
+        raise RuntimeError("FC-P013 fixed diagnostic window count differs")
+    return rows
+
+
 def optimizer_window_step(
     flow_model,
     aerodynamic_model,
@@ -215,11 +271,11 @@ def optimizer_window_step(
     )
     gradient_audit = audit_aerodynamic_gradients(aerodynamic_model)
     trainable = [
-        parameter for parameter in aerodynamic_model.parameters() if parameter.requires_grad
+        parameter
+        for parameter in aerodynamic_model.parameters()
+        if parameter.requires_grad
     ]
-    preclip = torch.nn.utils.clip_grad_norm_(
-        trainable, gradient_clip_norm
-    )
+    preclip = torch.nn.utils.clip_grad_norm_(trainable, gradient_clip_norm)
     if not torch.isfinite(preclip):
         raise FloatingPointError("non-finite aerodynamic gradient norm")
     optimizer.step()
@@ -278,7 +334,13 @@ def checkpoint_pair(root: Path) -> tuple[Path, Path]:
     return models[0], states[0]
 
 
-def build_dual_manifest(output: Path, aerodynamic_model: Path, aerodynamic_state: Path):
+def build_dual_manifest(
+    output: Path,
+    aerodynamic_model: Path,
+    aerodynamic_state: Path,
+    *,
+    input_sha256: dict[str, str] | None = None,
+):
     flow_model = output / "flow" / "FNO.0.0.mdlus"
     flow_state = output / "flow" / "checkpoint.0.0.pt"
     manifest = {
@@ -308,22 +370,52 @@ def build_dual_manifest(output: Path, aerodynamic_model: Path, aerodynamic_state
             "coord_features": True,
             "force_channels": list(FORCE_CHANNELS),
         },
+        "training_semantics": {
+            "window_count": TOTAL_STEPS,
+            "rollout_steps": ROLLOUT_STEPS,
+            "batch_size": 1,
+            "seed": 20261003,
+            "sampler_order_sha256": "177ebd9523cde918eb0c1fb8026286dac7e95f3d228ae0e349757a2a9a288f9f",
+            "h1_force_weight": 0.5,
+            "frozen_flow_ar_force_weight": 0.5,
+            "force_objective": "0.5_equal_four_normalized_mse_plus_0.5_rear_cl_normalized_mse",
+            "field_loss_used": False,
+            "chunk_size": CHUNK_SIZE,
+            "optimizer": "AdamW",
+            "learning_rate": 1e-5,
+            "weight_decay": 1e-4,
+            "gradient_clip_norm": 1.0,
+            "validation_accessed": False,
+            "frozen_test_accessed": False,
+        },
+        "input_sha256": input_sha256,
         "flow": {
-            "role": "flow", "frozen": True, "checkpoint_relative_directory": "flow",
-            "model_file": flow_model.name, "state_file": flow_state.name,
-            "checkpoint_epoch": 0, "model_sha256": sha256(flow_model),
-            "state_sha256": sha256(flow_state), "metadata_kind": PARENT_KIND,
+            "role": "flow",
+            "frozen": True,
+            "checkpoint_relative_directory": "flow",
+            "model_file": flow_model.name,
+            "state_file": flow_state.name,
+            "checkpoint_epoch": 0,
+            "model_sha256": sha256(flow_model),
+            "state_sha256": sha256(flow_state),
+            "metadata_kind": PARENT_KIND,
         },
         "aerodynamic": {
-            "role": "aerodynamic", "frozen": False,
+            "role": "aerodynamic",
+            "frozen": False,
             "checkpoint_relative_directory": "aerodynamic",
-            "model_file": aerodynamic_model.name, "state_file": aerodynamic_state.name,
-            "checkpoint_epoch": 1, "model_sha256": sha256(aerodynamic_model),
+            "model_file": aerodynamic_model.name,
+            "state_file": aerodynamic_state.name,
+            "checkpoint_epoch": 1,
+            "model_sha256": sha256(aerodynamic_model),
             "state_sha256": sha256(aerodynamic_state),
             "metadata_kind": "FC_P013_INDEPENDENT_FORCE_FNO_AERODYNAMIC_CHECKPOINT",
         },
     }
-    if manifest["flow"]["checkpoint_relative_directory"] == manifest["aerodynamic"]["checkpoint_relative_directory"]:
+    if (
+        manifest["flow"]["checkpoint_relative_directory"]
+        == manifest["aerodynamic"]["checkpoint_relative_directory"]
+    ):
         raise RuntimeError("dual checkpoint directories must differ")
     path = output / "dual_model_manifest.json"
     path.write_text(json.dumps(manifest, indent=2) + "\n")
@@ -348,23 +440,26 @@ def main() -> None:
 
     import numpy as np
     import torch
+    from fluid_control.augmented_datapipe import compose_training_data
+    from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
+    from fluid_control.tandem_datapipe import TandemRolloutDataset
     from omegaconf import OmegaConf
     from physicsnemo.datapipes import DataLoader
     from physicsnemo.distributed import DistributedManager
     from physicsnemo.utils import load_checkpoint, save_checkpoint
     from train_tandem_fno import build_model, configured_force_indices, predict
 
-    from fluid_control.augmented_datapipe import compose_training_data
-    from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
-    from fluid_control.tandem_datapipe import TandemRolloutDataset
-
     if sha256(args.config) != CONFIG_SHA:
         raise ValueError("resolved config SHA differs")
     cfg = OmegaConf.load(args.config)
     required = {
-        "rollout_steps": 100, "batch_size": 1, "seed": 20261003,
-        "learning_rate": 1e-5, "weight_decay": 1e-4,
-        "gradient_clip_norm": 1.0, "expected_regular_batches": TOTAL_STEPS,
+        "rollout_steps": 100,
+        "batch_size": 1,
+        "seed": 20261003,
+        "learning_rate": 1e-5,
+        "weight_decay": 1e-4,
+        "gradient_clip_norm": 1.0,
+        "expected_regular_batches": TOTAL_STEPS,
     }
     if any(cfg.training.get(key) != value for key, value in required.items()):
         raise ValueError("FC-P013 training contract differs")
@@ -377,51 +472,125 @@ def main() -> None:
     dist = DistributedManager()
     if dist.distributed or not dist.cuda:
         raise RuntimeError("FC-P013 requires exactly one CUDA device")
-    torch.cuda.set_per_process_memory_fraction(float(cfg.training.gpu_memory_fraction), dist.device)
-    if torch.get_float32_matmul_precision() != "high" or not torch.backends.cuda.matmul.allow_tf32 or not torch.backends.cudnn.allow_tf32:
+    torch.cuda.set_per_process_memory_fraction(
+        float(cfg.training.gpu_memory_fraction), dist.device
+    )
+    if (
+        torch.get_float32_matmul_precision() != "high"
+        or not torch.backends.cuda.matmul.allow_tf32
+        or not torch.backends.cudnn.allow_tf32
+    ):
         raise RuntimeError("default-TF32/high protocol differs")
     seed = int(cfg.training.seed)
-    random.seed(seed); np.random.seed(seed); torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
     force_indices = configured_force_indices(cfg)
     if tuple(force_indices) != (0, 1, 2, 3):
         raise ValueError("force channel order differs")
-    base = TandemRolloutDataset(cfg.data.root, "train", 100, stride=int(cfg.training.train_stride), num_workers=cfg.training.workers, force_indices=force_indices)
-    train, _ = compose_training_data(base, [Path(value) for value in cfg.data.additional_train_roots], rollout_steps=100, stride=int(cfg.training.additional_train_stride), workers=cfg.training.workers, force_indices=force_indices)
-    loader = DataLoader(train, batch_size=1, shuffle=True, collate_metadata=True, prefetch_factor=int(cfg.data.prefetch_factor), num_streams=int(cfg.data.num_streams), use_streams=True, seed=seed)
+    base = TandemRolloutDataset(
+        cfg.data.root,
+        "train",
+        100,
+        stride=int(cfg.training.train_stride),
+        num_workers=cfg.training.workers,
+        force_indices=force_indices,
+    )
+    train, _ = compose_training_data(
+        base,
+        [Path(value) for value in cfg.data.additional_train_roots],
+        rollout_steps=100,
+        stride=int(cfg.training.additional_train_stride),
+        workers=cfg.training.workers,
+        force_indices=force_indices,
+    )
+    loader = DataLoader(
+        train,
+        batch_size=1,
+        shuffle=True,
+        collate_metadata=True,
+        prefetch_factor=int(cfg.data.prefetch_factor),
+        num_streams=int(cfg.data.num_streams),
+        use_streams=True,
+        seed=seed,
+    )
     if len(loader) != TOTAL_STEPS:
         raise RuntimeError("FC-P013 requires exactly 1368 windows")
-    audit_loader = DataLoader(train, batch_size=1, shuffle=True, prefetch_factor=0, use_streams=False, seed=seed)
+    audit_loader = DataLoader(
+        train,
+        batch_size=1,
+        shuffle=True,
+        prefetch_factor=0,
+        use_streams=False,
+        seed=seed,
+    )
     expected_order = list(iter(audit_loader.sampler))
     if trainer.sequence_sha(expected_order) != trainer.EXPECTED_ORDER_SHA:
         raise RuntimeError("official sampler order differs")
 
     flow_model = build_model(cfg).to(dist.device)
     aerodynamic_model = build_model(cfg).to(dist.device)
-    flow_metadata: dict[str, Any] = {}; aero_metadata: dict[str, Any] = {}
-    flow_epoch = load_checkpoint(args.parent, models=flow_model, metadata_dict=flow_metadata, device=dist.device)
-    aero_epoch = load_checkpoint(args.parent, models=aerodynamic_model, metadata_dict=aero_metadata, device=dist.device)
+    flow_metadata: dict[str, Any] = {}
+    aero_metadata: dict[str, Any] = {}
+    flow_epoch = load_checkpoint(
+        args.parent, models=flow_model, metadata_dict=flow_metadata, device=dist.device
+    )
+    aero_epoch = load_checkpoint(
+        args.parent,
+        models=aerodynamic_model,
+        metadata_dict=aero_metadata,
+        device=dist.device,
+    )
     for epoch, metadata in ((flow_epoch, flow_metadata), (aero_epoch, aero_metadata)):
-        validate_calibrated_epoch_zero(args.parent, epoch, allow=True, expected_model_sha256=PARENT_MODEL_SHA, expected_state_sha256=PARENT_STATE_SHA, expected_kind=PARENT_KIND)
-    if flow_model is aerodynamic_model or any(a is b for a, b in zip(flow_model.parameters(), aerodynamic_model.parameters(), strict=True)):
+        validate_calibrated_epoch_zero(
+            args.parent,
+            epoch,
+            allow=True,
+            expected_model_sha256=PARENT_MODEL_SHA,
+            expected_state_sha256=PARENT_STATE_SHA,
+            expected_kind=PARENT_KIND,
+        )
+    if flow_model is aerodynamic_model or any(
+        a is b
+        for a, b in zip(
+            flow_model.parameters(), aerodynamic_model.parameters(), strict=True
+        )
+    ):
         raise RuntimeError("flow and aerodynamic models are not independent")
-    for parameter in flow_model.parameters(): parameter.requires_grad_(False)
-    flow_model.eval(); aerodynamic_model.train()
-    flow_before = tensor_state_sha256(flow_model); aero_before = tensor_state_sha256(aerodynamic_model)
+    for parameter in flow_model.parameters():
+        parameter.requires_grad_(False)
+    flow_model.eval()
+    aerodynamic_model.train()
+    flow_before = tensor_state_sha256(flow_model)
+    aero_before = tensor_state_sha256(aerodynamic_model)
+    final_layer = aerodynamic_model.decoder_net.final_layer.linear
+    discarded_before = {
+        "weight": tensor_sha256(final_layer.weight[:3]),
+        "bias": tensor_sha256(final_layer.bias[:3]),
+    }
 
     if args.resource_probe:
         batch, metadata = next(iter(loader))
         identity = trainer.training_identity(metadata)
         batch = {key: value.to(dist.device) for key, value in batch.items()}
         aerodynamic_model.zero_grad(set_to_none=True)
-        torch.cuda.reset_peak_memory_stats(dist.device); started = time.monotonic()
-        metrics = run_window(flow_model, aerodynamic_model, batch, predict, backward=True)
+        torch.cuda.reset_peak_memory_stats(dist.device)
+        started = time.monotonic()
+        metrics = run_window(
+            flow_model, aerodynamic_model, batch, predict, backward=True
+        )
         gradient_audit = audit_aerodynamic_gradients(aerodynamic_model)
-        if tensor_state_sha256(flow_model) != flow_before or tensor_state_sha256(aerodynamic_model) != aero_before:
+        if (
+            tensor_state_sha256(flow_model) != flow_before
+            or tensor_state_sha256(aerodynamic_model) != aero_before
+        ):
             raise RuntimeError("resource probe changed model tensors")
         args.output.mkdir(parents=True)
         result = {
             "status": "FC_P013_INDEPENDENT_FORCE_FNO_RESOURCE_PROBE_COMPLETE",
-            "identity": identity, "metrics": metrics,
+            "identity": identity,
+            "metrics": metrics,
             "gradient_audit": gradient_audit,
             "elapsed_seconds": time.monotonic() - started,
             "cuda_peak_allocated_bytes": torch.cuda.max_memory_allocated(dist.device),
@@ -430,80 +599,167 @@ def main() -> None:
             "flow_tensor_sha256_after": tensor_state_sha256(flow_model),
             "aerodynamic_tensor_sha256_before": aero_before,
             "aerodynamic_tensor_sha256_after": tensor_state_sha256(aerodynamic_model),
-            "optimizer_created": False, "optimizer_steps": 0, "candidate_saved": False,
-            "validation_accessed": False, "frozen_test_accessed": False, "ppo_executed": False,
+            "optimizer_created": False,
+            "optimizer_steps": 0,
+            "candidate_saved": False,
+            "validation_accessed": False,
+            "frozen_test_accessed": False,
+            "ppo_executed": False,
             "input_sha256": input_sha,
         }
         (args.output / "result.json").write_text(json.dumps(result, indent=2) + "\n")
-        train.close(); return
+        train.close()
+        return
 
+    if sum(
+        parameter.requires_grad for parameter in aerodynamic_model.parameters()
+    ) != 28 or sorted(
+        name
+        for name, parameter in aerodynamic_model.named_parameters()
+        if not parameter.requires_grad
+    ) != sorted(OFFICIAL_FROZEN_PARAMETER_NAMES):
+        raise RuntimeError("aerodynamic trainable scope differs")
     optimizer = torch.optim.AdamW(
-        [parameter for parameter in aerodynamic_model.parameters() if parameter.requires_grad],
+        [
+            parameter
+            for parameter in aerodynamic_model.parameters()
+            if parameter.requires_grad
+        ],
         lr=1e-5,
         weight_decay=1e-4,
     )
-    records = []; observed_order = []
+    records = []
+    observed_order = []
     identity_map = trainer.identity_index(train)
     for step, (batch, metadata) in enumerate(loader, start=1):
         identity = trainer.training_identity(metadata)
-        observed_order.append(identity_map[(identity["case"], identity["start"], identity["dataset_index"])])
-        batch = {key: value.to(dist.device, non_blocking=True) for key, value in batch.items()}
+        observed_order.append(
+            identity_map[
+                (identity["case"], identity["start"], identity["dataset_index"])
+            ]
+        )
+        batch = {
+            key: value.to(dist.device, non_blocking=True)
+            for key, value in batch.items()
+        }
         metrics = optimizer_window_step(
             flow_model, aerodynamic_model, batch, predict, optimizer
         )
-        if tensor_state_sha256(flow_model) != flow_before: raise RuntimeError("frozen flow changed")
+        if tensor_state_sha256(flow_model) != flow_before:
+            raise RuntimeError("frozen flow changed")
         row = {"step": step, "identity": identity, **metrics}
         records.append(row)
-        if step % 8 == 0: print(json.dumps(row, allow_nan=False), flush=True)
+        if step % 8 == 0:
+            print(json.dumps(row, allow_nan=False), flush=True)
     if len(records) != TOTAL_STEPS or observed_order != expected_order:
         raise RuntimeError("FC-P013 did not consume the fixed complete train pass")
     if tensor_state_sha256(aerodynamic_model) == aero_before:
         raise RuntimeError("aerodynamic model did not change")
 
     args.output.mkdir(parents=True)
-    flow_dir = args.output / "flow"; flow_dir.mkdir()
-    shutil.copy2(parent_model, flow_dir / parent_model.name); shutil.copy2(parent_state, flow_dir / parent_state.name)
+    flow_dir = args.output / "flow"
+    flow_dir.mkdir()
+    shutil.copy2(parent_model, flow_dir / parent_model.name)
+    shutil.copy2(parent_state, flow_dir / parent_state.name)
     aero_dir = args.output / "aerodynamic"
-    save_checkpoint(aero_dir, models=aerodynamic_model, optimizer=optimizer, epoch=1, metadata={
-        "status": "FC_P013_INDEPENDENT_FORCE_FNO_AERODYNAMIC_CHECKPOINT",
-        "checkpoint_epoch": 1,
-        "optimizer_steps": TOTAL_STEPS,
-        "flow_parent_model_sha256": PARENT_MODEL_SHA,
-        "flow_parent_state_sha256": PARENT_STATE_SHA,
-        "aerodynamic_initial_model_sha256": PARENT_MODEL_SHA,
-        "aerodynamic_initial_state_sha256": PARENT_STATE_SHA,
-        "selection_performed": False,
-        "validation_accessed": False, "frozen_test_accessed": False, "ppo_executed": False,
-    })
-    aero_models = list(aero_dir.glob("FNO.0.1.mdlus")); aero_states = list(aero_dir.glob("checkpoint.0.1.pt"))
-    if len(aero_models) != 1 or len(aero_states) != 1: raise RuntimeError("aerodynamic checkpoint pair differs")
-    fresh = build_model(cfg).to(dist.device); fresh_metadata: dict[str, Any] = {}
-    if load_checkpoint(aero_dir, models=fresh, metadata_dict=fresh_metadata, device=dist.device) != 1:
+    save_checkpoint(
+        aero_dir,
+        models=aerodynamic_model,
+        optimizer=optimizer,
+        epoch=1,
+        metadata={
+            "status": "FC_P013_INDEPENDENT_FORCE_FNO_AERODYNAMIC_CHECKPOINT",
+            "checkpoint_epoch": 1,
+            "optimizer_steps": TOTAL_STEPS,
+            "flow_parent_model_sha256": PARENT_MODEL_SHA,
+            "flow_parent_state_sha256": PARENT_STATE_SHA,
+            "aerodynamic_initial_model_sha256": PARENT_MODEL_SHA,
+            "aerodynamic_initial_state_sha256": PARENT_STATE_SHA,
+            "training_semantics": "independent_force_fno_h1_ar_equal_mix_balanced_force_only",
+            "sampler_order_sha256": trainer.EXPECTED_ORDER_SHA,
+            "input_sha256": input_sha,
+            "selection_performed": False,
+            "validation_accessed": False,
+            "frozen_test_accessed": False,
+            "ppo_executed": False,
+        },
+    )
+    aero_models = list(aero_dir.glob("FNO.0.1.mdlus"))
+    aero_states = list(aero_dir.glob("checkpoint.0.1.pt"))
+    if len(aero_models) != 1 or len(aero_states) != 1:
+        raise RuntimeError("aerodynamic checkpoint pair differs")
+    fresh = build_model(cfg).to(dist.device)
+    fresh_metadata: dict[str, Any] = {}
+    if (
+        load_checkpoint(
+            aero_dir, models=fresh, metadata_dict=fresh_metadata, device=dist.device
+        )
+        != 1
+    ):
         raise RuntimeError("fresh aerodynamic reload failed")
-    if fresh_metadata.get("status") != "FC_P013_INDEPENDENT_FORCE_FNO_AERODYNAMIC_CHECKPOINT":
+    if (
+        fresh_metadata.get("status")
+        != "FC_P013_INDEPENDENT_FORCE_FNO_AERODYNAMIC_CHECKPOINT"
+    ):
         raise RuntimeError("aerodynamic checkpoint metadata differs")
     if tensor_state_sha256(fresh) != tensor_state_sha256(aerodynamic_model):
         raise RuntimeError("fresh aerodynamic reload tensor SHA differs")
-    manifest = build_dual_manifest(args.output, aero_models[0], aero_states[0])
-    final_layer = aerodynamic_model.decoder_net.final_layer.linear
+    manifest = build_dual_manifest(
+        args.output,
+        aero_models[0],
+        aero_states[0],
+        input_sha256=input_sha,
+    )
+    from fluid_control.dual_fno import load_dual_fno
+
+    reloaded, reloaded_identity = load_dual_fno(
+        manifest, cfg, dist.device, build_model=build_model,
+        expected_manifest_sha256=sha256(manifest),
+    )
+    if tensor_state_sha256(reloaded.flow_model) != flow_before:
+        raise RuntimeError("official dual reload changed frozen flow tensors")
+    if tensor_state_sha256(reloaded.aerodynamic_model) != tensor_state_sha256(aerodynamic_model):
+        raise RuntimeError("official dual reload changed aerodynamic tensors")
+    discarded_after = {
+        "weight": tensor_sha256(final_layer.weight[:3]),
+        "bias": tensor_sha256(final_layer.bias[:3]),
+    }
     result = {
         "status": "FC_P013_INDEPENDENT_FORCE_FNO_TRAINING_COMPLETE_NOT_ADMISSION",
-        "optimizer_steps": TOTAL_STEPS, "records": records,
-        "flow_tensor_sha256_before": flow_before, "flow_tensor_sha256_after": tensor_state_sha256(flow_model),
-        "aerodynamic_tensor_sha256_before": aero_before, "aerodynamic_tensor_sha256_after": tensor_state_sha256(aerodynamic_model),
-        "dual_model_manifest_sha256": sha256(manifest), "input_sha256": input_sha,
+        "optimizer_steps": TOTAL_STEPS,
+        "records": records,
+        "fixed_train_diagnostics_status": "PENDING_SEPARATE_READ_ONLY_EVALUATION",
+        "fixed_train_diagnostics_protocol": "Original six P011 train windows, H1/free-AR H100 and physical tail62 metrics; evaluate exact P009 parent and this terminal, without selection",
+        "dual_fresh_reload_verified": True,
+        "dual_fresh_reload_manifest_sha256": reloaded_identity.manifest_sha256,
+        "flow_tensor_sha256_before": flow_before,
+        "flow_tensor_sha256_after": tensor_state_sha256(flow_model),
+        "aerodynamic_tensor_sha256_before": aero_before,
+        "aerodynamic_tensor_sha256_after": tensor_state_sha256(aerodynamic_model),
+        "dual_model_manifest_sha256": sha256(manifest),
+        "input_sha256": input_sha,
         "discarded_aerodynamic_field_rows": [0, 1, 2],
         "discarded_field_rows_may_change_via_adamw_weight_decay": True,
+        "discarded_field_rows_sha256_before": discarded_before,
+        "discarded_field_rows_sha256_after": discarded_after,
+        "discarded_field_rows_changed": {
+            key: discarded_before[key] != discarded_after[key]
+            for key in discarded_before
+        },
         "discarded_field_weight_gradient_norm_terminal": float(
             final_layer.weight.grad[:3].detach().double().square().sum().sqrt()
         ),
         "discarded_field_bias_gradient_norm_terminal": float(
             final_layer.bias.grad[:3].detach().double().square().sum().sqrt()
         ),
-        "selection_performed": False, "validation_accessed": False,
-        "frozen_test_accessed": False, "ppo_executed": False,
+        "selection_performed": False,
+        "validation_accessed": False,
+        "frozen_test_accessed": False,
+        "ppo_executed": False,
     }
-    (args.output / "result.json").write_text(json.dumps(result, indent=2, allow_nan=False) + "\n")
+    (args.output / "result.json").write_text(
+        json.dumps(result, indent=2, allow_nan=False) + "\n"
+    )
     train.close()
 
 

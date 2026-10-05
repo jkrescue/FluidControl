@@ -6,15 +6,20 @@ from pathlib import Path
 import pytest
 import torch
 
+
 ROOT = Path(__file__).resolve().parents[1]
-SPEC = importlib.util.spec_from_file_location("fcp013", ROOT / "scripts/train_fcp013_independent_force_fno.py")
+SPEC = importlib.util.spec_from_file_location(
+    "fcp013", ROOT / "scripts/train_fcp013_independent_force_fno.py"
+)
 assert SPEC and SPEC.loader
-M = importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(M)
+M = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(M)
 
 
 class Tiny(torch.nn.Module):
     def __init__(self, scale=1.0):
-        super().__init__(); self.scale = torch.nn.Parameter(torch.tensor(float(scale)))
+        super().__init__()
+        self.scale = torch.nn.Parameter(torch.tensor(float(scale)))
 
 
 def predict(model, x, mask):
@@ -46,7 +51,8 @@ def test_flow_residual_update_and_separate_model_instances():
 
 
 def test_true_state_alignment_is_t_to_t_plus_one():
-    b = batch(); values = M.true_state_inputs(b["state"], b["target_state"])
+    b = batch()
+    values = M.true_state_inputs(b["state"], b["target_state"])
     assert torch.equal(values[:, 0], b["state"])
     assert torch.equal(values[:, 1:], b["target_state"][:, :-1])
 
@@ -62,21 +68,44 @@ def test_inputs_preserve_mask_and_both_action_endpoints():
 
 
 def test_chunked_loss_and_gradient_equal_monolithic():
-    b = batch(); flow = Tiny(0.02); flow.scale.requires_grad_(False)
+    b = batch()
+    flow = Tiny(0.02)
+    flow.scale.requires_grad_(False)
     states = M.frozen_flow_states(flow, b["state"], b["mask"], b["omega"], predict)
     h1 = M.true_state_inputs(b["state"], b["target_state"])
     a, z = Tiny(0.3), Tiny(0.3)
-    out_a = M.chunk_force_objective(a, states, h1, b["mask"], b["omega"], b["target_force"], predict, chunk_size=10, backward=True)
+    out_a = M.chunk_force_objective(
+        a,
+        states,
+        h1,
+        b["mask"],
+        b["omega"],
+        b["target_force"],
+        predict,
+        chunk_size=10,
+        backward=True,
+    )
     grad_a = a.scale.grad.detach().clone()
-    out_z = M.chunk_force_objective(z, states, h1, b["mask"], b["omega"], b["target_force"], predict, chunk_size=100, backward=True)
+    out_z = M.chunk_force_objective(
+        z,
+        states,
+        h1,
+        b["mask"],
+        b["omega"],
+        b["target_force"],
+        predict,
+        chunk_size=100,
+        backward=True,
+    )
     assert out_a["total"] == pytest.approx(out_z["total"], rel=2e-6, abs=2e-7)
     assert grad_a.item() == pytest.approx(z.scale.grad.item(), rel=2e-6, abs=2e-7)
 
 
 def test_balanced_force_formula():
-    pred = torch.zeros(1, 2, 4); target = torch.tensor([[[1.,2.,3.,4.],[1.,2.,3.,4.]]])
+    pred = torch.zeros(1, 2, 4)
+    target = torch.tensor([[[1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0, 4.0]]])
     out = M.balanced_force_objective(pred, target)
-    channel = torch.tensor([1.,4.,9.,16.])
+    channel = torch.tensor([1.0, 4.0, 9.0, 16.0])
     assert torch.equal(out["channel_mse"], channel)
     assert out["balanced"] == pytest.approx(0.5 * channel.mean() + 0.5 * 16)
 
@@ -96,7 +125,9 @@ def test_one_window_performs_exactly_one_optimizer_step():
     flow.scale.requires_grad_(False)
     optimizer = CountingAdamW(aero.parameters())
     original = M.audit_aerodynamic_gradients
-    M.audit_aerodynamic_gradients = lambda model: {"trainable_gradient_all_finite": True}
+    M.audit_aerodynamic_gradients = lambda model: {
+        "trainable_gradient_all_finite": True
+    }
     try:
         result = M.optimizer_window_step(flow, aero, b, predict, optimizer)
     finally:
@@ -175,3 +206,25 @@ def test_dual_manifest_and_checkpoint_schema_are_loader_compatible():
         '"checkpoint_epoch": 1',
     ):
         assert key in text
+
+
+def test_fixed_diagnostic_uses_aerodynamic_force_path_without_updates():
+    b = batch()
+    sample = {key: value[0] for key, value in b.items()}
+    items = [
+        {
+            "global_index": index,
+            "family": "train",
+            "identity": {"case": f"case{index}", "start": 0},
+            "sample": sample,
+        }
+        for index in range(6)
+    ]
+    flow, aero = Tiny(0.01), Tiny(0.3)
+    flow.scale.requires_grad_(False)
+    before = aero.scale.detach().clone()
+    rows = M.evaluate_fixed_windows(flow, aero, items, torch.device("cpu"), predict)
+    assert len(rows) == 6
+    assert all(row["h1_balanced"] >= 0 and row["ar_balanced"] >= 0 for row in rows)
+    assert torch.equal(aero.scale, before)
+    assert aero.scale.requires_grad is True
