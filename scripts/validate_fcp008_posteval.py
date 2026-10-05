@@ -36,16 +36,29 @@ CHAIN_STATUS = "FC_P008_IMMUTABLE_POSTEVAL_CHAIN_STAGED"
 TRAINED_PROFILE = False
 DUAL_PROFILE = False
 ACCUMULATION_PROFILE = False
+REDUCED_RATE_PROFILE = False
 
 
 def configure_profile(name: str) -> None:
     """Select an exact identity profile; numerical validation stays shared."""
     global CANDIDATE_KIND, LINEAGE_STATUS, STEP_STATUS, COMPLETE_STATUS
     global CALIBRATED_KIND, DIAGNOSTIC_KIND, PRECISION_STATUS, CHAIN_STATUS
-    global TRAINED_PROFILE, DUAL_PROFILE, ACCUMULATION_PROFILE
-    DUAL_PROFILE = name in ("p013", "p015")
-    ACCUMULATION_PROFILE = name == "p015"
+    global TRAINED_PROFILE, DUAL_PROFILE, ACCUMULATION_PROFILE, REDUCED_RATE_PROFILE
+    DUAL_PROFILE = name in ("p013", "p015", "p018")
+    ACCUMULATION_PROFILE = name in ("p015", "p018")
+    REDUCED_RATE_PROFILE = name == "p018"
     profiles = {
+        "p018": (
+            "fcp018_reduced_rate_dual_fno",
+            "FC_P018_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION",
+            "FC_P018_POSTEVAL_STEP_COMPLETE",
+            "FC_P018_POSTEVAL_COMPLETE",
+            None,
+            "fcp018_reduced_rate_dual_fno",
+            "FC_P018_FORMAL_EVALUATION_DEFAULT_TF32_HIGH",
+            "FC_P018_IMMUTABLE_POSTEVAL_CHAIN_STAGED",
+            True,
+        ),
         "p015": (
             "fcp015_window_accumulation_dual_fno",
             "FC_P015_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION",
@@ -253,7 +266,12 @@ def validate_training_experiment(lineage: dict) -> None:
         return
     expected = {"optimizer_steps": 171 if ACCUMULATION_PROFILE else 1368}
     if ACCUMULATION_PROFILE:
-        expected.update(training_experiment="FC-P015", accumulation_windows=8, training_windows=1368)
+        expected.update(training_experiment="FC-P018" if REDUCED_RATE_PROFILE else "FC-P015",
+                        accumulation_windows=8, training_windows=1368)
+    if REDUCED_RATE_PROFILE:
+        expected.update(actual_learning_rate=1.5625e-7,
+                        training_protocol_sha256="310f0bdf8563a2a70b844a32852791fa1b1dc20278a3098418942e1dab204d2d",
+                        training_protocol_file="training_protocol.json")
     if any(lineage.get(k) != v for k, v in expected.items()):
         raise ValueError("training experiment/update protocol differs")
 
@@ -295,6 +313,8 @@ def validate_lineage(candidate: Path, lineage_path: Path) -> tuple[dict, Path, P
             expected_sha256=lineage.get("dual_manifest_sha256"),
         )
         expected_kind = "FC_P015_WINDOW_ACCUMULATION_FORCE_FNO" if ACCUMULATION_PROFILE else "FC_P013_INDEPENDENT_FORCE_FNO"
+        if REDUCED_RATE_PROFILE:
+            expected_kind = "FC_P018_REDUCED_RATE_FORCE_FNO"
         if identity.payload.get("kind") != expected_kind:
             raise ValueError("dual manifest experiment differs from posteval profile")
         if (identity.aerodynamic.model != model.resolve()
@@ -566,7 +586,7 @@ def main() -> None:
     parser.add_argument("--step", choices=(*EXPECTED, "complete"), required=True)
     parser.add_argument(
         "--profile",
-        choices=("p008", "p009", "p011_head_only", "p011_decoder_tail", "p013", "p015"),
+        choices=("p008", "p009", "p011_head_only", "p011_decoder_tail", "p013", "p015", "p018"),
         default="p008",
     )
     args = parser.parse_args()
@@ -581,8 +601,9 @@ def main() -> None:
     if ACCUMULATION_PROFILE:
         reload_receipt = args.candidate / "dual_reload_receipt.json"
         if load(approval_copy).get("dual_reload_receipt_sha256") != sha256(reload_receipt):
-            raise ValueError("P015 formal approval does not bind actual CPU reload")
-        verifier = module(args.chain_receipt.parent / "scripts/verify_fcp015_dual_reload.py", "p015_reload_receipt")
+            raise ValueError("formal approval does not bind actual CPU reload")
+        verifier_name = "verify_fcp018_dual_reload.py" if REDUCED_RATE_PROFILE else "verify_fcp015_dual_reload.py"
+        verifier = module(args.chain_receipt.parent / "scripts" / verifier_name, "explicit_profile_reload_receipt")
         verifier.validate_receipt(reload_receipt, args.candidate / "candidate/dual_model_manifest.json",
                                   args.chain_receipt.parent / "training_config.yaml",
                                   args.candidate / "candidate/result.json", args.numerical_source)

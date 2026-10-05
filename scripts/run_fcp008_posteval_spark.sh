@@ -9,6 +9,21 @@ case "$mode" in --dry-run|--stage-only|--execute|--resume|--wait) ;; *) echo "in
 image="fluid-control-physicsnemo:2.2.2"
 image_id="sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e"
 case "$profile" in
+  p018)
+    candidate="${FCP_POSTEVAL_CANDIDATE:-$root/artifacts/fcp018_reduced_rate_training_20261005}"
+    out="$candidate/posteval_fc_p018"
+    auditor_relative="scripts/audit_fcp018_candidate.py"
+    candidate_kind="fcp018_reduced_rate_dual_fno"
+    calibrated_kind=""
+    diagnostic_kind="$candidate_kind"
+    lineage_status="FC_P018_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION"
+    step_status="FC_P018_POSTEVAL_STEP_COMPLETE"
+    complete_status="FC_P018_POSTEVAL_COMPLETE"
+    chain_status="FC_P018_IMMUTABLE_POSTEVAL_CHAIN_STAGED"
+    precision_status="FC_P018_FORMAL_EVALUATION_DEFAULT_TF32_HIGH"
+    formal_status="FC_P018_FORMAL_EVALUATION_APPROVED"
+    token_expected="EXECUTE_APPROVED_FC_P018_POSTEVAL"
+    ;;
   p015)
     candidate="${FCP_POSTEVAL_CANDIDATE:-$root/artifacts/fcp015_window_accumulation_training_20261005}"
     out="$candidate/posteval_fc_p015"
@@ -108,7 +123,7 @@ checkpoint_args=()
 auditor_scope_args=()
 dual_args=()
 container_checkpoint=/workspace/checkpoint
-if [[ "$profile" == p013 || "$profile" == p015 ]]; then
+if [[ "$profile" == p013 || "$profile" == p015 || "$profile" == p018 ]]; then
   checkpoint_epoch=1
   checkpoint_relative_expected="candidate/aerodynamic"
   container_checkpoint=/workspace/dual/aerodynamic
@@ -140,15 +155,21 @@ if [[ "$mode" != --dry-run && -z "${FCP008_POSTEVAL_CHAIN_ROOT:-}" ]]; then
     mkdir -p "$temporary/$(dirname "$relative")"
     git show "$reviewed:$relative" >"$temporary/$relative"
   done
-  if [[ "$profile" == p013 || "$profile" == p015 ]]; then
+  if [[ "$profile" == p013 || "$profile" == p015 || "$profile" == p018 ]]; then
     for relative in src/fluid_control/dual_fno.py src/fluid_control/calibrated_checkpoint.py scripts/evaluate_tandem_fno.py scripts/diagnose_fno_force_window.py scripts/audit_dev30_validation_diagnostic.py; do
       git show "$reviewed:$relative" >"$temporary/numerical_source/$relative"
     done
     for relative in scripts/audit_fcp011_candidate.py scripts/evaluate_fcp013_fixed_train_windows.py scripts/train_fcp013_independent_force_fno.py; do
       git show "$reviewed:$relative" >"$temporary/$relative"
     done
-    if [[ "$profile" == p015 ]]; then
+    if [[ "$profile" == p015 || "$profile" == p018 ]]; then
       for relative in scripts/audit_fcp013_dual_candidate.py scripts/diagnose_fcp014_train_objective.py scripts/verify_fcp015_dual_reload.py; do
+        git show "$reviewed:$relative" >"$temporary/$relative"
+      done
+    fi
+    if [[ "$profile" == p018 ]]; then
+      for relative in scripts/audit_fcp015_candidate.py scripts/verify_fcp018_dual_reload.py scripts/finalize_fcp018_training.py docs/FC_P018_TRAINING_PROTOCOL_20261005.json; do
+        mkdir -p "$temporary/$(dirname "$relative")"
         git show "$reviewed:$relative" >"$temporary/$relative"
       done
     fi
@@ -163,7 +184,7 @@ target,root=map(pathlib.Path,sys.argv[1:3]); commit,tree,numerical_commit,numeri
 sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
 files={str(path.relative_to(root)):sha(path) for path in sorted(root.rglob("*")) if path.is_file()}
 payload={"status":status,"git_commit":commit,"git_tree":tree,"numerical_source_commit":numerical_commit,"numerical_source_tree":numerical_tree,"sha256":files}
-if status in ("FC_P013_IMMUTABLE_POSTEVAL_CHAIN_STAGED", "FC_P015_IMMUTABLE_POSTEVAL_CHAIN_STAGED"):
+if status in ("FC_P013_IMMUTABLE_POSTEVAL_CHAIN_STAGED", "FC_P015_IMMUTABLE_POSTEVAL_CHAIN_STAGED", "FC_P018_IMMUTABLE_POSTEVAL_CHAIN_STAGED"):
  overlays=("src/fluid_control/dual_fno.py","src/fluid_control/calibrated_checkpoint.py","scripts/evaluate_tandem_fno.py","scripts/diagnose_fno_force_window.py","scripts/audit_dev30_validation_diagnostic.py")
  payload["numerical_source_overlays"]={name:sha(root/"numerical_source"/name) for name in overlays}
  payload["overlay_source_commit"]=commit
@@ -196,12 +217,17 @@ if [[ "$profile" == p015 ]]; then
   [[ "${FCP015_EXECUTION_OBSERVATION_SHA256:-}" =~ ^[0-9a-f]{64}$ ]]
   auditor_scope_args=(--execution-observation-sha256 "$FCP015_EXECUTION_OBSERVATION_SHA256")
 fi
+if [[ "$profile" == p018 ]]; then
+  [[ "${FCP008_EXECUTION_APPROVAL_SHA256:-}" =~ ^[0-9a-f]{64}$ ]]
+  [[ "${FCP018_EXECUTION_OBSERVATION_SHA256:-}" =~ ^[0-9a-f]{64}$ ]]
+  auditor_scope_args=(--execution-observation-sha256 "$FCP018_EXECUTION_OBSERVATION_SHA256")
+fi
 
 if [[ "$mode" == --dry-run || "$mode" == --stage-only ]]; then
   if [[ "$mode" == --stage-only ]]; then
     env PYTHONPATH="$host_path" "$host_python" -c 'import importlib.util,sys; from pathlib import Path; spec=importlib.util.spec_from_file_location("frozen_validator",sys.argv[1]); module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module); module.configure_profile(sys.argv[2]); print("verified_chain_sha256="+module.validate_chain_receipt(Path(sys.argv[3]),Path(sys.argv[4])))' "$validator" "$profile" "$chain_receipt" "$source"
   fi
-  if [[ "$profile" == p015 ]]; then
+  if [[ "$profile" == p015 || "$profile" == p018 ]]; then
     env PYTHONPATH="$host_path" "$host_python" "$auditor" --repo "$root" --candidate "$candidate" --execution-approval-sha256 "$FCP008_EXECUTION_APPROVAL_SHA256" "${auditor_scope_args[@]}" >/dev/null
   else
     env PYTHONPATH="$host_path" "$host_python" "$auditor" --repo "$root" "${auditor_scope_args[@]}" >/dev/null
@@ -240,10 +266,13 @@ raw=subprocess.check_output(["systemctl","--user","show","fluid-control-fcp015-w
 module.validate_p015_unit_exit(json.loads(observation.read_text()),dict(line.split("=",1) for line in raw.splitlines() if "=" in line))
 PY
 fi
+if [[ "$profile" == p018 ]]; then
+  env PYTHONPATH="$host_path" "$host_python" -c 'from finalize_fcp018_training import read_unit,terminal_state; assert terminal_state(read_unit()), "P018 is still running"'
+fi
 lineage_json="$(env PYTHONPATH="$host_path" "$host_python" "$auditor" --repo "$root" --candidate "$candidate" --execution-approval-sha256 "$candidate_approval_sha" "${auditor_scope_args[@]}")"
 checkpoint_sha="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["checkpoint_sha256"])' <<<"$lineage_json")"
 checkpoint_state_sha="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["checkpoint_state_sha256"])' <<<"$lineage_json")"
-if [[ "$profile" == p015 ]]; then
+if [[ "$profile" == p015 || "$profile" == p018 ]]; then
   checkpoint_args=()
 elif [[ "$profile" != p011_* && "$profile" != p013 ]]; then
   checkpoint_args=(--allow-calibrated-epoch-zero --expected-calibrated-model-sha256 "$checkpoint_sha" --expected-calibrated-state-sha256 "$checkpoint_state_sha")
@@ -251,7 +280,7 @@ fi
 checkpoint_relative="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["checkpoint_relative_directory"])' <<<"$lineage_json")"
 checkpoint="$candidate/$checkpoint_relative"
 [[ "$checkpoint_relative" == "$checkpoint_relative_expected" && -d "$checkpoint" ]] || { echo "audited checkpoint directory differs" >&2; exit 2; }
-if [[ "$profile" == p013 || "$profile" == p015 ]]; then
+if [[ "$profile" == p013 || "$profile" == p015 || "$profile" == p018 ]]; then
   dual_manifest_sha="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["dual_manifest_sha256"])' <<<"$lineage_json")"
   dual_args=(--dual-fno-manifest /workspace/dual/dual_model_manifest.json --expected-dual-fno-manifest-sha256 "$dual_manifest_sha" --dual-training-config /workspace/training_config.yaml)
 fi
@@ -267,17 +296,21 @@ if profile=="p009":
 elif profile.startswith("p011_"):
  sha=lambda item:hashlib.sha256(item.read_bytes()).hexdigest(); scope=profile.removeprefix("p011_")
  required.update(candidate_kind=f"fcp011_{scope}_epoch1",training_scope=scope,checkpoint_epoch=1,candidate_result_sha256=sha(candidate/"result.json"),candidate_completion_receipt_sha256=sha(candidate/"completion_receipt.json"),protocol=["validation10_H1_H10_H50_H100_stride25_batch4","dynamic6_H1_H10_H50_H100_stride1_batch8","force_window6","unchanged_development_gate"])
-elif profile in ("p013", "p015"):
+elif profile in ("p013", "p015", "p018"):
  sha=lambda item:hashlib.sha256(item.read_bytes()).hexdigest()
  manifest=json.loads((candidate/"candidate/dual_model_manifest.json").read_text())
- kind={"p013":"fcp013_independent_force_dual_fno","p015":"fcp015_window_accumulation_dual_fno"}[profile]
+ kind={"p013":"fcp013_independent_force_dual_fno","p015":"fcp015_window_accumulation_dual_fno","p018":"fcp018_reduced_rate_dual_fno"}[profile]
  required.update(candidate_kind=kind,checkpoint_epoch=1,candidate_result_sha256=sha(candidate/"candidate/result.json"),candidate_completion_receipt_sha256=sha(candidate/"completion_receipt.json"),dual_manifest_sha256=sha(candidate/"candidate/dual_model_manifest.json"),flow_model_sha256=manifest["flow"]["model_sha256"],flow_state_sha256=manifest["flow"]["state_sha256"],protocol=["validation10_H1_H10_H50_H100_stride25_batch4","dynamic6_H1_H10_H50_H100_stride1_batch8","force_window6","unchanged_development_gate"])
  if profile=="p015":
   required.update(training_experiment="FC-P015",training_windows=1368,accumulation_windows=8,optimizer_steps=171,dual_reload_receipt_sha256=sha(candidate/"dual_reload_receipt.json"))
+ if profile=="p018":
+  required.update(training_experiment="FC-P018",training_windows=1368,accumulation_windows=8,optimizer_steps=171,dual_reload_receipt_sha256=sha(candidate/"dual_reload_receipt.json"),actual_learning_rate=1.5625e-7,training_protocol_sha256=sha(candidate/"candidate/training_protocol.json"))
 if any(value.get(k)!=v for k,v in required.items()): raise SystemExit("formal approval contract differs")
 PY
-if [[ "$profile" == p015 ]]; then
-  env PYTHONPATH="$host_path" "$host_python" "$chain_root/scripts/verify_fcp015_dual_reload.py" \
+if [[ "$profile" == p015 || "$profile" == p018 ]]; then
+  reload_verifier="$chain_root/scripts/verify_fcp015_dual_reload.py"
+  [[ "$profile" != p018 ]] || reload_verifier="$chain_root/scripts/verify_fcp018_dual_reload.py"
+  env PYTHONPATH="$host_path" "$host_python" "$reload_verifier" \
     --numerical-source "$source" --manifest "$candidate/candidate/dual_model_manifest.json" \
     --config "$chain_root/training_config.yaml" --training-result "$candidate/candidate/result.json" \
     --output "$candidate/dual_reload_receipt.json" --check-receipt
@@ -308,7 +341,7 @@ common=(--rm --network none --cpus 8 --memory 64g --shm-size 2g --pids-limit 512
  -e PYTHONPATH=/workspace/src:/workspace/scripts -v "$source/scripts:/workspace/scripts:ro" -v "$source/src:/workspace/src:ro"
  -v "$source/conf:/workspace/conf:ro" -v "$source/cfd:/workspace/cfd:ro" -v "$checkpoint:/workspace/checkpoint:ro"
  -v "$out:/workspace/output:rw" -w /workspace)
-if [[ "$profile" == p013 || "$profile" == p015 ]]; then
+if [[ "$profile" == p013 || "$profile" == p015 || "$profile" == p018 ]]; then
   common+=(-v "$candidate/candidate:/workspace/dual:ro" -v "$chain_root/training_config.yaml:/workspace/training_config.yaml:ro")
 fi
 
@@ -328,7 +361,7 @@ target,out=map(pathlib.Path,sys.argv[1:3]); step,model,state,lineage,chain,forma
 sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
 if any(not path.is_file() or out.resolve() not in path.resolve().parents for path in paths): raise SystemExit("step artifacts incomplete or escape output")
 payload={"status":status,"candidate_kind":kind,"step":step,"checkpoint_epoch":epoch,"checkpoint_sha256":model,"checkpoint_state_sha256":state,"lineage_sha256":lineage,"posteval_chain_receipt_sha256":chain,"formal_evaluation_approval_sha256":formal,"precision_sha256":sha(out/"precision.json"),"sha256":{str(path.relative_to(out)):sha(path) for path in paths}}
-if kind in ("fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno"):
+if kind in ("fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "fcp018_reduced_rate_dual_fno"):
  identity=json.loads((out/"lineage.json").read_text())
  payload.update({key:identity[key] for key in ("dual_manifest_sha256","flow_model_sha256","flow_state_sha256")})
 with tempfile.NamedTemporaryFile("w",dir=target.parent,delete=False) as stream:
@@ -370,7 +403,7 @@ root=pathlib.Path(sys.argv[1]); model,state,lineage,chain,formal,image,status,ki
 sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
 files={str(path.relative_to(root)):sha(path) for path in sorted(root.rglob("*")) if path.is_file() and path.name not in {"receipt.json","outer.log"}}
 payload={"status":status,"candidate_kind":kind,"checkpoint_epoch":epoch,"checkpoint_sha256":model,"checkpoint_state_sha256":state,"lineage_sha256":lineage,"posteval_chain_receipt_sha256":chain,"formal_evaluation_approval_sha256":formal,"precision_sha256":sha(root/"precision.json"),"official_image_id":image,"protocol":["validation10_H1_H10_H50_H100_stride25_batch4","dynamic6_H1_H10_H50_H100_stride1_batch8","force_window6","unchanged_development_gate"],"sha256":files,"frozen_test_accessed":False,"ppo_auto_launched":False}
-if kind in ("fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno"):
+if kind in ("fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "fcp018_reduced_rate_dual_fno"):
  identity=json.loads((root/"lineage.json").read_text())
  payload.update({key:identity[key] for key in ("dual_manifest_sha256","flow_model_sha256","flow_state_sha256")})
 target=root/"receipt.json"
