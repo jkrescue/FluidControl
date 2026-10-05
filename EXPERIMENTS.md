@@ -1,5 +1,17 @@
 # Experiment ledger
 
+## P026 no-update production-size GPU resource check — terminal, audit pending
+
+Actual invocation8667f3c9c82146d6ab861d634c460107 exitedsuccess/PID0; sourceee13932,
+approval40abd5f. Result8e1113efc903c6c95cd24755d8c9b081fb098a01ce60aa3c2477e932052f3589.
+One real warmtrainwindow816,100frozenflow calls, twoarms each10pairedchunk forwards
+and backwards. K1/K4 elapsed3.2774/3.0470seconds, peakallocated3.64/3.73GiB.
+Added288gradient norm0.0462021, finite; initial K4/K1 predictedforce difference0.
+Internalminimumfree29.121925GiB/available107.817810GiB. Fullrun22.6785seconds.
+Nooptimizer/update/checkpoint/heldout/PPO. Independentterminal/resource audit
+pending. Resource observation is singlewindow only, not fulltraining accuracy or
+guaranteed identical timing. Next officialreload/historyformalcallers integration.
+
 ## P026 shared force objective — CPU equivalence verified
 
 Source4d27fb53/tests907e25bd; Root20PASS0.78s and independent20PASS0.75s.
