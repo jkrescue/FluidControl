@@ -19,6 +19,7 @@ FAMILIES = {
 OUTPUT = ROOT / "artifacts/fcp026_history_training_k1_20261005/cache_advice_20261006_r1.jsonl"
 OUTPUTS = {1: OUTPUT, 4: ROOT / "artifacts/fcp026_history_training_k4_20261005/cache_advice_20261006_r1.jsonl"}
 RECEIPT_NAMES = tuple(f"cache_advice_20261006_r{i}.jsonl" for i in range(1, 5))
+K4_RECEIPT_NAMES = tuple(f"cache_advice_20261006_r{i}.jsonl" for i in range(1, 13))
 
 
 def require(ok, message):
@@ -62,8 +63,10 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--history-k", type=int, choices=(1, 4), default=1)
-    parser.add_argument("--receipt-name", choices=RECEIPT_NAMES, default=OUTPUT.name)
+    parser.add_argument("--receipt-name", choices=K4_RECEIPT_NAMES, default=OUTPUT.name)
     args = parser.parse_args(argv)
+    if args.history_k == 1 and args.receipt_name not in RECEIPT_NAMES:
+        parser.error("K1 permits only the existing fixed r1-r4 receipts")
     return args
 
 
