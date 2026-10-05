@@ -1,5 +1,14 @@
 # Research roadmap and prioritized backlog
 
+## 2026-10-05 — P023 complete, local joint support not met
+
+FC-E033 independently reviewed. Only HIGHH1bias regression violates local rules;
+other improvements are small and do not resolve original complete admission.
+Zero-input ablation exactly restores initial predictions;96coefficient magnitude
+and output response are not proportional. Next is a separately approved bounded
+no-optimizer response-scale diagnostic, not automatic larger training or PPO.
+See FC_P023_TERMINAL_REVIEW_20261005.md. Current GPU experiment has ended.
+
 ## 2026-10-05 17:38 UTC — P023 approved and running
 
 Actual unit fluid-control-fcp023-input-block-20261005.service, invocation

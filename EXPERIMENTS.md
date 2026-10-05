@@ -1,5 +1,17 @@
 # Experiment ledger
 
+## FC-E033 — P023 isolated96-input finite comparison complete
+
+Resultadfdd9a86cedf75019b655fe360b64b09d1aa51ce3de2f9166d0d80e296007cb;
+sourcef13a6a0. Independently verified32updates/192backwards/72endpoint-and-ablation
+windows, source/optimizer/frozen hashes and12repeatedpanel aggregates. Both20GiB
+floors held. HIGHlocal_support=false solely H1bias²+0.070729%vsinitial;
+ARbias²−0.199089%,RMSerror²−0.083577%,centeredMSE−0.249289%. Not admission.
+Bothterminal zero-input ablations exactly reproduce initial raw predictions;
+actualHIGHblocknorm.001553586, output effect remains small. No candidate/PPO.
+See docs/FC_P023_TERMINAL_REVIEW_20261005.md. Next: separately specified response-
+scale mechanism preparation, no automatic full training or acceptance change.
+
 ## P023 running — isolated current-force input coefficients
 
 Protocol docs/FC_P023_INPUT_BLOCK_COMPARISON_PLAN_20261005.md; approval SHA
