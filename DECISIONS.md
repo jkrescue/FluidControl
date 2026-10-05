@@ -64,6 +64,12 @@ Lead只批准下一个CPU-cache诊断：在prefix做4-fold leave-one-phase-out�
 
 该cache诊断已完成（result SHA `dbeee783…50e0f`）：prefix四相留出选定`alpha=1e-6`，aggregate normalized MSE从alpha0的`0.0064395`降至`0.00359875`（-44.1%）。选定后唯一一次late检查的physical rear-Cd/rear-Cl action MAE为`0.03876/0.06274`，优于OLS的`0.05602/0.08337`，但仍不足以支持控制准入。独立CPU复算的六个alpha score最大差`6.4e-12`，所有selected prefix/late指标复现。结果支持系数不稳定为重要贡献，但late仍高、且全部为train-internal，不允许宣称唯一根因、泛化或PPO准入。
 
+## D018 — 批准FC-P008全train family读出校准的实现与CPU测试
+
+2026-10-05 Asia/Shanghai，implementation and CPU tests approved；GPU执行另审。FC-P008只检验固定FC-P003C表征上的四力末层读出，不改变FNO架构、场输出、数据、归一化、reward或既有科学门槛。它使用全部44条train-only轨迹、19648个H1端点；base20/train8/train16的family share固定为既有regular sampler比例`(720,408,240)/1368`，每端点权重为`share_f/N_f`，其中`N=(16000,1600,2048)`。四折必须按真实source phase划分并以全局endpoint weight聚合OOF，禁止先将缺family的fold等权。
+
+source mapping artifact `57ed2a25…3b92`把四个canonical phase固定为b00/t148、b02/t106、b04/t120、b06/t134；train16只可凭source case/time和curated frame-0 identity并入b00/b02，不能按episode名或标签顺序推断。数值协议固定为正式default TF32/high，不沿用highest-FP32诊断路线。alpha grid、并列取较大值、fold-train-only统计、全train单次refit均预先固定；最终只允许改新checkpoint的四个force rows，其余tensor须字节不变，并以官方save/native replay核验。当前批准不包含GPU提取、候选执行、validation/frozen、PPO或真实CFD；完整科学准入仍需后续独立评估。
+
 ## 新决策格式
 
 ID、记录时间、状态、待检验假设、对应实验ID、所依据证据/协议、可选方案、取舍原因、保留的不确定性、撤销/调整条件。只有读取过的产物可作为事实；代理口头报告是待核信息。
