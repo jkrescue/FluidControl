@@ -651,7 +651,10 @@ def main():
     ):
         raise ValueError("official candidate training-state metadata differs")
     reloaded = build_model(config).to(dist.device)
-    if load_checkpoint(checkpoint_dir, models=reloaded, device=dist.device) != 0:
+    fresh_load_return_epoch = load_checkpoint(
+        checkpoint_dir, models=reloaded, device=dist.device
+    )
+    if fresh_load_return_epoch != 0:
         raise ValueError("expected candidate calibration epoch0")
     reloaded.eval()
     reloaded_arrays = {name: value.detach().cpu().numpy().copy() for name, value in reloaded.state_dict().items()}
@@ -706,6 +709,10 @@ def main():
         "calibration_generation": 1,
         "candidate_checkpoint_epoch": 0,
         "official_training_state_epoch_field_present": False,
+        "fresh_official_load_checkpoint_return_epoch": fresh_load_return_epoch,
+        "fresh_official_reload_tensor_sha256": model_tensor_sha256(reloaded),
+        "calibration_fit_performed": True,
+        "no_optimizer_training": True,
         "parent_tensor_sha256": parent_tensor_sha,
         "candidate_tensor_sha256": model_tensor_sha256(reloaded),
         "changed_parameter_names": changed,
