@@ -2,6 +2,12 @@
 
 This is implementation evidence, not a completed model evaluation or admission.
 
+## Fixed-six diagnostic launcher prepared — 2026-10-05
+
+`scripts/run_fcp013_fixed_diagnostics_spark.sh` is prepared, not yet executed on a candidate. It checks the frozen diagnostic source, unchanged P011 numerical trainer and resolved config, successful r2 completion/audit and actual artifact hashes. It refuses an active training container and requires >=50 GiB MemAvailable and >=30 GiB MemFree before starting. Only the existing train-only mounts, read-only parent and terminal dual candidate are exposed; GPU allocator fraction is 0.15, available-memory floor 20 GiB and timeout 1200 seconds. One fresh output directory is required. The six windows, parent/terminal comparison and metrics are unchanged. Official pinned-image CPU import preflight passed using these exact source mounts; no model forward, diagnostic result, optimizer or PPO was run.
+
+This launcher remains a prepared stage; Root must execute from a frozen copy after successful training, and must verify the guard and diagnostic result before any next-stage approval. Independent review was requested again; availability is not assumed.
+
 ## Terminal audit automation approval — 2026-10-05
 
 Lead approves one CPU-only finalizer waiting on the exact r2 systemd invocation `d0138175399a40f487493919a674e1a5`. It must see inactive/dead/success with normal exit code zero, then run the complete frozen candidate auditor, verify state remains terminal and atomically persist an audit plus training-completion receipt. The finalizer cannot launch evaluation, PPO, change models, or restart training. An active unit with Result=success is explicitly not completion. Unknown/missing units and observation timeout fail without restarting. Existing receipts must match exactly and are never overwritten.
