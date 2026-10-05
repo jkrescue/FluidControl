@@ -1,0 +1,18 @@
+{
+  "status": "FC_P026_K4_TRAINING_RUNNING_NOT_ADMISSION",
+  "unit": "fluid-control-fcp026-history-k4-20261006.service",
+  "invocation": "eee5a6fbad40411cac2f05e00520b079",
+  "source_commit": "be4fc7e",
+  "approval_commit": "ef2ddd3",
+  "approval_sha256": "fca9c5a1106c85fb55a54590784453bd5246d55c21bbaa8ded1e3c72562b3e86",
+  "container_id": "79a39768f1398bc5ff9d1085f027a4b1802978120107ca5f9008ffdd300a75e3",
+  "image": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e",
+  "started_at": "2026-10-05T22:00:35.617328938Z",
+  "observed_at_utc": "2026-10-05T23:14:39Z",
+  "observed_container_state": "running",
+  "planned_windows": 1368,
+  "planned_optimizer_updates": 171,
+  "training_completed": false,
+  "scientific_admission": false,
+  "note": "Actual live observation during training, recorded at the stated observation time, not a reconstructed start-time observation. No terminal success or scientific acceptance is claimed."
+}

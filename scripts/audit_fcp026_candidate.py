@@ -278,6 +278,12 @@ def validate_panel(panel, trainer, p020, identities, k, indices):
     equal_aggregate(panel["history_subgroups"], trainer.grouped_panel(rows), "warm/padded aggregate recomputation")
 
 
+TRAINING_UNITS = {
+    1: "fluid-control-fcp026-history-k1-20261005.service",
+    4: "fluid-control-fcp026-history-k4-20261006.service",
+}
+
+
 def validate_execution(repo, root, k, approval_sha, observation_path, observation_sha, unit, invocation):
     from audit_fcp013_dual_candidate import validate_guard
     from audit_fcp015_candidate import validate_resource_watch
@@ -290,7 +296,7 @@ def validate_execution(repo, root, k, approval_sha, observation_path, observatio
            "invocation": invocation, "approval_sha256": approval_sha, "image": IMAGE,
            "observed_container_state": "running", "planned_windows": 1368,
            "planned_optimizer_updates": 171, "training_completed": False, "scientific_admission": False}, "external running observation")
-    require(unit == f"fluid-control-fcp026-history-k{k}-20261005.service" and len(invocation) == 32, "exact arm unit/invocation")
+    require(unit == TRAINING_UNITS.get(k) and len(invocation) == 32, "exact arm unit/invocation")
     props = terminal_properties(unit)
     validate_terminal(props, invocation)  # Before archive/HDF reads, especially while still running.
     frozen = repo / "artifacts/fcp026_history_training_source_20261005_immutable"
