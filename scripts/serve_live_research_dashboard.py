@@ -339,22 +339,27 @@ function renderActiveExperiment(d){
  if(paired?.ready===true){
   const age=Date.now()-Date.parse(paired.sampled_at_utc||'');
   const fresh=Number.isFinite(age)&&age>=0&&age<60000;
-  const title='FNO 升力预测训练 · 两组同条件对照';
-  $('lead-now').textContent=title+'。A只训练升力输出；B同时训练现有解码器最后一层。训练完成后仍需独立评估，尚未开始新模型PPO或闭环验收。';
+  const completed=paired.arms.every(a=>a.terminal?.verified===true);
+  const title=completed?'两组训练完成 · 独立精度评估':'FNO 升力预测训练 · 两组同条件对照';
+  $('lead-now').textContent=title+'。A只训练升力输出；B同时训练现有解码器最后一层。尚未开始新模型PPO或闭环验收。';
   const card=document.createElement('div');card.className='card';
   const h=document.createElement('h3');h.textContent=title;card.appendChild(h);
   const table=document.createElement('table');
   table.innerHTML='<tr><th>节点 / 方法</th><th>更新次数</th><th>最新批次损失</th><th>实际状态</th></tr>';
   paired.arms.forEach(a=>{
    const tr=document.createElement('tr');
-   const state=!fresh?'页面采样已过期':a.running?(a.progress_fresh?'训练运行中':'进程运行，进度待检查'):a.service_state==='unknown'?'状态读取失败':'训练进程未运行，终态待核';
-   [a.label,a.step==null?'尚无已核步数':a.step+' / 1368',a.total_loss==null?'—':num(a.total_loss,6),state].forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.appendChild(td)});
+   const state=!fresh?'页面采样已过期':a.terminal?.verified?(a.formal?.running?'训练已核验；独立评估运行中':a.formal?.service_state==='unknown'?'训练已核验；评估状态读取失败':'训练已核验；评估未运行，结果待复核'):a.running?(a.progress_fresh?'训练运行中':'进程运行，进度待检查'):a.service_state==='unknown'?'状态读取失败':'训练进程未运行，终态待核';
+   [a.label,a.terminal?.verified?'1368 / 1368':a.step==null?'尚无已核步数':a.step+' / 1368',a.total_loss==null?'—':num(a.total_loss,6),state].forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.appendChild(td)});
    table.appendChild(tr);
   });card.appendChild(table);
-  const note=document.createElement('p');note.textContent='每次更新使用一个真实CFD的100步训练窗口。最新批次损失不是验证精度，不能跨不同批次直接排名。固定窗口的单步、连续预测和升力波动诊断将在终态结果保存后展示。';card.appendChild(note);
+  const note=document.createElement('p');note.textContent='每次更新使用一个真实CFD的100步训练窗口。最新批次损失不是验证精度，不能跨不同批次直接排名。独立评估检查速度、压力、阻力和升力波动；训练完成不是模型合格。';card.appendChild(note);
+  if(completed){
+   const diag=document.createElement('p');
+   diag.textContent='固定6个训练窗口：连续预测的升力波动误差（训练前 → 训练后） '+paired.arms.map(a=>a.label+'：'+num(a.terminal.rms_before,5)+' → '+num(a.terminal.rms_after,5)).join('；')+'。越小越好；这不是验证集成绩，也不是减阻率。';card.appendChild(diag);
+  }
   $('lead-models').prepend(card);
   $('train16-formal-progress').textContent=title;
-  $('train16-formal-detail').textContent='完整训练各1368次更新，数据、顺序和损失相同。资源要求：每节点可用统一内存至少20 GiB，实际采样见资源面板。现有流场图属于已标注的历史模型，并非本轮未完成模型的新结果。';
+  $('train16-formal-detail').textContent='完整训练各1368次更新，数据、顺序和损失相同。资源要求：每节点可用统一内存至少20 GiB，实际采样见资源面板。现有流场图属于已标注的历史模型，并非本轮模型的新结果。';
   return;
  }
  const joint=d.joint_readout_diagnostic;
@@ -816,6 +821,43 @@ def _parse_fcp011_live(output: str, now: float) -> dict:
             "admission": False}
 
 
+def _fcp011_terminal(root: Path, scope: str) -> dict:
+    identities = {
+        "head-only": ("fcp011_head_only_training_20261005", "6d3ecb9174f2adb20d5b95989d1438a0ba357b7ed1caeb03f9225da78d77b149", "1c0bb91bfee3ca33f0ca5060241b6992aca7b5c5be5a0adcc7c7714e05938960"),
+        "decoder-tail": ("fcp011_decoder_tail_training_worker_20261005", "499b3b6c65af9a8a53318f4d8dfe771b0b0cea919c66879f520c978887f5c686", "d05f1d0713b424f07f558d364b9c43bc36852c7b39881ca0d8295d6444c6873e"),
+    }
+    try:
+        directory, receipt_sha, result_sha = identities[scope]
+        base = root / "artifacts" / directory
+        receipt_raw = (base / "completion_receipt.json").read_bytes()
+        result_raw = (base / "result.json").read_bytes()
+        if hashlib.sha256(receipt_raw).hexdigest() != receipt_sha or hashlib.sha256(result_raw).hexdigest() != result_sha:
+            return {"verified": False}
+        result = json.loads(result_raw)
+        means = []
+        for step in ("0", "1368"):
+            rows = result["train_only_diagnostics"][step]["windows"]
+            values = [float(row["tail62_rear_cl_rms_absolute_error"]) for row in rows]
+            if len(values) != 6 or not all(math.isfinite(value) and value >= 0 for value in values):
+                return {"verified": False}
+            means.append(sum(values) / len(values))
+        return {"verified": True, "rms_before": means[0], "rms_after": means[1], "admission": False}
+    except (OSError, ValueError, KeyError, TypeError):
+        return {"verified": False}
+
+
+def _parse_fcp011_formal(output: str, scope: str) -> dict:
+    fields = dict(line.split("=", 1) for line in output.splitlines() if "=" in line)
+    try:
+        pid = int(fields.get("MainPID", "0"))
+    except ValueError:
+        pid = 0
+    state = fields.get("ActiveState", "unknown")
+    command = fields.get("ExecStart", "")
+    bound = f"FCP_POSTEVAL_PROFILE=p011_{scope.replace('-', '_')} " in command and "run_fcp008_posteval_spark.sh --execute" in command
+    return {"service_state": state, "pid": pid, "running": state == "active" and pid > 0 and bound, "admission": False}
+
+
 def _fcp011_training(root: Path) -> dict:
     approval = root / "docs/FC_P011_TRAINING_EXECUTION_APPROVAL_20261005.json"
     try:
@@ -830,15 +872,19 @@ def _fcp011_training(root: Path) -> dict:
         manager = "systemctl" if worker else "systemctl --user"
         journal = "journalctl" if worker else "journalctl --user"
         script = f"{manager} show {unit} -p ActiveState -p MainPID -p ExecStart; {journal} -u {unit} -n 24 -o json --no-pager"
+        script += f"; echo FCP011_FORMAL_STATUS; {manager} show fluid-control-fcp011-{scope}-posteval-20261005.service -p ActiveState -p MainPID -p ExecStart"
         command = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=2", "USER@WORKER_HOST", script] if worker else ["sh", "-c", script]
         try:
             response = subprocess.run(command, capture_output=True, text=True, timeout=4, check=False)
-            status = _parse_fcp011_live(response.stdout, time.time())
+            training_output, _, formal_output = response.stdout.partition("FCP011_FORMAL_STATUS\n")
+            status = _parse_fcp011_live(training_output, time.time())
+            formal = _parse_fcp011_formal(formal_output, scope)
         except (OSError, subprocess.SubprocessError):
             status = _parse_fcp011_live("", time.time())
-        arms.append({"label": label, **status})
+            formal = _parse_fcp011_formal("", scope)
+        arms.append({"label": label, **status, "terminal": _fcp011_terminal(root, scope), "formal": formal})
     return {"ready": True, "sampled_at_utc": datetime.now(UTC).isoformat(), "arms": arms,
-            "admission": False, "fixed_window_diagnostics_persisted": False}
+            "admission": False, "fixed_window_diagnostics_persisted": all(a["terminal"]["verified"] for a in arms)}
 
 
 def _fcp009_formal_status(root: Path) -> dict:

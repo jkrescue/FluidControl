@@ -48,3 +48,26 @@ def test_missing_malformed_or_nonfinite_progress_is_unknown_not_zero():
 
 def test_unbound_approval_does_not_show_paired_training(tmp_path):
     assert dashboard._fcp011_training(tmp_path) == {"ready": False}
+
+
+def test_formal_process_requires_live_pid_and_exact_scope():
+    value = "ActiveState=active\nMainPID=42\nExecStart=env FCP_POSTEVAL_PROFILE=p011_head_only /chain/scripts/run_fcp008_posteval_spark.sh --execute\n"
+    assert dashboard._parse_fcp011_formal(value, "head-only")["running"]
+    assert not dashboard._parse_fcp011_formal(value, "decoder-tail")["running"]
+    assert not dashboard._parse_fcp011_formal(value.replace("MainPID=42", "MainPID=0"), "head-only")["running"]
+    assert not dashboard._parse_fcp011_formal(value.replace("active", "inactive"), "head-only")["running"]
+    assert not dashboard._parse_fcp011_formal(value, "head-only")["admission"]
+
+
+def test_missing_formal_observation_is_unknown():
+    value = dashboard._parse_fcp011_formal("", "head-only")
+    assert value["service_state"] == "unknown" and not value["running"]
+
+
+def test_terminal_must_match_reviewed_receipt_and_result(tmp_path):
+    assert dashboard._fcp011_terminal(tmp_path, "head-only") == {"verified": False}
+    base = tmp_path / "artifacts/fcp011_head_only_training_20261005"
+    base.mkdir(parents=True)
+    (base / "completion_receipt.json").write_text('{}')
+    (base / "result.json").write_text('{"optimizer_steps":1368}')
+    assert dashboard._fcp011_terminal(tmp_path, "head-only") == {"verified": False}
