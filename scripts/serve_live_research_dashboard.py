@@ -335,6 +335,21 @@ function renderAdmission(d){
  }
 }
 function renderActiveExperiment(d){
+ const grouped=d.window_accumulation_training;
+ if(grouped?.verified===true){
+  const age=Date.now()-Date.parse(grouped.sampled_at_utc||'');
+  const fresh=Number.isFinite(age)&&age>=0&&age<60000;
+  const title=!fresh?'当前采样已过期':grouped.running?'八窗口梯度累积 · 训练进行中':'八窗口训练进程未运行 · 结果待核';
+  $('lead-now').textContent=title+'。上一模型未通过升力要求，本轮检验跨窗口平均梯度能否改善受力预测。';
+  const card=document.createElement('div');card.className='card';
+  const heading=document.createElement('h3');heading.textContent=title;card.appendChild(heading);
+  const progress=document.createElement('p');progress.textContent='已处理 '+grouped.consumed_windows+' / 1368 个流动窗口；完成 '+grouped.updates+' / 171 次参数更新。每八个窗口的梯度取平均，再更新模型一次。';card.appendChild(progress);
+  const detail=document.createElement('p');detail.textContent='官方 FNO、真实 CFD 数据和损失函数不变，原流场预测模型保持冻结。固定六个训练窗口在训练前、处理中和结束时重复检查；不挑选中间最好模型。';card.appendChild(detail);
+  const note=document.createElement('p');note.textContent='日志距今 '+num(grouped.log_age_seconds,0)+' 秒。训练完成后仍须完整精度评估，合格后才训练新 PPO 并开展真实 CFD 闭环。当前尚无本轮减阻结论；下方流场图片仍为已标注的历史结果。';card.appendChild(note);
+  $('lead-models').prepend(card);$('train16-formal-progress').textContent=title;
+  $('train16-formal-detail').textContent=progress.textContent+' 上一模型正式受力窗口联合通过 0/6，本轮不得以训练损失代替验收。';
+  return;
+ }
  const independent=d.independent_force_training;
  if(independent?.ready===true){
   const age=Date.now()-Date.parse(independent.sampled_at_utc||'');
@@ -1028,6 +1043,49 @@ def _fcp013_terminal_progress(root: Path) -> dict:
                                         for k in ("true_state_h1_field_relative_l2_uvp", "free_ar_field_relative_l2_uvp")),
                 "formal": _parse_fcp013_posteval_live(formal.stdout), "admission": False}
     except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError, IndexError):
+        return {"verified": False}
+
+
+def _parse_fcp015_live(output: str, log: str) -> dict:
+    fields = dict(line.split("=", 1) for line in output.splitlines() if "=" in line)
+    try:
+        pid = int(fields.get("MainPID", "0"))
+    except ValueError:
+        pid = 0
+    bound = (fields.get("InvocationID") == "7842742926284d0c94b0383163d5dc0b"
+             and "fcp015_window_accumulation_source_20261005_immutable/scripts/run_fcp015_window_accumulation_spark.sh --execute" in fields.get("ExecStart", ""))
+    updates = 0
+    for line in log.splitlines():
+        try:
+            row = json.loads(line)
+            if (row.get("event") == "accumulation_update" and type(row.get("update")) is int
+                    and 1 <= row["update"] <= 171 and row.get("consumed_windows") == 8 * row["update"]):
+                updates = max(updates, row["update"])
+        except (ValueError, TypeError, AttributeError):
+            continue
+    return {"running": bool(bound and fields.get("ActiveState") == "active"
+                            and fields.get("SubState") == "running" and pid > 0),
+            "updates": updates, "consumed_windows": updates * 8, "admission": False}
+
+
+def _fcp015_training(root: Path) -> dict:
+    base = root / "artifacts/fcp015_window_accumulation_training_20261005"
+    try:
+        for name, expected in {
+            "execution_approval.json": "5f42527e4b032b0c3aff4180aa34a6570ec1fcb3945ec7302934d8386c4702d6",
+            "running_execution_evidence.json": "320dda2539952d602d2e5c21f21d731c2c6e468063cfb85d9db5215e6ce16836",
+        }.items():
+            if hashlib.sha256((base / name).read_bytes()).hexdigest() != expected:
+                return {"verified": False}
+        state = subprocess.run(["systemctl", "--user", "show", "fluid-control-fcp015-window-accumulation-20261005.service",
+                                "-p", "ActiveState", "-p", "SubState", "-p", "MainPID", "-p", "InvocationID", "-p", "ExecStart"],
+                               capture_output=True, text=True, timeout=2, check=False)
+        log_path = base / "run.log"
+        log = log_path.read_bytes()[-262144:].decode(errors="replace")
+        return {"verified": True, "sampled_at_utc": datetime.now(UTC).isoformat(),
+                "log_age_seconds": max(0.0, time.time() - log_path.stat().st_mtime),
+                **_parse_fcp015_live(state.stdout, log)}
+    except (OSError, subprocess.SubprocessError, ValueError):
         return {"verified": False}
 
 
@@ -2602,6 +2660,7 @@ class Handler(BaseHTTPRequestHandler):
             data["decoder_scope_training"] = _fcp011_training(self.root)
             data["gradient_diagnostic"] = _fcp012_diagnostic(self.root)
             data["independent_force_training"] = _fcp013_training(self.root)
+            data["window_accumulation_training"] = _fcp015_training(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)

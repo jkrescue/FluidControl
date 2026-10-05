@@ -1,5 +1,7 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**当前训练（2026-10-05 09:48 UTC）**：FC-P015已按审批`b0c326a`启动，真实unit `fluid-control-fcp015-window-accumulation-20261005.service`，invocation `7842742926284d0c94b0383163d5dc0b`。同P009初始模型、同1368窗口顺序、同官方FNO/loss/AdamW数值；仅改为8窗平均梯度后一次clip/update，共171更新。四个固定诊断时点不参与选择终态。实际running evidence SHA `320dda25…16836`核验完整容器命令、GPU0、90GiB、禁网/只读根目录及train-only挂载。当前实测4/171更新、32/1368窗口、GPU96%、MemAvailable109GiB/MemFree29GiB；这是当时观测。HTML已改为实际P015身份和两种进度计数，原Chrome页已刷新；尚无新精度、PPO或闭环结果。终态审计、P015双模型加载和原formal衔接并行准备，不能以训练运行代替最终准入。
+
 **最新证据（2026-10-05 09:29 UTC）**：P014只读诊断已完成，result SHA `5550140b…e95a7`、unit exited/0、模型张量前后不变，44HDF及残差分解已独立复核。六窗实际H1、AR及总训练目标都变差；H100的AR centered residual MSE六窗均增加，H1三增三降，终态十二域平均残差均为正。这否定“仅纯常数偏移”作为完整解释，不能声称训练原因已查明。Lead不批准额外全训练集仅bias标量校准：它无法改变仍失败的Cl′ RMS，不足以推进整体准入。下一项优先是能改善波形、保持原架构/loss/数据/门槛的单因素优化干预，正在依据实际训练代码设计，不盲目继续原训练或扫参。P013正式FAIL继续有效，尚无新PPO或代理辅助真实CFD成功。
 
 **最新阶段（2026-10-05 09:27 UTC）**：P013完整正式评估已完成，原联合准入FAIL：六个受力窗口joint0/6，平均总Cd5/6、后Cl脉动RMS2/6、后Cl均值0/6。独立重算原审计器得到完全相同结论，18项receipt文件SHA全部一致；receipt SHA `2733c3cb…aa2e7a`。P013不准入新PPO。固定六个train窗口的P014只读目标/升力残差分解已按独立审查方案启动，service `fluid-control-fcp014-train-objective-20261005.service`，invocation `6bba81dba45b46638643f441ba21082f`，审批`e26473d`；原数据与模型不变、无optimizer/backward/save/validation/frozen/PPO。启动前重算44个真实训练HDF，容器保留至少20GiB MemAvailable和MemFree。下一步依据分解结果决定单因素改进；不能以诊断完成代替合格代理与真实CFD闭环。
