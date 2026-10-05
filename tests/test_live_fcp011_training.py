@@ -80,3 +80,11 @@ def test_formal_result_rejects_unbound_completion(tmp_path):
     (base / "receipt.json").write_text('{"status":"FC_P011_HEAD_ONLY_POSTEVAL_COMPLETE"}')
     (base / "development_gate.json").write_text('{"status":"DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL"}')
     assert dashboard._fcp011_formal_result(tmp_path, "head-only") == {"verified_fail": False}
+
+
+def test_gradient_diagnostic_requires_exact_reviewed_result(tmp_path):
+    assert dashboard._fcp012_diagnostic(tmp_path) == {"verified": False}
+    base = tmp_path / "artifacts/fcp012_decoder_gradient_diagnostic_20261005/diagnostic"
+    base.mkdir(parents=True)
+    (base / "result.json").write_text('{"status":"COMPLETE","rows":[]}')
+    assert dashboard._fcp012_diagnostic(tmp_path) == {"verified": False}

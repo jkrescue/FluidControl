@@ -359,7 +359,11 @@ function renderActiveExperiment(d){
    diag.textContent='固定6个训练窗口：连续预测的升力波动误差（训练前 → 训练后） '+paired.arms.map(a=>a.label+'：'+num(a.terminal.rms_before,5)+' → '+num(a.terminal.rms_after,5)).join('；')+'。越小越好；这不是验证集成绩，也不是减阻率。';card.appendChild(diag);
   }
   if(rejected){
-   const summary=document.createElement('p');summary.textContent='独立受力窗口评估（各6个工况）：'+paired.arms.map(a=>{const f=a.terminal.formal_result;return a.label+'：阻力 '+f.cd_pass+'/6、升力波动 '+f.rms_pass+'/6、平均升力 '+f.mean_pass+'/6'}).join('；')+'。两组都只有零转速的两个工况全部通过；旋转工况的升力波动误差仍过大。下一项工作是分解流场与受力训练目标对参数更新的影响，不是新PPO。';card.appendChild(summary);
+   const summary=document.createElement('p');summary.textContent='独立受力窗口评估（各6个工况）：'+paired.arms.map(a=>{const f=a.terminal.formal_result;return a.label+'：阻力 '+f.cd_pass+'/6、升力波动 '+f.rms_pass+'/6、平均升力 '+f.mean_pass+'/6'}).join('；')+'。两组都只有零转速的两个工况全部通过；旋转工况的升力波动误差仍过大。';card.appendChild(summary);
+   if(d.gradient_diagnostic?.verified){
+    const p=document.createElement('p');p.textContent='后续诊断已完成：两模型各检查6个真实训练窗口。5个旋转窗口中，均未触发事先规定的强梯度冲突或尺度失衡条件。不支持继续盲调损失权重；下一步评估分离流场与气动力预测的方案，尚未启动新训练或PPO。';card.appendChild(p);
+    $('lead-now').textContent='训练目标梯度诊断完成；未发现预设的强冲突信号。正在设计气动力预测改进，完整FNO辅助闭环尚未完成。';
+   }
   }
   $('lead-models').prepend(card);
   $('train16-formal-progress').textContent=title;
@@ -889,6 +893,25 @@ def _parse_fcp011_formal(output: str, scope: str) -> dict:
     command = fields.get("ExecStart", "")
     bound = f"FCP_POSTEVAL_PROFILE=p011_{scope.replace('-', '_')} " in command and "run_fcp008_posteval_spark.sh --execute" in command
     return {"service_state": state, "pid": pid, "running": state == "active" and pid > 0 and bound, "admission": False}
+
+
+def _fcp012_diagnostic(root: Path) -> dict:
+    try:
+        raw = (root / "artifacts/fcp012_decoder_gradient_diagnostic_20261005/diagnostic/result.json").read_bytes()
+        if hashlib.sha256(raw).hexdigest() != "4142cdc5c67ff04d50f2921887e01034a9ea7d09a2865ac286b52d1c911d814d":
+            return {"verified": False}
+        result = json.loads(raw)
+        counts = {}
+        for model in ("p009_parent", "fcp011_decoder_tail"):
+            rows = [row for row in result["rows"] if row["model"] == model and row["global_index"] != 160]
+            pairs = [row["gradient_groups"]["complete"]["field_vs_weighted_force"] for row in rows]
+            if len(pairs) != 5:
+                return {"verified": False}
+            counts[model] = {"scale_signal_windows": sum(p["left_to_right_norm_ratio"] > 10 for p in pairs),
+                             "conflict_signal_windows": sum(p["cosine"] < -0.2 for p in pairs)}
+        return {"verified": True, "window_count": 12, "models": counts, "admission": False}
+    except (OSError, ValueError, KeyError, TypeError):
+        return {"verified": False}
 
 
 def _fcp011_training(root: Path) -> dict:
@@ -2418,6 +2441,7 @@ class Handler(BaseHTTPRequestHandler):
             data["free_ar_diagnostic"] = _free_ar_diagnostic(self.root)
             data["joint_readout_diagnostic"] = _joint_readout_diagnostic(self.root)
             data["decoder_scope_training"] = _fcp011_training(self.root)
+            data["gradient_diagnostic"] = _fcp012_diagnostic(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
