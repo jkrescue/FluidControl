@@ -39,6 +39,47 @@ RESOURCES = {
 
 
 class TrainingEvaluationWatchdogTests(unittest.TestCase):
+    def test_fixed_feature_failure_is_operational_not_scientific(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            path = repo / MODULE.FIXED_FEATURE_READOUT_FAILURE
+            path.parent.mkdir(parents=True)
+            record = {
+                "status": "FCP003C_FIXED_FEATURE_FORCE_READOUT_OPERATIONAL_FAILURE",
+                "classification": "ENGINEERING_NUMERICAL_WIRING_CHECK_FAILURE_NOT_SCIENTIFIC_RESULT",
+                "authority_unit": MODULE.FIXED_FEATURE_READOUT_UNIT,
+                "exec_main_status": 1,
+                "optimizer_steps": 0,
+                "candidate_saved": False,
+                "result_json_created": False,
+                "cache_created": False,
+                "validation_accessed": False,
+                "frozen_test_accessed": False,
+                "ppo_executed": False,
+                "automatic_retry": False,
+                "scientific_gate_changed": False,
+            }
+            path.write_text(json.dumps(record, sort_keys=True))
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            with mock.patch.object(
+                MODULE, "FIXED_FEATURE_READOUT_FAILURE_SHA256", digest
+            ):
+                verified, issues = MODULE.verify_fixed_feature_operational_failure(
+                    repo
+                )
+                self.assertTrue(verified)
+                self.assertEqual(issues, [])
+                record["scientific_gate_changed"] = True
+                path.write_text(json.dumps(record, sort_keys=True))
+                verified, issues = MODULE.verify_fixed_feature_operational_failure(
+                    repo
+                )
+                self.assertFalse(verified)
+                self.assertIn(
+                    "fixed-feature operational failure scientific_gate_changed differs",
+                    issues,
+                )
+
     def test_absolute_calibration_progress_requires_objective_tag(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)

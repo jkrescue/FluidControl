@@ -139,6 +139,15 @@ ABSOLUTE_CALIBRATION_IMPLEMENTATION_SHA256 = (
 ABSOLUTE_CALIBRATION_LAUNCHER_SHA256 = (
     "a2bd69d367eef8bfc97ff5feba54531aa2f8b9e35d137c70fd85a0a7bbe40523"
 )
+FIXED_FEATURE_READOUT_UNIT = (
+    "fluid-control-fcp003c-fixed-feature-force-readout-20261005.service"
+)
+FIXED_FEATURE_READOUT_FAILURE = Path(
+    "artifacts/fcp003c_fixed_feature_force_readout_20261005/operational_failure.json"
+)
+FIXED_FEATURE_READOUT_FAILURE_SHA256 = (
+    "c2a75643b05d292f7b99c0acb58b73a97c2150ffa4d504547eeb793ee9b76ad9"
+)
 FC_P003B_UNIT = "fluid-control-fcp003b-dynamic-pairs-20261005.service"
 FC_P003B_PROBE_UNIT = "fluid-control-fcp003b-dynamic-pairs-probe-v3-20261005.service"
 FC_P003B_POSTEVAL_UNIT = (
@@ -478,6 +487,36 @@ def verify_absolute_calibration_authorization(repo: Path) -> tuple[bool, list[st
         path = repo / relative
         if not path.is_file() or file_sha256(path) != expected_sha:
             issues.append(f"absolute calibration input SHA differs: {relative}")
+    return not issues, issues
+
+
+def verify_fixed_feature_operational_failure(repo: Path) -> tuple[bool, list[str]]:
+    """Verify the bounded v1 engineering failure without making a science claim."""
+    path = repo / FIXED_FEATURE_READOUT_FAILURE
+    record = read_json(path, None)
+    if not isinstance(record, dict):
+        return False, ["fixed-feature operational failure record missing or invalid"]
+    issues = []
+    if file_sha256(path) != FIXED_FEATURE_READOUT_FAILURE_SHA256:
+        issues.append("fixed-feature operational failure record SHA differs")
+    expected = {
+        "status": "FCP003C_FIXED_FEATURE_FORCE_READOUT_OPERATIONAL_FAILURE",
+        "classification": "ENGINEERING_NUMERICAL_WIRING_CHECK_FAILURE_NOT_SCIENTIFIC_RESULT",
+        "authority_unit": FIXED_FEATURE_READOUT_UNIT,
+        "exec_main_status": 1,
+        "optimizer_steps": 0,
+        "candidate_saved": False,
+        "result_json_created": False,
+        "cache_created": False,
+        "validation_accessed": False,
+        "frozen_test_accessed": False,
+        "ppo_executed": False,
+        "automatic_retry": False,
+        "scientific_gate_changed": False,
+    }
+    for key, value in expected.items():
+        if record.get(key) != value:
+            issues.append(f"fixed-feature operational failure {key} differs")
     return not issues, issues
 
 
@@ -908,6 +947,7 @@ def discover_related_units() -> list[str]:
                 FC_P003C_POSTEVAL_UNIT,
                 CALIBRATION_UNIT,
                 ABSOLUTE_CALIBRATION_UNIT,
+                FIXED_FEATURE_READOUT_UNIT,
                 *SUPERSEDED_MAIN_UNITS,
                 *names,
             )
@@ -1150,6 +1190,10 @@ def build_sample(
         and bool(absolute_unit.get("training_process_pids"))
         and absolute_contract_verified
     )
+    fixed_feature_unit = units.get(FIXED_FEATURE_READOUT_UNIT, {})
+    fixed_feature_failure_verified, fixed_feature_failure_issues = (
+        verify_fixed_feature_operational_failure(repo)
+    )
     fc_p003b_unit = units.get(FC_P003B_UNIT, {})
     fc_p003b_probe_unit = units.get(FC_P003B_PROBE_UNIT, {})
     fc_p003b_posteval_unit = units.get(FC_P003B_POSTEVAL_UNIT, {})
@@ -1348,6 +1392,22 @@ def build_sample(
         progress["train_fit_calibration"] = progress[
             "train_fit_absolute_calibration"
         ]
+    progress["fixed_feature_force_readout"] = {
+        "state": (
+            "ENGINEERING_FAILURE_NEEDS_FIX"
+            if fixed_feature_failure_verified
+            else "FAILURE_EVIDENCE_INVALID_OR_PENDING"
+            if fixed_feature_unit.get("active_state") == "failed"
+            else "NOT_RUNNING"
+        ),
+        "authority_unit": FIXED_FEATURE_READOUT_UNIT,
+        "active_state": fixed_feature_unit.get("active_state", "unknown"),
+        "main_pid": fixed_feature_unit.get("main_pid", 0),
+        "operational_failure_verified": fixed_feature_failure_verified,
+        "operational_failure_issues": fixed_feature_failure_issues,
+        "scientific_result_available": False,
+        "automatic_retry": False,
+    }
     if not pending or active_units:
         idle_since = None
         idle_seconds = 0
