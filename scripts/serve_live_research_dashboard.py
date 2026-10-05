@@ -346,7 +346,7 @@ function renderActiveExperiment(d){
   const names={validation10:'十条验证轨迹',dynamic6:'六条动态动作轨迹',force_window:'受力时间窗口'};
   const done=(task.progress?.completed_steps||[]).map(x=>names[x]||x);
   const detail=failed&&!task.running?'六个工况通过数量：阻力 '+result.cd_pass+'/6；平均升力 '+result.mean_pass+'/6；升力波动 '+result.rms_pass+'/6；全部指标同时通过 '+result.joint_pass+'/6。':'已完成的评估阶段：'+(done.length?done.join('、'):'尚无完整阶段结果')+'。检查单步及连续预测的流场、阻力、升力均值与波动误差。';
-  const note=failed?'当前工作：分析逐时刻受力训练目标与升力波动误差的关系；下一诊断尚未执行。没有新PPO或代理辅助CFD闭环成功。下方图片保留历史模型标注。':'本轮精度与控制效果尚未验收，未启动新策略训练。下方流场图片保留历史模型标注，不代表本轮结果。';
+  const note=failed?'当前工作：梯度诊断已完成，训练目标改进仍待有限步数对照验证。没有新PPO或代理辅助CFD闭环成功。下方图片保留历史模型标注。':'本轮精度与控制效果尚未验收，未启动新策略训练。下方流场图片保留历史模型标注，不代表本轮结果。';
   $('lead-now').textContent=title+'。'+detail;
   const card=document.createElement('div');card.className='card';
   for(const [tag,text] of [['h3',title],['p',detail],['p',note],['p',task.identity_issues?.length?'运行核查提示：'+task.identity_issues.join('；'):'按实际服务、进程和资源采样更新；评估日志暂时无输出不代表停止。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
