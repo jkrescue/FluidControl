@@ -335,12 +335,28 @@ function renderAdmission(d){
  }
 }
 function renderActiveExperiment(d){
+ const probe=d.fixed_panel_probe;
+ if(probe?.verified===true){
+  const age=Date.now()-Date.parse(probe.sampled_at_utc||'');
+  const fresh=Number.isFinite(age)&&age>=0&&age<60000;
+  const title=!fresh?'当前采样已过期':probe.terminal?'固定六窗口诊断已结束 · 不代表控制准入':probe.running?'固定六窗口局部拟合诊断进行中':'诊断未运行 · 终态待核验';
+  const progress=probe.terminal?'完成 32 / 32 次更新；结果仍须独立复核。':probe.minimum_completed_updates==null?'尚无可信更新记录，不估算进度。':'日志确认至少完成 '+probe.minimum_completed_updates+' / 32 次更新；这是检查面板记录，不推算当前正在更新的序号。';
+  const detail='保持原官方神经算子、数据和损失函数，重复使用六个训练窗口，检验均值与波动误差能否同时改善。不保存候选模型，不读取验证或冻结测试，不启动强化学习策略。';
+  const prior=d.p015_formal_result;
+  const history=prior?.verified?'上一轮八窗口累积训练（P015）正式评估失败：联合通过 '+prior.joint_pass+'/6；阻力 '+prior.cd_pass+'/6、升力波动 '+prior.rms_pass+'/6、平均升力 '+prior.mean_pass+'/6。':'上一轮正式评估证据暂未核验，不能推断通过。';
+  $('lead-now').textContent=title+'。'+progress;
+  const card=document.createElement('div');card.className='card';
+  for(const [tag,text] of [['h3',title],['p',progress],['p',detail],['p',history],['p',probe.running&&!probe.progress_fresh?'进程仍在运行，但日志超过五分钟未更新，请检查进度。下方图片均为历史模型结果。':'下方图片均为已标注的历史模型结果，不是本次诊断产生的新结果。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
+  $('lead-models').prepend(card);$('train16-formal-progress').textContent=title;
+  $('train16-formal-detail').textContent=progress+' '+history;
+  return;
+ }
  const grouped=d.window_accumulation_training;
  if(grouped?.verified===true){
   const age=Date.now()-Date.parse(grouped.sampled_at_utc||'');
   const fresh=Number.isFinite(age)&&age>=0&&age<60000;
   const evaluation=grouped.evaluation;
-  const title=!fresh?'当前采样已过期':evaluation?.verified?(evaluation.running?'训练已完成 · 完整精度评估中':'精度评估进程已结束 · 结论待核'):grouped.running?'八窗口梯度累积 · 训练进行中':'八窗口训练进程未运行 · 结果待核';
+  const title=!fresh?'当前采样已过期':d.p015_formal_result?.verified?'八窗口累积训练正式评估失败 · 联合通过 1/6':evaluation?.verified?(evaluation.running?'训练已完成 · 完整精度评估中':'精度评估进程已结束 · 结论待核'):grouped.running?'八窗口梯度累积 · 训练进行中':'八窗口训练进程未运行 · 结果待核';
   $('lead-now').textContent=title+'。检查流场、阻力与升力预测是否满足控制要求；尚无本轮闭环减阻结论。';
   const card=document.createElement('div');card.className='card';
   const heading=document.createElement('h3');heading.textContent=title;card.appendChild(heading);
@@ -1044,6 +1060,90 @@ def _fcp013_terminal_progress(root: Path) -> dict:
                                         for k in ("true_state_h1_field_relative_l2_uvp", "free_ar_field_relative_l2_uvp")),
                 "formal": _parse_fcp013_posteval_live(formal.stdout), "admission": False}
     except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError, IndexError):
+        return {"verified": False}
+
+
+FCP016_INVOCATION = "a95370a65c2b47e0b0e2926261937e33"
+FCP016_APPROVAL = "f61980e2b98bfa5eb84a0a6d8e93b90924632802e28d1e9d79fbe605b712af53"
+FCP016_LAUNCHER = "artifacts/fcp016_fixed_panel_source_20261005_immutable/scripts/run_fcp016_fixed_panel_fit_spark.sh"
+
+
+def _parse_fcp016_live(output: str, log: str, log_age: float, result: dict | None = None) -> dict:
+    fields = dict(line.split("=", 1) for line in output.splitlines() if "=" in line)
+    if (fields.get("InvocationID") != FCP016_INVOCATION
+            or FCP016_LAUNCHER + " --execute" not in fields.get("ExecStart", "")
+            or "FCP016_APPROVAL_SHA256=" + FCP016_APPROVAL not in fields.get("ExecStart", "")):
+        return {"verified": False, "admission": False}
+    try:
+        pid = int(fields.get("MainPID", ""))
+    except ValueError:
+        return {"verified": False, "admission": False}
+    progress = None
+    for line in log.splitlines():
+        try:
+            row = json.loads(line)
+            if (row.get("event") == "panel_window" and type(row.get("update")) is int
+                    and row["update"] in (0, 8, 16, 32)
+                    and row.get("global_index") in (160, 816, 923, 975, 1077, 1233)):
+                progress = max(progress or 0, row["update"])
+        except (ValueError, TypeError, AttributeError):
+            continue
+    running = fields.get("ActiveState") == "active" and fields.get("SubState") == "running" and pid > 0
+    exited = (fields.get("ActiveState") == "active" and fields.get("SubState") == "exited" and pid == 0
+              and fields.get("Result") == "success" and fields.get("ExecMainCode") == "1"
+              and fields.get("ExecMainStatus") == "0")
+    result = result or {}
+    terminal = (exited and result.get("status") == "FC_P016_FIXED_PANEL_FIT_COMPLETE_NOT_ADMISSION"
+                and result.get("training_experiment") == "FC-P016" and result.get("optimizer_steps") == 32
+                and result.get("probe_sha256") == "18b210077a93bbd21a327ae6578a73fb371bf0d2f48d0541f6ca8bd87aa42bbb"
+                and result.get("candidate_saved") is False and result.get("validation_accessed") is False
+                and result.get("frozen_test_accessed") is False and result.get("ppo_executed") is False
+                and [x.get("update") for x in result.get("panels", [])] == [0,8,16,32])
+    return {"verified": True, "running": running, "terminal": terminal,
+            "minimum_completed_updates": progress, "progress_fresh": 0 <= log_age <= 300,
+            "log_age_seconds": log_age, "admission": False, "independent_terminal_audit": False}
+
+
+def _fcp016_probe(root: Path) -> dict:
+    base = root / "artifacts/fcp016_fixed_panel_fit_20261005"
+    try:
+        for path, expected in {
+            root / "docs/FC_P016_RUNNING_EXECUTION_20261005.json": "55711bedfcb27df86f31bdb2785f3206288a8332c2cc8d79dc06f013c1f2b630",
+            base / "execution_approval.json": FCP016_APPROVAL,
+            base / "immutable_launcher.sh": "496d7cc91598c3f440aa1c12f180409b47b4c371ce7410f1bba7f09cb7acfbe9",
+            root / FCP016_LAUNCHER: "496d7cc91598c3f440aa1c12f180409b47b4c371ce7410f1bba7f09cb7acfbe9",
+        }.items():
+            if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+                return {"verified": False}
+        state = subprocess.run(["systemctl", "--user", "show", "fluid-control-fcp016-fixed-panel-fit-20261005.service",
+            "-p", "ActiveState", "-p", "SubState", "-p", "MainPID", "-p", "InvocationID", "-p", "ExecStart",
+            "-p", "Result", "-p", "ExecMainCode", "-p", "ExecMainStatus"],capture_output=True,text=True,timeout=2,check=False)
+        if state.returncode != 0: return {"verified": False}
+        result = _read_json(base / "result.json", {})
+        return {**_parse_fcp016_live(state.stdout, _tail_text(base / "run.log"),
+                  time.time() - (base / "run.log").stat().st_mtime, result),
+                "sampled_at_utc": datetime.now(UTC).isoformat()}
+    except (OSError, subprocess.SubprocessError, ValueError, TypeError, AttributeError):
+        return {"verified": False}
+
+
+def _fcp015_formal_result(root: Path) -> dict:
+    base = root / "artifacts/fcp015_window_accumulation_training_20261005/posteval_fc_p015"
+    try:
+        raw = (base / "receipt.json").read_bytes()
+        if hashlib.sha256(raw).hexdigest() != "353004afa2aa5a35b912205751a100bc6d37d0572ce5431108dca3ed2ea95a5b":
+            return {"verified": False}
+        gate_raw = (base / "development_gate.json").read_bytes()
+        if hashlib.sha256(gate_raw).hexdigest() != json.loads(raw)["sha256"]["development_gate.json"]:
+            return {"verified": False}
+        gate = json.loads(gate_raw)
+        branches = gate["window_gate"]["branches"]
+        if gate["status"] != "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL" or len(branches) != 6:
+            return {"verified": False}
+        return {"verified": True, "admission": False, "joint_pass":sum(x["joint_pass"] is True for x in branches),
+                **{label:sum(x["metric_pass"][key] is True for x in branches) for label,key in
+                   (("cd_pass","total_cd"),("rms_pass","rear_cl_fluctuation_rms"),("mean_pass","rear_cl_mean"))}}
+    except (OSError, ValueError, KeyError, TypeError):
         return {"verified": False}
 
 
@@ -2694,6 +2794,8 @@ class Handler(BaseHTTPRequestHandler):
             data["gradient_diagnostic"] = _fcp012_diagnostic(self.root)
             data["independent_force_training"] = _fcp013_training(self.root)
             data["window_accumulation_training"] = _fcp015_training(self.root)
+            data["fixed_panel_probe"] = _fcp016_probe(self.root)
+            data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
