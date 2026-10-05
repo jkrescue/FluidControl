@@ -1,0 +1,22 @@
+{
+  "status": "FC_P009_FORMAL_EVALUATION_APPROVED",
+  "approved_by": "project_lead_root",
+  "candidate_kind": "FC_P009_TRAIN_ONLY_JOINT_FORCE_ROW_CANDIDATE",
+  "candidate_model_sha256": "dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31",
+  "candidate_state_sha256": "4998e534d4b82b17393c217357ed18220fb8e739166a88147483bb9cc5fb771e",
+  "candidate_result_sha256": "131428d4a1b1d4920a879281bcb91c3ca9937f63a88a8ddef1d08f2a3d5da60d",
+  "candidate_completion_receipt_sha256": "26ac241f07e94329b86bb54dae4f0339fcc9cd7145bf71b9030393161543b9b5",
+  "protocol": [
+    "validation10_H1_H10_H50_H100_stride25_batch4",
+    "dynamic6_H1_H10_H50_H100_stride1_batch8",
+    "force_window6",
+    "unchanged_development_gate"
+  ],
+  "formal_evaluation_authorized": true,
+  "frozen_test_accessed": false,
+  "ppo_auto_launch": false,
+  "minimum_mem_available_gib": 20,
+  "precision": "unchanged default TF32/high",
+  "execution_precondition": "Reviewed committed formal runner, lineage auditor and shared validator pass CPU tests and real candidate dry-run; Root authorizes execution only after final review acceptance",
+  "scientific_admission": false
+}
