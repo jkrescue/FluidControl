@@ -335,6 +335,28 @@ function renderAdmission(d){
  }
 }
 function renderActiveExperiment(d){
+ const paired=d.decoder_scope_training;
+ if(paired?.ready===true){
+  const age=Date.now()-Date.parse(paired.sampled_at_utc||'');
+  const fresh=Number.isFinite(age)&&age>=0&&age<60000;
+  const title='FNO 升力预测训练 · 两组同条件对照';
+  $('lead-now').textContent=title+'。A只训练升力输出；B同时训练现有解码器最后一层。训练完成后仍需独立评估，尚未开始新模型PPO或闭环验收。';
+  const card=document.createElement('div');card.className='card';
+  const h=document.createElement('h3');h.textContent=title;card.appendChild(h);
+  const table=document.createElement('table');
+  table.innerHTML='<tr><th>节点 / 方法</th><th>更新次数</th><th>最新批次损失</th><th>实际状态</th></tr>';
+  paired.arms.forEach(a=>{
+   const tr=document.createElement('tr');
+   const state=!fresh?'页面采样已过期':a.running?(a.progress_fresh?'训练运行中':'进程运行，进度待检查'):a.service_state==='unknown'?'状态读取失败':'训练进程未运行，终态待核';
+   [a.label,a.step==null?'尚无已核步数':a.step+' / 1368',a.total_loss==null?'—':num(a.total_loss,6),state].forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.appendChild(td)});
+   table.appendChild(tr);
+  });card.appendChild(table);
+  const note=document.createElement('p');note.textContent='每次更新使用一个真实CFD的100步训练窗口。最新批次损失不是验证精度，不能跨不同批次直接排名。固定窗口的单步、连续预测和升力波动诊断将在终态结果保存后展示。';card.appendChild(note);
+  $('lead-models').prepend(card);
+  $('train16-formal-progress').textContent=title;
+  $('train16-formal-detail').textContent='完整训练各1368次更新，数据、顺序和损失相同。资源要求：每节点可用统一内存至少20 GiB，实际采样见资源面板。现有流场图属于已标注的历史模型，并非本轮未完成模型的新结果。';
+  return;
+ }
  const joint=d.joint_readout_diagnostic;
  if(joint?.ready===true){
   const formal=joint.formal||{}, age=Date.now()-Date.parse(formal.sampled_at_utc||'');
@@ -749,6 +771,74 @@ def _dual_node_watchdog(root: Path):
 
 
 FCP009_JOINT_SHA = "931fcd2ddd6901ddfbb3ecdbfe9774d7b1e5fe6d17479c87c44ccaf51ff2b0bc"
+
+
+def _parse_fcp011_live(output: str, now: float) -> dict:
+    state, pid, command, latest = "unknown", 0, "", None
+    lines = output.splitlines()
+    for line in lines:
+        if line.startswith("ActiveState="):
+            state = line.partition("=")[2]
+        elif line.startswith("MainPID="):
+            try:
+                pid = int(line.partition("=")[2])
+            except ValueError:
+                pid = 0
+        elif line.startswith("ExecStart="):
+            command = line.partition("=")[2]
+    for line in lines:
+        try:
+            record = json.loads(line)
+            if pid and str(record.get("_PID")) != str(pid):
+                continue
+            message = json.loads(record["MESSAGE"])
+            step = message.get("step")
+            loss = float(message["total_loss"])
+            identity = message["identity"]
+            stamp = int(record["__REALTIME_TIMESTAMP"]) / 1e6
+            if type(step) is not int or not 1 <= step <= 1368 or not math.isfinite(loss):
+                continue
+            if identity.get("split") != "train" or identity.get("rollout_steps") != 100:
+                continue
+            if not math.isfinite(stamp) or stamp > now + 5:
+                continue
+            if latest is None or stamp > latest["timestamp"]:
+                latest = {"step": step, "total_loss": loss, "timestamp": stamp}
+        except (ValueError, TypeError, KeyError, AttributeError):
+            continue
+    bound = "train_fcp011_decoder_scope.py" in command and "--resource-probe" not in command
+    running = state == "active" and pid > 0 and bound
+    return {"service_state": state, "pid": pid, "running": running,
+            "step": latest["step"] if latest else None,
+            "total_loss": latest["total_loss"] if latest else None,
+            "progress_fresh": bool(latest and 0 <= now - latest["timestamp"] <= 300),
+            "progress_age_seconds": max(0, now - latest["timestamp"]) if latest else None,
+            "admission": False}
+
+
+def _fcp011_training(root: Path) -> dict:
+    approval = root / "docs/FC_P011_TRAINING_EXECUTION_APPROVAL_20261005.json"
+    try:
+        if hashlib.sha256(approval.read_bytes()).hexdigest() != "1cd0dce1bb4ea4c2e580e147a0a440f2d528ea16e914479a629eb8185709338a":
+            return {"ready": False}
+    except OSError:
+        return {"ready": False}
+    arms = []
+    for worker, scope, label in ((False, "head-only", "主节点 A：只训练升力输出"),
+                                  (True, "decoder-tail", "辅助节点 B：增加解码器训练")):
+        unit = f"fluid-control-fcp011-{scope}-training-20261005.service"
+        manager = "systemctl" if worker else "systemctl --user"
+        journal = "journalctl" if worker else "journalctl --user"
+        script = f"{manager} show {unit} -p ActiveState -p MainPID -p ExecStart; {journal} -u {unit} -n 24 -o json --no-pager"
+        command = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=2", "USER@WORKER_HOST", script] if worker else ["sh", "-c", script]
+        try:
+            response = subprocess.run(command, capture_output=True, text=True, timeout=4, check=False)
+            status = _parse_fcp011_live(response.stdout, time.time())
+        except (OSError, subprocess.SubprocessError):
+            status = _parse_fcp011_live("", time.time())
+        arms.append({"label": label, **status})
+    return {"ready": True, "sampled_at_utc": datetime.now(UTC).isoformat(), "arms": arms,
+            "admission": False, "fixed_window_diagnostics_persisted": False}
 
 
 def _fcp009_formal_status(root: Path) -> dict:
@@ -2248,6 +2338,7 @@ class Handler(BaseHTTPRequestHandler):
             data["full_train_calibration"] = _full_train_calibration(self.root)
             data["free_ar_diagnostic"] = _free_ar_diagnostic(self.root)
             data["joint_readout_diagnostic"] = _joint_readout_diagnostic(self.root)
+            data["decoder_scope_training"] = _fcp011_training(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
