@@ -335,6 +335,20 @@ function renderAdmission(d){
  }
 }
 function renderActiveExperiment(d){
+ const p022=d.p022_live;
+ if(p022){
+  const age=Date.now()-Date.parse(p022.sampled_at_utc||'');
+  const fresh=p022.verified===true&&Number.isFinite(age)&&age>=0&&age<60000;
+  const title=!fresh?'P022 状态暂未核实':p022.running?'P022 当前受力输入训练对照进行中':p022.exited_success?'P022 对照计算结束 · 精度结果待复核':'P022 任务已停止 · 正在检查原因';
+  const progress=fresh?'不输入当前受力：'+p022.updates.A_zero+'/16 次更新；输入当前受力：'+p022.updates.B_causal+'/16 次更新。':'当前进度未知，不用旧实验代替。';
+  const detail='两组使用同一初始模型、六个真实CFD窗口和相同训练目标。每次更新包含六个窗口，每个窗口预测100步；连续预测只在起点读取真实受力，之后使用自身预测。';
+  const note='比较平均升力、波动幅值和波形误差。尚无新的PPO或CFD闭环验收结果；下方流场图是已标注的历史模型结果。';
+  $('lead-now').textContent=title+'。'+progress;
+  const card=document.createElement('div');card.className='card';
+  for(const [tag,text] of [['h3',title],['p',progress],['p',detail],['p',note]]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
+  $('lead-models').prepend(card);$('train16-formal-progress').textContent=title;
+  $('train16-formal-detail').textContent=progress+' '+detail;return;
+ }
  const p020=d.p020_live;
  if(p020?.verified===true){
   const age=Date.now()-Date.parse(p020.sampled_at_utc||'');
@@ -1197,6 +1211,57 @@ def _fcp015_formal_result(root: Path) -> dict:
 FCP018_APPROVAL = "eea5bd5c6a3fe585ae1104600421e50b335f61299c4014c5e3136722af3d4d39"
 FCP018_PROTOCOL = "310f0bdf8563a2a70b844a32852791fa1b1dc20278a3098418942e1dab204d2d"
 FCP018_LAUNCHER = "artifacts/fcp018_reduced_rate_source_20261005_immutable/scripts/run_fcp018_reduced_rate_spark.sh"
+
+
+def _parse_fcp022_live(state: dict, log: str, process_matches: bool) -> dict:
+    if state.get("InvocationID") != "f1f3f7b31e70440693da2661a12cfc04":
+        return {"verified": False}
+    pid = state.get("MainPID", "0")
+    if pid != "0" and not process_matches:
+        return {"verified": False}
+    running = state.get("ActiveState") == "active" and state.get("SubState") == "running" and pid != "0" and process_matches
+    terminal = (state.get("ActiveState") == "active" and state.get("SubState") == "exited"
+                and pid == "0" and state.get("Result") == "success"
+                and state.get("ExecMainCode") == "1" and state.get("ExecMainStatus") == "0")
+    updates = {"A_zero": set(), "B_causal": set()}
+    for line in log.splitlines():
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(row, dict) or row.get("event") != "arm_update_complete":
+            continue
+        arm, step = row.get("arm"), row.get("update")
+        if arm not in updates or type(step) is not int or not 1 <= step <= 16 or step in updates[arm]:
+            return {"verified": False}
+        if arm == "B_causal" and len(updates["A_zero"]) != 16:
+            return {"verified": False}
+        updates[arm].add(step)
+    if any(steps != set(range(1, len(steps)+1)) for steps in updates.values()):
+        return {"verified": False}
+    return {"verified": True, "running": running, "exited_success": terminal,
+            "updates": {key: len(value) for key, value in updates.items()}, "admission": False}
+
+
+def _fcp022_live(root: Path) -> dict:
+    sampled = datetime.now(UTC).isoformat()
+    try:
+        approval = root / "docs/FC_P022_EXECUTION_APPROVAL_20261005.json"
+        launcher = root / "artifacts/fcp022_causal_conditioning_source_20261005_immutable/scripts/run_fcp022_causal_conditioning_spark.sh"
+        if hashlib.sha256(approval.read_bytes()).hexdigest() != "273fe63f097049fe28f9d3f6f241308a95eefb6fab23ca2dbe0d23559043cf78":
+            return {"verified": False, "sampled_at_utc": sampled}
+        if hashlib.sha256(launcher.read_bytes()).hexdigest() != "257382621faa554888c0eca5501bb11e86a7d529b6649d4d8665a705c8502f88":
+            return {"verified": False, "sampled_at_utc": sampled}
+        fields = ("InvocationID", "MainPID", "ActiveState", "SubState", "Result", "ExecMainCode", "ExecMainStatus")
+        raw = subprocess.check_output(["systemctl", "--user", "show", "fluid-control-fcp022-causal-conditioning-20261005.service",
+             *[arg for key in fields for arg in ("-p", key)]], text=True, timeout=5)
+        state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+        pid = state.get("MainPID", "0")
+        matches = pid.isdigit() and pid != "0" and str(launcher).encode() in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+        log = (root / "artifacts/fcp022_causal_conditioning_20261005/run.log").read_text()
+        return {**_parse_fcp022_live(state, log, matches), "sampled_at_utc": sampled}
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return {"verified": False, "sampled_at_utc": sampled}
 
 
 def _parse_fcp020_live(state: dict, log: str, process_matches: bool) -> dict:
@@ -2997,6 +3062,7 @@ class Handler(BaseHTTPRequestHandler):
             data["p018_formal_live"] = _fcp018_formal_live(self.root)
             data["p018_formal_result"] = _fcp018_formal_result(self.root)
             data["p020_live"] = _fcp020_live(self.root)
+            data["p022_live"] = _fcp022_live(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
