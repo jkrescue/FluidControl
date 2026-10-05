@@ -1,5 +1,14 @@
 # Research roadmap and prioritized backlog
 
+## 2026-10-05 18:17 UTC — P025 approved and running
+
+Actual invocation124d6521045a41cd9dcf5f35edff6712, source4d12c75, approval6fb2f810.
+Original P023HIGHcontrol, only symmetric statistical supervision changes; strict
+initial/source/precision binding, fullH100 gradients,20CPUchecks beforeexecution.
+Await independent terminal comparison; no admission/PPO. Unsupported outcome ends
+the isolated-block/statistical-loss branch. Short history conditioning is only a
+read-only next-stage recommendation, not approved implementation or newCFD.
+
 ## 2026-10-05 — P024 complete; P025 CPU preparation
 
 FC-E034 independent exact0/1reproduction and all60window checks complete.

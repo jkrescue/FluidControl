@@ -1,5 +1,16 @@
 # Experiment ledger
 
+## P025 running — fixed statistical supervision on isolated96 input coefficients
+
+Source4d12c75; approval6fb2f810, protocol7f6cc9c6; actual invocation
+124d6521045a41cd9dcf5f35edff6712 observedrunning18:17UTC,4/16updates.
+Fixed16updates/96backwards/36evaluationwindows, unchanged six realtrainwindows.
+Four normalized rearCl tail62 terms withfixed5/16, fullH100 recurrent gradients,
+original weights frozen, storedP023HIGH original-loss control. Exact initial
+rawpanel/source/precision comparability enforced beforeupdates. Root/independent
+20CPUtests passed; no terminal result/candidate/PPO. Both20GiB guarded.
+Actual container/mount evidence docs/FC_P025_RUNNING_EXECUTION_20261005.json.
+
 ## FC-E034 — P024 fixed response-scale mechanism diagnostic complete
 
 Result6eecbd75c5b18cd821d6cf814c6d9319f755bf8dc70f2eb0c0e7e9326bf8ba0b,
