@@ -15,6 +15,10 @@ The entries below are retrospective reconstructions from immutable artifacts and
 
 ## Historical experiments
 
+### Active FC-P013 — 2026-10-05 06:13 UTC
+
+Approved train-only independent aerodynamic official FNO experiment, implementation `1634c05`, execution `a6ca463`, approval SHA `1bdcfcf71d1581bbae66fc6551dde61a500bd95a464d9f61d510cbac1721a120`. Hypothesis and immutable inputs are in `docs/FC_P013_INDEPENDENT_FORCE_FNO_PLAN_20261005.md` and the source-bound execution approval. The P009 flow model is frozen; the independent force FNO uses the same parent and fixed 1368-window order, one terminal checkpoint, equal H1/free-AR supervision and no validation/frozen/PPO access. Root observed update 8 at 06:13 UTC; this is an active run, not a completed result or an FC-E scientific acceptance row. Exact six-window physical diagnostics are retained as a separate read-only stage under `docs/FC_P013_DIAGNOSTIC_SCHEDULING_20261005.md`. Outcome, same-protocol comparison and interpretation remain pending; next action is terminal record/checkpoint/source verification, then unchanged formal admission. No improvement is claimed from live training losses.
+
 | ID | Experiment | Hypothesis | Evidence and outcome | Interpretation | Next action |
 |---|---|---|---|---|---|
 | FC-E001 | B5 immutable parent | Static-train FNO may transfer to controlled trajectories. | validation10 recorded; dynamic6 Cd NRMSE 56.78% and action-delta Cd MAE 0.11461 both fail. | Useful immutable parent and negative control, not a controlled surrogate. | Retain unchanged. |
