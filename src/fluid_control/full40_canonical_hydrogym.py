@@ -191,6 +191,7 @@ def make_full40_canonical_env(
     episode_steps: int,
     device: torch.device | str,
     cases_root: Path | None = None,
+    fno_history_runtime: Mapping[str, object] | None = None,
 ):
     """Construct the official HydroGym FlowEnv around the fixed FNO stepper."""
     if split not in {"train", "validation"}:
@@ -208,6 +209,7 @@ def make_full40_canonical_env(
                 "checkpoint_epoch": checkpoint_epoch,
                 "canonical_baseline": baseline,
                 "cases_root": cases_root,
+                "fno_history_runtime": fno_history_runtime,
             },
             "solver": TandemFNOStepper,
             "solver_config": {"dt": CONTROL_DT},

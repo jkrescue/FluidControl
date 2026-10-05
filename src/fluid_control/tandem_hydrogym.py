@@ -6,6 +6,7 @@ This is a surrogate environment, not an OpenFOAM or official HydroGym CFD solver
 from __future__ import annotations
 
 import json
+import importlib
 import math
 from collections import deque
 from collections.abc import Mapping
@@ -51,6 +52,7 @@ class TandemSurrogateFlow(PDEBase):
         phase_baseline: Mapping[str, float | str] | None = None,
         shedding_period: float = 6.15,
         cases_root: str | Path | None = None,
+        fno_history_runtime: Mapping[str, object] | None = None,
     ) -> None:
         self.data_root = Path(data_root).resolve()
         if split not in {"train", "validation", "test"}:
@@ -65,6 +67,11 @@ class TandemSurrogateFlow(PDEBase):
         self.frame = int(frame)
         self.device = torch.device(device)
         self.network = network.to(self.device).eval()
+        self.fno_history_runtime = self._validate_history_runtime(
+            fno_history_runtime, network
+        )
+        if self.fno_history_runtime is not None and self.frame != 0:
+            raise ValueError("P026 HydroGym reset semantics require trajectory frame 0")
         self.checkpoint_epoch = checkpoint_epoch
         self.weights = tuple(
             float(x) for x in (drag_weight, lift_weight, action_weight, rate_weight)
@@ -198,6 +205,21 @@ class TandemSurrogateFlow(PDEBase):
             "omega": initial_omega,
             "force": initial_force,
         }
+        self.fno_history = None
+        if self.fno_history_runtime is not None:
+            history = self._history_module()
+            self.initial_state["fno_history_runtime"] = dict(
+                self.fno_history_runtime
+            )
+            self.initial_state["fno_history"] = history.reset_history(
+                self.initial_state["field"][None],
+                torch.tensor(
+                    [initial_omega / self.MAX_CONTROL],
+                    dtype=self.initial_state["field"].dtype,
+                    device=self.device,
+                ),
+                k=int(self.fno_history_runtime["history_length"]),
+            )
         self.initial_state_bound = float(self.initial_state["field"].abs().amax())
         self._probe_indices = self._build_probe_indices()
         self.requested_action = initial_omega
@@ -207,6 +229,61 @@ class TandemSurrogateFlow(PDEBase):
         self._initial_reward_history: tuple[tuple[float, np.ndarray], ...] | None = None
         self.initial_reward_history_sources: dict | None = None
         super().__init__()
+
+    @staticmethod
+    def _validate_history_runtime(value, network):
+        network_k = getattr(network, "history_length", None)
+        if value is None:
+            if network_k is not None:
+                raise ValueError("P026 network requires an explicit audited history runtime")
+            return None
+        if not isinstance(value, Mapping):
+            raise TypeError("history runtime identity must be a mapping")
+        profile = value.get("profile")
+        expected = {
+            "p026_k1": (1, "FC_P026_K1_HISTORY_FORCE_FNO"),
+            "p026_k4": (4, "FC_P026_K4_HISTORY_FORCE_FNO"),
+        }
+        if profile not in expected:
+            raise ValueError("unsupported FNO history runtime profile")
+        k, kind = expected[profile]
+        required = {
+            "profile": profile,
+            "history_length": k,
+            "manifest_kind": kind,
+            "flow_input_channels": 6,
+            "aerodynamic_input_channels": 6 if k == 1 else 18,
+            "left_padding": "trajectory_frame0",
+            "autoregressive_state_source": "frozen_flow_prediction",
+            "future_state_inputs": False,
+            "future_force_inputs": False,
+        }
+        if any(value.get(key) != expected_value for key, expected_value in required.items()):
+            raise ValueError("P026 FNO history runtime identity differs")
+        if network_k != k:
+            raise ValueError("P026 network and runtime history lengths differ")
+        for key in (
+            "dual_manifest_sha256",
+            "flow_model_sha256",
+            "flow_state_sha256",
+            "aerodynamic_model_sha256",
+            "aerodynamic_state_sha256",
+            "history_state_module_sha256",
+            "history_inference_module_sha256",
+            "training_protocol_sha256",
+            "config_sha256",
+            "normalization_sha256",
+        ):
+            digest = value.get(key)
+            if not isinstance(digest, str) or len(digest) != 64 or any(
+                character not in "0123456789abcdef" for character in digest
+            ):
+                raise ValueError(f"P026 history runtime {key} is invalid")
+        return dict(value)
+
+    @staticmethod
+    def _history_module():
+        return importlib.import_module("p026_history_inference")
 
     @property
     def num_inputs(self) -> int:
@@ -225,25 +302,158 @@ class TandemSurrogateFlow(PDEBase):
     def init_bcs(self) -> None:
         pass  # FNO evolves the CFD field; it has no PDE boundary solver.
 
-    def set_state(self, q: dict) -> None:
+    def _validated_state(self, q: dict) -> dict:
         field = q["field"].to(self.device).clone()
         if field.shape != (3, *self.mask.shape[1:]):
             raise ValueError("invalid surrogate field shape")
-        self.q = field
-        self.omega = float(q["omega"])
-        self.force = np.asarray(q["force"], dtype=np.float32).copy()
-        if self.force.shape != (len(self.force_channels),):
+        omega = float(q["omega"])
+        force = np.asarray(q["force"], dtype=np.float32).copy()
+        if force.shape != (len(self.force_channels),):
             raise ValueError(f"force must follow {self.force_channels}")
+        if not torch.isfinite(field).all() or not np.isfinite(omega) or not np.isfinite(force).all():
+            raise FloatingPointError("nonfinite surrogate state")
+        result = {"field": field, "omega": omega, "force": force}
+        if self.fno_history_runtime is not None:
+            if q.get("fno_history_runtime") != self.fno_history_runtime:
+                raise ValueError("P026 state history runtime identity differs")
+            if "fno_history" not in q:
+                raise ValueError("P026 state restore requires explicit FNO history")
+            history = self._history_module().clone_history(q["fno_history"])
+            if history.k != self.fno_history_runtime["history_length"]:
+                raise ValueError("restored FNO history length differs")
+            if not torch.equal(history.states[:, -1], field[None]) or not torch.equal(
+                history.actions[:, -1],
+                torch.tensor(
+                    [omega / self.MAX_CONTROL],
+                    dtype=field.dtype,
+                    device=field.device,
+                ),
+            ):
+                raise ValueError("restored FNO history current state/action differs")
+            result["fno_history"] = history
+        elif "fno_history" in q:
+            raise ValueError("legacy surrogate state cannot contain P026 history")
+        return result
+
+    def set_state(self, q: dict) -> None:
+        if self.fno_history_runtime is None:
+            # Preserve the reviewed legacy state path byte-for-byte in behavior.
+            field = q["field"].to(self.device).clone()
+            if field.shape != (3, *self.mask.shape[1:]):
+                raise ValueError("invalid surrogate field shape")
+            self.q = field
+            self.omega = float(q["omega"])
+            self.force = np.asarray(q["force"], dtype=np.float32).copy()
+            if self.force.shape != (len(self.force_channels),):
+                raise ValueError(f"force must follow {self.force_channels}")
+            self.fno_history = None
+            return
+        state = self._validated_state(q)
+        self.q = state["field"]
+        self.omega = state["omega"]
+        self.force = state["force"]
+        self.fno_history = state.get("fno_history")
 
     def copy_state(self, deepcopy: bool = True) -> dict:
-        return {
+        result = {
             "field": self.q.clone() if deepcopy else self.q,
             "omega": self.omega,
             "force": self.force.copy() if deepcopy else self.force,
         }
+        if self.fno_history_runtime is not None:
+            # HistoryBuffer is immutable but owns mutable tensors. Always clone;
+            # even a shallow PDE state must not alias another environment.
+            result["fno_history"] = self._history_module().clone_history(
+                self.fno_history
+            )
+            result["fno_history_runtime"] = dict(self.fno_history_runtime)
+        return result
+
+    def copy_runtime_snapshot(self) -> dict:
+        """Copy the complete surrogate runtime; unlike copy_state this includes reward/time."""
+        return {
+            "state": self.copy_state(deepcopy=True),
+            "history_runtime": (
+                None
+                if self.fno_history_runtime is None
+                else dict(self.fno_history_runtime)
+            ),
+            "time": float(self.t),
+            "requested_action": float(self.requested_action),
+            "applied_delta": float(self.applied_delta),
+            "rate_limited": bool(self.rate_limited),
+            "reward_history": tuple(
+                (float(sample_time), np.asarray(force).copy())
+                for sample_time, force in self._reward_history
+            ),
+        }
+
+    def restore_runtime_snapshot(self, snapshot: Mapping[str, object]) -> None:
+        """Validate first, then restore a complete snapshot without reset padding."""
+        if not isinstance(snapshot, Mapping) or set(snapshot) != {
+            "state", "history_runtime", "time", "requested_action",
+            "applied_delta", "rate_limited", "reward_history",
+        }:
+            raise ValueError("surrogate runtime snapshot schema differs")
+        if snapshot["history_runtime"] != self.fno_history_runtime:
+            raise ValueError("surrogate runtime snapshot identity differs")
+        state = self._validated_state(snapshot["state"])
+        values = [
+            float(snapshot["time"]),
+            float(snapshot["requested_action"]),
+            float(snapshot["applied_delta"]),
+        ]
+        if not np.isfinite(values).all():
+            raise FloatingPointError("nonfinite runtime snapshot")
+        reward_history = deque()
+        previous_time = None
+        for sample_time, force in snapshot["reward_history"]:
+            copied = np.asarray(force, dtype=np.float64).copy()
+            current_time = float(sample_time)
+            if (
+                copied.shape != (len(self.force_channels),)
+                or not np.isfinite(current_time)
+                or not np.isfinite(copied).all()
+                or (previous_time is not None and current_time <= previous_time)
+            ):
+                raise FloatingPointError("nonfinite reward-history snapshot")
+            reward_history.append((current_time, copied))
+            previous_time = current_time
+        if (
+            not reward_history
+            or reward_history[-1][0] != values[0]
+            or not np.array_equal(
+                reward_history[-1][1].astype(np.float32), state["force"]
+            )
+        ):
+            raise ValueError("reward-history snapshot does not end at runtime time")
+        self.q = state["field"]
+        self.omega = state["omega"]
+        self.force = state["force"]
+        self.fno_history = state.get("fno_history")
+        self.t, self.requested_action, self.applied_delta = values
+        self.rate_limited = bool(snapshot["rate_limited"])
+        self._reward_history = reward_history
+        self.set_control([self.omega])
 
     def reset(self, q0: dict | None = None, t: float = 0.0) -> None:
-        super().reset(q0=self.initial_state if q0 is None else q0, t=t)
+        selected = self.initial_state if q0 is None else q0
+        if self.fno_history_runtime is None:
+            # Do not silently strengthen or otherwise change the legacy reset.
+            super().reset(q0=selected, t=t)
+            self.set_control([self.omega])
+            self.requested_action = self.omega
+            self.applied_delta = 0.0
+            self.rate_limited = False
+            self._reward_history.clear()
+            self.record_reward_sample()
+            return
+        # PDEBase.reset writes t before set_state. Validate first so a malformed
+        # P026 snapshot cannot leak a new clock value into the live environment.
+        if not np.isfinite(t):
+            raise FloatingPointError("nonfinite P026 reset time")
+        self._validated_state(selected)
+        super().reset(q0=selected, t=t)
         self.set_control([self.omega])
         self.requested_action = self.omega
         self.applied_delta = 0.0
@@ -445,6 +655,94 @@ class TandemSurrogateFlow(PDEBase):
 class TandemFNOStepper(TransientSolver):
     """Advance one HydroGym control interval using the frozen PhysicsNeMo FNO."""
 
+    def _history_step(
+        self, flow: TandemSurrogateFlow, requested: float
+    ) -> TandemSurrogateFlow:
+        """Advance P026 atomically with explicit per-environment history."""
+        previous = flow.omega
+        applied = float(
+            np.clip(
+                requested,
+                previous - flow.max_delta_omega,
+                previous + flow.max_delta_omega,
+            )
+        )
+        rate_limited = not np.isclose(applied, requested)
+        applied = float(np.clip(applied, -flow.MAX_CONTROL, flow.MAX_CONTROL))
+        height, width = flow.mask.shape[-2:]
+        omega_now = torch.full(
+            (1, 1, height, width),
+            previous / flow.MAX_CONTROL,
+            dtype=flow.q.dtype,
+            device=flow.device,
+        )
+        omega_next = torch.full_like(omega_now, applied / flow.MAX_CONTROL)
+        flow_inputs = torch.cat(
+            (flow.q[None], flow.mask[None], omega_now, omega_next), dim=1
+        )
+        history_module = flow._history_module()
+        aerodynamic_inputs = history_module.pack_history_input(
+            flow.fno_history,
+            flow.mask[None],
+            torch.tensor(
+                [applied / flow.MAX_CONTROL],
+                dtype=flow.q.dtype,
+                device=flow.device,
+            ),
+        )
+        with torch.inference_mode():
+            raw = flow.network(flow_inputs, aerodynamic_inputs)
+            expected_outputs = 3 + len(flow.force_channels)
+            if raw.shape != (1, expected_outputs, height, width):
+                raise ValueError("P026 checkpoint output schema differs")
+            next_field = (flow.q + raw[0, :3]) * flow.mask
+            normalized_force = (raw[0, 3:expected_outputs] * flow.mask).sum(
+                dim=(-2, -1)
+            ) / flow.mask.sum(dim=(-2, -1)).clamp_min(1)
+        if (
+            not torch.isfinite(next_field).all()
+            or not torch.isfinite(normalized_force).all()
+        ):
+            raise FloatingPointError("non-finite P026 FNO rollout")
+        # Preserve the legacy NumPy float32 affine arithmetic exactly.  The
+        # explicit errstate/check catches the case where finite normalized
+        # outputs overflow only after conversion to physical force.
+        with np.errstate(over="ignore", invalid="ignore"):
+            predicted_force = (
+                normalized_force.detach().cpu().numpy() * flow.force_std
+                + flow.force_mean
+            )
+        if not np.isfinite(predicted_force).all():
+            raise FloatingPointError("non-finite physical P026 force")
+        next_history = history_module.advance_history(
+            flow.fno_history,
+            next_field.detach()[None],
+            torch.tensor(
+                [applied / flow.MAX_CONTROL],
+                dtype=flow.q.dtype,
+                device=flow.device,
+            ),
+        )
+        next_time = float(flow.t + self.dt)
+        if not np.isfinite(next_time):
+            raise FloatingPointError("non-finite prospective P026 time")
+        before = flow.copy_runtime_snapshot()
+        try:
+            flow.q = next_field.detach()
+            flow.force = predicted_force
+            flow.omega = applied
+            flow.fno_history = next_history
+            flow.set_control([applied])
+            flow.requested_action = requested
+            flow.applied_delta = applied - previous
+            flow.rate_limited = rate_limited
+            flow.t = next_time
+            flow.record_reward_sample()
+        except Exception:
+            flow.restore_runtime_snapshot(before)
+            raise
+        return flow
+
     def step(self, iter: int, control=None, **kwargs) -> TandemSurrogateFlow:
         flow: TandemSurrogateFlow = self.flow
         action = np.asarray(control, dtype=np.float64).reshape(-1)
@@ -453,6 +751,8 @@ class TandemFNOStepper(TransientSolver):
         requested = float(action[0])
         if abs(requested) > flow.MAX_CONTROL + 1e-6:
             raise ValueError("requested rotation outside declared action space")
+        if flow.fno_history_runtime is not None:
+            return TandemFNOStepper._history_step(self, flow, requested)
         previous = flow.omega
         applied = float(
             np.clip(

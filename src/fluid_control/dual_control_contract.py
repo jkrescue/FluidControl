@@ -11,11 +11,14 @@ from pathlib import Path
 
 from .dual_fno import (
     P015_SYSTEM_KIND, P018_SYSTEM_KIND, P018_PROTOCOL_SHA256, P018_LEARNING_RATE,
+    P026_K1_SYSTEM_KIND, P026_K4_SYSTEM_KIND,
+    P026_HISTORY_STATE_SHA256, P026_HISTORY_INFERENCE_SHA256,
     SYSTEM_KIND, sha256, validate_dual_fno_manifest,
     validate_dual_runtime_files,
 )
 
 DEVELOPMENT_AUDITOR_SHA = "ca6da0afdce5859be1c060eb48ba2cdd1ccc5ee3aeb2570d9c9b53067d5bc412"
+P026_FORMAL_RUNNER_SHA256 = "03c5862e34a648a1254284d1709bd74c3b995d3a91ae06c4a6f92a945029c0f3"
 P018_APPROVAL_SHA256 = "eea5bd5c6a3fe585ae1104600421e50b335f61299c4014c5e3136722af3d4d39"
 P018_OBSERVATION_SHA256 = "c040eae25fa31a98164e08e10dc4f007eb6a3ef38329ad0dcfaddd734c7eb53c"
 P018_INVOCATION = "1ca4654aab074278bb2efdfff8dbc1eb"
@@ -24,6 +27,53 @@ PROTOCOL = [
     "dynamic6_H1_H10_H50_H100_stride1_batch8",
     "force_window6", "unchanged_development_gate",
 ]
+
+
+def p026_runtime_binding(identity) -> dict | None:
+    """Derive HydroGym routing only from an already validated dual identity."""
+    profiles = {
+        P026_K1_SYSTEM_KIND: ("p026_k1", 1),
+        P026_K4_SYSTEM_KIND: ("p026_k4", 4),
+    }
+    kind = identity.payload.get("kind")
+    if kind not in profiles:
+        return None
+    profile, history_length = profiles[kind]
+    history_input = identity.payload.get("history_input")
+    exact_history = {
+        "schema_version": 1,
+        "profile": profile,
+        "history_length": history_length,
+        "flow_input_channels": 6,
+        "aerodynamic_input_channels": 6 if history_length == 1 else 18,
+        "left_padding": "trajectory_frame0",
+        "autoregressive_state_source": "frozen_flow_prediction",
+        "future_state_inputs": False,
+        "future_force_inputs": False,
+    }
+    if history_input != exact_history:
+        raise ValueError("P026 HydroGym history input differs from validated profile")
+    if (
+        identity.payload.get("history_state_module_sha256")
+        != P026_HISTORY_STATE_SHA256
+        or identity.payload.get("history_inference_module_sha256")
+        != P026_HISTORY_INFERENCE_SHA256
+    ):
+        raise ValueError("P026 HydroGym history source identity differs")
+    return {
+        **exact_history,
+        "manifest_kind": kind,
+        "dual_manifest_sha256": identity.manifest_sha256,
+        "flow_model_sha256": identity.flow.model_sha256,
+        "flow_state_sha256": identity.flow.state_sha256,
+        "aerodynamic_model_sha256": identity.aerodynamic.model_sha256,
+        "aerodynamic_state_sha256": identity.aerodynamic.state_sha256,
+        "history_state_module_sha256": P026_HISTORY_STATE_SHA256,
+        "history_inference_module_sha256": P026_HISTORY_INFERENCE_SHA256,
+        "training_protocol_sha256": identity.payload["training_protocol_sha256"],
+        "config_sha256": identity.payload["config_sha256"],
+        "normalization_sha256": identity.payload["normalization_sha256"],
+    }
 
 
 def verify_receipt_files(root: Path, files: dict) -> None:
@@ -48,6 +98,109 @@ def verify_receipt_files(root: Path, files: dict) -> None:
         path = (root / relative).resolve()
         if root not in path.parents or not path.is_file() or sha256(path) != digest:
             raise ValueError("post-evaluation file changed or escapes its root")
+
+
+def verify_p026_terminal_chain(root: Path, receipt: dict, identity) -> dict:
+    """Bind copied approval and both reviewed terminal proofs at low level."""
+    approval_path = root / "evidence/formal_approval.json"
+    files = receipt.get("sha256", {})
+    if (
+        not approval_path.is_file()
+        or receipt.get("formal_approval_sha256") != sha256(approval_path)
+        or files.get("evidence/formal_approval.json") != sha256(approval_path)
+    ):
+        raise ValueError("P026 copied formal approval differs")
+    candidate = identity.manifest_path.parent.resolve()
+    artifact_parent = next(
+        (parent for parent in candidate.parents if parent.name == "artifacts"), None
+    )
+    if artifact_parent is None:
+        raise ValueError("P026 candidate is outside the repository artifact root")
+    repo = artifact_parent.parent
+    runner_path = repo / "scripts/run_fcp026_posteval.py"
+    if not runner_path.is_file() or sha256(runner_path) != P026_FORMAL_RUNNER_SHA256:
+        raise ValueError("reviewed P026 formal runner differs")
+    spec = importlib.util.spec_from_file_location(
+        "p026_dual_control_formal_runner", runner_path
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError("cannot load reviewed P026 formal runner")
+    runner = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(runner)
+    approval = json.loads(approval_path.read_text(encoding="utf-8"))
+    if not isinstance(approval, dict):
+        raise TypeError("P026 formal approval is not a JSON object")
+    proofs = runner.validate_terminal_proofs(repo, candidate, approval)
+    if approval.get("candidate_sha256", {}).get("dual_model_manifest.json") != identity.manifest_sha256:
+        raise ValueError("P026 approval belongs to another dual manifest")
+    return proofs
+
+
+def verify_p026_posteval(root: Path, receipt: dict, expected: dict, identity) -> None:
+    """Bind the standalone P026 original-formal receipt without legacy aliases."""
+    kinds = {P026_K1_SYSTEM_KIND: 1, P026_K4_SYSTEM_KIND: 4}
+    history_k = kinds.get(identity.payload.get("kind"))
+    if history_k is None:
+        raise ValueError("unsupported P026 history kind")
+    required = {
+        "status": "FC_P026_ORIGINAL_FORMAL_COMPLETE_NOT_ADMISSION",
+        "history_k": history_k,
+        "protocol": PROTOCOL,
+        "scientific_admission": False,
+        "ppo_auto_launched": False,
+        "frozen_test_accessed": False,
+    }
+    if any(receipt.get(key) != value for key, value in required.items()):
+        raise ValueError("P026 formal receipt identity differs")
+    verify_p026_terminal_chain(root, receipt, identity)
+    candidate = receipt.get("candidate_sha256")
+    exact_candidate = {
+        "result.json": sha256(identity.manifest_path.parent / "result.json"),
+        "training_protocol.json": identity.payload["training_protocol_sha256"],
+        "dual_model_manifest.json": identity.manifest_sha256,
+        "flow/FNO.0.0.mdlus": identity.flow.model_sha256,
+        "flow/checkpoint.0.0.pt": identity.flow.state_sha256,
+        "aerodynamic/FNO.0.1.mdlus": identity.aerodynamic.model_sha256,
+        "aerodynamic/checkpoint.0.1.pt": identity.aerodynamic.state_sha256,
+    }
+    if candidate != exact_candidate:
+        raise ValueError("P026 formal receipt candidate bytes differ")
+    files = receipt.get("sha256")
+    required_outputs = {
+        "validation10/evaluation.json",
+        "validation10/segments.json",
+        "validation10/endpoint_gate.json",
+        "validation10/diagnostic.json",
+        "dynamic6/evaluation.json",
+        "dynamic6/segments.json",
+        "dynamic6/diagnostic.json",
+        "force_window/result.json",
+        "development_gate.json",
+    }
+    if not isinstance(files, dict) or not required_outputs.issubset(files):
+        raise ValueError("P026 formal outputs are incomplete")
+    resolved_root = root.resolve()
+    for relative, digest in files.items():
+        if not isinstance(relative, str) or not isinstance(digest, str):
+            raise ValueError("invalid P026 formal output identity")
+        path = (resolved_root / relative).resolve()
+        if (
+            resolved_root not in path.parents
+            or not path.is_file()
+            or sha256(path) != digest
+        ):
+            raise ValueError("P026 formal output changed or escapes its root")
+    # The endpoint/window/dynamic gate content is still checked by canonical PPO
+    # readiness. This function only proves that those exact outputs and both model
+    # roles belong to this P026 formal execution.
+    if expected != {
+        "checkpoint_sha256": identity.aerodynamic.model_sha256,
+        "checkpoint_state_sha256": identity.aerodynamic.state_sha256,
+        "dual_manifest_sha256": identity.manifest_sha256,
+        "flow_model_sha256": identity.flow.model_sha256,
+        "flow_state_sha256": identity.flow.state_sha256,
+    }:
+        raise ValueError("P026 expected dual identity differs")
 
 
 def receipt_profile(manifest_kind: str) -> tuple[str, str, str]:
@@ -245,7 +398,8 @@ def verify_dual_control_binding(
     # Real validated manifests always contain kind; default preserves the legacy
     # helper's P013 call contract and historical synthetic fixtures.
     manifest_kind = identity.payload.get("kind", SYSTEM_KIND)
-    _, _, step_status = receipt_profile(manifest_kind)
+    p026_kind = manifest_kind in (P026_K1_SYSTEM_KIND, P026_K4_SYSTEM_KIND)
+    step_status = None if p026_kind else receipt_profile(manifest_kind)[2]
     validate_dual_runtime_files(identity, config_path=training_config,
                                normalization_path=normalization_path)
     if identity.aerodynamic.directory != checkpoint_dir.resolve() or identity.aerodynamic.model_sha256 != expected_checkpoint_sha256:
@@ -260,13 +414,16 @@ def verify_dual_control_binding(
         "flow_model_sha256": identity.flow.model_sha256,
         "flow_state_sha256": identity.flow.state_sha256,
     }
-    check_receipt_identity(receipt, expected, manifest_kind=manifest_kind)
     root = posteval_receipt.parent
-    verify_receipt_files(root, receipt.get("sha256"))
-    for name in ("validation10", "dynamic6", "force_window"):
-        step = json.loads((root / "step_receipts" / f"{name}.json").read_text())
-        if step.get("status") != step_status or step.get("step") != name or any(step.get(k) != v for k, v in expected.items()):
-            raise ValueError("step receipt does not bind the same complete dual system")
+    if p026_kind:
+        verify_p026_posteval(root, receipt, expected, identity)
+    else:
+        check_receipt_identity(receipt, expected, manifest_kind=manifest_kind)
+        verify_receipt_files(root, receipt.get("sha256"))
+        for name in ("validation10", "dynamic6", "force_window"):
+            step = json.loads((root / "step_receipts" / f"{name}.json").read_text())
+            if step.get("status") != step_status or step.get("step") != name or any(step.get(k) != v for k, v in expected.items()):
+                raise ValueError("step receipt does not bind the same complete dual system")
     if manifest_kind == P015_SYSTEM_KIND:
         verify_p015_evidence(root, receipt, expected, identity)
     elif manifest_kind == P018_SYSTEM_KIND:
@@ -283,6 +440,7 @@ def verify_dual_control_binding(
         raise ValueError("stored development result differs from original recomputation")
     if recomputed.get("status") != "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_PASS":
         raise ValueError("dual surrogate has not passed original development admission")
+    history_runtime = p026_runtime_binding(identity)
     return {
         "status": "DUAL_CONTROL_IDENTITY_VERIFIED_NOT_CONTROL_SUCCESS",
         **expected, "posteval_receipt_sha256": expected_posteval_receipt_sha256,
@@ -290,6 +448,15 @@ def verify_dual_control_binding(
         "normalization_sha256": identity.payload["normalization_sha256"],
         "canonical_endpoint_window_dynamic_gates_still_required": True,
         "policy_trained": False, "real_cfd_control_validated": False,
+        **(
+            {
+                "dual_system_kind": manifest_kind,
+                "training_experiment": "FC-P026",
+                "fno_history_runtime": history_runtime,
+            }
+            if history_runtime is not None
+            else {}
+        ),
         **({"dual_system_kind":P018_SYSTEM_KIND,"training_experiment":"FC-P018",
             "actual_learning_rate":P018_LEARNING_RATE,"training_protocol_sha256":P018_PROTOCOL_SHA256,
             "training_protocol_file":"training_protocol.json"} if manifest_kind == P018_SYSTEM_KIND else {}),

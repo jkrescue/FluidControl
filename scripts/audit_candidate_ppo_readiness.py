@@ -32,6 +32,8 @@ FC_P008_KIND = "full_train_force_row_recalibration"
 FC_P013_KIND = "fcp013_independent_force_dual_fno"
 FC_P015_KIND = "fcp015_window_accumulation_dual_fno"
 FC_P018_KIND = "fcp018_reduced_rate_dual_fno"
+FC_P026_K1_KIND = "FC_P026_K1_HISTORY_FORCE_FNO"
+FC_P026_K4_KIND = "FC_P026_K4_HISTORY_FORCE_FNO"
 FC_P018_PROTOCOL_SHA = "310f0bdf8563a2a70b844a32852791fa1b1dc20278a3098418942e1dab204d2d"
 FC_P018_APPROVAL_SHA = "eea5bd5c6a3fe585ae1104600421e50b335f61299c4014c5e3136722af3d4d39"
 FC_P018_OBSERVATION_SHA = "c040eae25fa31a98164e08e10dc4f007eb6a3ef38329ad0dcfaddd734c7eb53c"
@@ -348,6 +350,86 @@ def p013_candidate_identity(*, repo_root, candidate_root, lineage, receipt_path,
     }
 
 
+def p026_candidate_identity(*, repo_root, candidate_root, lineage, receipt_path,
+                            normalization_path, data_artifacts):
+    """Bind a real P026 terminal proof and standalone formal receipt exactly."""
+    from fluid_control.dual_control_contract import (
+        verify_dual_control_binding,
+        verify_p026_terminal_chain,
+    )
+    from fluid_control.dual_fno import (
+        P026_K1_SYSTEM_KIND,
+        P026_K4_SYSTEM_KIND,
+        validate_dual_fno_manifest,
+        validate_dual_runtime_files,
+    )
+
+    match = __import__("re").fullmatch(
+        r"FC_P026_K([14])_CANDIDATE_INTEGRITY_VERIFIED_NOT_ADMISSION",
+        str(lineage.get("status", "")),
+    )
+    if match is None or int(match.group(1)) != lineage.get("history_k"):
+        raise ValueError("P026 terminal lineage arm/status differs")
+    k = int(match.group(1))
+    kind = {1: P026_K1_SYSTEM_KIND, 4: P026_K4_SYSTEM_KIND}[k]
+    candidate = candidate_root / "candidate"
+    receipt_root = receipt_path.resolve().parent
+    approval_path = receipt_root / "evidence/formal_approval.json"
+    _require_file(approval_path, "P026 formal approval copy")
+    receipt = load(receipt_path)
+    if (
+        receipt.get("formal_approval_sha256") != sha256(approval_path)
+        or receipt.get("history_k") != k
+    ):
+        raise ValueError("P026 formal approval/arm binding differs")
+    _receipt_binds(receipt, receipt_root, approval_path)
+    approval = load(approval_path)
+    manifest = candidate / "dual_model_manifest.json"
+    identity = validate_dual_fno_manifest(
+        manifest, expected_sha256=approval["candidate_sha256"]["dual_model_manifest.json"]
+    )
+    proofs = verify_p026_terminal_chain(receipt_root, receipt, identity)
+    if proofs.get("independent_terminal_audit") != lineage:
+        raise ValueError("P026 supplied lineage is not the reviewed terminal audit")
+    if identity.payload.get("kind") != kind:
+        raise ValueError("P026 dual manifest arm differs")
+    config = repo_root / FC_P013_CONFIG
+    validate_dual_runtime_files(
+        identity, config_path=config, normalization_path=normalization_path
+    )
+    result = load(candidate / "result.json")
+    expected_data = result.get("input_sha256")
+    if not isinstance(expected_data, dict) or set(data_artifacts) != set(expected_data):
+        raise ValueError("P026 train-data identity key set differs")
+    if any(sha256(data_artifacts[key]) != digest for key, digest in expected_data.items()):
+        raise ValueError("P026 train-data bytes differ")
+    binding = verify_dual_control_binding(
+        manifest_path=manifest,
+        expected_manifest_sha256=identity.manifest_sha256,
+        training_config=config,
+        normalization_path=normalization_path,
+        checkpoint_dir=identity.aerodynamic.directory,
+        expected_checkpoint_sha256=identity.aerodynamic.model_sha256,
+        posteval_receipt=receipt_path,
+        expected_posteval_receipt_sha256=sha256(receipt_path),
+        development_auditor=repo_root / "scripts/audit_dynamic_fno_development_gates.py",
+    )
+    return {
+        "kind": kind,
+        "config": config,
+        "epoch": 1,
+        "checkpoint_relative_directory": Path("candidate/aerodynamic"),
+        "model_file": identity.aerodynamic.model.name,
+        "state_file": identity.aerodynamic.state.name,
+        "checkpoint_sha256": identity.aerodynamic.model_sha256,
+        "checkpoint_state_sha256": identity.aerodynamic.state_sha256,
+        "dual_control_binding": binding,
+        "fno_history_runtime": binding["fno_history_runtime"],
+        "dual_manifest_path": str(manifest.relative_to(repo_root)),
+        "dual_posteval_receipt_path": str(receipt_path.resolve().relative_to(repo_root)),
+    }
+
+
 def audit(
     *,
     repo_root: Path,
@@ -441,7 +523,28 @@ def audit(
 
         candidate_kind = lineage.get("candidate_kind")
         p013 = None
-        if candidate_kind in (FC_P013_KIND, FC_P015_KIND, FC_P018_KIND):
+        p026_lineage = str(lineage.get("status", "")).startswith("FC_P026_K")
+        if p026_lineage:
+            p013 = p026_candidate_identity(
+                repo_root=repo_root,
+                candidate_root=candidate_root,
+                lineage=lineage,
+                receipt_path=posteval_receipt_path,
+                normalization_path=normalization_path,
+                data_artifacts=data_artifacts,
+            )
+            candidate_kind = p013["kind"]
+            lineage = {
+                **lineage,
+                "candidate_kind": candidate_kind,
+                "checkpoint_sha256": p013["checkpoint_sha256"],
+                "checkpoint_state_sha256": p013["checkpoint_state_sha256"],
+            }
+            config, epoch = p013["config"], p013["epoch"]
+            config_sha = sha256(config)
+            checkpoint_relative_directory = p013["checkpoint_relative_directory"]
+            model_file, state_file = p013["model_file"], p013["state_file"]
+        elif candidate_kind in (FC_P013_KIND, FC_P015_KIND, FC_P018_KIND):
             p013 = p013_candidate_identity(
                 repo_root=repo_root, candidate_root=candidate_root, lineage=lineage,
                 receipt_path=posteval_receipt_path, normalization_path=normalization_path,
@@ -617,10 +720,13 @@ def audit(
                 if sha256(path) != expected_data[key]:
                     raise ValueError(f"candidate data artifact differs: {key}")
 
-        if not str(receipt.get("status", "")).endswith("POSTEVAL_COMPLETE"):
+        if p026_lineage:
+            if receipt.get("status") != "FC_P026_ORIGINAL_FORMAL_COMPLETE_NOT_ADMISSION":
+                raise ValueError("P026 posteval completion status differs")
+        elif not str(receipt.get("status", "")).endswith("POSTEVAL_COMPLETE"):
             raise ValueError("posteval completion status differs")
         if (
-            receipt.get("checkpoint_sha256") != lineage["checkpoint_sha256"]
+            (not p026_lineage and receipt.get("checkpoint_sha256") != lineage["checkpoint_sha256"])
             or receipt.get("frozen_test_accessed") is not False
             or receipt.get("ppo_auto_launched") is not False
         ):
@@ -633,7 +739,10 @@ def audit(
         except ValueError as error:
             raise ValueError("posteval receipt is outside candidate root") from error
         _validate_receipt_table(receipt, receipt_root)
-        for path in (lineage_path, endpoint_gate_path, development_gate_path):
+        bound_paths = (endpoint_gate_path, development_gate_path)
+        if not p026_lineage:
+            bound_paths = (lineage_path, *bound_paths)
+        for path in bound_paths:
             _receipt_binds(receipt, receipt_root, path)
 
         checkpoint = lineage["checkpoint_sha256"]
@@ -709,7 +818,10 @@ def audit(
             "checkpoint_model_file": model_file,
             "checkpoint_state_file": state_file,
             "precision_protocol": (
-                FC_P008_PRECISION if candidate_kind in (FC_P008_KIND, FC_P013_KIND, FC_P015_KIND, FC_P018_KIND) else None
+                FC_P008_PRECISION if candidate_kind in (
+                    FC_P008_KIND, FC_P013_KIND, FC_P015_KIND, FC_P018_KIND,
+                    FC_P026_K1_KIND, FC_P026_K4_KIND,
+                ) else None
             ),
             "normalization_sha256": normalization_sha,
             "validation_manifest_sha256": validation_manifest_sha,
@@ -731,6 +843,8 @@ def audit(
             identities.update({key: p013[key] for key in (
                 "dual_control_binding", "dual_manifest_path", "dual_posteval_receipt_path"
             )})
+            if p026_lineage:
+                identities["fno_history_runtime"] = p013["fno_history_runtime"]
     return _result(
         blockers=blockers, official_image_id=official_image_id, identities=identities
     )

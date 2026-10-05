@@ -489,7 +489,12 @@ def recompute_p013_endpoint_view(
     # The binding verifier above already checked the real manifest/receipt
     # experiment. The default preserves old P013 synthetic helper callers.
     receipt_status = receipt.get("status", "FC_P013_POSTEVAL_COMPLETE")
-    profiles = {"FC_P013_POSTEVAL_COMPLETE": "P013", "FC_P015_POSTEVAL_COMPLETE": "P015", "FC_P018_POSTEVAL_COMPLETE": "P018"}
+    profiles = {
+        "FC_P013_POSTEVAL_COMPLETE": "P013",
+        "FC_P015_POSTEVAL_COMPLETE": "P015",
+        "FC_P018_POSTEVAL_COMPLETE": "P018",
+        "FC_P026_ORIGINAL_FORMAL_COMPLETE_NOT_ADMISSION": "P026",
+    }
     if receipt_status not in profiles:
         raise ValueError("endpoint path view requires a verified dual experiment")
     profile = profiles[receipt_status]
@@ -755,8 +760,8 @@ def require_single_model_identity(value) -> None:
             raise ValueError("dual FNO evidence requires the complete dual arguments")
         for key, item in value.items():
             if key in {"status", "kind", "candidate_kind", "metadata_kind", "training_experiment"} and isinstance(item, str):
-                if (item.startswith(("FC_P013_", "FC_P015_", "FC_P018_"))
-                        or item in {"fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "fcp018_reduced_rate_dual_fno", "FC-P015", "FC-P018"}):
+                if (item.startswith(("FC_P013_", "FC_P015_", "FC_P018_", "FC_P026_"))
+                        or item in {"fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "fcp018_reduced_rate_dual_fno", "FC-P015", "FC-P018", "FC-P026"}):
                     raise ValueError("dual checkpoint/evidence requires the complete dual arguments")
             require_single_model_identity(item)
     elif isinstance(value, list):
@@ -903,8 +908,10 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
     model_files = sorted(args.checkpoint_dir.glob("FNO.*.mdlus"))
     if len(model_files) != 1 or sha256(model_files[0]) != readiness["checkpoint_sha256"]:
         raise ValueError("checkpoint changed after readiness verification")
+    fno_history_runtime = None
     if runtime_dual is not None:
         from fluid_control.dual_fno import load_dual_fno
+        from fluid_control.dual_control_contract import p026_runtime_binding
         network, dual_identity = load_dual_fno(
             args.dual_fno_manifest, cfg, device, build_model=build_model,
             load_checkpoint=load_checkpoint,
@@ -913,6 +920,9 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
         epoch = dual_identity.aerodynamic.epoch
         calibrated_identity = {"checkpoint_epoch": epoch, "dual_model_system": True,
                                "flow_checkpoint_epoch": dual_identity.flow.epoch}
+        fno_history_runtime = p026_runtime_binding(dual_identity)
+        if runtime_dual.get("fno_history_runtime") != fno_history_runtime:
+            raise ValueError("P026 history runtime changed after readiness verification")
     else:
         network = build_model(cfg).to(device).eval().requires_grad_(False)
         checkpoint_metadata = {}
@@ -941,6 +951,7 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
                 baseline=baselines[f"b{phase}"],
                 episode_steps=args.episode_steps,
                 device=device,
+                fno_history_runtime=fno_history_runtime,
             )
         )
 
@@ -1049,6 +1060,11 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
         "physicsnemo_checkpoint_sha256": readiness["checkpoint_sha256"],
         "calibrated_checkpoint_identity": calibrated_identity,
         **({"dual_control_binding": runtime_dual} if runtime_dual is not None else {}),
+        **(
+            {"fno_history_runtime": fno_history_runtime}
+            if fno_history_runtime is not None
+            else {}
+        ),
         "precision_protocol": calibrated_precision,
         "vecnormalize_sha256": (
             sha256(args.vecnormalize_output)

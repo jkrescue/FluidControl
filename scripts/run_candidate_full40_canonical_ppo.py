@@ -19,7 +19,13 @@ from pathlib import Path
 
 
 RUNTIME_IMAGE_ID = "sha256:2e45b4e1ac9553ea86aa9148455be9aae30688446039fdee6255a637603acb2c"
-DUAL_KINDS = ("fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "fcp018_reduced_rate_dual_fno")
+DUAL_KINDS = (
+    "fcp013_independent_force_dual_fno",
+    "fcp015_window_accumulation_dual_fno",
+    "fcp018_reduced_rate_dual_fno",
+    "FC_P026_K1_HISTORY_FORCE_FNO",
+    "FC_P026_K4_HISTORY_FORCE_FNO",
+)
 
 
 def sha256(path: Path) -> str:
@@ -113,6 +119,11 @@ def command_contract(args, readiness: dict) -> dict:
             if not identity.get(key):
                 raise ValueError("P013 candidate identity is incomplete: " + key)
             contract[key] = identity[key]
+        if identity.get("candidate_kind", "").startswith("FC_P026_"):
+            runtime = identity["dual_control_binding"].get("fno_history_runtime")
+            if not isinstance(runtime, dict) or runtime != identity.get("fno_history_runtime"):
+                raise ValueError("P026 history runtime differs from readiness")
+            contract["fno_history_runtime"] = runtime
     return contract
 
 
