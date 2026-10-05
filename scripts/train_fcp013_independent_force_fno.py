@@ -23,6 +23,10 @@ TOTAL_STEPS = 1368
 ROLLOUT_STEPS = 100
 CHUNK_SIZE = 10
 FORCE_CHANNELS = ("front_cd", "front_cl", "rear_cd", "rear_cl")
+OFFICIAL_FROZEN_PARAMETER_NAMES = (
+    "spec_encoder.lift_network.0.conv.bias",
+    "spec_encoder.lift_network.2.conv.bias",
+)
 
 
 def sha256(path: Path) -> str:
@@ -209,16 +213,59 @@ def optimizer_window_step(
     metrics = run_window(
         flow_model, aerodynamic_model, batch, predict_fn, backward=True
     )
-    gradients = [parameter.grad for parameter in aerodynamic_model.parameters()]
-    if any(value is None or not torch.isfinite(value).all() for value in gradients):
-        raise RuntimeError("aerodynamic gradient missing or non-finite")
+    gradient_audit = audit_aerodynamic_gradients(aerodynamic_model)
+    trainable = [
+        parameter for parameter in aerodynamic_model.parameters() if parameter.requires_grad
+    ]
     preclip = torch.nn.utils.clip_grad_norm_(
-        aerodynamic_model.parameters(), gradient_clip_norm
+        trainable, gradient_clip_norm
     )
     if not torch.isfinite(preclip):
         raise FloatingPointError("non-finite aerodynamic gradient norm")
     optimizer.step()
-    return {**metrics, "preclip_gradient_norm": float(preclip.detach()), "optimizer_steps": 1}
+    return {
+        **metrics,
+        "preclip_gradient_norm": float(preclip.detach()),
+        "optimizer_steps": 1,
+        "gradient_audit": gradient_audit,
+    }
+
+
+def audit_aerodynamic_gradients(model) -> dict[str, Any]:
+    """Require the exact official two frozen biases and 28 finite gradients."""
+    import torch
+
+    named = dict(model.named_parameters())
+    frozen = sorted(name for name, value in named.items() if not value.requires_grad)
+    if frozen != sorted(OFFICIAL_FROZEN_PARAMETER_NAMES):
+        raise RuntimeError(f"official frozen parameter identities differ: {frozen}")
+    expected_shapes = {
+        "spec_encoder.lift_network.0.conv.bias": (24,),
+        "spec_encoder.lift_network.2.conv.bias": (48,),
+    }
+    if {name: tuple(named[name].shape) for name in frozen} != expected_shapes:
+        raise RuntimeError("official frozen lifting-bias shapes differ")
+    trainable = {name: value for name, value in named.items() if value.requires_grad}
+    if len(trainable) != 28:
+        raise RuntimeError("official trainable parameter tensor count differs")
+    missing = sorted(name for name, value in trainable.items() if value.grad is None)
+    nonfinite = sorted(
+        name
+        for name, value in trainable.items()
+        if value.grad is not None and not torch.isfinite(value.grad).all()
+    )
+    if missing or nonfinite:
+        raise RuntimeError(
+            f"trainable gradient audit failed: missing={missing}, nonfinite={nonfinite}"
+        )
+    return {
+        "official_frozen_parameter_names": frozen,
+        "official_frozen_parameter_shapes": {
+            name: list(expected_shapes[name]) for name in frozen
+        },
+        "trainable_parameter_tensor_count": len(trainable),
+        "trainable_gradient_all_finite": True,
+    }
 
 
 def checkpoint_pair(root: Path) -> tuple[Path, Path]:
@@ -240,12 +287,27 @@ def build_dual_manifest(output: Path, aerodynamic_model: Path, aerodynamic_state
         "kind": "FC_P013_INDEPENDENT_FORCE_FNO",
         "config_sha256": CONFIG_SHA,
         "normalization_sha256": NORMALIZATION_SHA,
-        "precision_protocol": {"float32_matmul_precision": "high", "cuda_matmul_tf32": True, "cudnn_tf32": True},
+        "precision_protocol": {
+            "float32_matmul_precision": "high",
+            "cuda_matmul_allow_tf32": True,
+            "cudnn_allow_tf32": True,
+        },
         "flow_parent_model_sha256": PARENT_MODEL_SHA,
         "flow_parent_state_sha256": PARENT_STATE_SHA,
         "aerodynamic_initial_model_sha256": PARENT_MODEL_SHA,
         "aerodynamic_initial_state_sha256": PARENT_STATE_SHA,
-        "architecture": {"in_channels": 6, "out_channels": 7, "force_channels": list(FORCE_CHANNELS)},
+        "architecture": {
+            "in_channels": 6,
+            "out_channels": 7,
+            "latent_channels": 48,
+            "num_fno_layers": 5,
+            "num_fno_modes": [32, 32],
+            "decoder_layers": 2,
+            "decoder_layer_size": 128,
+            "padding": 8,
+            "coord_features": True,
+            "force_channels": list(FORCE_CHANNELS),
+        },
         "flow": {
             "role": "flow", "frozen": True, "checkpoint_relative_directory": "flow",
             "model_file": flow_model.name, "state_file": flow_state.name,
@@ -353,15 +415,14 @@ def main() -> None:
         aerodynamic_model.zero_grad(set_to_none=True)
         torch.cuda.reset_peak_memory_stats(dist.device); started = time.monotonic()
         metrics = run_window(flow_model, aerodynamic_model, batch, predict, backward=True)
-        gradients = [parameter.grad for parameter in aerodynamic_model.parameters()]
-        if any(value is None or not torch.isfinite(value).all() for value in gradients):
-            raise RuntimeError("aerodynamic gradient missing or non-finite")
+        gradient_audit = audit_aerodynamic_gradients(aerodynamic_model)
         if tensor_state_sha256(flow_model) != flow_before or tensor_state_sha256(aerodynamic_model) != aero_before:
             raise RuntimeError("resource probe changed model tensors")
         args.output.mkdir(parents=True)
         result = {
             "status": "FC_P013_INDEPENDENT_FORCE_FNO_RESOURCE_PROBE_COMPLETE",
             "identity": identity, "metrics": metrics,
+            "gradient_audit": gradient_audit,
             "elapsed_seconds": time.monotonic() - started,
             "cuda_peak_allocated_bytes": torch.cuda.max_memory_allocated(dist.device),
             "cuda_peak_reserved_bytes": torch.cuda.max_memory_reserved(dist.device),
@@ -376,7 +437,11 @@ def main() -> None:
         (args.output / "result.json").write_text(json.dumps(result, indent=2) + "\n")
         train.close(); return
 
-    optimizer = torch.optim.AdamW(aerodynamic_model.parameters(), lr=1e-5, weight_decay=1e-4)
+    optimizer = torch.optim.AdamW(
+        [parameter for parameter in aerodynamic_model.parameters() if parameter.requires_grad],
+        lr=1e-5,
+        weight_decay=1e-4,
+    )
     records = []; observed_order = []
     identity_map = trainer.identity_index(train)
     for step, (batch, metadata) in enumerate(loader, start=1):
@@ -401,8 +466,13 @@ def main() -> None:
     aero_dir = args.output / "aerodynamic"
     save_checkpoint(aero_dir, models=aerodynamic_model, optimizer=optimizer, epoch=1, metadata={
         "status": "FC_P013_INDEPENDENT_FORCE_FNO_AERODYNAMIC_CHECKPOINT",
-        "optimizer_steps": TOTAL_STEPS, "flow_model_sha256": PARENT_MODEL_SHA,
-        "flow_state_sha256": PARENT_STATE_SHA, "selection_performed": False,
+        "checkpoint_epoch": 1,
+        "optimizer_steps": TOTAL_STEPS,
+        "flow_parent_model_sha256": PARENT_MODEL_SHA,
+        "flow_parent_state_sha256": PARENT_STATE_SHA,
+        "aerodynamic_initial_model_sha256": PARENT_MODEL_SHA,
+        "aerodynamic_initial_state_sha256": PARENT_STATE_SHA,
+        "selection_performed": False,
         "validation_accessed": False, "frozen_test_accessed": False, "ppo_executed": False,
     })
     aero_models = list(aero_dir.glob("FNO.0.1.mdlus")); aero_states = list(aero_dir.glob("checkpoint.0.1.pt"))
@@ -412,6 +482,8 @@ def main() -> None:
         raise RuntimeError("fresh aerodynamic reload failed")
     if fresh_metadata.get("status") != "FC_P013_INDEPENDENT_FORCE_FNO_AERODYNAMIC_CHECKPOINT":
         raise RuntimeError("aerodynamic checkpoint metadata differs")
+    if tensor_state_sha256(fresh) != tensor_state_sha256(aerodynamic_model):
+        raise RuntimeError("fresh aerodynamic reload tensor SHA differs")
     manifest = build_dual_manifest(args.output, aero_models[0], aero_states[0])
     final_layer = aerodynamic_model.decoder_net.final_layer.linear
     result = {

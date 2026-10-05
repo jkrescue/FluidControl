@@ -95,10 +95,55 @@ def test_one_window_performs_exactly_one_optimizer_step():
     flow, aero = Tiny(0.02), Tiny(0.3)
     flow.scale.requires_grad_(False)
     optimizer = CountingAdamW(aero.parameters())
-    result = M.optimizer_window_step(flow, aero, b, predict, optimizer)
+    original = M.audit_aerodynamic_gradients
+    M.audit_aerodynamic_gradients = lambda model: {"trainable_gradient_all_finite": True}
+    try:
+        result = M.optimizer_window_step(flow, aero, b, predict, optimizer)
+    finally:
+        M.audit_aerodynamic_gradients = original
     assert optimizer.calls == 1
     assert result["optimizer_steps"] == 1
     assert torch.isfinite(torch.tensor(result["total"]))
+
+
+def test_official_frozen_parameter_contract_is_exact():
+    class Lift(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.spec_encoder = torch.nn.Module()
+            self.spec_encoder.lift_network = torch.nn.ModuleList(
+                [torch.nn.Module(), torch.nn.Identity(), torch.nn.Module()]
+            )
+            for index, size in ((0, 24), (2, 48)):
+                module = self.spec_encoder.lift_network[index]
+                module.conv = torch.nn.Module()
+                module.conv.bias = torch.nn.Parameter(
+                    torch.zeros(size), requires_grad=False
+                )
+            self.extra = torch.nn.ParameterList(
+                [torch.nn.Parameter(torch.ones(())) for _ in range(28)]
+            )
+
+    model = Lift()
+    sum(model.extra).backward()
+    result = M.audit_aerodynamic_gradients(model)
+    assert result["trainable_parameter_tensor_count"] == 28
+    assert result["official_frozen_parameter_shapes"] == {
+        "spec_encoder.lift_network.0.conv.bias": [24],
+        "spec_encoder.lift_network.2.conv.bias": [48],
+    }
+    model.extra[0].requires_grad_(False)
+    with pytest.raises(RuntimeError, match="frozen parameter identities"):
+        M.audit_aerodynamic_gradients(model)
+    model.extra[0].requires_grad_(True)
+    for parameter in model.extra:
+        parameter.grad = None
+    with pytest.raises(RuntimeError, match="missing"):
+        M.audit_aerodynamic_gradients(model)
+    sum(model.extra).backward()
+    model.extra[0].grad.fill_(float("nan"))
+    with pytest.raises(RuntimeError, match="nonfinite"):
+        M.audit_aerodynamic_gradients(model)
 
 
 def test_wrong_checkpoint_pair_rejected(tmp_path):
@@ -114,3 +159,19 @@ def test_source_has_probe_without_optimizer_step_or_save():
     assert "optimizer.step" not in probe
     assert "save_checkpoint" not in probe
     assert '"optimizer_steps": 0' in probe
+
+
+def test_dual_manifest_and_checkpoint_schema_are_loader_compatible():
+    text = (ROOT / "scripts" / "train_fcp013_independent_force_fno.py").read_text()
+    for key in (
+        "cuda_matmul_allow_tf32",
+        "cudnn_allow_tf32",
+        "latent_channels",
+        "num_fno_layers",
+        "num_fno_modes",
+        "decoder_layer_size",
+        "aerodynamic_initial_model_sha256",
+        "aerodynamic_initial_state_sha256",
+        '"checkpoint_epoch": 1',
+    ):
+        assert key in text
