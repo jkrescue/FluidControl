@@ -1,14 +1,14 @@
 {
-  "experiment": "P026-K4-training",
-  "label": "四帧历史组：受力预测模型训练",
-  "description": "使用当前及前三帧真实流场历史，与单帧组使用相同44条CFD训练轨迹、1368个训练片段和171次参数更新。单帧组完整评估未通过，主要仍是升力波动预测误差；四帧组结果尚未知。当前不是PPO或真实CFD闭环验证。",
-  "unit": "fluid-control-fcp026-history-k4-20261006.service",
-  "invocation": "eee5a6fbad40411cac2f05e00520b079",
-  "approval": "docs/FC_P026_K4_TRAINING_EXECUTION_APPROVAL_20261005.json",
-  "approval_sha256": "fca9c5a1106c85fb55a54590784453bd5246d55c21bbaa8ded1e3c72562b3e86",
-  "launcher": "artifacts/fcp026_history_training_source_20261005_immutable/scripts/run_fcp026_history_training_spark.sh",
-  "launcher_sha256": "b14a48e89bdee441c365bb5c729573a7696b40d24bca8c0a588d5c2aa7304f32",
-  "log": "artifacts/fcp026_history_training_k4_20261005/run.log",
-  "progress_kind": "history_training",
-  "planned_updates": {"K4": 171}
+  "experiment": "P026-K4-formal",
+  "label": "四帧历史组：模型精度评估",
+  "description": "已完成1368个训练片段、171次参数更新，并通过模型完整性与官方重载检查。正在按与单帧组相同的协议，评估10个验证工况和6个动态控制工况的1、10、50、100步预测，以及整体阻力、平均升力和升力波动误差。评估完成不等于精度达标；尚未启动新PPO或代理辅助CFD闭环。",
+  "unit": "fluid-control-fcp026-k4-formal-20261006.service",
+  "invocation": "d5d2201c8e2c4bf2ab40201cca0dcb1e",
+  "approval": "docs/FC_P026_K4_FORMAL_EXECUTION_APPROVAL_20261006.json",
+  "approval_sha256": "03f6880893a730307a6a6acf0ed19276ca8dc958fc3266ebf14e8e2a1323cbb8",
+  "launcher": "scripts/run_fcp026_posteval.py",
+  "launcher_sha256": "03c5862e34a648a1254284d1709bd74c3b995d3a91ae06c4a6f92a945029c0f3",
+  "log": "artifacts/fcp026_history_training_k4_20261005/posteval_fc_p026_k4/memory.jsonl",
+  "progress_kind": "formal_evaluation",
+  "planned_updates": {"K4": 7}
 }
