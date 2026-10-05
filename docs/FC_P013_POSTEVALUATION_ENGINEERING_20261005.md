@@ -2,6 +2,12 @@
 
 This is implementation evidence, not a completed model evaluation or admission.
 
+## Real-CFD admission identity checks — 2026-10-05
+
+Independent control implementation adds dual-specific checks to the existing real-CFD runner. Readiness and completed PPO audit must carry identical complete dual identities, paired primary model and field-normalization hashes, plus a SHA-verified actual SB3 VecNormalize artifact. Its flags must be norm_obs=false/norm_reward=false, observation shape69, action shape1 with bounds±0.75, and raw observations must remain unchanged. Explicit host path/SHA and dual identity enter the predeclared lineage; the runner revalidates it under the execution lock before staging CFD. Existing legacy single-model checks and numerical control/reward/action rules are unchanged.
+
+Root reviewed the diff and reran56 CPU tests spanning new dual admission, existing real-CFD admission, canonical dual routing and dual contract; all passed. The implementation agent separately ran33 tests. These are software fixtures, not a policy trained or CFD controlled. The candidate-to-policy/export owner is still implementing P013 plumbing. The inference loop still applies PPO directly to real-CFD physical observations; no online FNO inference was added or claimed.
+
 ## Independent control fix and finalizer replacement — 2026-10-05
 
 The canonical PPO trainer now refuses the single-model route when P013/dual identity appears in supplied reports/readiness or actual selected checkpoint metadata. This prevents omission of all dual flags from silently treating the aerodynamic FNO as the flow model. The actual official pinned PhysicsNeMo `load_checkpoint` signature was inspected and supports `metadata_dict`; loaded metadata is rechecked before environment/policy creation. The implementation agent passed30 CPU tests; Root reviewed the diff and reran52 across dual binding, canonical dry-run, candidate launcher, control contract and actual HydroGym stepper fixtures. Legacy single-model behavior remains covered. No PPO was launched.

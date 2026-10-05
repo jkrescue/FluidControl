@@ -15,6 +15,7 @@ import hashlib
 import json
 import math
 import os
+import pickle
 import secrets
 import selectors
 import shutil
@@ -290,6 +291,83 @@ def resource_snapshot() -> dict:
     }
 
 
+def validate_dual_policy_contract(
+    *, audit: dict, readiness: dict, gate: dict, policy: Path,
+    normalization_sha256: str, vecnormalize: Path | None,
+    expected_vecnormalize_sha256: str | None,
+) -> dict:
+    """Bind a dual-trained raw-observation policy before any CFD is staged."""
+    def declares_dual(value):
+        if isinstance(value, dict):
+            return (bool({"dual_control_binding", "dual_manifest_sha256", "dual_model_system"}.intersection(value))
+                    or any(declares_dual(item) for item in value.values()))
+        if isinstance(value, list):
+            return any(declares_dual(item) for item in value)
+        return isinstance(value, str) and (value.startswith("FC_P013_") or value == "fcp013_independent_force_dual_fno")
+
+    dual = any(declares_dual(value) for value in (audit, readiness, gate))
+    if not dual:
+        if vecnormalize is not None or expected_vecnormalize_sha256 is not None:
+            raise ValueError("explicit dual VecNormalize arguments require dual policy evidence")
+        return {}
+    binding = audit.get("dual_control_binding")
+    if not isinstance(binding, dict) or binding != readiness.get("dual_control_binding"):
+        raise ValueError("PPO audit/readiness dual_control_binding differs or is absent")
+    required = {
+        "status": "DUAL_CONTROL_IDENTITY_VERIFIED_NOT_CONTROL_SUCCESS",
+        "canonical_endpoint_window_dynamic_gates_still_required": True,
+        "policy_trained": False, "real_cfd_control_validated": False,
+    }
+    if any(binding.get(key) != value for key, value in required.items()):
+        raise ValueError("dual control binding contract differs")
+    hashes = ("checkpoint_sha256", "checkpoint_state_sha256", "dual_manifest_sha256",
+              "flow_model_sha256", "flow_state_sha256", "posteval_receipt_sha256",
+              "training_config_sha256", "normalization_sha256")
+    if any(not isinstance(binding.get(key), str) or len(binding[key]) != 64
+           or any(character not in "0123456789abcdef" for character in binding[key]) for key in hashes):
+        raise ValueError("dual control identity hashes are incomplete")
+    if (binding["checkpoint_sha256"] != audit.get("physicsnemo_checkpoint_sha256")
+            or binding["normalization_sha256"] != normalization_sha256
+            or audit.get("training_executed") is not True):
+        raise ValueError("dual policy model/normalization/training identity differs")
+    identity_contract = "identity: norm_obs=false, norm_reward=false; preserves legacy PPO numerics"
+    if audit.get("vecnormalize_contract") != identity_contract:
+        raise ValueError("dual policy requires the canonical identity VecNormalize contract")
+    if vecnormalize is None or expected_vecnormalize_sha256 is None:
+        raise ValueError("dual policy requires VecNormalize path and expected SHA256")
+    # Canonical trainer saves output/checkpoints/policy.zip and output/vecnormalize.pkl.
+    # Resolve the caller's host path rather than trusting a /workspace audit path.
+    vecnormalize = vecnormalize.resolve()
+    expected_path = (policy.resolve().parent.parent / "vecnormalize.pkl").resolve()
+    if vecnormalize != expected_path:
+        raise ValueError("VecNormalize host path does not belong to this policy output")
+    artifact_bytes = vecnormalize.read_bytes()
+    digest = hashlib.sha256(artifact_bytes).hexdigest()
+    if digest != expected_vecnormalize_sha256 or digest != audit.get("vecnormalize_sha256"):
+        raise ValueError("dual policy VecNormalize SHA differs")
+    try:
+        from stable_baselines3.common.vec_env import VecNormalize
+
+        # Only deserialize the explicitly supplied, SHA-bound training artifact.
+        vec = pickle.loads(artifact_bytes)
+        if (type(vec) is not VecNormalize or vec.norm_obs is not False or vec.norm_reward is not False
+                or vec.observation_space.shape != (69,) or vec.action_space.shape != (1,)
+                or not np.array_equal(vec.action_space.low, np.array([-ACTION_LIMIT], dtype=np.float32))
+                or not np.array_equal(vec.action_space.high, np.array([ACTION_LIMIT], dtype=np.float32))):
+            raise ValueError("saved VecNormalize is not canonical identity normalization")
+        probes = np.linspace(-20.0, 20.0, 69, dtype=np.float32)[None]
+        if not np.array_equal(vec.normalize_obs(probes), probes):
+            raise ValueError("saved VecNormalize alters physical observations")
+    except Exception as error:
+        raise ValueError(f"cannot verify identity VecNormalize: {error}") from error
+    return {
+        "dual_control_binding": binding,
+        "vecnormalize_sha256": digest,
+        "vecnormalize_host_path": str(vecnormalize),
+        "vecnormalize_contract": identity_contract,
+    }
+
+
 def validate_policy_and_gates(
     *,
     policy: Path,
@@ -297,6 +375,8 @@ def validate_policy_and_gates(
     ppo_readiness: Path,
     fno_gate: Path,
     data: Path,
+    vecnormalize: Path | None = None,
+    expected_vecnormalize_sha256: str | None = None,
 ) -> dict:
     audit = load_json(ppo_audit)
     readiness = load_json(ppo_readiness)
@@ -335,7 +415,13 @@ def validate_policy_and_gates(
     policy_sha = sha256(policy)
     if final.get("checkpoint_sha256") != policy_sha:
         raise ValueError("final PPO checkpoint SHA differs")
+    dual_lineage = validate_dual_policy_contract(
+        audit=audit, readiness=readiness, gate=gate, policy=policy,
+        normalization_sha256=sha256(normalization), vecnormalize=vecnormalize,
+        expected_vecnormalize_sha256=expected_vecnormalize_sha256,
+    )
     return {
+        **dual_lineage,
         "policy_sha256": policy_sha,
         "ppo_audit_sha256": sha256(ppo_audit),
         "ppo_readiness_sha256": sha256(ppo_readiness),
@@ -417,6 +503,8 @@ def build_preflight(
     predeclaration_sha256: str,
     output: Path,
     resources: dict,
+    vecnormalize: Path | None = None,
+    expected_vecnormalize_sha256: str | None = None,
 ) -> dict:
     blockers = []
     lineage = None
@@ -428,6 +516,8 @@ def build_preflight(
             ppo_readiness=ppo_readiness,
             fno_gate=fno_gate,
             data=data,
+            vecnormalize=vecnormalize,
+            expected_vecnormalize_sha256=expected_vecnormalize_sha256,
         )
     except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
         blockers.append(f"policy_or_gate_invalid:{error}")
@@ -1028,6 +1118,8 @@ def run_feedback(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--policy", type=Path, required=True)
+    parser.add_argument("--vecnormalize", type=Path)
+    parser.add_argument("--expected-vecnormalize-sha256")
     parser.add_argument("--ppo-audit", type=Path, required=True)
     parser.add_argument("--ppo-readiness", type=Path, required=True)
     parser.add_argument("--fno-gate", type=Path, required=True)
@@ -1063,6 +1155,8 @@ def main() -> None:
         predeclaration_sha256=args.predeclaration_sha256,
         output=output,
         resources=resources,
+        vecnormalize=args.vecnormalize,
+        expected_vecnormalize_sha256=args.expected_vecnormalize_sha256,
     )
     if args.dry_run:
         target = output.with_suffix(".preflight.json")
@@ -1082,6 +1176,14 @@ def main() -> None:
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     with lock_path.open("w", encoding="utf-8") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        current_lineage = validate_policy_and_gates(
+            policy=args.policy.resolve(), ppo_audit=args.ppo_audit.resolve(),
+            ppo_readiness=args.ppo_readiness.resolve(), fno_gate=args.fno_gate.resolve(),
+            data=args.data.resolve(), vecnormalize=args.vecnormalize,
+            expected_vecnormalize_sha256=args.expected_vecnormalize_sha256,
+        )
+        if current_lineage != preflight["lineage"]:
+            raise ValueError("policy evidence changed after preflight")
         result = run_feedback(
             declaration,
             policy=args.policy.resolve(),
