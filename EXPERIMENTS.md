@@ -1,5 +1,22 @@
 # Experiment ledger
 
+## FC-E025 — FC-P015 complete formal rejection (2026-10-05)
+
+Eight-window gradient accumulation completed171 updates over the original1368
+windows from the same P009 parent. Official dual reload and complete formal
+evaluation finished successfully as processes, but scientific admission failed.
+All18 receipt artifact hashes and the original numerical auditor output were
+independently verified. Receipt SHA
+`353004afa2aa5a35b912205751a100bc6d37d0572ce5431108dca3ed2ea95a5b`.
+Joint1/6, totalCd5/6, rearCl-primeRMS2/6, rearmeanCl2/6; only the b05 zero branch
+passes jointly. Dynamic H100 pooledCdNRMSE0.01929335 and rearClMAE0.08544903 do
+not improve the P009 values0.01813790 and0.08429627. Frozen-flow metrics remain
+identical. Preserve the negative result; no compatible PPO or frozen test ran.
+
+FC-P016 is now preregistered for a bounded fixed-six32-update local fitting
+probe, with implementation and independent review underway. It is not executed
+or a scientific result. See `docs/FC_P016_FIXED_PANEL_FIT_PLAN_20261005.md`.
+
 ## FC-E024 — FC-P014 exact-objective residual decomposition (2026-10-05)
 
 Result SHA `5550140b818a3d9028073b913cf994da99d9d3e917ea24896e4a9d477b8e95a7`, source59215be, approval e26473d; actual service invocation6bba81dba45b46638643f441ba21082f exited0. Six original train H100 windows, parentP009 and terminalP013, original mixed-batch20 chunk objective with force train mode and no_grad. No backward/update/model-save/held-out/PPO. Tensor identities unchanged. Independent reviewer recomputed all48 residual decompositions; maximum identity residual6.94e-18. All44HDF hashes were checked before launch; host minima MemAvailable109.60GiB/MemFree29.02GiB.
