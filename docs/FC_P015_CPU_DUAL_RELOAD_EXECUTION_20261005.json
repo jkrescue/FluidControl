@@ -1,0 +1,51 @@
+{
+  "status": "FC_P015_CPU_DUAL_RELOAD_EXTERNAL_EXECUTION_VERIFIED",
+  "container_id": "38f2123c0f9ed6ff3dd05fb48b8465255fb729ae703fc2849ac1818db1579098",
+  "image": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e",
+  "path": "python",
+  "args": [
+    "artifacts/p015_posteval_chain_41d34b589bf8_immutable/scripts/verify_fcp015_dual_reload.py",
+    "--numerical-source",
+    "/workspace/artifacts/p015_posteval_chain_41d34b589bf8_immutable/numerical_source",
+    "--manifest",
+    "/output/candidate/dual_model_manifest.json",
+    "--config",
+    "/workspace/artifacts/p015_posteval_chain_41d34b589bf8_immutable/training_config.yaml",
+    "--training-result",
+    "/output/candidate/result.json",
+    "--output",
+    "/output/dual_reload_receipt.json",
+    "--execute-cpu"
+  ],
+  "state": {
+    "Status": "exited",
+    "Running": false,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 0,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-10-05T11:16:46.647589383Z",
+    "FinishedAt": "2026-10-05T11:16:57.726728615Z"
+  },
+  "host_config": {
+    "Memory": 12884901888,
+    "NanoCpus": 4000000000,
+    "ReadonlyRootfs": true,
+    "NetworkMode": "none",
+    "DeviceRequests": null,
+    "SecurityOpt": [
+      "no-new-privileges"
+    ],
+    "Binds": [
+      "/workspace/fluid_control:/workspace:ro",
+      "/workspace/fluid_control/artifacts/fcp015_window_accumulation_training_20261005:/output:rw"
+    ]
+  },
+  "user": "1000:1000",
+  "cuda_visible_devices": "CUDA_VISIBLE_DEVICES=",
+  "reload_receipt_sha256": "925a7dc0c1a1be0157afd5838018b1a3bccd74f0083b2d70718e8a65e8c2b18c",
+  "scientific_admission": false
+}

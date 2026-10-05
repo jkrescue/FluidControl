@@ -1,5 +1,7 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**P015训练终态已核验（2026-10-05 11:17 UTC）**：171次更新/1368窗口完成，实际服务同一invocation成功退出。Root与独立审查重算候选完整性一致；completion SHA `9c27e5eb…05fdf`。官方镜像实际CPU双模型重载通过，receipt SHA `925a7dc0…2b18c`，外部Docker退出/镜像/命令证据已单独保存。固定六个train片段的平均objective从0.00624614增至0.00730327；去均值升力波形部分改善但平均偏差多数恶化，不能宣称精度或控制通过。原完整formal已独立核验执行审批，尚未启动；正在补齐外部MemFree守卫，不改变冻结数值评估代码。下一步完整formal→按实际结果决定后续干预或兼容PPO→真实CFD反馈。详见`docs/FC_P015_TERMINAL_STATUS_20261005.md`。最终目标仍未达成。
+
 **P015控制接口准备完成（2026-10-05）**：`20d7170`已推送GitLab，补齐共享dual绑定、candidate readiness、PPO launcher、CFD readiness导出、底层训练入口及真实反馈入口的显式P015身份支持；缺失dual证据不能落入旧单模型路径。Root111项、独立196项及最终增量42项CPU回归通过，原数值审计器、reward、动作与验收标准不变。详见`docs/FC_P015_CONTROL_INTERFACE_READINESS_20261005.md`；这是工程准备，不是PPO/CFD执行或模型准入。当前训练同一invocation已完成57次更新后的六个固定train窗诊断，并继续至58/171（464/1368窗），诊断数值随预定终态保存，尚不判断精度改善。下一步仍为训练终态核验、实际双模型重载和原完整formal，不自动跳过任何失败条件。
 
 **评估衔接准备（2026-10-05 10:06 UTC）**：P015仍在同一invocation训练，10:03浏览器API实测35/171更新、280/1368窗口、日志约11秒新鲜；不是终态。原始数值协议不变的P015正式评估profile、独立CPU双FNO重载验证及保留服务终态finalizer已完成并推送`41d34b5`。Root76项、独立94项CPU测试通过，隔离冻结依赖导入通过；尚未实际重载P015终态或执行formal，不能写成科学通过。finalizer对真实running服务只报告运行、不生成completion。下一步是训练终态→完整候选审计→实际官方镜像双模型CPU重载及外部容器证据→单独批准原完整formal。
