@@ -335,6 +335,20 @@ function renderAdmission(d){
  }
 }
 function renderActiveExperiment(d){
+ const reduced=d.reduced_rate_training;
+ if(reduced?.verified===true){
+  const age=Date.now()-Date.parse(reduced.sampled_at_utc||'');
+  const fresh=Number.isFinite(age)&&age>=0&&age<60000;
+  const title=!fresh?'当前采样已过期':reduced.running?'全量训练进行中 · 降低学习率对照':'训练进程已结束或异常 · 终态与精度待核';
+  const progress='参数更新 '+reduced.updates+' / 171；训练窗口 '+reduced.consumed_windows+' / 1368。';
+  const detail='使用相同44条真实CFD训练轨迹和官方FNO；仅将学习率降为原来的1/64（1.5625×10⁻⁷）。每8个窗口合并梯度，再更新一次参数。';
+  const pending='当前尚无本轮精度验收、强化学习或真实CFD闭环结果。下方流场图片是已标注的历史结果。';
+  $('lead-now').textContent=title+'。'+progress;
+  const card=document.createElement('div');card.className='card';
+  for(const [tag,text] of [['h3',title],['p',progress],['p',detail],['p',pending],['p',reduced.running&&!reduced.progress_fresh?'日志超过五分钟未更新，需核查进度；进程仍在运行。':'依据实际运行进程和日志更新，不以GPU占用率判断科学成功。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
+  $('lead-models').prepend(card);$('train16-formal-progress').textContent=title;
+  $('train16-formal-detail').textContent=progress+' '+pending;return;
+ }
  const probe=d.fixed_panel_probe;
  if(probe?.verified===true){
   const age=Date.now()-Date.parse(probe.sampled_at_utc||'');
@@ -1144,6 +1158,62 @@ def _fcp015_formal_result(root: Path) -> dict:
                 **{label:sum(x["metric_pass"][key] is True for x in branches) for label,key in
                    (("cd_pass","total_cd"),("rms_pass","rear_cl_fluctuation_rms"),("mean_pass","rear_cl_mean"))}}
     except (OSError, ValueError, KeyError, TypeError):
+        return {"verified": False}
+
+
+FCP018_APPROVAL = "eea5bd5c6a3fe585ae1104600421e50b335f61299c4014c5e3136722af3d4d39"
+FCP018_PROTOCOL = "310f0bdf8563a2a70b844a32852791fa1b1dc20278a3098418942e1dab204d2d"
+FCP018_LAUNCHER = "artifacts/fcp018_reduced_rate_source_20261005_immutable/scripts/run_fcp018_reduced_rate_spark.sh"
+
+
+def _parse_fcp018_live(output: str, log: str, log_age: float) -> dict:
+    fields = dict(line.split("=", 1) for line in output.splitlines() if "=" in line)
+    if (fields.get("InvocationID") != "1ca4654aab074278bb2efdfff8dbc1eb"
+            or FCP018_LAUNCHER + " --execute" not in fields.get("ExecStart", "")
+            or "FCP018_APPROVAL_SHA256=" + FCP018_APPROVAL not in fields.get("ExecStart", "")):
+        return {"verified": False, "admission": False}
+    try:
+        pid = int(fields.get("MainPID", ""))
+    except ValueError:
+        return {"verified": False, "admission": False}
+    updates = 0
+    for line in log.splitlines():
+        try:
+            row = json.loads(line)
+            if (row.get("event") == "accumulation_update" and type(row.get("update")) is int
+                    and 1 <= row["update"] <= 171 and row.get("consumed_windows") == 8 * row["update"]
+                    and row.get("actual_learning_rate") == 1.5625e-7
+                    and row.get("training_protocol_sha256") == FCP018_PROTOCOL):
+                updates = max(updates, row["update"])
+        except (ValueError, TypeError, AttributeError):
+            continue
+    return {"verified": True, "running": fields.get("ActiveState") == "active"
+            and fields.get("SubState") == "running" and pid > 0,
+            "updates": updates, "consumed_windows": updates * 8,
+            "progress_fresh": 0 <= log_age <= 300, "log_age_seconds": log_age,
+            "admission": False, "independent_terminal_audit": False}
+
+
+def _fcp018_training(root: Path) -> dict:
+    base = root / "artifacts/fcp018_reduced_rate_training_20261005"
+    try:
+        for path, expected in {
+            root / "docs/FC_P018_RUNNING_EXECUTION_20261005.json": "c040eae25fa31a98164e08e10dc4f007eb6a3ef38329ad0dcfaddd734c7eb53c",
+            base / "execution_approval.json": FCP018_APPROVAL,
+            base / "training_protocol.json": FCP018_PROTOCOL,
+            base / "immutable_launcher.sh": "102b8c6efe54b2e868e4973315260b6ed73b8e24e770af4fa2f04876af36c731",
+            root / FCP018_LAUNCHER: "102b8c6efe54b2e868e4973315260b6ed73b8e24e770af4fa2f04876af36c731",
+        }.items():
+            if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+                return {"verified": False}
+        state = subprocess.run(["systemctl", "--user", "show", "fluid-control-fcp018-reduced-rate-20261005.service",
+            "-p", "ActiveState", "-p", "SubState", "-p", "MainPID", "-p", "InvocationID", "-p", "ExecStart"],
+            capture_output=True, text=True, timeout=2, check=False)
+        if state.returncode != 0: return {"verified": False}
+        return {**_parse_fcp018_live(state.stdout, _tail_text(base / "run.log"),
+                    time.time() - (base / "run.log").stat().st_mtime),
+                "sampled_at_utc": datetime.now(UTC).isoformat()}
+    except (OSError, subprocess.SubprocessError, ValueError, TypeError):
         return {"verified": False}
 
 
@@ -2795,6 +2865,7 @@ class Handler(BaseHTTPRequestHandler):
             data["independent_force_training"] = _fcp013_training(self.root)
             data["window_accumulation_training"] = _fcp015_training(self.root)
             data["fixed_panel_probe"] = _fcp016_probe(self.root)
+            data["reduced_rate_training"] = _fcp018_training(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
