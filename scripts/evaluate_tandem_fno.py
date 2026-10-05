@@ -154,6 +154,7 @@ def main() -> None:
     parser.add_argument("--allow-calibrated-epoch-zero", action="store_true")
     parser.add_argument("--expected-calibrated-model-sha256")
     parser.add_argument("--expected-calibrated-state-sha256")
+    parser.add_argument("--expected-calibrated-kind", choices=("FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE", "FC_P009_TRAIN_ONLY_JOINT_FORCE_ROW_CANDIDATE"), default="FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE")
     parser.add_argument(
         "--output", type=Path, default=Path("artifacts/tandem_fno/evaluation.json")
     )
@@ -224,6 +225,7 @@ def main() -> None:
             allow=args.allow_calibrated_epoch_zero,
             expected_model_sha256=args.expected_calibrated_model_sha256,
             expected_state_sha256=args.expected_calibrated_state_sha256,
+            expected_kind=args.expected_calibrated_kind,
         )
     except ValueError as error:
         if epoch == 0 and not args.allow_calibrated_epoch_zero:

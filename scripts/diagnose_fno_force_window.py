@@ -170,6 +170,7 @@ def main():
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--expected-model-sha", required=True)
     parser.add_argument("--expected-calibrated-state-sha256")
+    parser.add_argument("--expected-calibrated-kind", choices=("FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE", "FC_P009_TRAIN_ONLY_JOINT_FORCE_ROW_CANDIDATE"), default="FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE")
     parser.add_argument("--allow-calibrated-epoch-zero", action="store_true")
     args = parser.parse_args()
     if args.output.exists():
@@ -214,6 +215,7 @@ def main():
         allow=args.allow_calibrated_epoch_zero,
         expected_model_sha256=args.expected_model_sha,
         expected_state_sha256=args.expected_calibrated_state_sha256,
+        expected_kind=args.expected_calibrated_kind,
     )
     network.eval()
     stats = json.loads(normalization.read_text())

@@ -31,6 +31,7 @@ def validate_checkpoint(
     allow_calibrated_epoch_zero: bool = False,
     expected_calibrated_model_sha256: str | None = None,
     expected_calibrated_state_sha256: str | None = None,
+    expected_calibrated_kind: str = "FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE",
 ) -> dict:
     """Bind the validation result to the exact PhysicsNeMo model generation."""
     reported = report.get("checkpoint_dir")
@@ -45,6 +46,7 @@ def validate_checkpoint(
         allow=allow_calibrated_epoch_zero,
         expected_model_sha256=expected_calibrated_model_sha256,
         expected_state_sha256=expected_calibrated_state_sha256,
+        expected_kind=expected_calibrated_kind,
     )
     models = sorted(checkpoint_dir.glob("FNO.*.mdlus"))
     if len(models) != 1:
@@ -312,6 +314,7 @@ def audit(
     allow_calibrated_epoch_zero: bool = False,
     expected_calibrated_model_sha256: str | None = None,
     expected_calibrated_state_sha256: str | None = None,
+    expected_calibrated_kind: str = "FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE",
 ) -> dict:
     expected = validate_predeclaration(predeclaration)
     report = load(report_path)
@@ -323,6 +326,7 @@ def audit(
         allow_calibrated_epoch_zero=allow_calibrated_epoch_zero,
         expected_calibrated_model_sha256=expected_calibrated_model_sha256,
         expected_calibrated_state_sha256=expected_calibrated_state_sha256,
+        expected_calibrated_kind=expected_calibrated_kind,
     )
     runtime = validate_runtime_inputs(
         report, data=data, config=config, image_id=image_id
@@ -364,6 +368,7 @@ def main() -> None:
     parser.add_argument("--allow-calibrated-epoch-zero", action="store_true")
     parser.add_argument("--expected-calibrated-model-sha256")
     parser.add_argument("--expected-calibrated-state-sha256")
+    parser.add_argument("--expected-calibrated-kind", choices=("FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE", "FC_P009_TRAIN_ONLY_JOINT_FORCE_ROW_CANDIDATE"), default="FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE")
     args = parser.parse_args()
     if args.output.exists():
         raise FileExistsError(f"refusing to overwrite {args.output}")
@@ -373,6 +378,7 @@ def main() -> None:
             "allow_calibrated_epoch_zero": True,
             "expected_calibrated_model_sha256": args.expected_calibrated_model_sha256,
             "expected_calibrated_state_sha256": args.expected_calibrated_state_sha256,
+            "expected_calibrated_kind": args.expected_calibrated_kind,
         }
     result = audit(
         args.report,
