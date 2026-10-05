@@ -80,7 +80,7 @@ formal suite已完成并反证准入：总receipt SHA为`14fd24d9…edcb5`，dev
 
 2026-10-05 Asia/Shanghai，implementation and CPU tests approved；GPU提取另审。FC-P009检验固定FC-P003C/default-TF32/high模型的free-AR训练窗口隐藏特征能否改善四力末层读出，不改变模型架构、数据、归一化、reward或任何科学门槛。`alpha`固定为`0`，不运行六alpha选择；四相OOF只评价固定读出，不能用于选参。输入仍为既有regular sampler的1368个H100训练窗口、每窗100个相对时刻，共136800行隐藏特征；它们只覆盖19648个唯一真实CFD端点，同一端点在不同AR起点/relative horizon下的隐藏状态不得冒称独立物理样本。
 
-family顺序固定为base20/train8/train16，share仍为`(720,408,240)/1368`，而不是按端点数分配；对应window-step行数为72000/40800/24000，唯一CFD端点数为16000/1600/2048。四折按canonical source phase进行，OOF须按预定全局row weight汇总，不能在缺family的fold内重新等权。原regular sampler暴露保持，但这不是严格单因素消融：相对FC-P008，隐藏状态从true-state H1换成free-AR，同时同一真实端点因AR起点/relative horizon重复出现，row权重结构也随之改变。为分离该权重混杂，CPU阶段必须从现有P008 H1 cache将相同19648个目标映射成同一136800个window-step目标、保持目标值与phase逐项相同，并以固定`alpha=0`计算matched-weight H1对照；AR fit只能与这个对照和原P008两者并列解释。不得读取validation/frozen选参，也不得因validation10已FAIL而事后改变阈值或权重。实施先限于一次cache-only特征提取及CPU拟合；生成候选、native replay、formal和PPO均须另审。
+family顺序固定为base20/train8/train16，share仍为`(720,408,240)/1368`，而不是按端点数分配；对应window-step行数为72000/40800/24000，唯一CFD端点数为16000/1600/2048。四折按canonical source phase进行，OOF须按预定全局row weight汇总，不能在缺family的fold内重新等权。原regular sampler暴露保持，但这不是严格单因素消融：相对FC-P008，隐藏状态从true-state H1换成free-AR，同时同一真实端点因AR起点/relative horizon重复出现，row权重结构也随之改变。为分离该权重混杂，CPU阶段必须从现有P008 H1 cache将相同19648个目标映射成同一136800个window-step目标、保持目标值与phase逐项相同，并以固定`alpha=0`计算matched-weight H1对照；AR fit只能与这个对照和原P008两者并列解释。两种fit必须共用从同一HDF raw四力按P008 canonical NumPy-float64规范化后转float32得到的标签；官方DataPipe的torch-float32规范化另作同raw端点审计并记录两条算术路径的差异，不能用直接`array_equal`误判舍入差，也不能放宽容差掩盖case/step错配。不得读取validation/frozen选参，也不得因validation10已FAIL而事后改变阈值或权重。实施先限于一次cache-only特征提取及CPU拟合；生成候选、native replay、formal和PPO均须另审。
 
 ## 新决策格式
 
