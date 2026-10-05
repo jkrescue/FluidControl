@@ -1,0 +1,185 @@
+{
+  "status": "FC_P017_RUNNING_EXECUTION_NOT_COMPLETION",
+  "observed_utc": "2026-10-05T12:35:00Z",
+  "timestamp_note": "Approximate observation minute; exact container start below",
+  "unit": "fluid-control-fcp017-first-step-20261005.service",
+  "invocation": "cfa568f1f4d5412a93628273d93a95a1",
+  "approval_sha256": "379cf2789ef37f216c07429dcfa87c30282b192bcffa40e546be6084a9d84436",
+  "container": {
+    "id": "604af989be7d3dae1667c37d7a43afd50d8ec7e5b76798d0fca59bf6f4d5fd29",
+    "image": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e",
+    "state": {
+      "Status": "running",
+      "Running": true,
+      "Paused": false,
+      "Restarting": false,
+      "OOMKilled": false,
+      "Dead": false,
+      "Pid": 4083002,
+      "ExitCode": 0,
+      "Error": "",
+      "StartedAt": "2026-10-05T12:33:51.051552526Z",
+      "FinishedAt": "0001-01-01T00:00:00Z"
+    },
+    "path": "/opt/nvidia/physicsnemo_env.sh",
+    "args": [
+      "python",
+      "-u",
+      "scripts/spark_gpu_guard.py",
+      "--min-free-gib",
+      "20",
+      "--allocator-fraction",
+      ".15",
+      "--margin-gib",
+      "4",
+      "--poll-seconds",
+      "2",
+      "--",
+      "timeout",
+      "-k",
+      "20",
+      "900",
+      "python",
+      "-u",
+      "/workspace/probe/probe_fcp017_first_step.py",
+      "--source-root",
+      "/workspace/project",
+      "--config",
+      "/workspace/config.yaml",
+      "--panel-helper",
+      "/workspace/probe/probe_fcp016_fixed_panel_fit.py",
+      "--diagnostic-script",
+      "/workspace/helpers/diagnose_fcp014_train_objective.py",
+      "--parent",
+      "/workspace/parent",
+      "--output",
+      "/workspace/output/result.json",
+      "--execute"
+    ],
+    "mounts": [
+      {
+        "Type": "bind",
+        "Source": "/workspace/fluid_control/artifacts/fcp017_first_step_diagnostic_20261005",
+        "Destination": "/workspace/output",
+        "Mode": "rw",
+        "RW": true,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/workspace/fluid_control/artifacts/fcp014_train_objective_source_20261005_immutable/scripts",
+        "Destination": "/workspace/helpers",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/workspace/fluid_control/artifacts/fcp011_official_datapipe_cpu_preflight_20261005/mount_view/train16",
+        "Destination": "/workspace/train16",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/workspace/fluid_control/data/curated/tandem_cylinders_directppo_train16_v1/train",
+        "Destination": "/workspace/train16/train",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/workspace/fluid_control/artifacts/fcp017_first_step_source_20261005_immutable/scripts",
+        "Destination": "/workspace/probe",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/workspace/fluid_control/artifacts/fcp011_official_datapipe_cpu_preflight_20261005/mount_view/base",
+        "Destination": "/workspace/base",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/workspace/fluid_control/artifacts/fcp011_official_datapipe_cpu_preflight_20261005/mount_view/train8",
+        "Destination": "/workspace/train8",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/workspace/fluid_control/data/curated/tandem_cylinders_dynamic_train8_v1/train",
+        "Destination": "/workspace/train8/train",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/workspace/fluid_control/artifacts/fcp013_training_source_1634c05_immutable",
+        "Destination": "/workspace/project",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/workspace/fluid_control/data/curated/tandem_cylinders_matched_start_full40_dev30_v1/train",
+        "Destination": "/workspace/base/train",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/workspace/fluid_control/artifacts/fcp009_joint_force_row_candidate_20261005/candidate_build/candidate",
+        "Destination": "/workspace/parent",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/workspace/fluid_control/artifacts/fcp011_resource_probe_runtime_20261005/resolved_config.yaml",
+        "Destination": "/workspace/config.yaml",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      }
+    ],
+    "user": "1000:1000",
+    "host_config": {
+      "Memory": 42949672960,
+      "ReadonlyRootfs": true,
+      "NetworkMode": "none",
+      "DeviceRequests": [
+        {
+          "Driver": "",
+          "Count": 0,
+          "DeviceIDs": [
+            "0"
+          ],
+          "Capabilities": [
+            [
+              "gpu"
+            ]
+          ],
+          "Options": {}
+        }
+      ],
+      "CapDrop": [
+        "ALL"
+      ],
+      "SecurityOpt": [
+        "no-new-privileges"
+      ]
+    }
+  }
+}
