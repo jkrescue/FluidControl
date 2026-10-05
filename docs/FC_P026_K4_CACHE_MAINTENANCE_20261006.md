@@ -145,3 +145,38 @@ service invocation `eee5a6fbad40411cac2f05e00520b079`, PID941365, remained
 `activating/start`, not terminal. This review performed no HDF rereads or
 cache advice and establishes maintenance completion only, not training
 completion or scientific acceptance.
+
+## Separate r4 authorization
+
+At468 consumed windows, the same live K4 invocation's latest host sample
+recorded MemFree22,610,148KiB (about21.56GiB). Root separately authorizes
+one r4 pass using unchanged helper
+`3ca107dd1ddb2ac70a457f752088b423bf96f438f0b4f963d482929625d77ed9`.
+The only new receipt is K4's `cache_advice_20261006_r4.jsonl`, exclusively
+created; preserve r1/r2/r3. All44 pinned train files and current memory are
+rechecked by the same reviewed code. No model/data changes, global cache
+clearing, training restart or further maintenance loop is authorized.
+This is approval only; completion requires actual receipt review.
+
+## Actual r4 receipt review
+
+Root reports session29710 exited0 after this separately approved single pass.
+Independent saved-JSON review verified exactly90 records: begin,44 ordered
+file-begin/advised pairs,complete. All44 paths and reported hashes match the
+pinned audit; all per-file before/hash/advice stat snapshots equal file-begin
+stat. Begin binds the same reviewed helper, K4 and exact r4 output. Receipt SHA:
+`aff19e4d6003e9884ac0448c46339acc557c8d613aeb762886f7807104e2d0c2`.
+
+Start/end Unix timestamps were1791239538.2520118/1791239548.96068,
+elapsed **10.708794733 seconds**. Receipt memory minima were MemFree
+**21.356167 GiB**, MemAvailable **106.240269 GiB**, above applicable floors.
+The still-growing host-watch snapshot through1791239580,938 samples, had
+minima MemFree **21.006046 GiB**, MemAvailable **105.867161 GiB**; snapshot SHA:
+`af4605102f9e953a65242ae3c046f5688a5e15c647f18766e52727a9d967308a`.
+
+All three prior receipt hashes were rechecked unchanged: r1 `115ab435…374a6`,
+r2 `ea9ac02c…134cf7`, r3 `55d34429…28de533`. Actual training remained live
+under invocation `eee5a6fbad40411cac2f05e00520b079`, PID941365,
+`activating/start`; this is not training completion. No HDF files were reread
+and no advice was issued by this review. No further maintenance pass is
+approved, and no model admission or PPO conclusion follows.
