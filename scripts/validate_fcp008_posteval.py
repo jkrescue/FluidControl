@@ -33,12 +33,14 @@ CALIBRATED_KIND = "FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE"
 DIAGNOSTIC_KIND = "fc_p008_force_row_calibrated_epoch0"
 PRECISION_STATUS = "FC_P008_FORMAL_EVALUATION_DEFAULT_TF32_HIGH"
 CHAIN_STATUS = "FC_P008_IMMUTABLE_POSTEVAL_CHAIN_STAGED"
+TRAINED_PROFILE = False
 
 
 def configure_profile(name: str) -> None:
     """Select an exact identity profile; numerical validation stays shared."""
     global CANDIDATE_KIND, LINEAGE_STATUS, STEP_STATUS, COMPLETE_STATUS
     global CALIBRATED_KIND, DIAGNOSTIC_KIND, PRECISION_STATUS, CHAIN_STATUS
+    global TRAINED_PROFILE
     profiles = {
         "p008": (
             "full_train_force_row_recalibration",
@@ -49,6 +51,7 @@ def configure_profile(name: str) -> None:
             "fc_p008_force_row_calibrated_epoch0",
             "FC_P008_FORMAL_EVALUATION_DEFAULT_TF32_HIGH",
             "FC_P008_IMMUTABLE_POSTEVAL_CHAIN_STAGED",
+            False,
         ),
         "p009": (
             "joint_h1_free_ar_force_row_recalibration",
@@ -59,6 +62,29 @@ def configure_profile(name: str) -> None:
             "fc_p009_joint_force_row_calibrated_epoch0",
             "FC_P009_FORMAL_EVALUATION_DEFAULT_TF32_HIGH",
             "FC_P009_IMMUTABLE_POSTEVAL_CHAIN_STAGED",
+            False,
+        ),
+        "p011_head_only": (
+            "fcp011_head_only_epoch1",
+            "FC_P011_HEAD_ONLY_CANDIDATE_LINEAGE_PASS",
+            "FC_P011_HEAD_ONLY_POSTEVAL_STEP_COMPLETE",
+            "FC_P011_HEAD_ONLY_POSTEVAL_COMPLETE",
+            None,
+            "dev30_h20_development",
+            "FC_P011_HEAD_ONLY_FORMAL_EVALUATION_DEFAULT_TF32_HIGH",
+            "FC_P011_HEAD_ONLY_IMMUTABLE_POSTEVAL_CHAIN_STAGED",
+            True,
+        ),
+        "p011_decoder_tail": (
+            "fcp011_decoder_tail_epoch1",
+            "FC_P011_DECODER_TAIL_CANDIDATE_LINEAGE_PASS",
+            "FC_P011_DECODER_TAIL_POSTEVAL_STEP_COMPLETE",
+            "FC_P011_DECODER_TAIL_POSTEVAL_COMPLETE",
+            None,
+            "dev30_h20_development",
+            "FC_P011_DECODER_TAIL_FORMAL_EVALUATION_DEFAULT_TF32_HIGH",
+            "FC_P011_DECODER_TAIL_IMMUTABLE_POSTEVAL_CHAIN_STAGED",
+            True,
         ),
     }
     if name not in profiles:
@@ -72,6 +98,7 @@ def configure_profile(name: str) -> None:
         DIAGNOSTIC_KIND,
         PRECISION_STATUS,
         CHAIN_STATUS,
+        TRAINED_PROFILE,
     ) = profiles[name]
 EXPECTED = {
     "validation10": (
@@ -161,10 +188,18 @@ def validate_lineage(candidate: Path, lineage_path: Path) -> tuple[dict, Path, P
         raise ValueError("FC-P008 image identity differs")
     if lineage.get("formal_protocol") != PROTOCOL:
         raise ValueError("FC-P008 formal protocol differs")
-    if lineage.get("training_performed") is not False:
-        raise ValueError("FC-P008 must not claim a new training run")
-    if (
-        lineage.get("calibration_fit_performed") is not True
+    if TRAINED_PROFILE:
+        if (
+            lineage.get("checkpoint_epoch") != 1
+            or lineage.get("training_performed") is not True
+            or lineage.get("calibration_fit_performed") is not False
+            or lineage.get("optimizer_training_performed") is not True
+            or lineage.get("optimizer_steps") != 1368
+        ):
+            raise ValueError("FC-P011 positive-epoch training scope differs")
+    elif (
+        lineage.get("training_performed") is not False
+        or lineage.get("calibration_fit_performed") is not True
         or lineage.get("optimizer_training_performed") is not False
     ):
         raise ValueError("FC-P008 calibration/optimizer scope differs")
@@ -177,6 +212,8 @@ def validate_lineage(candidate: Path, lineage_path: Path) -> tuple[dict, Path, P
 
 
 def calibrated_kwargs(lineage: dict) -> dict:
+    if TRAINED_PROFILE:
+        return {}
     value = {
         "allow_calibrated_epoch_zero": True,
         "expected_calibrated_model_sha256": lineage["checkpoint_sha256"],
@@ -263,7 +300,7 @@ def validate_science_step(
                 "data": repo
                 / "data/curated/tandem_cylinders_full40_dynamic_validation_v1",
                 "checkpoint": checkpoint,
-                "checkpoint_epoch": 0,
+                "checkpoint_epoch": lineage["checkpoint_epoch"],
                 "expected_model_sha": lineage["checkpoint_sha256"],
                 "report": out / "dynamic6/evaluation.json",
                 "segments": out / "dynamic6/segments.json",
@@ -418,7 +455,11 @@ def main() -> None:
     parser.add_argument("--chain-receipt", type=Path, required=True)
     parser.add_argument("--formal-approval-sha256", required=True)
     parser.add_argument("--step", choices=(*EXPECTED, "complete"), required=True)
-    parser.add_argument("--profile", choices=("p008", "p009"), default="p008")
+    parser.add_argument(
+        "--profile",
+        choices=("p008", "p009", "p011_head_only", "p011_decoder_tail"),
+        default="p008",
+    )
     args = parser.parse_args()
     configure_profile(args.profile)
     lineage, _, _ = validate_lineage(args.candidate, args.lineage)
