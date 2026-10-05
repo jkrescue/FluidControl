@@ -151,6 +151,13 @@ def main() -> None:
     parser.add_argument(
         "--checkpoint-dir", type=Path, default=Path("artifacts/tandem_fno/best")
     )
+    parser.add_argument(
+        "--dual-fno-manifest",
+        type=Path,
+        default=None,
+        help="optional FC-P013 manifest selecting separate official flow/force FNOs",
+    )
+    parser.add_argument("--expected-dual-fno-manifest-sha256", default=None)
     parser.add_argument("--allow-calibrated-epoch-zero", action="store_true")
     parser.add_argument("--expected-calibrated-model-sha256")
     parser.add_argument("--expected-calibrated-state-sha256")
@@ -211,28 +218,70 @@ def main() -> None:
         torch.cuda.set_per_process_memory_fraction(
             float(cfg.training.gpu_memory_fraction), device=dist.device
         )
-    network = build_model(cfg).to(dist.device)
-    metadata: dict = {}
-    epoch = load_checkpoint(
-        args.checkpoint_dir, models=network, metadata_dict=metadata, device=dist.device
-    )
-    from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
+    from fluid_control.dual_fno import dual_fno_requested
 
-    try:
-        validate_calibrated_epoch_zero(
-            args.checkpoint_dir,
-            epoch,
-            allow=args.allow_calibrated_epoch_zero,
-            expected_model_sha256=args.expected_calibrated_model_sha256,
-            expected_state_sha256=args.expected_calibrated_state_sha256,
-            expected_kind=args.expected_calibrated_kind,
+    use_dual_fno = dual_fno_requested(
+        args.dual_fno_manifest,
+        args.expected_dual_fno_manifest_sha256,
+        single_model_calibrated_arguments=(
+            args.allow_calibrated_epoch_zero,
+            args.expected_calibrated_model_sha256,
+            args.expected_calibrated_state_sha256,
+        ),
+    )
+    dual_identity = None
+    if use_dual_fno:
+        from fluid_control.dual_fno import load_dual_fno, validate_dual_runtime_files
+
+        network, dual_identity = load_dual_fno(
+            args.dual_fno_manifest,
+            cfg,
+            dist.device,
+            build_model=build_model,
+            load_checkpoint=load_checkpoint,
+            expected_manifest_sha256=args.expected_dual_fno_manifest_sha256,
         )
-    except ValueError as error:
-        if epoch == 0 and not args.allow_calibrated_epoch_zero:
-            raise FileNotFoundError(
-                f"no positive-epoch PhysicsNeMo checkpoint found in {args.checkpoint_dir}"
-            ) from error
-        raise
+        validate_dual_runtime_files(
+            dual_identity,
+            config_path=args.config,
+            normalization_path=(args.normalization_data or args.data)
+            / "normalization.json",
+        )
+        epoch = dual_identity.aerodynamic.epoch
+        metadata = {
+            "dual_fno": True,
+            "manifest_sha256": dual_identity.manifest_sha256,
+            "flow_model_sha256": dual_identity.flow.model_sha256,
+            "flow_state_sha256": dual_identity.flow.state_sha256,
+            "aerodynamic_model_sha256": dual_identity.aerodynamic.model_sha256,
+            "aerodynamic_state_sha256": dual_identity.aerodynamic.state_sha256,
+        }
+    else:
+        network = build_model(cfg).to(dist.device)
+        metadata = {}
+        epoch = load_checkpoint(
+            args.checkpoint_dir,
+            models=network,
+            metadata_dict=metadata,
+            device=dist.device,
+        )
+        from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
+
+        try:
+            validate_calibrated_epoch_zero(
+                args.checkpoint_dir,
+                epoch,
+                allow=args.allow_calibrated_epoch_zero,
+                expected_model_sha256=args.expected_calibrated_model_sha256,
+                expected_state_sha256=args.expected_calibrated_state_sha256,
+                expected_kind=args.expected_calibrated_kind,
+            )
+        except ValueError as error:
+            if epoch == 0 and not args.allow_calibrated_epoch_zero:
+                raise FileNotFoundError(
+                    f"no positive-epoch PhysicsNeMo checkpoint found in {args.checkpoint_dir}"
+                ) from error
+            raise
     network.eval()
 
     normalization_data = args.normalization_data or args.data
@@ -271,7 +320,11 @@ def main() -> None:
     report = {
         "split": args.split,
         "checkpoint_epoch": epoch,
-        "checkpoint_dir": str(args.checkpoint_dir),
+        "checkpoint_dir": str(
+            dual_identity.aerodynamic.directory
+            if dual_identity is not None
+            else args.checkpoint_dir
+        ),
         "checkpoint_metadata": metadata,
         "evaluation_data": str(args.data),
         "normalization_data": str(normalization_data),
@@ -285,6 +338,8 @@ def main() -> None:
         "force_channels": list(force_channels),
         "cases": [],
     }
+    if dual_identity is not None:
+        report["dual_fno_manifest"] = str(dual_identity.manifest_path)
     segment_records = []
     for case_index, path in enumerate(evaluation_paths):
         with h5py.File(path, "r") as handle:

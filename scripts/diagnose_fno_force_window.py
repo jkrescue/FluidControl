@@ -169,6 +169,8 @@ def main():
     for name in ("data", "normalization-data", "config", "checkpoint-dir", "output"):
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--expected-model-sha", required=True)
+    parser.add_argument("--dual-fno-manifest", type=Path, default=None)
+    parser.add_argument("--expected-dual-fno-manifest-sha256", default=None)
     parser.add_argument("--expected-calibrated-state-sha256")
     parser.add_argument("--expected-calibrated-kind", choices=("FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE", "FC_P009_TRAIN_ONLY_JOINT_FORCE_ROW_CANDIDATE"), default="FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE")
     parser.add_argument("--allow-calibrated-epoch-zero", action="store_true")
@@ -180,9 +182,20 @@ def main():
     normalization = args.normalization_data / "normalization.json"
     if sha256(normalization) != NORMALIZATION_SHA:
         raise ValueError("immutable train20 normalization differs")
-    models = list(args.checkpoint_dir.glob("FNO.0.*.mdlus"))
-    if len(models) != 1 or sha256(models[0]) != args.expected_model_sha:
-        raise ValueError("explicit immutable model identity differs")
+    from fluid_control.dual_fno import dual_fno_requested
+
+    use_dual_fno = dual_fno_requested(
+        args.dual_fno_manifest,
+        args.expected_dual_fno_manifest_sha256,
+        single_model_calibrated_arguments=(
+            args.allow_calibrated_epoch_zero,
+            args.expected_calibrated_state_sha256,
+        ),
+    )
+    if not use_dual_fno:
+        models = list(args.checkpoint_dir.glob("FNO.0.*.mdlus"))
+        if len(models) != 1 or sha256(models[0]) != args.expected_model_sha:
+            raise ValueError("explicit immutable model identity differs")
     files = sorted((args.data / "validation").glob("*.h5"))
     if {p.stem for p in files} != set(CASES):
         raise ValueError("fixed six-case validation panel differs")
@@ -205,18 +218,41 @@ def main():
         raise ValueError("four force channels required")
     if dist.cuda:
         torch.cuda.set_per_process_memory_fraction(0.15, device=dist.device)
-    network = build_model(cfg).to(dist.device)
-    epoch = load_checkpoint(args.checkpoint_dir, models=network, device=dist.device)
-    from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
+    dual_identity = None
+    if use_dual_fno:
+        from fluid_control.dual_fno import load_dual_fno, validate_dual_runtime_files
 
-    validate_calibrated_epoch_zero(
-        args.checkpoint_dir,
-        epoch,
-        allow=args.allow_calibrated_epoch_zero,
-        expected_model_sha256=args.expected_model_sha,
-        expected_state_sha256=args.expected_calibrated_state_sha256,
-        expected_kind=args.expected_calibrated_kind,
-    )
+        network, dual_identity = load_dual_fno(
+            args.dual_fno_manifest,
+            cfg,
+            dist.device,
+            build_model=build_model,
+            load_checkpoint=load_checkpoint,
+            expected_manifest_sha256=args.expected_dual_fno_manifest_sha256,
+        )
+        validate_dual_runtime_files(
+            dual_identity,
+            config_path=args.config,
+            normalization_path=normalization,
+        )
+        if args.checkpoint_dir.resolve() != dual_identity.aerodynamic.directory:
+            raise ValueError("dual FNO aerodynamic checkpoint directory differs")
+        if args.expected_model_sha != dual_identity.aerodynamic.model_sha256:
+            raise ValueError("dual FNO expected aerodynamic model SHA differs")
+        epoch = dual_identity.aerodynamic.epoch
+    else:
+        network = build_model(cfg).to(dist.device)
+        epoch = load_checkpoint(args.checkpoint_dir, models=network, device=dist.device)
+        from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
+
+        validate_calibrated_epoch_zero(
+            args.checkpoint_dir,
+            epoch,
+            allow=args.allow_calibrated_epoch_zero,
+            expected_model_sha256=args.expected_model_sha,
+            expected_state_sha256=args.expected_calibrated_state_sha256,
+            expected_kind=args.expected_calibrated_kind,
+        )
     network.eval()
     stats = json.loads(normalization.read_text())
     if stats["all_force_channels"] != ["front_cd", "front_cl", "rear_cd", "rear_cl"]:
@@ -384,6 +420,12 @@ def main():
         "ppo_authorized": False,
         "frozen_test_accessed": False,
     }
+    if dual_identity is not None:
+        result["dual_fno_manifest"] = str(dual_identity.manifest_path)
+        result["dual_fno_manifest_sha256"] = dual_identity.manifest_sha256
+        result["flow_model_sha256"] = dual_identity.flow.model_sha256
+        result["flow_state_sha256"] = dual_identity.flow.state_sha256
+        result["aerodynamic_state_sha256"] = dual_identity.aerodynamic.state_sha256
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("x") as stream:
         json.dump(result, stream, indent=2, allow_nan=False)
