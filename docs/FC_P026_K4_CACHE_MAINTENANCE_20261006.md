@@ -213,3 +213,37 @@ training service remained live under invocation
 `eee5a6fbad40411cac2f05e00520b079`, PID941365, `activating/start`.
 This review reread no HDF files and issued no advice. Further passes remain
 unapproved; maintenance completion is not training or scientific completion.
+
+## Separate r6 authorization
+
+At 22:47 UTC the same live K4 invocation had consumed 707 windows and
+completed 88 updates. Its latest MemFree sample was 22,479,944 KiB.
+Root authorizes one bounded r6 pass with reviewed helper
+`d116b55b67c50d2e618ec4188fe4fc8a4bc8b732deda8ca89f5b942d4b654e25`.
+Only the new K4 `cache_advice_20261006_r6.jsonl` may be created; preserve
+r1-r5. Recheck all 44 pinned paths, hashes, stats and memory floors.
+No global cache action, model/data changes, restart, or further pass is
+authorized. This is approval only, not evidence of execution completion.
+
+## Actual r6 receipt review
+
+Root observed session 52028 exit 0. Independent saved-JSON verification found
+90 records: begin, 44 ordered file-begin/advised pairs, and complete. All 44
+paths and reported hashes match the pinned audit, and every file's start,
+before/hash/advice stat snapshots agree. The begin record binds reviewed
+helper `d116b55b…b654e25`, K4, and the exact r6 output. Receipt SHA-256:
+`ef6388ec90218fed1192480f09118c59fada983bea19af0b6a69350b0ba447f0`.
+
+Start/end Unix timestamps were 1791240482.125588/1791240493.006071;
+elapsed **10.880671498 seconds**. Recorded minimum MemFree was
+**21.300934 GiB**, MemAvailable **105.828136 GiB**, above applicable floors.
+The growing host-watch snapshot through timestamp 1791240518 contained 1390
+samples, with minima MemFree **21.006046 GiB**, MemAvailable **105.731537 GiB**;
+snapshot SHA-256:
+`1af723fac16e4a4fc69391736aad1e4f19acf6b57777b92779fc5061b78c95a6`.
+
+All r1–r5 receipt hashes were rechecked unchanged. The actual service still
+reported invocation `eee5a6fbad40411cac2f05e00520b079`, PID 941365,
+`activating/start`; this is live training, not terminal success. No HDF reread
+or additional cache advice was performed during review. No further pass or
+scientific acceptance is authorized by this maintenance result.
