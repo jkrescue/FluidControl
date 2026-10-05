@@ -20,7 +20,7 @@ def test_old_default_is_preparation_only_r1():
 
 
 @pytest.mark.parametrize("name", helper.RECEIPT_NAMES)
-def test_three_explicit_names_stay_in_exact_k1_directory(name):
+def test_four_explicit_names_stay_in_exact_k1_directory(name):
     args = helper.parse_args(["--receipt-name", name])
     target = helper.OUTPUT.with_name(args.receipt_name)
     assert target.parent == helper.ROOT / "artifacts/fcp026_history_training_k1_20261005"
@@ -28,7 +28,7 @@ def test_three_explicit_names_stay_in_exact_k1_directory(name):
     assert not args.execute
 
 
-@pytest.mark.parametrize("name", ["../cache_advice_20261006_r2.jsonl", "/tmp/escape", "r2", "cache_advice_20261006_r4.jsonl"])
+@pytest.mark.parametrize("name", ["../cache_advice_20261006_r2.jsonl", "/tmp/escape", "r2", "cache_advice_20261006_r5.jsonl"])
 def test_arbitrary_paths_or_names_rejected(name):
     with pytest.raises(SystemExit):
         helper.parse_args(["--receipt-name", name])

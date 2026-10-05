@@ -116,3 +116,16 @@ remained running with host PID599092. The unchanged external watcher had2075
 samples; overall minima remained MemFree20.936733GiB and MemAvailable105.834663GiB.
 No restart, numerical change, training completion or scientific admission is
 claimed. No further cache pass is authorized by this report.
+
+## r4 receipt-name preparation only
+
+Lead approved a minimal software amendment adding only the fixed
+`cache_advice_20261006_r4.jsonl` choice; r1 remains the default and all receipts
+remain exclusive. Helper SHA is
+`13bbd587e7a9594ce71133a112d18da09abeb8f7518b799913ba4a2c6b336013`.
+The 44-file scope, same-descriptor hashing/advice, stat checks, memory floors,
+operational headroom and 300-second deadline are unchanged. Thirteen tiny CPU
+tests passed in the canonical repository, including r4 confinement/exclusivity
+and rejection of r5. No HDF reads or cache advice occurred in these tests.
+This prepares a possible post-training clearance only: r4 has not been executed
+or authorized to execute. Any actual pass requires a separate Lead decision.

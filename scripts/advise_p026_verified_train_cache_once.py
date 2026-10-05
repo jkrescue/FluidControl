@@ -17,7 +17,7 @@ FAMILIES = {
     "tandem_cylinders_directppo_train16_v1": 16,
 }
 OUTPUT = ROOT / "artifacts/fcp026_history_training_k1_20261005/cache_advice_20261006_r1.jsonl"
-RECEIPT_NAMES = tuple(f"cache_advice_20261006_r{i}.jsonl" for i in (1, 2, 3))
+RECEIPT_NAMES = tuple(f"cache_advice_20261006_r{i}.jsonl" for i in range(1, 5))
 
 
 def require(ok, message):
