@@ -1,5 +1,16 @@
 # Experiment ledger
 
+## P026 formal history callers — actual-main CPU fixtures verified
+
+Evaluator daef4a3a6eb1b9190f5cde728581b0c1b4b9656f56e865cf61a53deb1f37de88;
+force-window eee1f59fa269a22556048f3fde8fc7ecbc31bb913571e49075dead92618a8576.
+Six actual-main fixtures pass Root1.66s/independent1.70s; official loading is
+mocked, so no scientific model acceptance or real validation is claimed.
+K1 actualmetrics identical; K4 future-observation poison cannot affect predictions.
+Report docs/FC_P026_FORMAL_CALLER_REVIEW_20261005.md records coverage and recovery
+of60new synthetic plots to repo-external engineering_quarantine. Final tests force
+temporary cwd and outputs. Training execution review next; noGPUstarted yet.
+
 ## P026 role-aware production loader — integrated, software checks only
 
 Loader3343dba367dd6e45fdc914fc321e90b94efc2d8a00553c61b025ef7d776fc2a8;

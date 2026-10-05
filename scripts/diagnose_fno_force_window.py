@@ -173,6 +173,12 @@ def main():
     parser.add_argument("--expected-dual-fno-manifest-sha256", default=None)
     parser.add_argument("--dual-training-config", type=Path, default=None,
                         help="immutable training config; evaluation still uses --config")
+    parser.add_argument(
+        "--fno-history-profile",
+        choices=("legacy_k1", "p026_k1", "p026_k4"),
+        default="legacy_k1",
+        help="explicit caller input contract; legacy behavior remains the default",
+    )
     parser.add_argument("--expected-calibrated-state-sha256")
     parser.add_argument("--expected-calibrated-kind", choices=("FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE", "FC_P009_TRAIN_ONLY_JOINT_FORCE_ROW_CANDIDATE"), default="FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE")
     parser.add_argument("--allow-calibrated-epoch-zero", action="store_true")
@@ -209,7 +215,11 @@ def main():
     from physicsnemo.distributed import DistributedManager
     from physicsnemo.utils import load_checkpoint
 
-    from evaluate_tandem_fno import load_composed_config
+    from evaluate_tandem_fno import (
+        history_dual_step,
+        history_profile_length,
+        load_composed_config,
+    )
     from train_tandem_fno import build_model, configured_force_indices
 
     DistributedManager.initialize()
@@ -256,6 +266,12 @@ def main():
             expected_state_sha256=args.expected_calibrated_state_sha256,
             expected_kind=args.expected_calibrated_kind,
         )
+    history_k = history_profile_length(
+        args.fno_history_profile,
+        use_dual_fno=use_dual_fno,
+        network=network,
+        manifest_payload=None if dual_identity is None else dual_identity.payload,
+    )
     network.eval()
     stats = json.loads(normalization.read_text())
     if stats["all_force_channels"] != ["front_cd", "front_cl", "rear_cd", "rear_cl"]:
@@ -300,6 +316,19 @@ def main():
         mask = torch.as_tensor(mask_np[0:1], dtype=torch.float32, device=dist.device)
         state = torch.as_tensor(initial[None], dtype=torch.float32, device=dist.device)
         predicted = (state - state_mean) / state_std * mask
+        history_buffer = None
+        if history_k is not None:
+            from p026_history_inference import reset_history
+
+            history_buffer = reset_history(
+                predicted,
+                torch.tensor(
+                    [omega[0] / action_scale],
+                    dtype=predicted.dtype,
+                    device=predicted.device,
+                ),
+                k=history_k,
+            )
         predicted_forces = [truth[0].tolist()]
         field_diagnostics = []
         spatial_diagnostics = []
@@ -307,12 +336,25 @@ def main():
             for step in range(100):
                 now = torch.full_like(mask, float(omega[step] / action_scale))
                 following = torch.full_like(mask, float(omega[step + 1] / action_scale))
-                raw = network(torch.cat([predicted, mask, now, following], dim=1))
+                if history_buffer is None:
+                    raw = network(torch.cat([predicted, mask, now, following], dim=1))
+                else:
+                    raw, predicted, history_buffer = history_dual_step(
+                        network,
+                        history_buffer,
+                        mask,
+                        torch.tensor(
+                            [omega[step + 1] / action_scale],
+                            dtype=predicted.dtype,
+                            device=predicted.device,
+                        ),
+                    )
                 if raw.shape[1] != 7 or not bool(torch.isfinite(raw).all()):
                     raise ValueError(
                         f"nonfinite or malformed prediction: {path.stem}/{step}"
                     )
-                predicted = (predicted + raw[:, :3]) * mask
+                if history_buffer is None:
+                    predicted = (predicted + raw[:, :3]) * mask
                 if not bool(torch.isfinite(predicted).all()):
                     raise ValueError(
                         f"nonfinite autoregressive state: {path.stem}/{step}"
@@ -429,6 +471,8 @@ def main():
         result["flow_model_sha256"] = dual_identity.flow.model_sha256
         result["flow_state_sha256"] = dual_identity.flow.state_sha256
         result["aerodynamic_state_sha256"] = dual_identity.aerodynamic.state_sha256
+    if history_k is not None:
+        result["fno_history_profile"] = args.fno_history_profile
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("x") as stream:
         json.dump(result, stream, indent=2, allow_nan=False)

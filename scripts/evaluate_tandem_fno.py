@@ -21,6 +21,74 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt  # noqa: E402
 
 
+HISTORY_PROFILES = {
+    "p026_k1": {
+        "schema_version": 1,
+        "profile": "p026_k1",
+        "history_length": 1,
+        "flow_input_channels": 6,
+        "aerodynamic_input_channels": 6,
+        "left_padding": "trajectory_frame0",
+        "autoregressive_state_source": "frozen_flow_prediction",
+        "future_state_inputs": False,
+        "future_force_inputs": False,
+    },
+    "p026_k4": {
+        "schema_version": 1,
+        "profile": "p026_k4",
+        "history_length": 4,
+        "flow_input_channels": 6,
+        "aerodynamic_input_channels": 18,
+        "left_padding": "trajectory_frame0",
+        "autoregressive_state_source": "frozen_flow_prediction",
+        "future_state_inputs": False,
+        "future_force_inputs": False,
+    },
+}
+
+
+def history_profile_length(profile, *, use_dual_fno, network, manifest_payload=None):
+    """Resolve an explicit engineering profile without changing legacy defaults."""
+    if profile == "legacy_k1":
+        if hasattr(network, "history_length"):
+            raise ValueError("a P026 history adapter requires an explicit profile")
+        return None
+    expected = HISTORY_PROFILES.get(profile)
+    if expected is None or not use_dual_fno:
+        raise ValueError("P026 history profiles require an explicit dual FNO")
+    if getattr(network, "history_length", None) != expected["history_length"]:
+        raise ValueError("loaded dual adapter history length differs from profile")
+    if not isinstance(manifest_payload, dict) or manifest_payload.get(
+        "history_input"
+    ) != expected:
+        raise ValueError("dual manifest history profile differs")
+    return expected["history_length"]
+
+
+def history_dual_step(network, buffer, mask, next_action):
+    """One causal dual step using the shared project history pack/shift helpers."""
+    from p026_history_inference import (
+        HistoryBuffer,
+        advance_history,
+        pack_history_input,
+    )
+
+    current = HistoryBuffer(
+        states=buffer.states[:, -1:],
+        actions=buffer.actions[:, -1:],
+        padding_mask=buffer.padding_mask[:, -1:],
+        source=buffer.source,
+    )
+    flow_inputs = pack_history_input(current, mask, next_action)
+    aerodynamic_inputs = pack_history_input(buffer, mask, next_action)
+    raw = network(flow_inputs, aerodynamic_inputs)
+    if raw.ndim != 4 or raw.shape[1] != 7 or not bool(torch.isfinite(raw).all()):
+        raise ValueError("history dual FNO returned malformed/nonfinite raw output")
+    predicted = (buffer.states[:, -1] + raw[:, :3]) * mask
+    shifted = advance_history(buffer, predicted, next_action)
+    return raw, predicted, shifted
+
+
 def field_error_sums(physical_error, physical_target, mask):
     """Per-channel physical SSE/reference sums over fluid cells only."""
     weight = mask.double()
@@ -160,6 +228,12 @@ def main() -> None:
     parser.add_argument("--expected-dual-fno-manifest-sha256", default=None)
     parser.add_argument("--dual-training-config", type=Path, default=None,
                         help="immutable training config; evaluation still uses --config")
+    parser.add_argument(
+        "--fno-history-profile",
+        choices=("legacy_k1", "p026_k1", "p026_k4"),
+        default="legacy_k1",
+        help="explicit caller input contract; legacy behavior remains the default",
+    )
     parser.add_argument("--allow-calibrated-epoch-zero", action="store_true")
     parser.add_argument("--expected-calibrated-model-sha256")
     parser.add_argument("--expected-calibrated-state-sha256")
@@ -285,6 +359,12 @@ def main() -> None:
                     f"no positive-epoch PhysicsNeMo checkpoint found in {args.checkpoint_dir}"
                 ) from error
             raise
+    history_k = history_profile_length(
+        args.fno_history_profile,
+        use_dual_fno=use_dual_fno,
+        network=network,
+        manifest_payload=None if dual_identity is None else dual_identity.payload,
+    )
     network.eval()
 
     normalization_data = args.normalization_data or args.data
@@ -341,6 +421,8 @@ def main() -> None:
         "force_channels": list(force_channels),
         "cases": [],
     }
+    if history_k is not None:
+        report["fno_history_profile"] = args.fno_history_profile
     if dual_identity is not None:
         report["dual_fno_manifest"] = str(dual_identity.manifest_path)
     segment_records = []
@@ -412,6 +494,14 @@ def main() -> None:
                 )
                 predicted = normalized[start_indices]
                 active_mask = mask[start_indices]
+                history_buffer = None
+                if history_k is not None:
+                    from p026_history_inference import trajectory_history
+
+                    history_buffer = trajectory_history(
+                        normalized, model_omega, start_indices, k=history_k
+                    )
+                    predicted = history_buffer.states[:, -1]
                 height, width = active_mask.shape[-2:]
                 predicted_force_normalized = None
                 for offset in range(horizon):
@@ -426,16 +516,25 @@ def main() -> None:
                         .reshape(-1, 1, 1, 1)
                         .expand(-1, 1, height, width)
                     )
-                    inputs = torch.cat(
-                        [predicted, active_mask, omega_now, omega_next], dim=1
-                    )
                     with torch.no_grad():
-                        raw = network(inputs)
+                        if history_buffer is None:
+                            inputs = torch.cat(
+                                [predicted, active_mask, omega_now, omega_next], dim=1
+                            )
+                            raw = network(inputs)
+                        else:
+                            raw, predicted, history_buffer = history_dual_step(
+                                network,
+                                history_buffer,
+                                active_mask,
+                                model_omega[step_indices + 1],
+                            )
                         if raw.shape[1] != 3 + len(force_indices):
                             raise ValueError(
                                 "checkpoint output channels do not match configured force targets"
                             )
-                        predicted = (predicted + raw[:, :3]) * active_mask
+                        if history_buffer is None:
+                            predicted = (predicted + raw[:, :3]) * active_mask
                         predicted_force_normalized = (raw[:, 3:] * active_mask).sum(
                             dim=(-2, -1)
                         ) / active_mask.sum(dim=(-2, -1)).clamp_min(1)
