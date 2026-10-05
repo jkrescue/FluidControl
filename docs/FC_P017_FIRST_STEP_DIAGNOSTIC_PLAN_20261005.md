@@ -31,10 +31,17 @@ No heldout mounts, architecture/loss/normalization changes or checkpoint saves.
    update norm, zero/disappearing FP32 displacements, and decay contribution.
    Formula comparison is observational unless a justified CPU-tested rounding
    bound is approved before execution; do not invent a PASS tolerance afterward.
+   For complex parameters, AdamW uses view-as-real componentwise moments; use
+   real(conj(g)*delta) for the directional product. Include the actual clip
+   implementation epsilon in the formula check. Record rounded decay effects.
 4. From the same initial weights independently evaluate theta+delta and
    theta+delta/64 and theta-delta/64. Every trial is restored from the initial
    tensor copy, not sequentially stepped. These three fixed points are not an
    optimizer sweep, candidate selection or learning-rate recommendation.
+   Keep the actual post-step tensor copy: float32 theta+(theta_after-theta)
+   need not equal theta_after bitwise. Measure this reconstruction discrepancy;
+   evaluate the actual post-step tensor as an additional identity check if it
+   differs, and do not attribute reconstruction error to optimizer overshoot.
 5. Report central directional difference [L(plus)-L(minus)]/(2/64), g dot delta,
    and actual rounded displacement norms. Repeat initial evaluation after exact
    tensor restoration and require the initial tensor SHA to be restored exactly.
