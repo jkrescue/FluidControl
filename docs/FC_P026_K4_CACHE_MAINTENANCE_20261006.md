@@ -280,3 +280,36 @@ invocation remained `eee5a6fbad40411cac2f05e00520b079`, PID 941365,
 `activating/start`. No HDF files were reread and no cache advice was issued
 by this review. This establishes r7 maintenance completion only; no later pass,
 training completion or scientific acceptance is implied.
+
+## Separate r8 authorization
+
+At host-watch timestamp 1791241196, the live K4 process had reached 897
+windows/112 updates, with MemFree 22,864,488 KiB (about 21.81 GiB).
+Root authorizes one bounded r8 pass using unchanged reviewed helper
+`d116b55b67c50d2e618ec4188fe4fc8a4bc8b732deda8ca89f5b942d4b654e25`.
+Create only K4 `cache_advice_20261006_r8.jsonl`, preserving r1-r7.
+All 44 pinned path/hash/stat checks and memory/deadline limits apply.
+No global cache action, model/data edits, training restart or later pass is
+authorized. This entry is approval only; actual completion needs review.
+
+## Actual r8 receipt review
+
+Root observed session 16425 exit 0. Independent JSON-only review verified
+90 records: begin, 44 ordered file-begin/advised pairs, complete. All 44
+paths and reported hashes match the pinned audit, with identical per-file
+start/before/hash/advice stat snapshots. The begin record binds the reviewed
+d116b55b…b654e25 helper, K4 and exact r8 output. Receipt SHA-256:
+`362e86fe2f7d3e2ca9cc0cd58767845bfcef043638d631087492e2cbec0b581c`.
+
+Start/end Unix timestamps were 1791241220.1606305/1791241232.236007;
+elapsed **12.075637369 seconds**. Receipt minima were MemFree
+**21.714046 GiB**, MemAvailable **106.073368 GiB**, above applicable floors.
+The growing host-watch snapshot through 1791241233, 1735 samples, had minima
+MemFree **21.006046 GiB**, MemAvailable **105.671360 GiB**; snapshot SHA:
+`5abf78c30ce195d0faf3981c32185669d8730e434d57ee6e6a52446c51b896cb`.
+
+All r1–r7 receipt hashes were rechecked unchanged. Training remained live:
+invocation `eee5a6fbad40411cac2f05e00520b079`, PID 941365,
+`activating/start`. This review performed no HDF reread or cache advice.
+No later maintenance pass, training completion or scientific acceptance is
+authorized or established by this result.
