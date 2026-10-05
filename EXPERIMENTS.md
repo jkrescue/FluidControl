@@ -1,5 +1,15 @@
 # Experiment ledger
 
+## P026 official CPU save/reload — executed, independent terminal review pending
+
+Script433a2f8bd5e2c3a27a59c5e4c3a1426dcccfefa0b98379fbb83e6269a0627708,
+Root5CPUtests0.56s/independent5CPUtests0.52s. Actual containerdb6cb7dd exited0,
+officialb40d image, noGPU,8GiBcontainer, onlyexclusiveengineeringoutput writable.
+Receipt8b1b48930eeab818921a1a287d69b02769635faa912c643c219150af03af4665
+records three officialfixtures flowK1/aeroK1/aeroK4 with exactfreshloadedtensors,
+epoch/metadata and parentidentity checks. Nooptimizer/training/candidate. This
+roundtrip does not exercise allformal/HydroGym loaders or certify accuracy.
+
 ## FC-E036 — P026 resource terminal audit passed, engineering only
 
 Independent result/provenance/precision/parent metadata checks complete;
