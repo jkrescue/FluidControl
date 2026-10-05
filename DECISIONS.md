@@ -110,6 +110,12 @@ FC-P011的局部scope干预未修复formal窗口失败，但训练记录显示A�
 
 canonical surrogate的reward warm-up与direct-CFD reset不一致属于接口缺陷而非新科学变量。commit `962c165`只让canonical路径从同一绝对restart时钟恢复真实62点prehistory，并严格绑定来源；32项CPU回归及两次独立复核均PASS。该修复不追认历史候选、不放宽门槛，也不等于控制执行授权。
 
+## D023 — FC-P012不支持以强梯度尺度失衡或反向冲突解释FC-P011B
+
+FC-P012按预声明在P009亲本和P011B终态各复算相同六个train-only H100窗口的field与`0.2×balanced-force`梯度。五个非zero-action-history窗口中，两模型的hidden组范数比`>10`计数均为`0/5`，cosine`<-0.2`计数也均为`0/5`，未触发既定的`4/5`或`3/5`解释条件。zero窗另列而不混入计数。故不根据该诊断调整loss权重、clip或重启训练；它也不证明不存在局部或其它参数组的优化问题。
+
+result/completion SHA为`4142cdc5…d814d`/`86f9d931…b26c`，12行均有限且模型tensor前后相同。direct-total与组件和的relative residual为`3.09e-5–9.84e-5`，按预声明仅作observational、没有数值等价阈值，不能从COMPLETE推断等价PASS。下一representation-capacity诊断或训练方案须独立批准，原formal门槛和PPO阻断不变。
+
 ## 新决策格式
 
 ID、记录时间、状态、待检验假设、对应实验ID、所依据证据/协议、可选方案、取舍原因、保留的不确定性、撤销/调整条件。只有读取过的产物可作为事实；代理口头报告是待核信息。
