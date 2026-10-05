@@ -54,3 +54,29 @@ def test_review_rejects_true_or_outside_result(tmp_path):
     assert not m._registered_terminal_review(tmp_path,{'review':review},progress)['verified']
     review['result']='../outside'
     assert not m._registered_terminal_review(tmp_path,{'review':review},progress)['verified']
+
+def test_resource_arm_progress_is_not_training():
+    reg={**REG,'progress_kind':'resource_arms','planned_updates':{'K1':1,'K4':1}}
+    s=state();s.update(MainPID='0',SubState='exited',ExecMainCode='1')
+    logs='\n'.join(json.dumps({'event':'arm_complete','k':k}) for k in (1,4))
+    value=m._parse_registered_progress(s,logs,False,reg)
+    assert value['verified'] and value['updates']=={'K1':1,'K4':1}
+    assert value['progress_unit']=='项无更新计算' and not value['admission']
+    for invalid in (logs+'\n'+logs, json.dumps({'event':'arm_complete','k':True})):
+        assert not m._parse_registered_progress(s,invalid,False,reg)['verified']
+
+def test_resource_review_requires_no_update_and_no_candidate(tmp_path):
+    import hashlib
+    report=tmp_path/'report';report.write_text('review')
+    result=tmp_path/'result'
+    payload=dict(status='FC_P026_HISTORY_RESOURCE_COMPLETE_NOT_ADMISSION',optimizer_steps=0,
+                 candidate_saved=False,scientific_admission=False,arms=[{'k':1},{'k':4}])
+    review=dict(kind='history_resource',report='report',result='result',summary='engineering',
+                next_action='integration',report_sha256=hashlib.sha256(report.read_bytes()).hexdigest())
+    progress=dict(verified=True,exited_success=True,updates={'K1':1,'K4':1},planned_updates={'K1':1,'K4':1})
+    for candidate in (False,True):
+        result.write_text(json.dumps({**payload,'candidate_saved':candidate}))
+        review['result_sha256']=hashlib.sha256(result.read_bytes()).hexdigest()
+        actual=m._registered_terminal_review(tmp_path,{'review':review},progress)
+        assert actual['verified'] is (not candidate)
+        if not candidate: assert actual['engineering_pass'] and not actual['admission']

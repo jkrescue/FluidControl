@@ -340,8 +340,8 @@ function renderActiveExperiment(d){
   const age=Date.now()-Date.parse(active.sampled_at_utc||'');
   const fresh=active.verified===true&&Number.isFinite(age)&&age>=0&&age<60000;
   const reviewed=fresh&&active.exited_success&&active.review?.verified===true;
-  const title=!fresh?'当前任务状态暂未核实':active.label+(active.running?' · 正在运行':reviewed?' · 已复核，未满足全部预测要求':active.exited_success?' · 计算结束，结果待复核':' · 已停止，正在检查原因');
-  const progress=fresh?Object.entries(active.planned_updates).map(([arm,total])=>'已完成 '+active.updates[arm]+'/'+total+' 次更新').join('；'):'不使用历史任务代替未知状态。';
+  const title=!fresh?'当前任务状态暂未核实':active.label+(active.running?' · 正在运行':reviewed?(active.review.engineering_pass?' · 工程复核通过，非精度验收':' · 已复核，未满足全部预测要求'):active.exited_success?' · 计算结束，结果待复核':' · 已停止，正在检查原因');
+  const progress=fresh?Object.entries(active.planned_updates).map(([arm,total])=>arm+' 已完成 '+active.updates[arm]+'/'+total+' '+(active.progress_unit||'次更新')).join('；'):'不使用历史任务代替未知状态。';
   $('lead-now').textContent=title+'。'+progress;
   const card=document.createElement('div');card.className='card';
   for(const [tag,text] of [['h3',title],['p',progress],['p',reviewed?active.review.summary:fresh?active.description:''],['p',reviewed?active.review.next_action:''],['p','计算完成不等于模型通过验收；尚无新的代理辅助CFD闭环结论。下方流场图是已标注的历史结果。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
@@ -1291,14 +1291,23 @@ def _parse_registered_progress(state: dict, log: str, matches: bool, registratio
     if not isinstance(plan, dict) or not plan or any(type(n) is not int or not 1 <= n <= 10000 for n in plan.values()):
         return {"verified": False}
     counts = {key: set() for key in plan}
+    kind = registration.get("progress_kind", "optimizer_updates")
+    if kind not in ("optimizer_updates", "resource_arms"):
+        return {"verified": False}
     for line in log.splitlines():
         try:
             row = json.loads(line)
         except ValueError:
             continue
-        if not isinstance(row, dict) or row.get("event") != "arm_update_complete":
+        event = "arm_complete" if kind == "resource_arms" else "arm_update_complete"
+        if not isinstance(row, dict) or row.get("event") != event:
             continue
-        arm, step = row.get("arm"), row.get("update")
+        if kind == "resource_arms":
+            if type(row.get("k")) is not int or row["k"] not in (1, 4):
+                return {"verified": False}
+            arm, step = "K" + str(row["k"]), 1
+        else:
+            arm, step = row.get("arm"), row.get("update")
         if arm not in plan or type(step) is not int or not 1 <= step <= plan[arm] or step in counts[arm]:
             return {"verified": False}
         counts[arm].add(step)
@@ -1308,11 +1317,12 @@ def _parse_registered_progress(state: dict, log: str, matches: bool, registratio
     terminal = state.get("ActiveState") == "active" and state.get("SubState") == "exited" and pid == "0" and state.get("Result") == "success" and state.get("ExecMainCode") == "1" and state.get("ExecMainStatus") == "0"
     return {"verified": True, "running": running, "exited_success": terminal,
             "updates": {k: len(v) for k, v in counts.items()}, "planned_updates": plan,
-            "label": registration["label"], "description": registration["description"], "admission": False}
+            "label": registration["label"], "description": registration["description"],
+            "progress_unit": "项无更新计算" if kind == "resource_arms" else "次更新", "admission": False}
 
 
 def _registered_terminal_review(root: Path, registration: dict, progress: dict) -> dict:
-    """Display an independently reviewed rejection, never infer admission."""
+    """Display a bound engineering/rejection review, never infer admission."""
     try:
         review = registration["review"]
         if not progress.get("verified") or not progress.get("exited_success"):
@@ -1330,6 +1340,15 @@ def _registered_terminal_review(root: Path, registration: dict, progress: dict) 
                 return {"verified": False}
             payloads[key] = raw
         result = json.loads(payloads["result"])
+        if review.get("kind") == "history_resource":
+            if (result.get("status") != "FC_P026_HISTORY_RESOURCE_COMPLETE_NOT_ADMISSION"
+                    or result.get("optimizer_steps") != 0
+                    or result.get("candidate_saved") is not False
+                    or result.get("scientific_admission") is not False
+                    or [arm.get("k") for arm in result.get("arms", [])] != [1, 4]):
+                return {"verified": False}
+            return {"verified": True, "engineering_pass": True, "admission": False,
+                    "summary": review["summary"], "next_action": review["next_action"]}
         if result["comparison"]["local_support"] is not False:
             return {"verified": False}
         return {"verified": True, "local_support": False, "admission": False,

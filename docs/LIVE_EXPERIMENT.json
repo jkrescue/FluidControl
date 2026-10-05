@@ -1,21 +1,26 @@
 {
-  "experiment": "P025",
-  "label": "平均升力与波动幅值联合监督训练",
-  "description": "固定原模型权重，仅训练新增96个受力输入系数；在原预测目标中加入均值和波动幅值监督，与上一组原目标训练比较。",
-  "unit": "fluid-control-fcp025-isolated-statistics-20261005.service",
-  "invocation": "124d6521045a41cd9dcf5f35edff6712",
-  "approval": "docs/FC_P025_EXECUTION_APPROVAL_20261005.json",
-  "approval_sha256": "6fb2f810e395fdc477339352d677616ad782b7edca6535f282710e2ae2573700",
-  "launcher": "artifacts/fcp025_isolated_statistics_source_20261005_immutable/scripts/run_fcp025_isolated_statistics_spark.sh",
-  "launcher_sha256": "98d4fa9d23d065f3af1f954e94dbf8458b0dd7b68344950c98344effc9cdd127",
-  "log": "artifacts/fcp025_isolated_statistics_20261005/run.log",
-  "planned_updates": {"STAT": 16},
+  "experiment": "P026-resource",
+  "label": "单帧与四帧模型 GPU 资源验证",
+  "description": "同一真实训练窗口，分别计算100步预测及梯度，不更新权重。仅验证运行兼容性和内存需求。",
+  "unit": "fluid-control-fcp026-history-resource-20261005.service",
+  "invocation": "8667f3c9c82146d6ab861d634c460107",
+  "approval": "docs/FC_P026_RESOURCE_EXECUTION_APPROVAL_20261005.json",
+  "approval_sha256": "77e9129e150cd383e38ac1051b33ed95c867d25d3f1f8a19fdd6f8048938277f",
+  "launcher": "artifacts/fcp026_history_resource_source_20261005_immutable/scripts/run_fcp026_history_resource_spark.sh",
+  "launcher_sha256": "5206b31f40df940917cdf65e9f5d5bf03f35eaa17bd573fa4f52a85fff71c07c",
+  "log": "artifacts/fcp026_history_resource_20261005/run.log",
+  "progress_kind": "resource_arms",
+  "planned_updates": {
+    "K1": 1,
+    "K4": 1
+  },
   "review": {
-    "report": "docs/FC_P025_TERMINAL_REVIEW_20261005.md",
-    "report_sha256": "66be6f23e590930d6a84c9b18ea43247f42b7e2a93dcdd1c6920a3a7dc21c0c6",
-    "result": "artifacts/fcp025_isolated_statistics_20261005/result.json",
-    "result_sha256": "7648df661439f530984504538bfaef3d1a602c1b960fd914fcba2f016fc4e74c",
-    "summary": "16次训练更新已完成。升力波动预测略有改善，但平均升力预测和原预测目标没有同时改善；未产生合格的新模型。已结束这条局部调参路线。",
-    "next_action": "下一阶段：验证单帧与四帧历史输入的公平对照。当前只进行CPU代码验证，尚未启动新的GPU训练。原始CFD数据、模型和验收标准保留。"
+    "kind": "history_resource",
+    "report": "docs/FC_P026_RESOURCE_TERMINAL_REVIEW_20261005.md",
+    "report_sha256": "b4a9e4414a59f42430bbf61f8d357a7af316c12cf98128a86bf06ac50223026b",
+    "result": "artifacts/fcp026_history_resource_20261005/result.json",
+    "result_sha256": "8e1113efc903c6c95cd24755d8c9b081fb098a01ce60aa3c2477e932052f3589",
+    "summary": "四帧模型前向与反向约3.05秒，峰值已分配GPU内存3.73GiB；外部采样最低物理空闲29.16GiB。初始化预测与单帧模型一致，历史输入有有效梯度。仅一个窗口，尚未训练或提升精度。",
+    "next_action": "当前阶段：完整训练程序和正式评估接口并行实现；官方保存重载已实际完成。尚未启动新的GPU训练或PPO。历史流场图不代表新结果。"
   }
 }
