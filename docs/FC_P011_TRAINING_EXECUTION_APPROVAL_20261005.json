@@ -1,0 +1,40 @@
+{
+  "status": "FC_P011_PAIRED_TRAINING_EXECUTION_APPROVED",
+  "owner": "Lead /root",
+  "source_commit": "595a79c",
+  "implementation_sha256": "9c761cfcb3d4f18dbe35aed1b3defe0614b29db867006055dae63d9fa94485a5",
+  "config_sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9",
+  "parent_model_sha256": "dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31",
+  "parent_state_sha256": "4998e534d4b82b17393c217357ed18220fb8e739166a88147483bb9cc5fb771e",
+  "resource_probe_sha256": {
+    "head_only": "d2ab60d1627804fb6eb7b8ad050321b9d923bde9d4a586a1956c327e00655534",
+    "decoder_tail": "54ccbebd51bb7d6fd9f60a513b044a5fe1679ec5f2199682ac2bd708145b71a1"
+  },
+  "hypothesis": "Under identical rear-lift-focused native training, adapting the existing final nonlinear decoder layer improves controlled lift response over adapting the output row alone.",
+  "arms": [
+    {"node": "USER@SPARK_HOST", "scope": "head_only"},
+    {"node": "USER@WORKER_HOST", "scope": "decoder_tail"}
+  ],
+  "image_id": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e",
+  "batch_size": 1,
+  "optimizer_steps_per_arm": 1368,
+  "rollout_steps": 100,
+  "seed": 20261003,
+  "train_window_order_sha256": "177ebd9523cde918eb0c1fb8026286dac7e95f3d228ae0e349757a2a9a288f9f",
+  "optimizer": {"name": "AdamW", "learning_rate": 0.00001, "weight_decay": 0.0001, "gradient_clip_norm": 1.0},
+  "objective": "masked normalized field MSE + 0.2*(0.5*equal-four-force normalized MSE + 0.5*rear-Cl normalized MSE)",
+  "teacher_forcing": 0.0,
+  "precision": "existing default TF32/high",
+  "diagnostic_steps": [0, 32, 128, 512, 1368],
+  "checkpoint_selection": "unique terminal step1368 checkpoint only; no best/validation/diagnostic selection",
+  "cuda_allocator_fraction": 0.45,
+  "minimum_mem_available_gib": 20,
+  "max_wall_seconds_per_arm": 7200,
+  "container_identity": "Reuse the successfully probed UID1000 narrow train-only mounts; do not alter original input permissions.",
+  "validation_or_frozen_accessed_during_training": false,
+  "ppo_executed": false,
+  "formal_evaluation_auto_authorized": false,
+  "operational_recovery": "Preserve failures. Do not silently restart a partially optimized run or alter budget, loss, data or scope. Confirm terminal status from guard exit and scientific artifacts, not systemd defaults alone.",
+  "next_action": "Return Worker terminal checkpoint/results/logs with hashes to Main. Verify both complete passes, order, allowed tensor changes and official fresh reload, then apply the original formal evaluation protocol to both arms after explicit evaluation approval. No gate changes or PPO authorization.",
+  "interpretation": "A versus B isolates trainable scope; parent versus A also includes new loss and further training. B can change all predictions through the shared decoder even though non-rear final rows remain fixed. Probe gradient clipping differences are observations, not a causal diagnosis."
+}
