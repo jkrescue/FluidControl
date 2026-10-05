@@ -88,6 +88,16 @@ def file_sha256(path: Path) -> str:
 def plan_recovery(sample: dict, ledger: dict, approved_actions: dict) -> dict:
     """Return a deterministic decision without executing external work."""
     current = sample.get("current_authority")
+    if current == "p018_training":
+        task = sample.get("authority_tasks", {}).get(current, {})
+        alerts = sample.get("alerts", [])
+        running = task.get("state") == "RUNNING"
+        return {"decision": "NO_ACTION_AUTHORITY_RUNNING" if running and not alerts else "LEAD_ACTION_QUEUED",
+                "reason": task.get("next_action", "核查P018当前状态；不得重启训练或启动未批准评估。"),
+                "suggested_next_stage": task.get("state", "UNKNOWN"),
+                "automatic_execution": False, "scientific_admission": False,
+                "alerts": alerts, "resources": sample.get("resources", {}),
+                "scope": "只排队Lead处理下一阶段；计时器不替代科学判断，不自动运行审计、训练、正式评估或PPO。"}
     if current in ("p013_formal", "p015_training"):
         task = sample.get("authority_tasks", {}).get(current, {})
         return {
@@ -238,7 +248,7 @@ def main() -> None:
         "unknown_failures_require_agent_analysis": True,
     }
     atomic_json(output / "reconciliation_latest.json", record)
-    if decision["decision"] == "NEEDS_AGENT_ANALYSIS":
+    if decision["decision"] in ("NEEDS_AGENT_ANALYSIS", "LEAD_ACTION_QUEUED"):
         diagnostic = output / "diagnostics" / f"{record['monitor_state_sha256']}.json"
         if not diagnostic.exists():
             atomic_json(diagnostic, {"sample": sample, "reconciliation": record})

@@ -224,6 +224,16 @@ P015_INVOCATION = "7842742926284d0c94b0383163d5dc0b"
 P015_APPROVAL = Path("docs/FC_P015_EXECUTION_APPROVAL_20261005.json")
 P015_APPROVAL_SHA256 = "5f42527e4b032b0c3aff4180aa34a6570ec1fcb3945ec7302934d8386c4702d6"
 P015_LAUNCHER = "artifacts/fcp015_window_accumulation_source_20261005_immutable/scripts/run_fcp015_window_accumulation_spark.sh"
+P018_UNIT = "fluid-control-fcp018-reduced-rate-20261005.service"
+P018_INVOCATION = "1ca4654aab074278bb2efdfff8dbc1eb"
+P018_APPROVAL = Path("docs/FC_P018_EXECUTION_APPROVAL_20261005.json")
+P018_APPROVAL_SHA256 = "eea5bd5c6a3fe585ae1104600421e50b335f61299c4014c5e3136722af3d4d39"
+P018_OBSERVATION = Path("docs/FC_P018_RUNNING_EXECUTION_20261005.json")
+P018_OBSERVATION_SHA256 = "c040eae25fa31a98164e08e10dc4f007eb6a3ef38329ad0dcfaddd734c7eb53c"
+P018_PROTOCOL_SHA256 = "310f0bdf8563a2a70b844a32852791fa1b1dc20278a3098418942e1dab204d2d"
+P018_LAUNCHER = "artifacts/fcp018_reduced_rate_source_20261005_immutable/scripts/run_fcp018_reduced_rate_spark.sh"
+P018_LAUNCHER_SHA256 = "102b8c6efe54b2e868e4973315260b6ed73b8e24e770af4fa2f04876af36c731"
+P018_ROOT = Path("artifacts/fcp018_reduced_rate_training_20261005")
 
 
 def classify_authority_task(state: dict, complete: bool, *, allow_resume: bool) -> tuple[str, str | None]:
@@ -687,7 +697,7 @@ def most_specific_error(lines: list[str]) -> str | None:
 def unit_state(unit: str) -> dict:
     properties = (
         "ActiveState,SubState,Result,ExecMainStatus,ExecMainStartTimestamp,"
-        "ExecMainExitTimestamp,MainPID,InvocationID,ExecStart"
+        "ExecMainExitTimestamp,MainPID,InvocationID,ExecStart,LoadState,ExecMainCode"
     )
     result = _command(
         ["systemctl", "--user", "show", unit, f"--property={properties}"]
@@ -748,7 +758,10 @@ def unit_state(unit: str) -> dict:
         "sub_state": values.get("SubState", "unknown"),
         "result": values.get("Result", "unknown"),
         "exec_main_status": values.get("ExecMainStatus", "unknown"),
+        "exec_main_code": values.get("ExecMainCode", "unknown"),
+        "load_state": values.get("LoadState", "unknown"),
         "main_pid": main_pid,
+        "main_pid_alive": main_pid > 0 and Path(f"/proc/{main_pid}").is_dir(),
         "invocation_id": values.get("InvocationID", ""),
         "exec_start": values.get("ExecStart", ""),
         "training_process_pids": training_process_pids,
@@ -987,7 +1000,7 @@ def resource_state(previous: dict | None) -> dict:
     counters = _cpu_counters()
     memory = {}
     for line in Path("/proc/meminfo").read_text(encoding="utf-8").splitlines():
-        if line.startswith(("MemAvailable:", "MemTotal:")):
+        if line.startswith(("MemAvailable:", "MemTotal:", "MemFree:")):
             key, value, _unit = line.split()
             memory[key.rstrip(":")] = int(value)
     gpu = _command(
@@ -1007,6 +1020,7 @@ def resource_state(previous: dict | None) -> dict:
         "gpu_temperature_c": float(values[1]) if len(values) == 3 else None,
         "gpu_power_w": float(values[2]) if len(values) == 3 else None,
         "mem_available_gib": memory.get("MemAvailable", 0) / 1024**2,
+        "mem_free_gib": memory.get("MemFree", 0) / 1024**2,
         "mem_total_gib": memory.get("MemTotal", 0) / 1024**2,
     }
 
@@ -2187,9 +2201,110 @@ def p015_authority(repo: Path, state: dict) -> dict:
             "scientific_admission": False}
 
 
+def p018_present(repo: Path) -> bool:
+    return any((repo / p).exists() for p in (P018_APPROVAL, P018_OBSERVATION, P018_ROOT))
+
+
+def p018_progress(path: Path, now: datetime) -> dict:
+    try:
+        with path.open("rb") as stream:
+            stream.seek(0, 2); stream.seek(max(0, stream.tell()-262144))
+            log = stream.read().decode(errors="replace")
+        updates = None
+        for line in log.splitlines():
+            try:
+                row = json.loads(line)
+                if (row.get("event") == "accumulation_update" and type(row.get("update")) is int
+                        and 1 <= row["update"] <= 171 and row.get("consumed_windows") == 8*row["update"]
+                        and row.get("actual_learning_rate") == 1.5625e-7
+                        and row.get("training_protocol_sha256") == P018_PROTOCOL_SHA256):
+                    updates = max(updates or 0, row["update"])
+            except (ValueError, TypeError, AttributeError):
+                continue
+        return {"completed_updates": updates, "consumed_windows": None if updates is None else 8*updates,
+                "log_age_seconds": max(0.0, now.timestamp()-path.stat().st_mtime)}
+    except OSError:
+        return {"completed_updates": None, "consumed_windows": None, "log_age_seconds": None}
+
+
+def p018_authority(repo: Path, state: dict, now: datetime) -> dict:
+    issues = []
+    base = repo / P018_ROOT
+    for relative, expected in {
+        P018_APPROVAL: P018_APPROVAL_SHA256, P018_OBSERVATION: P018_OBSERVATION_SHA256,
+        P018_ROOT / "execution_approval.json": P018_APPROVAL_SHA256,
+        P018_ROOT / "training_protocol.json": P018_PROTOCOL_SHA256,
+        Path("docs/FC_P018_TRAINING_PROTOCOL_20261005.json"): P018_PROTOCOL_SHA256,
+        P018_ROOT / "immutable_launcher.sh": P018_LAUNCHER_SHA256,
+        Path(P018_LAUNCHER): P018_LAUNCHER_SHA256,
+    }.items():
+        try:
+            if file_sha256(repo / relative) != expected: issues.append(f"P018 identity SHA differs: {relative}")
+        except OSError:
+            issues.append(f"P018 identity evidence missing: {relative}")
+    if state.get("invocation_id") != P018_INVOCATION or state.get("load_state") != "loaded":
+        issues.append("P018 exact retained unit/invocation missing or changed")
+    match = re.search(r"argv\[\]=(.*?) ;", state.get("exec_start", ""))
+    try:
+        argv = shlex.split(match.group(1)) if match else []
+    except ValueError:
+        argv = []
+    if argv != ["/usr/bin/env", "FCP018_APPROVAL_SHA256="+P018_APPROVAL_SHA256,
+                "/bin/bash", str(repo / P018_LAUNCHER), "--execute"]:
+        issues.append("P018 ExecStart approval/immutable launcher differs")
+    identity_bound = not issues
+    for name in ("resource_or_deadline_violation", "resource_watcher_unexpected_exit"):
+        if (base / name).exists(): issues.append("P018 resource watchdog failure: "+name)
+    if state.get("result") != "success" or state.get("exec_main_status") != "0":
+        issues.append("P018 service result/exit status not successful")
+    progress = p018_progress(base / "run.log", now)
+    active = state.get("active_state") == "active"
+    running = active and state.get("sub_state") == "running" and state.get("main_pid", 0)>0 and state.get("main_pid_alive") is True
+    terminal = (active and state.get("sub_state") == "exited" and state.get("main_pid") == 0
+                and state.get("exec_main_status") == "0" and state.get("exec_main_code") == "1"
+                and state.get("result") == "success")
+    classification, action = "NEEDS_AGENT_ANALYSIS", "核查执行身份或失败原因，保留日志；不得盲目重启训练。"
+    if not issues and running:
+        age = progress["log_age_seconds"]
+        classification = "RUNNING_PROGRESS_UNAVAILABLE" if age is None else "RUNNING_PROGRESS_STALE" if age>300 else "RUNNING"
+        action = "继续观察已批准训练；并行准备终态审计，不执行训练文件扫描。" if classification == "RUNNING" else "进程仍存活；检查最新日志与资源、守卫状态，不能把停滞当作训练结束或自动重启。"
+    elif not issues and terminal:
+        classification, action = "TERMINAL_AUDIT_PENDING", "成功退出不等于模型合格：由Lead确认并执行P018终态审计和finalizer；本计时器不启动昂贵审计。"
+        completion = base / "completion_receipt.json"
+        if completion.exists():
+            receipt = read_json(completion, {})
+            audit_path = base / "candidate_audit.json"
+            try:
+                audit = read_json(audit_path, {})
+                valid = (receipt.get("status") == "FC_P018_TRAINING_COMPLETE_NOT_ADMISSION"
+                         and receipt.get("terminal_unit", {}).get("InvocationID") == P018_INVOCATION
+                         and receipt.get("candidate_audit_sha256") == file_sha256(audit_path)
+                         and audit.get("status") == "FC_P018_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION"
+                         and audit.get("invocation_id") == P018_INVOCATION
+                         and receipt.get("training_approval_sha256") == P018_APPROVAL_SHA256
+                         and receipt.get("execution_observation_sha256") == P018_OBSERVATION_SHA256
+                         and audit.get("training_protocol_sha256") == P018_PROTOCOL_SHA256
+                         and audit.get("candidate_result_sha256") == file_sha256(base / "candidate/result.json")
+                         and audit.get("dual_manifest_sha256") == file_sha256(base / "candidate/dual_model_manifest.json"))
+                if not valid: raise ValueError("terminal receipt identity differs")
+                classification, action = "TERMINAL_AUDITED_RELOAD_REVIEW_PENDING", "终态审计收据已绑定；由Lead核对并批准官方CPU双模型重载，再按原门槛准备正式评估。禁止自动启动评估或PPO。"
+            except (OSError, ValueError, AttributeError):
+                classification, action = "NEEDS_AGENT_ANALYSIS", "终态收据缺失、损坏或身份冲突；保留现有文件并由Lead核查，不覆盖或重跑训练。"
+                issues.append("P018 completion/audit receipt binding invalid")
+    elif not issues:
+        issues.append("P018 unit neither verified running nor successful retained terminal")
+    return {"authority_unit":P018_UNIT,"invocation_id":P018_INVOCATION,"state":classification,
+            "running":bool(running and identity_bound),"stage_complete":False,"approved_action_id":None,
+            "identity_issues":issues,"progress":progress,"next_action":action,"scientific_admission":False,
+            "automatic_recovery_eligible":False,"lead_review_required":classification != "RUNNING"}
+
+
 def build_sample(repo, previous, units, resources, now):
     legacy = _build_legacy_sample(repo, previous, units, resources, now)
-    if (repo / P015_APPROVAL).exists():
+    if p018_present(repo):
+        task = p018_authority(repo, units.get(P018_UNIT, {}), now)
+        authority, prefix = "p018_training", "FC_P018_TRAINING_"
+    elif (repo / P015_APPROVAL).exists():
         task = p015_authority(repo, units.get(P015_UNIT, {}))
         authority, prefix = "p015_training", "FC_P015_TRAINING_"
     elif (repo / P013_APPROVAL).exists():
@@ -2202,7 +2317,7 @@ def build_sample(repo, previous, units, resources, now):
     sample["historical_legacy_sample"] = dict(legacy)
     sample.update(status=prefix + task["state"], stage_complete=False,
                   workflow_pending=True, authority_tasks={authority: task},
-                  active_units=[task["authority_unit"]] if task["state"] == "RUNNING" else [],
+                  active_units=[task["authority_unit"]] if task.get("running", task["state"] == "RUNNING") else [],
                   current_authority=authority)
     if authority == "p015_training":
         sample["historical_p013_authority"] = p013_authority(repo, units.get(P013_UNIT, {}))
@@ -2218,7 +2333,15 @@ def build_sample(repo, previous, units, resources, now):
     if task["state"] != "RUNNING":
         sample["alerts"].append(prefix + task["state"])
     sample["blocker_reasons"] = list(legacy["blocker_reasons"]) + task["identity_issues"]
-    if task["state"] == "RUNNING":
+    if authority == "p018_training":
+        sample["next_action"] = task["next_action"]
+        sample["blocker_reasons"] = list(task["identity_issues"])
+        sample["historical_p015_authority"] = p015_authority(repo, units.get(P015_UNIT, {}))
+        for metric in ("mem_available_gib", "mem_free_gib"):
+            value = resources.get(metric)
+            if value is None or value < 20:
+                sample["alerts"].append("FC_P018_RESOURCE_"+metric.upper()+"_MISSING_OR_BELOW_20_GIB")
+    if task.get("running", task["state"] == "RUNNING"):
         sample["no_running_since_utc"] = None
         sample["no_running_duration_seconds"] = 0
     return sample
@@ -2243,6 +2366,8 @@ def main() -> None:
         units[P013_UNIT] = unit_state(P013_UNIT)
     if (repo / P015_APPROVAL).exists():
         units[P015_UNIT] = unit_state(P015_UNIT)
+    if p018_present(repo):
+        units[P018_UNIT] = unit_state(P018_UNIT)
     units[WORKER_AUTHORITY_UNIT] = worker_unit_state(WORKER_AUTHORITY_UNIT)
     units[PAIRED_LAMBDA10_POSTEVAL_UNIT] = worker_unit_state(
         PAIRED_LAMBDA10_POSTEVAL_UNIT, user_scope=False
