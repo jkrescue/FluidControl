@@ -32,6 +32,24 @@ This is implementation evidence, not a completed model evaluation or admission.
 
 ## Remaining work before formal execution
 
+### Supplemental controller identity contract (06:46 UTC)
+
+`src/fluid_control/dual_control_contract.py` now provides a separate, tested
+identity check for future canonical PPO integration. It requires the exact dual
+manifest, both checkpoint pairs, bound training config/normalization, approved
+complete post-evaluation receipt and all required artifact hashes. Each of the
+three step receipts must refer to the same complete dual system. The original
+development auditor is SHA-pinned (`ca6da0af…bc412`) and recomputes its unchanged
+gate; a FAIL cannot pass the helper. Existing canonical endpoint, causal-window
+and dynamic-action checks remain separately required.
+
+The module is not yet called by the canonical PPO launcher. No policy or PPO
+process has been created. Three software-only tests cover full-file integrity,
+wrong/legacy dual identities, original-gate recomputation failure and mismatched
+step identities. Their JSON/tensor fixtures are not physical data or results.
+Independent agent review was retried and again failed at model-service capacity;
+it remains unavailable, not a completed review. Training continues independently.
+
 ### Frozen-source and HydroGym interface preflight (06:40 UTC)
 
 Source commit `5eef995ee397d99fbc1ca61b9fce3a7fb79ace26` adds a `--stage-only`
