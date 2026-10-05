@@ -308,18 +308,35 @@ def strict_start0_ranking(
     }
 
 
-def validate_checkpoint(report: dict, checkpoint_dir: Path) -> dict:
+def validate_checkpoint(
+    report: dict,
+    checkpoint_dir: Path,
+    *,
+    allow_calibrated_epoch_zero: bool = False,
+    expected_calibrated_model_sha256: str | None = None,
+    expected_calibrated_state_sha256: str | None = None,
+) -> dict:
     epoch = report.get("checkpoint_epoch")
-    if not isinstance(epoch, int) or isinstance(epoch, bool) or epoch < 1:
-        raise ValueError("checkpoint epoch is invalid")
+    from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
+
+    identity = validate_calibrated_epoch_zero(
+        checkpoint_dir,
+        epoch,
+        allow=allow_calibrated_epoch_zero,
+        expected_model_sha256=expected_calibrated_model_sha256,
+        expected_state_sha256=expected_calibrated_state_sha256,
+    )
     models = sorted(checkpoint_dir.glob("FNO.*.mdlus"))
     if len(models) != 1:
         raise ValueError("checkpoint must contain exactly one PhysicsNeMo FNO model")
-    return {
+    result = {
         "checkpoint_epoch": epoch,
         "checkpoint_model_file": models[0].name,
         "checkpoint_sha256": sha256(models[0]),
     }
+    if identity["calibrated_epoch_zero"]:
+        result.update(identity)
+    return result
 
 
 def audit(
@@ -328,6 +345,10 @@ def audit(
     data: Path,
     checkpoint_dir: Path,
     candidate_kind: str,
+    *,
+    allow_calibrated_epoch_zero: bool = False,
+    expected_calibrated_model_sha256: str | None = None,
+    expected_calibrated_state_sha256: str | None = None,
 ) -> dict:
     expected, release = validate_release(data)
     report = load(report_path)
@@ -347,7 +368,13 @@ def audit(
         "frozen_test_accessed_or_mounted": False,
         "horizons": horizons,
         "h100_start0_action_ranking": ranking,
-        **validate_checkpoint(report, checkpoint_dir),
+        **validate_checkpoint(
+            report,
+            checkpoint_dir,
+            allow_calibrated_epoch_zero=allow_calibrated_epoch_zero,
+            expected_calibrated_model_sha256=expected_calibrated_model_sha256,
+            expected_calibrated_state_sha256=expected_calibrated_state_sha256,
+        ),
         **release,
         "interpretation": (
             "These terminal-force diagnostics support model development only. They are not "
@@ -371,19 +398,31 @@ def main() -> None:
             "dev30_free_ar_development",
             "dev30_h20_development",
             "dev30_quickscreen_h20_stage_candidate",
+            "fc_p008_force_row_calibrated_epoch0",
         ),
         required=True,
     )
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--allow-calibrated-epoch-zero", action="store_true")
+    parser.add_argument("--expected-calibrated-model-sha256")
+    parser.add_argument("--expected-calibrated-state-sha256")
     args = parser.parse_args()
     if args.output.exists():
         raise FileExistsError(f"refusing to overwrite {args.output}")
+    calibrated = {}
+    if args.allow_calibrated_epoch_zero:
+        calibrated = {
+            "allow_calibrated_epoch_zero": True,
+            "expected_calibrated_model_sha256": args.expected_calibrated_model_sha256,
+            "expected_calibrated_state_sha256": args.expected_calibrated_state_sha256,
+        }
     result = audit(
         args.report,
         args.segments,
         args.data,
         args.checkpoint_dir,
         args.candidate_kind,
+        **calibrated,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")

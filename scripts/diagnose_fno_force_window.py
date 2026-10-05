@@ -169,6 +169,8 @@ def main():
     for name in ("data", "normalization-data", "config", "checkpoint-dir", "output"):
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--expected-model-sha", required=True)
+    parser.add_argument("--expected-calibrated-state-sha256")
+    parser.add_argument("--allow-calibrated-epoch-zero", action="store_true")
     args = parser.parse_args()
     if args.output.exists():
         raise FileExistsError("diagnostics never overwrite an earlier result")
@@ -204,8 +206,15 @@ def main():
         torch.cuda.set_per_process_memory_fraction(0.15, device=dist.device)
     network = build_model(cfg).to(dist.device)
     epoch = load_checkpoint(args.checkpoint_dir, models=network, device=dist.device)
-    if epoch < 1:
-        raise ValueError("no checkpoint loaded")
+    from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
+
+    validate_calibrated_epoch_zero(
+        args.checkpoint_dir,
+        epoch,
+        allow=args.allow_calibrated_epoch_zero,
+        expected_model_sha256=args.expected_model_sha,
+        expected_state_sha256=args.expected_calibrated_state_sha256,
+    )
     network.eval()
     stats = json.loads(normalization.read_text())
     if stats["all_force_channels"] != ["front_cd", "front_cl", "rear_cd", "rear_cl"]:

@@ -151,6 +151,9 @@ def main() -> None:
     parser.add_argument(
         "--checkpoint-dir", type=Path, default=Path("artifacts/tandem_fno/best")
     )
+    parser.add_argument("--allow-calibrated-epoch-zero", action="store_true")
+    parser.add_argument("--expected-calibrated-model-sha256")
+    parser.add_argument("--expected-calibrated-state-sha256")
     parser.add_argument(
         "--output", type=Path, default=Path("artifacts/tandem_fno/evaluation.json")
     )
@@ -212,10 +215,22 @@ def main() -> None:
     epoch = load_checkpoint(
         args.checkpoint_dir, models=network, metadata_dict=metadata, device=dist.device
     )
-    if epoch == 0:
-        raise FileNotFoundError(
-            f"no PhysicsNeMo checkpoint found in {args.checkpoint_dir}"
+    from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
+
+    try:
+        validate_calibrated_epoch_zero(
+            args.checkpoint_dir,
+            epoch,
+            allow=args.allow_calibrated_epoch_zero,
+            expected_model_sha256=args.expected_calibrated_model_sha256,
+            expected_state_sha256=args.expected_calibrated_state_sha256,
         )
+    except ValueError as error:
+        if epoch == 0 and not args.allow_calibrated_epoch_zero:
+            raise FileNotFoundError(
+                f"no positive-epoch PhysicsNeMo checkpoint found in {args.checkpoint_dir}"
+            ) from error
+        raise
     network.eval()
 
     normalization_data = args.normalization_data or args.data

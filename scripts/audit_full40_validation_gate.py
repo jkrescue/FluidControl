@@ -24,24 +24,41 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def validate_checkpoint(report: dict, checkpoint_dir: Path) -> dict:
+def validate_checkpoint(
+    report: dict,
+    checkpoint_dir: Path,
+    *,
+    allow_calibrated_epoch_zero: bool = False,
+    expected_calibrated_model_sha256: str | None = None,
+    expected_calibrated_state_sha256: str | None = None,
+) -> dict:
     """Bind the validation result to the exact PhysicsNeMo model generation."""
     reported = report.get("checkpoint_dir")
     if not isinstance(reported, str) or Path(reported).resolve() != checkpoint_dir.resolve():
         raise ValueError("validation report checkpoint_dir differs")
     epoch = report.get("checkpoint_epoch")
-    if not isinstance(epoch, int) or isinstance(epoch, bool) or epoch < 1:
-        raise ValueError("validation report checkpoint_epoch is invalid")
+    from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
+
+    identity = validate_calibrated_epoch_zero(
+        checkpoint_dir,
+        epoch,
+        allow=allow_calibrated_epoch_zero,
+        expected_model_sha256=expected_calibrated_model_sha256,
+        expected_state_sha256=expected_calibrated_state_sha256,
+    )
     models = sorted(checkpoint_dir.glob("FNO.*.mdlus"))
     if len(models) != 1:
         raise ValueError("checkpoint must contain exactly one FNO model generation")
     model = models[0]
-    return {
+    result = {
         "checkpoint_dir": str(checkpoint_dir),
         "checkpoint_epoch": epoch,
         "checkpoint_model_file": model.name,
         "checkpoint_sha256": sha256(model),
     }
+    if identity["calibrated_epoch_zero"]:
+        result.update(identity)
+    return result
 
 
 def validate_runtime_inputs(
@@ -291,12 +308,22 @@ def audit(
     data: Path,
     config: Path,
     image_id: str,
+    *,
+    allow_calibrated_epoch_zero: bool = False,
+    expected_calibrated_model_sha256: str | None = None,
+    expected_calibrated_state_sha256: str | None = None,
 ) -> dict:
     expected = validate_predeclaration(predeclaration)
     report = load(report_path)
     force = pooled_h100(report, expected)
     action = strict_start0_differences(load(segments_path), expected)
-    checkpoint = validate_checkpoint(report, checkpoint_dir)
+    checkpoint = validate_checkpoint(
+        report,
+        checkpoint_dir,
+        allow_calibrated_epoch_zero=allow_calibrated_epoch_zero,
+        expected_calibrated_model_sha256=expected_calibrated_model_sha256,
+        expected_calibrated_state_sha256=expected_calibrated_state_sha256,
+    )
     runtime = validate_runtime_inputs(
         report, data=data, config=config, image_id=image_id
     )
@@ -334,9 +361,19 @@ def main() -> None:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--allow-calibrated-epoch-zero", action="store_true")
+    parser.add_argument("--expected-calibrated-model-sha256")
+    parser.add_argument("--expected-calibrated-state-sha256")
     args = parser.parse_args()
     if args.output.exists():
         raise FileExistsError(f"refusing to overwrite {args.output}")
+    calibrated = {}
+    if args.allow_calibrated_epoch_zero:
+        calibrated = {
+            "allow_calibrated_epoch_zero": True,
+            "expected_calibrated_model_sha256": args.expected_calibrated_model_sha256,
+            "expected_calibrated_state_sha256": args.expected_calibrated_state_sha256,
+        }
     result = audit(
         args.report,
         args.segments,
@@ -345,6 +382,7 @@ def main() -> None:
         args.data,
         args.config,
         args.image_id,
+        **calibrated,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
