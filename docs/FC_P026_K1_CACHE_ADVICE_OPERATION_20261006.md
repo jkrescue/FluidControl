@@ -61,3 +61,27 @@ This does not prove the identity of every cached page.
 
 Continue the existing training and unchanged resource guard. This receipt does
 not authorize recurring advice, another pass, candidate admission, PPO, or CFD.
+
+## Separately authorized r2, 2026-10-05 20:15:46 UTC
+
+After explicit receipt-name amendment review and separate Lead authorization,
+Lead executed exactly one r2 pass with helper SHA
+`94d3c43b5b4341f4fa541dd9c630b5dad83785720f65ca092a1728b2fa4c7cb8`.
+The original r1 file and its digest above remain unchanged. The implementer did
+not execute either pass. Source/guard semantics remain those documented above;
+the amendment only permits explicit fixed, exclusively created receipt names.
+
+Actual r2 receipt `cache_advice_20261006_r2.jsonl` in the same K1 output directory
+has SHA `c8f3292ce93231e2c7ef26b000a2cb51f579047f0fbb4dbfe4df8fc3871f313a`.
+Lead's process exited0 after8.668314628s. Independent read-only review again
+verified90 ordered rows,44 unique exact approved paths/digests, all before/hash/
+after-advice stat identities, no abort and `data_writes=false`. Minimum logged
+MemFree21.717365GiB and MemAvailable106.596531GiB respected every original floor
+and operational headroom check. Observed free changed from21.722134GiB to26.353031GiB;
+as with r1, concurrent activity prevents exclusive causal attribution.
+
+At follow-up the same unit/invocation b3759e7e, MainPID598666 and container
+ed4f0ad7a426 (host PID599092) remained running. The external watcher had1412
+samples; minima remained free20.936733GiB/available105.834663GiB. No restart,
+model/protocol change, candidate completion or scientific conclusion follows.
+The r3 receipt was independently checked absent; no further pass is authorized.

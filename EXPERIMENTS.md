@@ -451,3 +451,7 @@ Lead executed one reviewed exact44 train-file same-descriptor SHA256/clean-cache
 ## 2026-10-06 — P026 cache receipt-name engineering amendment
 
 Reviewed helper94d3c43b adds only explicit fixed r1/r2/r3 receipt-name choices under the same K1 output, with r1 default and exclusive creation. All original44-file/hash/stat/memory/deadline checks remain unchanged; no scheduling or automatic pass. Implementation and Lead each passed11 software-fixture tests. See `docs/FC_P026_CACHE_RECEIPT_AMENDMENT_20261006.md`. Lead separately authorized r2 for Lead execution after canonical hash confirmation; this entry records no r2 execution or success, and r3 remains unauthorized. Original r1 source/proof remains preserved; no scientific CSV result or protocol change.
+
+## 2026-10-06 — P026 K1 separately authorized r2 cache maintenance completed
+
+Lead executed r2 once,8.66831s/exit0. Independent read-only review verified90 rows/44 exact approved train-file digests and unchanged stat identities; receipt SHA c8f3292ce93231e2c7ef26b000a2cb51f579047f0fbb4dbfe4df8fc3871f313a. Pass minima free21.717365GiB/available106.596531GiB; overall watcher minima20.936733/105.834663GiB at1412 samples. Same K1 invocation b3759e7e,MainPID598666,containered4f0ad7a426 remained running. No model/protocol/data changes or second execution by reviewer; r1 proof unchanged and r3 absent/unauthorized. Operation report appended with actual evidence; no scientific CSV result, admission or automatic future pass.
