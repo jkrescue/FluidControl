@@ -1,5 +1,7 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**P018全量低学习率对照已启动（2026-10-05 12:45 UTC核验）**：审批`9b44d9e`，Root及独立各58项回归通过。service `fluid-control-fcp018-reduced-rate-20261005.service`，invocation `1ca4654aab074278bb2efdfff8dbc1eb`，实际官方容器`afd47995f5153b1107dee041becbdb4e23c33b7281de7af69d07a621c174c31f`正在运行。相对P015仅优化参数lr由1e-5降为1.5625e-7；同44真实训练轨迹、同P009初态、同1368窗口/171更新与原目标，flow冻结。协议SHA `310f0bdf…04d2d`贯穿训练和保存；终态才评估，不挑中间模型。当前空闲内存约25GiB，双20GiB守卫开启。输出`artifacts/fcp018_reduced_rate_training_20261005/candidate`，外部执行证据见`docs/FC_P018_RUNNING_EXECUTION_20261005.json`。完整终态审计/CPU双模型重载/原formal衔接同步准备。P017独立复核支持局部首步过冲，不代表全数据稳定或准入；最终代理辅助CFD闭环仍未达成。
+
 **P017首步诊断已运行（2026-10-05 12:33 UTC）**：审批`5f5f2c0`，实施/Root/独立各27项CPU测试通过。实际service `fluid-control-fcp017-first-step-20261005.service`，invocation `cfa568f1f4d5412a93628273d93a95a1`，容器`604af989be7d3dae1667c37d7a43afd50d8ec7e5b76798d0fca59bf6f4d5fd29`运行在固定官方镜像。重放P009同六窗首个AdamW更新，比较实际方向和完整/正负1/64位移；不保存模型、不访问heldout/PPO。启动空闲约33GiB，双20GiB守卫与15分钟内限开启。输出`artifacts/fcp017_first_step_diagnostic_20261005`。P016独立终态审查已完成：运行完整但同时改善假设不获支持（FC-E026）；原科学准入不变，项目仍未完成。
 
 **P016检验结束，未支持同时改善（2026-10-05 12:24 UTC）**：同一invocation已保留为exited/0，内部GPU守卫exit0；result SHA `f760d2e7…54248`，记录32次更新/192窗口计算，完整独立终态复核进行中。固定训练面板H1/AR objective分别变化+0.175%/-3.803%；五个非零动作窗口的tail62均值偏差平方分别增加420.873%/208.108%，波形与波动幅值误差虽下降但不满足预声明同时改善要求。没有保存候选，没有PPO或新CFD闭环。下一步检查同批数据上的loss/梯度/更新实现及实际优化轨迹，再决定针对性改进，不盲目增加全量训练。看板`2c4f3cc`已部署，原私有API实测显示P016结束待独立复核及P015联合1/6失败。详见`docs/FC_P016_TERMINAL_OBSERVATION_20261005.md`。
