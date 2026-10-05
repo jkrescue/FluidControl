@@ -299,13 +299,13 @@ def validate_dual_policy_contract(
     """Bind a dual-trained raw-observation policy before any CFD is staged."""
     def declares_dual(value):
         if isinstance(value, dict):
-            return (bool({"dual_control_binding", "dual_manifest_sha256", "dual_model_system"}.intersection(value))
+            return (bool({"dual_control_binding", "dual_manifest_sha256", "dual_model_system", "fno_history_runtime"}.intersection(value))
                     or any(declares_dual(item) for item in value.values()))
         if isinstance(value, list):
             return any(declares_dual(item) for item in value)
         return isinstance(value, str) and (
-            value.startswith(("FC_P013_", "FC_P015_", "FC_P018_"))
-            or value in ("fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "fcp018_reduced_rate_dual_fno", "FC-P015", "FC-P018")
+            value.startswith(("FC_P013_", "FC_P015_", "FC_P018_", "FC_P026_"))
+            or value in ("fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "fcp018_reduced_rate_dual_fno", "FC-P015", "FC-P018", "FC-P026", "p026_k1", "p026_k4")
         )
 
     dual = any(declares_dual(value) for value in (audit, readiness, gate))
@@ -316,6 +316,12 @@ def validate_dual_policy_contract(
     binding = audit.get("dual_control_binding")
     if not isinstance(binding, dict) or binding != readiness.get("dual_control_binding"):
         raise ValueError("PPO audit/readiness dual_control_binding differs or is absent")
+    if any("FC_P026_" in json.dumps(value) or "p026_k" in json.dumps(value)
+           or "FC-P026" in json.dumps(value) or "fno_history_runtime" in value
+           for value in (audit, readiness, gate)):
+        from adapt_candidate_ppo_openfoam_readiness import validate_p026_history_binding
+
+        validate_p026_history_binding(binding, audit, readiness)
     required = {
         "status": "DUAL_CONTROL_IDENTITY_VERIFIED_NOT_CONTROL_SUCCESS",
         "canonical_endpoint_window_dynamic_gates_still_required": True,

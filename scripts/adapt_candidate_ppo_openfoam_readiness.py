@@ -25,6 +25,55 @@ COMPLETE = "FULL40_CANONICAL_PPO_SURROGATE_RUN_COMPLETE"
 IDENTITY_VEC = (
     "identity: norm_obs=false, norm_reward=false; preserves legacy PPO numerics"
 )
+P026_KINDS = {f"FC_P026_K{k}_HISTORY_FORCE_FNO": k for k in (1, 4)}
+# Same reviewed source pins as dual_control_contract; no model imports here.
+P026_HISTORY_STATE_SHA256 = "2b5b37dc79211bb5c4985a1d44d25262080f503011766206c536938f49a6b64c"
+P026_HISTORY_INFERENCE_SHA256 = "fd568f6457b980046a0419be96562291e9f96736270d45f20dd2adb2ffc5878c"
+
+
+def validate_p026_history_binding(dual: dict, *evidence: dict) -> None:
+    """Check existing history provenance; do not load a model or alter observations."""
+    kind = dual.get("dual_system_kind")
+    k = P026_KINDS.get(kind)
+    runtime = dual.get("fno_history_runtime")
+    if k is None or dual.get("training_experiment") != "FC-P026" or not isinstance(runtime, dict):
+        raise ValueError("P026 history binding kind/experiment/runtime missing or conflicting")
+    expected = {
+        "schema_version": 1, "profile": f"p026_k{k}", "history_length": k,
+        "flow_input_channels": 6, "aerodynamic_input_channels": 6 if k == 1 else 18,
+        "left_padding": "trajectory_frame0",
+        "autoregressive_state_source": "frozen_flow_prediction",
+        "future_state_inputs": False, "future_force_inputs": False,
+        "manifest_kind": kind,
+        "history_state_module_sha256": P026_HISTORY_STATE_SHA256,
+        "history_inference_module_sha256": P026_HISTORY_INFERENCE_SHA256,
+    }
+    for target, source in {
+        "dual_manifest_sha256": "dual_manifest_sha256",
+        "flow_model_sha256": "flow_model_sha256", "flow_state_sha256": "flow_state_sha256",
+        "aerodynamic_model_sha256": "checkpoint_sha256",
+        "aerodynamic_state_sha256": "checkpoint_state_sha256",
+        "config_sha256": "training_config_sha256", "normalization_sha256": "normalization_sha256",
+    }.items():
+        expected[target] = dual.get(source)
+    if any(type(runtime.get(key)) is not type(value) or runtime.get(key) != value
+           for key, value in expected.items()):
+        raise ValueError("P026 history binding profile/identity differs")
+    for key in ("training_protocol_sha256", "history_state_module_sha256", "history_inference_module_sha256"):
+        # Protocol is the actual candidate-file byte SHA verified upstream,
+        # not the inventory's canonicalized JSON SHA. Preserve that binding.
+        value = runtime.get(key)
+        if not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
+            raise ValueError("P026 history binding source/protocol hash absent")
+    for value in evidence:
+        nested = value.get("dual_control_binding")
+        if not isinstance(nested, dict):
+            raise ValueError("P026 history nested binding is absent or malformed")
+        observed = value.get("fno_history_runtime", nested.get("fno_history_runtime"))
+        if observed != runtime:
+            raise ValueError("P026 history runtime evidence differs or is absent")
+        if "candidate_kind" in value and value["candidate_kind"] != kind:
+            raise ValueError("P026 history candidate kind differs")
 
 
 def sha256(path: Path) -> str:
@@ -114,7 +163,8 @@ def adapt(
         if candidate_identity.get(key) != contract.get(key):
             raise ValueError(f"candidate readiness {key} differs from command contract")
     dual = contract.get("dual_control_binding")
-    is_dual = contract.get("candidate_kind") in (
+    is_p026 = contract.get("candidate_kind") in P026_KINDS
+    is_dual = is_p026 or contract.get("candidate_kind") in (
         "fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "fcp018_reduced_rate_dual_fno")
     observed_bindings = [value.get("dual_control_binding") for value in
                          (candidate_identity, readiness, audit)]
@@ -140,6 +190,8 @@ def adapt(
                 raise ValueError("dual control hash missing or invalid: " + key)
         if dual["normalization_sha256"] != candidate_identity.get("normalization_sha256"):
             raise ValueError("dual normalization differs from candidate readiness")
+        if is_p026:
+            validate_p026_history_binding(dual, contract, candidate_identity, readiness, audit)
     elif dual is not None or any(value is not None for value in observed_bindings):
         raise ValueError("dual evidence cannot be exported as a single-model candidate")
     if contract.get("vecnormalize") != {
