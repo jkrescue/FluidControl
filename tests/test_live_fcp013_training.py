@@ -46,3 +46,16 @@ def test_invalid_rows_are_unknown_not_zero():
 
 def test_training_needs_bound_approval(tmp_path):
     assert dashboard._fcp013_training(tmp_path) == {"ready": False}
+
+
+def test_child_journal_requires_same_service_invocation():
+    child = json.loads(row(pid=777))
+    child["_SYSTEMD_INVOCATION_ID"] = "current"
+    child["_SYSTEMD_USER_UNIT"] = "fluid-control-fcp013-training-20261005.service"
+    prefix = live() + "\nInvocationID=current\n"
+    assert dashboard._parse_fcp013_live(prefix + json.dumps(child), 1000)["step"] == 8
+    child["_SYSTEMD_INVOCATION_ID"] = "old"
+    assert dashboard._parse_fcp013_live(prefix + json.dumps(child), 1000)["step"] is None
+    child["_SYSTEMD_INVOCATION_ID"] = "current"
+    child["_SYSTEMD_USER_UNIT"] = "unrelated.service"
+    assert dashboard._parse_fcp013_live(prefix + json.dumps(child), 1000)["step"] is None

@@ -911,7 +911,7 @@ def _parse_fcp011_formal(output: str, scope: str) -> dict:
     return {"service_state": state, "pid": pid, "running": state == "active" and pid > 0 and bound, "admission": False}
 
 
-FCP013_TRAINING_APPROVAL_SHA = None  # Set only after source-bound training approval.
+FCP013_TRAINING_APPROVAL_SHA = "1bdcfcf71d1581bbae66fc6551dde61a500bd95a464d9f61d510cbac1721a120"
 
 
 def _parse_fcp013_live(output: str, now: float) -> dict:
@@ -922,12 +922,16 @@ def _parse_fcp013_live(output: str, now: float) -> dict:
     except ValueError:
         pid = 0
     command = fields.get("ExecStart", "")
+    invocation = fields.get("InvocationID", "")
     bound = any(name in command for name in ("run_fcp013_training_spark.sh", "train_fcp013_independent_force_fno.py")) and "--resource-probe" not in command
     latest = None
     for line in output.splitlines():
         try:
             record = json.loads(line)
-            if pid and str(record.get("_PID")) != str(pid):
+            if invocation:
+                if record.get("_SYSTEMD_INVOCATION_ID") != invocation or record.get("_SYSTEMD_USER_UNIT") != "fluid-control-fcp013-training-20261005.service":
+                    continue
+            elif pid and str(record.get("_PID")) != str(pid):
                 continue
             row = json.loads(record["MESSAGE"])
             step = row["step"]
@@ -962,7 +966,7 @@ def _fcp013_training(root: Path) -> dict:
         return {"ready": False}
     unit = "fluid-control-fcp013-training-20261005.service"
     try:
-        state = subprocess.run(["systemctl", "--user", "show", unit, "-p", "ActiveState", "-p", "MainPID", "-p", "ExecStart"], capture_output=True, text=True, timeout=2, check=False)
+        state = subprocess.run(["systemctl", "--user", "show", unit, "-p", "ActiveState", "-p", "MainPID", "-p", "ExecStart", "-p", "InvocationID"], capture_output=True, text=True, timeout=2, check=False)
         journal = subprocess.run(["journalctl", "--user", "-u", unit, "-n", "40", "-o", "json", "--no-pager"], capture_output=True, text=True, timeout=2, check=False)
         status = _parse_fcp013_live(state.stdout + "\n" + journal.stdout, time.time())
     except (OSError, subprocess.SubprocessError):
