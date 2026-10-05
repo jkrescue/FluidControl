@@ -180,3 +180,36 @@ under invocation `eee5a6fbad40411cac2f05e00520b079`, PID941365,
 `activating/start`; this is not training completion. No HDF files were reread
 and no advice was issued by this review. No further maintenance pass is
 approved, and no model admission or PPO conclusion follows.
+
+## Separate r5 authorization
+
+At592 consumed windows, same live K4 invocation, host MemFree was
+22,526,976KiB (about21.48GiB). Root authorizes one bounded r5 pass using
+reviewed helper `d116b55b67c50d2e618ec4188fe4fc8a4bc8b732deda8ca89f5b942d4b654e25`.
+Only K4's new `cache_advice_20261006_r5.jsonl` may be created; r1-r4 remain
+unchanged. The exact44/path/hash/stat/memory/deadline checks still apply.
+No further pass, global cache action, model/data modification or restart is
+authorized by this entry. This is approval, not evidence of completion.
+
+## Actual r5 receipt review
+
+Root reports the separately approved single execution, session53568, exited0.
+Independent JSON-only review verified90 records: begin,44 ordered file-begin/
+advised pairs,complete. All44 paths and recorded hashes match the pinned audit;
+all file-begin and before/hash/advice stat snapshots agree. The receipt binds
+helper `d116b55b…b654e25`, K4 and exact r5 output. Receipt SHA-256:
+`bbf63b35439627e2649ed5b50ddfa1ee2770378f9579c15d3b54517f57d9b4f3`.
+
+Start/end Unix timestamps were1791240032.4967554/1791240042.649896,
+elapsed **10.153431135 seconds**. Recorded minima were MemFree
+**21.325340 GiB**, MemAvailable **106.216824 GiB**, above applicable floors.
+The growing host-watch snapshot through1791240078,1178 samples, had minima
+MemFree **21.006046 GiB**, MemAvailable **105.731537 GiB**; snapshot SHA:
+`46063b89ab460ec3fc1681912e94448a7d93269b45efb76909bc1a7d2236ef61`.
+
+All prior r1–r4 receipt hashes remain unchanged (`115ab435…374a6`,
+`ea9ac02c…134cf7`, `55d34429…28de533`, `aff19e4d…4e2d0c2`). The actual
+training service remained live under invocation
+`eee5a6fbad40411cac2f05e00520b079`, PID941365, `activating/start`.
+This review reread no HDF files and issued no advice. Further passes remain
+unapproved; maintenance completion is not training or scientific completion.
