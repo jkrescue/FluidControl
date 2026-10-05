@@ -114,3 +114,29 @@ def test_formal_authority_supersedes_training_without_historical_loop(case,monke
     assert sample['current_authority']=='p018_formal'
     assert sample['active_units']==[w.P018_FORMAL_UNIT]
     assert sample['no_running_duration_seconds']==0
+
+
+def test_slow_legacy_poll_uses_resource_read_time(case,monkeypatch):
+    repo,start,state,_=case
+    read_time=start+timedelta(seconds=8)
+    path=repo/w.P018_FORMAL_MONITOR/'memory.jsonl'
+    row=json.loads(path.read_text());row['timestamp_utc']=(start+timedelta(seconds=6)).isoformat()
+    path.write_text(json.dumps(row)+'\n')
+    def slow_legacy(*args):
+        monkeypatch.setattr(w,'utc_now',lambda:read_time)
+        return dict(timestamp_utc=start.isoformat(),alerts=[],blocker_reasons=[])
+    monkeypatch.setattr(w,'_build_legacy_sample',slow_legacy)
+    sample=w.build_sample(repo,None,{w.P018_FORMAL_UNIT:state},dict(mem_available_gib=30,mem_free_gib=25),start)
+    task=sample['authority_tasks']['p018_formal']
+    assert task['state']=='RUNNING'
+    assert task['progress']['memory_age_seconds']==2
+    assert sample['timestamp_utc']==read_time.isoformat()==task['observed_utc']
+
+
+@pytest.mark.parametrize('offset',[-1,31])
+def test_live_read_still_rejects_real_future_or_stale_clock(case,monkeypatch,offset):
+    repo,now,state,_=case
+    monkeypatch.setattr(w,'utc_now',lambda:now+timedelta(seconds=offset))
+    task=w.p018_formal_authority(repo,state)
+    assert task['running'] and task['state']=='RUNNING_REQUIRES_REVIEW'
+    assert task['progress']['memory_age_seconds']==offset

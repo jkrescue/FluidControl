@@ -1185,10 +1185,9 @@ FCP018_LAUNCHER = "artifacts/fcp018_reduced_rate_source_20261005_immutable/scrip
 def _fcp018_formal_live(root: Path) -> dict:
     try:
         import watch_training_evaluation_state as monitor
-        now = datetime.now(UTC)
         task = monitor.p018_formal_authority(
-            root, monitor.unit_state(monitor.P018_FORMAL_UNIT), now)
-        return {"observed": True, "sampled_at_utc": now.isoformat(),
+            root, monitor.unit_state(monitor.P018_FORMAL_UNIT))
+        return {"observed": True, "sampled_at_utc": task["observed_utc"],
                 "task": task, "admission": False}
     except (ImportError, AttributeError, OSError, subprocess.SubprocessError, ValueError, TypeError):
         return {"observed": False, "admission": False}

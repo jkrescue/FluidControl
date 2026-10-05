@@ -257,8 +257,12 @@ def p018_formal_argv(repo):
         "--monitor-dir", str(repo/P018_FORMAL_MONITOR), "--execute"]
 
 
-def p018_formal_authority(repo, state, now):
-    """Bounded observation only: numerical admission always requires separate review."""
+def p018_formal_authority(repo, state, now=None):
+    """Observe resources at read time; explicit ``now`` is for deterministic replay.
+
+    Callers doing live sampling must omit ``now``: legacy/unit queries can take
+    seconds, and a poll-start timestamp predates newly appended memory rows.
+    """
     issues=[]
     for path, expected in {
         P018_SUPERVISOR:P018_SUPERVISOR_SHA, P018_FORMAL_APPROVAL:P018_FORMAL_APPROVAL_SHA,
@@ -299,12 +303,11 @@ def p018_formal_authority(repo, state, now):
             'dual_manifest_sha256':approval.get('dual_manifest_sha256')}
         if any(row.get(k)!=v for k,v in required.items()): issues.append('Formal step identity differs: '+name)
         else: progress['completed_steps'].append(name)
-    try: progress['runner_log_age_seconds']=max(0,now.timestamp()-(monitor/'runner.log').stat().st_mtime)
-    except OSError: pass
     try:
         with (monitor/'memory.jsonl').open('rb') as stream:
             stream.seek(0,2);stream.seek(max(0,stream.tell()-16384))
             rows=stream.read().decode().splitlines()
+        if now is None: now=utc_now()
         memory=json.loads(rows[-1]); age=(now-datetime.fromisoformat(memory['timestamp_utc'])).total_seconds()
         progress['memory']=memory; progress['memory_age_seconds']=age
         if running and (age<0 or age>30): issues.append('Formal resource samples stale')
@@ -312,6 +315,9 @@ def p018_formal_authority(repo, state, now):
             issues.append('Formal resource below 20 GiB or unavailable')
     except (OSError,ValueError,KeyError,IndexError,TypeError):
         if running: issues.append('Formal resource samples unavailable')
+    if now is None: now=utc_now()
+    try: progress['runner_log_age_seconds']=max(0,now.timestamp()-(monitor/'runner.log').stat().st_mtime)
+    except OSError: pass
     classification='NEEDS_AGENT_ANALYSIS'
     action='核查正式评估身份、资源或失败原因；保留证据，不自动重跑。'
     if not running and not terminal:
@@ -334,6 +340,7 @@ def p018_formal_authority(repo, state, now):
         if any(guard.get(k)!=v for k,v in expected.items()):
             issues.append('Formal terminal guard proof absent or differs');classification='NEEDS_AGENT_ANALYSIS'
     return {'authority_unit':P018_FORMAL_UNIT,'invocation_id':P018_FORMAL_INVOCATION,
+        'observed_utc':now.isoformat(),
         'state':classification,'running':bound and running,'stage_complete':False,
         'approved_action_id':None,'identity_issues':issues,'progress':progress,
         'next_action':action,'scientific_admission':False,'automatic_recovery_eligible':False}
@@ -2405,7 +2412,7 @@ def p018_authority(repo: Path, state: dict, now: datetime) -> dict:
 def build_sample(repo, previous, units, resources, now):
     legacy = _build_legacy_sample(repo, previous, units, resources, now)
     if (repo/P018_FORMAL_APPROVAL).exists() or (repo/P018_FORMAL_MONITOR).exists():
-        task = p018_formal_authority(repo, units.get(P018_FORMAL_UNIT, {}), now)
+        task = p018_formal_authority(repo, units.get(P018_FORMAL_UNIT, {}))
         authority, prefix = "p018_formal", "FC_P018_FORMAL_"
     elif p018_present(repo):
         task = p018_authority(repo, units.get(P018_UNIT, {}), now)
@@ -2425,6 +2432,8 @@ def build_sample(repo, previous, units, resources, now):
                   workflow_pending=True, authority_tasks={authority: task},
                   active_units=[task["authority_unit"]] if task.get("running", task["state"] == "RUNNING") else [],
                   current_authority=authority)
+    if authority == "p018_formal":
+        sample["timestamp_utc"] = task["observed_utc"]
     if authority == "p015_training":
         sample["historical_p013_authority"] = p013_authority(repo, units.get(P013_UNIT, {}))
     historical_idle_alerts = {

@@ -6,16 +6,17 @@ import serve_live_research_dashboard as d
 
 
 def test_live_formal_preserves_authority_without_admission(monkeypatch):
-    task = {'running': True, 'state': 'RUNNING', 'scientific_admission': False}
-    def authority(root, state, now):
+    task = {'running': True, 'state': 'RUNNING', 'scientific_admission': False,
+            'observed_utc': '2026-10-05T14:36:00+00:00'}
+    def authority(root, state):
         assert root == Path('/project') and state == {'pid': 42}
-        assert isinstance(now, datetime)
         return task
     monkeypatch.setitem(sys.modules, 'watch_training_evaluation_state', SimpleNamespace(
         P018_FORMAL_UNIT='exact', unit_state=lambda unit: {'pid': 42},
         p018_formal_authority=authority))
     result = d._fcp018_formal_live(Path('/project'))
     assert result['observed'] and result['task'] is task
+    assert result['sampled_at_utc'] == task['observed_utc']
     assert result['admission'] is False
 
 
