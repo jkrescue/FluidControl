@@ -1,5 +1,7 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**最新阶段（2026-10-05 09:27 UTC）**：P013完整正式评估已完成，原联合准入FAIL：六个受力窗口joint0/6，平均总Cd5/6、后Cl脉动RMS2/6、后Cl均值0/6。独立重算原审计器得到完全相同结论，18项receipt文件SHA全部一致；receipt SHA `2733c3cb…aa2e7a`。P013不准入新PPO。固定六个train窗口的P014只读目标/升力残差分解已按独立审查方案启动，service `fluid-control-fcp014-train-objective-20261005.service`，invocation `6bba81dba45b46638643f441ba21082f`，审批`e26473d`；原数据与模型不变、无optimizer/backward/save/validation/frozen/PPO。启动前重算44个真实训练HDF，容器保留至少20GiB MemAvailable和MemFree。下一步依据分解结果决定单因素改进；不能以诊断完成代替合格代理与真实CFD闭环。
+
 **当前摘要（2026-10-05，正式评估进行中）**：P013训练和终态完整性已完成，不是科学准入。validation10四份报告SHA与step receipt已独立核对；原端点组件PASS，但同协议P009→P013的H100后Cl MAE从0.0387410增至0.103710，pooled总Cd NRMSE从0.00558671增至0.00963676；start0动作差Cd MAE从0.01920627降至0.01554142。局部动作响应改善不能覆盖升力退步。dynamic6实际服务仍运行，后续force-window及联合准入尚待完成。原看板已更新并重载（8cc8f12），路线图已更新（4ed0c5f）；历史流场图片未冒充新模型结果。当前并行任务：P014固定训练窗口目标/均值与波动误差分解的实现和审查（GPU未批准），以及旧巡检误报的增量修复（尚未部署）。主线仍是合格代理→兼容PPO→真实CFD在线反馈→原减阻/升力联合验收；尚无新PPO或FNO辅助CFD成功。
 
 **最新科学进展（2026-10-05 08:49 UTC）**：固定六个训练窗口诊断完成（result SHA `8e0255c9…ec873`），同窗对比P009：P013的H1后圆柱Cl MAE在6/6变差，自回归MAE在5/6变差；尾62点Cl′ RMS误差H1在2/6变差、AR在4/6变差。流场u/v/p指标全部逐值不变，模型tensor未被诊断修改。这不是精度改善；保留负结果FC-E022，不能据此启动PPO。预定完整正式评估已按单独批准`4ad097c`启动：service `fluid-control-fcp013-posteval-r2-20261005.service`，invocation `7235b2f06282435a89b84964e384c60f`，使用不可变f95048c链；正在validation10阶段，尚无正式验收结论。目标不变，下一步依据完整结果分析误差，禁止降低门槛或盲目加轮数。

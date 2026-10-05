@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E023 — FC-P013 complete formal rejection (2026-10-05)
+
+The unchanged validation10/dynamic6/force-window/development suite completed, service invocation `7235b2f06282435a89b84964e384c60f`, retained exited status and exit code0. Completion is not scientific success. Receipt SHA `2733c3cb1061837da28db83bb8c0d16e534017211b514885f960255b48aa2e7a`; all18 referenced file hashes independently match. The original numerical auditor SHA `ca6da0afdce5859be1c060eb48ba2cdd1ccc5ee3aeb2570d9c9b53067d5bc412` was rerun and exactly reproduces the saved admission FAIL.
+
+Force-window joint0/6, total-Cd5/6, rear-Cl fluctuation RMS2/6, rear-Cl mean0/6. P009 counts under the same protocol were joint2/6, Cd6/6, RMS2/6, mean5/6. Four rotating RMS errors are0.047608874/0.128188129/0.070502560/0.053709452 versus fixed limits about0.0294. Mean-Cl errors span0.062781407–0.109959183, all above their original limits. Validation10 start0 delta-Cd MAE improves0.01920627→0.01554142, while H100 rear-Cl MAE worsens0.0387410→0.103710; endpoint improvement does not override failed temporal force prediction. No frozen access or new PPO.
+
+Decision: reject P013 for control training. Execute separately approved P014 fixed-train objective/residual decomposition (no parameter updates), then choose a new hypothesis from its evidence. Do not lower thresholds or relabel historical CFD-only PPO as surrogate-assisted.
+
 ## FC-E022 — FC-P013 terminal fixed-six train diagnostics (2026-10-05)
 
 The preregistered P013 r2 fixed pass completed1368 updates; terminal integrity and exact Docker/journal exit were independently verified. The read-only original six train windows then completed on P009 and terminal P013 with unchanged tensor hashes, optimizer0, no validation/frozen/PPO. Diagnostic result SHA:`8e0255c955c1b26fdff240a0854fc0a92d3bd247cc38ed6c268fc1d397cec873`; training source1634c05 and original diagnostic source from immutable23a4ec020ed6 chain. These are train diagnostics, not a formal admission threshold or converged optimization claim.
