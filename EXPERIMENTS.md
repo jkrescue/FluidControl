@@ -1,5 +1,17 @@
 # Experiment ledger
 
+## FC-E034 — P024 fixed response-scale mechanism diagnostic complete
+
+Result6eecbd75c5b18cd821d6cf814c6d9319f755bf8dc70f2eb0c0e7e9326bf8ba0b,
+source81a45c6, actualinvocationb85dcf9d70e443fe92ae4ef5d72d3c76 terminalsuccess.
+Independent60journalwindows/10panels/96vectors/source/resource checks complete;
+scale0/1exactlyreproduceP023 before-1/8/64. No optimizer or candidate.
+Positive scaling improves some statistics but trades against others;64H1centered
+MSE+19.096%,ARbias²+2.093%; no prescribednonzero scale meets all requirements.
+No optimum/capacity/fundamentaltradeoff inference. Minhostfree30.915GiB.
+See docs/FC_P024_TERMINAL_REVIEW_20261005.md. Next P025CPU-only boundedstatistical-
+loss implementation with frozenparent, not another scale sweep or thresholdchange.
+
 ## FC-E033 — P023 isolated96-input finite comparison complete
 
 Resultadfdd9a86cedf75019b655fe360b64b09d1aa51ce3de2f9166d0d80e296007cb;

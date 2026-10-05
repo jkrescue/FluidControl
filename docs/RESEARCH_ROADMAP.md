@@ -1,5 +1,15 @@
 # Research roadmap and prioritized backlog
 
+## 2026-10-05 — P024 complete; P025 CPU preparation
+
+FC-E034 independent exact0/1reproduction and all60window checks complete.
+No simple strongerconditioning fix along the saved direction; no candidate/PPO.
+Root chooses one bounded reoptimization using the previously specified symmetric
+mean/RMS objective while freezing original weights. See P025plan. It is a
+falsifiable actuallearning experiment, not proof ofcause or a coefficientsearch.
+If unsupported, end this isolated-block/statistical-loss branch and reassess.
+Implementation/evaluation agents preparing; GPU execution not yet approved.
+
 ## 2026-10-05 — P023 complete, local joint support not met
 
 FC-E033 independently reviewed. Only HIGHH1bias regression violates local rules;
