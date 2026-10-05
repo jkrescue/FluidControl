@@ -6,6 +6,8 @@
 
 **FC-P012梯度诊断终态（2026-10-05）**：固定六个train-only H100窗口在P009亲本和P011B终态上各完成一次，共12行；result/completion SHA为`4142cdc5…d814d`/`86f9d931…b26c`。按预声明仅统计五个非zero-action-history窗口：两模型的hidden组`field/(0.2×balanced-force)`范数比大于10均为`0/5`，cosine小于`-0.2`也均为`0/5`，因此不支持强尺度失衡或方向冲突假设，也不支持据此扫描loss权重。zero窗单列：P009比值/余弦为`10.4045/-0.0983`，P011B为`4.5051/-0.1605`，不进入预声明计数。direct-total与组件和的relative residual观测范围为`3.09e-5–9.84e-5`，无预声明容差且不作等价PASS；两模型参数/buffer SHA前后相同，optimizer=0、无save、无validation/frozen/PPO。下一representation-capacity假设须另行审批。
 
+**FC-P013工程状态（2026-10-05）**：独立受力FNO的单个真实train H100资源探针v2已通过，result SHA为`cba0ff7c…bccd`。固定`b04_m075/start180`窗口同时执行冻结flow的100步递推、true-state H1与free-AR两域的受力forward/backward；耗时`4.877 s`，CUDA peak allocated/reserved为`4.085/4.326 GB`，外层guard最低`MemAvailable=107.673 GiB`。官方两项冻结lifting bias名称/shape精确匹配，其余28个可训练parameter tensor梯度均存在且有限；flow/aerodynamic tensor SHA前后同为`89ce3b37…a8bb`。optimizer未创建、step=0、无candidate/save/validation/frozen/PPO。该结果只证明工程与资源可行；正式1368步训练尚未执行，仍待最终trainer保存/fresh-reload、六窗诊断与双模型契约审查，不是科学PASS。
+
 **控制接口兼容状态**：canonical surrogate与direct-CFD启动reward history的不一致已在commit `962c165`修复。canonical路径现在绑定HDF/config/split manifest/HDF及raw-force SHA，以绝对restart时钟原子恢复62个raw-float64 causal samples，并在重复reset时重建fresh copy；legacy Stage-C/direct语义保持。扩展32项CPU回归、Root独立24项和SOTA独立17项均PASS，真实b00构造probe在`141.9–148.0`立即window-ready。该软件修复没有执行PPO，也不是FNO或闭环科学PASS。
 
 **最新FC-P010结论（2026-10-05）**：纯CPU尾窗幅值监督诊断已完成（result SHA `d69033fd…8f94`）。它只优化rear-Cl仿射行；free-AR四个留出相位的尾62步RMS MAE均小幅改善`1.45%–7.34%`，但H1在三个相位恶化`13.26%–13.58%`，仅b02改善`2.08%`。全量fit同样是free-AR改善`9.02%`、H1恶化`10.51%`。五次LBFGS均达到固定200次上限且最终梯度未达声明容差，故这是固定预算下的多域权衡证据，不是已收敛最优解。FC-P010不支持构建候选或启动formal/PPO；下一步转向现有官方FNO表征内的有界训练干预，并继续要求完整field与原formal门槛。
