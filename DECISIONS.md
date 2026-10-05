@@ -94,6 +94,12 @@ Lead随后只批准一个有界CPU-cache判别：将相同136800行、相同cano
 
 共享头诊断已完成（SHA `931fcd2d…f2b0bc`）。H100 AR域rear-Cd/rear-Cl/total-Cd MAE为`0.01612/0.04610/0.01607`，相对C亲本`0.01637/0.07392/0.01637`改善但不及AR专用头`0.01368/0.04300/0.01367`；H1域为`0.01593/0.03035/0.01572`，优于C亲本`0.02622/0.06333/0.02580`但不及H1专用头`0.01432/0.02447/0.01411`。这支持折中头的train-only可表达性，不证明validation或控制收益。Lead只批准最小候选实现和CPU测试：复用缓存系数，官方加载C-e2，只改四个force rows/bias，保存为独立epoch0后重载并逐tensor核confinement；default-TF32/high下仅用固定base20首个train batch的H1作`2e-5` pointwise wiring sanity和有限性检查，pooled/native差只报告。候选GPU构建、原formal suite与PPO仍分别需要明确批准。
 
+## D020 — FC-P010尾窗幅值监督显示多域权衡，不构建线性头候选
+
+FC-P010在固定P009 train-only cache上保持H1/free-AR逐步rear-Cl损失各占一半，只新增free-AR尾62步centered-RMS项，并仅优化rear-Cl行。结果SHA `d69033fd…8f94`的输入绑定和指标已独立重算：free-AR四个phase OOF RMS误差均改善`1.45%–7.34%`，但H1有三个phase恶化约`13%`；full fit为free-AR改善`9.02%`、H1恶化`10.51%`，Cd因其它三行冻结而逐值不变。全部五个LBFGS fit都用尽200次且梯度未达容差，因此不能宣称已收敛或找到最优头。
+
+该结果不要求每项支配作为新gate，但其方向一致的跨域代价不足以支持候选构建。停止继续扫描固定线性头、loss mixture或相位权重；下一假设必须是有界的train-only官方FNO训练干预，之后仍用原field/force/dynamic/window formal协议裁决。不得把训练窗改善、有限完成或CPU诊断状态写成PPO准入。
+
 ## 新决策格式
 
 ID、记录时间、状态、待检验假设、对应实验ID、所依据证据/协议、可选方案、取舍原因、保留的不确定性、撤销/调整条件。只有读取过的产物可作为事实；代理口头报告是待核信息。
