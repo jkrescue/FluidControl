@@ -1,0 +1,18 @@
+{
+  "status": "FC_P008_FORMAL_EVALUATION_APPROVED",
+  "candidate_model_sha256": "3f92fbf5371b21d8eb83236438258bdf60cdd1592ef8e4c79987f05b1ca29504",
+  "candidate_state_sha256": "5cfd6bc118ee75a4ee88978ae0b2428de73a3ce679bb69a70dc09f9a7cf644f7",
+  "candidate_checkpoint_epoch": 0,
+  "candidate_kind": "fc_p008_force_row_calibrated_epoch0",
+  "formal_evaluation_authorized": true,
+  "formal_protocol": [
+    "validation10_H1_H10_H50_H100_stride25_batch4",
+    "dynamic6_H1_H10_H50_H100_stride1_batch8",
+    "force_window6",
+    "unchanged_development_gate"
+  ],
+  "minimum_mem_available_gib": 20,
+  "frozen_test_accessed": false,
+  "ppo_auto_launch": false,
+  "scope": "One formal post-evaluation of the completed FC-P008 calibrated epoch-zero candidate; this approval does not authorize PPO or frozen-test access."
+}
