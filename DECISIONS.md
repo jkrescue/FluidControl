@@ -74,6 +74,8 @@ source mapping artifact `57ed2a25…3b92`把四个canonical phase固定为b00/t1
 
 该次校准已完成且独立重算通过：固定规则选中`alpha=0`，OOF physical rear-Cd/rear-Cl MAE为`0.012857/0.022035`；全train native rear-Cd/rear-Cl MAE由亲本`0.025576/0.064053`降至`0.010462/0.017277`。同时default-TF32的ideal/native rear-Cd bias仍为`-0.004621` physical，说明不能用理想仿射拟合替代真实执行。Lead据此批准一次原封不动的formal suite；该批准是“值得测”而非“已通过”，不得改`alpha=0`、阈值或跳过force-window/development gate，PPO仍未授权。
 
+formal suite已完成并反证准入：总receipt SHA为`14fd24d9…edcb5`，development FAIL，force-window仅1/6联合通过。四个旋转分支rear-Cl′ RMS误差相对C均明显下降，但dynamic delta-Cd、validation rear-Cd以及多个window mean-Cl/Cd指标退化；因此不能将“升力RMS局部改善”改写为整体控制准确度成功。FC-P008不进入PPO。后续FC-P009只研究train-only free-AR隐藏特征及matched-weight H1对照，不能改变或追认本次阈值。
+
 ## D019 — 批准FC-P009 free-AR隐藏特征的train-only CPU实现与测试
 
 2026-10-05 Asia/Shanghai，implementation and CPU tests approved；GPU提取另审。FC-P009检验固定FC-P003C/default-TF32/high模型的free-AR训练窗口隐藏特征能否改善四力末层读出，不改变模型架构、数据、归一化、reward或任何科学门槛。`alpha`固定为`0`，不运行六alpha选择；四相OOF只评价固定读出，不能用于选参。输入仍为既有regular sampler的1368个H100训练窗口、每窗100个相对时刻，共136800行隐藏特征；它们只覆盖19648个唯一真实CFD端点，同一端点在不同AR起点/relative horizon下的隐藏状态不得冒称独立物理样本。
