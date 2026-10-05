@@ -32,6 +32,36 @@ This is implementation evidence, not a completed model evaluation or admission.
 
 ## Remaining work before formal execution
 
+### Canonical PPO dual loading integrated (06:55 UTC)
+
+The canonical PPO entry point now accepts the optional dual manifest, training
+configuration and complete post-evaluation receipt with expected hashes. Its
+original canonical preflight must already be READY; a partial dual argument set,
+failed canonical gate, smoke-mode attempt, single-calibration bypass or absent
+new identity VecNormalize output remains BLOCKED. Immediately before execution
+the full binding is recomputed and compared with preflight. Official dual loading
+then supplies the existing HydroGym stepper without changing PPO, reward,
+observations, action constraints or environment transitions. The saved policy
+audit includes both checkpoint pairs and the dual receipt identity. The default
+single-model path is preserved.
+
+40 related CPU tests pass. The pinned runtime image also imports the new entry
+point, PhysicsNeMo, SB3 and HydroGym when used with the existing official-source
+mount `.tools/hydrogym` at clean commit
+`4ab9854dea3d84e38a59c25e0f5835a00cf8225f`. An initial isolated import omitted this
+required source mount and correctly failed with `ModuleNotFoundError`; the retry
+used the established launcher mount/PYTHONPATH rather than installing a different
+package. No PPO or model inference ran in either import check.
+
+The Worker lacked this exact runtime image. A bounded main-to-Worker image-only
+transfer is active under `fluid-control-worker-hydrogym-runtime-transfer-20261005`.
+It preserves image ID `sha256:2e45b4e1ac9553ea86aa9148455be9aae30688446039fdee6255a637603acb2c`.
+No datasets or scientific results are being transferred. Source mounting and
+resource readiness must still be checked before using Worker for PPO. The current
+PPO guard deliberately checks both CUDA-free and unified MemAvailable; cache-heavy
+Spark nodes may fail its conservative startup requirement. This check has not
+been bypassed or changed, and no PPO execution is approved by these code changes.
+
 ### Supplemental controller identity contract (06:46 UTC)
 
 `src/fluid_control/dual_control_contract.py` now provides a separate, tested

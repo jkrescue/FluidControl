@@ -640,6 +640,49 @@ def evaluate_policy(env, policy, steps: int) -> dict:
     }
 
 
+def dual_binding_from_args(args, readiness: dict) -> dict | None:
+    """Supplement all canonical gates with exact dual-system provenance."""
+    names = ("dual_fno_manifest", "expected_dual_fno_manifest_sha256",
+             "dual_training_config", "dual_posteval_receipt",
+             "expected_dual_posteval_receipt_sha256")
+    values = [getattr(args, name, None) for name in names]
+    if not any(value is not None for value in values):
+        return None
+    if not all(value is not None for value in values):
+        raise ValueError("dual FNO requires all manifest, training config and post-evaluation identities")
+    if getattr(args, "train_only_smoke", False) or getattr(args, "allow_calibrated_epoch_zero", False):
+        raise ValueError("dual FNO cannot use smoke or single calibrated-model bypass arguments")
+    if readiness.get("status") != "FULL40_CANONICAL_PPO_EXECUTION_READY":
+        raise ValueError("canonical endpoint/window/dynamic admission must pass before dual binding")
+    if getattr(args, "vecnormalize_output", None) is None:
+        raise ValueError("dual PPO requires its own saved identity VecNormalize artifact")
+    from fluid_control.dual_control_contract import verify_dual_control_binding
+    return verify_dual_control_binding(
+        manifest_path=args.dual_fno_manifest,
+        expected_manifest_sha256=args.expected_dual_fno_manifest_sha256,
+        training_config=args.dual_training_config,
+        normalization_path=args.data / "normalization.json",
+        checkpoint_dir=args.checkpoint_dir,
+        expected_checkpoint_sha256=readiness["checkpoint_sha256"],
+        posteval_receipt=args.dual_posteval_receipt,
+        expected_posteval_receipt_sha256=args.expected_dual_posteval_receipt_sha256,
+        development_auditor=Path(__file__).resolve().parent / "audit_dynamic_fno_development_gates.py",
+    )
+
+
+def attach_dual_readiness(args, readiness: dict) -> dict:
+    """No dual argument can turn a blocked canonical result into READY."""
+    result = dict(readiness)
+    try:
+        binding = dual_binding_from_args(args, readiness)
+        if binding is not None:
+            result["dual_control_binding"] = binding
+    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+        result["status"] = "FULL40_CANONICAL_PPO_EXECUTION_BLOCKED"
+        result["blockers"] = [*readiness.get("blockers", []), f"dual_identity_invalid:{error}"]
+    return result
+
+
 def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
     import torch
     from evaluate_tandem_fno import load_composed_config
@@ -659,6 +702,9 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
     )
     if readiness["status"] != allowed:
         raise RuntimeError("refusing PPO execution because readiness is blocked")
+    runtime_dual = dual_binding_from_args(args, readiness)
+    if readiness.get("dual_control_binding") != runtime_dual:
+        raise ValueError("dual model identity changed after readiness verification")
     if args.output.exists():
         raise FileExistsError(f"refusing to overwrite {args.output}")
     device = torch.device(args.device)
@@ -670,7 +716,7 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
         raise ValueError("canonical PPO execution requires available GPU0")
     torch.cuda.set_per_process_memory_fraction(args.gpu_memory_fraction, device=0)
     calibrated_precision = None
-    if args.allow_calibrated_epoch_zero:
+    if args.allow_calibrated_epoch_zero or runtime_dual is not None:
         calibrated_precision = validate_calibrated_precision_protocol(torch)
     baselines = (
         validate_train20_baselines(args.baselines)
@@ -706,15 +752,26 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
     model_files = sorted(args.checkpoint_dir.glob("FNO.*.mdlus"))
     if len(model_files) != 1 or sha256(model_files[0]) != readiness["checkpoint_sha256"]:
         raise ValueError("checkpoint changed after readiness verification")
-    network = build_model(cfg).to(device).eval().requires_grad_(False)
-    epoch = load_checkpoint(args.checkpoint_dir, models=network, device=device)
-    calibrated_identity = validate_calibrated_epoch_zero(
-        args.checkpoint_dir,
-        epoch,
-        allow=args.allow_calibrated_epoch_zero,
-        expected_model_sha256=args.expected_calibrated_model_sha256,
-        expected_state_sha256=args.expected_calibrated_state_sha256,
-    )
+    if runtime_dual is not None:
+        from fluid_control.dual_fno import load_dual_fno
+        network, dual_identity = load_dual_fno(
+            args.dual_fno_manifest, cfg, device, build_model=build_model,
+            load_checkpoint=load_checkpoint,
+            expected_manifest_sha256=args.expected_dual_fno_manifest_sha256,
+        )
+        epoch = dual_identity.aerodynamic.epoch
+        calibrated_identity = {"checkpoint_epoch": epoch, "dual_model_system": True,
+                               "flow_checkpoint_epoch": dual_identity.flow.epoch}
+    else:
+        network = build_model(cfg).to(device).eval().requires_grad_(False)
+        epoch = load_checkpoint(args.checkpoint_dir, models=network, device=device)
+        calibrated_identity = validate_calibrated_epoch_zero(
+            args.checkpoint_dir,
+            epoch,
+            allow=args.allow_calibrated_epoch_zero,
+            expected_model_sha256=args.expected_calibrated_model_sha256,
+            expected_state_sha256=args.expected_calibrated_state_sha256,
+        )
 
     def make_case(split: str, case: str, phase: str):
         return Monitor(
@@ -835,6 +892,7 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
         "physicsnemo_checkpoint_epoch": epoch,
         "physicsnemo_checkpoint_sha256": readiness["checkpoint_sha256"],
         "calibrated_checkpoint_identity": calibrated_identity,
+        **({"dual_control_binding": runtime_dual} if runtime_dual is not None else {}),
         "precision_protocol": calibrated_precision,
         "vecnormalize_sha256": (
             sha256(args.vecnormalize_output)
@@ -862,6 +920,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--checkpoint-dir", type=Path, required=True)
+    parser.add_argument("--dual-fno-manifest", type=Path)
+    parser.add_argument("--expected-dual-fno-manifest-sha256")
+    parser.add_argument("--dual-training-config", type=Path)
+    parser.add_argument("--dual-posteval-receipt", type=Path)
+    parser.add_argument("--expected-dual-posteval-receipt-sha256")
     parser.add_argument("--dev30-data", type=Path)
     parser.add_argument("--promotion-receipt", type=Path)
     parser.add_argument("--validation-gate", type=Path)
@@ -957,6 +1020,7 @@ def main() -> None:
             runtime_image_id=args.runtime_image_id,
             episode_steps=args.episode_steps,
         )
+    readiness = attach_dual_readiness(args, readiness)
     if args.dry_run:
         write_exclusive(args.output, readiness)
         print(json.dumps(readiness, indent=2))
