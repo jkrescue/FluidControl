@@ -88,7 +88,7 @@ def file_sha256(path: Path) -> str:
 def plan_recovery(sample: dict, ledger: dict, approved_actions: dict) -> dict:
     """Return a deterministic decision without executing external work."""
     current = sample.get("current_authority")
-    if current == "p018_training":
+    if current in ("p018_training", "p018_formal"):
         task = sample.get("authority_tasks", {}).get(current, {})
         alerts = sample.get("alerts", [])
         running = task.get("state") == "RUNNING"

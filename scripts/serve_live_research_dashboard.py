@@ -335,6 +335,22 @@ function renderAdmission(d){
  }
 }
 function renderActiveExperiment(d){
+ const formal018=d.p018_formal_live;
+ if(formal018?.observed===true){
+  const age=Date.now()-Date.parse(formal018.sampled_at_utc||'');
+  const fresh=Number.isFinite(age)&&age>=0&&age<60000;
+  const task=formal018.task;
+  const title=!fresh?'评估状态采样已过期':task.running?'P018 训练结束 · 完整预测精度评估中':'P018 评估进程未运行 · 结果待复核';
+  const names={validation10:'十条验证轨迹',dynamic6:'六条动态动作轨迹',force_window:'受力时间窗口'};
+  const done=(task.progress?.completed_steps||[]).map(x=>names[x]||x);
+  const detail='已完成的评估阶段：'+(done.length?done.join('、'):'尚无完整阶段结果')+'。检查单步及连续预测的流场、阻力、升力均值与波动误差。';
+  const note='本轮精度与控制效果尚未验收，未启动新策略训练。下方流场图片保留历史模型标注，不代表本轮结果。';
+  $('lead-now').textContent=title+'。'+detail;
+  const card=document.createElement('div');card.className='card';
+  for(const [tag,text] of [['h3',title],['p',detail],['p',note],['p',task.identity_issues?.length?'运行核查提示：'+task.identity_issues.join('；'):'按实际服务、进程和资源采样更新；评估日志暂时无输出不代表停止。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
+  $('lead-models').prepend(card);$('train16-formal-progress').textContent=title;
+  $('train16-formal-detail').textContent=detail+' '+note;return;
+ }
  const reduced=d.reduced_rate_training;
  if(reduced?.verified===true){
   const age=Date.now()-Date.parse(reduced.sampled_at_utc||'');
@@ -1164,6 +1180,18 @@ def _fcp015_formal_result(root: Path) -> dict:
 FCP018_APPROVAL = "eea5bd5c6a3fe585ae1104600421e50b335f61299c4014c5e3136722af3d4d39"
 FCP018_PROTOCOL = "310f0bdf8563a2a70b844a32852791fa1b1dc20278a3098418942e1dab204d2d"
 FCP018_LAUNCHER = "artifacts/fcp018_reduced_rate_source_20261005_immutable/scripts/run_fcp018_reduced_rate_spark.sh"
+
+
+def _fcp018_formal_live(root: Path) -> dict:
+    try:
+        import watch_training_evaluation_state as monitor
+        now = datetime.now(UTC)
+        task = monitor.p018_formal_authority(
+            root, monitor.unit_state(monitor.P018_FORMAL_UNIT), now)
+        return {"observed": True, "sampled_at_utc": now.isoformat(),
+                "task": task, "admission": False}
+    except (ImportError, AttributeError, OSError, subprocess.SubprocessError, ValueError, TypeError):
+        return {"observed": False, "admission": False}
 
 
 def _parse_fcp018_live(output: str, log: str, log_age: float) -> dict:
@@ -2866,6 +2894,7 @@ class Handler(BaseHTTPRequestHandler):
             data["window_accumulation_training"] = _fcp015_training(self.root)
             data["fixed_panel_probe"] = _fcp016_probe(self.root)
             data["reduced_rate_training"] = _fcp018_training(self.root)
+            data["p018_formal_live"] = _fcp018_formal_live(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")

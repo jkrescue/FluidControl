@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import shlex
 import subprocess
@@ -234,6 +235,108 @@ P018_PROTOCOL_SHA256 = "310f0bdf8563a2a70b844a32852791fa1b1dc20278a3098418942e1d
 P018_LAUNCHER = "artifacts/fcp018_reduced_rate_source_20261005_immutable/scripts/run_fcp018_reduced_rate_spark.sh"
 P018_LAUNCHER_SHA256 = "102b8c6efe54b2e868e4973315260b6ed73b8e24e770af4fa2f04876af36c731"
 P018_ROOT = Path("artifacts/fcp018_reduced_rate_training_20261005")
+P018_FORMAL_UNIT = "fluid-control-fcp018-posteval-20261005.service"
+P018_FORMAL_INVOCATION = "ef589f7dbeff4fa0ab064309409971ad"
+P018_FORMAL_APPROVAL = Path("docs/FC_P018_FORMAL_EVALUATION_APPROVAL_20261005.json")
+P018_FORMAL_APPROVAL_SHA = "7b137d4600aaa38458dccb8a1db4f13bd6b9e0140e23dcb9f409702fc2ed275b"
+P018_SUPERVISOR = Path("artifacts/fcp018_formal_supervisor_5f956e4_immutable.py")
+P018_SUPERVISOR_SHA = "4bb55e02a1e14bef92e69ac881603608233b3b1c996c277df77a8287e7124a0c"
+P018_CHAIN = Path("artifacts/p018_posteval_chain_d46622b7cb51_immutable")
+P018_CHAIN_SHA = "6a97e0b4792f2e15156694b91e148267f577ac6e4eaf0f134caad1dae50efe3f"
+P018_RUNNER_SHA = "918ab117b780d6c24c177e3036e58cf7260ab0647bf832466540f7305df5c71e"
+P018_FORMAL_MONITOR = P018_ROOT / "formal_supervision_r1"
+
+
+def p018_formal_argv(repo):
+    return ["/usr/bin/python3", str(repo/P018_SUPERVISOR),
+        "--runner-sha256", P018_RUNNER_SHA, "--chain-receipt-sha256", P018_CHAIN_SHA,
+        "--approval-sha256", P018_FORMAL_APPROVAL_SHA,
+        "--training-approval-sha256", P018_APPROVAL_SHA256,
+        "--observation-sha256", P018_OBSERVATION_SHA256,
+        "--approval", str(repo/P018_FORMAL_APPROVAL),
+        "--monitor-dir", str(repo/P018_FORMAL_MONITOR), "--execute"]
+
+
+def p018_formal_authority(repo, state, now):
+    """Bounded observation only: numerical admission always requires separate review."""
+    issues=[]
+    for path, expected in {
+        P018_SUPERVISOR:P018_SUPERVISOR_SHA, P018_FORMAL_APPROVAL:P018_FORMAL_APPROVAL_SHA,
+        P018_CHAIN/'receipt.json':P018_CHAIN_SHA,
+        P018_CHAIN/'scripts/run_fcp008_posteval_spark.sh':P018_RUNNER_SHA,
+        P018_APPROVAL:P018_APPROVAL_SHA256, P018_OBSERVATION:P018_OBSERVATION_SHA256,
+    }.items():
+        try:
+            if file_sha256(repo/path)!=expected: issues.append('Formal identity SHA differs: '+str(path))
+        except OSError: issues.append('Formal identity missing: '+str(path))
+    if state.get('load_state')!='loaded' or state.get('invocation_id')!=P018_FORMAL_INVOCATION:
+        issues.append('Formal unit/invocation differs')
+    match=re.search(r"argv\[\]=(.*?) ;",state.get('exec_start',''))
+    try: argv=shlex.split(match.group(1)) if match else []
+    except ValueError: argv=[]
+    if argv!=p018_formal_argv(repo): issues.append('Formal immutable command differs')
+    bound=not issues
+    if state.get('result')!='success' or state.get('exec_main_status')!='0':
+        issues.append('Formal service reports unsuccessful result/exit status')
+    running=(state.get('active_state'),state.get('sub_state')) in [('activating','start'),('active','running')]
+    running=bool(running and state.get('main_pid',0)>0 and state.get('main_pid_alive') is True)
+    terminal=(state.get('active_state')=='active' and state.get('sub_state')=='exited'
+              and state.get('main_pid')==0 and state.get('result')=='success'
+              and state.get('exec_main_code')=='1' and state.get('exec_main_status')=='0')
+    monitor=repo/P018_FORMAL_MONITOR
+    progress={'completed_steps':[], 'runner_log_age_seconds':None, 'memory':None}
+    approval=read_json(repo/P018_FORMAL_APPROVAL,{})
+    for name in ('validation10','dynamic6','force_window'):
+        path=repo/P018_ROOT/'posteval_fc_p018/step_receipts'/f'{name}.json'
+        if not path.exists(): continue
+        row=read_json(path,{})
+        required={'status':'FC_P018_POSTEVAL_STEP_COMPLETE','step':name,
+            'candidate_kind':'fcp018_reduced_rate_dual_fno',
+            'formal_evaluation_approval_sha256':P018_FORMAL_APPROVAL_SHA,
+            'posteval_chain_receipt_sha256':P018_CHAIN_SHA,
+            'checkpoint_sha256':approval.get('candidate_model_sha256'),
+            'checkpoint_state_sha256':approval.get('candidate_state_sha256'),
+            'dual_manifest_sha256':approval.get('dual_manifest_sha256')}
+        if any(row.get(k)!=v for k,v in required.items()): issues.append('Formal step identity differs: '+name)
+        else: progress['completed_steps'].append(name)
+    try: progress['runner_log_age_seconds']=max(0,now.timestamp()-(monitor/'runner.log').stat().st_mtime)
+    except OSError: pass
+    try:
+        with (monitor/'memory.jsonl').open('rb') as stream:
+            stream.seek(0,2);stream.seek(max(0,stream.tell()-16384))
+            rows=stream.read().decode().splitlines()
+        memory=json.loads(rows[-1]); age=(now-datetime.fromisoformat(memory['timestamp_utc'])).total_seconds()
+        progress['memory']=memory; progress['memory_age_seconds']=age
+        if running and (age<0 or age>30): issues.append('Formal resource samples stale')
+        if any(type(memory.get(k)) not in (int,float) or not math.isfinite(memory[k]) or memory[k]<20*1024**2 for k in ('mem_available_kib','mem_free_kib')):
+            issues.append('Formal resource below 20 GiB or unavailable')
+    except (OSError,ValueError,KeyError,IndexError,TypeError):
+        if running: issues.append('Formal resource samples unavailable')
+    classification='NEEDS_AGENT_ANALYSIS'
+    action='核查正式评估身份、资源或失败原因；保留证据，不自动重跑。'
+    if not running and not terminal:
+        issues.append('Formal unit is neither verified running nor successful retained terminal')
+    if bound and running:
+        classification='RUNNING' if not issues else 'RUNNING_REQUIRES_REVIEW'
+        action='继续已批准的原协议正式评估；日志静默不代表结束。完成后独立核对原始完整门槛，不自动启动PPO。'
+    elif not issues and terminal:
+        classification='TERMINAL_AUDIT_PENDING'
+        action='正式评估进程已成功退出；核对守卫收据、完整评估收据及原始数值门槛，交Lead科学判断，不自动认定准入或启动PPO。'
+    if terminal:
+        guard=read_json(monitor/'receipt.json',{})
+        expected={'status':'FC_P018_FORMAL_RESOURCE_GUARD_COMPLETE_NOT_ADMISSION',
+            'supervisor_sha256':P018_SUPERVISOR_SHA,'runner_sha256':P018_RUNNER_SHA,
+            'approval_sha256':P018_FORMAL_APPROVAL_SHA,'chain_receipt_sha256':P018_CHAIN_SHA,
+            'training_approval_sha256':P018_APPROVAL_SHA256,
+            'observation_sha256':P018_OBSERVATION_SHA256,
+            'command':['bash',str(repo/P018_CHAIN/'scripts/run_fcp008_posteval_spark.sh'),'--execute'],
+            'runner_exit_code':0}
+        if any(guard.get(k)!=v for k,v in expected.items()):
+            issues.append('Formal terminal guard proof absent or differs');classification='NEEDS_AGENT_ANALYSIS'
+    return {'authority_unit':P018_FORMAL_UNIT,'invocation_id':P018_FORMAL_INVOCATION,
+        'state':classification,'running':bound and running,'stage_complete':False,
+        'approved_action_id':None,'identity_issues':issues,'progress':progress,
+        'next_action':action,'scientific_admission':False,'automatic_recovery_eligible':False}
 
 
 def classify_authority_task(state: dict, complete: bool, *, allow_resume: bool) -> tuple[str, str | None]:
@@ -2301,7 +2404,10 @@ def p018_authority(repo: Path, state: dict, now: datetime) -> dict:
 
 def build_sample(repo, previous, units, resources, now):
     legacy = _build_legacy_sample(repo, previous, units, resources, now)
-    if p018_present(repo):
+    if (repo/P018_FORMAL_APPROVAL).exists() or (repo/P018_FORMAL_MONITOR).exists():
+        task = p018_formal_authority(repo, units.get(P018_FORMAL_UNIT, {}), now)
+        authority, prefix = "p018_formal", "FC_P018_FORMAL_"
+    elif p018_present(repo):
         task = p018_authority(repo, units.get(P018_UNIT, {}), now)
         authority, prefix = "p018_training", "FC_P018_TRAINING_"
     elif (repo / P015_APPROVAL).exists():
@@ -2333,7 +2439,7 @@ def build_sample(repo, previous, units, resources, now):
     if task["state"] != "RUNNING":
         sample["alerts"].append(prefix + task["state"])
     sample["blocker_reasons"] = list(legacy["blocker_reasons"]) + task["identity_issues"]
-    if authority == "p018_training":
+    if authority in ("p018_training", "p018_formal"):
         sample["next_action"] = task["next_action"]
         sample["blocker_reasons"] = list(task["identity_issues"])
         sample["historical_p015_authority"] = p015_authority(repo, units.get(P015_UNIT, {}))
@@ -2368,6 +2474,8 @@ def main() -> None:
         units[P015_UNIT] = unit_state(P015_UNIT)
     if p018_present(repo):
         units[P018_UNIT] = unit_state(P018_UNIT)
+    if (repo/P018_FORMAL_APPROVAL).exists() or (repo/P018_FORMAL_MONITOR).exists():
+        units[P018_FORMAL_UNIT] = unit_state(P018_FORMAL_UNIT)
     units[WORKER_AUTHORITY_UNIT] = worker_unit_state(WORKER_AUTHORITY_UNIT)
     units[PAIRED_LAMBDA10_POSTEVAL_UNIT] = worker_unit_state(
         PAIRED_LAMBDA10_POSTEVAL_UNIT, user_scope=False

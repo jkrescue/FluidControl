@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**当前阶段：P018训练终态与官方CPU双模型重载已核验，原完整正式评估运行中（2026-10-05 14:30 UTC附近核验）**。训练同一invocation `1ca4654aab074278bb2efdfff8dbc1eb`成功退出，171次AdamW更新/1368窗口、44条真实训练轨迹、固定学习率`1.5625e-7`与协议均通过完整性审计；冻结flow和两项lifting bias保持不变。候选审计SHA `03153fa5…2323b9`、completion SHA `bce5fb46…205bf`，不是科学准入。实际官方镜像CPU双模型重载收据SHA `d3625877…91bdde`；外部容器`79e72220…1a6407`退出0，镜像/命令证据见`docs/FC_P018_CPU_DUAL_RELOAD_EXECUTION_20261005.json`。前两次只读默认缓存目录导致的失败保留，成功尝试只将缓存重定向到容器临时目录。
+
+正式评估于14:20 UTC启动，当前精确service `fluid-control-fcp018-posteval-20261005.service`、invocation `ef589f7dbeff4fa0ab064309409971ad`、MainPID `56992`为`activating/start`：这是oneshot任务正在运行，不是空闲或已完成。审批SHA `7b137d46…ed275b`，冻结评估链SHA `6a97e0b4…0efe3f`，不可变外层守卫SHA `4bb55e02…24a0c`；原validation10→dynamic6→force-window→联合审计协议不变，同时守护MemAvailable和MemFree至少20GiB。输出在`artifacts/fcp018_reduced_rate_training_20261005/posteval_fc_p018`，运行日志/资源在`formal_supervision_r1`。尚无完整正式精度结论；固定六个训练窗H1目标改善3.53%、自回归目标恶化0.126%，不等于收敛或准入。下一步完成并独立复核原完整门槛；只有合格候选才进入兼容新PPO与配对真实CFD反馈。P015联合1/6失败仍保留；没有新的代理辅助真实CFD成功，项目未完成。
+
+**用户条件授权，当前不改指标**：按`DECISIONS.md`顶部2026-10-05 14:20 UTC记录，继续尝试一小时后、最早15:20 UTC（北京时间23:20），才可基于证据复评真实CFD的`|后圆柱平均Cl|/基准Cl′RMS <=0.10`要求。这是实际平均横向载荷限制，不是代理预测均值误差门槛；不会自动放宽升力脉动RMS比、减阻、动作或资源限制，也不改变正在运行的P018原正式评估。若随后修订，须登记新版本、并列保留旧10%结果，不回写历史PASS，且仍须真实CFD闭环验证。
+
+以下按时间记录保留为历史；“训练正在运行”等旧描述不覆盖上述当前状态。
+
 **P018全量低学习率对照已启动（2026-10-05 12:45 UTC核验）**：审批`9b44d9e`，Root及独立各58项回归通过。service `fluid-control-fcp018-reduced-rate-20261005.service`，invocation `1ca4654aab074278bb2efdfff8dbc1eb`，实际官方容器`afd47995f5153b1107dee041becbdb4e23c33b7281de7af69d07a621c174c31f`正在运行。相对P015仅优化参数lr由1e-5降为1.5625e-7；同44真实训练轨迹、同P009初态、同1368窗口/171更新与原目标，flow冻结。协议SHA `310f0bdf…04d2d`贯穿训练和保存；终态才评估，不挑中间模型。当前空闲内存约25GiB，双20GiB守卫开启。输出`artifacts/fcp018_reduced_rate_training_20261005/candidate`，外部执行证据见`docs/FC_P018_RUNNING_EXECUTION_20261005.json`。完整终态审计/CPU双模型重载/原formal衔接同步准备。P017独立复核支持局部首步过冲，不代表全数据稳定或准入；最终代理辅助CFD闭环仍未达成。
 
 **P017首步诊断已运行（2026-10-05 12:33 UTC）**：审批`5f5f2c0`，实施/Root/独立各27项CPU测试通过。实际service `fluid-control-fcp017-first-step-20261005.service`，invocation `cfa568f1f4d5412a93628273d93a95a1`，容器`604af989be7d3dae1667c37d7a43afd50d8ec7e5b76798d0fca59bf6f4d5fd29`运行在固定官方镜像。重放P009同六窗首个AdamW更新，比较实际方向和完整/正负1/64位移；不保存模型、不访问heldout/PPO。启动空闲约33GiB，双20GiB守卫与15分钟内限开启。输出`artifacts/fcp017_first_step_diagnostic_20261005`。P016独立终态审查已完成：运行完整但同时改善假设不获支持（FC-E026）；原科学准入不变，项目仍未完成。
