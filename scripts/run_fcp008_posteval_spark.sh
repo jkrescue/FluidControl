@@ -5,7 +5,7 @@ set -euo pipefail
 profile="${FCP_POSTEVAL_PROFILE:-p008}"
 root="${FCP008_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)}"; cd "$root"
 mode="${1:---dry-run}"
-case "$mode" in --dry-run|--execute|--resume|--wait) ;; *) echo "invalid mode" >&2; exit 2;; esac
+case "$mode" in --dry-run|--stage-only|--execute|--resume|--wait) ;; *) echo "invalid mode" >&2; exit 2;; esac
 image="fluid-control-physicsnemo:2.2.2"
 image_id="sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e"
 case "$profile" in
@@ -170,7 +170,10 @@ host_path="$chain_root/scripts:$host_source/src:$host_source/scripts"
 [[ "$(sha "$predecl")" == d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b ]]
 [[ "$(sha "$physical_qc")" == 9723203f922cbe6609f2c92b7b48d299ee9d948d694d3c6c2eab413472421d86 ]]
 
-if [[ "$mode" == --dry-run ]]; then
+if [[ "$mode" == --dry-run || "$mode" == --stage-only ]]; then
+  if [[ "$mode" == --stage-only ]]; then
+    env PYTHONPATH="$host_path" "$host_python" -c 'import importlib.util,sys; from pathlib import Path; spec=importlib.util.spec_from_file_location("frozen_validator",sys.argv[1]); module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module); module.configure_profile(sys.argv[2]); print("verified_chain_sha256="+module.validate_chain_receipt(Path(sys.argv[3]),Path(sys.argv[4])))' "$validator" "$profile" "$chain_receipt" "$source"
+  fi
   env PYTHONPATH="$host_path" "$host_python" "$auditor" --repo "$root" "${auditor_scope_args[@]}" >/dev/null
   if [[ "$profile" == p013 ]]; then
     echo "FC_P013_POSTEVAL_INTERFACE_DRY_RUN_PASS_NO_GPU_NO_SCIENTIFIC_RESULT"
