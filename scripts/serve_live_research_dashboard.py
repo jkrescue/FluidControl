@@ -335,6 +335,17 @@ function renderAdmission(d){
  }
 }
 function renderActiveExperiment(d){
+ const p024=d.p024_live;
+ if(p024?.verified===true){
+  const age=Date.now()-Date.parse(p024.sampled_at_utc||'');
+  const fresh=Number.isFinite(age)&&age>=0&&age<60000;
+  const title=!fresh?'响应诊断状态采样已过期':p024.running?'P024 输入响应诊断进行中':p024.exited_success?'P024 诊断计算结束 · 结果待复核':'P024 诊断已停止 · 正在检查原因';
+  const detail='不训练模型：先精确重现原模型与上次训练结果，再检查固定的几组输入系数。用于判断受力输入作用强弱和误差变化，不选择新模型或策略。';
+  $('lead-now').textContent=title;
+  const card=document.createElement('div');card.className='card';
+  for(const [tag,text] of [['h3',title],['p',detail],['p','P023已复核：部分预测误差略有改善，但仍未满足全部要求。原验收标准不变；流场图为历史结果。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
+  $('lead-models').prepend(card);$('train16-formal-progress').textContent=title;$('train16-formal-detail').textContent=detail;return;
+ }
  const p023=d.p023_live;
  if(p023){
   const age=Date.now()-Date.parse(p023.sampled_at_utc||'');
@@ -1256,6 +1267,30 @@ def _parse_fcp023_live(state: dict, log: str, process_matches: bool) -> dict:
         return {"verified": False}
     return {"verified": True, "running": running, "exited_success": terminal,
             "updates": {key: len(value) for key, value in updates.items()}, "admission": False}
+
+
+def _fcp024_live(root: Path) -> dict:
+    sampled = datetime.now(UTC).isoformat()
+    try:
+        approval = root / "docs/FC_P024_EXECUTION_APPROVAL_20261005.json"
+        launcher = root / "artifacts/fcp024_response_scale_source_20261005_immutable/scripts/run_fcp024_response_scale_spark.sh"
+        if hashlib.sha256(approval.read_bytes()).hexdigest() != "53926e4d2defe71f24f7ddb99b2a51706855997c94a112de2d50f462c6fda4cd" or hashlib.sha256(launcher.read_bytes()).hexdigest() != "683482e6f77bd81498f12ee9b5dd8ab6fdc0755c2b47da23a020f021f48ff705":
+            return {"verified": False, "sampled_at_utc": sampled}
+        fields = ("InvocationID", "MainPID", "ActiveState", "SubState", "Result", "ExecMainCode", "ExecMainStatus")
+        raw = subprocess.check_output(["systemctl", "--user", "show", "fluid-control-fcp024-response-scale-20261005.service",
+             *[arg for key in fields for arg in ("-p", key)]], text=True, timeout=5)
+        state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+        pid = state.get("MainPID", "0")
+        if state.get("InvocationID") != "b85dcf9d70e443fe92ae4ef5d72d3c76":
+            return {"verified": False, "sampled_at_utc": sampled}
+        matches = pid.isdigit() and pid != "0" and str(launcher).encode() in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+        if pid != "0" and not matches:
+            return {"verified": False, "sampled_at_utc": sampled}
+        running = state.get("ActiveState") == "active" and state.get("SubState") == "running" and matches
+        terminal = state.get("ActiveState") == "active" and state.get("SubState") == "exited" and pid == "0" and state.get("Result") == "success" and state.get("ExecMainCode") == "1" and state.get("ExecMainStatus") == "0"
+        return {"verified": True, "running": running, "exited_success": terminal, "sampled_at_utc": sampled, "admission": False}
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return {"verified": False, "sampled_at_utc": sampled}
 
 
 def _fcp023_terminal_review(root: Path) -> dict:
@@ -3149,6 +3184,7 @@ class Handler(BaseHTTPRequestHandler):
             data["p020_live"] = _fcp020_live(self.root)
             data["p022_live"] = _fcp022_live(self.root)
             data["p023_live"] = _fcp023_live(self.root)
+            data["p024_live"] = _fcp024_live(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
