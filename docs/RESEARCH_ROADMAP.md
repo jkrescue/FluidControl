@@ -16,7 +16,7 @@ CFD真值 → 代理预测 → 控制决策 → 在线CFD反馈。分开管理�
 | P1 data-space analysis | Re、alpha、L/D、相位和动作时间历程覆盖 | 区分已见参数、未见相位、未见动作历程、参数外推；同初态配对成立 |
 | P2 surrogate accuracy | u/v/p及前后受力固定协议基线 | 明确各动作/相位/时间范围误差，不以单个平均数掩盖失败 |
 | P3 rollout stability | H1/10/50/100时序误差、相位/幅值、必要物理诊断 | 有限输出与准确预测分别判定；不把H100外推为800步稳定 |
-| P4 control-oriented prediction | FC-P015完整评估失败，六窗仅1/6联合通过，旋转升力波动仍不准。FC-P016固定六窗可拟合性检验已完成实施和独立审查，于12:13 UTC在Main启动；尚无终态结论 | 先按固定32次更新区分局部优化能力与误差权衡，再批准针对性训练；原完整准入和真实CFD验收不变 |
+| P4 control-oriented prediction | FC-P015完整评估失败；FC-P016固定六窗检验也未支持同时改善，独立终态复核完成。首个AdamW更新后同批目标升至20.48倍，正在实施FC-P017首步方向与位移检查 | 先区分更新方向、有限步幅和数值问题，再批准针对性训练；原完整准入和真实CFD验收不变 |
 | P5 interpretable control baseline | 条件性MPC/有限动作搜索对照 | 代理准入后才执行；相同物理目标、动作约束和真实CFD对照；不强制推翻PPO |
 | P6 RL integration | 绑定合格新FNO重新训练PPO | 环境/模型/归一化/策略SHA对应，训练及独立评估无数值异常 |
 | P7 real-CFD closed loop | 冻结策略、配对OpenFOAM反馈验证 | 满足原物理指标；再逐步增加未参与开发的测试与多seed证据 |
@@ -38,7 +38,8 @@ P5不是“已有PPO必须作废”的依赖；P4不通过时MPC和surrogate PPO
 | FC-P013 / COMPLETE — DEVELOPMENT FAIL | 独立官方受力FNO能否改善控制相关预测，同时保留原flow递推；是组合系统测试，不是梯度冲突已证实 | 原完整正式评估已完成，receipt SHA `2733c3cb…aa2e7a`；六窗联合0/6、总Cd5/6、后Cl脉动RMS2/6、后Cl均值0/6，原审计器独立重算一致 | 拒绝进入PPO；保留FC-E023负结果，不改变门槛或选择中间模型 |
 | FC-P014 / COMPLETE — DIAGNOSTIC ONLY | 训练退步是否主要是可用常数修正的均值偏移 | 六个固定train窗的实际H1、AR目标均退步；AR去均值残差MSE六窗均增加，结果SHA `5550140b…e95a7`。模型未修改，无优化或验证集访问 | FC-E024保留；拒绝额外全数据仅常数偏置校准，因为它不能改善升力脉动RMS。结果不能证明唯一训练原因 |
 | FC-P015 / COMPLETE — DEVELOPMENT FAIL | 八窗口平均梯度是否改善完整控制预测要求 | 171次更新完成，官方双模型重载及完整formal已独立复核；receipt353004af…95a5b，joint1/6、Cd5/6、RMS2/6、meanCl2/6 | 拒绝PPO准入，保留FC-E025。相比P013部分改善仍不能满足要求，不继续无依据单遍训练或仅bias修正 |
-| FC-P016 / RUNNING — APPROVED TRAIN-ONLY PROBE | 固定训练分布下原非线性受力FNO能否同时降低均值及波形误差 | 审批e40bca9；真实invocation a95370a65c2b47e0b0e2926261937e33，外部运行证据见FC_P016_RUNNING_EXECUTION_20261005.json。同P009亲本、原loss/架构，固定六窗平均梯度后更新32次；0/8/16/32诊断，终态32解释。严格train-only，无candidate/save/validation/PPO | 分domain比较原objective及五个nonzero窗tail62 bias²、centeredMSE和Cl脉动RMS误差。只支持局部可拟合性，不证明泛化/输入充分性；详见FC_P016_FIXED_PANEL_FIT_PLAN_20261005.md |
+| FC-P016 / COMPLETE — SIMULTANEOUS REPAIR NOT SUPPORTED | 固定训练分布下原非线性受力FNO能否同时降低均值及波形误差 | 独立核验32次更新/192次窗口计算完整，result f760d2e7…54248。H1/AR objective +0.175%/-3.803%，bias² +420.873%/+208.108%；波形与RMS误差下降不足以覆盖偏差恶化 | 保留FC-E026；不保存候选、不启动PPO或自动追加训练。下项检查同批优化机制，不把失败归因容量或ROI |
+| FC-P017 / IMPLEMENTATION — NO GPU APPROVAL YET | 首个AdamW方向局部下降但完整位移过大 | 同P009/六窗/原目标，计算一次原始平均梯度与首步实际位移；固定完整和正负1/64位移前向，复核复数Adam公式及舍入。计划218ac7e | 只判别局部方向与有限步幅；不选模型、不扫参、不访问heldout。实现与独立审查后另批GPU |
 | FC-P004 / GATED | 合格代理上的短时域显式动作规划可提供解释性控制对照 | 可选MPC候选序列受相同动作约束，在真实CFD配对评价；预先规定时域和计算预算 | 用于区分代理/控制器问题，不因为MPC可解释就视为安全可靠 |
 | FC-P005 / GATED | 合格新代理支持学到有物理收益的PPO策略 | 新policy仅在准确绑定的FNO中训练，随后真实CFD配对；指标沿用原标准 | 通过后才能主张surrogate-assisted闭环，而不是CFD-only成果 |
 | FC-P006 / LATER | 收益在未参与开发的样本/随机种子上可重复 | 固定候选后开展冻结集/新独立样本、多seed，报告区间及失效 | 扩大或收缩稳健性结论；反复开发用的validation不当最终test |
