@@ -25,6 +25,7 @@ from fluid_control.canonical_joint_v1 import (
     validate_baseline,
     validate_full40_action_contract,
 )
+from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
 
 PROFILE = "matched_start_full40_v1"
 VALIDATION_GATE_STATUS = "FULL40_VALIDATION_SURROGATE_READINESS_PASS"
@@ -179,6 +180,27 @@ def write_atomic(path: Path, payload: dict) -> None:
         stream.flush()
         os.fsync(stream.fileno())
     os.replace(temporary, path)
+
+
+def validate_calibrated_precision_protocol(torch_module) -> dict:
+    """Require FC-P008's default-TF32/high protocol before its first forward."""
+    value = {
+        "NVIDIA_TF32_OVERRIDE": os.environ.get("NVIDIA_TF32_OVERRIDE"),
+        "cuda_matmul_allow_tf32": bool(
+            torch_module.backends.cuda.matmul.allow_tf32
+        ),
+        "cudnn_allow_tf32": bool(torch_module.backends.cudnn.allow_tf32),
+        "float32_matmul_precision": torch_module.get_float32_matmul_precision(),
+    }
+    expected = {
+        "NVIDIA_TF32_OVERRIDE": None,
+        "cuda_matmul_allow_tf32": True,
+        "cudnn_allow_tf32": True,
+        "float32_matmul_precision": "high",
+    }
+    if value != expected:
+        raise ValueError("FC-P008 default-TF32/high precision protocol differs")
+    return value
 
 
 def _load_gate_module():
@@ -647,6 +669,9 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
     ):
         raise ValueError("canonical PPO execution requires available GPU0")
     torch.cuda.set_per_process_memory_fraction(args.gpu_memory_fraction, device=0)
+    calibrated_precision = None
+    if args.allow_calibrated_epoch_zero:
+        calibrated_precision = validate_calibrated_precision_protocol(torch)
     baselines = (
         validate_train20_baselines(args.baselines)
         if train_only_smoke
@@ -683,8 +708,13 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
         raise ValueError("checkpoint changed after readiness verification")
     network = build_model(cfg).to(device).eval().requires_grad_(False)
     epoch = load_checkpoint(args.checkpoint_dir, models=network, device=device)
-    if epoch < 1:
-        raise FileNotFoundError("full40 PhysicsNeMo checkpoint did not load")
+    calibrated_identity = validate_calibrated_epoch_zero(
+        args.checkpoint_dir,
+        epoch,
+        allow=args.allow_calibrated_epoch_zero,
+        expected_model_sha256=args.expected_calibrated_model_sha256,
+        expected_state_sha256=args.expected_calibrated_state_sha256,
+    )
 
     def make_case(split: str, case: str, phase: str):
         return Monitor(
@@ -804,6 +834,8 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
         "training_executed": True,
         "physicsnemo_checkpoint_epoch": epoch,
         "physicsnemo_checkpoint_sha256": readiness["checkpoint_sha256"],
+        "calibrated_checkpoint_identity": calibrated_identity,
+        "precision_protocol": calibrated_precision,
         "vecnormalize_sha256": (
             sha256(args.vecnormalize_output)
             if args.vecnormalize_output is not None
@@ -849,6 +881,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gpu-memory-fraction", type=float, default=0.20)
     parser.add_argument("--vecnormalize-output", type=Path)
     parser.add_argument("--seed", type=int, default=20261003)
+    parser.add_argument("--allow-calibrated-epoch-zero", action="store_true")
+    parser.add_argument("--expected-calibrated-model-sha256")
+    parser.add_argument("--expected-calibrated-state-sha256")
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--dry-run", action="store_true")
     mode.add_argument("--execute", action="store_true")
@@ -870,6 +905,19 @@ def main() -> None:
         parser.error("checkpoint interval must divide timesteps")
     if not 0.0 < args.gpu_memory_fraction <= 0.20:
         parser.error("gpu memory fraction must be in (0, 0.20]")
+    if args.allow_calibrated_epoch_zero:
+        if not (
+            args.expected_calibrated_model_sha256
+            and args.expected_calibrated_state_sha256
+        ):
+            parser.error(
+                "calibrated epoch zero requires expected model and state SHA256"
+            )
+    elif (
+        args.expected_calibrated_model_sha256
+        or args.expected_calibrated_state_sha256
+    ):
+        parser.error("calibrated checkpoint SHA arguments require explicit allow")
     if args.train_only_smoke:
         readiness = smoke_preflight(
             data=args.data,

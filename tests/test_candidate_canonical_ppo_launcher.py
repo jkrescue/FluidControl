@@ -83,6 +83,28 @@ def readiness() -> dict:
     }
 
 
+def p008_readiness() -> dict:
+    value = readiness()
+    value["candidate_identity"].update({
+        "candidate_kind": "full_train_force_row_recalibration",
+        "checkpoint_epoch": 0,
+        "checkpoint_relative_directory": "candidate_build/candidate",
+        "checkpoint_model_file": "FNO.0.0.mdlus",
+        "checkpoint_state_file": "checkpoint.0.0.pt",
+        "resolved_config_path": (
+            "artifacts/tandem_fno_true_state_paired_step_lambda10_20261005/"
+            "resolved_config.yaml"
+        ),
+        "precision_protocol": {
+            "NVIDIA_TF32_OVERRIDE": None,
+            "cuda_matmul_allow_tf32": True,
+            "cudnn_allow_tf32": True,
+            "float32_matmul_precision": "high",
+        },
+    })
+    return value
+
+
 def test_command_uses_candidate_h100_and_preserves_legacy_contract(tmp_path: Path) -> None:
     args = make_args(tmp_path)
     dry = MODULE.build_trainer_command(args, args.output, "dry-run")
@@ -103,6 +125,28 @@ def test_command_uses_candidate_h100_and_preserves_legacy_contract(tmp_path: Pat
     }
 
 
+def test_p008_command_preserves_epoch_zero_identity_without_aliasing(
+    tmp_path: Path,
+) -> None:
+    args = make_args(tmp_path)
+    identity = p008_readiness()
+    command = MODULE.build_trainer_command(args, args.output, "dry-run", identity)
+    assert command[command.index("--checkpoint-dir") + 1].endswith(
+        "candidate/candidate_build/candidate"
+    )
+    assert command[command.index("--config") + 1].endswith(
+        "tandem_fno_true_state_paired_step_lambda10_20261005/resolved_config.yaml"
+    )
+    assert "--allow-calibrated-epoch-zero" in command
+    assert command[command.index("--expected-calibrated-model-sha256") + 1] == "a" * 64
+    assert command[command.index("--expected-calibrated-state-sha256") + 1] == "b" * 64
+    contract = MODULE.command_contract(args, identity)
+    assert contract["checkpoint_epoch"] == 0
+    assert contract["checkpoint_model_file"] == "FNO.0.0.mdlus"
+    assert contract["checkpoint_state_file"] == "checkpoint.0.0.pt"
+    assert contract["precision_protocol"]["float32_matmul_precision"] == "high"
+
+
 def test_legacy_entry_keeps_no_vecnormalize_default() -> None:
     args = LEGACY.build_parser().parse_args([
         "--data", "data", "--config", "config", "--checkpoint-dir", "checkpoint",
@@ -110,6 +154,23 @@ def test_legacy_entry_keeps_no_vecnormalize_default() -> None:
         "--runtime-image-id", "runtime", "--output", "output", "--dry-run",
     ])
     assert args.vecnormalize_output is None
+    assert args.allow_calibrated_epoch_zero is False
+
+
+def test_calibrated_precision_requires_default_tf32_high(monkeypatch) -> None:
+    torch_stub = SimpleNamespace(
+        backends=SimpleNamespace(
+            cuda=SimpleNamespace(matmul=SimpleNamespace(allow_tf32=True)),
+            cudnn=SimpleNamespace(allow_tf32=True),
+        ),
+        get_float32_matmul_precision=lambda: "high",
+    )
+    monkeypatch.delenv("NVIDIA_TF32_OVERRIDE", raising=False)
+    value = LEGACY.validate_calibrated_precision_protocol(torch_stub)
+    assert value["float32_matmul_precision"] == "high"
+    torch_stub.backends.cuda.matmul.allow_tf32 = False
+    with pytest.raises(ValueError, match="default-TF32/high"):
+        LEGACY.validate_calibrated_precision_protocol(torch_stub)
 
 
 @pytest.mark.parametrize(
@@ -189,11 +250,12 @@ def test_ready_dry_run_requires_legacy_preflight_to_pass(
     assert result["command_contract"]["new_policy_required"] is True
 
 
-def test_execute_binds_new_policy_and_identity_vecnormalize(
-    tmp_path: Path, monkeypatch
+@pytest.mark.parametrize("precision_valid", [True, False])
+def test_execute_binds_new_policy_vecnormalize_and_p008_precision(
+    tmp_path: Path, monkeypatch, precision_valid: bool
 ) -> None:
     args = make_args(tmp_path)
-    candidate_readiness = readiness()
+    candidate_readiness = p008_readiness()
     contract = MODULE.command_contract(args, candidate_readiness)
     approved = args.repo / "approved.json"
     approved.write_text(json.dumps({
@@ -220,6 +282,11 @@ def test_execute_binds_new_policy_and_identity_vecnormalize(
         (output / "audit.json").write_text(json.dumps({
             "status": "FULL40_CANONICAL_PPO_SURROGATE_RUN_COMPLETE",
             "physicsnemo_checkpoint_sha256": "a" * 64,
+            "precision_protocol": (
+                candidate_readiness["candidate_identity"]["precision_protocol"]
+                if precision_valid
+                else {"float32_matmul_precision": "highest"}
+            ),
             "vecnormalize_contract": (
                 "identity: norm_obs=false, norm_reward=false; preserves legacy PPO numerics"
             ),
@@ -231,6 +298,10 @@ def test_execute_binds_new_policy_and_identity_vecnormalize(
         }))
 
     monkeypatch.setattr(MODULE.subprocess, "run", fake_run)
+    if not precision_valid:
+        with pytest.raises(ValueError, match="audit contract differs"):
+            MODULE.execute(args, candidate_readiness)
+        return
     result = MODULE.execute(args, candidate_readiness)
     assert result["status"] == "CANDIDATE_CANONICAL_PPO_SURROGATE_RUN_BOUND"
     assert result["final_policy_sha256"] == MODULE.sha256(

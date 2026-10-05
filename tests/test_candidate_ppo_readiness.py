@@ -7,6 +7,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
+import torch
 import yaml
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/audit_candidate_ppo_readiness.py"
@@ -235,6 +236,88 @@ def make_fcp003c(values: dict) -> None:
     write_json(values["posteval_receipt_path"], receipt)
 
 
+def make_fcp008(values: dict) -> None:
+    candidate = values["candidate_root"]
+    old_model = candidate / "best/FNO.0.2.mdlus"
+    old_state = candidate / "best/checkpoint.0.2.pt"
+    checkpoint = candidate / "candidate_build/candidate"
+    checkpoint.mkdir(parents=True)
+    model = checkpoint / "FNO.0.0.mdlus"
+    state = checkpoint / "checkpoint.0.0.pt"
+    old_model.replace(model)
+    old_state.unlink()
+    torch.save({"metadata": {
+        "status": "FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE",
+        "candidate_checkpoint_epoch": 0,
+        "parent_checkpoint_epoch": 2,
+        "calibration_generation": 1,
+        "validation_accessed": False,
+        "frozen_test_accessed": False,
+        "ppo_executed": False,
+    }}, state)
+    external_config = (
+        values["repo_root"] / MODULE.FC_P008_CONFIG
+    )
+    external_config.parent.mkdir(parents=True, exist_ok=True)
+    (candidate / "resolved_config.yaml").replace(external_config)
+    values["data_artifacts"]["resolved_config"] = external_config
+    lineage_path = values["lineage_path"]
+    lineage = json.loads(lineage_path.read_text())
+    lineage.update({
+        "status": "FC_P008_CANDIDATE_LINEAGE_PASS",
+        "candidate_kind": MODULE.FC_P008_KIND,
+        "checkpoint_epoch": 0,
+        "checkpoint_relative_directory": "candidate_build/candidate",
+        "checkpoint_model_file": "FNO.0.0.mdlus",
+        "checkpoint_state_file": "checkpoint.0.0.pt",
+        "checkpoint_sha256": digest(model),
+        "checkpoint_state_sha256": digest(state),
+        "checkpoint_generation_payload_sha256": MODULE.archive_payload(model),
+        "training_performed": False,
+        "optimizer_training_performed": False,
+        "calibration_fit_performed": True,
+        "validation_or_frozen_accessed": False,
+        "ppo_auto_launch": False,
+        "parent_checkpoint_epoch": 2,
+        "calibration_generation": 1,
+        "precision_protocol": MODULE.FC_P008_PRECISION,
+        "data_lineage": {
+            "dev30": digest(values["data_artifacts"]["dev30"]),
+            "train8": digest(values["data_artifacts"]["train8"]),
+            "normalization": digest(values["normalization_path"]),
+            "resolved_config": digest(external_config),
+        },
+    })
+    lineage.pop("resolved_config_sha256", None)
+    lineage.pop("frozen_test_opened_or_enumerated", None)
+    write_json(lineage_path, lineage)
+    for gate_key in ("endpoint_gate_path", "window_gate_path", "dynamic_gate_path"):
+        gate = json.loads(values[gate_key].read_text())
+        gate["checkpoint_sha256"] = digest(model)
+        write_json(values[gate_key], gate)
+    development = json.loads(values["development_gate_path"].read_text())
+    development["checkpoint_sha256"] = digest(model)
+    write_json(values["development_gate_path"], development)
+    receipt = json.loads(values["posteval_receipt_path"].read_text())
+    receipt["checkpoint_sha256"] = digest(model)
+    receipt["sha256"]["lineage.json"] = digest(lineage_path)
+    receipt["sha256"]["validation10/endpoint_gate.json"] = digest(
+        values["endpoint_gate_path"]
+    )
+    receipt["sha256"]["development_gate.json"] = digest(
+        values["development_gate_path"]
+    )
+    precision = values["posteval_receipt_path"].parent / "precision.json"
+    write_json(precision, {
+        "status": MODULE.FC_P008_PRECISION_STATUS,
+        "official_image_id": MODULE.IMAGE_ID,
+        **MODULE.FC_P008_PRECISION,
+    })
+    receipt["precision_sha256"] = digest(precision)
+    receipt["sha256"]["precision.json"] = digest(precision)
+    write_json(values["posteval_receipt_path"], receipt)
+
+
 def test_complete_candidate_is_ready_but_does_not_authorize_or_run_ppo(tmp_path: Path) -> None:
     result = MODULE.audit(**fixture(tmp_path))
     assert result["status"] == "CANDIDATE_PPO_CPU_DRY_RUN_READY"
@@ -253,6 +336,78 @@ def test_fcp003c_candidate_uses_bound_training_sources_and_is_ready(tmp_path: Pa
     assert result["candidate_identity"]["candidate_kind"] == MODULE.FC_P003C_KIND
     assert result["training_executed"] is False
     assert result["ppo_execution_authorized"] is False
+
+
+def test_fcp008_uses_exact_epoch_zero_pair_and_external_parent_config(
+    tmp_path: Path,
+) -> None:
+    values = fixture(tmp_path)
+    make_fcp008(values)
+    result = MODULE.audit(**values)
+    assert result["status"] == "CANDIDATE_PPO_CPU_DRY_RUN_READY"
+    identity = result["candidate_identity"]
+    assert identity["checkpoint_epoch"] == 0
+    assert identity["checkpoint_relative_directory"] == "candidate_build/candidate"
+    assert identity["checkpoint_model_file"] == "FNO.0.0.mdlus"
+    assert identity["checkpoint_state_file"] == "checkpoint.0.0.pt"
+    assert identity["resolved_config_path"] == str(MODULE.FC_P008_CONFIG)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        ("calibration_fit_performed", False),
+        ("optimizer_training_performed", True),
+        ("parent_checkpoint_epoch", 1),
+        ("checkpoint_relative_directory", "best"),
+        ("checkpoint_model_file", "FNO.0.2.mdlus"),
+    ),
+)
+def test_fcp008_rejects_scope_or_checkpoint_identity_tampering(
+    tmp_path: Path, field: str, value: object
+) -> None:
+    values = fixture(tmp_path)
+    make_fcp008(values)
+    lineage = json.loads(values["lineage_path"].read_text())
+    lineage[field] = value
+    write_json(values["lineage_path"], lineage)
+    receipt = json.loads(values["posteval_receipt_path"].read_text())
+    receipt["sha256"]["lineage.json"] = digest(values["lineage_path"])
+    write_json(values["posteval_receipt_path"], receipt)
+    result = MODULE.audit(**values)
+    assert result["status"].endswith("BLOCKED")
+    assert result["blockers"][0]["kind"] == "SCHEMA_ERROR"
+
+
+@pytest.mark.parametrize("target", ["lineage", "precision", "receipt"])
+def test_fcp008_rejects_precision_binding_tampering(
+    tmp_path: Path, target: str
+) -> None:
+    values = fixture(tmp_path)
+    make_fcp008(values)
+    if target == "lineage":
+        lineage = json.loads(values["lineage_path"].read_text())
+        lineage["precision_protocol"]["cuda_matmul_allow_tf32"] = False
+        write_json(values["lineage_path"], lineage)
+        receipt = json.loads(values["posteval_receipt_path"].read_text())
+        receipt["sha256"]["lineage.json"] = digest(values["lineage_path"])
+        write_json(values["posteval_receipt_path"], receipt)
+    elif target == "precision":
+        precision = values["posteval_receipt_path"].parent / "precision.json"
+        document = json.loads(precision.read_text())
+        document["float32_matmul_precision"] = "highest"
+        write_json(precision, document)
+        receipt = json.loads(values["posteval_receipt_path"].read_text())
+        receipt["precision_sha256"] = digest(precision)
+        receipt["sha256"]["precision.json"] = digest(precision)
+        write_json(values["posteval_receipt_path"], receipt)
+    else:
+        receipt = json.loads(values["posteval_receipt_path"].read_text())
+        receipt["precision_sha256"] = "0" * 64
+        write_json(values["posteval_receipt_path"], receipt)
+    result = MODULE.audit(**values)
+    assert result["status"].endswith("BLOCKED")
+    assert result["blockers"][0]["kind"] == "SCHEMA_ERROR"
 
 
 @pytest.mark.parametrize(

@@ -18,6 +18,8 @@ from pathlib import Path
 
 import yaml
 
+from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
+
 
 PROFILE = "matched_start_full40_v1"
 IMAGE_ID = "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e"
@@ -26,6 +28,18 @@ WINDOW_STATUS = "FULL40_VALIDATION_CANONICAL_WINDOW_FIDELITY_PASS"
 DYNAMIC_STATUS = "FULL40_VALIDATION_DYNAMIC_ACTION_PASS"
 DEVELOPMENT_STATUS = "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_PASS"
 FC_P003C_KIND = "true_state_paired_step_lambda10"
+FC_P008_KIND = "full_train_force_row_recalibration"
+FC_P008_CONFIG = Path(
+    "artifacts/tandem_fno_true_state_paired_step_lambda10_20261005/"
+    "resolved_config.yaml"
+)
+FC_P008_PRECISION = {
+    "NVIDIA_TF32_OVERRIDE": None,
+    "cuda_matmul_allow_tf32": True,
+    "cudnn_allow_tf32": True,
+    "float32_matmul_precision": "high",
+}
+FC_P008_PRECISION_STATUS = "FC_P008_FORMAL_EVALUATION_DEFAULT_TF32_HIGH"
 FC_P003C_SOURCES = {
     "/workspace/train8": {
         "lineage_key": "train8",
@@ -280,12 +294,23 @@ def audit(
         if not str(lineage.get("status", "")).endswith("CANDIDATE_LINEAGE_PASS"):
             raise ValueError("candidate lineage status differs")
         candidate_kind = lineage.get("candidate_kind")
-        expected_training_performed = candidate_kind == FC_P003C_KIND
-        if (
-            lineage.get("frozen_test_opened_or_enumerated") is not False
-            or lineage.get("ppo_auto_launch") is not False
-            or lineage.get("training_performed") is not expected_training_performed
-        ):
+        if candidate_kind == FC_P008_KIND:
+            required_scope = {
+                "training_performed": False,
+                "optimizer_training_performed": False,
+                "calibration_fit_performed": True,
+                "validation_or_frozen_accessed": False,
+                "ppo_auto_launch": False,
+                "parent_checkpoint_epoch": 2,
+                "calibration_generation": 1,
+            }
+        else:
+            required_scope = {
+                "training_performed": candidate_kind == FC_P003C_KIND,
+                "frozen_test_opened_or_enumerated": False,
+                "ppo_auto_launch": False,
+            }
+        if any(lineage.get(key) != value for key, value in required_scope.items()):
             raise ValueError("candidate lineage scope differs")
         try:
             candidate_relative = str(candidate_root.relative_to(repo_root))
@@ -295,9 +320,26 @@ def audit(
             raise ValueError("candidate root identity differs")
 
         epoch = int(lineage["checkpoint_epoch"])
-        model = candidate_root / f"best/FNO.0.{epoch}.mdlus"
-        state = candidate_root / f"best/checkpoint.0.{epoch}.pt"
-        config = candidate_root / "resolved_config.yaml"
+        if candidate_kind == FC_P008_KIND:
+            if (
+                epoch != 0
+                or lineage.get("checkpoint_relative_directory")
+                != "candidate_build/candidate"
+                or lineage.get("checkpoint_model_file") != "FNO.0.0.mdlus"
+                or lineage.get("checkpoint_state_file") != "checkpoint.0.0.pt"
+            ):
+                raise ValueError("FC-P008 checkpoint identity differs")
+            checkpoint_relative_directory = Path("candidate_build/candidate")
+            model_file, state_file = "FNO.0.0.mdlus", "checkpoint.0.0.pt"
+            config = (repo_root / FC_P008_CONFIG).resolve()
+        else:
+            checkpoint_relative_directory = Path("best")
+            model_file = f"FNO.0.{epoch}.mdlus"
+            state_file = f"checkpoint.0.{epoch}.pt"
+            config = candidate_root / "resolved_config.yaml"
+        checkpoint_dir = candidate_root / checkpoint_relative_directory
+        model = checkpoint_dir / model_file
+        state = checkpoint_dir / state_file
         launch = candidate_root / "launch_receipt.json"
         completion = candidate_root / "completion_receipt.json"
         for label, path in (
@@ -309,7 +351,11 @@ def audit(
             raise ValueError("candidate model SHA differs")
         if sha256(state) != lineage.get("checkpoint_state_sha256"):
             raise ValueError("candidate state SHA differs")
-        if sha256(config) != lineage.get("resolved_config_sha256"):
+        config_sha = sha256(config)
+        if candidate_kind == FC_P008_KIND:
+            if config_sha != lineage.get("data_lineage", {}).get("resolved_config"):
+                raise ValueError("FC-P008 resolved config SHA differs")
+        elif config_sha != lineage.get("resolved_config_sha256"):
             raise ValueError("candidate resolved config SHA differs")
         if sha256(launch) != lineage.get("launch_receipt_sha256"):
             raise ValueError("candidate launch receipt SHA differs")
@@ -318,6 +364,29 @@ def audit(
         completion_value = load(completion)
         if archive_payload(model) != lineage.get("checkpoint_generation_payload_sha256"):
             raise ValueError("candidate model archive payload differs")
+        if candidate_kind == FC_P008_KIND:
+            validate_calibrated_epoch_zero(
+                checkpoint_dir,
+                epoch,
+                allow=True,
+                expected_model_sha256=lineage.get("checkpoint_sha256"),
+                expected_state_sha256=lineage.get("checkpoint_state_sha256"),
+            )
+            if lineage.get("precision_protocol") != FC_P008_PRECISION:
+                raise ValueError("FC-P008 lineage precision protocol differs")
+            precision_path = posteval_receipt_path.parent / "precision.json"
+            _require_file(precision_path, "FC-P008 formal precision evidence")
+            precision = load(precision_path)
+            expected_precision = {
+                "status": FC_P008_PRECISION_STATUS,
+                "official_image_id": official_image_id,
+                **FC_P008_PRECISION,
+            }
+            if precision != expected_precision:
+                raise ValueError("FC-P008 formal precision evidence differs")
+            if receipt.get("precision_sha256") != sha256(precision_path):
+                raise ValueError("FC-P008 receipt precision SHA differs")
+            _receipt_binds(receipt, posteval_receipt_path.parent, precision_path)
 
         config_value = yaml.safe_load(config.read_text(encoding="utf-8"))
         if not isinstance(config_value, dict):
@@ -472,7 +541,14 @@ def audit(
             "checkpoint_epoch": epoch,
             "checkpoint_sha256": lineage["checkpoint_sha256"],
             "checkpoint_state_sha256": lineage["checkpoint_state_sha256"],
-            "resolved_config_sha256": lineage["resolved_config_sha256"],
+            "resolved_config_sha256": config_sha,
+            "resolved_config_path": str(config.relative_to(repo_root)),
+            "checkpoint_relative_directory": str(checkpoint_relative_directory),
+            "checkpoint_model_file": model_file,
+            "checkpoint_state_file": state_file,
+            "precision_protocol": (
+                FC_P008_PRECISION if candidate_kind == FC_P008_KIND else None
+            ),
             "normalization_sha256": normalization_sha,
             "validation_manifest_sha256": validation_manifest_sha,
             "dynamic_validation_manifest_sha256": dynamic_validation_manifest_sha,

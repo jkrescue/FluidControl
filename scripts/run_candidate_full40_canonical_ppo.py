@@ -58,17 +58,20 @@ def write_exclusive(path: Path, value: dict) -> None:
 
 
 def command_contract(args, readiness: dict) -> dict:
+    identity = readiness.get("candidate_identity", {})
     return {
-        "candidate_kind": readiness.get("candidate_identity", {}).get("candidate_kind"),
-        "checkpoint_sha256": readiness.get("candidate_identity", {}).get(
-            "checkpoint_sha256"
+        "candidate_kind": identity.get("candidate_kind"),
+        "checkpoint_epoch": identity.get("checkpoint_epoch"),
+        "checkpoint_relative_directory": identity.get(
+            "checkpoint_relative_directory"
         ),
-        "checkpoint_state_sha256": readiness.get("candidate_identity", {}).get(
-            "checkpoint_state_sha256"
-        ),
-        "resolved_config_sha256": readiness.get("candidate_identity", {}).get(
-            "resolved_config_sha256"
-        ),
+        "checkpoint_model_file": identity.get("checkpoint_model_file"),
+        "checkpoint_state_file": identity.get("checkpoint_state_file"),
+        "checkpoint_sha256": identity.get("checkpoint_sha256"),
+        "checkpoint_state_sha256": identity.get("checkpoint_state_sha256"),
+        "resolved_config_path": identity.get("resolved_config_path"),
+        "resolved_config_sha256": identity.get("resolved_config_sha256"),
+        "precision_protocol": identity.get("precision_protocol"),
         "candidate_readiness_implementation_sha256": sha256(
             args.repo / "scripts/audit_candidate_ppo_readiness.py"
         ),
@@ -103,15 +106,30 @@ def command_contract(args, readiness: dict) -> dict:
     }
 
 
-def build_trainer_command(args, output: Path, mode: str) -> list[str]:
+def build_trainer_command(
+    args, output: Path, mode: str, readiness: dict | None = None
+) -> list[str]:
     candidate = args.candidate_root.resolve()
+    identity = (readiness or {}).get("candidate_identity", {})
+    config_relative = identity.get("resolved_config_path", "")
+    checkpoint_relative = identity.get("checkpoint_relative_directory", "")
+    config = (
+        args.repo / config_relative
+        if config_relative
+        else candidate / "resolved_config.yaml"
+    ).resolve()
+    checkpoint_dir = (
+        candidate / checkpoint_relative
+        if checkpoint_relative
+        else candidate / "best"
+    ).resolve()
     command = [
         sys.executable,
         "-u",
         str(args.repo / "scripts/train_full40_hydrogym_ppo_canonical.py"),
         "--data", str(args.data),
-        "--config", str(candidate / "resolved_config.yaml"),
-        "--checkpoint-dir", str(candidate / "best"),
+        "--config", str(config),
+        "--checkpoint-dir", str(checkpoint_dir),
         "--dev30-data", str(args.dev30_data),
         "--promotion-receipt", str(args.promotion_receipt),
         "--baselines", str(args.baselines),
@@ -130,6 +148,16 @@ def build_trainer_command(args, output: Path, mode: str) -> list[str]:
         "--gpu-memory-fraction", str(args.gpu_memory_fraction),
         "--seed", str(args.seed),
     ]
+    if identity.get("candidate_kind") == "full_train_force_row_recalibration":
+        command.extend(
+            (
+                "--allow-calibrated-epoch-zero",
+                "--expected-calibrated-model-sha256",
+                str(identity.get("checkpoint_sha256")),
+                "--expected-calibrated-state-sha256",
+                str(identity.get("checkpoint_state_sha256")),
+            )
+        )
     if mode == "execute":
         command.extend(("--vecnormalize-output", str(output / "vecnormalize.pkl")))
     command.append("--execute" if mode == "execute" else "--dry-run")
@@ -223,7 +251,7 @@ def dry_run(args, readiness: dict) -> dict:
     contract = command_contract(args, readiness)
     with tempfile.TemporaryDirectory() as directory:
         canonical_output = Path(directory) / "canonical_preflight.json"
-        command = build_trainer_command(args, canonical_output, "dry-run")
+        command = build_trainer_command(args, canonical_output, "dry-run", readiness)
         subprocess.run(command, cwd=args.repo, check=True)
         canonical = load(canonical_output)
     if canonical.get("status") != "FULL40_CANONICAL_PPO_EXECUTION_READY":
@@ -258,7 +286,7 @@ def execute(args, readiness: dict) -> dict:
         raise RuntimeError("candidate readiness is blocked")
     if args.output.exists():
         raise FileExistsError(f"refusing to overwrite {args.output}")
-    command = build_trainer_command(args, args.output, "execute")
+    command = build_trainer_command(args, args.output, "execute", readiness)
     subprocess.run(command, cwd=args.repo, check=True)
     audit_path = args.output / "audit.json"
     vec_path = args.output / "vecnormalize.pkl"
@@ -269,6 +297,10 @@ def execute(args, readiness: dict) -> dict:
         or audit.get("physicsnemo_checkpoint_sha256") != contract["checkpoint_sha256"]
         or audit.get("vecnormalize_contract")
         != "identity: norm_obs=false, norm_reward=false; preserves legacy PPO numerics"
+        or (
+            contract["candidate_kind"] == "full_train_force_row_recalibration"
+            and audit.get("precision_protocol") != contract["precision_protocol"]
+        )
         or not isinstance(iterations, list)
         or not iterations
     ):
