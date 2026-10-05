@@ -340,11 +340,13 @@ function renderActiveExperiment(d){
   const age=Date.now()-Date.parse(formal018.sampled_at_utc||'');
   const fresh=Number.isFinite(age)&&age>=0&&age<60000;
   const task=formal018.task;
-  const title=!fresh?'评估状态采样已过期':task.running?'P018 训练结束 · 完整预测精度评估中':'P018 评估进程未运行 · 结果待复核';
+  const result=d.p018_formal_result;
+  const failed=result?.verified===true;
+  const title=!fresh?'评估状态采样已过期':task.running?'P018 训练结束 · 完整预测精度评估中':failed?'P018 完整评估未达标 · 升力波动预测需改进':'P018 评估进程未运行 · 结果待复核';
   const names={validation10:'十条验证轨迹',dynamic6:'六条动态动作轨迹',force_window:'受力时间窗口'};
   const done=(task.progress?.completed_steps||[]).map(x=>names[x]||x);
-  const detail='已完成的评估阶段：'+(done.length?done.join('、'):'尚无完整阶段结果')+'。检查单步及连续预测的流场、阻力、升力均值与波动误差。';
-  const note='本轮精度与控制效果尚未验收，未启动新策略训练。下方流场图片保留历史模型标注，不代表本轮结果。';
+  const detail=failed&&!task.running?'六个工况通过数量：阻力 '+result.cd_pass+'/6；平均升力 '+result.mean_pass+'/6；升力波动 '+result.rms_pass+'/6；全部指标同时通过 '+result.joint_pass+'/6。':'已完成的评估阶段：'+(done.length?done.join('、'):'尚无完整阶段结果')+'。检查单步及连续预测的流场、阻力、升力均值与波动误差。';
+  const note=failed?'当前工作：分析逐时刻受力训练目标与升力波动误差的关系；下一诊断尚未执行。没有新PPO或代理辅助CFD闭环成功。下方图片保留历史模型标注。':'本轮精度与控制效果尚未验收，未启动新策略训练。下方流场图片保留历史模型标注，不代表本轮结果。';
   $('lead-now').textContent=title+'。'+detail;
   const card=document.createElement('div');card.className='card';
   for(const [tag,text] of [['h3',title],['p',detail],['p',note],['p',task.identity_issues?.length?'运行核查提示：'+task.identity_issues.join('；'):'按实际服务、进程和资源采样更新；评估日志暂时无输出不代表停止。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
@@ -1180,6 +1182,26 @@ def _fcp015_formal_result(root: Path) -> dict:
 FCP018_APPROVAL = "eea5bd5c6a3fe585ae1104600421e50b335f61299c4014c5e3136722af3d4d39"
 FCP018_PROTOCOL = "310f0bdf8563a2a70b844a32852791fa1b1dc20278a3098418942e1dab204d2d"
 FCP018_LAUNCHER = "artifacts/fcp018_reduced_rate_source_20261005_immutable/scripts/run_fcp018_reduced_rate_spark.sh"
+
+
+def _fcp018_formal_result(root: Path) -> dict:
+    base = root / "artifacts/fcp018_reduced_rate_training_20261005/posteval_fc_p018"
+    try:
+        raw = (base / "receipt.json").read_bytes()
+        if hashlib.sha256(raw).hexdigest() != "d4d3f85a79e31d50866bb8dbd23ec90e0453cde39ef6b314e3db80344d33869c":
+            return {"verified": False}
+        gate_raw = (base / "development_gate.json").read_bytes()
+        if hashlib.sha256(gate_raw).hexdigest() != json.loads(raw)["sha256"]["development_gate.json"]:
+            return {"verified": False}
+        gate = json.loads(gate_raw)
+        branches = gate["window_gate"]["branches"]
+        if gate["status"] != "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL" or len(branches) != 6:
+            return {"verified": False}
+        return {"verified": True, "admission": False, "joint_pass": sum(x["joint_pass"] is True for x in branches),
+                **{label: sum(x["metric_pass"][key] is True for x in branches) for label, key in
+                   (("cd_pass", "total_cd"), ("rms_pass", "rear_cl_fluctuation_rms"), ("mean_pass", "rear_cl_mean"))}}
+    except (OSError, ValueError, KeyError, TypeError):
+        return {"verified": False}
 
 
 def _fcp018_formal_live(root: Path) -> dict:
@@ -2894,6 +2916,7 @@ class Handler(BaseHTTPRequestHandler):
             data["fixed_panel_probe"] = _fcp016_probe(self.root)
             data["reduced_rate_training"] = _fcp018_training(self.root)
             data["p018_formal_live"] = _fcp018_formal_live(self.root)
+            data["p018_formal_result"] = _fcp018_formal_result(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")

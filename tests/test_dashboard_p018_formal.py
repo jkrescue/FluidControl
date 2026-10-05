@@ -28,3 +28,14 @@ def test_missing_monitor_does_not_invent_progress(monkeypatch):
 def test_formal_card_precedes_completed_training():
     source = Path(d.__file__).read_text()
     assert source.index('const formal018=d.p018_formal_live;') < source.index('const reduced=d.reduced_rate_training;')
+
+
+def test_unreviewed_result_not_verified(tmp_path):
+    root = tmp_path / 'artifacts/fcp018_reduced_rate_training_20261005/posteval_fc_p018'
+    root.mkdir(parents=True)
+    (root / 'receipt.json').write_text('{"status":"PASS"}')
+    assert d._fcp018_formal_result(tmp_path) == {'verified': False}
+
+
+def test_missing_result_not_verified(tmp_path):
+    assert d._fcp018_formal_result(tmp_path) == {'verified': False}
