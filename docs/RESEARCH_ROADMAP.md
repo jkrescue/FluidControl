@@ -1,5 +1,16 @@
 # Research roadmap and prioritized backlog
 
+## 2026-10-05 17:29 UTC — P023 CPU prerequisites complete; bounded trainer preparation
+
+P022 complete and independently rejected locally (FC-E032). P023 isolated96-input
+adapter passes CPU unit tests and an actual official-FNO CPU100-step verification;
+see FC_P023_CPU_REVIEW_20261005.md, integrated0f3ee83. No accuracy claim follows.
+Current priority is the preregistered LOW/HIGH frozen-parent comparison described
+in FC_P023_INPUT_BLOCK_COMPARISON_PLAN_20261005.md. CPU implementation only is
+authorized until final execution review. No GPU job or new PPO currently running.
+Full-data causal audit/training is conditional on this study, not underway.
+Physical meanlift review17:32UTC remains separate from surrogate accuracy.
+
 ## 2026-10-05 16:42 UTC — P021 resource check complete; P022 preparation
 
 P021 real-size engineering prerequisite is complete and independently reviewed:
