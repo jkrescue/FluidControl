@@ -1,5 +1,19 @@
 # Experiment ledger
 
+## FC-E032 — P022 causal force-input finite comparison (2026-10-05)
+
+Operationally complete and independently reviewed; local_support=false. Result
+SHA `69e5d4a8a93b8036187a18a5c40cb270aec53462a49ddab94417fa0b908096d8`.
+Two matched arms, sixteen updates each,192 fullH100 window backwards; original
+objective and fixed six training windows. A/B initial rows and endpoint repeats
+exactly agree; complete aggregate/check dictionaries independently recomputed.
+Current-force B improves four mean/amplitude squared errors versus zero-input A,
+but relative to initial H1bias+0.52877%, H1centeredwaveform+11.3133%, ARbias+0.69550%;
+AR original objective also worse than A. Not a candidate, admission or PPO result.
+Both20GiB floors held; external minfree26.807617GiB. Source074d979; full report
+`docs/FC_P022_TERMINAL_REVIEW_20261005.md`. Next action is targeted learning-scale
+and update-scope analysis, not automatic repetition or full training.
+
 ## P021 engineering prerequisite completed; P022 scientific comparison pending
 
 P021 r2 actual full-size100-step forward/backward passed independent engineering
