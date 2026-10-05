@@ -349,7 +349,7 @@ function renderActiveExperiment(d){
   const risk=document.createElement('p');risk.className='bad';risk.textContent=formal.verified_fail?'正式结果：6个时间窗口中，总阻力均值6/6通过，后柱平均升力5/6通过，升力波动幅度仅2/6通过，4个旋转工况均未通过。下一步分析训练窗口与未见相位的波动幅度误差；暂不启动新模型PPO。':'仍有不足：第100步总阻力误差仅小幅改善，且一个初始相位有所退化。必须完成原定独立验证，不能据此启动PPO。';card.appendChild(risk);
   $('lead-models').prepend(card);
   $('train16-formal-progress').textContent=title;
-  $('train16-formal-detail').textContent='候选已保存并通过加载与输出一致性检查。'+(formal.verified_fail?'正式结果已独立复核，整体未达标；当前开展CPU时间窗口诊断，GPU未运行训练。':running?'正在评估：'+stage+'；该评估器不逐批输出百分比，实际负载见资源采样。':formal.complete_recorded?'完整结果记录已生成，仍需独立复核科学指标。':'当前服务状态：'+(formal.service_state||'未知')+'，不据历史文件推断正在计算。')+' 下表是此前的训练相位留出诊断，不是当前验证成绩。';
+  $('train16-formal-detail').textContent='候选已保存并通过加载与输出一致性检查。'+(formal.verified_fail?'正式结果已独立复核，整体未达标；后续重点是时间窗口误差诊断。是否正在计算请看实时资源及任务状态。':running?'正在评估：'+stage+'；该评估器不逐批输出百分比，实际负载见资源采样。':formal.complete_recorded?'完整结果记录已生成，仍需独立复核科学指标。':'当前服务状态：'+(formal.service_state||'未知')+'，不据历史文件推断正在计算。')+' 下表是此前的训练相位留出诊断，不是当前验证成绩。';
   return;
  }
  const ar=d.free_ar_diagnostic;
