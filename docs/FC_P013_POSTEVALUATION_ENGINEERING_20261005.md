@@ -2,6 +2,10 @@
 
 This is implementation evidence, not a completed model evaluation or admission.
 
+## Recovery reproducibility observation — 2026-10-05
+
+Read-only comparison of the first attempt and r2 run logs matched all 34 common logged window identities through update 272. The six logged losses at steps 8..48 were exactly equal. At step56 totals were 0.010853966698050499 (first attempt) versus 0.010854589752852917 (r2); at64 they were 0.018482627347111702 versus 0.018506601452827454. Maximum absolute total-loss difference over these 34 logged updates was 0.01536891981959343. This demonstrates matching logged window order but not bitwise numerical reproducibility. The fixed seed and original default-TF32 precision contract are unchanged; the trainer does not request deterministic algorithms. The cause of divergence has not been isolated. Do not attribute it conclusively to TF32, the later memory fault, or a model-quality change. Do not choose a run by these losses. The interrupted attempt produced no eligible terminal model; r2 still requires the entire original evaluation and later repeated-seed evidence for broader claims.
+
 ## Fixed-six diagnostic launcher prepared — 2026-10-05
 
 `scripts/run_fcp013_fixed_diagnostics_spark.sh` is prepared, not yet executed on a candidate. It checks the frozen diagnostic source, unchanged P011 numerical trainer and resolved config, successful r2 completion/audit and actual artifact hashes. It refuses an active training container and requires >=50 GiB MemAvailable and >=30 GiB MemFree before starting. Only the existing train-only mounts, read-only parent and terminal dual candidate are exposed; GPU allocator fraction is 0.15, available-memory floor 20 GiB and timeout 1200 seconds. One fresh output directory is required. The six windows, parent/terminal comparison and metrics are unchanged. Official pinned-image CPU import preflight passed using these exact source mounts; no model forward, diagnostic result, optimizer or PPO was run.
