@@ -411,3 +411,36 @@ remained live under invocation `eee5a6fbad40411cac2f05e00520b079`, PID 941365,
 `activating/start`. No HDF reread or advice occurred during this review.
 This result neither authorizes a subsequent pass nor establishes training
 completion or scientific acceptance.
+
+## Separate r12 authorization
+
+At timestamp 1791242719, the same live K4 process had reached 1283 windows.
+MemFree was 23,066,084 KiB (about 22.0 GiB). Root authorizes one bounded
+r12 pass with reviewed helper
+`d116b55b67c50d2e618ec4188fe4fc8a4bc8b732deda8ca89f5b942d4b654e25`.
+Create only K4 `cache_advice_20261006_r12.jsonl`; preserve r1-r11.
+All exact 44-file checks, memory floors and timeout guards remain mandatory.
+No global cache action, data/model edits, restart or subsequent pass is
+approved. This is authorization only, not proof of successful execution.
+
+## Actual r12 receipt review
+
+Root confirmed session 49007 exit 0. Independent saved-JSON review verified
+90 records: begin, 44 ordered file-begin/advised pairs, complete. All reported
+paths/hashes match the pinned audit; every file's start/before/hash/advice
+stat snapshots agree. Begin binds approved helper d116b55b…b654e25, K4 and
+the exact r12 output. Receipt SHA-256:
+`5e750dc3daa166959fb4bef425a4ece7cff1322cecaf2d9507f9be2e81bb389d`.
+
+Start/end Unix timestamps were 1791242751.5826087/1791242762.176191;
+elapsed **10.593672733 seconds**. Receipt minima were MemFree
+**21.230133 GiB**, MemAvailable **105.671494 GiB**, above applicable floors.
+The growing host-watch snapshot through 1791242768, 2475 samples, had minima
+MemFree **21.006046 GiB**, MemAvailable **105.671360 GiB**; snapshot SHA:
+`0436c4d4cbbf0835f3178deda268cbfceba91a835c7fe0ace73ea000437d8abd`.
+
+All r1–r11 receipt hashes were rechecked unchanged. Training remained live
+under invocation `eee5a6fbad40411cac2f05e00520b079`, PID 941365,
+`activating/start`. No HDF reread or advice occurred during this review.
+This maintenance result does not authorize another pass or establish training
+completion or scientific acceptance.
