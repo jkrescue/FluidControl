@@ -1,5 +1,11 @@
 # Research roadmap and prioritized backlog
 
+## 当前状态：P019局部梯度诊断完成，P020仅准备（FC-E029）
+
+P019独立复核60个梯度计算、原目标精确重现、源/数据/模型身份及资源守卫。五窗AR-RMS平方误差沿负原目标聚合梯度导数+0.859184，沿六窗原目标+0.468014；各窗自身AR-RMS导数却均为负，支持局部跨窗梯度干扰，不是AdamW或全局因果结论。模型无更新、无候选保存、无heldout/PPO。结果SHA `1bd66e3cbf7c1200ff0af96d23bd62803d59422129eec5c5dddf7615fbcb183f`，详见`FC_P019_TERMINAL_REVIEW_20261005.md`。
+
+下一步仅准备P020固定六个训练窗、全部六窗梯度平均的两臂16更新原目标/对称tail-statistic loss对照；统计摘要另聚焦五个非零窗。未批准GPU、未执行。原P018完整FAIL和全部验收标准保持有效；不把梯度诊断当作loss修复有效或科学准入。以下“P019仅准备”是先前记录，保留历史。
+
 ## 当前状态：P018完整正式FAIL，P019仅准备（FC-E028，2026-10-05）
 
 P018同一formal invocation `ef589f7dbeff4fa0ab064309409971ad`已成功退出；18项完整receipt SHA和原审计器raw重算全部一致。原联合门槛FAIL：joint1/6、Cd5/6、后Cl′RMS2/6、均值预测4/6，仅b01zero联合通过。receipt SHA `d4d3f85a79e31d50866bb8dbd23ec90e0453cde39ef6b314e3db80344d33869c`。全部formal资源样本通过双20GiB要求，最低available110.045368/free27.460377GiB。四个旋转分支幅值误差仍失败，不能以端点Cd或均值改善代替整体准入。详细比较见`FC_P018_TERMINAL_REVIEW_20261005.md`。

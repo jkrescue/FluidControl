@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**当前阶段：P019只读梯度诊断完成，支持局部跨窗梯度干扰（FC-E029，2026-10-05）**。同一invocation `275365360254440aba18ed96aac58630`已active/exited、success、MainPID0；60个唯一梯度计算与精确journal一致，guard exit0。结果SHA `1bd66e3cbf7c1200ff0af96d23bd62803d59422129eec5c5dddf7615fbcb183f`。每窗原目标两次均精确重现P018终态；五非零窗AR-RMS平方误差沿负原始聚合梯度的方向导数为+0.859184，沿六窗原目标梯度为+0.468014，重复符号稳定，而各窗自己的AR-RMS方向导数六个均为负。解释限于聚合造成的局部跨窗干扰，不是AdamW实际方向、全局病因或loss改动有效性的证明。其余三项聚合统计量方向为负。
+
+108个host资源样本最低available102.286327GiB/free20.551254GiB，内层CUDAfree最低20.544643GiB；双20GiB守卫满足但余量很窄。无optimizer/update/savecandidate/heldout/PPO，模型不变。完整出处和局限见`docs/FC_P019_TERMINAL_REVIEW_20261005.md`；实际启动证据`docs/FC_P019_RUNNING_EXECUTION_20261005.json`保留。下一步仅准备P020两臂16更新、固定六个训练窗且全部六窗梯度平均的原目标/对称尾窗统计loss对照；统计摘要另聚焦五个非零窗，尚未批准GPU或执行。P018原正式FAIL继续有效，物理平均载荷0.10与代理误差指标保持区分，本记录不修改门槛。以下P018/P019旧计划状态为历史，不覆盖本段。
+
 **当前阶段：FC-P018原完整正式评估结束，独立复核FAIL（FC-E028，2026-10-05）**。同一formal invocation `ef589f7dbeff4fa0ab064309409971ad`已保留为active/exited、success、MainPID0、ExecMainCode1/Status0；不是运行中的默认exit0。18项receipt文件SHA与三阶段身份全部核对，冻结原审计器从raw force-window重算得到完全相同字典。完整receipt SHA `d4d3f85a79e31d50866bb8dbd23ec90e0453cde39ef6b314e3db80344d33869c`；原联合准入 **1/6，Cd5/6、Cl′RMS2/6、meanCl4/6，FAIL**。仅b01 zero联合通过；四个旋转分支RMS误差0.0683247/0.122662/0.0685903/0.0813667仍超过约0.0294限值。validation10与dynamic6的端点组件通过不能覆盖窗口失败。formal守卫1017个样本最低MemAvailable110.045368GiB/MemFree27.460377GiB，均高于20GiB。
 
 同dynamic6协议P009/P015/P018的H100 pooled Cd NRMSE分别0.01813790/0.01929335/0.01791093，macro分别0.01562564/0.01834680/0.01569608，后Cl MAE分别0.08429627/0.08544903/0.08507009；原flow指标全部不变。P018相对P015部分指标改善，但不构成准入或完整波动幅值修复。详见`docs/FC_P018_TERMINAL_REVIEW_20261005.md`。没有新PPO、frozen-test或代理辅助真实CFD成功，项目未完成。下一步仅准备P019 objective/statistic gradient诊断，尚未批准或执行；不盲目追加训练。

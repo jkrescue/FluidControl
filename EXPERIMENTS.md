@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E029 — FC-P019 local cross-window gradient interference (2026-10-05)
+
+P018 terminal, six fixed train windows, original mixed20 chunk objective; five gradient kinds each repeated twice,60 unique passes. No optimizer/update/candidate save/held-out/PPO. Exactinvocation275365360254440aba18ed96aac58630 retainedexited0; result SHA `1bd66e3cbf7c1200ff0af96d23bd62803d59422129eec5c5dddf7615fbcb183f`, source6de42a9. Approval/source/candidate identities and44-HDF startup map verified. Every original objective exactly reproduces P018terminal in both repeats. Host minima available102.286327/free20.551254GiB; internalCUDAfree20.544643GiB, guardexit0.
+
+Five-nonzero aggregate AR-RMS squared-error derivative along the negative original gradient is+0.859184292/+0.859184299 across repeats; against six-window original gradient +0.468013701/+0.468013706. Other three aggregate derivatives are negative. All six individual-window AR-RMS derivatives along their own negative objective gradients are negative: this supports local cross-window interference, not universal within-window conflict or actualAdamW behavior.64summary algebra checks finite and consistent; fullvectors not saved so no independent full-vector re-dot. Repeat spread is not a rigorous uncertainty bound.
+
+See `docs/FC_P019_TERMINAL_REVIEW_20261005.md` and Root-owned running evidence SHA `5719e608b59b61de03206714128079b08e0bf52efd1a85392c385ac25626adab`. P018 admissionFAIL remains. P020 two-arm16-update fixed-six-window loss diagnostic averages all six training-window gradients; its statistical summary separately focuses on five nonzero windows. It is PREPARATION ONLY, not GPU approved/executed. No threshold change or scientific admission.
+
 ## FC-E028 — FC-P018 reduced-rate complete formal rejection (2026-10-05)
 
 Same P009 parent, 44 real train trajectories, fixed 1368-window order and eight-window accumulation; the sole optimizer override relative to P015 is learning rate1.5625e-7. All171 actual AdamW steps, finite moments, frozen tensors, protocol and data hashes were independently checked. Actual official CPU dual reload passed; earlier cache failures are preserved.
