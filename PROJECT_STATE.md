@@ -1,5 +1,7 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**P015正式精度评估已启动（2026-10-05 11:26 UTC）**：service `fluid-control-fcp015-posteval-20261005.service`，实际invocation `c41e61fcaa5f49e3be9e0092c1e19bc3`；原完整数值协议与冻结评估源码不变。外部资源守卫`d4b4d6a`经实现、Root与独立各25项CPU测试通过，实际启动前检查通过；同时监测MemAvailable和MemFree至少20GiB，3小时内部上限，systemd保留180秒清理时间，异常只清理精确匹配本评估的容器。运行记录在候选目录`formal_supervision_r1`，科学结果在`posteval_fc_p015`。刚启动时正在来源检查，尚无正式精度结论、PPO或新闭环结果。完成后核对原联合要求；失败则继续基于实测误差改进，不降低门槛。
+
 **P015训练终态已核验（2026-10-05 11:17 UTC）**：171次更新/1368窗口完成，实际服务同一invocation成功退出。Root与独立审查重算候选完整性一致；completion SHA `9c27e5eb…05fdf`。官方镜像实际CPU双模型重载通过，receipt SHA `925a7dc0…2b18c`，外部Docker退出/镜像/命令证据已单独保存。固定六个train片段的平均objective从0.00624614增至0.00730327；去均值升力波形部分改善但平均偏差多数恶化，不能宣称精度或控制通过。原完整formal已独立核验执行审批，尚未启动；正在补齐外部MemFree守卫，不改变冻结数值评估代码。下一步完整formal→按实际结果决定后续干预或兼容PPO→真实CFD反馈。详见`docs/FC_P015_TERMINAL_STATUS_20261005.md`。最终目标仍未达成。
 
 **P015控制接口准备完成（2026-10-05）**：`20d7170`已推送GitLab，补齐共享dual绑定、candidate readiness、PPO launcher、CFD readiness导出、底层训练入口及真实反馈入口的显式P015身份支持；缺失dual证据不能落入旧单模型路径。Root111项、独立196项及最终增量42项CPU回归通过，原数值审计器、reward、动作与验收标准不变。详见`docs/FC_P015_CONTROL_INTERFACE_READINESS_20261005.md`；这是工程准备，不是PPO/CFD执行或模型准入。当前训练同一invocation已完成57次更新后的六个固定train窗诊断，并继续至58/171（464/1368窗），诊断数值随预定终态保存，尚不判断精度改善。下一步仍为训练终态核验、实际双模型重载和原完整formal，不自动跳过任何失败条件。
