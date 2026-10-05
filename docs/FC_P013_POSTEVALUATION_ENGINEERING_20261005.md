@@ -2,6 +2,19 @@
 
 This is implementation evidence, not a completed model evaluation or admission.
 
+## Recovery generation update — 2026-10-05 07:12 UTC
+
+The first training attempt suffered a verified CUDA copy stall and was preserved, not accepted. See `FC_P013_RECOVERY_APPROVAL_20261005.md`. The identical experiment is running in the separate r2 output, observed at 88/1368 updates. No terminal candidate or formal scientific metrics exist yet.
+
+- Live observation for r2: `c6da08418d3e9c6287d50534fc669f560ed8d5d2a7f4237c90892e91655d1e6d`; actual recovery launcher: `9a589802227a67035f3f0c421fb7ccfa1b955180b3cb0b3750e22a4ca00b4c4b`. Original immutable trainer, parent and training approval are unchanged.
+- The candidate auditor now accepts only the two explicitly identified attempt roots and their distinct evidence hashes. For r2 it also requires the exact recovery approval and launcher, plus valid physical-free/available-memory and progress-watch samples. Original 1368 persisted optimizer-step, tensor, HDF and scientific protocol checks remain.
+- The post-evaluation default points at r2. Source `23a4ec020ed62ba2f406283335a5d0f8dfbd002b` was frozen into `artifacts/p013_posteval_chain_23a4ec020ed6_immutable`; receipt SHA `a426f82bf1877ed1a930e763a62e6f2739b91185356fdf19bd435735fa7507ef`. Stage-only validation passed, preserving original numerical source and four reviewed dual-loading overlays. No evaluation GPU or PPO was launched.
+- 18 CPU tests passed across recovery-watch, candidate-audit and formal-profile tests. They establish software checks, not flow or control accuracy.
+- Dashboard `e11756c` now reads the r2 systemd invocation; 7 focused tests passed and live local API verified attempt=2, running=true and fresh step32. Existing Chrome tab was reloaded. Historical field images remain historical.
+- Worker image transfer completed with matching pinned SHA and no dataset transfer. Do not repeat bulk image transfer concurrently with Main training. The export script remains untracked pending a resource-aware redesign; it is not promoted as a safe training-time tool.
+
+Next: finish r2; independently audit actual terminal files and create a truthful completion receipt; run the six fixed train diagnostics; separately authorize the unchanged formal suite. PPO and real-CFD integration remain gated by scientific accuracy, not these engineering checks.
+
 ## Verified before the terminal exists
 
 - Running container observed directly through Docker and systemd. The observation
