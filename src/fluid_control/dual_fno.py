@@ -24,6 +24,11 @@ AERO_KIND = "FC_P013_INDEPENDENT_FORCE_FNO_AERODYNAMIC_CHECKPOINT"
 P015_MANIFEST_STATUS = "FC_P015_DUAL_FNO_MANIFEST_VERIFIED"
 P015_SYSTEM_KIND = "FC_P015_WINDOW_ACCUMULATION_FORCE_FNO"
 P015_AERO_KIND = "FC_P015_WINDOW_ACCUMULATION_FORCE_FNO_AERODYNAMIC_CHECKPOINT"
+P018_MANIFEST_STATUS = "FC_P018_DUAL_FNO_MANIFEST_VERIFIED"
+P018_SYSTEM_KIND = "FC_P018_REDUCED_RATE_FORCE_FNO"
+P018_AERO_KIND = "FC_P018_REDUCED_RATE_FORCE_FNO_AERODYNAMIC_CHECKPOINT"
+P018_PROTOCOL_SHA256 = "310f0bdf8563a2a70b844a32852791fa1b1dc20278a3098418942e1dab204d2d"
+P018_LEARNING_RATE = 1.5625e-7
 FLOW_MODEL_SHA256 = "dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31"
 FLOW_STATE_SHA256 = "4998e534d4b82b17393c217357ed18220fb8e739166a88147483bb9cc5fb771e"
 CONFIG_SHA256 = "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
@@ -104,7 +109,31 @@ def _experiment_contract(kind: str) -> dict[str, Any]:
                 "optimizer_steps": 171,
                 "extra": {"training_experiment": "FC-P015", "accumulation_windows": 8,
                           "training_windows": 1368, "optimizer_steps": 171}}
+    if kind == P018_SYSTEM_KIND:
+        return {"status": P018_MANIFEST_STATUS, "aero_kind": P018_AERO_KIND,
+                "optimizer_steps": 171,
+                "extra": {"training_experiment": "FC-P018", "accumulation_windows": 8,
+                          "training_windows": 1368, "optimizer_steps": 171,
+                          "actual_learning_rate": P018_LEARNING_RATE,
+                          "training_protocol_sha256": P018_PROTOCOL_SHA256,
+                          "training_protocol_file": "training_protocol.json"}}
     raise ValueError("dual FNO experiment kind is not supported")
+
+
+def _validate_p018_protocol(root: Path, payload: dict[str, Any]) -> None:
+    if payload.get("kind") != P018_SYSTEM_KIND:
+        return
+    protocol_path = _confined_file(root, payload.get("training_protocol_file"))
+    if sha256(protocol_path) != P018_PROTOCOL_SHA256:
+        raise ValueError("P018 actual training protocol SHA differs")
+    protocol = _read_object(protocol_path)
+    if (protocol.get("training_experiment") != "FC-P018"
+            or protocol.get("base_config_sha256") != CONFIG_SHA256
+            or protocol.get("sole_optimizer_override") != {"learning_rate": P018_LEARNING_RATE}
+            or payload.get("actual_learning_rate") != P018_LEARNING_RATE
+            or payload.get("training_protocol_sha256") != P018_PROTOCOL_SHA256
+            or payload.get("training_semantics", {}).get("learning_rate") != P018_LEARNING_RATE):
+        raise ValueError("P018 effective learning rate or protocol differs")
 
 
 def _checkpoint_identity(root: Path, payload: object, *, role: str,
@@ -216,6 +245,7 @@ def validate_dual_fno_manifest(
     }
     if any(payload.get(key) != value for key, value in exact.items()):
         raise ValueError("dual FNO manifest fixed identity differs")
+    _validate_p018_protocol(manifest_path.parent, payload)
     architecture = payload["architecture"]
     if architecture != ARCHITECTURE:
         raise ValueError("dual FNO architecture differs")
@@ -238,6 +268,7 @@ def validate_dual_runtime_files(
     identity: DualFNOIdentity, *, config_path: Path, normalization_path: Path
 ) -> None:
     """Bind evaluator runtime inputs to the manifest's immutable identities."""
+    _validate_p018_protocol(identity.manifest_path.parent, identity.payload)
     if sha256(config_path.resolve()) != identity.payload["config_sha256"]:
         raise ValueError("dual FNO runtime configuration SHA differs")
     if sha256(normalization_path.resolve()) != identity.payload["normalization_sha256"]:
