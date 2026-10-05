@@ -340,7 +340,8 @@ function renderActiveExperiment(d){
   const age=Date.now()-Date.parse(paired.sampled_at_utc||'');
   const fresh=Number.isFinite(age)&&age>=0&&age<60000;
   const completed=paired.arms.every(a=>a.terminal?.verified===true);
-  const title=completed?'两组训练完成 · 独立精度评估':'FNO 升力预测训练 · 两组同条件对照';
+  const rejected=paired.arms.every(a=>a.terminal?.formal_result?.verified_fail===true);
+  const title=rejected?'两组独立评估均未通过 · 升力波动预测需改进':completed?'两组训练完成 · 独立精度评估':'FNO 升力预测训练 · 两组同条件对照';
   $('lead-now').textContent=title+'。A只训练升力输出；B同时训练现有解码器最后一层。尚未开始新模型PPO或闭环验收。';
   const card=document.createElement('div');card.className='card';
   const h=document.createElement('h3');h.textContent=title;card.appendChild(h);
@@ -348,7 +349,7 @@ function renderActiveExperiment(d){
   table.innerHTML='<tr><th>节点 / 方法</th><th>更新次数</th><th>最新批次损失</th><th>实际状态</th></tr>';
   paired.arms.forEach(a=>{
    const tr=document.createElement('tr');
-   const state=!fresh?'页面采样已过期':a.terminal?.verified?(a.formal?.running?'训练已核验；独立评估运行中':a.formal?.service_state==='unknown'?'训练已核验；评估状态读取失败':'训练已核验；评估未运行，结果待复核'):a.running?(a.progress_fresh?'训练运行中':'进程运行，进度待检查'):a.service_state==='unknown'?'状态读取失败':'训练进程未运行，终态待核';
+   const state=!fresh?'页面采样已过期':a.terminal?.formal_result?.verified_fail?'独立评估未通过；不可进入代理PPO':a.terminal?.verified?(a.formal?.running?'训练已核验；独立评估运行中':a.formal?.service_state==='unknown'?'训练已核验；评估状态读取失败':'训练已核验；评估未运行，结果待复核'):a.running?(a.progress_fresh?'训练运行中':'进程运行，进度待检查'):a.service_state==='unknown'?'状态读取失败':'训练进程未运行，终态待核';
    [a.label,a.terminal?.verified?'1368 / 1368':a.step==null?'尚无已核步数':a.step+' / 1368',a.total_loss==null?'—':num(a.total_loss,6),state].forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.appendChild(td)});
    table.appendChild(tr);
   });card.appendChild(table);
@@ -356,6 +357,9 @@ function renderActiveExperiment(d){
   if(completed){
    const diag=document.createElement('p');
    diag.textContent='固定6个训练窗口：连续预测的升力波动误差（训练前 → 训练后） '+paired.arms.map(a=>a.label+'：'+num(a.terminal.rms_before,5)+' → '+num(a.terminal.rms_after,5)).join('；')+'。越小越好；这不是验证集成绩，也不是减阻率。';card.appendChild(diag);
+  }
+  if(rejected){
+   const summary=document.createElement('p');summary.textContent='独立受力窗口评估（各6个工况）：'+paired.arms.map(a=>{const f=a.terminal.formal_result;return a.label+'：阻力 '+f.cd_pass+'/6、升力波动 '+f.rms_pass+'/6、平均升力 '+f.mean_pass+'/6'}).join('；')+'。两组都只有零转速的两个工况全部通过；旋转工况的升力波动误差仍过大。下一项工作是分解流场与受力训练目标对参数更新的影响，不是新PPO。';card.appendChild(summary);
   }
   $('lead-models').prepend(card);
   $('train16-formal-progress').textContent=title;
@@ -821,6 +825,34 @@ def _parse_fcp011_live(output: str, now: float) -> dict:
             "admission": False}
 
 
+def _fcp011_formal_result(base: Path, scope: str) -> dict:
+    expected = {
+        "head-only": "256a65c7d6b2cb7cdffc96c6a4de33117f4aee8fd3bda9e8ea72c9477a452a07",
+        "decoder-tail": "e6c0a1712894bc4c6060258ee8903de1787b54f71fa72411a60ba2d4f0ecebcc",
+    }
+    try:
+        base = base / "posteval_fc_p011"
+        raw = (base / "receipt.json").read_bytes()
+        if hashlib.sha256(raw).hexdigest() != expected[scope]:
+            return {"verified_fail": False}
+        receipt = json.loads(raw)
+        raw = (base / "development_gate.json").read_bytes()
+        if hashlib.sha256(raw).hexdigest() != receipt["sha256"]["development_gate.json"]:
+            return {"verified_fail": False}
+        gate = json.loads(raw)
+        if gate.get("status") != "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL" or gate.get("checkpoint_sha256") != receipt["checkpoint_sha256"]:
+            return {"verified_fail": False}
+        branches = gate["window_gate"]["branches"]
+        if len(branches) != 6:
+            return {"verified_fail": False}
+        return {"verified_fail": True, "admission": False,
+                "cd_pass": sum(b["metric_pass"]["total_cd"] is True for b in branches),
+                "rms_pass": sum(b["metric_pass"]["rear_cl_fluctuation_rms"] is True for b in branches),
+                "mean_pass": sum(b["metric_pass"]["rear_cl_mean"] is True for b in branches)}
+    except (OSError, ValueError, KeyError, TypeError):
+        return {"verified_fail": False}
+
+
 def _fcp011_terminal(root: Path, scope: str) -> dict:
     identities = {
         "head-only": ("fcp011_head_only_training_20261005", "6d3ecb9174f2adb20d5b95989d1438a0ba357b7ed1caeb03f9225da78d77b149", "1c0bb91bfee3ca33f0ca5060241b6992aca7b5c5be5a0adcc7c7714e05938960"),
@@ -841,7 +873,8 @@ def _fcp011_terminal(root: Path, scope: str) -> dict:
             if len(values) != 6 or not all(math.isfinite(value) and value >= 0 for value in values):
                 return {"verified": False}
             means.append(sum(values) / len(values))
-        return {"verified": True, "rms_before": means[0], "rms_after": means[1], "admission": False}
+        return {"verified": True, "rms_before": means[0], "rms_after": means[1], "admission": False,
+                "formal_result": _fcp011_formal_result(base, scope)}
     except (OSError, ValueError, KeyError, TypeError):
         return {"verified": False}
 

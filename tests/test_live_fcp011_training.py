@@ -71,3 +71,12 @@ def test_terminal_must_match_reviewed_receipt_and_result(tmp_path):
     (base / "completion_receipt.json").write_text('{}')
     (base / "result.json").write_text('{"optimizer_steps":1368}')
     assert dashboard._fcp011_terminal(tmp_path, "head-only") == {"verified": False}
+
+
+def test_formal_result_rejects_unbound_completion(tmp_path):
+    assert dashboard._fcp011_formal_result(tmp_path, "head-only") == {"verified_fail": False}
+    base = tmp_path / "posteval_fc_p011"
+    base.mkdir()
+    (base / "receipt.json").write_text('{"status":"FC_P011_HEAD_ONLY_POSTEVAL_COMPLETE"}')
+    (base / "development_gate.json").write_text('{"status":"DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL"}')
+    assert dashboard._fcp011_formal_result(tmp_path, "head-only") == {"verified_fail": False}
