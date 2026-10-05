@@ -337,8 +337,11 @@ function renderAdmission(d){
 function renderActiveExperiment(d){
  const joint=d.joint_readout_diagnostic;
  if(joint?.ready===true){
-  const title='受力联合拟合已完成 · 准备候选模型验证';
-  $('lead-now').textContent='单步与连续预测受力误差取得折中改善，尚未通过独立验证；新模型 PPO 和真实 CFD 闭环验收仍未完成。当前计算负载以下方资源采样为准。';
+  const formal=joint.formal||{}, age=Date.now()-Date.parse(formal.sampled_at_utc||'');
+  const running=Number.isFinite(age)&&age>=0&&age<60000&&formal.service_state==='active';
+  const stage={validation10:'10条验证轨迹',dynamic6:'动态转速轨迹',force_window:'阻力与升力时间窗口'}[formal.stage]||'验证数据';
+  const title=running?'正式模型评估进行中 · '+stage:formal.complete_recorded?'正式评估记录已完成 · 结论待复核':'受力联合拟合已完成 · 当前未确认正式评估运行';
+  $('lead-now').textContent=title+'。单步与连续预测受力误差的训练内改善，不代表独立验证通过；新模型 PPO 和真实 CFD 闭环验收仍未完成。';
   const card=document.createElement('div');card.className='card';
   const h=document.createElement('h3');h.textContent=title;card.appendChild(h);
   const table=document.createElement('div');table.innerHTML='<table><tr><th>预测范围 / 系数平均绝对误差</th><th>原模型</th><th>联合拟合</th></tr>'+joint.rows.map(r=>`<tr><td>${r.label}</td><td>${num(r.before,5)}</td><td>${num(r.after,5)}</td></tr>`).join('')+'</table>';card.appendChild(table);
@@ -346,7 +349,7 @@ function renderActiveExperiment(d){
   const risk=document.createElement('p');risk.className='bad';risk.textContent='仍有不足：第100步总阻力误差仅小幅改善，且一个初始相位有所退化。下一步必须检查实际模型输出并完成原定独立验证，不能据此启动PPO。';card.appendChild(risk);
   $('lead-models').prepend(card);
   $('train16-formal-progress').textContent=title;
-  $('train16-formal-detail').textContent='1,368个窗口、136,800条预测记录已完成；CPU联合拟合也已完成。当前记录不证明GPU任务正在运行，亦不代表控制目标完成。';
+  $('train16-formal-detail').textContent='候选已保存并通过加载与输出一致性检查。'+(running?'正在评估：'+stage+'；该评估器不逐批输出百分比，实际负载见资源采样。':formal.complete_recorded?'完整结果记录已生成，仍需独立复核科学指标。':'当前服务状态：'+(formal.service_state||'未知')+'，不据历史文件推断正在计算。')+' 下表是此前的训练相位留出诊断，不是当前验证成绩。';
   return;
  }
  const ar=d.free_ar_diagnostic;
@@ -748,6 +751,23 @@ def _dual_node_watchdog(root: Path):
 FCP009_JOINT_SHA = "931fcd2ddd6901ddfbb3ecdbfe9774d7b1e5fe6d17479c87c44ccaf51ff2b0bc"
 
 
+def _fcp009_formal_status(root: Path) -> dict:
+    base = root / "artifacts/fcp009_joint_force_row_candidate_20261005/posteval_fc_p009"
+    model = "dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31"
+    stage = "validation10"
+    for step, following in (("validation10", "dynamic6"), ("dynamic6", "force_window")):
+        receipt = _read_json(base / "step_receipts" / (step + ".json"), {})
+        if isinstance(receipt, dict) and receipt.get("status") == "FC_P009_POSTEVAL_STEP_COMPLETE" and receipt.get("checkpoint_sha256") == model and receipt.get("step") == step:
+            stage = following
+        else:
+            break
+    complete = _read_json(base / "receipt.json", {})
+    return {"service_state": _service_state("fluid-control-fcp009-posteval-20261005.service"),
+            "stage": stage,
+            "complete_recorded": isinstance(complete, dict) and complete.get("status") == "FC_P009_POSTEVAL_COMPLETE" and complete.get("checkpoint_sha256") == model,
+            "sampled_at_utc": datetime.now(UTC).isoformat(), "admission": False}
+
+
 def _joint_readout_diagnostic(root: Path) -> dict:
     """Show measured diagnostic results only, with immutable identity binding."""
     base = root / "artifacts/fcp009_free_ar_force_readout_cache_20261005"
@@ -766,7 +786,8 @@ def _joint_readout_diagnostic(root: Path) -> dict:
                 if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or v < 0 for v in (before, after)):
                     return {"ready": False}
                 rows.append({"label": label + " / " + channel_label, "before": before, "after": after})
-        return {"ready": True, "rows": rows, "admission": False, "candidate_verified": False}
+        return {"ready": True, "rows": rows, "admission": False, "candidate_verified": False,
+                "formal": _fcp009_formal_status(root)}
     except (OSError, ValueError, KeyError, TypeError):
         return {"ready": False}
 
