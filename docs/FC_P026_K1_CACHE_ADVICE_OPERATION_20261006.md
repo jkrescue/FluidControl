@@ -85,3 +85,34 @@ ed4f0ad7a426 (host PID599092) remained running. The external watcher had1412
 samples; minima remained free20.936733GiB/available105.834663GiB. No restart,
 model/protocol change, candidate completion or scientific conclusion follows.
 The r3 receipt was independently checked absent; no further pass is authorized.
+
+## Separately authorized r3, 2026-10-05 20:38:36 UTC
+
+Subsequently, Lead separately authorized and executed exactly one r3 pass with
+the same reviewed helper SHA
+`94d3c43b5b4341f4fa541dd9c630b5dad83785720f65ca092a1728b2fa4c7cb8`.
+This supersedes the preceding no-r3-authorization statement only for that actual
+pass; it does not authorize another pass or recurring maintenance. The reviewer
+did not execute advice or read HDF contents.
+
+Receipt `cache_advice_20261006_r3.jsonl` in the same K1 output directory has SHA
+`022cdcd8b8c65f5c1edb311ac4190061e66e5014394f78e713223f3f13651d00`.
+Lead reported exit0; the receipt records completion of44 files in8.228574854s.
+Independent read-only verification confirmed90 ordered JSONL rows, exactly44
+unique paths and matching hashes against the original pinned audit map, and
+identical file stat identities before hashing, after hashing and after advice.
+The receipt records `data_writes=false`; no abort is present. Startup free20.75,
+pre-file free20.5 and all recorded dual20GiB checks passed unchanged.
+
+The logged pass minima were MemFree21.266956GiB and MemAvailable106.544888GiB.
+Free memory changed from21.271824GiB to26.208698GiB; available memory ended at
+106.761192GiB. Concurrent training and system activity prevent attributing the
+entire observed change exclusively to cache advice.
+
+At independent follow-up, the same K1 unit remained activating/start with
+MainPID598666 and invocation `b3759e7e1acc4de7a1aa9f6e8d38de9a`.
+The exact container `ed4f0ad7a42621712b6689d3f694ed90067f154ed7bf78c72e0993bbad930f65`
+remained running with host PID599092. The unchanged external watcher had2075
+samples; overall minima remained MemFree20.936733GiB and MemAvailable105.834663GiB.
+No restart, numerical change, training completion or scientific admission is
+claimed. No further cache pass is authorized by this report.
