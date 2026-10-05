@@ -14,7 +14,7 @@ def test_runner_is_thin_and_binds_epoch_zero_identity_and_protocol() -> None:
     assert "formal_evaluation_approval.json" in text
     assert "posteval_chain_receipt_sha256" in text
     assert 'numerical_commit="7216214b545fbbd50b2fb5ed866f231039b06b18"' in text
-    assert 'git archive "$numerical_commit" -- src conf \\' in text
+    assert 'git archive "$numerical_commit" -- src scripts conf cfd \\' in text
     assert "--entrypoint python" in text and "python - <<" not in text
     assert "--segment-stride 25 --evaluation-batch-size 4" in text
     assert "--segment-stride 1 --evaluation-batch-size 8" in text

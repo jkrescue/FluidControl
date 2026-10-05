@@ -31,11 +31,7 @@ if [[ "$mode" != --dry-run && -z "${FCP008_POSTEVAL_CHAIN_ROOT:-}" ]]; then
   numerical_commit="7216214b545fbbd50b2fb5ed866f231039b06b18"
   # Hydra composes the evaluation child config through other files in conf/;
   # freeze the complete config tree instead of only the leaf YAML.
-  git archive "$numerical_commit" -- src conf \
-    cfd/tandem_cylinders/audit_full40_dynamic6_fno.py \
-    scripts/evaluate_tandem_fno.py scripts/train_tandem_fno.py scripts/spark_gpu_guard.py \
-    scripts/audit_dev30_validation_diagnostic.py scripts/audit_full40_validation_gate.py \
-    scripts/diagnose_fno_force_window.py scripts/audit_dynamic_fno_development_gates.py \
+  git archive "$numerical_commit" -- src scripts conf cfd \
     | tar -x -C "$temporary/numerical_source"
   for relative in scripts/run_fcp008_posteval_spark.sh scripts/audit_fcp008_candidate.py scripts/validate_fcp008_posteval.py; do
     mkdir -p "$temporary/$(dirname "$relative")"
