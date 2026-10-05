@@ -26,7 +26,7 @@ def calibrated(tmp_path, monkeypatch):
             "rear_cd": {"mae": .010}, "rear_cl": {"mae": .017}},
     }))
     monkeypatch.setattr(dashboard, "FCP008_RESULT_SHA", hashlib.sha256(path.read_bytes()).hexdigest())
-    monkeypatch.setattr(dashboard, "_service_state", lambda unit: "active")
+    monkeypatch.setattr(dashboard, "_fcp008_service_state", lambda: "active")
     return tmp_path, base, path
 
 
@@ -51,7 +51,7 @@ def test_completed_step_does_not_imply_live_job(calibrated, monkeypatch):
     steps = base / "posteval_fc_p008/step_receipts"
     steps.mkdir(parents=True)
     (steps / "validation10.json").write_text("{}")
-    monkeypatch.setattr(dashboard, "_service_state", lambda unit: "inactive")
+    monkeypatch.setattr(dashboard, "_fcp008_service_state", lambda: "inactive")
     result = dashboard._full_train_calibration(root)
     assert result["stage"] == "dynamic6"
     assert result["service_state"] == "inactive"
@@ -67,3 +67,30 @@ def test_completion_record_is_model_bound_and_not_scientific_pass(calibrated):
     receipt.write_text(json.dumps({"status": "FC_P008_POSTEVAL_COMPLETE", "checkpoint_sha256": "a" * 64}))
     result = dashboard._full_train_calibration(root)
     assert result["formal_complete"] and result["admission"] is False
+
+
+@pytest.mark.parametrize("output,expected", [
+    ("fluid-control-fcp008-posteval-r2-20261005.service loaded failed failed old\nfluid-control-fcp008-posteval-r3b-20261005.service loaded active running current", "active"),
+    ("fluid-control-fcp008-posteval-r2-20261005.service loaded failed failed old", "failed"),
+    ("unrelated.service loaded active running other", "inactive"),
+])
+def test_recovery_service_sampling(monkeypatch, output, expected):
+    from types import SimpleNamespace
+    monkeypatch.setattr(dashboard.subprocess, "run", lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout=output))
+    assert dashboard._fcp008_service_state() == expected
+
+
+def test_validation_failure_requires_bound_model_and_hash(calibrated):
+    root, base, _ = calibrated
+    out = base / "posteval_fc_p008"
+    (out / "validation10").mkdir(parents=True)
+    (out / "step_receipts").mkdir()
+    gate = out / "validation10/endpoint_gate.json"
+    gate.write_text(json.dumps({"checkpoint_sha256": "a" * 64,
+        "status": "FULL40_VALIDATION_SURROGATE_READINESS_FAIL",
+        "h100_start0_action_difference": {"pairwise_delta_cd_mae": .04, "predeclared_delta_cd_mae_maximum": .023}}))
+    assert dashboard._full_train_calibration(root)["validation"] is None
+    (out / "step_receipts/validation10.json").write_text(json.dumps({"sha256": {"validation10/endpoint_gate.json": hashlib.sha256(gate.read_bytes()).hexdigest()}}))
+    assert dashboard._full_train_calibration(root)["validation"]["delta_cd_mae"] == .04
+    gate.write_text("{}")
+    assert dashboard._full_train_calibration(root)["validation"] is None

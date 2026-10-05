@@ -347,6 +347,10 @@ function renderActiveExperiment(d){
   const h=document.createElement('h3');h.textContent=title;card.appendChild(h);
   const t=document.createElement('div');t.innerHTML='<table><tr><th>训练集平均绝对误差</th><th>原模型</th><th>校准后</th></tr>'+fc.rows.map(r=>`<tr><td>${r.channel==='rear_cd'?'后圆柱阻力系数':'后圆柱升力系数'}</td><td>${num(r.before,4)}</td><td>${num(r.after,4)}</td></tr>`).join('')+'</table>';card.appendChild(t);
   const p=document.createElement('p');p.textContent='44 条真实 CFD 训练轨迹、19,648 个时间步；只校准力输出层，原流场输出不变。表中是训练集误差，不是减阻比例，也不是独立验证成绩。下方流场图仍为原 FNO 的预测。';card.appendChild(p);
+  if(fc.validation?.status==='FULL40_VALIDATION_SURROGATE_READINESS_FAIL'){
+   const warning=document.createElement('p');warning.className='bad';
+   warning.textContent=`独立验证尚未通过：旋转相对无旋转的阻力变化预测误差 ${num(fc.validation.delta_cd_mae,4)}，既定上限 ${num(fc.validation.maximum,4)}。后续动态验证仍需完成，当前不可进入 PPO。`;card.appendChild(warning);
+  }
   $('lead-models').prepend(card);
   $('train16-formal-progress').textContent=title;
   $('train16-formal-progress').className='number';
@@ -711,6 +715,28 @@ def _dual_node_watchdog(root: Path):
     return payload
 
 
+def _fcp008_service_state() -> str:
+    """Observe all recovery generations without mistaking old failures for live work."""
+    try:
+        proc = subprocess.run(
+            ["systemctl", "--user", "list-units", "--all", "--plain", "--no-legend",
+             "--no-pager", "--type=service", "fluid-control-fcp008-posteval*.service"],
+            capture_output=True, text=True, timeout=3, check=False,
+        )
+        if proc.returncode != 0:
+            return "unknown"
+        states = []
+        for line in proc.stdout.splitlines():
+            fields = line.split()
+            if len(fields) >= 4 and re.fullmatch(r"fluid-control-fcp008-posteval[-a-z0-9]*\.service", fields[0]):
+                states.append(fields[2])
+        if "active" in states:
+            return "active"
+        return "failed" if "failed" in states else "inactive"
+    except (OSError, subprocess.TimeoutExpired):
+        return "unknown"
+
+
 def _full_train_calibration(root: Path) -> dict:
     """Latest calibrated candidate; process state is sampled, not inferred from files."""
     base = root / FCP008
@@ -734,9 +760,19 @@ def _full_train_calibration(root: Path) -> dict:
             stage = "force_window"
         receipt = _read_json(out / "receipt.json", {})
         complete = receipt.get("status") == "FC_P008_POSTEVAL_COMPLETE" and receipt.get("checkpoint_sha256") == result["candidate_model_sha256"]
+        validation = None
+        gate_path = out / "validation10/endpoint_gate.json"
+        step = _read_json(out / "step_receipts/validation10.json", {})
+        if gate_path.is_file() and step.get("sha256", {}).get("validation10/endpoint_gate.json") == hashlib.sha256(gate_path.read_bytes()).hexdigest():
+            gate = _read_json(gate_path, {})
+            delta = gate.get("h100_start0_action_difference", {})
+            value, maximum = delta.get("pairwise_delta_cd_mae"), delta.get("predeclared_delta_cd_mae_maximum")
+            if gate.get("checkpoint_sha256") == result["candidate_model_sha256"] and all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and v >= 0 for v in (value, maximum)):
+                validation = {"status": gate.get("status"), "delta_cd_mae": value, "maximum": maximum}
         return {"ready": True, "rows": rows, "stage": stage,
                 "formal_complete": complete, "admission": False,
-                "service_state": _service_state("fluid-control-fcp008-posteval-r2-20261005.service"),
+                "validation": validation,
+                "service_state": _fcp008_service_state(),
                 "sampled_at_utc": datetime.now(UTC).isoformat()}
     except (OSError, ValueError, KeyError, TypeError, AttributeError):
         return {"ready": False}
