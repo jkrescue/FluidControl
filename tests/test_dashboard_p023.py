@@ -34,3 +34,10 @@ def test_failed_not_running():
     s=state();s.update(MainPID='0',ActiveState='failed',SubState='failed',Result='exit-code',ExecMainCode='1',ExecMainStatus='1')
     x=m._parse_fcp023_live(s,log('LOW',[1]),False)
     assert x['verified'] and not x['exited_success'] and not x['running']
+
+def test_terminal_review_missing_or_wrong_identity(tmp_path):
+    assert not m._fcp023_terminal_review(tmp_path)['verified']
+    p=tmp_path/'artifacts/fcp023_input_block_20261005/result.json'
+    p.parent.mkdir(parents=True)
+    p.write_text('{"comparison":{"local_support":true}}')
+    assert not m._fcp023_terminal_review(tmp_path)['verified']

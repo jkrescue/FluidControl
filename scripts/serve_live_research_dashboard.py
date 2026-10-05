@@ -339,10 +339,11 @@ function renderActiveExperiment(d){
  if(p023){
   const age=Date.now()-Date.parse(p023.sampled_at_utc||'');
   const fresh=p023.verified===true&&Number.isFinite(age)&&age>=0&&age<60000;
-  const title=!fresh?'当前训练状态暂未核实':p023.running?'P023 当前受力输入训练进行中':p023.exited_success?'P023 计算结束 · 精度结果待复核':'P023 任务已停止 · 正在检查原因';
+  const reviewed=fresh&&p023.exited_success&&p023.terminal_review?.verified===true;
+  const title=!fresh?'当前训练状态暂未核实':p023.running?'P023 当前受力输入训练进行中':reviewed?'P023 已复核 · 预测略有改善但仍未满足全部要求':p023.exited_success?'P023 计算结束 · 精度结果待复核':'P023 任务已停止 · 正在检查原因';
   const progress=fresh?'低学习率组：'+p023.updates.LOW+'/16 次更新；较高学习率组：'+p023.updates.HIGH+'/16 次更新。':'当前进度未知，不用历史任务代替。';
-  const detail='原模型权重固定，只训练新增的96个受力输入系数。两组都使用当前受力；每次更新包含六个真实CFD窗口，每窗连续预测100步。';
-  const note='检查平均升力、波动幅值及波形误差。P022已复核但未满足全部精度改进要求；尚无新的PPO或代理辅助CFD闭环结果。下方流场图仍是标注的历史结果。';
+  const detail=reviewed?'较高学习率组：连续预测的升力波动幅值绝对误差降低约0.041%，单步平均升力偏差平方增加约0.071%。关闭新增输入后，预测回到训练前结果，说明输入有作用，但改善幅度仍小。':'原模型权重固定，只训练新增的96个受力输入系数。两组都使用当前受力；每次更新包含六个真实CFD窗口，每窗连续预测100步。';
+  const note=reviewed?'下一项输入响应诊断正在准备，尚未启动GPU计算；先重现已有结果，再检查不同输入系数幅度下的误差变化。没有新的PPO或代理辅助CFD闭环结果。下方流场图是历史结果。':'检查平均升力、波动幅值及波形误差。P022已复核但未满足全部精度改进要求；尚无新的PPO或代理辅助CFD闭环结果。下方流场图仍是标注的历史结果。';
   $('lead-now').textContent=title+'。'+progress;
   const card=document.createElement('div');card.className='card';
   for(const [tag,text] of [['h3',title],['p',progress],['p',detail],['p',note]]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
@@ -1257,6 +1258,22 @@ def _parse_fcp023_live(state: dict, log: str, process_matches: bool) -> dict:
             "updates": {key: len(value) for key, value in updates.items()}, "admission": False}
 
 
+def _fcp023_terminal_review(root: Path) -> dict:
+    try:
+        result = root / "artifacts/fcp023_input_block_20261005/result.json"
+        report = root / "docs/FC_P023_TERMINAL_REVIEW_20261005.md"
+        raw = result.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != "adfdd9a86cedf75019b655fe360b64b09d1aa51ce3de2f9166d0d80e296007cb":
+            return {"verified": False}
+        if hashlib.sha256(report.read_bytes()).hexdigest() != "2b883509ed5dd62deb737ed586603080ba1c6a2719c42c09f443b20878c5bb7b":
+            return {"verified": False}
+        result_data = json.loads(raw)
+        return {"verified": True, "local_support": result_data["comparison"]["local_support"],
+                "scientific_admission": False, "experiment_id": "FC-E033"}
+    except (OSError, ValueError, KeyError, TypeError):
+        return {"verified": False}
+
+
 def _fcp023_live(root: Path) -> dict:
     sampled = datetime.now(UTC).isoformat()
     try:
@@ -1273,7 +1290,10 @@ def _fcp023_live(root: Path) -> dict:
         pid = state.get("MainPID", "0")
         matches = pid.isdigit() and pid != "0" and str(launcher).encode() in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
         log = (root / "artifacts/fcp023_input_block_20261005/run.log").read_text()
-        return {**_parse_fcp023_live(state, log, matches), "sampled_at_utc": sampled}
+        parsed = _parse_fcp023_live(state, log, matches)
+        if parsed.get("exited_success"):
+            parsed["terminal_review"] = _fcp023_terminal_review(root)
+        return {**parsed, "sampled_at_utc": sampled}
     except (OSError, ValueError, subprocess.SubprocessError):
         return {"verified": False, "sampled_at_utc": sampled}
 
