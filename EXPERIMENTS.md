@@ -1,5 +1,17 @@
 # Experiment ledger
 
+## FC-P026 K4 original formal evaluation — actual running observation
+
+Observed2026-10-05T23:38:24Z: unit `fluid-control-fcp026-k4-formal-20261006.service`,
+invocation `d5d2201c8e2c4bf2ab40201cca0dcb1e`, PID1156613, activating/start.
+Officialb40 container `0be58547d0ccd85f1d569a336e921fa712af255c12589d5a74da6ca784f84b64`
+is running original validation10 H1/10/50/100 stride25/batch4 with p026_k4.
+Actual approval SHA `03f6880893a730307a6a6acf0ed19276ca8dc958fc3266ebf14e8e2a1323cbb8`
+and readonly source/candidate/data mounts verified. Unit start23:36:49UTC;
+container start23:36:54.985072171UTC. No numeric result, completion, scientific
+admission or PPO authorization follows; no CSV scientific row added.
+Evidence: `docs/FC_P026_K4_FORMAL_RUNNING_OBSERVATION_20261006.json`.
+
 ## FC-P026 K4 training integrity and official CPU reload milestone — not a scientific result
 
 Actual retained K4 training invocation `eee5a6fbad40411cac2f05e00520b079`
