@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E024 — FC-P014 exact-objective residual decomposition (2026-10-05)
+
+Result SHA `5550140b818a3d9028073b913cf994da99d9d3e917ea24896e4a9d477b8e95a7`, source59215be, approval e26473d; actual service invocation6bba81dba45b46638643f441ba21082f exited0. Six original train H100 windows, parentP009 and terminalP013, original mixed-batch20 chunk objective with force train mode and no_grad. No backward/update/model-save/held-out/PPO. Tensor identities unchanged. Independent reviewer recomputed all48 residual decompositions; maximum identity residual6.94e-18. All44HDF hashes were checked before launch; host minima MemAvailable109.60GiB/MemFree29.02GiB.
+
+H1/AR/total normalized objectives each worsen6/6. H100 rear-Cl AR centered residual MSE increases6/6; H1 centered residual MSE increases3/6 and decreases3/6, while H1 bias-squared increases6/6. Terminal12 domain means and analytic bias-coordinate derivatives are positive. There is no compensating H1/AR improvement on this panel; mixed bias/waveform deterioration cannot be explained as a pure constant offset. This is not proof of full-dataset convergence or a unique optimizer cause.
+
+Lead decision: do not allocate another full1368-window pass solely to scalar bias correction, which cannot repair the failed centered-RMS criterion. Develop one bounded optimization intervention capable of changing the waveform, retaining the official architecture and original objective/protocol. Do not sweep parameters or lower admission criteria.
+
 ## FC-E023 — FC-P013 complete formal rejection (2026-10-05)
 
 The unchanged validation10/dynamic6/force-window/development suite completed, service invocation `7235b2f06282435a89b84964e384c60f`, retained exited status and exit code0. Completion is not scientific success. Receipt SHA `2733c3cb1061837da28db83bb8c0d16e534017211b514885f960255b48aa2e7a`; all18 referenced file hashes independently match. The original numerical auditor SHA `ca6da0afdce5859be1c060eb48ba2cdd1ccc5ee3aeb2570d9c9b53067d5bc412` was rerun and exactly reproduces the saved admission FAIL.
