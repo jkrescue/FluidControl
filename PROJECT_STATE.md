@@ -1,12 +1,18 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-**FC-P026 K1原始完整正式评估已经实际启动，当前仍在运行而非终态。** Main user unit `fluid-control-fcp026-k1-formal-20261006.service`、invocation `c039836ab63246ff8772dad66e1b46e5` 于21:21:31 UTC启动；观测时处于validation10，实际容器 `4a9cea6bd3a1…43d2` 使用官方镜像 `b40d5888…a22e` 和GPU0。审批SHA `2d15c323…0000`，411文件正式源链 `ff8b742a…fe24`，runner `03c5862e…c0f3`，终态运行时manifest `277ec97a…1f70`。这只是运行中观察：尚无完成receipt、科学准入或PPO授权，Root继续独占监控/UI。
+**当前里程碑：FC-P026 K1原始完整正式评估终态FAIL；匹配K4训练已实际启动。** K1正式unit `fluid-control-fcp026-k1-formal-20261006.service`、invocation `c039836ab63246ff8772dad66e1b46e5` 已于21:58:17 UTC成功退出。终态receipt SHA `f2f7a50a26177c65ee048b58fb20df0aee7f4cfa42aed0edd857f08d911ef948`，35项输出哈希全部独立重算一致，八个阶段容器均exit0且无OOM。validation10与dynamic6端点诊断通过，但原62点窗口仅1/6联合通过：总Cd 5/6、后Cl脉动RMS 2/6、后Cl均值4/6；四个旋转RMS误差为0.068339/0.122262/0.068218/0.081354，均高于约0.0294限值。因此 `DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL`，无科学准入、PPO或frozen访问。完整独立复核见 `docs/FC_P026_K1_FORMAL_TERMINAL_REVIEW_20261006.md`。
+
+Root随后签发独立K4审批`ef2ddd3`（SHA `fca9c5a1106c85fb55a54590784453bd5246d55c21bbaa8ded1e3c72562b3e86`）。实际unit `fluid-control-fcp026-history-k4-20261006.service`、invocation `eee5a6fbad40411cac2f05e00520b079` 已于22:00:26 UTC启动；观测到官方容器 `79a39768…75e3`、`--history-k 4`、GPU96%，启动preflight CUDA free32.9703GiB、MemAvailable115.0164GiB。这里仅证明K4真实运行，不是完成或精度结论；仍须完成1368窗/171更新、终态审计/官方重载和独立原完整formal，且无PPO自动授权。
+
+## 历史记录（以下为当时状态，不代表当前仍在运行）
+
+**FC-P026 K1原始完整正式评估启动观察。** Main user unit `fluid-control-fcp026-k1-formal-20261006.service`、invocation `c039836ab63246ff8772dad66e1b46e5` 于21:21:31 UTC启动；观测时处于validation10，实际容器 `4a9cea6bd3a1…43d2` 使用官方镜像 `b40d5888…a22e` 和GPU0。审批SHA `2d15c323…0000`，411文件正式源链 `ff8b742a…fe24`，runner `03c5862e…c0f3`，终态运行时manifest `277ec97a…1f70`。这是历史运行中观察；终态见上文。
 
 **当前里程碑：P026 K1已完成1368窗/171次更新，真实终态完整性检查及官方CPU双模型重载均已通过独立复核。** 同一训练invocation `b3759e7e1acc4de7a1aa9f6e8d38de9a` 已成功退出、PID0；实际检查收据SHA `fa26bf47b6eb448e36046973a479e771b2d37eb605d9630b9022b392ce30d944`，官方CPU重载收据SHA `980698fd335a7a536e358ced26b9f69236e8d101d1f038a46eaf6a0c84f67028`。七个候选文件、两个模型张量、协议、源码及实际容器身份一致。训练守卫最小CUDA空闲20.7337GiB，主机物理空闲最小20.9367GiB，内部采样最小20.7402GiB；均未低于20GiB。前两次检查失败及其原始unit证据均保留；兼容修复仅处理JSON `1`/`1.0`和诊断汇总最多2ULP的Python版本舍入差，不改训练、模型、数据或科学门槛。
 
 HydroGym历史运行时集成已提交 `23711cc`，运行镜像准备已提交 `e542ff1`，不再是待提交状态。报告 `docs/FC_P026_K1_TERMINAL_REVIEW_20261006.md`；只读执行证据 `artifacts/fcp026_k1_terminal_review_20261006/`。**这只是完整性与可加载性通过：尚无P026正式评估结果、科学准入模型或新PPO。** 正式评估审批另行准备，未凭准备材料宣称已经启动；K4需独立批准并与主机其他重任务错开。尚未增加科学CSV结果行。
 
-## 历史记录（以下为当时状态，不代表当前仍在训练或待提交）
+### 更早历史（以下为当时状态，不代表当前仍在训练或待提交）
 
 **P026 HydroGym显式历史运行时与PPO身份链已完成Root的canonical内容与CPU证据复核，当前仅待最终提交。** 六个生产文件保持既有legacy/direct-CFD路径，并仅为P026增加显式K1/K4历史缓冲、原子reset/step/snapshot恢复、候选身份与正式终态证明绑定；MPC仍明确不在本次范围。Root重新分进程运行canonical fake-HydroGym 15项和readiness/legacy 60项，全部通过；另一个保留的受限host CPU unit用真实HydroGym `PDEBase`/`FlowEnv`、小型mock网络和合成数据通过1项生命周期测试。不可变证据位于 `artifacts/fcp026_hydrogym_actual_core_canonical_cpu_20261006/`，`SHA256SUMS` SHA为 `b0ff32a762b13736da9f22a5f2ebeb4b476fc7ac6dc01e5576a94bd29a49674d`。后者不是官方模型、真实CFD、PPO或科学证据。当前没有启动PPO、没有访问新模型/HDF，也没有改变运行中的K1训练、数值门槛或成功CFD-only基线。
 

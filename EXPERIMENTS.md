@@ -1,5 +1,40 @@
 # Experiment ledger
 
+## FC-E037 — FC-P026 K1 original formal evaluation: terminal development FAIL
+
+The actual K1 formal unit `fluid-control-fcp026-k1-formal-20261006.service`,
+invocation `c039836ab63246ff8772dad66e1b46e5`, exited successfully after the
+unchanged validation10, dynamic6, force-window6, and development-gate sequence.
+Receipt SHA is `f2f7a50a26177c65ee048b58fb20df0aee7f4cfa42aed0edd857f08d911ef948`;
+all 35 receipt-named outputs rehashed exactly and all eight terminal container
+records are exit0/non-OOM. Minimum external MemFree/MemAvailable were
+28.046733856/110.021461487 GiB.
+
+Endpoint evidence was positive: validation10 H100 delta-Cd MAE 0.0191297 passed
+the 0.023 limit with sign8/8 and ordering20/20; dynamic6 strict delta-Cd MAE
+0.0103930 and pooled H100 total-Cd NRMSE 0.0178932 also passed. The unchanged
+62-point window gate nevertheless passed only 1/6 branches (Cd5/6, rear-Cl RMS
+2/6, mean4/6). Four rotating RMS errors were
+0.0683388/0.1222618/0.0682180/0.0813537 versus fixed limits near0.0294. Status
+is `DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL`; scientific admission/PPO/frozen
+access are false. The candidate seven-hash map equals the approval and prior
+audit maps, but this review did not reread candidate payload bytes. Full report:
+`docs/FC_P026_K1_FORMAL_TERMINAL_REVIEW_20261006.md`.
+
+## FC-P026 K4 matched full training — actual GPU execution started
+
+Independent approval commit `ef2ddd3`, SHA
+`fca9c5a1106c85fb55a54590784453bd5246d55c21bbaa8ded1e3c72562b3e86`;
+approved dry-run passed. Actual user unit
+`fluid-control-fcp026-history-k4-20261006.service`, invocation
+`eee5a6fbad40411cac2f05e00520b079`, MainPID941365 started at22:00:26UTC.
+Container `79a39768f1398bc5ff9d1085f027a4b1802978120107ca5f9008ffdd300a75e3`
+uses official image `b40d5888…a22e` and explicit `--history-k 4`. Actual
+preflight observed CUDA free32.9703GiB and MemAvailable115.0164GiB; GPU later
+reached96%. This is a running observation only. Completion, audit/reload,
+unchanged formal evaluation, admission, PPO, and real-CFD benefit remain
+unknown.
+
 ## P026 formal source freeze — actual artifact verified
 
 Exclusive artifacts/fcp026_formal_source_20261005_immutable contains408BASE721
