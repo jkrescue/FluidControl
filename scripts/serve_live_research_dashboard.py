@@ -335,6 +335,22 @@ function renderAdmission(d){
  }
 }
 function renderActiveExperiment(d){
+ const independent=d.independent_force_training;
+ if(independent?.ready===true){
+  const age=Date.now()-Date.parse(independent.sampled_at_utc||'');
+  const fresh=Number.isFinite(age)&&age>=0&&age<60000;
+  const title=!fresh?'训练状态采样已过期':independent.running?'独立气动力 FNO · 训练进行中':independent.service_state==='unknown'?'训练状态暂时读取失败':'独立气动力 FNO · 训练进程未运行，结果待核';
+  $('lead-now').textContent=title+'。原流场FNO保持不变，另一个官方FNO学习阻力和升力；尚未通过独立精度评估。';
+  const card=document.createElement('div');card.className='card';
+  const h=document.createElement('h3');h.textContent=title;card.appendChild(h);
+  const progress=document.createElement('p');progress.textContent='已记录更新：'+(independent.step==null?'尚无有效记录':independent.step+' / 1368')+'；'+(independent.progress_fresh?'最近更新正常':independent.running?'等待首批记录或检查进度':'不把旧日志当作正在训练');card.appendChild(progress);
+  const losses=document.createElement('p');losses.textContent='最新训练批次损失：真实当前流场输入 '+(independent.h1_balanced==null?'—':num(independent.h1_balanced,6))+'；连续预测流场输入 '+(independent.ar_balanced==null?'—':num(independent.ar_balanced,6))+'；等权合计 '+(independent.total==null?'—':num(independent.total,6));card.appendChild(losses);
+  const note=document.createElement('p');note.textContent='每次更新使用一个真实CFD的100步窗口，两类输入各占一半。这里显示的是归一化训练误差，不是验证精度或减阻率。训练结束后仍需原定流场、阻力和升力波动评估，不能自动进入PPO。';card.appendChild(note);
+  $('lead-models').prepend(card);
+  $('train16-formal-progress').textContent=title;
+  $('train16-formal-detail').textContent='本阶段共1368次更新，固定终态模型、不挑选验证集最优轮次。资源要求为至少20 GiB可用统一内存；下方流场图片仍属于明确标注的历史模型。';
+  return;
+ }
  const paired=d.decoder_scope_training;
  if(paired?.ready===true){
   const age=Date.now()-Date.parse(paired.sampled_at_utc||'');
@@ -893,6 +909,65 @@ def _parse_fcp011_formal(output: str, scope: str) -> dict:
     command = fields.get("ExecStart", "")
     bound = f"FCP_POSTEVAL_PROFILE=p011_{scope.replace('-', '_')} " in command and "run_fcp008_posteval_spark.sh --execute" in command
     return {"service_state": state, "pid": pid, "running": state == "active" and pid > 0 and bound, "admission": False}
+
+
+FCP013_TRAINING_APPROVAL_SHA = None  # Set only after source-bound training approval.
+
+
+def _parse_fcp013_live(output: str, now: float) -> dict:
+    fields = dict(line.split("=", 1) for line in output.splitlines() if "=" in line and not line.startswith("{"))
+    state = fields.get("ActiveState", "unknown")
+    try:
+        pid = int(fields.get("MainPID", "0"))
+    except ValueError:
+        pid = 0
+    command = fields.get("ExecStart", "")
+    bound = any(name in command for name in ("run_fcp013_training_spark.sh", "train_fcp013_independent_force_fno.py")) and "--resource-probe" not in command
+    latest = None
+    for line in output.splitlines():
+        try:
+            record = json.loads(line)
+            if pid and str(record.get("_PID")) != str(pid):
+                continue
+            row = json.loads(record["MESSAGE"])
+            step = row["step"]
+            values = {key: float(row[key]) for key in ("total", "h1_balanced", "ar_balanced")}
+            stamp = int(record["__REALTIME_TIMESTAMP"]) / 1e6
+            if type(step) is not int or not 1 <= step <= 1368 or not all(math.isfinite(value) and value >= 0 for value in values.values()):
+                continue
+            if row["identity"].get("split") != "train" or row["identity"].get("rollout_steps") != 100:
+                continue
+            if not math.isfinite(stamp) or stamp > now + 5:
+                continue
+            if latest is None or stamp > latest["timestamp"]:
+                latest = {"step": step, **values, "timestamp": stamp}
+        except (ValueError, TypeError, KeyError, AttributeError):
+            continue
+    running = state == "active" and pid > 0 and bound
+    return {"service_state": state, "pid": pid, "running": running,
+            "step": latest["step"] if latest else None,
+            **{key: latest[key] if latest else None for key in ("total", "h1_balanced", "ar_balanced")},
+            "progress_fresh": bool(running and latest and 0 <= now - latest["timestamp"] <= 300),
+            "admission": False}
+
+
+def _fcp013_training(root: Path) -> dict:
+    if FCP013_TRAINING_APPROVAL_SHA is None:
+        return {"ready": False}
+    try:
+        raw = (root / "docs/FC_P013_TRAINING_EXECUTION_APPROVAL_20261005.json").read_bytes()
+        if hashlib.sha256(raw).hexdigest() != FCP013_TRAINING_APPROVAL_SHA:
+            return {"ready": False}
+    except OSError:
+        return {"ready": False}
+    unit = "fluid-control-fcp013-training-20261005.service"
+    try:
+        state = subprocess.run(["systemctl", "--user", "show", unit, "-p", "ActiveState", "-p", "MainPID", "-p", "ExecStart"], capture_output=True, text=True, timeout=2, check=False)
+        journal = subprocess.run(["journalctl", "--user", "-u", unit, "-n", "40", "-o", "json", "--no-pager"], capture_output=True, text=True, timeout=2, check=False)
+        status = _parse_fcp013_live(state.stdout + "\n" + journal.stdout, time.time())
+    except (OSError, subprocess.SubprocessError):
+        status = _parse_fcp013_live("", time.time())
+    return {"ready": True, "sampled_at_utc": datetime.now(UTC).isoformat(), **status}
 
 
 def _fcp012_diagnostic(root: Path) -> dict:
@@ -2442,6 +2517,7 @@ class Handler(BaseHTTPRequestHandler):
             data["joint_readout_diagnostic"] = _joint_readout_diagnostic(self.root)
             data["decoder_scope_training"] = _fcp011_training(self.root)
             data["gradient_diagnostic"] = _fcp012_diagnostic(self.root)
+            data["independent_force_training"] = _fcp013_training(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
