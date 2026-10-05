@@ -29,7 +29,9 @@ if [[ "$mode" != --dry-run && -z "${FCP008_POSTEVAL_CHAIN_ROOT:-}" ]]; then
   temporary="$(mktemp -d "$root/artifacts/.fcp008-posteval-snapshot.XXXXXX")"
   mkdir -p "$temporary/numerical_source"
   numerical_commit="7216214b545fbbd50b2fb5ed866f231039b06b18"
-  git archive "$numerical_commit" -- src conf/tandem_fno_full40_h20.yaml \
+  # Hydra composes the evaluation child config through other files in conf/;
+  # freeze the complete config tree instead of only the leaf YAML.
+  git archive "$numerical_commit" -- src conf \
     cfd/tandem_cylinders/audit_full40_dynamic6_fno.py \
     scripts/evaluate_tandem_fno.py scripts/train_tandem_fno.py scripts/spark_gpu_guard.py \
     scripts/audit_dev30_validation_diagnostic.py scripts/audit_full40_validation_gate.py \
