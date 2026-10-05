@@ -100,6 +100,12 @@ FC-P010在固定P009 train-only cache上保持H1/free-AR逐步rear-Cl损失各�
 
 该结果不要求每项支配作为新gate，但其方向一致的跨域代价不足以支持候选构建。停止继续扫描固定线性头、loss mixture或相位权重；下一假设必须是有界的train-only官方FNO训练干预，之后仍用原field/force/dynamic/window formal协议裁决。不得把训练窗改善、有限完成或CPU诊断状态写成PPO准入。
 
+## D021 — FC-P011训练完成但固定train诊断为权衡，以原formal裁决而非训练指标挑选
+
+FC-P011两臂均按同一1368-window顺序完成且scope auditor通过。A只训练rear-Cl行，free-AR rear-Cl逐步/RMS约改善1.5%，但true-state H1退化；B额外训练最后decoder hidden linear层，free-AR rear-Cl逐步/RMS反而恶化6.65%/3.37%，同时free-AR field与H1 RMS改善。该结果既不支持按训练指标直接接受任一臂，也不允许把A→B之外的变化归因于scope。Lead已分别以`ef6af31`和`f76402b`批准两臂运行完全相同的原formal suite；只有完整field、endpoint、dynamic与force-window结果能作准入判断，当前formal active且无结论，PPO继续禁止。
+
+canonical surrogate的reward warm-up与direct-CFD reset不一致属于接口缺陷而非新科学变量。commit `962c165`只让canonical路径从同一绝对restart时钟恢复真实62点prehistory，并严格绑定来源；32项CPU回归及两次独立复核均PASS。该修复不追认历史候选、不放宽门槛，也不等于控制执行授权。
+
 ## 新决策格式
 
 ID、记录时间、状态、待检验假设、对应实验ID、所依据证据/协议、可选方案、取舍原因、保留的不确定性、撤销/调整条件。只有读取过的产物可作为事实；代理口头报告是待核信息。
