@@ -52,6 +52,10 @@ def make_fixture(root: Path, *, wrong_source_sha: bool = False) -> None:
             handle.attrs["config_json"] = json.dumps(config)
             handle.create_dataset("time", data=np.asarray([[time]]))
             handle.create_dataset("omega", data=np.asarray([[0.0]]))
+            handle.create_dataset("state", data=np.zeros((1, 3, 2, 2), np.float32))
+            handle.create_dataset("force", data=np.zeros((1, 4), np.float32))
+            handle.create_dataset("x", data=np.asarray([16.0, 18.0]))
+            handle.create_dataset("y", data=np.asarray([5.0, 10.0]))
         hdf_sha[case] = sha256(hdf)
     split = data / "splits/train.json"
     split.write_text(
@@ -78,7 +82,7 @@ def comparison(case: str) -> dict:
             {
                 "frame": 0,
                 "time": 0.0,
-                "probe_max_abs_error": 0.001,
+                "probe_max_abs_error": 0.0,
                 "front_force_max_abs_error": 0.0,
                 "rear_force_max_abs_error": 0.0,
                 "omega_abs_error": 0.0,
@@ -96,13 +100,22 @@ class Full40TrainFrame0ParityTests(unittest.TestCase):
             with patch(
                 "audit_full40_train_frame0_69d_parity.compare",
                 side_effect=lambda data, cases, split, case, frames: comparison(case),
-            ) as mocked:
+            ) as mocked, patch(
+                "audit_full40_train_frame0_69d_parity.bilinear_probes",
+                return_value=np.zeros((32, 2), dtype=np.float64),
+            ), patch(
+                "audit_full40_train_frame0_69d_parity.total_drag_observation_at",
+                return_value=(np.zeros(69, dtype=np.float64), {}),
+            ):
                 result = audit(root)
             self.assertEqual(result["status"], "FULL40_TRAIN_FRAME0_69D_PARITY_PASS")
             self.assertEqual([row["case"] for row in result["cases"]], list(CASES))
             self.assertEqual(
                 [(call.args[2], call.args[3], call.args[4]) for call in mocked.call_args_list],
                 [("train", case, [0]) for case in CASES],
+            )
+            self.assertTrue(
+                all(len(row["raw_observation_69d"]) == 69 for row in result["cases"])
             )
 
     def test_rejects_manifest_mismatch(self) -> None:

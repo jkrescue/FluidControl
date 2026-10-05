@@ -11,8 +11,11 @@ import tempfile
 from pathlib import Path
 
 import h5py
+import numpy as np
 
+from fluid_control.openfoam_observation import total_drag_observation_at
 from validate_tandem_69d_observation_parity import compare
+from validate_tandem_probe_mapping import bilinear_probes
 
 
 CASES = tuple(
@@ -83,6 +86,15 @@ def audit(repo: Path) -> dict:
             hdf_split = str(handle.attrs["split"])
             time = float(handle["time"][0, 0])
             omega = float(handle["omega"][0, 0])
+            curated_observation = np.concatenate(
+                (
+                    bilinear_probes(
+                        handle["state"][0], handle["x"][:], handle["y"][:]
+                    ).reshape(-1),
+                    np.asarray(handle["force"][0], dtype=np.float64),
+                    np.asarray(handle["omega"][0], dtype=np.float64),
+                )
+            )
         if (
             hdf_case != case
             or hdf_split != "train"
@@ -105,9 +117,31 @@ def audit(repo: Path) -> dict:
             force_sha[name] = sha256(paths[0])
         if force_sha != config.get("source_force_sha256"):
             raise ValueError(f"raw force SHA differs: {case}")
+        raw_observation, _ = total_drag_observation_at(source, time, omega)
+        raw_observation = np.asarray(raw_observation, dtype=np.float64)
+        curated_observation = np.asarray(curated_observation, dtype=np.float64)
+        if (
+            raw_observation.shape != (69,)
+            or curated_observation.shape != (69,)
+            or not np.isfinite(raw_observation).all()
+            or not np.isfinite(curated_observation).all()
+        ):
+            raise ValueError(f"invalid frame-0 69D observation: {case}")
 
         parity = compare(data, cases_root, "train", case, [0])
         comparison = parity["comparisons"][0]
+        vector_error = np.abs(raw_observation - curated_observation)
+        reproduced = {
+            "probe_max_abs_error": float(vector_error[:64].max()),
+            "front_force_max_abs_error": float(vector_error[64:66].max()),
+            "rear_force_max_abs_error": float(vector_error[66:68].max()),
+            "omega_abs_error": float(vector_error[68]),
+        }
+        if any(
+            reproduced[key] != float(comparison[key])
+            for key in reproduced
+        ):
+            raise AssertionError("stored observation vectors differ from reused audit")
         diagnostic_pass = bool(
             comparison["probe_max_abs_error"] <= PROBE_DIAGNOSTIC_LIMIT
             and comparison["front_force_max_abs_error"] <= 1e-4
@@ -124,6 +158,14 @@ def audit(repo: Path) -> dict:
                 "case_config_sha256": sha256(config_path),
                 "hdf5_sha256": sha256(hdf),
                 "raw_force_sha256": force_sha,
+                "raw_observation_69d": raw_observation.tolist(),
+                "raw_observation_float64_sha256": hashlib.sha256(
+                    raw_observation.tobytes()
+                ).hexdigest(),
+                "curated_observation_69d": curated_observation.tolist(),
+                "curated_observation_float64_sha256": hashlib.sha256(
+                    curated_observation.tobytes()
+                ).hexdigest(),
                 "comparison": comparison,
                 "diagnostic_pass": diagnostic_pass,
             }
