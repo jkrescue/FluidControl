@@ -335,6 +335,20 @@ function renderAdmission(d){
  }
 }
 function renderActiveExperiment(d){
+ const p023=d.p023_live;
+ if(p023){
+  const age=Date.now()-Date.parse(p023.sampled_at_utc||'');
+  const fresh=p023.verified===true&&Number.isFinite(age)&&age>=0&&age<60000;
+  const title=!fresh?'当前训练状态暂未核实':p023.running?'P023 当前受力输入训练进行中':p023.exited_success?'P023 计算结束 · 精度结果待复核':'P023 任务已停止 · 正在检查原因';
+  const progress=fresh?'低学习率组：'+p023.updates.LOW+'/16 次更新；较高学习率组：'+p023.updates.HIGH+'/16 次更新。':'当前进度未知，不用历史任务代替。';
+  const detail='原模型权重固定，只训练新增的96个受力输入系数。两组都使用当前受力；每次更新包含六个真实CFD窗口，每窗连续预测100步。';
+  const note='检查平均升力、波动幅值及波形误差。P022已复核但未满足全部精度改进要求；尚无新的PPO或代理辅助CFD闭环结果。下方流场图仍是标注的历史结果。';
+  $('lead-now').textContent=title+'。'+progress;
+  const card=document.createElement('div');card.className='card';
+  for(const [tag,text] of [['h3',title],['p',progress],['p',detail],['p',note]]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
+  $('lead-models').prepend(card);$('train16-formal-progress').textContent=title;
+  $('train16-formal-detail').textContent=progress+' '+detail;return;
+ }
  const p022=d.p022_live;
  if(p022){
   const age=Date.now()-Date.parse(p022.sampled_at_utc||'');
@@ -1211,6 +1225,57 @@ def _fcp015_formal_result(root: Path) -> dict:
 FCP018_APPROVAL = "eea5bd5c6a3fe585ae1104600421e50b335f61299c4014c5e3136722af3d4d39"
 FCP018_PROTOCOL = "310f0bdf8563a2a70b844a32852791fa1b1dc20278a3098418942e1dab204d2d"
 FCP018_LAUNCHER = "artifacts/fcp018_reduced_rate_source_20261005_immutable/scripts/run_fcp018_reduced_rate_spark.sh"
+
+
+def _parse_fcp023_live(state: dict, log: str, process_matches: bool) -> dict:
+    if state.get("InvocationID") != "39aec740a9914226bb1f74c2d29e7917":
+        return {"verified": False}
+    pid = state.get("MainPID", "0")
+    if pid != "0" and not process_matches:
+        return {"verified": False}
+    running = state.get("ActiveState") == "active" and state.get("SubState") == "running" and pid != "0" and process_matches
+    terminal = (state.get("ActiveState") == "active" and state.get("SubState") == "exited"
+                and pid == "0" and state.get("Result") == "success"
+                and state.get("ExecMainCode") == "1" and state.get("ExecMainStatus") == "0")
+    updates = {"LOW": set(), "HIGH": set()}
+    for line in log.splitlines():
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(row, dict) or row.get("event") != "arm_update_complete":
+            continue
+        arm, step = row.get("arm"), row.get("update")
+        if arm not in updates or type(step) is not int or not 1 <= step <= 16 or step in updates[arm]:
+            return {"verified": False}
+        if arm == "HIGH" and len(updates["LOW"]) != 16:
+            return {"verified": False}
+        updates[arm].add(step)
+    if any(steps != set(range(1, len(steps)+1)) for steps in updates.values()):
+        return {"verified": False}
+    return {"verified": True, "running": running, "exited_success": terminal,
+            "updates": {key: len(value) for key, value in updates.items()}, "admission": False}
+
+
+def _fcp023_live(root: Path) -> dict:
+    sampled = datetime.now(UTC).isoformat()
+    try:
+        approval = root / "docs/FC_P023_EXECUTION_APPROVAL_20261005.json"
+        launcher = root / "artifacts/fcp023_input_block_source_20261005_immutable/scripts/run_fcp023_input_block_spark.sh"
+        if hashlib.sha256(approval.read_bytes()).hexdigest() != "714db1f9d09b0ee7037953d6b807b3341cf7a736889d5c5fa98e5ae8c0116cf0":
+            return {"verified": False, "sampled_at_utc": sampled}
+        if hashlib.sha256(launcher.read_bytes()).hexdigest() != "1215d6e107639c3e902944e26a4c228729d102ee5b79d3b75297009d5571e924":
+            return {"verified": False, "sampled_at_utc": sampled}
+        fields = ("InvocationID", "MainPID", "ActiveState", "SubState", "Result", "ExecMainCode", "ExecMainStatus")
+        raw = subprocess.check_output(["systemctl", "--user", "show", "fluid-control-fcp023-input-block-20261005.service",
+             *[arg for key in fields for arg in ("-p", key)]], text=True, timeout=5)
+        state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+        pid = state.get("MainPID", "0")
+        matches = pid.isdigit() and pid != "0" and str(launcher).encode() in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+        log = (root / "artifacts/fcp023_input_block_20261005/run.log").read_text()
+        return {**_parse_fcp023_live(state, log, matches), "sampled_at_utc": sampled}
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return {"verified": False, "sampled_at_utc": sampled}
 
 
 def _parse_fcp022_live(state: dict, log: str, process_matches: bool) -> dict:
@@ -3063,6 +3128,7 @@ class Handler(BaseHTTPRequestHandler):
             data["p018_formal_result"] = _fcp018_formal_result(self.root)
             data["p020_live"] = _fcp020_live(self.root)
             data["p022_live"] = _fcp022_live(self.root)
+            data["p023_live"] = _fcp023_live(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
