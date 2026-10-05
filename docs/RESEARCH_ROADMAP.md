@@ -1,5 +1,16 @@
 # Research roadmap and prioritized backlog
 
+## Current — P026 design reviewed; shared history objective under CPU implementation
+
+See docs/FC_P026_HISTORY_COMPARISON_PLAN_20261005.md. Matched full44 K1/K4
+design uses separate P009flow/P018aero parents,1368windows/171updates perarm,
+original objective/optimizer and full original evaluation. Current authorization
+is CPU engineering only: shared causal history objective and no-update probe
+harness, followed by independent review. No GPU execution approved yet.
+Official tinyCPU check and six representative realHDF windows have run successfully;
+neither is fulltraining or scientific admission. Save/reload and all history-aware
+formal callers must be verified before fulltraining; no threshold changes.
+
 ## Current — P025 unsupported; short-history CPU preparation
 
 FC-E035 completed16updates and independent terminal review. End the isolated
