@@ -23,3 +23,39 @@ floor but with limited headroom. The pass must use the reviewed helper hash
 and cannot overwrite any prior receipt. Execution success is not yet recorded
 by this approval; verify the actual receipt separately. No r2, automatic loop,
 training restart, scientific admission or PPO execution is authorized here.
+
+## Actual r1 execution and independent receipt review
+
+Root reports the approved command exited 0 under its 310-second outer timeout
+(session 51920). The saved receipt independently records completion in
+10.184359 seconds, from 2026-10-05 22:05:52.096 UTC to 22:06:02.280 UTC
+(2026-10-06 06:05:52–06:06:02 Asia/Shanghai).
+
+Receipt SHA-256:
+`115ab435a28d0b23d8e1a8fea8823467b15cad00ec99956231ca5c38a1a374a6`.
+Its 90 records comprise one begin, 44 file-begin/advised pairs, and one
+complete, with no aborted record. The begin record binds the approved helper,
+K4, exact output and pinned P018 audit SHA. All 44 unique sorted paths and
+reported SHA values match that audit's train-only allowlist. All three
+same-descriptor stat snapshots match each file-begin stat, covering
+6,834,205,387 bytes. This review checked saved JSON evidence only; it did not
+reread any HDF file or issue cache advice.
+
+Across 178 receipt memory observations, minima were MemFree **21.424427 GiB**
+and MemAvailable **105.820568 GiB**. Initial free memory was 21.424427 GiB;
+completion free memory was 24.310375 GiB. Recorded samples remain above the
+applicable 20/20.5/20.75 GiB checks. The increase is an observed operational
+change, not proof that all advised pages were evicted or that training improved.
+
+The concurrently growing `resource_watch.jsonl` snapshot through Unix timestamp
+1791238023 (22:07:03 UTC) contained 187 samples, with minima MemFree
+**21.550716 GiB** and MemAvailable **105.905724 GiB**; snapshot SHA-256 was
+`6100cc274b6ace0ffac05c2fba4b0686ddfda5a75847ca9845b4399ca4baf7d0`.
+This identifies that read snapshot, not a final immutable training log.
+
+The actual service `fluid-control-fcp026-history-k4-20261006.service` remained
+live: invocation `eee5a6fbad40411cac2f05e00520b079`, MainPID 941365,
+ActiveState `activating`, SubState `start`. Its interim ExecMainStatus 0 is
+not terminal success. The observed training log had reached 81/1368 windows
+and 10 updates. Cache maintenance completed; training and scientific review
+did not. No restart, second pass, model acceptance or PPO authorization follows.
