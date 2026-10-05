@@ -1,5 +1,18 @@
 # Experiment ledger
 
+## P026 role-aware production loader — integrated, software checks only
+
+Loader3343dba367dd6e45fdc914fc321e90b94efc2d8a00553c61b025ef7d776fc2a8;
+focusedtests6eef48fa7f0c386995fd477ada90fe0ca30a4de227c2b4703bd0a70b36aa4047.
+Independent23focused/baselegacytests and earlier35legacytests pass; Rootcanonical
+33focused/base/history tests0.64s plus23P015/P018 regressions0.61s pass.
+Explicit role architectures and actual imported history module hashes are enforced.
+Report docs/FC_P026_ROLE_LOADER_REVIEW_20261005.md limits these claims to software
+compatibility; no realcandidate/heldout/HydroGym admission is implied. Additional
+official smoke is engineering-only and does not exercise full production loader;
+its scratch-cleaning script is not synchronized. Canonical earlier parent-bound
+checkpoint verifier remains the retained save/reload evidence.
+
 ## P026 monitoring preparation — actual training events supported
 
 Root added registered progress parsing for history_training window/update events,

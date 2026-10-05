@@ -8,6 +8,7 @@ not apply the residual update, mask, spatial pooling, or physical scaling.
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import re
@@ -29,6 +30,19 @@ P018_SYSTEM_KIND = "FC_P018_REDUCED_RATE_FORCE_FNO"
 P018_AERO_KIND = "FC_P018_REDUCED_RATE_FORCE_FNO_AERODYNAMIC_CHECKPOINT"
 P018_PROTOCOL_SHA256 = "310f0bdf8563a2a70b844a32852791fa1b1dc20278a3098418942e1dab204d2d"
 P018_LEARNING_RATE = 1.5625e-7
+P026_K1_MANIFEST_STATUS = "FC_P026_K1_DUAL_FNO_MANIFEST_VERIFIED"
+P026_K4_MANIFEST_STATUS = "FC_P026_K4_DUAL_FNO_MANIFEST_VERIFIED"
+P026_K1_SYSTEM_KIND = "FC_P026_K1_HISTORY_FORCE_FNO"
+P026_K4_SYSTEM_KIND = "FC_P026_K4_HISTORY_FORCE_FNO"
+P026_K1_AERO_KIND = "FC_P026_K1_HISTORY_AERODYNAMIC_CHECKPOINT"
+P026_K4_AERO_KIND = "FC_P026_K4_HISTORY_AERODYNAMIC_CHECKPOINT"
+P026_AERO_INITIAL_MODEL_SHA256 = "8a89f4774923afa698328e8e65ae337e7e0efefdae0bc9452d6b7a78758fb70d"
+P026_AERO_INITIAL_STATE_SHA256 = "d78d43d43738dd63b9556819e22f6b57c16993affaaff94dc3a29b6250994d6c"
+P026_HISTORY_STATE_SHA256 = "2b5b37dc79211bb5c4985a1d44d25262080f503011766206c536938f49a6b64c"
+P026_HISTORY_INFERENCE_SHA256 = "fd568f6457b980046a0419be96562291e9f96736270d45f20dd2adb2ffc5878c"
+P026_HISTORY_OBJECTIVE_SHA256 = "4d27fb53e05df73ba94d84bf42ba8205d78ebe6f91de832a68659870ea7d77c0"
+P026_ORDER_SHA256 = "177ebd9523cde918eb0c1fb8026286dac7e95f3d228ae0e349757a2a9a288f9f"
+P026_LEARNING_RATE = 1.5625e-7
 FLOW_MODEL_SHA256 = "dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31"
 FLOW_STATE_SHA256 = "4998e534d4b82b17393c217357ed18220fb8e739166a88147483bb9cc5fb771e"
 CONFIG_SHA256 = "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
@@ -117,7 +131,113 @@ def _experiment_contract(kind: str) -> dict[str, Any]:
                           "actual_learning_rate": P018_LEARNING_RATE,
                           "training_protocol_sha256": P018_PROTOCOL_SHA256,
                           "training_protocol_file": "training_protocol.json"}}
+    p026 = {
+        P026_K1_SYSTEM_KIND: (1, P026_K1_MANIFEST_STATUS, P026_K1_AERO_KIND),
+        P026_K4_SYSTEM_KIND: (4, P026_K4_MANIFEST_STATUS, P026_K4_AERO_KIND),
+    }
+    if kind in p026:
+        history_k, status, aero_kind = p026[kind]
+        return {
+            "status": status,
+            "aero_kind": aero_kind,
+            "optimizer_steps": 171,
+            "p026_history_k": history_k,
+            "extra": {
+                "training_experiment": "FC-P026",
+                "accumulation_windows": 8,
+                "training_windows": 1368,
+                "optimizer_steps": 171,
+                "actual_learning_rate": P026_LEARNING_RATE,
+                "training_protocol_file": "training_protocol.json",
+            },
+        }
     raise ValueError("dual FNO experiment kind is not supported")
+
+
+def _p026_history_input(history_k: int) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "profile": f"p026_k{history_k}",
+        "history_length": history_k,
+        "flow_input_channels": 6,
+        "aerodynamic_input_channels": 6 if history_k == 1 else 18,
+        "left_padding": "trajectory_frame0",
+        "autoregressive_state_source": "frozen_flow_prediction",
+        "future_state_inputs": False,
+        "future_force_inputs": False,
+    }
+
+
+def _p026_inventory() -> dict[str, Any]:
+    return {
+        "windows": 1368,
+        "warm": 1300,
+        "padded": 68,
+        "family_windows": [720, 408, 240],
+        "family_padded": [20, 16, 32],
+    }
+
+
+def _validate_p026_protocol(
+    root: Path, payload: dict[str, Any], contract: dict[str, Any]
+) -> None:
+    history_k = contract.get("p026_history_k")
+    if history_k is None:
+        return
+    history_input = _p026_history_input(history_k)
+    aero_architecture = dict(ARCHITECTURE)
+    aero_architecture["in_channels"] = 6 if history_k == 1 else 18
+    exact = {
+        "history_input": history_input,
+        "history_inventory": _p026_inventory(),
+        "history_state_module_sha256": P026_HISTORY_STATE_SHA256,
+        "history_inference_module_sha256": P026_HISTORY_INFERENCE_SHA256,
+        "flow_architecture": ARCHITECTURE,
+        "aerodynamic_architecture": aero_architecture,
+    }
+    if any(payload.get(key) != value for key, value in exact.items()):
+        raise ValueError("P026 history or role architecture contract differs")
+    protocol_path = _confined_file(root, payload.get("training_protocol_file"))
+    protocol_sha = sha256(protocol_path)
+    protocol = _read_object(protocol_path)
+    if (
+        payload.get("training_protocol_sha256") != protocol_sha
+        or payload.get("training_semantics") != protocol
+    ):
+        raise ValueError("P026 training protocol bytes or semantics differ")
+    protocol_exact = {
+        "training_experiment": "FC-P026",
+        "history_input": history_input,
+        "training_windows": 1368,
+        "accumulation_windows": 8,
+        "optimizer_steps": 171,
+        "learning_rate": P026_LEARNING_RATE,
+        "betas": [0.9, 0.999],
+        "eps": 1e-8,
+        "weight_decay": 1e-4,
+        "gradient_clip_norm": 1.0,
+        "seed": 20261003,
+        "chunk_size": 10,
+        "rollout_steps": 100,
+        "sampler_order_sha256": P026_ORDER_SHA256,
+        "diagnostic_counts": [0, 456, 912, 1368],
+        "objective": "equal_H1_AR_half_equal_four_half_rearCl_normalized_MSE",
+        "history_state_module_sha256": P026_HISTORY_STATE_SHA256,
+        "history_inference_module_sha256": P026_HISTORY_INFERENCE_SHA256,
+        "action_semantics": "stored_prescribed_action_samples_not_exact_nominal_time_commands",
+        "inventory": _p026_inventory(),
+        "allocator_fraction": 0.06,
+        "wall_seconds": 14400,
+        "validation_accessed": False,
+        "frozen_test_accessed": False,
+        "selection_performed": False,
+    }
+    if set(protocol) != set(protocol_exact) | {"history_objective_sha256"}:
+        raise ValueError("P026 training protocol keys differ")
+    if any(protocol.get(key) != value for key, value in protocol_exact.items()):
+        raise ValueError("P026 training protocol values differ")
+    if protocol["history_objective_sha256"] != P026_HISTORY_OBJECTIVE_SHA256:
+        raise ValueError("P026 history objective SHA differs")
 
 
 def _validate_p018_protocol(root: Path, payload: dict[str, Any]) -> None:
@@ -239,13 +359,22 @@ def validate_dual_fno_manifest(
         "normalization_sha256": NORMALIZATION_SHA256,
         "flow_parent_model_sha256": FLOW_MODEL_SHA256,
         "flow_parent_state_sha256": FLOW_STATE_SHA256,
-        "aerodynamic_initial_model_sha256": FLOW_MODEL_SHA256,
-        "aerodynamic_initial_state_sha256": FLOW_STATE_SHA256,
+        "aerodynamic_initial_model_sha256": (
+            P026_AERO_INITIAL_MODEL_SHA256
+            if contract.get("p026_history_k") is not None
+            else FLOW_MODEL_SHA256
+        ),
+        "aerodynamic_initial_state_sha256": (
+            P026_AERO_INITIAL_STATE_SHA256
+            if contract.get("p026_history_k") is not None
+            else FLOW_STATE_SHA256
+        ),
         **contract["extra"],
     }
     if any(payload.get(key) != value for key, value in exact.items()):
         raise ValueError("dual FNO manifest fixed identity differs")
     _validate_p018_protocol(manifest_path.parent, payload)
+    _validate_p026_protocol(manifest_path.parent, payload, contract)
     architecture = payload["architecture"]
     if architecture != ARCHITECTURE:
         raise ValueError("dual FNO architecture differs")
@@ -269,6 +398,11 @@ def validate_dual_runtime_files(
 ) -> None:
     """Bind evaluator runtime inputs to the manifest's immutable identities."""
     _validate_p018_protocol(identity.manifest_path.parent, identity.payload)
+    _validate_p026_protocol(
+        identity.manifest_path.parent,
+        identity.payload,
+        _experiment_contract(identity.payload["kind"]),
+    )
     if sha256(config_path.resolve()) != identity.payload["config_sha256"]:
         raise ValueError("dual FNO runtime configuration SHA differs")
     if sha256(normalization_path.resolve()) != identity.payload["normalization_sha256"]:
@@ -348,6 +482,42 @@ def make_dual_fno_adapter(flow_model, aerodynamic_model):
     return DualFNOAdapter().eval()
 
 
+def _runtime_architecture(cfg) -> dict[str, Any]:
+    architecture = {
+        key: (list(value) if key == "num_fno_modes" else value)
+        for key, value in {
+            "in_channels": int(cfg.model.in_channels),
+            "out_channels": int(cfg.model.out_channels),
+            "latent_channels": int(cfg.model.latent_channels),
+            "num_fno_layers": int(cfg.model.num_fno_layers),
+            "num_fno_modes": cfg.model.num_fno_modes,
+            "decoder_layers": int(cfg.model.decoder_layers),
+            "decoder_layer_size": int(cfg.model.decoder_layer_size),
+            "padding": int(cfg.model.padding),
+            "coord_features": bool(cfg.model.coord_features),
+        }.items()
+    }
+    architecture["force_channels"] = list(FORCE_CHANNELS)
+    return architecture
+
+
+def _p026_history_adapter_factory() -> Callable:
+    """Bind the imported project glue bytes before any P026 model is exposed."""
+    import p026_history_inference
+    import p026_state_history
+
+    inference_path = Path(p026_history_inference.__file__).resolve()
+    state_path = Path(p026_state_history.__file__).resolve()
+    if (
+        not inference_path.is_file()
+        or sha256(inference_path) != P026_HISTORY_INFERENCE_SHA256
+        or not state_path.is_file()
+        or sha256(state_path) != P026_HISTORY_STATE_SHA256
+    ):
+        raise ValueError("P026 imported history module source SHA differs")
+    return p026_history_inference.make_history_dual_fno_adapter
+
+
 def load_dual_fno(
     manifest_path: Path,
     cfg,
@@ -362,29 +532,27 @@ def load_dual_fno(
         manifest_path, expected_sha256=expected_manifest_sha256
     )
     validate_runtime_precision()
-    cfg_architecture = {
-        key: (list(value) if key == "num_fno_modes" else value)
-        for key, value in {
-            "in_channels": int(cfg.model.in_channels),
-            "out_channels": int(cfg.model.out_channels),
-            "latent_channels": int(cfg.model.latent_channels),
-            "num_fno_layers": int(cfg.model.num_fno_layers),
-            "num_fno_modes": cfg.model.num_fno_modes,
-            "decoder_layers": int(cfg.model.decoder_layers),
-            "decoder_layer_size": int(cfg.model.decoder_layer_size),
-            "padding": int(cfg.model.padding),
-            "coord_features": bool(cfg.model.coord_features),
-        }.items()
-    }
-    cfg_architecture["force_channels"] = list(FORCE_CHANNELS)
+    cfg_architecture = _runtime_architecture(cfg)
     if cfg_architecture != ARCHITECTURE:
         raise ValueError("runtime FNO configuration differs from dual manifest")
     if load_checkpoint is None:
         from physicsnemo.utils import load_checkpoint as official_load_checkpoint
 
         load_checkpoint = official_load_checkpoint
+    contract = _experiment_contract(identity.payload["kind"])
+    history_k = contract.get("p026_history_k")
+    aerodynamic_cfg = cfg
+    if history_k is not None:
+        if identity.payload["flow_architecture"] != cfg_architecture:
+            raise ValueError("P026 runtime flow architecture differs")
+        aerodynamic_cfg = copy.deepcopy(cfg)
+        aerodynamic_cfg.model.in_channels = 6 if history_k == 1 else 18
+        if _runtime_architecture(aerodynamic_cfg) != identity.payload[
+            "aerodynamic_architecture"
+        ]:
+            raise ValueError("P026 runtime aerodynamic architecture differs")
     flow_model = build_model(cfg).to(device)
-    aerodynamic_model = build_model(cfg).to(device)
+    aerodynamic_model = build_model(aerodynamic_cfg).to(device)
     flow_metadata: dict[str, Any] = {}
     aerodynamic_metadata: dict[str, Any] = {}
     flow_epoch = load_checkpoint(
@@ -411,14 +579,21 @@ def load_dual_fno(
         expected_state_sha256=identity.flow.state_sha256,
         expected_kind=FLOW_KIND,
     )
-    contract = _experiment_contract(identity.payload["kind"])
     required_aero_metadata = {
         "status": contract["aero_kind"],
         "checkpoint_epoch": 1,
         "flow_parent_model_sha256": FLOW_MODEL_SHA256,
         "flow_parent_state_sha256": FLOW_STATE_SHA256,
-        "aerodynamic_initial_model_sha256": FLOW_MODEL_SHA256,
-        "aerodynamic_initial_state_sha256": FLOW_STATE_SHA256,
+        "aerodynamic_initial_model_sha256": (
+            P026_AERO_INITIAL_MODEL_SHA256
+            if history_k is not None
+            else FLOW_MODEL_SHA256
+        ),
+        "aerodynamic_initial_state_sha256": (
+            P026_AERO_INITIAL_STATE_SHA256
+            if history_k is not None
+            else FLOW_STATE_SHA256
+        ),
         "optimizer_steps": contract["optimizer_steps"],
         **contract["extra"],
         "selection_performed": False,
@@ -426,6 +601,28 @@ def load_dual_fno(
         "frozen_test_accessed": False,
         "ppo_executed": False,
     }
+    if history_k is not None:
+        required_aero_metadata.update(
+            {
+                "history_profile": f"p026_k{history_k}",
+                "history_k": history_k,
+                "model_in_channels": 6 if history_k == 1 else 18,
+                "training_protocol_sha256": identity.payload[
+                    "training_protocol_sha256"
+                ],
+                "history_state_module_sha256": P026_HISTORY_STATE_SHA256,
+                "history_inference_module_sha256": P026_HISTORY_INFERENCE_SHA256,
+                "sampler_order_sha256": P026_ORDER_SHA256,
+                "history_inventory": _p026_inventory(),
+            }
+        )
     if any(aerodynamic_metadata.get(key) != value for key, value in required_aero_metadata.items()):
         raise ValueError("dual FNO aerodynamic checkpoint metadata differs")
-    return make_dual_fno_adapter(flow_model, aerodynamic_model), identity
+    if history_k is None:
+        return make_dual_fno_adapter(flow_model, aerodynamic_model), identity
+    make_history_dual_fno_adapter = _p026_history_adapter_factory()
+
+    return (
+        make_history_dual_fno_adapter(flow_model, aerodynamic_model, k=history_k),
+        identity,
+    )
