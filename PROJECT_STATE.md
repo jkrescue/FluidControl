@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**2026-10-05 16:38 UTC：P021真实尺寸资源检查r2完成，工程复核通过。** 两个对照各100次前向和100次反向重算，28项梯度有限、原模型与扩展初态参数不变；总29.05秒，单组前后向约4.60–4.86秒，最高CUDA reserved3.779GiB。外部物理空闲最低28.596GiB，可用108.325GiB，双20GiB满足。结果SHA `975fc40bbb88d5d0ab3d239ee0ce994bc0635aabcad9b7d74568bf73f1a8ce7a`，Root与独立审查核对实际终态和记录。详见`docs/FC_P021_RESOURCE_TERMINAL_REVIEW_20261005.md`。
+
+尚未训练、无新候选或PPO；此次新增输入权重仍全零，不能推断学习后的反馈稳定性或精度。下一步已授权暂存CPU准备六窗、每组16次更新的零输入/当前受力输入对照，原目标和优化器相同；GPU训练须实现审查后另行批准。以下“正在运行”为此前观察。
+
 **2026-10-05 16:37 UTC：P021真实尺寸资源检查r2已启动，尚无结论。** Root与独立审查各15项CPU测试通过；代码877911e、恢复518684f。首轮invocation `f2b325db3b8b49c2ad1647ad41ec7e15`在模型创建前因Python导入后的物理空闲约29.4GiB低于额外30GiB启动要求退出，无20GiB违规；failure SHA `30c1d17c7692a85ff60f62e11eb5700d1fdda1a49163e543253f44cf828317b5`，原证据保留。
 
 r2只对44个同描述符重验SHA的只读训练HDF文件发送干净缓存释放建议，不写数据、不全局清缓存、不改模型/协议/内存门槛。恢复审批SHA `3bec0fb8f853efaf308f1fa0a70aef16059a5f65ca99d8aa751377940960f6a1`。实际unit `fluid-control-fcp021-causal-resource-r2-20261005.service`、invocation `abb778c24a494eaa881eaa2669c5b57f`、容器 `69ccfb0be99f24872432a6cf069712d008f51cc89089aee8c3c22b3b2833a63d`，官方image b40d5888。启动CUDAfree36.589GiB、MemAvailable115.087GiB仅是当时观测。
