@@ -32,6 +32,40 @@ This is implementation evidence, not a completed model evaluation or admission.
 
 ## Remaining work before formal execution
 
+### Frozen-source and HydroGym interface preflight (06:40 UTC)
+
+Source commit `5eef995ee397d99fbc1ca61b9fce3a7fb79ace26` adds a `--stage-only`
+path, which creates and validates the exact immutable evaluation snapshot without
+running GPU evaluation. Snapshot directory:
+`artifacts/p013_posteval_chain_5eef995ee397_immutable`; receipt SHA:
+`db603f5e98f26cbc8d0e4817344a0b1f6ada52ca8fac18f1bba81b181f10a8a6`.
+It contains the original numerical tree, explicit reviewed adapter paths, all
+candidate-auditor dependencies and the bound training configuration.
+
+The pinned official PhysicsNeMo image imported both evaluators from this frozen
+snapshot and loaded the genuine immutable P009 flow parent on CPU through the
+official loader and strict P009 identity helper. No forward pass, optimizer,
+candidate save, CFD generation, validation inference or PPO ran in this probe.
+
+The new shared validator also recomputed/revalidated all four existing P011A
+stages (validation10, dynamic6, force_window, complete) against their original
+immutable reports and source tree. All four reuse checks passed; the existing
+scientific admission FAIL is unchanged.
+
+Two software-only tests now call the actual `TandemFNOStepper.step` with the dual
+adapter. They verify separate flow-delta/four-force routing, physical force
+de-normalization, shared inputs, action normalization/rate limiting and rejection
+of nonfinite forces before state update. Small synthetic tensors are explicitly
+test fixtures, not CFD training data or scientific evidence. The tests do not
+construct a full canonical 69D environment, train PPO, or establish control gain.
+
+The existing canonical PPO launcher still loads one checkpoint. Before any dual
+PPO execution, its preflight and loading/result identities must be extended to
+the accepted dual manifest and both checkpoint pairs while retaining every
+endpoint/window/dynamic gate, the 69D observation and causal force prehistory.
+The underlying HydroGym stepper requires no alternate update equation. This
+interface finding does not authorize PPO before surrogate admission.
+
 ### Additional implementation evidence (06:33 UTC)
 
 The shared runner/validator now has a separate P013 profile and a thin wrapper.
