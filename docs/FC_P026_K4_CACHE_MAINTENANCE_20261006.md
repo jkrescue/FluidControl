@@ -146,6 +146,38 @@ service invocation `eee5a6fbad40411cac2f05e00520b079`, PID941365, remained
 cache advice and establishes maintenance completion only, not training
 completion or scientific acceptance.
 
+## Actual r11 receipt review
+
+Root reports separately approved session93348 exit0. Independent saved-JSON
+review verified90 records: begin,44 ordered file-begin/advised pairs,complete.
+All44 paths and reported hashes match the pinned audit, with identical per-file
+start/before/hash/advice stat snapshots. Begin binds reviewed helperd116b55b…b654e25,
+K4 and exactr11 output. Receipt SHA:
+`ac969392e69677efee3cb5d6577edc4bdcdcae0bf6514139e4a6bdea3c28f37f`.
+
+Start/end Unix timestamps were1791242364.592915/1791242375.2992246;
+elapsed **10.706622560 seconds**. Receipt minima: MemFree **21.920593 GiB**,
+MemAvailable **106.166386 GiB**, above applicable floors. Growing host-watch
+snapshot through1791242403,2299samples, minima: MemFree **21.006046 GiB**,
+MemAvailable **105.671360 GiB**; snapshot SHA:
+`a54a6e2e200a07280cd2e8c206d3cf39f8775334043e63150f0bb18952d4f5fb`.
+
+Allr1–r10 receipt hashes were rechecked unchanged. Actual service remained live
+under invocation `eee5a6fbad40411cac2f05e00520b079`, PID941365,
+`activating/start`. No HDF reread or cache advice was performed by review.
+No further pass, training completion or scientific acceptance follows.
+
+## Separate r11 authorization
+
+At timestamp 1791242339 the same live K4 invocation had reached 1186
+windows/148 updates; MemFree was 22,635,404 KiB (about 21.59 GiB).
+Root authorizes one bounded r11 pass with reviewed helper
+`d116b55b67c50d2e618ec4188fe4fc8a4bc8b732deda8ca89f5b942d4b654e25`.
+Exclusively create K4 `cache_advice_20261006_r11.jsonl`, preserving r1-r10.
+All exact 44-file checks and memory/deadline guards remain unchanged.
+No global cache action, model/data modification, restart or later pass is
+authorized. Actual receipt verification remains required.
+
 ## Separate r4 authorization
 
 At468 consumed windows, the same live K4 invocation's latest host sample
