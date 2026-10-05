@@ -1,5 +1,18 @@
 # Experiment ledger
 
+## P026 actual official CPU training inventory — verified
+
+Container2fa6d157 exited0/noOOM, official pinned image, noGPU, readonly
+train-only inputs and exclusive output. Receipt76c84cae2e08595d5326159926396ed8b1bc31a6c1fdd09a92bbae5b9ef2a526
+independently verifies all1368 unique identities, original order177ebd95,
+family counts720/408/240 and warm1300/padded68.
+Effective protocol hashes K1 daf22b2464744509260f1eb9e0b20d3b80da484c8985f3a22887293bbb40cb30;
+K4 72b3638c4f0fbad687bcc4b216365e8c68935611778f7be562386abaa1db7a3d.
+Report docs/FC_P026_TRAINING_INVENTORY_CPU_REVIEW_20261005.md includes launcher
+static review and18CPUtests. Metadata/sampler only: no field batches, training,
+new accuracy, PPO or scientific admission. Full44 bytes remain checked at launch.
+Next actual role-loader/history-caller integration, then separate execution review.
+
 ## P026 full trainer — independently reviewed, not executed
 
 Final trainer SHA562d268545ba5cd2559374f4bd8bd34bf59a2e49f2e886e4e286bb12aac5d49e;
