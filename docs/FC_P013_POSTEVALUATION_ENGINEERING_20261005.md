@@ -2,6 +2,14 @@
 
 This is implementation evidence, not a completed model evaluation or admission.
 
+## Formal dual-checkpoint path preflight — 2026-10-05
+
+Read-only independent review found that the original dev30 diagnostic accepted only `/workspace/checkpoint`, whereas the P013 evaluator correctly records `/workspace/dual/aerodynamic`. The diagnostic now admits the latter only under the explicit `fcp013_independent_force_dual_fno` kind, after CPU validation of the actual dual manifest, aerodynamic role/epoch and all five model/manifest report hashes. Unknown aliases and legacy-kind attempts remain rejected. The runner and posteval validator now select this explicit kind; the diagnostic is an additional declared immutable-source overlay. Original pooled, paired-action and threshold computations are unchanged. Root reran50 CPU tests, including legacy numerical diagnostics and posteval profile/chain tests; all passed after updating the test fixture to include the required fifth overlay. No evaluation or GPU job was run for this patch.
+
+Candidate control plumbing and optional portable compatibility-receipt access paths were committed/pushed as `4481de7`, with108 CPU tests passing. That commit is not execution readiness: the separate canonical raw endpoint-report path adapter remains under independent implementation. Promotion verification must be regenerated as a new receipt under the actual `/workspace` runtime, preserving old host receipts. Original formal reports, gate values and acceptance thresholds must not be edited.
+
+Training r2 and its already frozen terminal auditor remain unchanged. The next formal-evaluation snapshot must include the reviewed diagnostic overlay and bind actual terminal artifacts before GPU execution; earlier four-overlay snapshots remain historical and must not be selected for the upcoming formal suite.
+
 ## Real-CFD admission identity checks — 2026-10-05
 
 Independent control implementation adds dual-specific checks to the existing real-CFD runner. Readiness and completed PPO audit must carry identical complete dual identities, paired primary model and field-normalization hashes, plus a SHA-verified actual SB3 VecNormalize artifact. Its flags must be norm_obs=false/norm_reward=false, observation shape69, action shape1 with bounds±0.75, and raw observations must remain unchanged. Explicit host path/SHA and dual identity enter the predeclared lineage; the runner revalidates it under the execution lock before staging CFD. Existing legacy single-model checks and numerical control/reward/action rules are unchanged.

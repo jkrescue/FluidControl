@@ -15,7 +15,7 @@ case "$profile" in
     auditor_relative="scripts/audit_fcp013_dual_candidate.py"
     candidate_kind="fcp013_independent_force_dual_fno"
     calibrated_kind=""
-    diagnostic_kind="dev30_h20_development"
+    diagnostic_kind="fcp013_independent_force_dual_fno"
     lineage_status="FC_P013_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION"
     step_status="FC_P013_POSTEVAL_STEP_COMPLETE"
     complete_status="FC_P013_POSTEVAL_COMPLETE"
@@ -126,7 +126,7 @@ if [[ "$mode" != --dry-run && -z "${FCP008_POSTEVAL_CHAIN_ROOT:-}" ]]; then
     git show "$reviewed:$relative" >"$temporary/$relative"
   done
   if [[ "$profile" == p013 ]]; then
-    for relative in src/fluid_control/dual_fno.py src/fluid_control/calibrated_checkpoint.py scripts/evaluate_tandem_fno.py scripts/diagnose_fno_force_window.py; do
+    for relative in src/fluid_control/dual_fno.py src/fluid_control/calibrated_checkpoint.py scripts/evaluate_tandem_fno.py scripts/diagnose_fno_force_window.py scripts/audit_dev30_validation_diagnostic.py; do
       git show "$reviewed:$relative" >"$temporary/numerical_source/$relative"
     done
     for relative in scripts/audit_fcp011_candidate.py scripts/evaluate_fcp013_fixed_train_windows.py scripts/train_fcp013_independent_force_fno.py; do
@@ -144,7 +144,7 @@ sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
 files={str(path.relative_to(root)):sha(path) for path in sorted(root.rglob("*")) if path.is_file()}
 payload={"status":status,"git_commit":commit,"git_tree":tree,"numerical_source_commit":numerical_commit,"numerical_source_tree":numerical_tree,"sha256":files}
 if status=="FC_P013_IMMUTABLE_POSTEVAL_CHAIN_STAGED":
- overlays=("src/fluid_control/dual_fno.py","src/fluid_control/calibrated_checkpoint.py","scripts/evaluate_tandem_fno.py","scripts/diagnose_fno_force_window.py")
+ overlays=("src/fluid_control/dual_fno.py","src/fluid_control/calibrated_checkpoint.py","scripts/evaluate_tandem_fno.py","scripts/diagnose_fno_force_window.py","scripts/audit_dev30_validation_diagnostic.py")
  payload["numerical_source_overlays"]={name:sha(root/"numerical_source"/name) for name in overlays}
  payload["overlay_source_commit"]=commit
 with tempfile.NamedTemporaryFile("w",dir=root,delete=False) as stream:

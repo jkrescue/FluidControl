@@ -15,6 +15,7 @@ RELEASE_KIND = "immutable_development_train20_validation10"
 PREDECLARATION_SHA256 = "d7ff174ef10194a8739357376335ca13ff9b45c8079970846bb71f15a715d24b"
 FORCE_CHANNELS = ["front_cd", "front_cl", "rear_cd", "rear_cl"]
 HORIZONS = (1, 10, 50, 100)
+P013_KIND = "fcp013_independent_force_dual_fno"
 ACTIONS = {"m075": -0.75, "m0375": -0.375, "zero": 0.0, "p0375": 0.375, "p075": 0.75}
 CASE = re.compile(
     r"matched_start_acquisition_validation_b(01|05)_"
@@ -118,14 +119,39 @@ def validate_release(data: Path) -> tuple[dict[str, tuple[str, float]], dict]:
 
 
 def validate_report_contract(
-    report: dict, expected: dict[str, tuple[str, float]]
+    report: dict, expected: dict[str, tuple[str, float]], *,
+    candidate_kind: str | None = None, checkpoint_dir: Path | None = None,
 ) -> None:
+    checkpoint_alias = "/workspace/checkpoint"
+    if candidate_kind == P013_KIND:
+        if checkpoint_dir is None:
+            raise ValueError("P013 diagnostic requires the actual dual checkpoint")
+        from fluid_control.dual_fno import validate_dual_fno_manifest
+        identity = validate_dual_fno_manifest(
+            checkpoint_dir.resolve().parent / "dual_model_manifest.json"
+        )
+        metadata = report.get("checkpoint_metadata")
+        if (identity.aerodynamic.directory != checkpoint_dir.resolve()
+                or report.get("checkpoint_epoch") != 1
+                or not isinstance(metadata, dict)
+                or metadata.get("dual_fno") is not True):
+            raise ValueError("P013 diagnostic checkpoint role/epoch differs")
+        expected_metadata = {
+            "manifest_sha256": identity.manifest_sha256,
+            "flow_model_sha256": identity.flow.model_sha256,
+            "flow_state_sha256": identity.flow.state_sha256,
+            "aerodynamic_model_sha256": identity.aerodynamic.model_sha256,
+            "aerodynamic_state_sha256": identity.aerodynamic.state_sha256,
+        }
+        if any(metadata.get(key) != value for key, value in expected_metadata.items()):
+            raise ValueError("P013 diagnostic report dual identity differs")
+        checkpoint_alias = "/workspace/dual/aerodynamic"
     if (
         report.get("split") != "validation"
         or report.get("action_mode") != "observed"
         or report.get("evaluation_data") != "/workspace/devdata"
         or report.get("normalization_data") != "/workspace/devdata"
-        or report.get("checkpoint_dir") != "/workspace/checkpoint"
+        or report.get("checkpoint_dir") != checkpoint_alias
         or report.get("force_channels") != FORCE_CHANNELS
         or float(report.get("action_scale", -1.0)) != 0.75
         or float(report.get("evaluation_action_limit", -1.0)) != 0.75
@@ -355,7 +381,8 @@ def audit(
 ) -> dict:
     expected, release = validate_release(data)
     report = load(report_path)
-    validate_report_contract(report, expected)
+    validate_report_contract(report, expected, candidate_kind=candidate_kind,
+                             checkpoint_dir=checkpoint_dir)
     horizons = pooled_metrics(report, expected)
     ranking = strict_start0_ranking(load(segments_path), expected)
     return {
@@ -404,6 +431,7 @@ def main() -> None:
             "dev30_quickscreen_h20_stage_candidate",
             "fc_p008_force_row_calibrated_epoch0",
             "fc_p009_joint_force_row_calibrated_epoch0",
+            P013_KIND,
         ),
         required=True,
     )

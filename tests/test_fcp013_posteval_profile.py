@@ -21,6 +21,7 @@ def test_dual_profile_is_distinct_and_legacy_profile_restores():
     v.configure_profile('p013')
     assert v.DUAL_PROFILE and v.TRAINED_PROFILE
     assert v.CANDIDATE_KIND == 'fcp013_independent_force_dual_fno'
+    assert v.DIAGNOSTIC_KIND == v.CANDIDATE_KIND
     assert v.calibrated_kwargs(lineage()) == {}
     assert len(v.dual_identity_fields(lineage())) == 3
     v.configure_profile('p008')
@@ -71,6 +72,7 @@ def test_runner_preserves_protocol_and_freezes_all_dual_dependencies():
     source = (ROOT / 'scripts/run_fcp008_posteval_spark.sh').read_text()
     for token in ('src/fluid_control/dual_fno.py', 'src/fluid_control/calibrated_checkpoint.py',
                   'scripts/audit_fcp011_candidate.py', 'scripts/train_fcp013_independent_force_fno.py',
+                  'scripts/audit_dev30_validation_diagnostic.py',
                   'scripts/evaluate_fcp013_fixed_train_windows.py', 'training_config.yaml'):
         assert token in source
     assert '--segment-stride 25 --evaluation-batch-size 4' in source
@@ -88,7 +90,8 @@ def test_overlay_receipt_names_and_hashes_are_mandatory(tmp_path):
     root = tmp_path / 'chain'
     source = root / 'numerical_source'
     names = ('src/fluid_control/dual_fno.py', 'src/fluid_control/calibrated_checkpoint.py',
-             'scripts/evaluate_tandem_fno.py', 'scripts/diagnose_fno_force_window.py')
+             'scripts/evaluate_tandem_fno.py', 'scripts/diagnose_fno_force_window.py',
+             'scripts/audit_dev30_validation_diagnostic.py')
     for name in names:
         path = source / name
         path.parent.mkdir(parents=True, exist_ok=True)

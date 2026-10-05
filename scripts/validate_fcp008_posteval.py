@@ -50,7 +50,7 @@ def configure_profile(name: str) -> None:
             "FC_P013_POSTEVAL_STEP_COMPLETE",
             "FC_P013_POSTEVAL_COMPLETE",
             None,
-            "dev30_h20_development",
+            "fcp013_independent_force_dual_fno",
             "FC_P013_FORMAL_EVALUATION_DEFAULT_TF32_HIGH",
             "FC_P013_IMMUTABLE_POSTEVAL_CHAIN_STAGED",
             True,
@@ -507,7 +507,8 @@ def validate_chain_receipt(path: Path, numerical_source: Path) -> str:
         if value.get("numerical_source_commit") != "7216214b545fbbd50b2fb5ed866f231039b06b18" or value.get("overlay_source_commit") != value.get("git_commit"):
             raise ValueError("dual evaluation numerical source lineage differs")
         names = ("src/fluid_control/dual_fno.py", "src/fluid_control/calibrated_checkpoint.py",
-                 "scripts/evaluate_tandem_fno.py", "scripts/diagnose_fno_force_window.py")
+                 "scripts/evaluate_tandem_fno.py", "scripts/diagnose_fno_force_window.py",
+                 "scripts/audit_dev30_validation_diagnostic.py")
         expected = {name: sha256(numerical_source / name) for name in names}
         if value.get("numerical_source_overlays") != expected:
             raise ValueError("dual evaluation overlay identities differ")
