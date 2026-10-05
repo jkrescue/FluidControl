@@ -1,5 +1,15 @@
 # Research roadmap and prioritized backlog
 
+## 2026-10-05 17:38 UTC — P023 approved and running
+
+Actual unit fluid-control-fcp023-input-block-20261005.service, invocation
+39aec740a9914226bb1f74c2d29e7917; reviewed source f13a6a0. Root and independent
+25CPU tests passed; exact approval714db1f9. Both20GiB memory guards active.
+Observe and independently audit this fixed32-update result before approving
+full-data expansion or another intervention. No surrogate admission or new PPO.
+Physical meanload review17:32 retained10% because it is not the current blocker;
+conditional15% option remains documented in DECISIONS. Earlier statuses follow.
+
 ## 2026-10-05 17:29 UTC — P023 CPU prerequisites complete; bounded trainer preparation
 
 P022 complete and independently rejected locally (FC-E032). P023 isolated96-input

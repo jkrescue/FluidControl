@@ -1,5 +1,18 @@
 # Experiment ledger
 
+## P023 running — isolated current-force input coefficients
+
+Protocol docs/FC_P023_INPUT_BLOCK_COMPARISON_PLAN_20261005.md; approval SHA
+714db1f9d09b0ee7037953d6b807b3341cf7a736889d5c5fa98e5ae8c0116cf0,
+source f13a6a0. Actual invocation39aec740a9914226bb1f74c2d29e7917 observed
+running17:38UTC, LOW4/16completed/HIGH0; no terminal evidence yet.
+Fixed six real train windows, both causal,96new coefficients only; LOW1.5625e-7
+versusHIGH1e-5, originalJ0/fullH100.32updates/192backwards/72endpoint-and-ablation
+window evaluations. Root and independent25CPU tests passed before execution.
+Output artifacts/fcp023_input_block_20261005. No model saved/heldout/PPO.
+Next: independent terminal review using original local conditions and frozen
+parent checks. Do not infer acceptance from update count or training loss.
+
 ## FC-E032 — P022 causal force-input finite comparison (2026-10-05)
 
 Operationally complete and independently reviewed; local_support=false. Result
