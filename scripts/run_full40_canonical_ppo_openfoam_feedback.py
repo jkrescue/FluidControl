@@ -304,8 +304,8 @@ def validate_dual_policy_contract(
         if isinstance(value, list):
             return any(declares_dual(item) for item in value)
         return isinstance(value, str) and (
-            value.startswith(("FC_P013_", "FC_P015_"))
-            or value in ("fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "FC-P015")
+            value.startswith(("FC_P013_", "FC_P015_", "FC_P018_"))
+            or value in ("fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "fcp018_reduced_rate_dual_fno", "FC-P015", "FC-P018")
         )
 
     dual = any(declares_dual(value) for value in (audit, readiness, gate))

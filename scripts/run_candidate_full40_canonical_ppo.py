@@ -19,7 +19,7 @@ from pathlib import Path
 
 
 RUNTIME_IMAGE_ID = "sha256:2e45b4e1ac9553ea86aa9148455be9aae30688446039fdee6255a637603acb2c"
-DUAL_KINDS = ("fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno")
+DUAL_KINDS = ("fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "fcp018_reduced_rate_dual_fno")
 
 
 def sha256(path: Path) -> str:

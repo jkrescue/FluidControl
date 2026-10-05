@@ -115,7 +115,7 @@ def adapt(
             raise ValueError(f"candidate readiness {key} differs from command contract")
     dual = contract.get("dual_control_binding")
     is_dual = contract.get("candidate_kind") in (
-        "fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno")
+        "fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "fcp018_reduced_rate_dual_fno")
     observed_bindings = [value.get("dual_control_binding") for value in
                          (candidate_identity, readiness, audit)]
     if is_dual:

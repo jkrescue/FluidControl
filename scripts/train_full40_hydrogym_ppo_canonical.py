@@ -489,7 +489,7 @@ def recompute_p013_endpoint_view(
     # The binding verifier above already checked the real manifest/receipt
     # experiment. The default preserves old P013 synthetic helper callers.
     receipt_status = receipt.get("status", "FC_P013_POSTEVAL_COMPLETE")
-    profiles = {"FC_P013_POSTEVAL_COMPLETE": "P013", "FC_P015_POSTEVAL_COMPLETE": "P015"}
+    profiles = {"FC_P013_POSTEVAL_COMPLETE": "P013", "FC_P015_POSTEVAL_COMPLETE": "P015", "FC_P018_POSTEVAL_COMPLETE": "P018"}
     if receipt_status not in profiles:
         raise ValueError("endpoint path view requires a verified dual experiment")
     profile = profiles[receipt_status]
@@ -755,8 +755,8 @@ def require_single_model_identity(value) -> None:
             raise ValueError("dual FNO evidence requires the complete dual arguments")
         for key, item in value.items():
             if key in {"status", "kind", "candidate_kind", "metadata_kind", "training_experiment"} and isinstance(item, str):
-                if (item.startswith(("FC_P013_", "FC_P015_"))
-                        or item in {"fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "FC-P015"}):
+                if (item.startswith(("FC_P013_", "FC_P015_", "FC_P018_"))
+                        or item in {"fcp013_independent_force_dual_fno", "fcp015_window_accumulation_dual_fno", "fcp018_reduced_rate_dual_fno", "FC-P015", "FC-P018"}):
                     raise ValueError("dual checkpoint/evidence requires the complete dual arguments")
             require_single_model_identity(item)
     elif isinstance(value, list):

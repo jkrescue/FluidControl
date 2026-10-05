@@ -10,11 +10,15 @@ import json
 from pathlib import Path
 
 from .dual_fno import (
-    P015_SYSTEM_KIND, SYSTEM_KIND, sha256, validate_dual_fno_manifest,
+    P015_SYSTEM_KIND, P018_SYSTEM_KIND, P018_PROTOCOL_SHA256, P018_LEARNING_RATE,
+    SYSTEM_KIND, sha256, validate_dual_fno_manifest,
     validate_dual_runtime_files,
 )
 
 DEVELOPMENT_AUDITOR_SHA = "ca6da0afdce5859be1c060eb48ba2cdd1ccc5ee3aeb2570d9c9b53067d5bc412"
+P018_APPROVAL_SHA256 = "eea5bd5c6a3fe585ae1104600421e50b335f61299c4014c5e3136722af3d4d39"
+P018_OBSERVATION_SHA256 = "c040eae25fa31a98164e08e10dc4f007eb6a3ef38329ad0dcfaddd734c7eb53c"
+P018_INVOCATION = "1ca4654aab074278bb2efdfff8dbc1eb"
 PROTOCOL = [
     "validation10_H1_H10_H50_H100_stride25_batch4",
     "dynamic6_H1_H10_H50_H100_stride1_batch8",
@@ -53,6 +57,8 @@ def receipt_profile(manifest_kind: str) -> tuple[str, str, str]:
                       "FC_P013_POSTEVAL_STEP_COMPLETE"),
         P015_SYSTEM_KIND: ("FC_P015_POSTEVAL_COMPLETE", "fcp015_window_accumulation_dual_fno",
                            "FC_P015_POSTEVAL_STEP_COMPLETE"),
+        P018_SYSTEM_KIND: ("FC_P018_POSTEVAL_COMPLETE", "fcp018_reduced_rate_dual_fno",
+                           "FC_P018_POSTEVAL_STEP_COMPLETE"),
     }
     if manifest_kind not in profiles:
         raise ValueError("unsupported dual control experiment")
@@ -129,6 +135,104 @@ def verify_p015_evidence(root: Path, receipt: dict, expected: dict, identity) ->
         raise ValueError("P015 actual CPU reload identity differs")
 
 
+def verify_p018_evidence(root: Path, receipt: dict, expected: dict, identity) -> None:
+    """Verify P018's extra provenance without changing any numerical gate."""
+    load = lambda path: json.loads(path.read_text())
+    experiment = dict(training_experiment="FC-P018", accumulation_windows=8,
+                      training_windows=1368, optimizer_steps=171,
+                      actual_learning_rate=P018_LEARNING_RATE, training_protocol_sha256=P018_PROTOCOL_SHA256)
+    protocol_path = root.parent / "candidate/training_protocol.json"
+    if sha256(protocol_path) != P018_PROTOCOL_SHA256:
+        raise ValueError("P018 candidate training protocol bytes differ")
+    lineage = load(root / "lineage.json")
+    required = {"status": "FC_P018_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION",
+                "candidate_kind": "fcp018_reduced_rate_dual_fno", "checkpoint_epoch": 1,
+                **experiment, **expected}
+    if any(lineage.get(k) != v for k, v in required.items()):
+        raise ValueError("P018 lineage experiment/identity differs")
+    hashes = {"lineage_sha256": sha256(root / "lineage.json"),
+              "formal_evaluation_approval_sha256": sha256(root / "evidence/formal_evaluation_approval.json"),
+              "precision_sha256": sha256(root / "precision.json")}
+    if any(receipt.get(k) != v for k, v in hashes.items()):
+        raise ValueError("P018 receipt provenance differs")
+    chain_sha = receipt.get("posteval_chain_receipt_sha256")
+    if not isinstance(chain_sha, str) or len(chain_sha) != 64 or any(c not in "0123456789abcdef" for c in chain_sha):
+        raise ValueError("P018 numerical chain SHA absent")
+    hashes["posteval_chain_receipt_sha256"] = chain_sha
+    for name in ("validation10", "dynamic6", "force_window"):
+        step = load(root / "step_receipts" / f"{name}.json")
+        if (step.get("candidate_kind") != required["candidate_kind"] or step.get("checkpoint_epoch") != 1
+                or any(step.get(k) != v for k, v in hashes.items())):
+            raise ValueError("P018 step provenance differs")
+    approval = load(root / "evidence/formal_evaluation_approval.json")
+    reload_path = root.parent / "dual_reload_receipt.json"
+    result_path = root.parent / "candidate/result.json"
+    result_sha = sha256(result_path)
+    approval_expected = {"status": "FC_P018_FORMAL_EVALUATION_APPROVED", **experiment,
+        "candidate_kind": required["candidate_kind"], "checkpoint_epoch": 1,
+        "candidate_model_sha256": expected["checkpoint_sha256"],
+        "candidate_state_sha256": expected["checkpoint_state_sha256"],
+        "dual_manifest_sha256": expected["dual_manifest_sha256"],
+        "flow_model_sha256": expected["flow_model_sha256"], "flow_state_sha256": expected["flow_state_sha256"],
+        "candidate_result_sha256": result_sha, "dual_reload_receipt_sha256": sha256(reload_path),
+        "candidate_completion_receipt_sha256": sha256(root.parent / "completion_receipt.json"),
+        "formal_evaluation_authorized": True, "protocol": PROTOCOL,
+        "frozen_test_accessed": False, "ppo_auto_launch": False}
+    if any(approval.get(k) != v for k, v in approval_expected.items()) or lineage.get("candidate_result_sha256") != result_sha:
+        raise ValueError("P018 formal approval/reload/result binding differs")
+    reloaded = load(reload_path)
+    result = load(result_path)
+    reload_expected = {"status": "FC_P018_OFFICIAL_CPU_DUAL_RELOAD_VERIFIED_NOT_ADMISSION",
+        **experiment, "device": "cpu", "dual_manifest_sha256": expected["dual_manifest_sha256"],
+        "flow_model_sha256": expected["flow_model_sha256"], "flow_state_sha256": expected["flow_state_sha256"],
+        "aerodynamic_model_sha256": expected["checkpoint_sha256"],
+        "aerodynamic_state_sha256": expected["checkpoint_state_sha256"],
+        "config_sha256": identity.payload["config_sha256"], "training_result_sha256": result_sha,
+        "tensor_sha256": {role: result.get(role + "_tensor_sha256_after") for role in ("flow", "aerodynamic")},
+        "posteval_chain_receipt_sha256": chain_sha, "forward_performed": False,
+        "optimizer_created": False, "model_saved": False, "gpu_used": False,
+        "scientific_admission": False, "ppo_authorized": False}
+    if any(reloaded.get(k) != v for k, v in reload_expected.items()):
+        raise ValueError("P018 actual CPU reload identity differs")
+
+
+    execution = {"training_approval_sha256": P018_APPROVAL_SHA256,
+                 "execution_observation_sha256": P018_OBSERVATION_SHA256}
+    if sha256(root.parent / "execution_approval.json") != P018_APPROVAL_SHA256:
+        raise ValueError("P018 actual training execution approval differs")
+    if any(lineage.get(k) != v for k,v in {**execution,"invocation_id":P018_INVOCATION}.items()):
+        raise ValueError("P018 lineage execution evidence differs")
+    result_expected = {"status":"FC_P018_REDUCED_RATE_TRAINING_COMPLETE_NOT_ADMISSION",
+        **experiment,"training_protocol_file":"training_protocol.json",
+        "dual_model_manifest_sha256":expected["dual_manifest_sha256"],
+        "config_sha256":identity.payload["config_sha256"],"base_config_sha256":identity.payload["config_sha256"],
+        "official_pair_fresh_reload_verified":True,
+        "selection_performed":False,"validation_accessed":False,"frozen_test_accessed":False,"ppo_executed":False}
+    if any(result.get(k) != v for k,v in result_expected.items()):
+        raise ValueError("P018 training result effective protocol differs")
+    tensor_hashes = [result.get(role+"_tensor_sha256_after") for role in ("flow","aerodynamic")]
+    if (any(not isinstance(v,str) or len(v)!=64 or any(ch not in "0123456789abcdef" for ch in v) for v in tensor_hashes)
+            or result.get("flow_tensor_sha256_before") != tensor_hashes[0]
+            or result.get("aerodynamic_tensor_sha256_before") != tensor_hashes[0]):
+        raise ValueError("P018 frozen-flow/initial tensor evidence differs")
+    completion = load(root.parent / "completion_receipt.json")
+    completion_expected = {"status":"FC_P018_TRAINING_COMPLETE_NOT_ADMISSION",**experiment,**execution,**expected,
+        "training_protocol_file":"training_protocol.json","candidate_result_sha256":result_sha,
+        "unit":"fluid-control-fcp018-reduced-rate-20261005.service",
+        "scientific_admission":False,"ppo_executed":False}
+    if any(completion.get(k) != v for k,v in completion_expected.items()):
+        raise ValueError("P018 training completion identity differs")
+    terminal = completion.get("terminal_unit",{})
+    if any(terminal.get(k) != v for k,v in {"LoadState":"loaded","InvocationID":P018_INVOCATION,
+            "ActiveState":"active","SubState":"exited","MainPID":"0","Result":"success",
+            "ExecMainCode":"1","ExecMainStatus":"0"}.items()):
+        raise ValueError("P018 retained terminal service proof differs")
+    audit_path = root.parent / "candidate_audit.json"
+    if completion.get("candidate_audit_sha256") != sha256(audit_path) or load(audit_path) != lineage:
+        raise ValueError("P018 completed audit differs from formal lineage")
+    if reloaded.get("training_protocol_file") != "training_protocol.json":
+        raise ValueError("P018 reload effective protocol file differs")
+
 def verify_dual_control_binding(
     *, manifest_path: Path, expected_manifest_sha256: str,
     training_config: Path, normalization_path: Path,
@@ -165,6 +269,8 @@ def verify_dual_control_binding(
             raise ValueError("step receipt does not bind the same complete dual system")
     if manifest_kind == P015_SYSTEM_KIND:
         verify_p015_evidence(root, receipt, expected, identity)
+    elif manifest_kind == P018_SYSTEM_KIND:
+        verify_p018_evidence(root, receipt, expected, identity)
     if sha256(development_auditor) != DEVELOPMENT_AUDITOR_SHA:
         raise ValueError("original numerical development auditor changed")
     spec = importlib.util.spec_from_file_location("dual_control_original_development_audit", development_auditor)
@@ -184,4 +290,7 @@ def verify_dual_control_binding(
         "normalization_sha256": identity.payload["normalization_sha256"],
         "canonical_endpoint_window_dynamic_gates_still_required": True,
         "policy_trained": False, "real_cfd_control_validated": False,
+        **({"dual_system_kind":P018_SYSTEM_KIND,"training_experiment":"FC-P018",
+            "actual_learning_rate":P018_LEARNING_RATE,"training_protocol_sha256":P018_PROTOCOL_SHA256,
+            "training_protocol_file":"training_protocol.json"} if manifest_kind == P018_SYSTEM_KIND else {}),
     }

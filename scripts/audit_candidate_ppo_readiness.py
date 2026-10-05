@@ -31,6 +31,10 @@ FC_P003C_KIND = "true_state_paired_step_lambda10"
 FC_P008_KIND = "full_train_force_row_recalibration"
 FC_P013_KIND = "fcp013_independent_force_dual_fno"
 FC_P015_KIND = "fcp015_window_accumulation_dual_fno"
+FC_P018_KIND = "fcp018_reduced_rate_dual_fno"
+FC_P018_PROTOCOL_SHA = "310f0bdf8563a2a70b844a32852791fa1b1dc20278a3098418942e1dab204d2d"
+FC_P018_APPROVAL_SHA = "eea5bd5c6a3fe585ae1104600421e50b335f61299c4014c5e3136722af3d4d39"
+FC_P018_OBSERVATION_SHA = "c040eae25fa31a98164e08e10dc4f007eb6a3ef38329ad0dcfaddd734c7eb53c"
 FC_P013_CONFIG = Path("artifacts/fcp011_resource_probe_runtime_20261005/resolved_config.yaml")
 HOST_REPO = Path("/workspace/fluid_control")
 FC_P008_CONFIG = Path(
@@ -214,10 +218,10 @@ def p013_candidate_identity(*, repo_root, candidate_root, lineage, receipt_path,
     from fluid_control.dual_control_contract import verify_dual_control_binding
     from fluid_control.dual_fno import ARCHITECTURE, validate_dual_fno_manifest, validate_dual_runtime_files
 
-    if profile not in ("P013", "P015"):
+    if profile not in ("P013", "P015", "P018"):
         raise ValueError("unsupported dual candidate profile")
-    kind = FC_P015_KIND if profile == "P015" else FC_P013_KIND
-    steps = 171 if profile == "P015" else 1368
+    kind = {"P013": FC_P013_KIND, "P015": FC_P015_KIND, "P018": FC_P018_KIND}[profile]
+    steps = 1368 if profile == "P013" else 171
     required = {
         "status": f"FC_{profile}_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION",
         "candidate_kind": kind, "checkpoint_epoch": 1,
@@ -229,8 +233,14 @@ def p013_candidate_identity(*, repo_root, candidate_root, lineage, receipt_path,
         "validation_or_frozen_accessed": False, "ppo_auto_launch": False,
         "official_image_id": IMAGE_ID,
     }
-    if profile == "P015":
-        required.update(training_experiment="FC-P015", training_windows=1368, accumulation_windows=8)
+    if profile in ("P015", "P018"):
+        required.update(training_experiment="FC-" + profile, training_windows=1368, accumulation_windows=8)
+    if profile == "P018":
+        required.update(actual_learning_rate=1.5625e-7,
+                        training_protocol_sha256=FC_P018_PROTOCOL_SHA,
+                        training_protocol_file="training_protocol.json")
+        if sha256(candidate_root / "candidate/training_protocol.json") != FC_P018_PROTOCOL_SHA:
+            raise ValueError("P018 candidate training protocol bytes differ")
     if any(lineage.get(k) != v for k, v in required.items()):
         raise ValueError("P013 lineage identity/scope differs")
     relative = candidate_root.relative_to(repo_root)
@@ -275,16 +285,25 @@ def p013_candidate_identity(*, repo_root, candidate_root, lineage, receipt_path,
         "aerodynamic_state_sha256": identity.aerodynamic.state_sha256,
         "candidate_result_sha256": lineage["candidate_result_sha256"],
     }
-    if profile == "P015":
+    if profile in ("P015", "P018"):
         completion_expected.pop("aerodynamic_model_sha256")
         completion_expected.pop("aerodynamic_state_sha256")
         completion_expected.update(
             checkpoint_sha256=identity.aerodynamic.model_sha256,
             checkpoint_state_sha256=identity.aerodynamic.state_sha256,
-            training_experiment="FC-P015", training_windows=1368, accumulation_windows=8,
+            training_experiment="FC-" + profile, training_windows=1368, accumulation_windows=8,
             training_approval_sha256=sha256(candidate_root / "execution_approval.json"),
-            execution_observation_sha256=sha256(candidate_root / "running_execution_evidence.json"),
+            execution_observation_sha256=sha256(
+                repo_root / "docs/FC_P018_RUNNING_EXECUTION_20261005.json" if profile == "P018"
+                else candidate_root / "running_execution_evidence.json"),
         )
+        if profile == "P018":
+            if (completion_expected["training_approval_sha256"] != FC_P018_APPROVAL_SHA
+                    or completion_expected["execution_observation_sha256"] != FC_P018_OBSERVATION_SHA):
+                raise ValueError("P018 external execution evidence differs")
+            completion_expected.update(actual_learning_rate=1.5625e-7,
+                                       training_protocol_sha256=FC_P018_PROTOCOL_SHA,
+                                       training_protocol_file="training_protocol.json")
         for key in ("training_approval_sha256", "execution_observation_sha256"):
             if lineage.get(key) != completion_expected[key]:
                 raise ValueError("P015 execution evidence binding differs")
@@ -316,7 +335,7 @@ def p013_candidate_identity(*, repo_root, candidate_root, lineage, receipt_path,
             or approval.get("candidate_result_sha256") != lineage["candidate_result_sha256"]
             or approval.get("dual_manifest_sha256") != identity.manifest_sha256):
         raise ValueError("P013 formal approval belongs to another candidate")
-    if profile == "P015" and approval.get("dual_reload_receipt_sha256") != sha256(candidate_root / "dual_reload_receipt.json"):
+    if profile in ("P015", "P018") and approval.get("dual_reload_receipt_sha256") != sha256(candidate_root / "dual_reload_receipt.json"):
         raise ValueError("P015 actual CPU reload receipt differs from formal approval")
     return {
         "config": config, "epoch": 1,
@@ -422,12 +441,12 @@ def audit(
 
         candidate_kind = lineage.get("candidate_kind")
         p013 = None
-        if candidate_kind in (FC_P013_KIND, FC_P015_KIND):
+        if candidate_kind in (FC_P013_KIND, FC_P015_KIND, FC_P018_KIND):
             p013 = p013_candidate_identity(
                 repo_root=repo_root, candidate_root=candidate_root, lineage=lineage,
                 receipt_path=posteval_receipt_path, normalization_path=normalization_path,
                 data_artifacts=data_artifacts,
-                profile="P015" if candidate_kind == FC_P015_KIND else "P013",
+                profile={FC_P013_KIND: "P013", FC_P015_KIND: "P015", FC_P018_KIND: "P018"}[candidate_kind],
             )
             config, epoch = p013["config"], p013["epoch"]
             config_sha = sha256(config)
@@ -690,7 +709,7 @@ def audit(
             "checkpoint_model_file": model_file,
             "checkpoint_state_file": state_file,
             "precision_protocol": (
-                FC_P008_PRECISION if candidate_kind in (FC_P008_KIND, FC_P013_KIND, FC_P015_KIND) else None
+                FC_P008_PRECISION if candidate_kind in (FC_P008_KIND, FC_P013_KIND, FC_P015_KIND, FC_P018_KIND) else None
             ),
             "normalization_sha256": normalization_sha,
             "validation_manifest_sha256": validation_manifest_sha,
