@@ -1,5 +1,7 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**P026保存重载独立执行审查完成。** 容器、固定官方镜像、只读来源与专用输出已核验；三个工程目录共六个文件逐个SHA复核一致。完整报告 `docs/FC_P026_CHECKPOINT_CPU_REVIEW_20261005.md`。工程文件仍为非候选，不会改名充当已训练模型。当前实际开发为完整训练程序与正式评估历史调用，尚无新的GPU训练或PPO；本地看板已显示P026单窗口实测而非P025旧任务。
+
 **P026官方保存重载已实际完成，独立执行复核中。** 固定官方CPU容器 `db6cb7dde8455bec7ea9b33b00ae151dd5b867f4785af6484d3d4236a7ac3f6b` 退出0、无OOM，生成3个明确标识非候选的工程文件：flowK1、aeroK1、aeroK4。官方save/load重载后的完整张量、映射、epoch和元数据均按程序检查一致；receiptSHA `8b1b48930eeab818921a1a287d69b02769635faa912c643c219150af03af4665`，路径 `artifacts/fcp026_cpu_checkpoint_engineering_20261005/engineering_fixtures/engineering_receipt.json`。无优化器/训练/GPU/候选。只证明工程保存兼容，K4作为旧K1的拒绝检查仅覆盖测试用metadata校验器，不是所有生产调用。正式评估调用与完整1368窗训练程序正在分别隔离实现，尚未批准GPU训练。
 
 **FC-E036：P026资源试验独立终态审查通过（仅工程结论）。** 报告 `docs/FC_P026_RESOURCE_TERMINAL_REVIEW_20261005.md` 核验实际实例/镜像/源码、K1/K4预测及目标完全一致、100次flow及各10次混合分块、非零历史梯度。外部14次采样最低MemFree29.161835GiB，内部最低29.121925GiB，guard退出0；无优化器或候选。后续官方保存重载脚本和正式评估调用接入正在隔离准备，未启动完整训练。Root还在固定官方镜像实际核验save/load_checkpoint来源SHA `0d26a62251c3724a1ceebfa1daa1bb5ba9dcdc5e73a0ded3ccb955355af2f78e`，不编造API。磁盘当前约300GB可用，足够本次少量工程重载文件；不据此启动新CFD或大批数据生成。以下“复核中”为历史。

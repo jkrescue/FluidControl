@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## P026 checkpoint engineering terminal review complete
+
+Independent retainedcontainer/image/mount/log inspection and all6savedfile hashes
+match receipt8b1b4893; report docs/FC_P026_CHECKPOINT_CPU_REVIEW_20261005.md.
+No reviewer rerun or model load; exact fresh tensor equality was enforced by the
+reviewed successful producer. Three artifacts remain engineeringfixtures, never
+accepted candidates. Fulltraining/formalcallers still under implementation.
+
 ## P026 official CPU save/reload — executed, independent terminal review pending
 
 Script433a2f8bd5e2c3a27a59c5e4c3a1426dcccfefa0b98379fbb83e6269a0627708,
