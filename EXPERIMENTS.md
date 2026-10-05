@@ -1,5 +1,20 @@
 # Experiment ledger
 
+## FC-P026 K4 training integrity and official CPU reload milestone — not a scientific result
+
+Actual retained K4 training invocation `eee5a6fbad40411cac2f05e00520b079`
+completed1368 windows/171 updates, success/exit0/PID0. Independently rehashed
+all7 candidate and6 execution files against candidate audit SHA
+`423ad58a3d441d26f174174bc68824a59ccd453b2e49f0577888530a81083b0b`.
+Actual official CPU-only reload containerc84f3e5f…50df24e exited0/noOOM;
+receipt SHA `491d6e4e8868edd0c0a222ceb1e1ed5cc1c5b2c3a8b88f0f4a053895aed1a729`
+matches audit/tensors/7filemap/416-source closure. Internal/host/guard free
+memory minima20.803394/21.006046/21.071632GiB remained above20GiB.
+Four fixed training-panel aggregates were independently recomputed from JSON;
+small terminal improvements are descriptive train-only evidence. K4 formal
+results, scientific admission and PPO remain pending/unapproved. This entry
+adds no scientific CSV row. See `docs/FC_P026_K4_TERMINAL_REVIEW_20261006.md`.
+
 ## FC-E037 — FC-P026 K1 original formal evaluation: terminal development FAIL
 
 The actual K1 formal unit `fluid-control-fcp026-k1-formal-20261006.service`,
