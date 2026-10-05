@@ -52,25 +52,7 @@ def oof_predictions(free_ar, h1, targets, phases):
     return predictions
 
 
-def physical_metrics(error, force_std, mask):
-    physical = error[mask] * force_std
-    values = {
-        "rear_cd": physical[:, 2],
-        "rear_cl": physical[:, 3],
-        "total_cd": physical[:, 0] + physical[:, 2],
-    }
-    return {
-        name: {
-            "count": len(value),
-            "mae": float(np.mean(np.abs(value))),
-            "rmse": float(np.sqrt(np.mean(np.square(value)))),
-            "bias": float(np.mean(value)),
-        }
-        for name, value in values.items()
-    }
-
-
-def summarize(cache, force_std):
+def validate_cache_schema(cache):
     free_ar = np.asarray(cache["features"], dtype=np.float64)
     h1 = np.asarray(cache["matched_weight_h1_features"], dtype=np.float64)
     targets = np.asarray(cache["targets_normalized"], dtype=np.float64)
@@ -91,6 +73,43 @@ def summarize(cache, force_std):
             raise ValueError("FC-P009 phase row count differs")
         if any(int(((phases == phase) & (steps == step)).sum()) != count // 100 for step in range(1, 101)):
             raise ValueError("FC-P009 phase/relative-step count differs")
+    return free_ar, h1, targets, phases, steps
+
+
+def validate_normalization_binding(result, path, expected_sha=NORM_SHA):
+    normalization = json.loads(path.read_text())
+    force_std = np.asarray(normalization.get("all_force_std"), dtype=np.float64)
+    if (
+        sha256(path) != expected_sha
+        or result.get("input_sha256", {}).get("normalization") != expected_sha
+        or force_std.shape != (4,)
+        or not np.isfinite(force_std).all()
+        or not (force_std > 0).all()
+    ):
+        raise ValueError("force normalization contract differs")
+    return force_std
+
+
+def physical_metrics(error, force_std, mask):
+    physical = error[mask] * force_std
+    values = {
+        "rear_cd": physical[:, 2],
+        "rear_cl": physical[:, 3],
+        "total_cd": physical[:, 0] + physical[:, 2],
+    }
+    return {
+        name: {
+            "count": len(value),
+            "mae": float(np.mean(np.abs(value))),
+            "rmse": float(np.sqrt(np.mean(np.square(value)))),
+            "bias": float(np.mean(value)),
+        }
+        for name, value in values.items()
+    }
+
+
+def summarize(cache, force_std):
+    free_ar, h1, targets, phases, steps = validate_cache_schema(cache)
     predictions = oof_predictions(free_ar, h1, targets, phases)
     reports = {}
     for direction, prediction in predictions.items():
@@ -141,16 +160,7 @@ def main():
         or result.get("input_sha256", {}).get("implementation") != EXPECTED_IMPLEMENTATION_SHA
     ):
         raise ValueError("completed FC-P009 cache receipt differs")
-    normalization = json.loads(args.normalization.read_text())
-    force_std = np.asarray(normalization.get("all_force_std"), dtype=np.float64)
-    if (
-        sha256(args.normalization) != NORM_SHA
-        or result.get("input_sha256", {}).get("normalization") != NORM_SHA
-        or force_std.shape != (4,)
-        or not np.isfinite(force_std).all()
-        or not (force_std > 0).all()
-    ):
-        raise ValueError("force normalization contract differs")
+    force_std = validate_normalization_binding(result, args.normalization)
     cache = dict(np.load(args.cache, allow_pickle=False))
     payload = {
         "status": "FC_P009_CACHE_ONLY_CROSS_DOMAIN_ANALYSIS_COMPLETE",
