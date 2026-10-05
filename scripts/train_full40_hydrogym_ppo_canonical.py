@@ -455,6 +455,93 @@ def smoke_preflight(
     }
 
 
+DUAL_OPTION_NAMES = (
+    "dual_fno_manifest", "expected_dual_fno_manifest_sha256", "dual_training_config",
+    "dual_posteval_receipt", "expected_dual_posteval_receipt_sha256",
+)
+
+
+def recompute_p013_endpoint_view(
+    *, dual_options: dict, gate_module, validation_gate: Path,
+    validation_report: Path, validation_segments: Path, predeclaration: Path,
+    checkpoint_dir: Path, data: Path, config: Path, image_id: str,
+) -> tuple[dict, dict]:
+    """Use an identity-verified temporary path view of an unchanged P013 report."""
+    if set(dual_options) != set(DUAL_OPTION_NAMES) or any(
+        dual_options[name] is None for name in DUAL_OPTION_NAMES
+    ):
+        raise ValueError("P013 endpoint path view requires complete dual arguments")
+    from fluid_control.dual_control_contract import verify_dual_control_binding
+
+    stored = read_json(validation_gate)
+    binding = verify_dual_control_binding(
+        manifest_path=dual_options["dual_fno_manifest"],
+        expected_manifest_sha256=dual_options["expected_dual_fno_manifest_sha256"],
+        training_config=dual_options["dual_training_config"],
+        normalization_path=data / "normalization.json", checkpoint_dir=checkpoint_dir,
+        expected_checkpoint_sha256=stored["checkpoint_sha256"],
+        posteval_receipt=dual_options["dual_posteval_receipt"],
+        expected_posteval_receipt_sha256=dual_options["expected_dual_posteval_receipt_sha256"],
+        development_auditor=Path(__file__).with_name("audit_dynamic_fno_development_gates.py"),
+    )
+    receipt_path = dual_options["dual_posteval_receipt"].resolve()
+    receipt = read_json(receipt_path)
+    sources = {
+        "validation10/evaluation.json": validation_report,
+        "validation10/segments.json": validation_segments,
+        "validation10/endpoint_gate.json": validation_gate,
+    }
+    source_hashes = {}
+    for relative, path in sources.items():
+        if path.resolve() != receipt_path.parent / relative:
+            raise ValueError("P013 endpoint path view requires original receipt-bound files")
+        source_hashes[relative] = sha256(path)
+        if receipt["sha256"].get(relative) != source_hashes[relative]:
+            raise ValueError("P013 endpoint source SHA differs")
+    report = read_json(validation_report)
+    original = {
+        "checkpoint_dir": "/workspace/dual/aerodynamic",
+        "evaluation_data": "/workspace/devdata",
+        "normalization_data": "/workspace/devdata",
+    }
+    if any(report.get(key) != value for key, value in original.items()):
+        raise ValueError("P013 endpoint original path aliases differ")
+    expected_metadata = {
+        "dual_fno": True, "manifest_sha256": binding["dual_manifest_sha256"],
+        "flow_model_sha256": binding["flow_model_sha256"],
+        "flow_state_sha256": binding["flow_state_sha256"],
+        "aerodynamic_model_sha256": binding["checkpoint_sha256"],
+        "aerodynamic_state_sha256": binding["checkpoint_state_sha256"],
+    }
+    metadata = report.get("checkpoint_metadata", {})
+    if any(metadata.get(key) != value for key, value in expected_metadata.items()):
+        raise ValueError("P013 endpoint report dual identity differs")
+    if sha256(config) != stored.get("model_config_sha256"):
+        raise ValueError("P013 endpoint evaluation config differs")
+    runtime = {
+        "checkpoint_dir": str(checkpoint_dir.resolve()),
+        "evaluation_data": str(data.resolve()), "normalization_data": str(data.resolve()),
+    }
+    view = {**report, **runtime}
+    with tempfile.TemporaryDirectory(prefix="p013-canonical-endpoint-view-") as directory:
+        view_path = Path(directory) / "evaluation.json"
+        view_path.write_text(json.dumps(view, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        recomputed = gate_module.audit(
+            view_path, validation_segments, predeclaration, checkpoint_dir,
+            data, config, image_id,
+        )
+    recomputed["checkpoint_dir"] = original["checkpoint_dir"]
+    recomputed["report_sha256"] = source_hashes["validation10/evaluation.json"]
+    return recomputed, {
+        "status": "P013_ENDPOINT_PATH_VIEW_IDENTITY_VERIFIED",
+        "original_paths": original, "runtime_paths": runtime,
+        "source_sha256": source_hashes,
+        "posteval_receipt_sha256": binding["posteval_receipt_sha256"],
+        "dual_manifest_sha256": binding["dual_manifest_sha256"],
+        "numerical_evidence_changed": False,
+    }
+
+
 def preflight(
     *,
     data: Path,
@@ -472,6 +559,7 @@ def preflight(
     image_id: str,
     runtime_image_id: str,
     episode_steps: int,
+    dual_options: dict | None = None,
 ) -> dict:
     blockers: list[str] = []
     action_contract = None
@@ -479,6 +567,7 @@ def preflight(
     baseline_rows = None
     evidence_gate_sha256 = {}
     promotion_lineage = None
+    endpoint_path_view = None
     try:
         manifest = read_json(data / "manifest.json")
         action_contract = validate_full40_action_contract(manifest)
@@ -507,15 +596,25 @@ def preflight(
         blockers.append(f"dev30_promotion_receipt_invalid:{error}")
     try:
         gate_module = _load_gate_module()
-        recomputed = gate_module.audit(
-            validation_report,
-            validation_segments,
-            predeclaration,
-            checkpoint_dir,
-            data,
-            config,
-            image_id,
-        )
+        if dual_options is not None:
+            if promotion_lineage is None:
+                raise ValueError("P013 endpoint path view requires verified dev30/full40 promotion")
+            recomputed, endpoint_path_view = recompute_p013_endpoint_view(
+                dual_options=dual_options, gate_module=gate_module,
+                validation_gate=validation_gate, validation_report=validation_report,
+                validation_segments=validation_segments, predeclaration=predeclaration,
+                checkpoint_dir=checkpoint_dir, data=data, config=config, image_id=image_id,
+            )
+        else:
+            recomputed = gate_module.audit(
+                validation_report,
+                validation_segments,
+                predeclaration,
+                checkpoint_dir,
+                data,
+                config,
+                image_id,
+            )
         stored = read_json(validation_gate)
         if stored != recomputed:
             raise ValueError("stored validation gate differs from recomputation")
@@ -579,6 +678,7 @@ def preflight(
         "baseline_phases_verified": sorted(baseline_rows) if baseline_rows else [],
         "baseline_artifact_sha256": sha256(baselines) if baseline_rows else None,
         "evidence_gate_sha256": evidence_gate_sha256,
+        **({"endpoint_path_view": endpoint_path_view} if endpoint_path_view is not None else {}),
         "blockers": blockers,
         "scientific_scope": (
             "surrogate PPO readiness only; real-CFD replay remains mandatory and "
@@ -1067,6 +1167,11 @@ def main() -> None:
             image_id=args.image_id,
             runtime_image_id=args.runtime_image_id,
             episode_steps=args.episode_steps,
+            dual_options=(
+                {name: getattr(args, name) for name in DUAL_OPTION_NAMES}
+                if any(getattr(args, name) is not None for name in DUAL_OPTION_NAMES)
+                else None
+            ),
         )
     readiness = attach_dual_readiness(args, readiness)
     if args.dry_run:
