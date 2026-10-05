@@ -339,11 +339,12 @@ function renderActiveExperiment(d){
  if(active){
   const age=Date.now()-Date.parse(active.sampled_at_utc||'');
   const fresh=active.verified===true&&Number.isFinite(age)&&age>=0&&age<60000;
-  const title=!fresh?'当前任务状态暂未核实':active.label+(active.running?' · 正在运行':active.exited_success?' · 计算结束，结果待复核':' · 已停止，正在检查原因');
+  const reviewed=fresh&&active.exited_success&&active.review?.verified===true;
+  const title=!fresh?'当前任务状态暂未核实':active.label+(active.running?' · 正在运行':reviewed?' · 已复核，未满足全部预测要求':active.exited_success?' · 计算结束，结果待复核':' · 已停止，正在检查原因');
   const progress=fresh?Object.entries(active.planned_updates).map(([arm,total])=>'已完成 '+active.updates[arm]+'/'+total+' 次更新').join('；'):'不使用历史任务代替未知状态。';
   $('lead-now').textContent=title+'。'+progress;
   const card=document.createElement('div');card.className='card';
-  for(const [tag,text] of [['h3',title],['p',progress],['p',fresh?active.description:''],['p','计算完成不等于模型通过验收；尚无新的代理辅助CFD闭环结论。下方流场图是已标注的历史结果。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
+  for(const [tag,text] of [['h3',title],['p',progress],['p',reviewed?active.review.summary:fresh?active.description:''],['p',reviewed?active.review.next_action:''],['p','计算完成不等于模型通过验收；尚无新的代理辅助CFD闭环结论。下方流场图是已标注的历史结果。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
   $('lead-models').prepend(card);$('train16-formal-progress').textContent=title;$('train16-formal-detail').textContent=progress;return;
  }
  const p024=d.p024_live;
@@ -1310,6 +1311,33 @@ def _parse_registered_progress(state: dict, log: str, matches: bool, registratio
             "label": registration["label"], "description": registration["description"], "admission": False}
 
 
+def _registered_terminal_review(root: Path, registration: dict, progress: dict) -> dict:
+    """Display an independently reviewed rejection, never infer admission."""
+    try:
+        review = registration["review"]
+        if not progress.get("verified") or not progress.get("exited_success"):
+            return {"verified": False}
+        if progress["updates"] != progress["planned_updates"]:
+            return {"verified": False}
+        payloads = {}
+        for key in ("report", "result"):
+            path = Path(review[key])
+            resolved = (root / path).resolve()
+            if path.is_absolute() or not resolved.is_relative_to(root.resolve()):
+                return {"verified": False}
+            raw = resolved.read_bytes()
+            if hashlib.sha256(raw).hexdigest() != review[key + "_sha256"]:
+                return {"verified": False}
+            payloads[key] = raw
+        result = json.loads(payloads["result"])
+        if result["comparison"]["local_support"] is not False:
+            return {"verified": False}
+        return {"verified": True, "local_support": False, "admission": False,
+                "summary": review["summary"], "next_action": review["next_action"]}
+    except (OSError, ValueError, KeyError, TypeError):
+        return {"verified": False}
+
+
 def _registered_experiment_live(root: Path) -> dict:
     sampled = datetime.now(UTC).isoformat()
     try:
@@ -1333,7 +1361,9 @@ def _registered_experiment_live(root: Path) -> dict:
         pid = state.get("MainPID", "0")
         matches = pid.isdigit() and pid != "0" and str(launcher).encode() in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
         log = confined(registration["log"]).read_text()
-        return {**_parse_registered_progress(state, log, matches, registration), "sampled_at_utc": sampled}
+        progress = _parse_registered_progress(state, log, matches, registration)
+        return {**progress, "review": _registered_terminal_review(root, registration, progress),
+                "sampled_at_utc": sampled}
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
         return {"verified": False, "sampled_at_utc": sampled}
 

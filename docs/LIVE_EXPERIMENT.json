@@ -9,5 +9,13 @@
   "launcher": "artifacts/fcp025_isolated_statistics_source_20261005_immutable/scripts/run_fcp025_isolated_statistics_spark.sh",
   "launcher_sha256": "98d4fa9d23d065f3af1f954e94dbf8458b0dd7b68344950c98344effc9cdd127",
   "log": "artifacts/fcp025_isolated_statistics_20261005/run.log",
-  "planned_updates": {"STAT": 16}
+  "planned_updates": {"STAT": 16},
+  "review": {
+    "report": "docs/FC_P025_TERMINAL_REVIEW_20261005.md",
+    "report_sha256": "66be6f23e590930d6a84c9b18ea43247f42b7e2a93dcdd1c6920a3a7dc21c0c6",
+    "result": "artifacts/fcp025_isolated_statistics_20261005/result.json",
+    "result_sha256": "7648df661439f530984504538bfaef3d1a602c1b960fd914fcba2f016fc4e74c",
+    "summary": "16次训练更新已完成。升力波动预测略有改善，但平均升力预测和原预测目标没有同时改善；未产生合格的新模型。已结束这条局部调参路线。",
+    "next_action": "下一阶段：验证单帧与四帧历史输入的公平对照。当前只进行CPU代码验证，尚未启动新的GPU训练。原始CFD数据、模型和验收标准保留。"
+  }
 }

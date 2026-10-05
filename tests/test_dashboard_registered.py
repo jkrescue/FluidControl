@@ -26,3 +26,31 @@ def test_bad_registry_plan():
         assert not m._parse_registered_progress(state(),'',True,{**REG,'planned_updates':plan})['verified']
 def test_missing_registry(tmp_path):
     assert not m._registered_experiment_live(tmp_path)['verified']
+
+def test_review_requires_terminal_complete_and_bound_false_result(tmp_path):
+    import hashlib
+    report=tmp_path/'report.md';result=tmp_path/'result.json'
+    report.write_text('Independent review')
+    result.write_text(json.dumps({'comparison':{'local_support':False}}))
+    review=dict(report='report.md',result='result.json',summary='failed',next_action='CPU preparation')
+    for key,path in [('report',report),('result',result)]:
+        review[key+'_sha256']=hashlib.sha256(path.read_bytes()).hexdigest()
+    reg={'review':review}
+    progress=dict(verified=True,exited_success=True,updates={'STAT':16},planned_updates={'STAT':16})
+    assert m._registered_terminal_review(tmp_path,reg,progress)['verified']
+    assert not m._registered_terminal_review(tmp_path,reg,{**progress,'exited_success':False})['verified']
+    assert not m._registered_terminal_review(tmp_path,reg,{**progress,'updates':{'STAT':15}})['verified']
+    report.write_text('changed')
+    assert not m._registered_terminal_review(tmp_path,reg,progress)['verified']
+
+def test_review_rejects_true_or_outside_result(tmp_path):
+    import hashlib
+    report=tmp_path/'report';report.write_text('review')
+    result=tmp_path/'result';result.write_text(json.dumps({'comparison':{'local_support':True}}))
+    review=dict(report='report',result='result',summary='bad',next_action='bad',
+                report_sha256=hashlib.sha256(report.read_bytes()).hexdigest(),
+                result_sha256=hashlib.sha256(result.read_bytes()).hexdigest())
+    progress=dict(verified=True,exited_success=True,updates={'STAT':16},planned_updates={'STAT':16})
+    assert not m._registered_terminal_review(tmp_path,{'review':review},progress)['verified']
+    review['result']='../outside'
+    assert not m._registered_terminal_review(tmp_path,{'review':review},progress)['verified']
