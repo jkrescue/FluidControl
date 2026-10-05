@@ -21,6 +21,9 @@ MANIFEST_STATUS = "FC_P013_DUAL_FNO_MANIFEST_VERIFIED"
 SYSTEM_KIND = "FC_P013_INDEPENDENT_FORCE_FNO"
 FLOW_KIND = "FC_P009_TRAIN_ONLY_JOINT_FORCE_ROW_CANDIDATE"
 AERO_KIND = "FC_P013_INDEPENDENT_FORCE_FNO_AERODYNAMIC_CHECKPOINT"
+P015_MANIFEST_STATUS = "FC_P015_DUAL_FNO_MANIFEST_VERIFIED"
+P015_SYSTEM_KIND = "FC_P015_WINDOW_ACCUMULATION_FORCE_FNO"
+P015_AERO_KIND = "FC_P015_WINDOW_ACCUMULATION_FORCE_FNO_AERODYNAMIC_CHECKPOINT"
 FLOW_MODEL_SHA256 = "dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31"
 FLOW_STATE_SHA256 = "4998e534d4b82b17393c217357ed18220fb8e739166a88147483bb9cc5fb771e"
 CONFIG_SHA256 = "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
@@ -91,7 +94,21 @@ class DualFNOIdentity:
     payload: dict[str, Any]
 
 
-def _checkpoint_identity(root: Path, payload: object, *, role: str) -> CheckpointIdentity:
+def _experiment_contract(kind: str) -> dict[str, Any]:
+    """Explicit project experiment identities; never infer steps from filenames."""
+    if kind == SYSTEM_KIND:
+        return {"status": MANIFEST_STATUS, "aero_kind": AERO_KIND,
+                "optimizer_steps": 1368, "extra": {}}
+    if kind == P015_SYSTEM_KIND:
+        return {"status": P015_MANIFEST_STATUS, "aero_kind": P015_AERO_KIND,
+                "optimizer_steps": 171,
+                "extra": {"training_experiment": "FC-P015", "accumulation_windows": 8,
+                          "training_windows": 1368, "optimizer_steps": 171}}
+    raise ValueError("dual FNO experiment kind is not supported")
+
+
+def _checkpoint_identity(root: Path, payload: object, *, role: str,
+                         aerodynamic_kind: str = AERO_KIND) -> CheckpointIdentity:
     if not isinstance(payload, dict):
         raise TypeError(f"dual manifest {role} identity must be an object")
     required = {
@@ -113,7 +130,7 @@ def _checkpoint_identity(root: Path, payload: object, *, role: str) -> Checkpoin
     if not isinstance(epoch, int) or isinstance(epoch, bool):
         raise ValueError(f"dual manifest {role} epoch is invalid")
     expected_epoch = 0 if role == "flow" else 1
-    expected_kind = FLOW_KIND if role == "flow" else AERO_KIND
+    expected_kind = FLOW_KIND if role == "flow" else aerodynamic_kind
     if epoch != expected_epoch or payload["metadata_kind"] != expected_kind:
         raise ValueError(f"dual manifest {role} epoch/kind differs")
     directory_value = payload["checkpoint_relative_directory"]
@@ -160,7 +177,7 @@ def _checkpoint_identity(root: Path, payload: object, *, role: str) -> Checkpoin
 def validate_dual_fno_manifest(
     manifest_path: Path, *, expected_sha256: str | None = None
 ) -> DualFNOIdentity:
-    """Validate the exact FC-P013 checkpoint pair before constructing models."""
+    """Validate an explicitly supported checkpoint pair before constructing models."""
     manifest_path = manifest_path.resolve()
     if not manifest_path.is_file():
         raise FileNotFoundError(manifest_path)
@@ -185,16 +202,17 @@ def validate_dual_fno_manifest(
     }
     if not required.issubset(payload):
         raise ValueError("dual FNO manifest is incomplete")
+    contract = _experiment_contract(payload["kind"])
     exact = {
         "schema_version": SCHEMA_VERSION,
-        "status": MANIFEST_STATUS,
-        "kind": SYSTEM_KIND,
+        "status": contract["status"],
         "config_sha256": CONFIG_SHA256,
         "normalization_sha256": NORMALIZATION_SHA256,
         "flow_parent_model_sha256": FLOW_MODEL_SHA256,
         "flow_parent_state_sha256": FLOW_STATE_SHA256,
         "aerodynamic_initial_model_sha256": FLOW_MODEL_SHA256,
         "aerodynamic_initial_state_sha256": FLOW_STATE_SHA256,
+        **contract["extra"],
     }
     if any(payload.get(key) != value for key, value in exact.items()):
         raise ValueError("dual FNO manifest fixed identity differs")
@@ -206,7 +224,8 @@ def validate_dual_fno_manifest(
         raise ValueError("dual FNO precision protocol differs")
     flow = _checkpoint_identity(manifest_path.parent, payload["flow"], role="flow")
     aerodynamic = _checkpoint_identity(
-        manifest_path.parent, payload["aerodynamic"], role="aerodynamic"
+        manifest_path.parent, payload["aerodynamic"], role="aerodynamic",
+        aerodynamic_kind=contract["aero_kind"],
     )
     if flow.model_sha256 != FLOW_MODEL_SHA256 or flow.state_sha256 != FLOW_STATE_SHA256:
         raise ValueError("dual FNO flow checkpoint is not the frozen P009 parent")
@@ -361,14 +380,16 @@ def load_dual_fno(
         expected_state_sha256=identity.flow.state_sha256,
         expected_kind=FLOW_KIND,
     )
+    contract = _experiment_contract(identity.payload["kind"])
     required_aero_metadata = {
-        "status": AERO_KIND,
+        "status": contract["aero_kind"],
         "checkpoint_epoch": 1,
         "flow_parent_model_sha256": FLOW_MODEL_SHA256,
         "flow_parent_state_sha256": FLOW_STATE_SHA256,
         "aerodynamic_initial_model_sha256": FLOW_MODEL_SHA256,
         "aerodynamic_initial_state_sha256": FLOW_STATE_SHA256,
-        "optimizer_steps": 1368,
+        "optimizer_steps": contract["optimizer_steps"],
+        **contract["extra"],
         "selection_performed": False,
         "validation_accessed": False,
         "frozen_test_accessed": False,
