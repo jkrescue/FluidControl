@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**当前阶段：P021 CPU工程复核通过，真实尺寸GPU资源检查仅在准备**。模块SHA `bcefcad2fa622e5b69133725aa8d39db5a1b0a41a1b5e6c7dcb1f6b7d99a4962`、测试SHA `a3dfb4b88d70eabb72d2df560444f828a6041b812e7cba9d06d1785139f9b5eb`，Root/实现/独立审查均24项CPU测试通过。Root另在固定官方CPU-only容器实跑微型FNO H100，完整图与checkpoint输出及28项梯度最大差0，10项谱虚部分量梯度非零，未用GPU或优化器。代码与证据已同步`1cc12fe`，详见`docs/FC_P021_CPU_REVIEW_20261005.md`；这不证明全尺寸精度或资源可行性。
+
+当前仅按`docs/FC_P021_RESOURCE_PROBE_PLAN_20261005.md`准备一个既有真实训练窗口816的前向/反向检查程序及CPU测试；GPU执行尚未批准。计划使用原P018权重和精确同刻受力、完整100步递推，不更新/保存模型；两项20GiB要求不变。没有新的模型训练、代理准入或PPO/CFD闭环结果。以下CPU实现之前的描述为历史。
+
 **当前阶段：六窗因果力输入审计完成（FC-E031），P021仅CPU工程获批**。独立从实际raw系数与配置重算完整时间审计，274个源文件SHA和完整结果一致；六窗606个名义端点、每圆柱均有唯一同时间raw力。base/train8的505帧中200帧HDF力实际含下一solver样本的微小插值贡献；train16的101帧使用精确端点，不含该依赖。六个初始力均精确，因此旧AR initial persistence不受影响；旧HDF-lag H1 persistence只能称描述性滞后一帧基线，不能称严格在线因果。精确raw sidecar只覆盖这六窗，不外推到44轨迹/heldout，HDF目标与归一化不改。
 
 审计主结果`artifacts/causal_force_input_audit_20261005/timestamp_audit.json` SHA `72d9117922ef5dbbd3b9f9a5ae193d01c19ac44a39aea30b4dbe5eaf3189d4e2`；详见`docs/CAUSAL_FORCE_TIMESTAMP_AUDIT_20261005.md`。Root提交`225d99f`仅授权P021隔离暂存CPU适配器/梯度与warm-start工程测试，不授权GPU、训练或架构部署。P020局部条件未满足和P018正式FAIL保持有效，无新候选/准入/PPO；所有指标不变。以下早期状态保留为历史。
