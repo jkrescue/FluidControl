@@ -247,3 +247,36 @@ reported invocation `eee5a6fbad40411cac2f05e00520b079`, PID 941365,
 `activating/start`; this is live training, not terminal success. No HDF reread
 or additional cache advice was performed during review. No further pass or
 scientific acceptance is authorized by this maintenance result.
+
+## Separate r7 authorization
+
+At host-watch timestamp 1791240833, the same live K4 invocation had reached
+805 windows and MemFree 22,880,008 KiB (about 21.82 GiB). Root authorizes
+one bounded r7 pass with unchanged reviewed helper
+`d116b55b67c50d2e618ec4188fe4fc8a4bc8b732deda8ca89f5b942d4b654e25`.
+Exclusively create K4 `cache_advice_20261006_r7.jsonl`; preserve r1-r6.
+All 44 pinned path/hash/stat and memory/deadline checks remain mandatory.
+No global cache operation, data/model edits, restart or subsequent pass is
+authorized. Execution success remains to be verified from the actual receipt.
+
+## Actual r7 receipt review
+
+Root observed session 98182 exit 0. Independent saved-JSON review verified
+90 records: begin, 44 ordered file-begin/advised pairs, complete. Every path
+and reported hash matches the pinned audit, and all per-file start/hash/advice
+stat snapshots agree. The receipt binds the approved d116b55b…b654e25 helper,
+K4 and exact r7 output. Receipt SHA-256:
+`2ff7d82b2fab2bd2b0563ca6e9eba6214a02b3427b61c6a49839ed5aa4b20cec`.
+
+Start/end Unix timestamps were 1791240855.8846467/1791240867.343941,
+elapsed **11.459630691 seconds**. Receipt minima were MemFree
+**21.911907 GiB**, MemAvailable **106.242134 GiB**, above all applicable floors.
+The growing host-watch snapshot through 1791240881, 1565 samples, had minima
+MemFree **21.006046 GiB**, MemAvailable **105.671360 GiB**; snapshot SHA:
+`c4ca5e34d54645d89e8cba3edfafee1a45365a83bd95f16a7b20ee25ebfe10db`.
+
+All six earlier receipt hashes were rechecked unchanged. The actual training
+invocation remained `eee5a6fbad40411cac2f05e00520b079`, PID 941365,
+`activating/start`. No HDF files were reread and no cache advice was issued
+by this review. This establishes r7 maintenance completion only; no later pass,
+training completion or scientific acceptance is implied.
