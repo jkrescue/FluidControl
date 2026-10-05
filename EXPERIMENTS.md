@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E022 — FC-P013 terminal fixed-six train diagnostics (2026-10-05)
+
+The preregistered P013 r2 fixed pass completed1368 updates; terminal integrity and exact Docker/journal exit were independently verified. The read-only original six train windows then completed on P009 and terminal P013 with unchanged tensor hashes, optimizer0, no validation/frozen/PPO. Diagnostic result SHA:`8e0255c955c1b26fdff240a0854fc0a92d3bd247cc38ed6c268fc1d397cec873`; training source1634c05 and original diagnostic source from immutable23a4ec020ed6 chain. These are train diagnostics, not a formal admission threshold or converged optimization claim.
+
+H1 rear-Cl MAE worsens6/6; free-AR worsens5/6. The sole AR improvement is b00PRBS0.100626→0.100346. The zero-window H1 MAE worsens0.011493→0.082078 and AR mean-Cl error0.000669→0.081711. H1 tail62 RMS error worsens2/6 and AR4/6, so amplitude changes are mixed. All H1/AR u/v/p field metrics are exactly unchanged. This pass does not demonstrate improved force fitting. Absolute-error summaries do not establish a common signed offset or its cause.
+
+The original complete formal suite is now executing under separate approval`4ad097c`; no checkpoint reselection or threshold change. Service`fluid-control-fcp013-posteval-r2-20261005.service`, invocation`7235b2f06282435a89b84964e384c60f`. Its results are not yet recorded as completed. Next diagnostic hypothesis, if formal admission fails, concerns signed residual means and same-window optimization evidence; no architecture expansion or weight sweep is authorized by this observation.
+
 This is the human-readable index for `experiments/results.csv`. Stable completed-history IDs use `FC-E###`; proposed work is intentionally excluded and uses the separate `FC-P###` namespace.
 
 The entries below are retrospective reconstructions from immutable artifacts and receipts; they are not presented as historical preregistrations.

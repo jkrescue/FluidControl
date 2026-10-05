@@ -1,5 +1,7 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**最新科学进展（2026-10-05 08:49 UTC）**：固定六个训练窗口诊断完成（result SHA `8e0255c9…ec873`），同窗对比P009：P013的H1后圆柱Cl MAE在6/6变差，自回归MAE在5/6变差；尾62点Cl′ RMS误差H1在2/6变差、AR在4/6变差。流场u/v/p指标全部逐值不变，模型tensor未被诊断修改。这不是精度改善；保留负结果FC-E022，不能据此启动PPO。预定完整正式评估已按单独批准`4ad097c`启动：service `fluid-control-fcp013-posteval-r2-20261005.service`，invocation `7235b2f06282435a89b84964e384c60f`，使用不可变f95048c链；正在validation10阶段，尚无正式验收结论。目标不变，下一步依据完整结果分析误差，禁止降低门槛或盲目加轮数。
+
 **当前阶段（2026-10-05 08:45 UTC）**：FC-P013 r2已完成全部1368次更新并保存终态双FNO；Docker精确容器退出码0，fresh reload通过，冻结流场tensor SHA前后相同。完整候选审计SHA为`1c280b29…704a7`，completion receipt SHA为`3c53a7fb…e2d90`；这只是训练完整性完成，不是精度或控制准入。原终态检查器因临时systemd服务被回收而失败，记录保留；独立复核Docker退出事件、精确invocation日志与12项文件SHA后，专用恢复脚本`7bf45cf`生成如实记录服务已回收的completion，不伪造systemd成功状态。训练guard最低MemAvailable107.423GiB、CUDAfree27.595GiB。
 
 固定六窗口只读诊断已启动：`fluid-control-fcp013-fixed-six-r2-20261005.service`，invocation `ef401d302bf54b468ec217a42492b968`，输出`artifacts/fcp013_independent_force_fno_training_r2_20261005/fixed_six_diagnostics`。批准`c46fa31`，不可变launcher SHA `cf0bc8d5…62bef`。比较P009亲本和P013终态的原H1/free-AR物理误差，禁止优化、选模型、validation/frozen/PPO。下一步查看诊断并执行另行批准的完整正式评估；只有原全部准入通过后才训练兼容PPO并开展真实CFD闭环。最终目标仍未完成。
