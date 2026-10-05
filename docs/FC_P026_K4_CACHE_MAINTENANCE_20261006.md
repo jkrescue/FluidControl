@@ -346,3 +346,36 @@ invocation `eee5a6fbad40411cac2f05e00520b079`, PID 941365,
 `activating/start`. No HDF reread or cache advice was performed by this
 review. No subsequent pass, training completion or scientific acceptance is
 authorized or established by the maintenance result.
+
+## Separate r10 authorization
+
+At timestamp 1791241959, the same live K4 invocation had reached 1089
+windows/136 updates. MemFree was 23,152,348 KiB (about 22.08 GiB).
+Root authorizes one bounded r10 pass with unchanged reviewed helper
+`d116b55b67c50d2e618ec4188fe4fc8a4bc8b732deda8ca89f5b942d4b654e25`.
+Exclusively create K4 `cache_advice_20261006_r10.jsonl`; preserve r1-r9.
+All 44 pinned file identities and existing memory/deadline guards apply.
+No global cache action, data/model edits, restart or further pass is approved.
+Execution completion must be established from the actual receipt.
+
+## Actual r10 receipt review
+
+Root confirmed session 38880 exit 0. Independent JSON-only review verified
+90 records: begin, 44 ordered file-begin/advised pairs, complete. All reported
+paths/hashes match the pinned audit and all per-file start/before/hash/advice
+stat snapshots agree. Begin binds reviewed helper d116b55b…b654e25, K4 and
+the exact r10 output. Receipt SHA-256:
+`f3b0a45fde0b66050b927e3303fe6478ff40aa5bef32e1a6aa0aa855b506b67c`.
+
+Start/end Unix timestamps were 1791241984.3123283/1791241994.7507544;
+elapsed **10.438632036 seconds**. Receipt minima were MemFree
+**21.978786 GiB**, MemAvailable **106.055191 GiB**, above applicable floors.
+The growing host-watch snapshot through 1791241999, 2104 samples, had minima
+MemFree **21.006046 GiB**, MemAvailable **105.671360 GiB**; snapshot SHA:
+`ac0cccfe7ff660708a2b5e64f0b9aeb163cf71bcfc3aa194d0444abca3cdf87c`.
+
+All r1–r9 receipt hashes were rechecked unchanged. The actual training service
+remained live under invocation `eee5a6fbad40411cac2f05e00520b079`, PID 941365,
+`activating/start`. No HDF reread or advice occurred during this review.
+This result neither authorizes a subsequent pass nor establishes training
+completion or scientific acceptance.
