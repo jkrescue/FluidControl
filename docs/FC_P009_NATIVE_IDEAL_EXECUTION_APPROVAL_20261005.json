@@ -1,0 +1,28 @@
+{
+  "status": "FC_P009_NATIVE_IDEAL_WINDOW_DIAGNOSTIC_EXECUTION_APPROVED",
+  "owner": "Lead /root",
+  "hypothesis": "Native execution of the saved force head may differ enough from pooled-affine evaluation to affect temporal force statistics; quantify before selecting the next training intervention.",
+  "implementation_sha256": "26adb78407483e8bcd1332b768523143a88eb8b674b7fae32918d1447f9606e6",
+  "implementation_commit": "62f9a62",
+  "candidate_kind": "FC_P009_TRAIN_ONLY_JOINT_FORCE_ROW_CANDIDATE",
+  "candidate_model_sha256": "dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31",
+  "candidate_state_sha256": "4998e534d4b82b17393c217357ed18220fb8e739166a88147483bb9cc5fb771e",
+  "selected_windows": [
+    {"family":"base20","case":"matched_start_acquisition_train_b00_zero","start":320,"global_window_index":160,"local_dataset_index":160,"role":"zero_control"},
+    {"family":"train8","case":"dynamic_train8_b00_prbs","start":90,"global_window_index":816,"local_dataset_index":96,"role":"high_ideal_rms_error_prbs_b00"},
+    {"family":"train8","case":"dynamic_train8_b02_prbs","start":100,"global_window_index":923,"local_dataset_index":203,"role":"high_ideal_rms_error_prbs_b02"},
+    {"family":"train16","case":"direct_cfd_directppo2048_v1_env0_ep0009_b00","start":0,"global_window_index":1233,"local_dataset_index":105,"role":"high_ideal_rms_error_train16_ep9"}
+  ],
+  "precision": "existing default TF32/high, original batch4 context",
+  "comparison": "Actual saved float32 force rows on same-runtime pooled features versus native output; cache-feature drift reported separately; 100 steps and trailing62 physical statistics.",
+  "optimizer_steps": 0,
+  "validation_or_frozen_accessed": false,
+  "ppo_executed": false,
+  "candidate_saved": false,
+  "max_wall_seconds": 480,
+  "minimum_mem_available_gib": 20,
+  "cuda_allocator_fraction": 0.15,
+  "decision_rule": "If native-ideal statistical differences are small compared with the observed prediction errors, end the numerical implementation hypothesis and prioritize train-only model/data intervention. No threshold changes or automatic admission.",
+  "output": "artifacts/fcp009_native_ideal_window_diagnostic_20261005",
+  "independent_review": "Objective accepted code and ten tests; engineering diagnostic only, no scientific admission."
+}
