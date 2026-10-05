@@ -518,6 +518,87 @@ def commands(k, model, manifest):
     return result
 
 
+def validate_terminal_proofs(repo, candidate, approval):
+    """Validate actual P026 receipt contents, not only Lead-reviewed file bytes.
+
+    Receipt maps use training-root-relative ``candidate/`` names; approval maps
+    use candidate-relative names. Only that one literal prefix is normalized.
+    No inference of an arm, terminal success, model reload or scientific PASS.
+    """
+    k = approval["history_k"]
+    require(type(k) is int and k in (1, 4), "terminal proof arm differs")
+    files = approval["candidate_sha256"]
+    expected_files = {
+        "result.json", "training_protocol.json", "dual_model_manifest.json",
+        "flow/FNO.0.0.mdlus", "flow/checkpoint.0.0.pt",
+        "aerodynamic/FNO.0.1.mdlus", "aerodynamic/checkpoint.0.1.pt",
+    }
+    require(isinstance(files, dict) and set(files) == expected_files,
+            "terminal proof candidate file set differs")
+
+    def exact_fields(value, expected):
+        require(isinstance(value, dict), "terminal proof object missing")
+        for key, wanted in expected.items():
+            actual = value.get(key)
+            require(actual == wanted and
+                    (type(wanted) not in (bool, int) or type(actual) is type(wanted)),
+                    f"terminal proof field differs: {key}")
+
+    def digest(value, label):
+        require(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None,
+                f"terminal proof digest invalid: {label}")
+        return value
+
+    proofs = {}
+    for name in ("independent_terminal_audit", "official_dual_reload"):
+        proof = approval[name]
+        path = bound(repo, proof["path"], proof["sha256"])
+        require(proof["reviewed_by_lead"] is True, "unreviewed terminal proof")
+        proofs[name] = json.loads(path.read_text())
+    audit, reload = proofs["independent_terminal_audit"], proofs["official_dual_reload"]
+    common = dict(history_k=k, training_protocol_sha256=files["training_protocol.json"],
+                  dual_manifest_sha256=files["dual_model_manifest.json"],
+                  candidate_result_sha256=files["result.json"],
+                  scientific_admission=False, ppo_authorized=False)
+    for proof in (audit, reload):
+        exact_fields(proof, common)
+        mapping = proof.get("candidate_sha256")
+        require(isinstance(mapping, dict) and set(mapping) ==
+                {"candidate/" + name for name in expected_files},
+                "terminal proof seven-file map/prefix differs")
+        normalized = {name[len("candidate/"):]: digest(value, name)
+                      for name, value in mapping.items()}
+        require(normalized == files, "terminal proof candidate bytes differ")
+    exact_fields(audit, dict(
+        status=f"FC_P026_K{k}_CANDIDATE_INTEGRITY_VERIFIED_NOT_ADMISSION",
+        actual_optimizer_steps=171, actual_training_windows=1368, accumulation_windows=8,
+        training_unit=approval["training_unit"], training_invocation=approval["training_invocation"],
+        dual_adapter_fresh_reload_verified=False))
+    require(isinstance(audit.get("terminal_evidence"), dict), "terminal unit evidence missing")
+    terminal(audit["terminal_evidence"], approval["training_invocation"])
+    exact_fields(audit["terminal_evidence"], dict(LoadState="loaded"))
+    exact_fields(reload, dict(
+        status=f"FC_P026_K{k}_OFFICIAL_CPU_DUAL_RELOAD_VERIFIED_NOT_ADMISSION",
+        candidate_audit_sha256=approval["independent_terminal_audit"]["sha256"],
+        config_sha256=approval["training_config_sha256"], required_official_image_id=IMAGE,
+        device="cpu", official_dual_reload_verified=True, forward_performed=False,
+        optimizer_created=False, model_saved=False, gpu_used=False))
+    # These are already byte-bound by candidate_contract; recheck the small JSON
+    # here so this helper is independently testable without reading model bytes.
+    result_path = bound(candidate, "result.json", files["result.json"])
+    result = json.loads(result_path.read_text())
+    tensors = {"flow": digest(result.get("flow_tensor_sha256"), "result flow"),
+               "aerodynamic": digest(result.get("aerodynamic_terminal_tensor_sha256"), "result aerodynamic")}
+    require(audit.get("tensor_sha256") == reload.get("tensor_sha256") == tensors,
+            "terminal/reloaded/saved tensor identity differs")
+    loader = digest(audit.get("role_loader_sha256"), "audited role loader")
+    require(isinstance(reload.get("runtime_source_sha256"), dict) and
+            reload["runtime_source_sha256"].get("src/fluid_control/dual_fno.py") == loader ==
+            approval["source_sha256"]["src/fluid_control/dual_fno.py"],
+            "audited/reloaded/formal role loader differs")
+    return proofs
+
+
 def preflight(args):
     require(sha(args.approval) == args.approval_sha256, "formal approval SHA differs")
     a = json.loads(args.approval.read_text())
@@ -570,12 +651,7 @@ def preflight(args):
     bound(args.repo, QC, QC_SHA)
     candidate_contract(args.candidate, a)
     validate_candidate_loader(args.source, args.candidate, a)
-    # Approval authorizes these actual independently reviewed receipts by bytes.
-    # Their content is preserved, not synthesized or re-labelled by this runner.
-    for name in ("independent_terminal_audit", "official_dual_reload"):
-        proof = a[name]
-        bound(args.repo, proof["path"], proof["sha256"])
-        require(proof["reviewed_by_lead"] is True, "unreviewed terminal proof")
+    validate_terminal_proofs(args.repo, args.candidate, a)
     require(
         re.fullmatch(
             r"fluid-control-fcp026-history-k[14]-[a-zA-Z0-9-]+\.service",
