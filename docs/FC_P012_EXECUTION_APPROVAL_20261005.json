@@ -1,0 +1,35 @@
+{
+  "experiment": "FC-P012",
+  "approval": "bounded train-only diagnostic, no training or PPO",
+  "approved_by": "Lead root",
+  "implementation_commit": "67cdc65",
+  "script_sha256": "978d28da0fd42d087a22c3a5620ee15c32c1edc63bf65ef07e5602803ff924c0",
+  "test_sha256": "1f571caaf5838aeffc4c2fbd535997ad360eb7885404de7b2740707e163cdb81",
+  "trainer_sha256": "9c761cfcb3d4f18dbe35aed1b3defe0614b29db867006055dae63d9fa94485a5",
+  "config_sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9",
+  "image_id": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e",
+  "node": "USER@SPARK_HOST",
+  "protocol": "docs/FC_P012_GRADIENT_DIAGNOSTIC_PLAN_20261005.md",
+  "scope": "P009 parent and P011 decoder-tail terminal, exact six original train H100 windows each; batch one; teacher forcing zero; default TF32/high",
+  "model_pair_sha256": [
+    ["dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31", "4998e534d4b82b17393c217357ed18220fb8e739166a88147483bb9cc5fb771e"],
+    ["5102e83e00276994ad85b88c59721d52915400a037fc29f321d593fa69b800d8", "c3c8c92ea792ed7332da75af269143b10ea0d0541b84273b7424e2922d9ae6b0"]
+  ],
+  "root_independent_tests_passed": 7,
+  "launch_conditions": [
+    "Independent evaluation review has no unresolved blocking issue",
+    "Immutable code and train-only views; no validation/frozen mounts",
+    "Existing spark_gpu_guard enforces unified MemAvailable floor",
+    "Record actual command, immutable launcher hash, unit, input identities and image before execution",
+    "Preserve failures and results; do not overwrite existing run outputs"
+  ],
+  "runtime_max_seconds": 900,
+  "allocator_fraction_max": 0.45,
+  "min_mem_available_gib": 20,
+  "optimizer_allowed": false,
+  "checkpoint_save_allowed": false,
+  "validation_allowed": false,
+  "frozen_allowed": false,
+  "ppo_allowed": false,
+  "next_action": "Independently interpret all twelve rows under the predeclared diagnostic rules; any training intervention requires a new recorded approval and unchanged formal evaluation"
+}
