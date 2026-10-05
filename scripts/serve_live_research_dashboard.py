@@ -341,7 +341,7 @@ function renderActiveExperiment(d){
   const fresh=active.verified===true&&Number.isFinite(age)&&age>=0&&age<60000;
   const reviewed=fresh&&active.exited_success&&active.review?.verified===true;
   const title=!fresh?'当前任务状态暂未核实':active.label+(active.running?' · 正在运行':reviewed?(active.review.engineering_pass?' · 工程复核通过，非精度验收':' · 已复核，未满足全部预测要求'):active.exited_success?' · 计算结束，结果待复核':' · 已停止，正在检查原因');
-  const progress=fresh?Object.entries(active.planned_updates).map(([arm,total])=>arm+' 已完成 '+active.updates[arm]+'/'+total+' '+(active.progress_unit||'次更新')+(active.windows?'；训练窗口 '+active.windows[arm]+'/'+(total*8):'')).join('；'):'不使用历史任务代替未知状态。';
+  const progress=fresh?Object.entries(active.planned_updates).map(([arm,total])=>arm+' 已完成 '+active.updates[arm]+'/'+total+' '+(active.progress_unit||'次更新')+(active.windows?'；训练窗口 '+active.windows[arm]+'/'+(total*8):'')).join('；')+(active.progress_detail?'。'+active.progress_detail:''):'不使用历史任务代替未知状态。';
   $('lead-now').textContent=title+'。'+progress;
   const card=document.createElement('div');card.className='card';
   for(const [tag,text] of [['h3',title],['p',progress],['p',reviewed?active.review.summary:fresh?active.description:''],['p',reviewed?active.review.next_action:''],['p','计算完成不等于模型通过验收；尚无新的代理辅助CFD闭环结论。下方流场图是已标注的历史结果。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
@@ -1373,6 +1373,103 @@ def _registered_terminal_review(root: Path, registration: dict, progress: dict) 
         return {"verified": False}
 
 
+FORMAL_STAGE_LABELS = {
+    "validation10": "10个验证工况：流场与受力预测",
+    "validation_diagnostic": "核对10个验证工况的误差统计",
+    "endpoint_gate": "检查长时预测的误差指标",
+    "dynamic6": "6个动态控制工况：连续流场预测",
+    "dynamic_diagnostic": "核对动态工况的误差统计",
+    "force_window": "检查阻力、平均升力与升力波动",
+    "development_gate": "汇总控制相关预测指标",
+}
+
+
+def _registered_formal_progress(root: Path, registration: dict, state: dict, matches: bool) -> dict:
+    """Display actual completed commands, never interpret them as metric passes."""
+    def confined(name):
+        path = (root / name).resolve()
+        if Path(name).is_absolute() or not path.is_relative_to(root.resolve()):
+            raise ValueError("formal progress path outside project")
+        return path
+
+    if state.get("InvocationID") != registration["invocation"]:
+        return {"verified": False}
+    pid = state.get("MainPID", "0")
+    if pid != "0" and not matches:
+        return {"verified": False}
+    approval_raw = confined(registration["approval"]).read_bytes()
+    if hashlib.sha256(approval_raw).hexdigest() != registration["approval_sha256"]:
+        raise ValueError("formal approval differs")
+    approval = json.loads(approval_raw)
+    if (approval.get("status") != "FC_P026_APPROVED_ORIGINAL_FORMAL_EVALUATION"
+            or approval.get("formal_evaluation_authorized") is not True
+            or approval.get("ppo_auto_launch") is not False
+            or type(approval.get("history_k")) is not int
+            or approval["history_k"] not in (1, 4)):
+        raise ValueError("not an approved formal evaluation")
+    arm = f"K{approval['history_k']}"
+    if registration["planned_updates"] != {arm: len(FORMAL_STAGE_LABELS)}:
+        raise ValueError("formal step plan differs")
+    output = confined(approval["output_relative_directory"])
+    if hashlib.sha256((output / "evidence/formal_approval.json").read_bytes()).hexdigest() != registration["approval_sha256"]:
+        raise ValueError("actual formal approval copy differs")
+    completed = 0
+    for index, name in enumerate(FORMAL_STAGE_LABELS):
+        terminal_path = output / "evidence" / f"{name}_container_terminal.json"
+        if not terminal_path.exists():
+            continue
+        if completed != index:
+            raise ValueError("formal step completion is not contiguous")
+        initial = json.loads((output / "evidence" / f"{name}_container.json").read_text())
+        terminal = json.loads(terminal_path.read_text())
+        if not initial.get("Id") or initial["Id"] != terminal.get("Id"):
+            raise ValueError("formal container identity differs")
+        for proof in (initial, terminal):
+            if (proof.get("Image") != approval["official_image_id"]
+                    or not any(m.get("Source") == str(output)
+                               and m.get("Destination") == "/workspace/output"
+                               and m.get("RW") is True for m in proof.get("Mounts", []))):
+                raise ValueError("formal container output/image differs")
+        status = terminal["State"]
+        if (status.get("Status") != "exited" or status.get("Running") is not False
+                or status.get("OOMKilled") is not False
+                or type(status.get("ExitCode")) is not int or status["ExitCode"] != 0):
+            raise ValueError("formal step did not exit successfully")
+        completed += 1
+    running = ((state.get("ActiveState"), state.get("SubState")) in
+               (("active", "running"), ("activating", "start")) and pid != "0" and matches)
+    exited = (state.get("ActiveState") == "active" and state.get("SubState") == "exited"
+              and pid == "0" and state.get("Result") == "success"
+              and state.get("ExecMainCode") == "1" and state.get("ExecMainStatus") == "0")
+    if exited and completed != len(FORMAL_STAGE_LABELS):
+        raise ValueError("formal unit ended without all step evidence")
+    current = None
+    lines = confined(registration["log"]).read_text().splitlines()
+    for index, line in enumerate(lines):
+        try:
+            row = json.loads(line)
+        except ValueError:
+            if index == len(lines) - 1:
+                continue  # A concurrent writer can leave its final line incomplete.
+            raise
+        if not isinstance(row, dict):
+            raise ValueError("invalid formal memory sample")
+        current = row
+    detail = "计算结束，预测精度结果待复核" if exited else "阶段采样待更新"
+    if running and current:
+        sampled = current.get("time_unix")
+        age = datetime.now(UTC).timestamp() - sampled if type(sampled) in (int, float) else float("inf")
+        if 0 <= age < 60:
+            step = current.get("step")
+            if step not in FORMAL_STAGE_LABELS and step != "precision":
+                raise ValueError("unknown formal step")
+            detail = "当前：" + FORMAL_STAGE_LABELS.get(step, "检查数值计算设置")
+    return {"verified": True, "running": running, "exited_success": exited,
+            "updates": {arm: completed}, "planned_updates": registration["planned_updates"],
+            "label": registration["label"], "description": registration["description"],
+            "progress_unit": "项评估步骤", "progress_detail": detail, "admission": False}
+
+
 def _registered_experiment_live(root: Path) -> dict:
     sampled = datetime.now(UTC).isoformat()
     try:
@@ -1395,8 +1492,11 @@ def _registered_experiment_live(root: Path) -> dict:
         state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
         pid = state.get("MainPID", "0")
         matches = pid.isdigit() and pid != "0" and str(launcher).encode() in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
-        log = confined(registration["log"]).read_text()
-        progress = _parse_registered_progress(state, log, matches, registration)
+        if registration.get("progress_kind") == "formal_evaluation":
+            progress = _registered_formal_progress(root, registration, state, matches)
+        else:
+            log = confined(registration["log"]).read_text()
+            progress = _parse_registered_progress(state, log, matches, registration)
         return {**progress, "review": _registered_terminal_review(root, registration, progress),
                 "sampled_at_utc": sampled}
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
