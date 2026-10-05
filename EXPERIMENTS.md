@@ -1,5 +1,17 @@
 # Experiment ledger
 
+## P026 K1 full matched training — actual GPU execution started
+
+Sourcebe4fc7e, approval755cd99/SHA1088285e4e13c7e3553009dd511436e9a5da976e93eed44d6bb0c28ab9515aa3.
+Dry-run identity/protocol/dependency checks passed before execution. Actual unit
+fluid-control-fcp026-history-k1-20261005.service, invocationb3759e7e1acc4de7a1aa9f6e8d38de9a;
+containered4f0ad7a42621712b6689d3f694ed90067f154ed7bf78c72e0993bbad930f65
+started2026-10-05T19:27:46.093783477Z. Exact44training HDFbyte checks completed.
+Earlyactual5window events/GPU96% confirm computation, not merelyservicecreation.
+Root registered real unit+approval+launcher+log in dashboard; training progress
+does not imply admission. Immutable copies and dual20GiBguards remain active.
+No formal evaluation/PPO/realCFD launch authorized by this running observation.
+
 ## P026 formal history callers — actual-main CPU fixtures verified
 
 Evaluator daef4a3a6eb1b9190f5cde728581b0c1b4b9656f56e865cf61a53deb1f37de88;

@@ -1,0 +1,17 @@
+{
+  "status": "FC_P026_K1_TRAINING_RUNNING_NOT_ADMISSION",
+  "unit": "fluid-control-fcp026-history-k1-20261005.service",
+  "invocation": "b3759e7e1acc4de7a1aa9f6e8d38de9a",
+  "source_commit": "be4fc7e",
+  "approval_commit": "755cd99",
+  "approval_sha256": "1088285e4e13c7e3553009dd511436e9a5da976e93eed44d6bb0c28ab9515aa3",
+  "container_id": "ed4f0ad7a42621712b6689d3f694ed90067f154ed7bf78c72e0993bbad930f65",
+  "image": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e",
+  "started_at": "2026-10-05T19:27:46.093783477Z",
+  "observed_container_state": "running",
+  "planned_windows": 1368,
+  "planned_optimizer_updates": 171,
+  "training_completed": false,
+  "scientific_admission": false,
+  "note": "Running observation only. Zero default exit fields while live are not terminal success."
+}

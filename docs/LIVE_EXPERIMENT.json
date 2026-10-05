@@ -1,26 +1,14 @@
 {
-  "experiment": "P026-resource",
-  "label": "单帧与四帧模型 GPU 资源验证",
-  "description": "同一真实训练窗口，分别计算100步预测及梯度，不更新权重。仅验证运行兼容性和内存需求。",
-  "unit": "fluid-control-fcp026-history-resource-20261005.service",
-  "invocation": "8667f3c9c82146d6ab861d634c460107",
-  "approval": "docs/FC_P026_RESOURCE_EXECUTION_APPROVAL_20261005.json",
-  "approval_sha256": "77e9129e150cd383e38ac1051b33ed95c867d25d3f1f8a19fdd6f8048938277f",
-  "launcher": "artifacts/fcp026_history_resource_source_20261005_immutable/scripts/run_fcp026_history_resource_spark.sh",
-  "launcher_sha256": "5206b31f40df940917cdf65e9f5d5bf03f35eaa17bd573fa4f52a85fff71c07c",
-  "log": "artifacts/fcp026_history_resource_20261005/run.log",
-  "progress_kind": "resource_arms",
-  "planned_updates": {
-    "K1": 1,
-    "K4": 1
-  },
-  "review": {
-    "kind": "history_resource",
-    "report": "docs/FC_P026_RESOURCE_TERMINAL_REVIEW_20261005.md",
-    "report_sha256": "b4a9e4414a59f42430bbf61f8d357a7af316c12cf98128a86bf06ac50223026b",
-    "result": "artifacts/fcp026_history_resource_20261005/result.json",
-    "result_sha256": "8e1113efc903c6c95cd24755d8c9b081fb098a01ce60aa3c2477e932052f3589",
-    "summary": "四帧模型前向与反向约3.05秒，峰值已分配GPU内存3.73GiB；外部采样最低物理空闲29.16GiB。初始化预测与单帧模型一致，历史输入有有效梯度。仅一个窗口，尚未训练或提升精度。",
-    "next_action": "当前阶段：完整训练程序和正式评估接口并行实现；官方保存重载已实际完成。尚未启动新的GPU训练或PPO。历史流场图不代表新结果。"
-  }
+  "experiment": "P026-K1-training",
+  "label": "单帧对照组训练",
+  "description": "使用44条真实CFD训练轨迹的1368个窗口，计划171次参数更新；每8个窗口的梯度平均后更新一次。流场模型保持固定，本轮训练受力预测模型。四帧历史组随后按同一预算对照；当前不是PPO或在线CFD验收。",
+  "unit": "fluid-control-fcp026-history-k1-20261005.service",
+  "invocation": "b3759e7e1acc4de7a1aa9f6e8d38de9a",
+  "approval": "docs/FC_P026_K1_TRAINING_EXECUTION_APPROVAL_20261005.json",
+  "approval_sha256": "1088285e4e13c7e3553009dd511436e9a5da976e93eed44d6bb0c28ab9515aa3",
+  "launcher": "artifacts/fcp026_history_training_source_20261005_immutable/scripts/run_fcp026_history_training_spark.sh",
+  "launcher_sha256": "b14a48e89bdee441c365bb5c729573a7696b40d24bca8c0a588d5c2aa7304f32",
+  "log": "artifacts/fcp026_history_training_k1_20261005/run.log",
+  "progress_kind": "history_training",
+  "planned_updates": {"K1": 171}
 }
