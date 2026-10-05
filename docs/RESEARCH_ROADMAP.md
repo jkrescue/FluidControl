@@ -16,7 +16,7 @@ CFD真值 → 代理预测 → 控制决策 → 在线CFD反馈。分开管理�
 | P1 data-space analysis | Re、alpha、L/D、相位和动作时间历程覆盖 | 区分已见参数、未见相位、未见动作历程、参数外推；同初态配对成立 |
 | P2 surrogate accuracy | u/v/p及前后受力固定协议基线 | 明确各动作/相位/时间范围误差，不以单个平均数掩盖失败 |
 | P3 rollout stability | H1/10/50/100时序误差、相位/幅值、必要物理诊断 | 有限输出与准确预测分别判定；不把H100外推为800步稳定 |
-| P4 control-oriented prediction | FC-P013已完成1368次更新和完整性核验；六个训练窗口中H1升力MAE全部退步、AR五个退步；原完整正式评估正在动态动作阶段 | 正式评估全部条件满足后才准入新PPO。并行准备只读误差分解，区分均值偏移与波动误差；不以训练完成或端点PASS替代整体验收 |
+| P4 control-oriented prediction | FC-P013正式评估失败；P014确认误差包含均值与波形两部分。FC-P015正在按固定计划训练：同1368窗口，每8窗平均梯度后更新，共171次；原流场FNO冻结 | 终态来源、双模型重载及原完整正式评估全部通过后才准入新PPO。不以训练完成或端点PASS替代整体验收，不更换验收标准 |
 | P5 interpretable control baseline | 条件性MPC/有限动作搜索对照 | 代理准入后才执行；相同物理目标、动作约束和真实CFD对照；不强制推翻PPO |
 | P6 RL integration | 绑定合格新FNO重新训练PPO | 环境/模型/归一化/策略SHA对应，训练及独立评估无数值异常 |
 | P7 real-CFD closed loop | 冻结策略、配对OpenFOAM反馈验证 | 满足原物理指标；再逐步增加未参与开发的测试与多seed证据 |
@@ -35,7 +35,9 @@ P5不是“已有PPO必须作废”的依赖；P4不通过时MPC和surrogate PPO
 | D015 / COMPLETE — FC-P008与FC-P009 DEVELOPMENT FAIL | FC-P008原formal联合window仅1/6；FC-P009固定50/50共享头正式候选恢复端点Cd/动作与多数mean-Cl，但force-window仍仅两个zero分支通过（2/6），均不准入PPO | FC-P009 receipt `ac5c0dd0…e231c`；四旋转rear-Cl′ RMS误差`0.06750/0.12501/0.07045/0.07987`，固定上限约`0.0294`。field与C不变，frozen/PPO均未访问。后续P010尾窗监督在free-AR小幅改善但H1多数相位退化，且五次fit均未在200次预算内达到梯度容差 | 拒绝继续固定线性头扫参；保留原门槛，不把endpoint或train-cache改善当闭环准入 |
 | FC-P011 / COMPLETE — BOTH DEVELOPMENT FAIL | 在相同继续训练和受力loss下，额外解冻现有decoder最后hidden linear层比只调rear-Cl row更能改善控制相关表征 | A/B均完成1368更新及同协议formal；两臂force-window仅2/6 zero通过。A旋转RMS误差`0.0703/0.1222/0.0681/0.0832`，B为`0.0626/0.1192/0.0752/0.0762`；B validation delta-Cd `0.024318>0.023` | 拒绝两臂并禁止PPO。只准备no-optimizer/no-save的六窗梯度分解，区分尺度与方向冲突；该诊断不构成新gate或训练批准 |
 | FC-P012 / COMPLETE — 预声明梯度解释未获支持 | FC-P011B的权衡伴随field与weighted-force的强尺度失衡或反向梯度冲突 | P009与P011B各6个train窗口、共12行；五个nonzero窗中两模型ratio>10与cos<-.2均为0/5；zero窗另列，参数前后不变 | 不据此扫loss权重或改clip；representation-capacity后续须另批并继续接受原formal裁决 |
-| FC-P013 / FORMAL EVALUATION ACTIVE — NO ADMISSION | 独立官方受力FNO能否改善控制相关预测，同时保留原flow递推；是组合系统测试，不是梯度冲突已证实 | r2训练完成、终态来源和重载核验通过；固定六窗H1后Cl MAE在6/6变差，AR在5/6变差，场指标相同。正式validation10端点组件通过，dynamic6进行中（2026-10-05 09:04 UTC） | 完成原formal，不改变门槛或选择中间模型。FC-P014只读训练目标/物理误差分解正在设计与独立审阅，尚未批准GPU执行；不启动不合格代理PPO |
+| FC-P013 / COMPLETE — DEVELOPMENT FAIL | 独立官方受力FNO能否改善控制相关预测，同时保留原flow递推；是组合系统测试，不是梯度冲突已证实 | 原完整正式评估已完成，receipt SHA `2733c3cb…aa2e7a`；六窗联合0/6、总Cd5/6、后Cl脉动RMS2/6、后Cl均值0/6，原审计器独立重算一致 | 拒绝进入PPO；保留FC-E023负结果，不改变门槛或选择中间模型 |
+| FC-P014 / COMPLETE — DIAGNOSTIC ONLY | 训练退步是否主要是可用常数修正的均值偏移 | 六个固定train窗的实际H1、AR目标均退步；AR去均值残差MSE六窗均增加，结果SHA `5550140b…e95a7`。模型未修改，无优化或验证集访问 | FC-E024保留；拒绝额外全数据仅常数偏置校准，因为它不能改善升力脉动RMS。结果不能证明唯一训练原因 |
+| FC-P015 / TRAINING ACTIVE — NO ADMISSION | 八个原顺序窗口平均梯度后再裁剪更新，是否改善固定训练面板及原正式受力指标 | 同P009初始模型、同数据/loss/架构、1368窗单遍，共171次更新；固定0/456/912/1368窗诊断不选模型。审批`b0c326a`，实际invocation `7842742926284d0c94b0383163d5dc0b` | 完成预定终态后审计来源、官方双模型重载、原完整formal。若失败，依据同协议误差提出下一项可证伪干预；若通过，推进兼容新PPO与真实CFD反馈。更新次数和Adam状态同时改变，不称为单独证明梯度噪声原因 |
 | FC-P004 / GATED | 合格代理上的短时域显式动作规划可提供解释性控制对照 | 可选MPC候选序列受相同动作约束，在真实CFD配对评价；预先规定时域和计算预算 | 用于区分代理/控制器问题，不因为MPC可解释就视为安全可靠 |
 | FC-P005 / GATED | 合格新代理支持学到有物理收益的PPO策略 | 新policy仅在准确绑定的FNO中训练，随后真实CFD配对；指标沿用原标准 | 通过后才能主张surrogate-assisted闭环，而不是CFD-only成果 |
 | FC-P006 / LATER | 收益在未参与开发的样本/随机种子上可重复 | 固定候选后开展冻结集/新独立样本、多seed，报告区间及失效 | 扩大或收缩稳健性结论；反复开发用的validation不当最终test |
