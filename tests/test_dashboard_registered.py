@@ -65,6 +65,22 @@ def test_resource_arm_progress_is_not_training():
     for invalid in (logs+'\n'+logs, json.dumps({'event':'arm_complete','k':True})):
         assert not m._parse_registered_progress(s,invalid,False,reg)['verified']
 
+def test_history_training_counts_actual_windows_and_updates():
+    reg={**REG,'progress_kind':'history_training','planned_updates':{'K4':171}}
+    rows=[dict(event='training_window_complete',history_k=4,consumed=n) for n in range(1,9)]
+    rows.append(dict(event='accumulation_update_complete',history_k=4,update=1))
+    s=state();s.update(ActiveState='activating',SubState='start')
+    value=m._parse_registered_progress(s,'\n'.join(map(json.dumps,rows)),True,reg)
+    assert value['running'] and value['updates']=={'K4':1} and value['windows']=={'K4':8}
+    assert not value['admission']
+    for bad in (rows[1:],rows+rows[-1:],rows+[dict(event='training_window_complete',history_k=True,consumed=9)],rows+[dict(event='training_window_complete',history_k=1,consumed=9)]):
+        assert not m._parse_registered_progress(s,'\n'.join(map(json.dumps,bad)),True,reg)['verified']
+
+def test_history_training_cannot_report_update_without_eight_windows():
+    reg={**REG,'progress_kind':'history_training','planned_updates':{'K1':171}}
+    text=json.dumps(dict(event='accumulation_update_complete',history_k=1,update=1))
+    assert not m._parse_registered_progress(state(),text,True,reg)['verified']
+
 def test_resource_review_requires_no_update_and_no_candidate(tmp_path):
     import hashlib
     report=tmp_path/'report';report.write_text('review')

@@ -1,5 +1,14 @@
 # Experiment ledger
 
+## P026 monitoring preparation — actual training events supported
+
+Root added registered progress parsing for history_training window/update events,
+with contiguous sequence, arm and 8-window/update consistency checks. Matched
+systemd oneshot activating/start with a verified live PID is running, not stopped.
+Eighteen registered-dashboard/P023 tests pass. This prepares the local-only UI;
+current registration remains the completed resource probe until a real training
+invocation exists. No training or scientific gain is claimed by UI changes.
+
 ## P026 actual official CPU training inventory — verified
 
 Container2fa6d157 exited0/noOOM, official pinned image, noGPU, readonly

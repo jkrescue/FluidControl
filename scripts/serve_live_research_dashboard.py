@@ -341,7 +341,7 @@ function renderActiveExperiment(d){
   const fresh=active.verified===true&&Number.isFinite(age)&&age>=0&&age<60000;
   const reviewed=fresh&&active.exited_success&&active.review?.verified===true;
   const title=!fresh?'当前任务状态暂未核实':active.label+(active.running?' · 正在运行':reviewed?(active.review.engineering_pass?' · 工程复核通过，非精度验收':' · 已复核，未满足全部预测要求'):active.exited_success?' · 计算结束，结果待复核':' · 已停止，正在检查原因');
-  const progress=fresh?Object.entries(active.planned_updates).map(([arm,total])=>arm+' 已完成 '+active.updates[arm]+'/'+total+' '+(active.progress_unit||'次更新')).join('；'):'不使用历史任务代替未知状态。';
+  const progress=fresh?Object.entries(active.planned_updates).map(([arm,total])=>arm+' 已完成 '+active.updates[arm]+'/'+total+' '+(active.progress_unit||'次更新')+(active.windows?'；训练窗口 '+active.windows[arm]+'/'+(total*8):'')).join('；'):'不使用历史任务代替未知状态。';
   $('lead-now').textContent=title+'。'+progress;
   const card=document.createElement('div');card.className='card';
   for(const [tag,text] of [['h3',title],['p',progress],['p',reviewed?active.review.summary:fresh?active.description:''],['p',reviewed?active.review.next_action:''],['p','计算完成不等于模型通过验收；尚无新的代理辅助CFD闭环结论。下方流场图是已标注的历史结果。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
@@ -1292,20 +1292,33 @@ def _parse_registered_progress(state: dict, log: str, matches: bool, registratio
         return {"verified": False}
     counts = {key: set() for key in plan}
     kind = registration.get("progress_kind", "optimizer_updates")
-    if kind not in ("optimizer_updates", "resource_arms"):
+    if kind not in ("optimizer_updates", "resource_arms", "history_training"):
         return {"verified": False}
+    windows = {key: set() for key in plan}
     for line in log.splitlines():
         try:
             row = json.loads(line)
         except ValueError:
             continue
-        event = "arm_complete" if kind == "resource_arms" else "arm_update_complete"
+        if kind == "history_training" and isinstance(row, dict) and row.get("event") == "training_window_complete":
+            k, consumed = row.get("history_k"), row.get("consumed")
+            arm = "K" + str(k)
+            if type(k) is not int or k not in (1, 4) or arm not in plan or type(consumed) is not int or not 1 <= consumed <= plan[arm] * 8 or consumed in windows[arm]:
+                return {"verified": False}
+            windows[arm].add(consumed)
+            continue
+        event = {"resource_arms": "arm_complete", "history_training": "accumulation_update_complete"}.get(kind, "arm_update_complete")
         if not isinstance(row, dict) or row.get("event") != event:
             continue
         if kind == "resource_arms":
             if type(row.get("k")) is not int or row["k"] not in (1, 4):
                 return {"verified": False}
             arm, step = "K" + str(row["k"]), 1
+        elif kind == "history_training":
+            k = row.get("history_k")
+            if type(k) is not int or k not in (1, 4):
+                return {"verified": False}
+            arm, step = "K" + str(k), row.get("update")
         else:
             arm, step = row.get("arm"), row.get("update")
         if arm not in plan or type(step) is not int or not 1 <= step <= plan[arm] or step in counts[arm]:
@@ -1313,11 +1326,14 @@ def _parse_registered_progress(state: dict, log: str, matches: bool, registratio
         counts[arm].add(step)
     if any(steps != set(range(1, len(steps)+1)) for steps in counts.values()):
         return {"verified": False}
-    running = state.get("ActiveState") == "active" and state.get("SubState") == "running" and pid != "0" and matches
+    if kind == "history_training" and any(windows[k] != set(range(1, len(windows[k]) + 1)) or len(windows[k]) < 8 * len(counts[k]) for k in plan):
+        return {"verified": False}
+    running = (state.get("ActiveState"), state.get("SubState")) in (("active", "running"), ("activating", "start")) and pid != "0" and matches
     terminal = state.get("ActiveState") == "active" and state.get("SubState") == "exited" and pid == "0" and state.get("Result") == "success" and state.get("ExecMainCode") == "1" and state.get("ExecMainStatus") == "0"
     return {"verified": True, "running": running, "exited_success": terminal,
             "updates": {k: len(v) for k, v in counts.items()}, "planned_updates": plan,
             "label": registration["label"], "description": registration["description"],
+            **({"windows": {k: len(v) for k, v in windows.items()}} if kind == "history_training" else {}),
             "progress_unit": "项无更新计算" if kind == "resource_arms" else "次更新", "admission": False}
 
 
