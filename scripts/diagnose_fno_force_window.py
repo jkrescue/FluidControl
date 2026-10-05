@@ -171,6 +171,8 @@ def main():
     parser.add_argument("--expected-model-sha", required=True)
     parser.add_argument("--dual-fno-manifest", type=Path, default=None)
     parser.add_argument("--expected-dual-fno-manifest-sha256", default=None)
+    parser.add_argument("--dual-training-config", type=Path, default=None,
+                        help="immutable training config; evaluation still uses --config")
     parser.add_argument("--expected-calibrated-state-sha256")
     parser.add_argument("--expected-calibrated-kind", choices=("FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE", "FC_P009_TRAIN_ONLY_JOINT_FORCE_ROW_CANDIDATE"), default="FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE")
     parser.add_argument("--allow-calibrated-epoch-zero", action="store_true")
@@ -182,7 +184,7 @@ def main():
     normalization = args.normalization_data / "normalization.json"
     if sha256(normalization) != NORMALIZATION_SHA:
         raise ValueError("immutable train20 normalization differs")
-    from fluid_control.dual_fno import dual_fno_requested
+    from fluid_control.dual_fno import dual_fno_requested, require_dual_training_config
 
     use_dual_fno = dual_fno_requested(
         args.dual_fno_manifest,
@@ -192,6 +194,7 @@ def main():
             args.expected_calibrated_state_sha256,
         ),
     )
+    require_dual_training_config(use_dual_fno, args.dual_training_config)
     if not use_dual_fno:
         models = list(args.checkpoint_dir.glob("FNO.0.*.mdlus"))
         if len(models) != 1 or sha256(models[0]) != args.expected_model_sha:
@@ -232,7 +235,7 @@ def main():
         )
         validate_dual_runtime_files(
             dual_identity,
-            config_path=args.config,
+            config_path=args.dual_training_config,
             normalization_path=normalization,
         )
         if args.checkpoint_dir.resolve() != dual_identity.aerodynamic.directory:

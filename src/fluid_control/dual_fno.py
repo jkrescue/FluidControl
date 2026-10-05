@@ -257,6 +257,14 @@ def dual_fno_requested(
     return True
 
 
+def require_dual_training_config(use_dual: bool, path: Path | None) -> None:
+    """Keep training-source identity distinct from unchanged evaluation config."""
+    if use_dual and path is None:
+        raise ValueError("dual FNO evaluation requires the bound training config")
+    if not use_dual and path is not None:
+        raise ValueError("dual training config cannot accompany a single FNO")
+
+
 def combine_dual_raw(flow_raw, aerodynamic_raw):
     """Return raw 7-channel output without residual updates or force pooling."""
     if flow_raw.ndim != 4 or aerodynamic_raw.ndim != 4:

@@ -158,6 +158,8 @@ def main() -> None:
         help="optional FC-P013 manifest selecting separate official flow/force FNOs",
     )
     parser.add_argument("--expected-dual-fno-manifest-sha256", default=None)
+    parser.add_argument("--dual-training-config", type=Path, default=None,
+                        help="immutable training config; evaluation still uses --config")
     parser.add_argument("--allow-calibrated-epoch-zero", action="store_true")
     parser.add_argument("--expected-calibrated-model-sha256")
     parser.add_argument("--expected-calibrated-state-sha256")
@@ -218,7 +220,7 @@ def main() -> None:
         torch.cuda.set_per_process_memory_fraction(
             float(cfg.training.gpu_memory_fraction), device=dist.device
         )
-    from fluid_control.dual_fno import dual_fno_requested
+    from fluid_control.dual_fno import dual_fno_requested, require_dual_training_config
 
     use_dual_fno = dual_fno_requested(
         args.dual_fno_manifest,
@@ -229,6 +231,7 @@ def main() -> None:
             args.expected_calibrated_state_sha256,
         ),
     )
+    require_dual_training_config(use_dual_fno, args.dual_training_config)
     dual_identity = None
     if use_dual_fno:
         from fluid_control.dual_fno import load_dual_fno, validate_dual_runtime_files
@@ -243,7 +246,7 @@ def main() -> None:
         )
         validate_dual_runtime_files(
             dual_identity,
-            config_path=args.config,
+            config_path=args.dual_training_config,
             normalization_path=(args.normalization_data or args.data)
             / "normalization.json",
         )
