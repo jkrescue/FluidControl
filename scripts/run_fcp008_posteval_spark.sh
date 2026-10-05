@@ -10,7 +10,7 @@ image="fluid-control-physicsnemo:2.2.2"
 image_id="sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e"
 case "$profile" in
   p013)
-    candidate="${FCP_POSTEVAL_CANDIDATE:-$root/artifacts/fcp013_independent_force_fno_training_20261005}"
+    candidate="${FCP_POSTEVAL_CANDIDATE:-$root/artifacts/fcp013_independent_force_fno_training_r2_20261005}"
     out="$candidate/posteval_fc_p013"
     auditor_relative="scripts/audit_fcp013_dual_candidate.py"
     candidate_kind="fcp013_independent_force_dual_fno"

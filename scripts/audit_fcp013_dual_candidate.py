@@ -26,6 +26,28 @@ IMAGE = "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e
 ORDER_SHA = "177ebd9523cde918eb0c1fb8026286dac7e95f3d228ae0e349757a2a9a288f9f"
 OBSERVATION_SHA = "a106555efbe2e6b6ab1046a94ed05f58d903785b223716cdd7075a73bc432f63"
 ROOT_NAME = "fcp013_independent_force_fno_training_20261005"
+RECOVERY_ROOT_NAME = "fcp013_independent_force_fno_training_r2_20261005"
+RECOVERY_OBSERVATION_SHA = "c6da08418d3e9c6287d50534fc669f560ed8d5d2a7f4237c90892e91655d1e6d"
+RECOVERY_APPROVAL_SHA = "6579dfbf97d6a7fbe6b74fa537addc52fe7b4cf266368772ce52965d9d973095"
+RECOVERY_LAUNCHER_SHA = "9a589802227a67035f3f0c421fb7ccfa1b955180b3cb0b3750e22a4ca00b4c4b"
+
+
+def validate_recovery_watch(text: str) -> dict:
+    rows = [json.loads(line) for line in text.splitlines() if line.strip()]
+    if not rows:
+        raise ValueError("recovery watchdog evidence missing")
+    previous = 0
+    for row in rows:
+        if "event" in row:
+            raise ValueError("recovery watchdog stopped execution")
+        for key in ("timestamp", "mem_available_kib", "mem_free_kib", "log_age_seconds"):
+            if type(row.get(key)) is not int:
+                raise ValueError("invalid recovery resource sample")
+        if row["timestamp"] <= previous or min(row["mem_available_kib"], row["mem_free_kib"]) < 20 * 1024**2 or not 0 <= row["log_age_seconds"] <= 300:
+            raise ValueError("recovery memory/progress condition failed")
+        previous = row["timestamp"]
+    return {"samples": len(rows), "min_mem_available_gib": min(r["mem_available_kib"] for r in rows) / 1024**2,
+            "min_mem_free_gib": min(r["mem_free_kib"] for r in rows) / 1024**2}
 
 
 def state_digest(state: dict) -> str:
@@ -144,15 +166,23 @@ def observed_order_from_hdf(repo: Path, records: list[dict]) -> tuple[str, dict]
 
 def validate_candidate(repo: Path, candidate: Path) -> dict:
     import torch
-    if candidate.resolve() != (repo / "artifacts" / ROOT_NAME).resolve():
+    recovery = candidate.resolve() == (repo / "artifacts" / RECOVERY_ROOT_NAME).resolve()
+    if not recovery and candidate.resolve() != (repo / "artifacts" / ROOT_NAME).resolve():
         raise ValueError("candidate root differs")
-    if sha256(candidate / "execution_approval.json") != APPROVAL_SHA or sha256(candidate / "running_execution_evidence.json") != OBSERVATION_SHA:
+    expected_observation = RECOVERY_OBSERVATION_SHA if recovery else OBSERVATION_SHA
+    if sha256(candidate / "execution_approval.json") != APPROVAL_SHA or sha256(candidate / "running_execution_evidence.json") != expected_observation:
         raise ValueError("execution evidence differs")
     observation = json.loads((candidate / "running_execution_evidence.json").read_text())
     if observation.get("image_id") != IMAGE or observation.get("source_sha256", {}).get("scripts/train_fcp013_independent_force_fno.py") != TRAINER_SHA:
         raise ValueError("observed runtime source differs")
-    if sha256(candidate / "immutable_launcher.sh") != observation["source_sha256"]["scripts/run_fcp013_training_spark.sh"]:
+    launcher_sha = observation.get("executed_launcher_sha256") if recovery else observation["source_sha256"]["scripts/run_fcp013_training_spark.sh"]
+    if sha256(candidate / "immutable_launcher.sh") != launcher_sha:
         raise ValueError("observed launcher differs")
+    recovery_watch = None
+    if recovery:
+        if observation.get("attempt") != 2 or launcher_sha != RECOVERY_LAUNCHER_SHA or observation.get("recovery_approval_sha256") != RECOVERY_APPROVAL_SHA or sha256(candidate / "recovery_approval.md") != RECOVERY_APPROVAL_SHA:
+            raise ValueError("recovery execution identity differs")
+        recovery_watch = validate_recovery_watch((candidate / "resource_watch.jsonl").read_text())
     guard = validate_guard((candidate / "run.log").read_text())
     manifest = candidate / "candidate/dual_model_manifest.json"
     identity = validate_dual_fno_manifest(manifest)
@@ -189,9 +219,12 @@ def validate_candidate(repo: Path, candidate: Path) -> dict:
     files = [candidate / "execution_approval.json", candidate / "running_execution_evidence.json",
              candidate / "immutable_launcher.sh", candidate / "run.log", result_path, manifest,
              identity.flow.model, identity.flow.state, identity.aerodynamic.model, identity.aerodynamic.state]
+    if recovery:
+        files.extend([candidate / "recovery_approval.md", candidate / "resource_watch.jsonl"])
     return {
         "status": "FC_P013_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION",
         "candidate_kind": "fcp013_independent_force_dual_fno", "candidate_root": str(candidate.resolve()),
+        "execution_attempt": 2 if recovery else 1, "recovery_watch": recovery_watch,
         "checkpoint_relative_directory": "candidate/aerodynamic", "checkpoint_epoch": 1,
         "checkpoint_model_file": identity.aerodynamic.model.name,
         "checkpoint_state_file": identity.aerodynamic.state.name,
@@ -220,7 +253,7 @@ def main():
     args = parser.parse_args()
     if args.execution_approval_sha256 not in (None, APPROVAL_SHA):
         raise ValueError("training approval differs")
-    candidate = args.candidate or args.repo / "artifacts" / ROOT_NAME
+    candidate = args.candidate or args.repo / "artifacts" / RECOVERY_ROOT_NAME
     if not (candidate / "candidate/result.json").is_file() and args.candidate is None and args.output is None:
         print(json.dumps({"status": "FC_P013_CANDIDATE_AUDITOR_READY_NO_TERMINAL_YET"}))
         return
