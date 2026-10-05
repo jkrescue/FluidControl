@@ -59,3 +59,14 @@ def test_child_journal_requires_same_service_invocation():
     child["_SYSTEMD_INVOCATION_ID"] = "current"
     child["_SYSTEMD_USER_UNIT"] = "unrelated.service"
     assert dashboard._parse_fcp013_live(prefix + json.dumps(child), 1000)["step"] is None
+
+
+def test_recovery_ignores_first_attempt_even_with_matching_invocation():
+    unit = "fluid-control-fcp013-training-r2-20261005.service"
+    child = json.loads(row(pid=777, step=24))
+    child.update(_SYSTEMD_INVOCATION_ID="recovery", _SYSTEMD_USER_UNIT=unit)
+    prefix = live(command="/immutable/run_fcp013_training_recovery_spark.sh") + "\nInvocationID=recovery\n"
+    value = dashboard._parse_fcp013_live(prefix + json.dumps(child), 1000, unit)
+    assert value["running"] and value["progress_fresh"] and value["step"] == 24
+    child["_SYSTEMD_USER_UNIT"] = "fluid-control-fcp013-training-20261005.service"
+    assert dashboard._parse_fcp013_live(prefix + json.dumps(child), 1000, unit)["step"] is None

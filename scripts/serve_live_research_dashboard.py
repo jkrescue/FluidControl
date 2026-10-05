@@ -343,7 +343,7 @@ function renderActiveExperiment(d){
   $('lead-now').textContent=title+'。原流场FNO保持不变，另一个官方FNO学习阻力和升力；尚未通过独立精度评估。';
   const card=document.createElement('div');card.className='card';
   const h=document.createElement('h3');h.textContent=title;card.appendChild(h);
-  const progress=document.createElement('p');progress.textContent='已记录更新：'+(independent.step==null?'尚无有效记录':independent.step+' / 1368')+'；'+(independent.progress_fresh?'最近更新正常':independent.running?'等待首批记录或检查进度':'不把旧日志当作正在训练');card.appendChild(progress);
+  const progress=document.createElement('p');progress.textContent='恢复后第2次执行 · 已记录更新：'+(independent.step==null?'尚无有效记录':independent.step+' / 1368')+'；'+(independent.progress_fresh?'最近更新正常':independent.running?'等待首批记录或检查进度':'不把旧日志当作正在训练');card.appendChild(progress);
   const losses=document.createElement('p');losses.textContent='最新训练批次损失：真实当前流场输入 '+(independent.h1_balanced==null?'—':num(independent.h1_balanced,6))+'；连续预测流场输入 '+(independent.ar_balanced==null?'—':num(independent.ar_balanced,6))+'；等权合计 '+(independent.total==null?'—':num(independent.total,6));card.appendChild(losses);
   const note=document.createElement('p');note.textContent='每次更新使用一个真实CFD的100步窗口，两类输入各占一半。这里显示的是归一化训练误差，不是验证精度或减阻率。训练结束后仍需原定流场、阻力和升力波动评估，不能自动进入PPO。';card.appendChild(note);
   $('lead-models').prepend(card);
@@ -914,7 +914,7 @@ def _parse_fcp011_formal(output: str, scope: str) -> dict:
 FCP013_TRAINING_APPROVAL_SHA = "1bdcfcf71d1581bbae66fc6551dde61a500bd95a464d9f61d510cbac1721a120"
 
 
-def _parse_fcp013_live(output: str, now: float) -> dict:
+def _parse_fcp013_live(output: str, now: float, unit: str = "fluid-control-fcp013-training-20261005.service") -> dict:
     fields = dict(line.split("=", 1) for line in output.splitlines() if "=" in line and not line.startswith("{"))
     state = fields.get("ActiveState", "unknown")
     try:
@@ -923,13 +923,13 @@ def _parse_fcp013_live(output: str, now: float) -> dict:
         pid = 0
     command = fields.get("ExecStart", "")
     invocation = fields.get("InvocationID", "")
-    bound = any(name in command for name in ("run_fcp013_training_spark.sh", "train_fcp013_independent_force_fno.py")) and "--resource-probe" not in command
+    bound = any(name in command for name in ("run_fcp013_training_spark.sh", "run_fcp013_training_recovery_spark.sh", "train_fcp013_independent_force_fno.py")) and "--resource-probe" not in command
     latest = None
     for line in output.splitlines():
         try:
             record = json.loads(line)
             if invocation:
-                if record.get("_SYSTEMD_INVOCATION_ID") != invocation or record.get("_SYSTEMD_USER_UNIT") != "fluid-control-fcp013-training-20261005.service":
+                if record.get("_SYSTEMD_INVOCATION_ID") != invocation or record.get("_SYSTEMD_USER_UNIT") != unit:
                     continue
             elif pid and str(record.get("_PID")) != str(pid):
                 continue
@@ -962,16 +962,19 @@ def _fcp013_training(root: Path) -> dict:
         raw = (root / "docs/FC_P013_TRAINING_EXECUTION_APPROVAL_20261005.json").read_bytes()
         if hashlib.sha256(raw).hexdigest() != FCP013_TRAINING_APPROVAL_SHA:
             return {"ready": False}
+        recovery = (root / "docs/FC_P013_RECOVERY_APPROVAL_20261005.md").read_bytes()
+        if hashlib.sha256(recovery).hexdigest() != "6579dfbf97d6a7fbe6b74fa537addc52fe7b4cf266368772ce52965d9d973095":
+            return {"ready": False}
     except OSError:
         return {"ready": False}
-    unit = "fluid-control-fcp013-training-20261005.service"
+    unit = "fluid-control-fcp013-training-r2-20261005.service"
     try:
         state = subprocess.run(["systemctl", "--user", "show", unit, "-p", "ActiveState", "-p", "MainPID", "-p", "ExecStart", "-p", "InvocationID"], capture_output=True, text=True, timeout=2, check=False)
         journal = subprocess.run(["journalctl", "--user", "-u", unit, "-n", "40", "-o", "json", "--no-pager"], capture_output=True, text=True, timeout=2, check=False)
-        status = _parse_fcp013_live(state.stdout + "\n" + journal.stdout, time.time())
+        status = _parse_fcp013_live(state.stdout + "\n" + journal.stdout, time.time(), unit)
     except (OSError, subprocess.SubprocessError):
         status = _parse_fcp013_live("", time.time())
-    return {"ready": True, "sampled_at_utc": datetime.now(UTC).isoformat(), **status}
+    return {"ready": True, "attempt": 2, "unit": unit, "sampled_at_utc": datetime.now(UTC).isoformat(), **status}
 
 
 def _fcp012_diagnostic(root: Path) -> dict:
