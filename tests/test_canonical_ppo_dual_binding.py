@@ -1,5 +1,6 @@
 """CPU identity-routing fixtures; no policy training or scientific acceptance."""
 import importlib.util
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -79,3 +80,54 @@ def test_execute_rechecks_binding_and_uses_dual_loader_without_changing_ppo_hype
     assert 'network, dual_identity = load_dual_fno(' in source
     assert 'expected_manifest_sha256=args.expected_dual_fno_manifest_sha256' in source
     assert 'n_steps=128' in source and 'batch_size=256' in source
+
+
+@pytest.mark.parametrize('source', ['checkpoint', 'validation_report', 'validation_gate',
+                                    'validation_segments', 'window_gate', 'dynamic_gate', 'readiness'])
+def test_omitting_all_dual_flags_cannot_use_p013_identity(tmp_path, source):
+    import torch
+
+    args = SimpleNamespace(checkpoint_dir=tmp_path)
+    old = ready()
+    if source == 'checkpoint':
+        torch.save({'metadata': {'status': 'FC_P013_INDEPENDENT_FORCE_FNO_AERODYNAMIC_CHECKPOINT'}},
+                   tmp_path / 'checkpoint.0.1.pt')
+    elif source == 'readiness':
+        old['dual_control_binding'] = {'dual_manifest_sha256': 'a' * 64}
+    else:
+        path = tmp_path / f'{source}.json'
+        path.write_text(json.dumps({'lineage': {'dual_manifest_sha256': 'a' * 64}}))
+        setattr(args, source, path)
+    result = module.attach_dual_readiness(args, old)
+    assert result['status'] == 'FULL40_CANONICAL_PPO_EXECUTION_BLOCKED'
+    assert 'complete dual arguments' in result['blockers'][-1]
+
+
+def test_genuine_legacy_checkpoint_metadata_keeps_single_route(tmp_path):
+    import torch
+
+    torch.save({'metadata': {'status': 'LEGACY_TRAIN_COMPLETE'},
+                'optimizer_state_dict': {'fixture': torch.ones(2)}},
+               tmp_path / 'checkpoint.0.2.pt')
+    args = SimpleNamespace(checkpoint_dir=tmp_path)
+    assert module.attach_dual_readiness(args, ready()) == ready()
+
+
+def test_unreadable_checkpoint_identity_fails_closed(tmp_path):
+    (tmp_path / 'checkpoint.0.1.pt').write_bytes(b'invalid checkpoint')
+    result = module.attach_dual_readiness(SimpleNamespace(checkpoint_dir=tmp_path), ready())
+    assert result['status'] == 'FULL40_CANONICAL_PPO_EXECUTION_BLOCKED'
+    assert 'cannot verify selected checkpoint metadata' in result['blockers'][-1]
+
+
+@pytest.mark.parametrize('name', ['expected_calibrated_model_sha256', 'expected_calibrated_state_sha256'])
+def test_stray_single_calibration_shas_conflict_with_dual_selection(name):
+    args = full_args()
+    setattr(args, name, 'e' * 64)
+    result = module.attach_dual_readiness(args, ready())
+    assert result['status'] == 'FULL40_CANONICAL_PPO_EXECUTION_BLOCKED'
+
+
+def test_loaded_checkpoint_metadata_also_rejects_p013_without_dual():
+    with pytest.raises(ValueError, match='complete dual arguments'):
+        module.require_single_model_identity({'status': 'FC_P013_INDEPENDENT_FORCE_FNO_AERODYNAMIC_CHECKPOINT'})

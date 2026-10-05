@@ -2,6 +2,12 @@
 
 This is implementation evidence, not a completed model evaluation or admission.
 
+## Independent control fix and finalizer replacement — 2026-10-05
+
+The canonical PPO trainer now refuses the single-model route when P013/dual identity appears in supplied reports/readiness or actual selected checkpoint metadata. This prevents omission of all dual flags from silently treating the aerodynamic FNO as the flow model. The actual official pinned PhysicsNeMo `load_checkpoint` signature was inspected and supports `metadata_dict`; loaded metadata is rechecked before environment/policy creation. The implementation agent passed30 CPU tests; Root reviewed the diff and reran52 across dual binding, canonical dry-run, candidate launcher, control contract and actual HydroGym stepper fixtures. Legacy single-model behavior remains covered. No PPO was launched.
+
+After the independently reviewed data-hash repair, the current authoritative immutable post-evaluation chain is `artifacts/p013_posteval_chain_2e04cbe0cc18_immutable`, receipt SHA `f9810e70ca55d09d30f67d7112cc6300b5deaa16a1f6c8bb470e15a829775500`. Stage-only verification passed. Root stopped only the old waiting finalizer and started `fluid-control-fcp013-finalizer-r2-datahash-20261005.service`, invocation `e2ac5526abd149bdb38352d185236d65`, using this new audit source and the same immutable finalizer program. Training service and scientific protocol were untouched. The old finalizer source must not be used for completion. Downstream real-CFD dual/normalization enforcement is assigned next and remains pending.
+
 ## Independent review and data-byte enforcement — 2026-10-05
 
 A fresh independent review identified a real P2 provenance weakness: terminal audit previously recorded actual HDF hashes without comparing pinned manifest hashes. Root repaired this for base20 (SHA-pinned train split with stem-keyed HDF hashes) and train8/train16 (filename-keyed manifest hashes), with exact file-set checks before shape/order reconstruction. The diagnostic launcher now rechecks all 44 bytes and current per-directory HDF file sets against the terminal audit before GPU work. Running trainer/data were not changed.

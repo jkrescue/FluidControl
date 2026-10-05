@@ -640,6 +640,45 @@ def evaluate_policy(env, policy, steps: int) -> dict:
     }
 
 
+def require_single_model_identity(value) -> None:
+    """Reject dual evidence even when the operator omitted every dual flag."""
+    if isinstance(value, dict):
+        dual_keys = {"dual_control_binding", "dual_manifest_sha256", "dual_fno_manifest_sha256"}
+        if dual_keys.intersection(value):
+            raise ValueError("dual FNO evidence requires the complete dual arguments")
+        for key, item in value.items():
+            if key in {"status", "kind", "candidate_kind", "metadata_kind"} and isinstance(item, str):
+                if item.startswith("FC_P013_") or item == "fcp013_independent_force_dual_fno":
+                    raise ValueError("P013 checkpoint/evidence requires the complete dual arguments")
+            require_single_model_identity(item)
+    elif isinstance(value, list):
+        for item in value:
+            require_single_model_identity(item)
+
+
+def verify_single_model_selection(args, readiness: dict) -> None:
+    require_single_model_identity(readiness)
+    for name in ("validation_gate", "validation_report", "validation_segments", "window_gate", "dynamic_gate"):
+        path = getattr(args, name, None)
+        if path is not None:
+            require_single_model_identity(read_json(path))
+    checkpoint_dir = getattr(args, "checkpoint_dir", None)
+    if checkpoint_dir is None:
+        return
+    # Official state metadata identifies P013 even if no dual-aware report was
+    # supplied. Meta storage avoids materializing historical optimizer tensors.
+    import torch
+
+    for state in sorted(checkpoint_dir.glob("checkpoint.0.*.pt")):
+        try:
+            payload = torch.load(state, map_location="meta", weights_only=False)
+        except Exception as error:
+            raise ValueError("cannot verify selected checkpoint metadata") from error
+        if not isinstance(payload, dict):
+            raise ValueError("selected checkpoint state is not a mapping")
+        require_single_model_identity(payload.get("metadata", {}))
+
+
 def dual_binding_from_args(args, readiness: dict) -> dict | None:
     """Supplement all canonical gates with exact dual-system provenance."""
     names = ("dual_fno_manifest", "expected_dual_fno_manifest_sha256",
@@ -647,10 +686,14 @@ def dual_binding_from_args(args, readiness: dict) -> dict | None:
              "expected_dual_posteval_receipt_sha256")
     values = [getattr(args, name, None) for name in names]
     if not any(value is not None for value in values):
+        verify_single_model_selection(args, readiness)
         return None
     if not all(value is not None for value in values):
         raise ValueError("dual FNO requires all manifest, training config and post-evaluation identities")
-    if getattr(args, "train_only_smoke", False) or getattr(args, "allow_calibrated_epoch_zero", False):
+    if (getattr(args, "train_only_smoke", False)
+            or getattr(args, "allow_calibrated_epoch_zero", False)
+            or getattr(args, "expected_calibrated_model_sha256", None) is not None
+            or getattr(args, "expected_calibrated_state_sha256", None) is not None):
         raise ValueError("dual FNO cannot use smoke or single calibrated-model bypass arguments")
     if readiness.get("status") != "FULL40_CANONICAL_PPO_EXECUTION_READY":
         raise ValueError("canonical endpoint/window/dynamic admission must pass before dual binding")
@@ -764,7 +807,12 @@ def execute(args, readiness: dict, *, train_only_smoke: bool = False) -> dict:
                                "flow_checkpoint_epoch": dual_identity.flow.epoch}
     else:
         network = build_model(cfg).to(device).eval().requires_grad_(False)
-        epoch = load_checkpoint(args.checkpoint_dir, models=network, device=device)
+        checkpoint_metadata = {}
+        epoch = load_checkpoint(
+            args.checkpoint_dir, models=network, device=device,
+            metadata_dict=checkpoint_metadata,
+        )
+        require_single_model_identity(checkpoint_metadata)
         calibrated_identity = validate_calibrated_epoch_zero(
             args.checkpoint_dir,
             epoch,
