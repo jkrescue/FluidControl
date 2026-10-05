@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**当前阶段（2026-10-05 08:45 UTC）**：FC-P013 r2已完成全部1368次更新并保存终态双FNO；Docker精确容器退出码0，fresh reload通过，冻结流场tensor SHA前后相同。完整候选审计SHA为`1c280b29…704a7`，completion receipt SHA为`3c53a7fb…e2d90`；这只是训练完整性完成，不是精度或控制准入。原终态检查器因临时systemd服务被回收而失败，记录保留；独立复核Docker退出事件、精确invocation日志与12项文件SHA后，专用恢复脚本`7bf45cf`生成如实记录服务已回收的completion，不伪造systemd成功状态。训练guard最低MemAvailable107.423GiB、CUDAfree27.595GiB。
+
+固定六窗口只读诊断已启动：`fluid-control-fcp013-fixed-six-r2-20261005.service`，invocation `ef401d302bf54b468ec217a42492b968`，输出`artifacts/fcp013_independent_force_fno_training_r2_20261005/fixed_six_diagnostics`。批准`c46fa31`，不可变launcher SHA `cf0bc8d5…62bef`。比较P009亲本和P013终态的原H1/free-AR物理误差，禁止优化、选模型、validation/frozen/PPO。下一步查看诊断并执行另行批准的完整正式评估；只有原全部准入通过后才训练兼容PPO并开展真实CFD闭环。最终目标仍未完成。
+
 **当前观测（2026-10-05 08:05 UTC）**：FC-P013 r2仍在运行，已记录888/1368次更新；本轮最近资源检查GPU约95%、MemAvailable约108GiB、MemFree约28GiB。训练终态核验服务也在等待；尚无终态候选、正式评估或新PPO结果。HTML已在`e11756c`改为读取r2实际服务和日志，下面07:05的“UI尚未更新”是历史状态。目标及物理验收不变：合格代理、兼容新策略、真实CFD配对减阻与升力约束共同成立才完成。
 
 并行工程工作：候选PPO入口、双FNO身份传递、原始评估配置分离及兼容文件相对路径的108项CPU回归已通过；这些是软件测试，不是模型精度通过。独立复核发现正式validation诊断仍写死旧单模型容器路径，canonical入口也需要对原报告做可追溯的临时路径视图；正在以P013专用身份检查修复，不改原报告或数值门槛。新正式评估源码快照将在复核后重新冻结；运行中的训练和终态核验源码不变。下一步仍是训练终态核验→固定六个训练窗口诊断→原完整正式评估→仅在准入通过后新PPO及真实CFD反馈，不以工程测试代替科学结果。

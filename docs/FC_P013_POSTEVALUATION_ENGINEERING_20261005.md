@@ -2,6 +2,14 @@
 
 This is implementation evidence, not a completed model evaluation or admission.
 
+## Training terminal recovery and fixed-six launch — 2026-10-05 08:45 UTC
+
+Trainingr2 completed1368 updates at08:38 UTC; model saving and fresh reload completed. The original terminal waiter failed because systemd garbage-collected the transient unit before its next30-second poll. Missing-unit rejection was preserved, not weakened globally, and training was not restarted. Docker records the exact previously captured container's die exitCode0 and subsequent destroy at1791189496; trusted journal fields bind the same unit/invocation to the matching guard exit0. Independent reviewer rehashed all12 candidate-audit files and verified finite ordered updates, frozen flow and resource minima. Root ran the full frozen2e04 candidate auditor, including actual44train-HDF byte identities.
+
+The separately implemented collected-unit finalizer (`7bf45cf`,31CPU tests passed) verifies pinned observation/source identities, absent current container/collected unit, exact Docker events and invocation journal, then invokes the original frozen auditor. It preserves raw terminal evidence under`collected_terminal_evidence/` and explicitly reports`systemd_terminal_success_observed=false`; it does not invent a retained success unit. Completion SHA:`3c53a7fb94d5ad5f29bed6522317389f02842d078d157d63e20b90b6948e2d90`. Candidate audit SHA:`1c280b291ae7ded1f8e63ccc46ba40a7e085e7d7b6fa69f0dddff18ffac704a7`. Model/state/manifest/result are bound in that audit and the fixed-six approval. All scientific admission fields remain false/pending.
+
+Fixed-six approval is committed`c46fa31`; immutable launcher SHA`cf0bc8d57cb02ff23d0c006fca26e7fd63330a7b52a478a1ef73785561c62bef`. Service`fluid-control-fcp013-fixed-six-r2-20261005.service`, invocation`ef401d302bf54b468ec217a42492b968`, started08:45. Initial CUDAfree34.977GiB and MemAvailable115.114GiB pass the original guard. This service usesRemainAfterExit to retain its terminal process status, avoiding the transient-GC observation issue. No formal evaluation or PPO has started. Preserve distinction between training integrity, train diagnostics and scientific admission.
+
 ## Terminal diagnostic interpretation and runtime preflight — 2026-10-05
 
 The pinned PhysicsNeMo2.2.2+HydroGym runtime (`2e45b4e1…03acb2c`) successfully imported the actual canonical trainer and parsed its CLI under a read-only, network-disabled, CPU-only2GiB container. This verifies startup/import compatibility only; no CUDA/model/policy execution occurred. The intentionally absent GPU warning is expected in this CPU preflight.
