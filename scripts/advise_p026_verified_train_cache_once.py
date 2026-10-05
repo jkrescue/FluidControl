@@ -19,7 +19,7 @@ FAMILIES = {
 OUTPUT = ROOT / "artifacts/fcp026_history_training_k1_20261005/cache_advice_20261006_r1.jsonl"
 OUTPUTS = {1: OUTPUT, 4: ROOT / "artifacts/fcp026_history_training_k4_20261005/cache_advice_20261006_r1.jsonl"}
 RECEIPT_NAMES = tuple(f"cache_advice_20261006_r{i}.jsonl" for i in range(1, 5))
-K4_RECEIPT_NAMES = tuple(f"cache_advice_20261006_r{i}.jsonl" for i in range(1, 13))
+K4_RECEIPT_NAMES = tuple(f"cache_advice_20261006_r{i}.jsonl" for i in range(1, 14))
 
 
 def require(ok, message):

@@ -63,7 +63,7 @@ def test_only_exact_arms_allowed(arm):
         helper.parse_args(["--history-k", arm])
 
 
-@pytest.mark.parametrize("name", ["cache_advice_20261006_r13.jsonl", "../cache_advice_20261006_r2.jsonl", "/tmp/escape"])
+@pytest.mark.parametrize("name", ["cache_advice_20261006_r14.jsonl", "../cache_advice_20261006_r2.jsonl", "/tmp/escape"])
 def test_k4_outside_fixed_receipts_rejected(name):
     with pytest.raises(SystemExit):
         helper.parse_args(["--history-k", "4", "--receipt-name", name])
