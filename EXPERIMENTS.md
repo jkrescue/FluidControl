@@ -1,5 +1,17 @@
 # Experiment ledger
 
+## P026 full trainer — independently reviewed, not executed
+
+Final trainer SHA562d268545ba5cd2559374f4bd8bd34bf59a2e49f2e886e4e286bb12aac5d49e;
+tests fc32801e1c873285d4b2ef81df4e58664683744f74924592e34da88f84262332.
+Independent 41 CPU tests passed in1.16s; Root44 trainer/history tests passed in1.09s.
+Report docs/FC_P026_TRAINER_CPU_REVIEW_20261005.md records coverage and limits.
+Matched1368/171 training, separate parent identities, original objective and
+terminal checkpoints are implemented; warm/padded fixed-panel reporting does not
+alter selection or acceptance. No full training or formal evaluation executed.
+Next: actual inventory/order preflight, role-aware production loader/callers,
+reviewed resource launcher and immutable execution approval.
+
 ## P026 checkpoint engineering terminal review complete
 
 Independent retainedcontainer/image/mount/log inspection and all6savedfile hashes
