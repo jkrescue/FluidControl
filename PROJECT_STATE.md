@@ -1,5 +1,7 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**P017首步诊断已运行（2026-10-05 12:33 UTC）**：审批`5f5f2c0`，实施/Root/独立各27项CPU测试通过。实际service `fluid-control-fcp017-first-step-20261005.service`，invocation `cfa568f1f4d5412a93628273d93a95a1`，容器`604af989be7d3dae1667c37d7a43afd50d8ec7e5b76798d0fca59bf6f4d5fd29`运行在固定官方镜像。重放P009同六窗首个AdamW更新，比较实际方向和完整/正负1/64位移；不保存模型、不访问heldout/PPO。启动空闲约33GiB，双20GiB守卫与15分钟内限开启。输出`artifacts/fcp017_first_step_diagnostic_20261005`。P016独立终态审查已完成：运行完整但同时改善假设不获支持（FC-E026）；原科学准入不变，项目仍未完成。
+
 **P016检验结束，未支持同时改善（2026-10-05 12:24 UTC）**：同一invocation已保留为exited/0，内部GPU守卫exit0；result SHA `f760d2e7…54248`，记录32次更新/192窗口计算，完整独立终态复核进行中。固定训练面板H1/AR objective分别变化+0.175%/-3.803%；五个非零动作窗口的tail62均值偏差平方分别增加420.873%/208.108%，波形与波动幅值误差虽下降但不满足预声明同时改善要求。没有保存候选，没有PPO或新CFD闭环。下一步检查同批数据上的loss/梯度/更新实现及实际优化轨迹，再决定针对性改进，不盲目增加全量训练。看板`2c4f3cc`已部署，原私有API实测显示P016结束待独立复核及P015联合1/6失败。详见`docs/FC_P016_TERMINAL_OBSERVATION_20261005.md`。
 
 **P016固定六窗检验已启动（2026-10-05 12:13 UTC）**：service `fluid-control-fcp016-fixed-panel-fit-20261005.service`，实际invocation `a95370a65c2b47e0b0e2926261937e33`。代码/方案/数据依赖审批`e40bca9`，实施、Root与独立各15项CPU测试通过；启动重新校验44个真实训练HDF。固定P009初始化、冻结flow，原mixed20目标，六窗梯度平均后更新，共32次；只解释终态，不保存候选，不访问validation/frozen，不运行PPO。官方镜像实际容器已运行、GPU约96%，当时MemFree约29.9GiB；两项内存守卫>=20GiB，内部30分钟时限。外部镜像/命令/挂载证据见`docs/FC_P016_RUNNING_EXECUTION_20261005.json`。这只是正在执行的局部可拟合性检验，不是新精度或控制成功。
