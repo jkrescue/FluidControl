@@ -17,6 +17,7 @@ FAMILIES = {
     "tandem_cylinders_directppo_train16_v1": 16,
 }
 OUTPUT = ROOT / "artifacts/fcp026_history_training_k1_20261005/cache_advice_20261006_r1.jsonl"
+OUTPUTS = {1: OUTPUT, 4: ROOT / "artifacts/fcp026_history_training_k4_20261005/cache_advice_20261006_r1.jsonl"}
 RECEIPT_NAMES = tuple(f"cache_advice_20261006_r{i}.jsonl" for i in range(1, 5))
 
 
@@ -60,13 +61,17 @@ def open_confined(relative):
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--history-k", type=int, choices=(1, 4), default=1)
     parser.add_argument("--receipt-name", choices=RECEIPT_NAMES, default=OUTPUT.name)
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.history_k == 4 and args.receipt_name != RECEIPT_NAMES[0]:
+        parser.error("K4 preparation permits only the fixed r1 receipt")
+    return args
 
 
 def main():
     args = parse_args()
-    output = OUTPUT.with_name(args.receipt_name)
+    output = OUTPUTS[args.history_k].with_name(args.receipt_name)
     raw = AUDIT.read_bytes()
     require(hashlib.sha256(raw).hexdigest() == AUDIT_SHA, "approved44 source SHA differs")
     files = json.loads(raw)["train_hdf_sha256"]
@@ -90,7 +95,8 @@ def main():
             log.flush()
             os.fsync(log.fileno())
         emit("begin", audit_sha256=AUDIT_SHA, helper_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-             files=44, memory=memory(), data_writes=False)
+             files=44, memory=memory(), data_writes=False, history_k=args.history_k,
+             output=str(output))
         try:
             guard(memory(), initial=True)
             for index, (name, expected) in enumerate(sorted(files.items()), 1):

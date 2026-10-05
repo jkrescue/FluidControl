@@ -17,13 +17,14 @@ def test_old_default_is_preparation_only_r1():
     args = helper.parse_args([])
     assert args.receipt_name == "cache_advice_20261006_r1.jsonl"
     assert args.execute is False
+    assert args.history_k == 1
 
 
-@pytest.mark.parametrize("name", helper.RECEIPT_NAMES)
-def test_four_explicit_names_stay_in_exact_k1_directory(name):
-    args = helper.parse_args(["--receipt-name", name])
-    target = helper.OUTPUT.with_name(args.receipt_name)
-    assert target.parent == helper.ROOT / "artifacts/fcp026_history_training_k1_20261005"
+@pytest.mark.parametrize("k,name", [(1, name) for name in helper.RECEIPT_NAMES] + [(4, helper.RECEIPT_NAMES[0])])
+def test_explicit_names_stay_in_exact_arm_directory(name, k):
+    args = helper.parse_args(["--receipt-name", name, "--history-k", str(k)])
+    target = helper.OUTPUTS[args.history_k].with_name(args.receipt_name)
+    assert target.parent == helper.ROOT / f"artifacts/fcp026_history_training_k{k}_20261005"
     assert target.name == name
     assert not args.execute
 
@@ -34,8 +35,8 @@ def test_arbitrary_paths_or_names_rejected(name):
         helper.parse_args(["--receipt-name", name])
 
 
-@pytest.mark.parametrize("name", helper.RECEIPT_NAMES)
-def test_existing_selected_receipt_cannot_repeat_advice(tmp_path, monkeypatch, name):
+@pytest.mark.parametrize("k,name", [(1, name) for name in helper.RECEIPT_NAMES] + [(4, helper.RECEIPT_NAMES[0])])
+def test_existing_selected_receipt_cannot_repeat_advice(tmp_path, monkeypatch, name, k):
     files = {f"data/curated/{family}/train/software_fixture_{i}.h5": "a" * 64
              for family, count in helper.FAMILIES.items() for i in range(count)}
     audit = tmp_path / "audit.json"
@@ -44,8 +45,8 @@ def test_existing_selected_receipt_cannot_repeat_advice(tmp_path, monkeypatch, n
     target.write_text("historical receipt stays unchanged")
     monkeypatch.setattr(helper, "AUDIT", audit)
     monkeypatch.setattr(helper, "AUDIT_SHA", hashlib.sha256(audit.read_bytes()).hexdigest())
-    monkeypatch.setattr(helper, "OUTPUT", tmp_path / helper.RECEIPT_NAMES[0])
-    monkeypatch.setattr(helper, "parse_args", lambda: type("Args", (), {"execute": True, "receipt_name": name})())
+    monkeypatch.setattr(helper, "OUTPUTS", {k: tmp_path / helper.RECEIPT_NAMES[0]})
+    monkeypatch.setattr(helper, "parse_args", lambda: type("Args", (), {"execute": True, "receipt_name": name, "history_k": k})())
     def forbidden(*args, **kwargs):
         raise AssertionError("data/cache/resource operation must not run")
     monkeypatch.setattr(helper, "open_confined", forbidden)
@@ -54,3 +55,15 @@ def test_existing_selected_receipt_cannot_repeat_advice(tmp_path, monkeypatch, n
     with pytest.raises(FileExistsError):
         helper.main()
     assert target.read_text() == "historical receipt stays unchanged"
+
+
+@pytest.mark.parametrize("arm", ["0", "2", "3", "5", "../k4", "4.0"])
+def test_only_exact_arms_allowed(arm):
+    with pytest.raises(SystemExit):
+        helper.parse_args(["--history-k", arm])
+
+
+@pytest.mark.parametrize("name", helper.RECEIPT_NAMES[1:])
+def test_k4_later_receipts_rejected(name):
+    with pytest.raises(SystemExit):
+        helper.parse_args(["--history-k", "4", "--receipt-name", name])
