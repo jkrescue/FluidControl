@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**当前里程碑：P026 K1已完成1368窗/171次更新，真实终态完整性检查及官方CPU双模型重载均已通过独立复核。** 同一训练invocation `b3759e7e1acc4de7a1aa9f6e8d38de9a` 已成功退出、PID0；实际检查收据SHA `fa26bf47b6eb448e36046973a479e771b2d37eb605d9630b9022b392ce30d944`，官方CPU重载收据SHA `980698fd335a7a536e358ced26b9f69236e8d101d1f038a46eaf6a0c84f67028`。七个候选文件、两个模型张量、协议、源码及实际容器身份一致。训练守卫最小CUDA空闲20.7337GiB，主机物理空闲最小20.9367GiB，内部采样最小20.7402GiB；均未低于20GiB。前两次检查失败及其原始unit证据均保留；兼容修复仅处理JSON `1`/`1.0`和诊断汇总最多2ULP的Python版本舍入差，不改训练、模型、数据或科学门槛。
+
+HydroGym历史运行时集成已提交 `23711cc`，运行镜像准备已提交 `e542ff1`，不再是待提交状态。报告 `docs/FC_P026_K1_TERMINAL_REVIEW_20261006.md`；只读执行证据 `artifacts/fcp026_k1_terminal_review_20261006/`。**这只是完整性与可加载性通过：尚无P026正式评估结果、科学准入模型或新PPO。** 正式评估审批另行准备，未凭准备材料宣称已经启动；K4需独立批准并与主机其他重任务错开。尚未增加科学CSV结果行。
+
+## 历史记录（以下为当时状态，不代表当前仍在训练或待提交）
+
 **P026 HydroGym显式历史运行时与PPO身份链已完成Root的canonical内容与CPU证据复核，当前仅待最终提交。** 六个生产文件保持既有legacy/direct-CFD路径，并仅为P026增加显式K1/K4历史缓冲、原子reset/step/snapshot恢复、候选身份与正式终态证明绑定；MPC仍明确不在本次范围。Root重新分进程运行canonical fake-HydroGym 15项和readiness/legacy 60项，全部通过；另一个保留的受限host CPU unit用真实HydroGym `PDEBase`/`FlowEnv`、小型mock网络和合成数据通过1项生命周期测试。不可变证据位于 `artifacts/fcp026_hydrogym_actual_core_canonical_cpu_20261006/`，`SHA256SUMS` SHA为 `b0ff32a762b13736da9f22a5f2ebeb4b476fc7ac6dc01e5576a94bd29a49674d`。后者不是官方模型、真实CFD、PPO或科学证据。当前没有启动PPO、没有访问新模型/HDF，也没有改变运行中的K1训练、数值门槛或成功CFD-only基线。
 
 **历史阶段记录（训练后检查工具入库时）：HydroGym历史输入接口当时仍在并行实现。** GitLab提交 `7d0a12c` 包含独立审查后的终态检查、官方CPU双模型重载工具及更新后的阶段计划。Root在主机重新运行38项小型CPU测试，全部通过（1.55秒）；这只是工具验证，尚未对真实新候选执行检查或重载。该段中的K1进度334/1368是当时观测值，不是当前实时状态；训练实例未因本次接口集成而重启或修改。训练后仍按原完整协议评价，K4另行批准运行。
