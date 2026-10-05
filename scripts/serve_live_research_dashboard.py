@@ -335,6 +335,20 @@ function renderAdmission(d){
  }
 }
 function renderActiveExperiment(d){
+ const joint=d.joint_readout_diagnostic;
+ if(joint?.ready===true){
+  const title='受力联合拟合已完成 · 准备候选模型验证';
+  $('lead-now').textContent='单步与连续预测受力误差取得折中改善，尚未通过独立验证；新模型 PPO 和真实 CFD 闭环验收仍未完成。当前计算负载以下方资源采样为准。';
+  const card=document.createElement('div');card.className='card';
+  const h=document.createElement('h3');h.textContent=title;card.appendChild(h);
+  const table=document.createElement('div');table.innerHTML='<table><tr><th>预测范围 / 系数平均绝对误差</th><th>原模型</th><th>联合拟合</th></tr>'+joint.rows.map(r=>`<tr><td>${r.label}</td><td>${num(r.before,5)}</td><td>${num(r.after,5)}</td></tr>`).join('')+'</table>';card.appendChild(table);
+  const note=document.createElement('p');note.textContent='训练相位留出诊断，数值越低越好；不是减阻比例，也不是最终测试成绩。使用同一批真实CFD目标，单步与连续预测特征各占一半，只拟合既有受力输出。原流场预测保持不变。';card.appendChild(note);
+  const risk=document.createElement('p');risk.className='bad';risk.textContent='仍有不足：第100步总阻力误差仅小幅改善，且一个初始相位有所退化。下一步必须检查实际模型输出并完成原定独立验证，不能据此启动PPO。';card.appendChild(risk);
+  $('lead-models').prepend(card);
+  $('train16-formal-progress').textContent=title;
+  $('train16-formal-detail').textContent='1,368个窗口、136,800条预测记录已完成；CPU联合拟合也已完成。当前记录不证明GPU任务正在运行，亦不代表控制目标完成。';
+  return;
+ }
  const ar=d.free_ar_diagnostic;
  if(ar?.ready===true){
   const age=Date.now()-Date.parse(ar.sampled_at_utc);
@@ -729,6 +743,32 @@ def _dual_node_watchdog(root: Path):
     }:
         return None
     return payload
+
+
+FCP009_JOINT_SHA = "931fcd2ddd6901ddfbb3ecdbfe9774d7b1e5fe6d17479c87c44ccaf51ff2b0bc"
+
+
+def _joint_readout_diagnostic(root: Path) -> dict:
+    """Show measured diagnostic results only, with immutable identity binding."""
+    base = root / "artifacts/fcp009_free_ar_force_readout_cache_20261005"
+    try:
+        path = base / "cpu_joint_50_50_analysis.json"
+        if hashlib.sha256(path.read_bytes()).hexdigest() != FCP009_JOINT_SHA:
+            return {"ready": False}
+        result = json.loads(path.read_text())
+        if result.get("status") != "FC_P009_FIXED_50_50_JOINT_READOUT_DIAGNOSTIC_COMPLETE" or result.get("source_result_sha256") != "1321c30a1e12172b85b269405c208981390f952bdf6f03a7fe2dd21f3bb91daf":
+            return {"ready": False}
+        rows = []
+        for horizon, label in (("H1", "单步"), ("H100", "连续第100步")):
+            for channel, channel_label in (("total_cd", "总阻力 Cd"), ("rear_cl", "后柱升力 Cl")):
+                before = result["reports"]["parent_predict_free_ar"]["pooled"]["relative_horizons"][horizon]["physical"][channel]["mae"]
+                after = result["reports"]["joint_fit_predict_free_ar"]["pooled"]["relative_horizons"][horizon]["physical"][channel]["mae"]
+                if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or v < 0 for v in (before, after)):
+                    return {"ready": False}
+                rows.append({"label": label + " / " + channel_label, "before": before, "after": after})
+        return {"ready": True, "rows": rows, "admission": False, "candidate_verified": False}
+    except (OSError, ValueError, KeyError, TypeError):
+        return {"ready": False}
 
 
 def _free_ar_diagnostic(root: Path) -> dict:
@@ -2175,6 +2215,7 @@ class Handler(BaseHTTPRequestHandler):
             data["fixed_feature_readout"] = _fixed_feature_readout(self.root)
             data["full_train_calibration"] = _full_train_calibration(self.root)
             data["free_ar_diagnostic"] = _free_ar_diagnostic(self.root)
+            data["joint_readout_diagnostic"] = _joint_readout_diagnostic(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
         return self._send(b"not found", "text/plain", 404)
