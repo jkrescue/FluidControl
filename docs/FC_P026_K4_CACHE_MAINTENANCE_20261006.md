@@ -60,6 +60,36 @@ not terminal success. The observed training log had reached 81/1368 windows
 and 10 updates. Cache maintenance completed; training and scientific review
 did not. No restart, second pass, model acceptance or PPO authorization follows.
 
+## Separately approved and completed r2
+
+Root subsequently reviewed and committed the fixed K4 r1–r4 name extension
+(`37d9b64`), with 30 canonical CPU tests passing in 0.04 seconds. The extension
+does not authorize repeated execution automatically. Root reports one separately
+approved r2 execution, session 20657, exit 0, using helper
+`3ca107dd1ddb2ac70a457f752088b423bf96f438f0b4f963d482929625d77ed9`.
+
+Independent saved-receipt review found 90 records: begin, 44 matching
+file-begin/advised pairs, and complete. All 44 paths and hashes match the pinned
+audit; every file's before/hash/advice stat records agree. The receipt binds K4
+and the exact r2 output. No HDF reread or additional advice was performed by
+the reviewer. Receipt SHA-256:
+`ea9ac02c38c8441c1afaeee4f610d44aeed13fe10cb72b6ac67343dc47134cf7`.
+
+Execution ran from 2026-10-05 22:14:33.939901 UTC to 22:14:44.171206 UTC
+(2026-10-06 06:14:33–06:14:44 Asia/Shanghai), elapsed 10.231633539 seconds.
+Recorded minima were MemFree **21.483437 GiB** and MemAvailable
+**106.142365 GiB**, above all applicable floors; completion free memory was
+24.287720 GiB. The growing host-watch snapshot through timestamp 1791238512
+(22:15:12 UTC), 423 samples, had minima MemFree **21.342857 GiB** and
+MemAvailable **105.867161 GiB**. Its snapshot SHA-256 was
+`5c2210fee8a9646a83ae62a0a2566e9536692d10cfa777958eb2bc35827a0ebc`.
+
+The original r1 receipt retains SHA `115ab435a28d0b23d8e1a8fea8823467b15cad00ec99956231ca5c38a1a374a6`;
+r3 and r4 receipts were absent at review. The same training invocation
+`eee5a6fbad40411cac2f05e00520b079`, PID 941365, remained `activating/start`.
+This establishes completed r2 maintenance only, not terminal training success,
+scientific admission, or permission for r3/r4.
+
 ## Separate r2 preparation and authorization
 
 Subsequent live K4 observations showed MemFree declining again to about21.7GiB
