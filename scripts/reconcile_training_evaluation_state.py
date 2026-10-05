@@ -87,6 +87,15 @@ def file_sha256(path: Path) -> str:
 
 def plan_recovery(sample: dict, ledger: dict, approved_actions: dict) -> dict:
     """Return a deterministic decision without executing external work."""
+    if sample.get("current_authority") == "p013_formal":
+        task = sample.get("authority_tasks", {}).get("p013_formal", {})
+        return {
+            "decision": ("NO_ACTION_AUTHORITY_RUNNING" if task.get("state") == "RUNNING"
+                         else "NEEDS_AGENT_ANALYSIS"),
+            "reason": "P013 observation only; terminal/identity/failure states require Lead review; no automatic retry",
+            "alerts": sample.get("alerts", []),
+            "resources": sample.get("resources", {}),
+        }
     if sample.get("stage_complete"):
         return {"decision": "NO_ACTION_STAGE_COMPLETE"}
     tasks = sample.get("authority_tasks", {})

@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import json
 import re
+import shlex
 import subprocess
 import tempfile
 from datetime import UTC, datetime
@@ -213,6 +214,11 @@ PAIRED_PROTOCOL_SHA256 = {
 }
 REVIEWED_MAIN_RESUME_ACTION = "main-posteval-resume-78d827f"
 PRODUCTION_AUTO_RECOVERY_ENABLED = True
+P013_UNIT = "fluid-control-fcp013-posteval-r2-20261005.service"
+P013_INVOCATION = "7235b2f06282435a89b84964e384c60f"
+P013_APPROVAL = Path("docs/FC_P013_FORMAL_EVALUATION_APPROVAL_20261005.json")
+P013_APPROVAL_SHA256 = "7216f471ebfd205dfcdff51a393a97f48726a25a20135da9bd9875cc6511d120"
+P013_LAUNCHER = "artifacts/p013_posteval_chain_f95048c3a786_immutable/scripts/run_fcp008_posteval_spark.sh"
 
 
 def classify_authority_task(state: dict, complete: bool, *, allow_resume: bool) -> tuple[str, str | None]:
@@ -676,7 +682,7 @@ def most_specific_error(lines: list[str]) -> str | None:
 def unit_state(unit: str) -> dict:
     properties = (
         "ActiveState,SubState,Result,ExecMainStatus,ExecMainStartTimestamp,"
-        "ExecMainExitTimestamp,MainPID"
+        "ExecMainExitTimestamp,MainPID,InvocationID,ExecStart"
     )
     result = _command(
         ["systemctl", "--user", "show", unit, f"--property={properties}"]
@@ -738,6 +744,8 @@ def unit_state(unit: str) -> dict:
         "result": values.get("Result", "unknown"),
         "exec_main_status": values.get("ExecMainStatus", "unknown"),
         "main_pid": main_pid,
+        "invocation_id": values.get("InvocationID", ""),
+        "exec_start": values.get("ExecStart", ""),
         "training_process_pids": training_process_pids,
         "posteval_process_pids": posteval_process_pids,
         "started_at": values.get("ExecMainStartTimestamp") or None,
@@ -1118,7 +1126,7 @@ def paired_training_progress(repo: Path) -> dict:
     }
 
 
-def build_sample(
+def _build_legacy_sample(
     repo: Path,
     previous: dict | None,
     units: dict[str, dict],
@@ -2114,6 +2122,65 @@ def build_sample(
     }
 
 
+def p013_authority(repo: Path, state: dict) -> dict:
+    """Observe only the approved invocation; never authorize an automatic retry."""
+    issues = []
+    approval = repo / P013_APPROVAL
+    if not approval.is_file() or file_sha256(approval) != P013_APPROVAL_SHA256:
+        issues.append("formal approval SHA differs or is missing")
+    if state.get("invocation_id") != P013_INVOCATION:
+        issues.append("formal invocation differs or is missing")
+    match = re.search(r"argv\[\]=(.*?) ;", state.get("exec_start", ""))
+    try:
+        argv = shlex.split(match.group(1)) if match else []
+    except ValueError:
+        argv = []
+    if ("FCP_POSTEVAL_PROFILE=p013" not in argv or
+            argv[-2:] != [str(repo / P013_LAUNCHER), "--execute"]):
+        issues.append("formal ExecStart profile/immutable launcher/execute differs")
+    active, sub = state.get("active_state"), state.get("sub_state")
+    if issues or active == "failed" or state.get("result") not in ("success", None):
+        classification = "NEEDS_AGENT_ANALYSIS"
+    elif active == "active" and sub == "running" and state.get("main_pid", 0) > 0:
+        classification = "RUNNING"
+    else:
+        classification = "TERMINAL_REQUIRES_INDEPENDENT_REVIEW"
+    return {"authority_unit": P013_UNIT, "invocation_id": P013_INVOCATION,
+            "state": classification, "stage_complete": False,
+            "approved_action_id": None, "identity_issues": issues,
+            "scientific_admission": False}
+
+
+def build_sample(repo, previous, units, resources, now):
+    legacy = _build_legacy_sample(repo, previous, units, resources, now)
+    if not (repo / P013_APPROVAL).exists():
+        return legacy
+    task = p013_authority(repo, units.get(P013_UNIT, {}))
+    sample = dict(legacy)
+    # Snapshot this sample only: never recursively embed previous samples.
+    sample["historical_legacy_sample"] = dict(legacy)
+    sample.update(status="FC_P013_FORMAL_" + task["state"], stage_complete=False,
+                  workflow_pending=True, authority_tasks={"p013_formal": task},
+                  active_units=[P013_UNIT] if task["state"] == "RUNNING" else [],
+                  current_authority="p013_formal")
+    historical_idle_alerts = {
+        "PAIRED_POSTEVAL_APPROVED_WITH_NO_RUNNING_UNIT_FOR_300_SECONDS",
+        "D015_COMPLETE_CALIBRATION_ENGINEERING_WITH_NO_RUNNING_TASK_FOR_300_SECONDS",
+        "D015_COMPLETE_AWAITING_CALIBRATION_CONTRACT_WITH_NO_RUNNING_TASK_FOR_300_SECONDS",
+        "FC_P003C_REJECTED_D015_IMPLEMENTATION_WITH_NO_RUNNING_TASK_FOR_300_SECONDS",
+        "TRAIN16_PENDING_WITH_NO_RUNNING_UNIT_FOR_300_SECONDS",
+        "TRAIN16_REVIEWED_RECOVERY_PENDING",
+    }
+    sample["alerts"] = [a for a in legacy["alerts"] if a not in historical_idle_alerts]
+    if task["state"] != "RUNNING":
+        sample["alerts"].append("FC_P013_FORMAL_" + task["state"])
+    sample["blocker_reasons"] = list(legacy["blocker_reasons"]) + task["identity_issues"]
+    if task["state"] == "RUNNING":
+        sample["no_running_since_utc"] = None
+        sample["no_running_duration_seconds"] = 0
+    return sample
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parent.parent)
@@ -2129,6 +2196,8 @@ def main() -> None:
         output = repo / output
     previous = read_json(output / "latest.json", None)
     units = {name: unit_state(name) for name in discover_related_units()}
+    if (repo / P013_APPROVAL).exists():
+        units[P013_UNIT] = unit_state(P013_UNIT)
     units[WORKER_AUTHORITY_UNIT] = worker_unit_state(WORKER_AUTHORITY_UNIT)
     units[PAIRED_LAMBDA10_POSTEVAL_UNIT] = worker_unit_state(
         PAIRED_LAMBDA10_POSTEVAL_UNIT, user_scope=False
