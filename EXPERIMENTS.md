@@ -1,5 +1,14 @@
 # Experiment ledger
 
+## FC-E036 — P026 resource terminal audit passed, engineering only
+
+Independent result/provenance/precision/parent metadata checks complete;
+full report docs/FC_P026_RESOURCE_TERMINAL_REVIEW_20261005.md. Both observed host
+floors exceed20GiB, guard/container0. Initial saved predictions and objectives
+exactlyequal K1/K4; singlewarmwindow only. No newscientificaccuracy, optimizer,
+candidate or control result. Officialsave/load CPU fixture and formal caller
+integration are next; original physical and prediction requirements remain.
+
 ## P026 no-update production-size GPU resource check — terminal, audit pending
 
 Actual invocation8667f3c9c82146d6ab861d634c460107 exitedsuccess/PID0; sourceee13932,
