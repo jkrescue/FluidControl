@@ -40,9 +40,10 @@ The two environments call the same `canonical_joint_v1` cost and use the same
 6.15-D/U trailing-window formula, but their reset histories differ:
 
 - `TandemSurrogateFlow.reset()` clears its force history and inserts only the
-  frame-0 force. Its canonical window is not ready for roughly the first 61
-  decisions of a 100-step episode, so the physical drag/lift gate terms are
-  zero during that warm-up; only action and rate costs remain.
+  frame-0 force. The canonical point-as-interval helper is not ready for the
+  first 60 decisions and becomes ready after decision 61 (62 samples spanning
+  6.1 D/U plus one 0.1-D/U sample interval). The physical drag/lift gate terms
+  are zero during that warm-up; only action and rate costs remain.
 - `DirectOpenFOAMFlow.reset()` requires 62 real, causal 0.1-D/U force samples
   ending at the restart. Its window is ready before the first controlled step.
 
