@@ -1,4 +1,4 @@
-"""Strict identity check for the approved FC-P008 epoch-zero calibration."""
+"""Strict identity checks for approved force-row epoch-zero calibrations."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from pathlib import Path
 
 
 FC_P008_STATUS = "FC_P008_TRAIN_ONLY_FORCE_ROW_CANDIDATE"
+FC_P009_STATUS = "FC_P009_TRAIN_ONLY_JOINT_FORCE_ROW_CANDIDATE"
 
 
 def _sha256(path: Path) -> str:
@@ -25,8 +26,9 @@ def validate_calibrated_epoch_zero(
     allow: bool = False,
     expected_model_sha256: str | None = None,
     expected_state_sha256: str | None = None,
+    expected_kind: str = FC_P008_STATUS,
 ) -> dict:
-    """Accept epoch zero only for the exact official FC-P008 checkpoint pair.
+    """Accept epoch zero only for an exact approved official checkpoint pair.
 
     PhysicsNeMo returns ``0`` both for a valid checkpoint saved with epoch zero
     and for a missing training state. This function removes that ambiguity.
@@ -57,8 +59,10 @@ def validate_calibrated_epoch_zero(
     if not isinstance(payload, dict) or set(payload) != {"metadata"}:
         raise ValueError("calibrated training-state payload differs")
     metadata = payload["metadata"]
+    if expected_kind not in {FC_P008_STATUS, FC_P009_STATUS}:
+        raise ValueError("calibrated checkpoint kind is unsupported")
     required = {
-        "status": FC_P008_STATUS,
+        "status": expected_kind,
         "candidate_checkpoint_epoch": 0,
         "parent_checkpoint_epoch": 2,
         "calibration_generation": 1,
@@ -68,7 +72,15 @@ def validate_calibrated_epoch_zero(
     }
     if not isinstance(metadata, dict) or any(metadata.get(key) != value for key, value in required.items()):
         raise ValueError("calibrated training-state metadata differs")
-    return {
+    if expected_kind == FC_P009_STATUS and (
+        metadata.get("alpha") != 0.0
+        or metadata.get("domain_mix")
+        != {"free_ar": 0.5, "matched_weight_h1": 0.5}
+        or metadata.get("calibration_fit_performed") is not True
+        or metadata.get("optimizer_training_performed") is not False
+    ):
+        raise ValueError("FC-P009 calibrated metadata differs")
+    result = {
         "checkpoint_epoch": 0,
         "calibrated_epoch_zero": True,
         "checkpoint_model_file": models[0].name,
@@ -78,3 +90,6 @@ def validate_calibrated_epoch_zero(
         "calibration_generation": 1,
         "parent_checkpoint_epoch": 2,
     }
+    if expected_kind == FC_P009_STATUS:
+        result["candidate_kind"] = expected_kind
+    return result

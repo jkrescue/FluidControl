@@ -8,6 +8,8 @@ import torch
 
 from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
 
+P009_KIND = "FC_P009_TRAIN_ONLY_JOINT_FORCE_ROW_CANDIDATE"
+
 
 ROOT = Path(__file__).parents[1]
 
@@ -114,3 +116,48 @@ def test_existing_auditors_directly_validate_epoch_zero_identity(tmp_path):
     assert full_result["calibrated_epoch_zero"] is True
     with pytest.raises(ValueError, match="not explicitly allowed"):
         dev.validate_checkpoint({"checkpoint_epoch": 0}, tmp_path)
+
+
+def test_epoch_zero_accepts_only_exact_p009_joint_metadata(tmp_path):
+    model, state = checkpoint(
+        tmp_path,
+        status=P009_KIND,
+        alpha=0.0,
+        domain_mix={"free_ar": 0.5, "matched_weight_h1": 0.5},
+        calibration_fit_performed=True,
+        optimizer_training_performed=False,
+    )
+    result = validate_calibrated_epoch_zero(
+        tmp_path, 0, expected_kind=P009_KIND, **kwargs(model, state)
+    )
+    assert result["candidate_kind"] == P009_KIND
+    payload = torch.load(state, map_location="cpu", weights_only=False)
+    payload["metadata"]["domain_mix"]["free_ar"] = 0.6
+    torch.save(payload, state)
+    with pytest.raises(ValueError, match="P009 calibrated metadata"):
+        validate_calibrated_epoch_zero(
+            tmp_path,
+            0,
+            expected_kind=P009_KIND,
+            allow=True,
+            expected_model_sha256=sha(model),
+            expected_state_sha256=sha(state),
+        )
+
+
+@pytest.mark.parametrize(
+    "updates,expected_kind",
+    [
+        ({}, "UNKNOWN_KIND"),
+        ({}, P009_KIND),
+        ({"status": P009_KIND, "alpha": 1e-6, "domain_mix": {"free_ar": 0.5, "matched_weight_h1": 0.5}, "calibration_fit_performed": True, "optimizer_training_performed": False}, P009_KIND),
+        ({"status": P009_KIND, "alpha": 0.0, "domain_mix": {"free_ar": 0.4, "matched_weight_h1": 0.6}, "calibration_fit_performed": True, "optimizer_training_performed": False}, P009_KIND),
+        ({"status": P009_KIND, "alpha": 0.0, "domain_mix": {"free_ar": 0.5, "matched_weight_h1": 0.5}, "calibration_fit_performed": True, "optimizer_training_performed": True}, P009_KIND),
+    ],
+)
+def test_epoch_zero_rejects_wrong_p009_kind_or_metadata(tmp_path, updates, expected_kind):
+    model, state = checkpoint(tmp_path, **updates)
+    with pytest.raises(ValueError):
+        validate_calibrated_epoch_zero(
+            tmp_path, 0, expected_kind=expected_kind, **kwargs(model, state)
+        )
