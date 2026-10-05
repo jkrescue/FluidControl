@@ -1,5 +1,20 @@
 # Experiment ledger
 
+## P021 engineering prerequisite completed; P022 scientific comparison pending
+
+P021 r2 actual full-size100-step forward/backward passed independent engineering
+review; result SHA `975fc40bbb88d5d0ab3d239ee0ce994bc0635aabcad9b7d74568bf73f1a8ce7a`.
+Each zero/current-force arm100forward+100recompute,28finitegradients, no optimizer
+or changed parameters. Minimum external MemFree28.595875GiB; source and recovery
+records in `docs/FC_P021_RESOURCE_TERMINAL_REVIEW_20261005.md`. First startup failure
+is preserved, not omitted from the record. This is not an accuracy experiment.
+
+Next P022 CPU preparation is approved under
+`docs/FC_P022_CAUSAL_CONDITIONING_PLAN_20261005.md`: six fixed train windows,
+16updates/arm, same original objective and fresh AdamW, only zero versus causal
+current-force inputs differ. Full-gradient100-step recurrence, no saved candidate,
+no validation/frozen/PPO. GPU execution not yet approved; no results to report.
+
 ## FC-E031 — Six-window causal force-input audit (2026-10-05)
 
 Descriptive CPU data/source audit only, no model training. Actual persisted evidence is `artifacts/causal_force_input_audit_20261005/{persistence.json,timestamp_audit.json,official_source.json}`. Primary timestamp SHA `72d9117922ef5dbbd3b9f9a5ae193d01c19ac44a39aea30b4dbe5eaf3189d4e2`. Independent in-memory recomputation from actual raw files matches the full timestamp result, including274 source/config hashes. All606 endpoints per cylinder uniquely match nominal time exactly; restart-source fallback occurs only selected initial frames975/1077/1233.

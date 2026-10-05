@@ -1,5 +1,21 @@
 # Research roadmap and prioritized backlog
 
+## 2026-10-05 16:42 UTC — P021 resource check complete; P022 preparation
+
+P021 real-size engineering prerequisite is complete and independently reviewed:
+full100-step gradients, unchanged initial model, nooptimizer, both20GiB floors.
+See `FC_P021_RESOURCE_TERMINAL_REVIEW_20261005.md`. Do not repeat this completed
+probe or interpret it as learned-feedback stability or accuracy improvement.
+
+Current priority is implement/test the bounded zero-input versus exact current-
+force input comparison in `FC_P022_CAUSAL_CONDITIONING_PLAN_20261005.md`, followed
+by separate Lead execution review. If locally supported, extend exact-time input
+provenance to all train trajectories and prepare one full-training candidate;
+if unsupported, analyze measured per-window errors before another intervention.
+Formal validation, compatible new HydroGym/PPO training and real-CFD feedback
+remain required, not completed. Preserve existing successful CFD-only control.
+User-authorized mean-load review at17:32UTC is distinct from prediction accuracy.
+
 ## 当前状态：FC-E031因果力输入审计完成，P021仅CPU工程
 
 六窗606个raw端点可构建显式因果输入；base/train8旧HDF的200/505帧含真实微小未来插值，train16精确。旧H1 HDF-lag persistence不是严格因果，六初始力精确故AR initial baseline不受影响。完整审计与274来源SHA独立重算一致，报告`CAUSAL_FORCE_TIMESTAMP_AUDIT_20261005.md`，主SHA`72d9117922ef5dbbd3b9f9a5ae193d01c19ac44a39aea30b4dbe5eaf3189d4e2`。
