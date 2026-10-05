@@ -16,7 +16,7 @@ CFD真值 → 代理预测 → 控制决策 → 在线CFD反馈。分开管理�
 | P1 data-space analysis | Re、alpha、L/D、相位和动作时间历程覆盖 | 区分已见参数、未见相位、未见动作历程、参数外推；同初态配对成立 |
 | P2 surrogate accuracy | u/v/p及前后受力固定协议基线 | 明确各动作/相位/时间范围误差，不以单个平均数掩盖失败 |
 | P3 rollout stability | H1/10/50/100时序误差、相位/幅值、必要物理诊断 | 有限输出与准确预测分别判定；不把H100外推为800步稳定 |
-| P4 control-oriented prediction | FC-P010已显示固定线性rear-Cl头的H1/free-AR权衡；FC-P011 CPU与双scope resource probe通过，完整训练已批准待真实启动 | 用同训练协议的head-only/decoder-tail对照检验最后decoder表征范围；工程通过不等于科学PASS，终态仍须另行批准完整原formal |
+| P4 control-oriented prediction | FC-P010已显示固定线性rear-Cl头的H1/free-AR权衡；FC-P011 head-only/decoder-tail两臂已真实运行 | 用同训练协议的两臂对照检验最后decoder表征范围；训练完成不等于科学PASS，终态仍须另行批准完整原formal |
 | P5 interpretable control baseline | 条件性MPC/有限动作搜索对照 | 代理准入后才执行；相同物理目标、动作约束和真实CFD对照；不强制推翻PPO |
 | P6 RL integration | 绑定合格新FNO重新训练PPO | 环境/模型/归一化/策略SHA对应，训练及独立评估无数值异常 |
 | P7 real-CFD closed loop | 冻结策略、配对OpenFOAM反馈验证 | 满足原物理指标；再逐步增加未参与开发的测试与多seed证据 |
@@ -33,7 +33,7 @@ P5不是“已有PPO必须作废”的依赖；P4不通过时MPC和surrogate PPO
 | FC-P003B / COMPLETE — 干预未获支持 | 动态动作/零动作同初态配对监督，比常值动作配对更适合控制相关预测 | 两epoch、SHA回传和完整同协议后评估已完成。端点组件通过，但force-window仅2/6 zero分支通过；四个旋转分支rear-Cl′ RMS误差比FC-P003仅降2.53--3.16%，仍约为限值5.9倍。true-state H1旋转分支rear-Cl MAE仍为0.156--0.192 | 保留FC-E012负结果；不启动代理PPO，不放松门槛 |
 | FC-P003C / COMPLETE — 干预未获支持 | 将配对窗口统计项替换为true-state每端点action-minus-zero四力监督，可直接改善一步动作-受力映射 | 固定两epoch训练和完整同协议后评估已完成；endpoint组件通过，但force-window仍仅2/6 zero分支通过，四个旋转分支Cl′ RMS误差相对FC-P003B均值约恶化1.37%，development FAIL | 保留FC-E013负结果；PPO继续阻断；不以技术probe或endpoint PASS替代完整准入 |
 | D015 / COMPLETE — FC-P008与FC-P009 DEVELOPMENT FAIL | FC-P008原formal联合window仅1/6；FC-P009固定50/50共享头正式候选恢复端点Cd/动作与多数mean-Cl，但force-window仍仅两个zero分支通过（2/6），均不准入PPO | FC-P009 receipt `ac5c0dd0…e231c`；四旋转rear-Cl′ RMS误差`0.06750/0.12501/0.07045/0.07987`，固定上限约`0.0294`。field与C不变，frozen/PPO均未访问。后续P010尾窗监督在free-AR小幅改善但H1多数相位退化，且五次fit均未在200次预算内达到梯度容差 | 拒绝继续固定线性头扫参；保留原门槛，不把endpoint或train-cache改善当闭环准入 |
-| FC-P011 / FULL TRAINING APPROVED — AWAITING LIVE EVIDENCE | 在相同继续训练和受力loss下，额外解冻现有decoder最后hidden linear层比只调rear-Cl row更能改善控制相关表征 | CPU code/data preflight已通过；两臂H100 resource probe PASS且模型tensor未变。完整训练approval `a142578`，两臂同P009亲本、同1368个train-only窗口/更新、同顺序和终态协议 | 仅A→B解释scope；真实unit/PID出现前不写RUNNING。训练终态不自动授权formal/PPO，不按固定train诊断挑checkpoint |
+| FC-P011 / FULL TRAINING RUNNING | 在相同继续训练和受力loss下，额外解冻现有decoder最后hidden linear层比只调rear-Cl row更能改善控制相关表征 | Main head-only与Worker decoder-tail权威unit/PID及finite同序step记录已核；两臂同P009亲本、同1368个train-only窗口/更新、同顺序和终态协议 | 仅A→B解释scope；不按固定train诊断挑checkpoint。formal身份适配仅获CPU准备授权，formal执行/PPO均未授权 |
 | FC-P004 / GATED | 合格代理上的短时域显式动作规划可提供解释性控制对照 | 可选MPC候选序列受相同动作约束，在真实CFD配对评价；预先规定时域和计算预算 | 用于区分代理/控制器问题，不因为MPC可解释就视为安全可靠 |
 | FC-P005 / GATED | 合格新代理支持学到有物理收益的PPO策略 | 新policy仅在准确绑定的FNO中训练，随后真实CFD配对；指标沿用原标准 | 通过后才能主张surrogate-assisted闭环，而不是CFD-only成果 |
 | FC-P006 / LATER | 收益在未参与开发的样本/随机种子上可重复 | 固定候选后开展冻结集/新独立样本、多seed，报告区间及失效 | 扩大或收缩稳健性结论；反复开发用的validation不当最终test |
