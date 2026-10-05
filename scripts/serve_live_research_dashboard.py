@@ -339,13 +339,14 @@ function renderActiveExperiment(d){
  if(grouped?.verified===true){
   const age=Date.now()-Date.parse(grouped.sampled_at_utc||'');
   const fresh=Number.isFinite(age)&&age>=0&&age<60000;
-  const title=!fresh?'当前采样已过期':grouped.running?'八窗口梯度累积 · 训练进行中':'八窗口训练进程未运行 · 结果待核';
-  $('lead-now').textContent=title+'。上一模型未通过升力要求，本轮检验跨窗口平均梯度能否改善受力预测。';
+  const evaluation=grouped.evaluation;
+  const title=!fresh?'当前采样已过期':evaluation?.verified?(evaluation.running?'训练已完成 · 完整精度评估中':'精度评估进程已结束 · 结论待核'):grouped.running?'八窗口梯度累积 · 训练进行中':'八窗口训练进程未运行 · 结果待核';
+  $('lead-now').textContent=title+'。检查流场、阻力与升力预测是否满足控制要求；尚无本轮闭环减阻结论。';
   const card=document.createElement('div');card.className='card';
   const heading=document.createElement('h3');heading.textContent=title;card.appendChild(heading);
   const progress=document.createElement('p');progress.textContent='已处理 '+grouped.consumed_windows+' / 1368 个流动窗口；完成 '+grouped.updates+' / 171 次参数更新。每八个窗口的梯度取平均，再更新模型一次。';card.appendChild(progress);
   const detail=document.createElement('p');detail.textContent='官方 FNO、真实 CFD 数据和损失函数不变，原流场预测模型保持冻结。固定六个训练窗口在训练前、处理中和结束时重复检查；不挑选中间最好模型。';card.appendChild(detail);
-  const note=document.createElement('p');note.textContent='日志距今 '+num(grouped.log_age_seconds,0)+' 秒。训练完成后仍须完整精度评估，合格后才训练新 PPO 并开展真实 CFD 闭环。当前尚无本轮减阻结论；下方流场图片仍为已标注的历史结果。';card.appendChild(note);
+  const note=document.createElement('p');note.textContent=evaluation?.verified?'模型保存及官方双模型重载已核验。评估范围包括 1、10、50、100 步预测、动态动作轨迹及六个受力时间窗口；全部通过后才训练兼容的新 PPO，再用真实 CFD 验证。下方流场图片仍为已标注的历史结果。':'训练日志距今 '+num(grouped.log_age_seconds,0)+' 秒。训练完成后仍须完整精度评估，合格后才训练新 PPO 并开展真实 CFD 闭环。下方流场图片仍为已标注的历史结果。';card.appendChild(note);
   $('lead-models').prepend(card);$('train16-formal-progress').textContent=title;
   $('train16-formal-detail').textContent=progress.textContent+' 上一模型正式受力窗口联合通过 0/6，本轮不得以训练损失代替验收。';
   return;
@@ -1068,6 +1069,38 @@ def _parse_fcp015_live(output: str, log: str) -> dict:
             "updates": updates, "consumed_windows": updates * 8, "admission": False}
 
 
+def _parse_fcp015_posteval(output: str) -> dict:
+    fields = dict(line.split("=", 1) for line in output.splitlines() if "=" in line)
+    bound = (fields.get("InvocationID") == "c41e61fcaa5f49e3be9e0092c1e19bc3"
+             and "fcp015_formal_supervisor_bf3668d852f8_immutable/supervise_fcp015_formal.py" in fields.get("ExecStart", ""))
+    try:
+        pid = int(fields.get("MainPID", "0"))
+    except ValueError:
+        return {"verified": False}
+    if not bound:
+        return {"verified": False}
+    return {"verified": True, "running": fields.get("ActiveState") == "active"
+            and fields.get("SubState") == "running" and pid > 0, "admission": False}
+
+
+def _fcp015_posteval(root: Path) -> dict:
+    base = root / "artifacts/fcp015_window_accumulation_training_20261005"
+    try:
+        for path, expected in {
+            base / "completion_receipt.json": "9c27e5ebe104a8988f274b9c3e8cd0d6728838c1d6aa34daff9d25d310605fdf",
+            base / "dual_reload_receipt.json": "925a7dc0c1a1be0157afd5838018b1a3bccd74f0083b2d70718e8a65e8c2b18c",
+            root / "docs/FC_P015_FORMAL_EVALUATION_APPROVAL_20261005.json": "991d3e4e5d5ac439824b9f8cfcfd1327be11460f79901053e57c83919df7730e",
+        }.items():
+            if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+                return {"verified": False}
+        state = subprocess.run(["systemctl", "--user", "show", "fluid-control-fcp015-posteval-20261005.service",
+                                "-p", "ActiveState", "-p", "SubState", "-p", "MainPID", "-p", "InvocationID", "-p", "ExecStart"],
+                               capture_output=True, text=True, timeout=2, check=False)
+        return _parse_fcp015_posteval(state.stdout) if state.returncode == 0 else {"verified": False}
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return {"verified": False}
+
+
 def _fcp015_training(root: Path) -> dict:
     base = root / "artifacts/fcp015_window_accumulation_training_20261005"
     try:
@@ -1084,7 +1117,7 @@ def _fcp015_training(root: Path) -> dict:
         log = log_path.read_bytes()[-262144:].decode(errors="replace")
         return {"verified": True, "sampled_at_utc": datetime.now(UTC).isoformat(),
                 "log_age_seconds": max(0.0, time.time() - log_path.stat().st_mtime),
-                **_parse_fcp015_live(state.stdout, log)}
+                **_parse_fcp015_live(state.stdout, log), "evaluation": _fcp015_posteval(root)}
     except (OSError, subprocess.SubprocessError, ValueError):
         return {"verified": False}
 
