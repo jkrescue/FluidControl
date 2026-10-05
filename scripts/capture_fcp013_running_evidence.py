@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Capture live P013 execution evidence, not a retrospective launch approval."""
 import hashlib
+import argparse
 import json
 import subprocess
 from datetime import datetime, timezone
@@ -18,17 +19,27 @@ def digest(path):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--recovery-r2', action='store_true')
+    args = parser.parse_args()
+    global OUTPUT
+    suffix = '-r2' if args.recovery_r2 else ''
+    launcher = 'run_fcp013_training_recovery_spark.sh' if args.recovery_r2 else 'run_fcp013_training_spark.sh'
+    if args.recovery_r2:
+        OUTPUT = ROOT / 'artifacts/fcp013_independent_force_fno_training_r2_20261005'
+        if digest(OUTPUT / 'recovery_approval.md') != '6579dfbf97d6a7fbe6b74fa537addc52fe7b4cf266368772ce52965d9d973095':
+            raise RuntimeError('recovery approval differs')
     inspect = json.loads(subprocess.check_output(
-        ['docker', 'inspect', 'fcp013-independent-force-training-20261005'], text=True))[0]
+        ['docker', 'inspect', f'fcp013-independent-force-training{suffix}-20261005'], text=True))[0]
     unit = subprocess.check_output(['systemctl', '--user', 'show',
-        'fluid-control-fcp013-training-20261005.service', '-p', 'MainPID', '-p', 'ActiveState',
+        f'fluid-control-fcp013-training{suffix}-20261005.service', '-p', 'MainPID', '-p', 'ActiveState',
         '-p', 'InvocationID', '-p', 'ExecStart'], text=True)
     fields = dict(line.split('=', 1) for line in unit.splitlines() if '=' in line)
     if inspect['Image'] != IMAGE or inspect['State']['Running'] is not True:
         raise RuntimeError('expected training container is not live')
     if fields.get('ActiveState') != 'active' or int(fields.get('MainPID', '0')) <= 0:
         raise RuntimeError('expected training unit is not live')
-    if 'run_fcp013_training_spark.sh' not in fields.get('ExecStart', ''):
+    if launcher not in fields.get('ExecStart', ''):
         raise RuntimeError('unit command differs')
     command = inspect['Config']['Cmd']
     if '--resource-probe' in command or 'scripts/train_fcp013_independent_force_fno.py' not in command:
@@ -70,6 +81,12 @@ def main():
         'source_sha256': source_hashes, 'approval_sha256': APPROVAL,
         'validation_or_frozen_mounted': False, 'training_complete': False,
     }
+    if args.recovery_r2:
+        actual_launcher = ROOT / 'artifacts/fcp013_recovery_launcher_20261005_immutable' / launcher
+        if digest(actual_launcher) != digest(OUTPUT / 'immutable_launcher.sh'):
+            raise RuntimeError('recovery launcher copy differs')
+        receipt.update(attempt=2, recovery_approval_sha256=digest(OUTPUT / 'recovery_approval.md'),
+                       executed_launcher_sha256=digest(actual_launcher))
     with (OUTPUT / 'running_execution_evidence.json').open('x') as stream:
         json.dump(receipt, stream, indent=2)
         stream.write('\n')
