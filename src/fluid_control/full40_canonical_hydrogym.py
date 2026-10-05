@@ -6,6 +6,7 @@ does not alter the historical Stage-C adapter and makes no real-CFD claim.
 
 from __future__ import annotations
 
+from collections import deque
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -37,6 +38,9 @@ class Full40CanonicalSurrogateFlow(TandemSurrogateFlow):
         shedding_period: float = DEFAULT_WINDOW_SECONDS,
         **kwargs,
     ) -> None:
+        # PDEBase.__init__ invokes reset virtually before the raw prehistory can
+        # be bound.  Only that construction-time reset may use the base path.
+        self._canonical_initializing = True
         super().__init__(
             reward_mode="legacy_rear",
             phase_baseline=None,
@@ -48,8 +52,53 @@ class Full40CanonicalSurrogateFlow(TandemSurrogateFlow):
             raise ValueError("full40 canonical PPO requires four-force 69D observations")
         if not np.isclose(self.MAX_CONTROL, ACTION_LIMIT, rtol=0.0, atol=1e-12):
             raise ValueError("full40 FNO action normalization must be exactly 0.75")
+        self.require_actual_causal_prehistory()
         self.reward_mode = "canonical_joint_v1"
         self.canonical_baseline = validate_baseline(canonical_baseline)
+        self._canonical_initializing = False
+        # FlowEnv snapshots the already-constructed flow without resetting it.
+        # Finish construction in the same window-ready state as every Gym reset.
+        self.reset()
+
+    def reset(self, q0: dict | None = None, t: float = 0.0) -> None:
+        if self._canonical_initializing:
+            super().reset(q0=q0, t=t)
+            return
+        if self._initial_reward_history is None:
+            raise RuntimeError("canonical PPO requires real causal force prehistory")
+        if not (
+            np.isclose(t, 0.0, rtol=0.0, atol=1e-12)
+            or np.isclose(t, self.initial_cfd_time, rtol=0.0, atol=1e-12)
+        ):
+            raise ValueError("canonical PPO reset time differs from restart")
+        if q0 is not None:
+            field = q0.get("field")
+            force = np.asarray(q0.get("force"), dtype=np.float32)
+            if (
+                not isinstance(field, torch.Tensor)
+                or not torch.equal(field.to(self.device), self.initial_state["field"])
+                or not np.isclose(
+                    float(q0.get("omega", np.nan)),
+                    float(self.initial_state["omega"]),
+                    rtol=0.0,
+                    atol=1e-8,
+                )
+                or force.shape != self.initial_state["force"].shape
+                or not np.array_equal(force, self.initial_state["force"])
+            ):
+                raise ValueError("causal force prehistory is valid only for initial q0")
+        super().reset(q0=q0, t=self.initial_cfd_time)
+        history = deque(
+            (timestamp, force.copy())
+            for timestamp, force in self._initial_reward_history
+        )
+        if (
+            len(history) != 62
+            or not np.isclose(history[-1][0], self.t, rtol=0.0, atol=1e-8)
+            or not np.array_equal(history[-1][1].astype(np.float32), self.force)
+        ):
+            raise AssertionError("canonical reset prehistory is incomplete")
+        self._reward_history = history
 
     def canonical_ledger(self) -> dict:
         times = np.asarray([row[0] for row in self._reward_history], dtype=np.float64)
@@ -141,6 +190,7 @@ def make_full40_canonical_env(
     baseline: Mapping[str, float | str],
     episode_steps: int,
     device: torch.device | str,
+    cases_root: Path | None = None,
 ):
     """Construct the official HydroGym FlowEnv around the fixed FNO stepper."""
     if split not in {"train", "validation"}:
@@ -157,6 +207,7 @@ def make_full40_canonical_env(
                 "device": device,
                 "checkpoint_epoch": checkpoint_epoch,
                 "canonical_baseline": baseline,
+                "cases_root": cases_root,
             },
             "solver": TandemFNOStepper,
             "solver_config": {"dt": CONTROL_DT},

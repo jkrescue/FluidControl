@@ -88,7 +88,7 @@ raw files and case metadata by SHA, and add tests that:
 
 1. surrogate and direct resets are window-ready with identical 62 timestamps
    and forces for a fixed source;
-2. a missing, duplicated, future, or non-finite sample is rejected;
+2. a missing, conflicting duplicate, future, or non-finite sample is rejected;
 3. the first-step canonical reward components match for the same force/action
    sequence; and
 4. no validation or frozen source is opened while constructing train PPO
@@ -112,3 +112,17 @@ Finally, the surrogate online reward uses 0.1-D/U endpoint samples over 6.15
 D/U, whereas the real-CFD final acceptance reads the dense 0.005 force history
 over the predeclared final 60 D/U. The latter is intentionally a higher-fidelity
 physical outcome evaluation, not the same statistic as the PPO reward.
+
+## CPU implementation approval
+
+Lead approved a narrowly scoped compatibility implementation and CPU tests.
+The canonical surrogate must run on the source restart's absolute CFD clock,
+atomically replace its one-point reset history with the verified 62 unique
+causal endpoints, and recreate that history from immutable values on every
+reset. An identical duplicate raw row may be merged exactly as in the direct
+CFD reader; a conflicting duplicate must fail closed. The last timestamp and
+four-force row must equal the current frame-0 state, and any different reset
+state or time must be rejected. The implementation must also bind the HDF5
+embedded case configuration and the raw force-file hashes. This approval is
+for CPU implementation and regression tests only; it does not authorize PPO,
+FNO training, CFD execution, or a change to any scientific gate.

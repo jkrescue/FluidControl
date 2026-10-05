@@ -29,12 +29,13 @@ PROJECT = Path(__file__).resolve().parents[1]
 CFD = PROJECT / "cfd" / "tandem_cylinders"
 CASES = CFD / "cases"
 sys.path.insert(0, str(CFD))
-from analyze_baseline import load_coefficients, log_health  # noqa: E402
+from analyze_baseline import log_health  # noqa: E402
 from make_expanded_control_dataset import replace_rear_patch  # noqa: E402
 from make_probe_feedback_case import substitute  # noqa: E402
 
 sys.path.insert(0, str(PROJECT / "src"))
 from fluid_control.openfoam_observation import total_drag_observation_at  # noqa: E402
+from fluid_control.openfoam_force_history import actual_causal_prehistory  # noqa: E402
 
 OPENFOAM_IMAGE = (
     "opencfd/openfoam-default@"
@@ -84,44 +85,6 @@ def latest_time(case: Path) -> float:
     return max(values)
 
 
-def force_rows(case: Path, object_name: str) -> dict[float, tuple[float, float]]:
-    paths = sorted(case.glob(f"postProcessing/{object_name}/*/coefficient.dat"))
-    if not paths:
-        raise FileNotFoundError(f"missing {object_name} force history in {case}")
-    rows: dict[float, tuple[float, float]] = {}
-    for path in paths:
-        for timestamp, cd, cl in load_coefficients(path):
-            key = round(timestamp, 8)
-            value = (cd, cl)
-            if key in rows and not np.allclose(rows[key], value, rtol=0.0, atol=1e-8):
-                raise ValueError(f"conflicting force restart sample at t={timestamp}")
-            rows[key] = value
-    return rows
-
-
-def actual_causal_prehistory(reference: Path, restart_time: float) -> tuple[list, list, dict]:
-    front = force_rows(reference, "forceFront")
-    rear = force_rows(reference, "forceRear")
-    # 62 uniform 0.1-D/U point samples cover 6.2 D/U under the canonical
-    # point-as-interval convention. Every sample is real and no later than t0.
-    times = [round(restart_time - 6.1 + CONTROL_DT * index, 8) for index in range(62)]
-    forces = []
-    for timestamp in times:
-        if timestamp not in front or timestamp not in rear:
-            raise FileNotFoundError(f"missing causal force sample at t={timestamp}")
-        forces.append([*front[timestamp], *rear[timestamp]])
-    if times[-1] > restart_time + 1e-8:
-        raise AssertionError("future force sample entered prehistory")
-    sources = {}
-    for object_name in ("forceFront", "forceRear"):
-        paths = sorted(reference.glob(f"postProcessing/{object_name}/*/coefficient.dat"))
-        sources[object_name] = [
-            {"path": str(path.relative_to(PROJECT)), "sha256": sha256(path)}
-            for path in paths
-        ]
-    return times, forces, sources
-
-
 class OpenFOAMWorker:
     def __init__(
         self,
@@ -157,7 +120,12 @@ class OpenFOAMWorker:
         if not math.isclose(float(config["source_restart_time"]), self.restart_time, abs_tol=1e-8):
             raise ValueError("source restart provenance mismatch")
         self.prehistory_times, self.prehistory_forces, self.prehistory_sources = (
-            actual_causal_prehistory(self.reference, self.restart_time)
+            actual_causal_prehistory(
+                self.reference,
+                self.restart_time,
+                provenance_root=PROJECT,
+                control_dt=CONTROL_DT,
+            )
         )
         self.initial_observation, self.initial_observation_sources = total_drag_observation_at(
             self.reference, self.restart_time, 0.0

@@ -18,6 +18,7 @@ import torch
 from hydrogym import PDEBase, TransientSolver
 
 from .openfoam_observation import observation_at, total_drag_observation_at
+from .openfoam_force_history import actual_causal_prehistory, sha256_file
 from .stage_c_objective import (
     stage_c_cost_components,
     stage_c_force_ledger,
@@ -49,6 +50,7 @@ class TandemSurrogateFlow(PDEBase):
         reward_mode: str = "legacy_rear",
         phase_baseline: Mapping[str, float | str] | None = None,
         shedding_period: float = 6.15,
+        cases_root: str | Path | None = None,
     ) -> None:
         self.data_root = Path(data_root).resolve()
         if split not in {"train", "validation", "test"}:
@@ -81,6 +83,14 @@ class TandemSurrogateFlow(PDEBase):
         self.phase_baseline = validate_stage_c_baseline(phase_baseline)
         if self.reward_mode == "stage_c_total_drag" and self.phase_baseline is None:
             raise ValueError("stage_c_total_drag requires an audited phase_baseline")
+        self.cases_root = (
+            Path(cases_root).resolve()
+            if cases_root is not None
+            else Path(__file__).resolve().parents[2]
+            / "cfd"
+            / "tandem_cylinders"
+            / "cases"
+        )
 
         manifest = json.loads((self.data_root / "manifest.json").read_text())
         stats = json.loads((self.data_root / "normalization.json").read_text())
@@ -143,12 +153,7 @@ class TandemSurrogateFlow(PDEBase):
             # The expanded CFD run starts at the copied t=80 state, but its
             # force function object first writes at t=80.005. The curated
             # frame-0 force is therefore a nearest-time sample, not t=80.
-            case_root = (
-                Path(__file__).resolve().parents[2]
-                / "cfd"
-                / "tandem_cylinders"
-                / "cases"
-            )
+            case_root = self.cases_root
             case_config = json.loads(
                 (case_root / case / "case_config.json").read_text(encoding="utf-8")
             )
@@ -199,6 +204,8 @@ class TandemSurrogateFlow(PDEBase):
         self.applied_delta = 0.0
         self.rate_limited = False
         self._reward_history: deque[tuple[float, np.ndarray]] = deque()
+        self._initial_reward_history: tuple[tuple[float, np.ndarray], ...] | None = None
+        self.initial_reward_history_sources: dict | None = None
         super().__init__()
 
     @property
@@ -243,6 +250,94 @@ class TandemSurrogateFlow(PDEBase):
         self.rate_limited = False
         self._reward_history.clear()
         self.record_reward_sample()
+
+    def require_actual_causal_prehistory(self) -> None:
+        """Bind this frame-0 state to its exact raw-CFD causal force history."""
+        if self.frame != 0:
+            raise ValueError("canonical PPO causal prehistory requires frame 0")
+        project = Path(__file__).resolve().parents[2]
+        cases = self.cases_root
+        case_config_path = (
+            cases / self.case_path.stem / "case_config.json"
+        ).resolve()
+        if not case_config_path.is_relative_to(cases) or not case_config_path.is_file():
+            raise ValueError("canonical PPO case config escapes cases root")
+        case_config = json.loads(case_config_path.read_text(encoding="utf-8"))
+        manifest = json.loads((self.data_root / "manifest.json").read_text())
+        split_entry = manifest.get("split_manifests", {}).get(self.split, {})
+        split_path = (self.data_root / str(split_entry.get("path", ""))).resolve()
+        if (
+            manifest.get("profile") != "matched_start_full40_v1"
+            or not split_path.is_relative_to(self.data_root)
+            or not split_path.is_file()
+            or split_entry.get("sha256") != sha256_file(split_path)
+        ):
+            raise ValueError("canonical PPO dataset manifest differs")
+        split_manifest = json.loads(split_path.read_text(encoding="utf-8"))
+        if (
+            split_manifest.get("split") != self.split
+            or self.case_path.stem not in split_manifest.get("cases", [])
+            or split_manifest.get("hdf5_sha256", {}).get(self.case_path.stem)
+            != sha256_file(self.case_path)
+        ):
+            raise ValueError("canonical PPO split/HDF5 manifest differs")
+        with h5py.File(self.case_path, "r") as handle:
+            if (
+                handle.attrs.get("case") != self.case_path.stem
+                or handle.attrs.get("split") != self.split
+            ):
+                raise ValueError("curated HDF5 case/split identity differs")
+            curated_config = json.loads(str(handle.attrs["config_json"]))
+        restart_time = float(case_config.get("source_restart_time", math.nan))
+        source_name = str(case_config.get("source_restart_case", ""))
+        source_case = (cases / source_name).resolve()
+        if (
+            case_config.get("case") != self.case_path.stem
+            or case_config.get("split") != self.split
+            or not math.isclose(restart_time, self.initial_cfd_time, abs_tol=1e-8)
+            or not source_name
+            or curated_config != case_config
+            or float(case_config.get("action_target", math.nan)) != 0.0
+            or not source_case.is_relative_to(cases)
+        ):
+            raise ValueError("canonical PPO restart provenance differs")
+        times, forces, sources = actual_causal_prehistory(
+            source_case,
+            restart_time,
+            provenance_root=project if cases.is_relative_to(project) else cases.parent,
+            control_dt=self.DEFAULT_DT,
+        )
+        values = np.asarray(forces, dtype=np.float64)
+        if values.shape != (62, 4) or not np.array_equal(
+            values[-1].astype(np.float32), self.initial_state["force"]
+        ):
+            raise ValueError("causal force history does not match frame-0 force")
+        absolute = np.asarray(times, dtype=np.float64)
+        if np.any(np.diff(absolute) <= 0.0) or not np.isclose(
+            absolute[-1], restart_time
+        ):
+            raise ValueError("causal force history clock differs")
+        expected_source_sha = case_config.get("source_force_sha256")
+        actual_source_sha = {
+            key: rows[0]["sha256"] if len(rows) == 1 else None
+            for key, rows in sources.items()
+        }
+        if expected_source_sha != actual_source_sha:
+            raise ValueError("causal force-history source SHA differs")
+        self._initial_reward_history = tuple(
+            (float(timestamp), force.copy())
+            for timestamp, force in zip(absolute, values, strict=True)
+        )
+        self.initial_reward_history_sources = {
+            "case_config": str(
+                case_config_path.relative_to(project)
+                if case_config_path.is_relative_to(project)
+                else case_config_path.relative_to(cases.parent)
+            ),
+            "source_restart_case": source_name,
+            "source_restart_time": restart_time,
+            "force_sources": sources,
+        }
 
     def save_checkpoint(self, filename: str) -> None:
         raise NotImplementedError("surrogate restart uses curated CFD HDF5 frames")
