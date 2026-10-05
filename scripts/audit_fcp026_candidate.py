@@ -46,6 +46,18 @@ def fields(actual, expected, label):
     equal({key: actual.get(key) for key in expected}, expected, label)
 
 
+def validate_approved_protocol(actual, expected):
+    """Accept only the approved clip norm's equivalent JSON integer spelling."""
+    require(isinstance(actual, dict), "approved protocol must be an object")
+    value = actual.get("gradient_clip_norm")
+    wanted = expected["gradient_clip_norm"]
+    require(type(value) in (int, float) and math.isfinite(value)
+            and value == wanted, "approved protocol gradient_clip_norm differs")
+    normalized = dict(actual)
+    normalized["gradient_clip_norm"] = wanted
+    equal(normalized, expected, "approved protocol")
+
+
 def number(value, label, minimum=0):
     require(type(value) in (int, float) and math.isfinite(value) and value >= minimum, label)
     return value
@@ -352,7 +364,7 @@ def validate_candidate(args):
     protocol_sha = trainer.canonical_sha(expected_protocol)
     checked(candidate/"training_protocol.json", protocol_sha)
     equal(read(candidate/"training_protocol.json"), expected_protocol, "effective protocol")
-    equal(approval["effective_protocol"], expected_protocol, "approved protocol")
+    validate_approved_protocol(approval["effective_protocol"], expected_protocol)
     require(approval["effective_protocol_sha256"] == protocol_sha, "approved protocol SHA")
     inv_path = repo/approval["inventory_receipt"]
     checked(inv_path, approval["inventory_receipt_sha256"])
