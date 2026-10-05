@@ -87,12 +87,13 @@ def file_sha256(path: Path) -> str:
 
 def plan_recovery(sample: dict, ledger: dict, approved_actions: dict) -> dict:
     """Return a deterministic decision without executing external work."""
-    if sample.get("current_authority") == "p013_formal":
-        task = sample.get("authority_tasks", {}).get("p013_formal", {})
+    current = sample.get("current_authority")
+    if current in ("p013_formal", "p015_training"):
+        task = sample.get("authority_tasks", {}).get(current, {})
         return {
             "decision": ("NO_ACTION_AUTHORITY_RUNNING" if task.get("state") == "RUNNING"
                          else "NEEDS_AGENT_ANALYSIS"),
-            "reason": "P013 observation only; terminal/identity/failure states require Lead review; no automatic retry",
+            "reason": f"{current} observation only; terminal/identity/failure states require Lead review; no automatic retry",
             "alerts": sample.get("alerts", []),
             "resources": sample.get("resources", {}),
         }

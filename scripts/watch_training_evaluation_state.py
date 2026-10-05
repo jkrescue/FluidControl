@@ -219,6 +219,11 @@ P013_INVOCATION = "7235b2f06282435a89b84964e384c60f"
 P013_APPROVAL = Path("docs/FC_P013_FORMAL_EVALUATION_APPROVAL_20261005.json")
 P013_APPROVAL_SHA256 = "7216f471ebfd205dfcdff51a393a97f48726a25a20135da9bd9875cc6511d120"
 P013_LAUNCHER = "artifacts/p013_posteval_chain_f95048c3a786_immutable/scripts/run_fcp008_posteval_spark.sh"
+P015_UNIT = "fluid-control-fcp015-window-accumulation-20261005.service"
+P015_INVOCATION = "7842742926284d0c94b0383163d5dc0b"
+P015_APPROVAL = Path("docs/FC_P015_EXECUTION_APPROVAL_20261005.json")
+P015_APPROVAL_SHA256 = "5f42527e4b032b0c3aff4180aa34a6570ec1fcb3945ec7302934d8386c4702d6"
+P015_LAUNCHER = "artifacts/fcp015_window_accumulation_source_20261005_immutable/scripts/run_fcp015_window_accumulation_spark.sh"
 
 
 def classify_authority_task(state: dict, complete: bool, *, allow_resume: bool) -> tuple[str, str | None]:
@@ -2151,18 +2156,56 @@ def p013_authority(repo: Path, state: dict) -> dict:
             "scientific_admission": False}
 
 
+def p015_authority(repo: Path, state: dict) -> dict:
+    """P015 is an explicitly bound training observation, never a retry authority."""
+    issues = []
+    approval = repo / P015_APPROVAL
+    if not approval.is_file() or file_sha256(approval) != P015_APPROVAL_SHA256:
+        issues.append("P015 training approval SHA differs or is missing")
+    if state.get("invocation_id") != P015_INVOCATION:
+        issues.append("P015 training invocation differs or is missing")
+    match = re.search(r"argv\[\]=(.*?) ;", state.get("exec_start", ""))
+    try:
+        argv = shlex.split(match.group(1)) if match else []
+    except ValueError:
+        argv = []
+    expected = ["/usr/bin/env", "FCP015_APPROVAL_SHA256=" + P015_APPROVAL_SHA256,
+                "/bin/bash", str(repo / P015_LAUNCHER), "--execute"]
+    if argv != expected:
+        issues.append("P015 ExecStart approval/immutable launcher/execute differs")
+    active, sub = state.get("active_state"), state.get("sub_state")
+    if (issues or active == "failed" or state.get("result") not in ("success", None)
+            or str(state.get("exec_main_status", "0")) != "0"):
+        classification = "NEEDS_AGENT_ANALYSIS"
+    elif active == "active" and sub == "running" and state.get("main_pid", 0) > 0:
+        classification = "RUNNING"
+    else:
+        classification = "TERMINAL_REQUIRES_INDEPENDENT_REVIEW"
+    return {"authority_unit": P015_UNIT, "invocation_id": P015_INVOCATION,
+            "state": classification, "stage_complete": False,
+            "approved_action_id": None, "identity_issues": issues,
+            "scientific_admission": False}
+
+
 def build_sample(repo, previous, units, resources, now):
     legacy = _build_legacy_sample(repo, previous, units, resources, now)
-    if not (repo / P013_APPROVAL).exists():
+    if (repo / P015_APPROVAL).exists():
+        task = p015_authority(repo, units.get(P015_UNIT, {}))
+        authority, prefix = "p015_training", "FC_P015_TRAINING_"
+    elif (repo / P013_APPROVAL).exists():
+        task = p013_authority(repo, units.get(P013_UNIT, {}))
+        authority, prefix = "p013_formal", "FC_P013_FORMAL_"
+    else:
         return legacy
-    task = p013_authority(repo, units.get(P013_UNIT, {}))
     sample = dict(legacy)
     # Snapshot this sample only: never recursively embed previous samples.
     sample["historical_legacy_sample"] = dict(legacy)
-    sample.update(status="FC_P013_FORMAL_" + task["state"], stage_complete=False,
-                  workflow_pending=True, authority_tasks={"p013_formal": task},
-                  active_units=[P013_UNIT] if task["state"] == "RUNNING" else [],
-                  current_authority="p013_formal")
+    sample.update(status=prefix + task["state"], stage_complete=False,
+                  workflow_pending=True, authority_tasks={authority: task},
+                  active_units=[task["authority_unit"]] if task["state"] == "RUNNING" else [],
+                  current_authority=authority)
+    if authority == "p015_training":
+        sample["historical_p013_authority"] = p013_authority(repo, units.get(P013_UNIT, {}))
     historical_idle_alerts = {
         "PAIRED_POSTEVAL_APPROVED_WITH_NO_RUNNING_UNIT_FOR_300_SECONDS",
         "D015_COMPLETE_CALIBRATION_ENGINEERING_WITH_NO_RUNNING_TASK_FOR_300_SECONDS",
@@ -2173,7 +2216,7 @@ def build_sample(repo, previous, units, resources, now):
     }
     sample["alerts"] = [a for a in legacy["alerts"] if a not in historical_idle_alerts]
     if task["state"] != "RUNNING":
-        sample["alerts"].append("FC_P013_FORMAL_" + task["state"])
+        sample["alerts"].append(prefix + task["state"])
     sample["blocker_reasons"] = list(legacy["blocker_reasons"]) + task["identity_issues"]
     if task["state"] == "RUNNING":
         sample["no_running_since_utc"] = None
@@ -2198,6 +2241,8 @@ def main() -> None:
     units = {name: unit_state(name) for name in discover_related_units()}
     if (repo / P013_APPROVAL).exists():
         units[P013_UNIT] = unit_state(P013_UNIT)
+    if (repo / P015_APPROVAL).exists():
+        units[P015_UNIT] = unit_state(P015_UNIT)
     units[WORKER_AUTHORITY_UNIT] = worker_unit_state(WORKER_AUTHORITY_UNIT)
     units[PAIRED_LAMBDA10_POSTEVAL_UNIT] = worker_unit_state(
         PAIRED_LAMBDA10_POSTEVAL_UNIT, user_scope=False
