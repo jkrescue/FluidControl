@@ -187,6 +187,13 @@ def validate_candidate(repo: Path, candidate: Path, scope: str) -> dict:
         receipt_hashes.get(name) != digest for name, digest in actual_hashes.items()
     ):
         raise ValueError("FC-P011 completion hashes differ")
+    candidate_root = candidate.resolve()
+    for relative, digest in receipt_hashes.items():
+        if not isinstance(relative, str) or not isinstance(digest, str):
+            raise TypeError("FC-P011 completion hash entry differs")
+        path = (candidate / relative).resolve()
+        if candidate_root not in path.parents or not path.is_file() or sha256(path) != digest:
+            raise ValueError("FC-P011 completion artifact table differs")
     if (
         completion.get("status") != COMPLETION_STATUS
         or completion.get("scope") != scope
