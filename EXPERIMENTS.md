@@ -1,5 +1,15 @@
 # Experiment ledger
 
+## FC-E030 — FC-P020 symmetric tail-statistic finite-update comparison (2026-10-05)
+
+Operationally complete: identical P018 initial tensors and fresh AdamW for both arms, fixed SIX training windows, 16 updates per arm, six raw gradients averaged before one clip. All192 unique window backwards and32 update records verified. Four endpoint panels repeated twice; all repeat rows and A/B initial rows exactly equal. Source/dependency/candidate/approval hashes, journal44-HDF mapping, resource guard exit0, finite output and aggregate/criterion recomputation verified independently. Result SHA `a7c0d0c41b35391e22d07fb223a5ed243891ccdd4759815e9bf08b82670b5042`.
+
+Predeclared interpretation: `LOCAL_CONDITIONS_NOT_MET`. B improves all four five-nonzero tail statistics versus A, but its H1 bias MSE increases4.8015515e-6 and H1 centered residual MSE increases0.0002363738182 versus the shared initial state. Both six-window original domain objectives decrease; that does not override the failed conditions. Repeat spread zero is observational, not a rigorous error bound. This finite-update comparison is not a full-training, capacity, admission or physical-control result.
+
+Host382 samples minimum MemAvailable106.712757/MemFree24.620411GiB; innerguard384 samples minimum CUDAfree24.622280GiB. No saved candidate, heldout, PPO or threshold change. Next scientific direction awaits Root analysis and separate approval; current-force conditioning is not approved execution. Full provenance and numbers: `docs/FC_P020_TERMINAL_REVIEW_20261005.md`. Preserve earlier entries below.
+
+Next-action clarification: Root authorizes preparation only for current-force-conditioning data/causality/persistence-baseline investigation, not GPU execution or architecture implementation.
+
 ## FC-E029 — FC-P019 local cross-window gradient interference (2026-10-05)
 
 P018 terminal, six fixed train windows, original mixed20 chunk objective; five gradient kinds each repeated twice,60 unique passes. No optimizer/update/candidate save/held-out/PPO. Exactinvocation275365360254440aba18ed96aac58630 retainedexited0; result SHA `1bd66e3cbf7c1200ff0af96d23bd62803d59422129eec5c5dddf7615fbcb183f`, source6de42a9. Approval/source/candidate identities and44-HDF startup map verified. Every original objective exactly reproduces P018terminal in both repeats. Host minima available102.286327/free20.551254GiB; internalCUDAfree20.544643GiB, guardexit0.

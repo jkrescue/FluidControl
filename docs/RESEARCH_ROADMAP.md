@@ -1,5 +1,13 @@
 # Research roadmap and prioritized backlog
 
+## 当前状态：P020完成但局部支持条件未满足（FC-E030）
+
+两组从同一P018终态、fresh AdamW、固定六训练窗各16更新，32更新/192反向事件与资源/源数据身份独立核验。B相对A四项五非零窗尾统计均改善，但相对初态H1bias MSE增加4.8015515e-6、H1 centered residual MSE增加0.0002363738182，原预声明结论`LOCAL_CONDITIONS_NOT_MET`。零端点重复差仅为观测，不是严格误差界。没有候选保存、heldout或PPO；P018正式FAIL与原门槛保持。
+
+下一方向待Root分析；当前力条件化仅为分析方向，未批准执行或新训练。不得以局部相对A改善自动推进全量训练。结果SHA `a7c0d0c41b35391e22d07fb223a5ed243891ccdd4759815e9bf08b82670b5042`，详见`FC_P020_TERMINAL_REVIEW_20261005.md`。以下P020仅准备/运行状态是历史。
+
+下一步授权范围：仅准备当前力条件化的数据/因果可用性/persistence baseline调查；未批准GPU、架构实现或新训练。
+
 ## 当前状态：P019局部梯度诊断完成，P020仅准备（FC-E029）
 
 P019独立复核60个梯度计算、原目标精确重现、源/数据/模型身份及资源守卫。五窗AR-RMS平方误差沿负原目标聚合梯度导数+0.859184，沿六窗原目标+0.468014；各窗自身AR-RMS导数却均为负，支持局部跨窗梯度干扰，不是AdamW或全局因果结论。模型无更新、无候选保存、无heldout/PPO。结果SHA `1bd66e3cbf7c1200ff0af96d23bd62803d59422129eec5c5dddf7615fbcb183f`，详见`FC_P019_TERMINAL_REVIEW_20261005.md`。
