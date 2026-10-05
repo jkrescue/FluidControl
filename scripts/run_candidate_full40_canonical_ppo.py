@@ -59,7 +59,7 @@ def write_exclusive(path: Path, value: dict) -> None:
 
 def command_contract(args, readiness: dict) -> dict:
     identity = readiness.get("candidate_identity", {})
-    return {
+    contract = {
         "candidate_kind": identity.get("candidate_kind"),
         "checkpoint_epoch": identity.get("checkpoint_epoch"),
         "checkpoint_relative_directory": identity.get(
@@ -104,6 +104,15 @@ def command_contract(args, readiness: dict) -> dict:
         "reward_contract": "canonical_joint_v1 unchanged",
         "new_policy_required": True,
     }
+    if identity.get("candidate_kind") == "fcp013_independent_force_dual_fno":
+        contract["endpoint_evaluation_config_sha256"] = sha256(args.endpoint_evaluation_config)
+        if identity.get("endpoint_evaluation_config_sha256") != contract["endpoint_evaluation_config_sha256"]:
+            raise ValueError("P013 endpoint evaluation config differs from readiness")
+        for key in ("dual_control_binding", "dual_manifest_path", "dual_posteval_receipt_path"):
+            if not identity.get(key):
+                raise ValueError("P013 candidate identity is incomplete: " + key)
+            contract[key] = identity[key]
+    return contract
 
 
 def build_trainer_command(
@@ -123,12 +132,17 @@ def build_trainer_command(
         if checkpoint_relative
         else candidate / "best"
     ).resolve()
+    evaluation_config = (
+        args.endpoint_evaluation_config
+        if identity.get("candidate_kind") == "fcp013_independent_force_dual_fno"
+        else config
+    )
     command = [
         sys.executable,
         "-u",
         str(args.repo / "scripts/train_full40_hydrogym_ppo_canonical.py"),
         "--data", str(args.data),
-        "--config", str(config),
+        "--config", str(evaluation_config),
         "--checkpoint-dir", str(checkpoint_dir),
         "--dev30-data", str(args.dev30_data),
         "--promotion-receipt", str(args.promotion_receipt),
@@ -158,7 +172,18 @@ def build_trainer_command(
                 str(identity.get("checkpoint_state_sha256")),
             )
         )
-    if mode == "execute":
+    if identity.get("candidate_kind") == "fcp013_independent_force_dual_fno":
+        binding = identity["dual_control_binding"]
+        command.extend((
+            "--dual-fno-manifest", str(args.repo / identity["dual_manifest_path"]),
+            "--expected-dual-fno-manifest-sha256", binding["dual_manifest_sha256"],
+            "--dual-training-config", str(config),
+            "--dual-posteval-receipt", str(args.repo / identity["dual_posteval_receipt_path"]),
+            "--expected-dual-posteval-receipt-sha256", binding["posteval_receipt_sha256"],
+        ))
+        # Required even by the read-only low-level dual preflight. Dry-run never saves it.
+        command.extend(("--vecnormalize-output", str(output / "vecnormalize.pkl")))
+    elif mode == "execute":
         command.extend(("--vecnormalize-output", str(output / "vecnormalize.pkl")))
     command.append("--execute" if mode == "execute" else "--dry-run")
     return command
@@ -258,6 +283,8 @@ def dry_run(args, readiness: dict) -> dict:
         raise RuntimeError("legacy canonical PPO preflight is blocked")
     if canonical.get("checkpoint_sha256") != contract["checkpoint_sha256"]:
         raise ValueError("legacy preflight checkpoint differs from candidate")
+    if canonical.get("dual_control_binding") != contract.get("dual_control_binding"):
+        raise ValueError("canonical preflight dual binding differs from candidate")
     receipt.update(
         status="CANDIDATE_CANONICAL_PPO_DRY_RUN_READY",
         command_contract=contract,
@@ -279,6 +306,8 @@ def execute(args, readiness: dict) -> dict:
         != "FULL40_CANONICAL_PPO_EXECUTION_READY"
         or approved.get("canonical_preflight", {}).get("checkpoint_sha256")
         != contract["checkpoint_sha256"]
+        or approved.get("canonical_preflight", {}).get("dual_control_binding")
+        != contract.get("dual_control_binding")
         or approved.get("training_executed") is not False
     ):
         raise ValueError("approved candidate dry-run differs from current inputs")
@@ -295,10 +324,11 @@ def execute(args, readiness: dict) -> dict:
     if (
         audit.get("status") != "FULL40_CANONICAL_PPO_SURROGATE_RUN_COMPLETE"
         or audit.get("physicsnemo_checkpoint_sha256") != contract["checkpoint_sha256"]
+        or audit.get("dual_control_binding") != contract.get("dual_control_binding")
         or audit.get("vecnormalize_contract")
         != "identity: norm_obs=false, norm_reward=false; preserves legacy PPO numerics"
         or (
-            contract["candidate_kind"] == "full_train_force_row_recalibration"
+            contract["candidate_kind"] in ("full_train_force_row_recalibration", "fcp013_independent_force_dual_fno")
             and audit.get("precision_protocol") != contract["precision_protocol"]
         )
         or not isinstance(iterations, list)

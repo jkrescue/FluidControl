@@ -113,6 +113,34 @@ def adapt(
     ):
         if candidate_identity.get(key) != contract.get(key):
             raise ValueError(f"candidate readiness {key} differs from command contract")
+    dual = contract.get("dual_control_binding")
+    is_dual = contract.get("candidate_kind") == "fcp013_independent_force_dual_fno"
+    observed_bindings = [value.get("dual_control_binding") for value in
+                         (candidate_identity, readiness, audit)]
+    if is_dual:
+        if not isinstance(dual, dict) or any(value != dual for value in observed_bindings):
+            raise ValueError("candidate dual control bindings differ or are absent")
+        required = {
+            "status": "DUAL_CONTROL_IDENTITY_VERIFIED_NOT_CONTROL_SUCCESS",
+            "canonical_endpoint_window_dynamic_gates_still_required": True,
+            "policy_trained": False, "real_cfd_control_validated": False,
+            "checkpoint_sha256": contract["checkpoint_sha256"],
+            "checkpoint_state_sha256": contract["checkpoint_state_sha256"],
+            "training_config_sha256": contract["resolved_config_sha256"],
+            "normalization_sha256": contract.get("full40_normalization_sha256"),
+        }
+        if any(dual.get(k) != v for k, v in required.items()):
+            raise ValueError("dual control identity scope differs")
+        for key in ("checkpoint_sha256", "checkpoint_state_sha256", "dual_manifest_sha256",
+                    "flow_model_sha256", "flow_state_sha256", "posteval_receipt_sha256",
+                    "training_config_sha256", "normalization_sha256"):
+            value = dual.get(key)
+            if not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
+                raise ValueError("dual control hash missing or invalid: " + key)
+        if dual["normalization_sha256"] != candidate_identity.get("normalization_sha256"):
+            raise ValueError("dual normalization differs from candidate readiness")
+    elif dual is not None or any(value is not None for value in observed_bindings):
+        raise ValueError("dual evidence cannot be exported as a single-model candidate")
     if contract.get("vecnormalize") != {
         "norm_obs": False,
         "norm_reward": False,
@@ -206,6 +234,8 @@ def adapt(
         "real_cfd_validation_complete": False,
         "frozen_test_accessed": False,
     }
+    if is_dual:
+        exported["candidate_openfoam_compatibility"]["dual_control_binding"] = dual
     # The canonical trainer runs in /workspace, so its immutable audit records
     # the container path.  The historical CFD entry compares the final path to
     # the host policy path.  Export a derived copy with only that location

@@ -617,6 +617,21 @@ def write_exclusive(path: Path, payload: dict) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def portable_receipt_paths(receipt: dict, repo_root: Path) -> dict:
+    """Serialize only access paths portably; preserve all metrics and byte hashes."""
+    root = repo_root.resolve(strict=True)
+    result = dict(receipt)
+    for path_key, hash_key in (("producer_script", "producer_script_sha256"),
+                               ("protocol_path", "protocol_sha256"),
+                               ("evidence_path", "evidence_sha256")):
+        path = Path(receipt[path_key]).resolve(strict=True)
+        relative = path.relative_to(root)
+        if sha256(path) != receipt[hash_key]:
+            raise ValueError("portable receipt source bytes differ: " + path_key)
+        result[path_key] = str(relative)
+    return result
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--force-window", type=Path, required=True)
@@ -635,12 +650,17 @@ def main() -> None:
     parser.add_argument("--checkpoint-sha256", required=True)
     parser.add_argument("--window-output", type=Path, required=True)
     parser.add_argument("--dynamic-output", type=Path, required=True)
+    parser.add_argument("--portable-repo-root", type=Path,
+                        help="Use confined repository-relative paths in newly generated receipts")
     args = parser.parse_args()
     if args.window_output.exists() or args.dynamic_output.exists():
         raise FileExistsError("canonical compatibility receipts never overwrite")
     if len(args.checkpoint_sha256) != 64:
         parser.error("checkpoint SHA-256 must contain 64 hexadecimal characters")
     window, dynamic = build_receipts(args)
+    if args.portable_repo_root is not None:
+        window = portable_receipt_paths(window, args.portable_repo_root)
+        dynamic = portable_receipt_paths(dynamic, args.portable_repo_root)
     write_exclusive(args.window_output, window)
     write_exclusive(args.dynamic_output, dynamic)
     print(json.dumps({"window": window["status"], "dynamic": dynamic["status"]}))

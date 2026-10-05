@@ -29,6 +29,9 @@ DYNAMIC_STATUS = "FULL40_VALIDATION_DYNAMIC_ACTION_PASS"
 DEVELOPMENT_STATUS = "DYNAMIC_FNO_DEVELOPMENT_ADMISSION_PASS"
 FC_P003C_KIND = "true_state_paired_step_lambda10"
 FC_P008_KIND = "full_train_force_row_recalibration"
+FC_P013_KIND = "fcp013_independent_force_dual_fno"
+FC_P013_CONFIG = Path("artifacts/fcp011_resource_probe_runtime_20261005/resolved_config.yaml")
+HOST_REPO = Path("/workspace/fluid_control")
 FC_P008_CONFIG = Path(
     "artifacts/tandem_fno_true_state_paired_step_lambda10_20261005/"
     "resolved_config.yaml"
@@ -200,6 +203,106 @@ def _bound_evidence(gate: dict, repo_root: Path) -> None:
             raise ValueError(f"{prefix} SHA differs")
 
 
+def p013_candidate_identity(*, repo_root, candidate_root, lineage, receipt_path,
+                            normalization_path, data_artifacts):
+    """Bind actual P013 evidence without adapting it into a legacy training schema."""
+    from fluid_control.dual_control_contract import verify_dual_control_binding
+    from fluid_control.dual_fno import ARCHITECTURE, validate_dual_fno_manifest, validate_dual_runtime_files
+
+    required = {
+        "status": "FC_P013_DUAL_CANDIDATE_LINEAGE_PASS_NOT_ADMISSION",
+        "candidate_kind": FC_P013_KIND, "checkpoint_epoch": 1,
+        "checkpoint_relative_directory": "candidate/aerodynamic",
+        "checkpoint_model_file": "FNO.0.1.mdlus",
+        "checkpoint_state_file": "checkpoint.0.1.pt",
+        "training_performed": True, "optimizer_training_performed": True,
+        "calibration_fit_performed": False, "optimizer_steps": 1368,
+        "validation_or_frozen_accessed": False, "ppo_auto_launch": False,
+        "official_image_id": IMAGE_ID,
+    }
+    if any(lineage.get(k) != v for k, v in required.items()):
+        raise ValueError("P013 lineage identity/scope differs")
+    relative = candidate_root.relative_to(repo_root)
+    if lineage.get("candidate_root") not in (str(candidate_root), str(relative), str(HOST_REPO / relative)):
+        raise ValueError("P013 candidate root identity differs")
+    config = repo_root / FC_P013_CONFIG
+    manifest = candidate_root / "candidate/dual_model_manifest.json"
+    identity = validate_dual_fno_manifest(manifest, expected_sha256=lineage["dual_manifest_sha256"])
+    validate_dual_runtime_files(identity, config_path=config, normalization_path=normalization_path)
+    for model in (identity.flow.model, identity.aerodynamic.model):
+        archive_payload(model)
+        with zipfile.ZipFile(model) as archive:
+            arguments = json.loads(archive.read("args.json")).get("__args__", {})
+        if arguments.get("dimension") != 2 or any(
+                arguments.get(k) != v for k, v in ARCHITECTURE.items() if k != "force_channels"):
+            raise ValueError("P013 official model archive architecture differs")
+    expected = {
+        "checkpoint_sha256": identity.aerodynamic.model_sha256,
+        "checkpoint_state_sha256": identity.aerodynamic.state_sha256,
+        "flow_model_sha256": identity.flow.model_sha256,
+        "flow_state_sha256": identity.flow.state_sha256,
+        "resolved_config_sha256": sha256(config),
+    }
+    if any(lineage.get(k) != v for k, v in expected.items()):
+        raise ValueError("P013 persisted dual identity differs")
+    completion = load(candidate_root / "completion_receipt.json")
+    audit_path = candidate_root / "candidate_audit.json"
+    candidate_audit = load(audit_path)
+    if (completion.get("status") != "FC_P013_TRAINING_COMPLETE_NOT_ADMISSION"
+            or completion.get("candidate_audit_sha256") != sha256(audit_path)
+            or completion.get("optimizer_steps") != 1368
+            or completion.get("scientific_admission") is not False
+            or completion.get("ppo_executed") is not False
+            or any(lineage.get(k) != v for k, v in candidate_audit.items())):
+        raise ValueError("P013 terminal audit/completion binding differs")
+    _validate_receipt_table(candidate_audit, candidate_root)
+    completion_expected = {
+        "dual_manifest_sha256": identity.manifest_sha256,
+        "flow_model_sha256": identity.flow.model_sha256,
+        "flow_state_sha256": identity.flow.state_sha256,
+        "aerodynamic_model_sha256": identity.aerodynamic.model_sha256,
+        "aerodynamic_state_sha256": identity.aerodynamic.state_sha256,
+        "candidate_result_sha256": lineage["candidate_result_sha256"],
+    }
+    if any(completion.get(k) != v for k, v in completion_expected.items()):
+        raise ValueError("P013 completion model/result identity differs")
+    from audit_fcp011_candidate import INPUT_SHA
+    # The terminal audit reports the release hashes through candidate/result.json.
+    result = load(candidate_root / "candidate/result.json")
+    if result.get("input_sha256") != INPUT_SHA or set(data_artifacts) != set(INPUT_SHA):
+        raise ValueError("P013 data artifact keys differ")
+    if any(sha256(data_artifacts[k]) != v for k, v in INPUT_SHA.items()):
+        raise ValueError("P013 data release bytes differ")
+    receipt_path.resolve().relative_to(candidate_root)
+    binding = verify_dual_control_binding(
+        manifest_path=manifest, expected_manifest_sha256=identity.manifest_sha256,
+        training_config=config, normalization_path=normalization_path,
+        checkpoint_dir=identity.aerodynamic.directory,
+        expected_checkpoint_sha256=identity.aerodynamic.model_sha256,
+        posteval_receipt=receipt_path, expected_posteval_receipt_sha256=sha256(receipt_path),
+        development_auditor=repo_root / "scripts/audit_dynamic_fno_development_gates.py",
+    )
+    precision = load(receipt_path.parent / "precision.json")
+    if precision != {"status": "FC_P013_FORMAL_EVALUATION_DEFAULT_TF32_HIGH",
+                     "official_image_id": IMAGE_ID, **FC_P008_PRECISION}:
+        raise ValueError("P013 formal precision evidence differs")
+    approval = load(receipt_path.parent / "evidence/formal_evaluation_approval.json")
+    if (approval.get("candidate_kind") != FC_P013_KIND
+            or approval.get("candidate_completion_receipt_sha256") != sha256(candidate_root / "completion_receipt.json")
+            or approval.get("candidate_result_sha256") != lineage["candidate_result_sha256"]
+            or approval.get("dual_manifest_sha256") != identity.manifest_sha256):
+        raise ValueError("P013 formal approval belongs to another candidate")
+    return {
+        "config": config, "epoch": 1,
+        "checkpoint_relative_directory": Path("candidate/aerodynamic"),
+        "model_file": identity.aerodynamic.model.name,
+        "state_file": identity.aerodynamic.state.name,
+        "dual_control_binding": binding,
+        "dual_manifest_path": str(manifest.relative_to(repo_root)),
+        "dual_posteval_receipt_path": str(receipt_path.resolve().relative_to(repo_root)),
+    }
+
+
 def audit(
     *,
     repo_root: Path,
@@ -291,169 +394,182 @@ def audit(
         ):
             raise ValueError("dynamic validation manifest action/split contract differs")
 
-        if not str(lineage.get("status", "")).endswith("CANDIDATE_LINEAGE_PASS"):
-            raise ValueError("candidate lineage status differs")
         candidate_kind = lineage.get("candidate_kind")
-        if candidate_kind == FC_P008_KIND:
-            required_scope = {
-                "training_performed": False,
-                "optimizer_training_performed": False,
-                "calibration_fit_performed": True,
-                "validation_or_frozen_accessed": False,
-                "ppo_auto_launch": False,
-                "parent_checkpoint_epoch": 2,
-                "calibration_generation": 1,
-            }
+        p013 = None
+        if candidate_kind == FC_P013_KIND:
+            p013 = p013_candidate_identity(
+                repo_root=repo_root, candidate_root=candidate_root, lineage=lineage,
+                receipt_path=posteval_receipt_path, normalization_path=normalization_path,
+                data_artifacts=data_artifacts,
+            )
+            config, epoch = p013["config"], p013["epoch"]
+            config_sha = sha256(config)
+            checkpoint_relative_directory = p013["checkpoint_relative_directory"]
+            model_file, state_file = p013["model_file"], p013["state_file"]
         else:
-            required_scope = {
-                "training_performed": candidate_kind == FC_P003C_KIND,
-                "frozen_test_opened_or_enumerated": False,
-                "ppo_auto_launch": False,
-            }
-        if any(lineage.get(key) != value for key, value in required_scope.items()):
-            raise ValueError("candidate lineage scope differs")
-        try:
-            candidate_relative = str(candidate_root.relative_to(repo_root))
-        except ValueError as error:
-            raise ValueError("candidate root escapes repository") from error
-        if lineage.get("candidate_root") not in (str(candidate_root), candidate_relative):
-            raise ValueError("candidate root identity differs")
+            if not str(lineage.get("status", "")).endswith("CANDIDATE_LINEAGE_PASS"):
+                raise ValueError("candidate lineage status differs")
+            candidate_kind = lineage.get("candidate_kind")
+            if candidate_kind == FC_P008_KIND:
+                required_scope = {
+                    "training_performed": False,
+                    "optimizer_training_performed": False,
+                    "calibration_fit_performed": True,
+                    "validation_or_frozen_accessed": False,
+                    "ppo_auto_launch": False,
+                    "parent_checkpoint_epoch": 2,
+                    "calibration_generation": 1,
+                }
+            else:
+                required_scope = {
+                    "training_performed": candidate_kind == FC_P003C_KIND,
+                    "frozen_test_opened_or_enumerated": False,
+                    "ppo_auto_launch": False,
+                }
+            if any(lineage.get(key) != value for key, value in required_scope.items()):
+                raise ValueError("candidate lineage scope differs")
+            try:
+                candidate_relative = str(candidate_root.relative_to(repo_root))
+            except ValueError as error:
+                raise ValueError("candidate root escapes repository") from error
+            if lineage.get("candidate_root") not in (str(candidate_root), candidate_relative):
+                raise ValueError("candidate root identity differs")
 
-        epoch = int(lineage["checkpoint_epoch"])
-        if candidate_kind == FC_P008_KIND:
-            if (
-                epoch != 0
-                or lineage.get("checkpoint_relative_directory")
-                != "candidate_build/candidate"
-                or lineage.get("checkpoint_model_file") != "FNO.0.0.mdlus"
-                or lineage.get("checkpoint_state_file") != "checkpoint.0.0.pt"
+            epoch = int(lineage["checkpoint_epoch"])
+            if candidate_kind == FC_P008_KIND:
+                if (
+                    epoch != 0
+                    or lineage.get("checkpoint_relative_directory")
+                    != "candidate_build/candidate"
+                    or lineage.get("checkpoint_model_file") != "FNO.0.0.mdlus"
+                    or lineage.get("checkpoint_state_file") != "checkpoint.0.0.pt"
+                ):
+                    raise ValueError("FC-P008 checkpoint identity differs")
+                checkpoint_relative_directory = Path("candidate_build/candidate")
+                model_file, state_file = "FNO.0.0.mdlus", "checkpoint.0.0.pt"
+                config = (repo_root / FC_P008_CONFIG).resolve()
+            else:
+                checkpoint_relative_directory = Path("best")
+                model_file = f"FNO.0.{epoch}.mdlus"
+                state_file = f"checkpoint.0.{epoch}.pt"
+                config = candidate_root / "resolved_config.yaml"
+            checkpoint_dir = candidate_root / checkpoint_relative_directory
+            model = checkpoint_dir / model_file
+            state = checkpoint_dir / state_file
+            launch = candidate_root / "launch_receipt.json"
+            completion = candidate_root / "completion_receipt.json"
+            for label, path in (
+                ("model", model), ("state", state), ("resolved config", config),
+                ("launch receipt", launch), ("completion receipt", completion),
             ):
-                raise ValueError("FC-P008 checkpoint identity differs")
-            checkpoint_relative_directory = Path("candidate_build/candidate")
-            model_file, state_file = "FNO.0.0.mdlus", "checkpoint.0.0.pt"
-            config = (repo_root / FC_P008_CONFIG).resolve()
-        else:
-            checkpoint_relative_directory = Path("best")
-            model_file = f"FNO.0.{epoch}.mdlus"
-            state_file = f"checkpoint.0.{epoch}.pt"
-            config = candidate_root / "resolved_config.yaml"
-        checkpoint_dir = candidate_root / checkpoint_relative_directory
-        model = checkpoint_dir / model_file
-        state = checkpoint_dir / state_file
-        launch = candidate_root / "launch_receipt.json"
-        completion = candidate_root / "completion_receipt.json"
-        for label, path in (
-            ("model", model), ("state", state), ("resolved config", config),
-            ("launch receipt", launch), ("completion receipt", completion),
-        ):
-            _require_file(path, label)
-        if sha256(model) != lineage.get("checkpoint_sha256"):
-            raise ValueError("candidate model SHA differs")
-        if sha256(state) != lineage.get("checkpoint_state_sha256"):
-            raise ValueError("candidate state SHA differs")
-        config_sha = sha256(config)
-        if candidate_kind == FC_P008_KIND:
-            if config_sha != lineage.get("data_lineage", {}).get("resolved_config"):
-                raise ValueError("FC-P008 resolved config SHA differs")
-        elif config_sha != lineage.get("resolved_config_sha256"):
-            raise ValueError("candidate resolved config SHA differs")
-        if sha256(launch) != lineage.get("launch_receipt_sha256"):
-            raise ValueError("candidate launch receipt SHA differs")
-        if sha256(completion) != lineage.get("completion_receipt_sha256"):
-            raise ValueError("candidate completion receipt SHA differs")
-        completion_value = load(completion)
-        if archive_payload(model) != lineage.get("checkpoint_generation_payload_sha256"):
-            raise ValueError("candidate model archive payload differs")
-        if candidate_kind == FC_P008_KIND:
-            validate_calibrated_epoch_zero(
-                checkpoint_dir,
-                epoch,
-                allow=True,
-                expected_model_sha256=lineage.get("checkpoint_sha256"),
-                expected_state_sha256=lineage.get("checkpoint_state_sha256"),
-            )
-            if lineage.get("precision_protocol") != FC_P008_PRECISION:
-                raise ValueError("FC-P008 lineage precision protocol differs")
-            precision_path = posteval_receipt_path.parent / "precision.json"
-            _require_file(precision_path, "FC-P008 formal precision evidence")
-            precision = load(precision_path)
-            expected_precision = {
-                "status": FC_P008_PRECISION_STATUS,
-                "official_image_id": official_image_id,
-                **FC_P008_PRECISION,
-            }
-            if precision != expected_precision:
-                raise ValueError("FC-P008 formal precision evidence differs")
-            if receipt.get("precision_sha256") != sha256(precision_path):
-                raise ValueError("FC-P008 receipt precision SHA differs")
-            _receipt_binds(receipt, posteval_receipt_path.parent, precision_path)
+                _require_file(path, label)
+            if sha256(model) != lineage.get("checkpoint_sha256"):
+                raise ValueError("candidate model SHA differs")
+            if sha256(state) != lineage.get("checkpoint_state_sha256"):
+                raise ValueError("candidate state SHA differs")
+            config_sha = sha256(config)
+            if candidate_kind == FC_P008_KIND:
+                if config_sha != lineage.get("data_lineage", {}).get("resolved_config"):
+                    raise ValueError("FC-P008 resolved config SHA differs")
+            elif config_sha != lineage.get("resolved_config_sha256"):
+                raise ValueError("candidate resolved config SHA differs")
+            if sha256(launch) != lineage.get("launch_receipt_sha256"):
+                raise ValueError("candidate launch receipt SHA differs")
+            if sha256(completion) != lineage.get("completion_receipt_sha256"):
+                raise ValueError("candidate completion receipt SHA differs")
+            completion_value = load(completion)
+            if archive_payload(model) != lineage.get("checkpoint_generation_payload_sha256"):
+                raise ValueError("candidate model archive payload differs")
+            if candidate_kind == FC_P008_KIND:
+                validate_calibrated_epoch_zero(
+                    checkpoint_dir,
+                    epoch,
+                    allow=True,
+                    expected_model_sha256=lineage.get("checkpoint_sha256"),
+                    expected_state_sha256=lineage.get("checkpoint_state_sha256"),
+                )
+                if lineage.get("precision_protocol") != FC_P008_PRECISION:
+                    raise ValueError("FC-P008 lineage precision protocol differs")
+                precision_path = posteval_receipt_path.parent / "precision.json"
+                _require_file(precision_path, "FC-P008 formal precision evidence")
+                precision = load(precision_path)
+                expected_precision = {
+                    "status": FC_P008_PRECISION_STATUS,
+                    "official_image_id": official_image_id,
+                    **FC_P008_PRECISION,
+                }
+                if precision != expected_precision:
+                    raise ValueError("FC-P008 formal precision evidence differs")
+                if receipt.get("precision_sha256") != sha256(precision_path):
+                    raise ValueError("FC-P008 receipt precision SHA differs")
+                _receipt_binds(receipt, posteval_receipt_path.parent, precision_path)
 
-        config_value = yaml.safe_load(config.read_text(encoding="utf-8"))
-        if not isinstance(config_value, dict):
-            raise ValueError("resolved config is not a mapping")
-        training, model_config = config_value.get("training", {}), config_value.get("model", {})
-        data_config = config_value.get("data", {})
-        expected_model = {
-            "in_channels": 6,
-            "out_channels": 7,
-            "latent_channels": 48,
-            "num_fno_layers": 5,
-            "num_fno_modes": [32, 32],
-            "decoder_layers": 2,
-            "decoder_layer_size": 128,
-            "padding": 8,
-            "coord_features": True,
-        }
-        if any(model_config.get(key) != value for key, value in expected_model.items()):
-            raise ValueError("candidate FNO architecture differs")
-        if (
-            training.get("rollout_steps") != 100
-            or training.get("validation_rollout_steps") != 100
-            or data_config.get("force_indices") != [0, 1, 2, 3]
-        ):
-            raise ValueError("candidate is not the canonical H100 six-input/seven-output FNO")
-        with zipfile.ZipFile(model) as archive:
-            args = json.loads(archive.read("args.json"))
-        archive_args = args.get("__args__", {})
-        if any(archive_args.get(key) != value for key, value in expected_model.items()):
-            raise ValueError("candidate model archive architecture differs")
-        if archive_args.get("dimension") != 2:
-            raise ValueError("candidate model archive dimension differs")
-        if (
-            normalization.get("state_channels") != ["u", "v", "gauge_pressure"]
-            or normalization.get("all_force_channels")
-            != ["front_cd", "front_cl", "rear_cd", "rear_cl"]
-            or len(normalization.get("state_mean", [])) != 3
-            or len(normalization.get("state_std", [])) != 3
-            or len(normalization.get("all_force_mean", [])) != 4
-            or len(normalization.get("all_force_std", [])) != 4
-        ):
-            raise ValueError("candidate normalization channel contract differs")
-
-        data_lineage = lineage.get("data_lineage")
-        if not isinstance(data_lineage, dict):
-            raise ValueError("candidate data lineage is missing")
-        if candidate_kind == FC_P003C_KIND:
-            _validate_fcp003c_training_sources(
-                candidate_root=candidate_root,
-                completion=completion_value,
-                data_lineage=data_lineage,
-                normalization=normalization_sha,
-            )
-            expected_data = data_lineage
-        else:
-            if data_lineage.get("normalization") != normalization_sha:
-                raise ValueError("candidate normalization SHA differs")
-            expected_data = {
-                key: value
-                for key, value in data_lineage.items()
-                if key != "normalization"
+            config_value = yaml.safe_load(config.read_text(encoding="utf-8"))
+            if not isinstance(config_value, dict):
+                raise ValueError("resolved config is not a mapping")
+            training, model_config = config_value.get("training", {}), config_value.get("model", {})
+            data_config = config_value.get("data", {})
+            expected_model = {
+                "in_channels": 6,
+                "out_channels": 7,
+                "latent_channels": 48,
+                "num_fno_layers": 5,
+                "num_fno_modes": [32, 32],
+                "decoder_layers": 2,
+                "decoder_layer_size": 128,
+                "padding": 8,
+                "coord_features": True,
             }
-        if set(data_artifacts) != set(expected_data):
-            raise ValueError("candidate data artifact key set differs")
-        for key, path in data_artifacts.items():
-            if sha256(path) != expected_data[key]:
-                raise ValueError(f"candidate data artifact differs: {key}")
+            if any(model_config.get(key) != value for key, value in expected_model.items()):
+                raise ValueError("candidate FNO architecture differs")
+            if (
+                training.get("rollout_steps") != 100
+                or training.get("validation_rollout_steps") != 100
+                or data_config.get("force_indices") != [0, 1, 2, 3]
+            ):
+                raise ValueError("candidate is not the canonical H100 six-input/seven-output FNO")
+            with zipfile.ZipFile(model) as archive:
+                args = json.loads(archive.read("args.json"))
+            archive_args = args.get("__args__", {})
+            if any(archive_args.get(key) != value for key, value in expected_model.items()):
+                raise ValueError("candidate model archive architecture differs")
+            if archive_args.get("dimension") != 2:
+                raise ValueError("candidate model archive dimension differs")
+            if (
+                normalization.get("state_channels") != ["u", "v", "gauge_pressure"]
+                or normalization.get("all_force_channels")
+                != ["front_cd", "front_cl", "rear_cd", "rear_cl"]
+                or len(normalization.get("state_mean", [])) != 3
+                or len(normalization.get("state_std", [])) != 3
+                or len(normalization.get("all_force_mean", [])) != 4
+                or len(normalization.get("all_force_std", [])) != 4
+            ):
+                raise ValueError("candidate normalization channel contract differs")
+
+            data_lineage = lineage.get("data_lineage")
+            if not isinstance(data_lineage, dict):
+                raise ValueError("candidate data lineage is missing")
+            if candidate_kind == FC_P003C_KIND:
+                _validate_fcp003c_training_sources(
+                    candidate_root=candidate_root,
+                    completion=completion_value,
+                    data_lineage=data_lineage,
+                    normalization=normalization_sha,
+                )
+                expected_data = data_lineage
+            else:
+                if data_lineage.get("normalization") != normalization_sha:
+                    raise ValueError("candidate normalization SHA differs")
+                expected_data = {
+                    key: value
+                    for key, value in data_lineage.items()
+                    if key != "normalization"
+                }
+            if set(data_artifacts) != set(expected_data):
+                raise ValueError("candidate data artifact key set differs")
+            for key, path in data_artifacts.items():
+                if sha256(path) != expected_data[key]:
+                    raise ValueError(f"candidate data artifact differs: {key}")
 
         if not str(receipt.get("status", "")).endswith("POSTEVAL_COMPLETE"):
             raise ValueError("posteval completion status differs")
@@ -547,7 +663,7 @@ def audit(
             "checkpoint_model_file": model_file,
             "checkpoint_state_file": state_file,
             "precision_protocol": (
-                FC_P008_PRECISION if candidate_kind == FC_P008_KIND else None
+                FC_P008_PRECISION if candidate_kind in (FC_P008_KIND, FC_P013_KIND) else None
             ),
             "normalization_sha256": normalization_sha,
             "validation_manifest_sha256": validation_manifest_sha,
@@ -565,6 +681,10 @@ def audit(
                 key: sha256(path) for key, path in sorted(data_artifacts.items())
             },
         }
+        if p013 is not None:
+            identities.update({key: p013[key] for key in (
+                "dual_control_binding", "dual_manifest_path", "dual_posteval_receipt_path"
+            )})
     return _result(
         blockers=blockers, official_image_id=official_image_id, identities=identities
     )
