@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**2026-10-05 16:37 UTC：P021真实尺寸资源检查r2已启动，尚无结论。** Root与独立审查各15项CPU测试通过；代码877911e、恢复518684f。首轮invocation `f2b325db3b8b49c2ad1647ad41ec7e15`在模型创建前因Python导入后的物理空闲约29.4GiB低于额外30GiB启动要求退出，无20GiB违规；failure SHA `30c1d17c7692a85ff60f62e11eb5700d1fdda1a49163e543253f44cf828317b5`，原证据保留。
+
+r2只对44个同描述符重验SHA的只读训练HDF文件发送干净缓存释放建议，不写数据、不全局清缓存、不改模型/协议/内存门槛。恢复审批SHA `3bec0fb8f853efaf308f1fa0a70aef16059a5f65ca99d8aa751377940960f6a1`。实际unit `fluid-control-fcp021-causal-resource-r2-20261005.service`、invocation `abb778c24a494eaa881eaa2669c5b57f`、容器 `69ccfb0be99f24872432a6cf069712d008f51cc89089aee8c3c22b3b2833a63d`，官方image b40d5888。启动CUDAfree36.589GiB、MemAvailable115.087GiB仅是当时观测。
+
+本次固定训练窗816、两个输入对照各一次完整H100前后向，不创建优化器/更新或保存模型，无heldout/PPO/准入。双20GiB守卫持续有效。结果位置 `artifacts/fcp021_causal_resource_probe_r2_20261005`；后续需真实终态与独立复核才能安排有限训练。用户新一小时复评时间17:32UTC（北京时间01:32），物理平均升力10%目前不变，详情见DECISIONS。以下较早“仅准备”描述为历史。
+
 **当前阶段：P021 CPU工程复核通过，真实尺寸GPU资源检查仅在准备**。模块SHA `bcefcad2fa622e5b69133725aa8d39db5a1b0a41a1b5e6c7dcb1f6b7d99a4962`、测试SHA `a3dfb4b88d70eabb72d2df560444f828a6041b812e7cba9d06d1785139f9b5eb`，Root/实现/独立审查均24项CPU测试通过。Root另在固定官方CPU-only容器实跑微型FNO H100，完整图与checkpoint输出及28项梯度最大差0，10项谱虚部分量梯度非零，未用GPU或优化器。代码与证据已同步`1cc12fe`，详见`docs/FC_P021_CPU_REVIEW_20261005.md`；这不证明全尺寸精度或资源可行性。
 
 当前仅按`docs/FC_P021_RESOURCE_PROBE_PLAN_20261005.md`准备一个既有真实训练窗口816的前向/反向检查程序及CPU测试；GPU执行尚未批准。计划使用原P018权重和精确同刻受力、完整100步递推，不更新/保存模型；两项20GiB要求不变。没有新的模型训练、代理准入或PPO/CFD闭环结果。以下CPU实现之前的描述为历史。
