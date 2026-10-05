@@ -1,5 +1,7 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+**最新运行恢复（2026-10-05 07:05 UTC）**：原FC-P013训练在592步后无进展；内核记录NVIDIA NV_ERR_NO_MEMORY，进程卡在CUDA设备到主机复制。证据保留在原输出`operational_failure/`，没有终态候选，不是科学失败或成功。仅停止该容器后，同一镜像CUDA计算/复制检查通过。已按原初始模型、数据顺序、1368步、优化器和不可变训练源码启动r2，service `fluid-control-fcp013-training-r2-20261005.service`，invocation `d0138175399a40f487493919a674e1a5`，输出`artifacts/fcp013_independent_force_fno_training_r2_20261005`。恢复批准`a72afd1`/`docs/FC_P013_RECOVERY_APPROVAL_20261005.md`；增加MemFree保护和300秒无进展停止检查，禁止训练时并行大镜像传输，不改变科学验收门槛。启动MemAvailable114.64GiB，CUDAfree37.81GiB，仅代表启动观测。原HTML训练卡仍绑定第一次运行，尚需更新至r2，不能拿旧卡判断新训练。副节点镜像同步已完成并校验同一image SHA，无数据迁移、无PPO执行。下一步确认r2持续更新、更新UI及评估来源绑定，然后按原固定六窗/正式评估/新PPO/真实CFD反馈链推进。最终目标未完成。
+
 **最新执行状态（2026-10-05 06:13 UTC）**：FC-P013正式train-only训练已经启动，Main service `fluid-control-fcp013-training-20261005.service`，MainPID `3503971`，当前invocation `b15752ea472d407ab3ebef57c850cb19`。实测8/1368更新、GPU利用率96%、统一可用内存约107 GiB；这些是该时刻的观测，不是实时常量。源码`1634c05`，执行批准`a6ca463`，批准文件SHA `1bdcfcf7…1a120`。本次固定一个1368-window训练遍历，独立官方FNO仅训练气动力，原P009流场FNO完全冻结，H1/AR各占一半，保持原数据/参数/数值协议；无validation/frozen/PPO。24项CPU训练及dual契约测试通过，工程探针已通过。模型服务容量不足使额外独立代理复核不可用；Root接管最终保存/重载检查，科学验收仍须独立完成。原六窗物理诊断改为只读独立进程，窗口和指标不变，不参与选模型。看板`16d2b27`已部署并经API确认实际服务代次和训练步数。下一步完成双模型正式评估链，训练终态做来源/保存重载/固定六窗核查，然后在不改门槛的前提下评估；最终闭环目标尚未达成。
 
 下文各阶段记录保留作为历史；出现“尚未训练”时以本段最新观测为准。
