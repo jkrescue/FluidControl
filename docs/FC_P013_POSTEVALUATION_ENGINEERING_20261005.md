@@ -2,6 +2,12 @@
 
 This is implementation evidence, not a completed model evaluation or admission.
 
+## Worker runtime core preflight — 2026-10-05
+
+Worker has the exact pinned PPO dependency image `sha256:2e45b4e1ac9553ea86aa9148455be9aae30688446039fdee6255a637603acb2c`. The clean official HydroGym core (`hydrogym`, LICENSE, pyproject.toml) was archived from commit `4ab9854dea3d84e38a59c25e0f5835a00cf8225f`; archive SHA matched on Main and Worker: `a8c7dc52953b603843ccf2173a98450f886665eccd7cb3b100f2a9e5fb87a59f`. Core tracked source bytes were 598428, not a bulk image/dataset transfer. Main retains `artifacts/worker_hydrogym_source_preflight_20261005/hydrogym_source.tar`; Worker scratch mount is `/home/USER/workspace/fluid_control_runtime_preflight_20261005/hydrogym`.
+
+A read-only, no-network, no-GPU, 2 GiB/2 CPU container imported HydroGym FlowEnv/PDEBase/TransientSolver, official PhysicsNeMo 2.2.2 and SB3 2.7.1 successfully (`WORKER_CORE_IMPORT_PREFLIGHT_PASS`). This verifies core Python runtime imports only, not Firedrake/Nek/Maia backends, project adapter execution, CUDA inference, PPO or real CFD. No scientific data or result storage moved to Worker. Main training advanced to step360 during this check; it remained active.
+
 ## Recovery reproducibility observation — 2026-10-05
 
 Read-only comparison of the first attempt and r2 run logs matched all 34 common logged window identities through update 272. The six logged losses at steps 8..48 were exactly equal. At step56 totals were 0.010853966698050499 (first attempt) versus 0.010854589752852917 (r2); at64 they were 0.018482627347111702 versus 0.018506601452827454. Maximum absolute total-loss difference over these 34 logged updates was 0.01536891981959343. This demonstrates matching logged window order but not bitwise numerical reproducibility. The fixed seed and original default-TF32 precision contract are unchanged; the trainer does not request deterministic algorithms. The cause of divergence has not been isolated. Do not attribute it conclusively to TF32, the later memory fault, or a model-quality change. Do not choose a run by these losses. The interrupted attempt produced no eligible terminal model; r2 still requires the entire original evaluation and later repeated-seed evidence for broader claims.
