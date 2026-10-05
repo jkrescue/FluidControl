@@ -72,6 +72,8 @@ source mapping artifact `57ed2a25…3b92`把四个canonical phase固定为b00/t1
 
 实现已通过独立CPU审查：9项测试及真实44轨迹inventory验证family权重、缺family的fold聚合、fold-train统计、误导性train16名字不决定phase、去标准化、official fresh reload和force-row confinement。Lead随后只批准一次受守卫的Main全train校准执行；这项执行可生成train-only候选和原生replay证据，但不能自行开启formal evaluation或PPO。执行结果须从真实feature cache独立重算CV与native指标后再决定是否申请后续评估。
 
+该次校准已完成且独立重算通过：固定规则选中`alpha=0`，OOF physical rear-Cd/rear-Cl MAE为`0.012857/0.022035`；全train native rear-Cd/rear-Cl MAE由亲本`0.025576/0.064053`降至`0.010462/0.017277`。同时default-TF32的ideal/native rear-Cd bias仍为`-0.004621` physical，说明不能用理想仿射拟合替代真实执行。Lead据此批准一次原封不动的formal suite；该批准是“值得测”而非“已通过”，不得改`alpha=0`、阈值或跳过force-window/development gate，PPO仍未授权。
+
 ## 新决策格式
 
 ID、记录时间、状态、待检验假设、对应实验ID、所依据证据/协议、可选方案、取舍原因、保留的不确定性、撤销/调整条件。只有读取过的产物可作为事实；代理口头报告是待核信息。
