@@ -1,5 +1,15 @@
 # Experiment ledger
 
+## P026 shared force objective — CPU equivalence verified
+
+Source4d27fb53/tests907e25bd; Root20PASS0.78s and independent20PASS0.75s.
+PinnedP013 K1 loss/outputs/gradients exact on batch1/2 CPUfixtures. K4 chunked
+gradients agree with full-window fixture; no aerodynamic field feedback or
+futureH1truth in AR. Final targetalignment and288history coefficient gradients
+tested. See docs/FC_P026_HISTORY_OBJECTIVE_CPU_REVIEW_20261005.md. NoGPU/model
+update/admission. Next no-update resourceharness preparation and explicit
+history-aware formalcaller integration; no legacy6channel K4 bypass permitted.
+
 ## P026 real-HDF integration prerequisite — independently reviewed
 
 Actual official CPU container a8c735d1 exited0. Six realtrain windows cover
