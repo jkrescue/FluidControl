@@ -246,3 +246,47 @@ def test_auditor_rejects_scope_and_metadata_tamper(tmp_path, monkeypatch):
     (candidate / "result.json").write_text(json.dumps(result))
     with pytest.raises(ValueError):
         module.validate_candidate(repo, candidate, "head_only")
+
+
+def update_completion(candidate: Path, relative: str, digest: str) -> None:
+    path = candidate / "completion_receipt.json"
+    value = json.loads(path.read_text())
+    value["sha256"][relative] = digest
+    path.write_text(json.dumps(value))
+
+
+def test_completion_accepts_valid_extra_member(tmp_path, monkeypatch):
+    module, repo, candidate = candidate_fixture(tmp_path, monkeypatch)
+    log = candidate / "run.log"
+    log.write_text("complete\n")
+    update_completion(candidate, "run.log", sha(log))
+    assert module.validate_candidate(repo, candidate, "head_only")["checkpoint_epoch"] == 1
+
+
+def test_completion_rejects_parent_escape(tmp_path, monkeypatch):
+    module, repo, candidate = candidate_fixture(tmp_path, monkeypatch)
+    outside = candidate.parent / "outside.log"
+    outside.write_text("escape\n")
+    update_completion(candidate, "../outside.log", sha(outside))
+    with pytest.raises(ValueError, match="artifact table"):
+        module.validate_candidate(repo, candidate, "head_only")
+
+
+def test_completion_rejects_symlink_escape(tmp_path, monkeypatch):
+    module, repo, candidate = candidate_fixture(tmp_path, monkeypatch)
+    outside = candidate.parent / "outside.log"
+    outside.write_text("escape\n")
+    link = candidate / "linked.log"
+    link.symlink_to(outside)
+    update_completion(candidate, "linked.log", sha(outside))
+    with pytest.raises(ValueError, match="artifact table"):
+        module.validate_candidate(repo, candidate, "head_only")
+
+
+def test_completion_rejects_extra_member_hash_mismatch(tmp_path, monkeypatch):
+    module, repo, candidate = candidate_fixture(tmp_path, monkeypatch)
+    log = candidate / "run.log"
+    log.write_text("complete\n")
+    update_completion(candidate, "run.log", "0" * 64)
+    with pytest.raises(ValueError, match="artifact table"):
+        module.validate_candidate(repo, candidate, "head_only")
