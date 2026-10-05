@@ -335,6 +335,20 @@ function renderAdmission(d){
  }
 }
 function renderActiveExperiment(d){
+ const p020=d.p020_live;
+ if(p020?.verified===true){
+  const age=Date.now()-Date.parse(p020.sampled_at_utc||'');
+  const fresh=Number.isFinite(age)&&age>=0&&age<60000;
+  const title=!fresh?'训练对照状态采样已过期':p020.running?'P020 升力预测训练对照进行中':p020.exited_success?'P020 训练对照已结束 · 结果待独立复核':'P020 训练对照未运行 · 正在检查原因';
+  const progress='原损失函数：'+p020.updates.A_original+'/16 次更新；增加升力均值与波动监督：'+p020.updates.B_symmetric_tail+'/16 次更新。';
+  const detail='两组使用同一初始模型和六个真实CFD训练窗口；比较升力均值、波动幅值及连续预测误差，不改变控制验收标准。';
+  const note='这是训练诊断，不是新的PPO或CFD闭环成功。下方流场图仍是标注的历史结果。';
+  $('lead-now').textContent=title+'。'+progress;
+  const card=document.createElement('div');card.className='card';
+  for(const [tag,text] of [['h3',title],['p',progress],['p',detail],['p',note]]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
+  $('lead-models').prepend(card);$('train16-formal-progress').textContent=title;
+  $('train16-formal-detail').textContent=progress+' '+detail;return;
+ }
  const formal018=d.p018_formal_live;
  if(formal018?.observed===true){
   const age=Date.now()-Date.parse(formal018.sampled_at_utc||'');
@@ -1182,6 +1196,54 @@ def _fcp015_formal_result(root: Path) -> dict:
 FCP018_APPROVAL = "eea5bd5c6a3fe585ae1104600421e50b335f61299c4014c5e3136722af3d4d39"
 FCP018_PROTOCOL = "310f0bdf8563a2a70b844a32852791fa1b1dc20278a3098418942e1dab204d2d"
 FCP018_LAUNCHER = "artifacts/fcp018_reduced_rate_source_20261005_immutable/scripts/run_fcp018_reduced_rate_spark.sh"
+
+
+def _parse_fcp020_live(state: dict, log: str, process_matches: bool) -> dict:
+    if state.get("InvocationID") != "4567f6d393414bba8baf2239d16960a7":
+        return {"verified": False}
+    running = (state.get("SubState") in {"start", "running"}
+               and state.get("MainPID", "0") != "0" and process_matches)
+    terminal = (state.get("ActiveState") == "active" and state.get("SubState") == "exited"
+                and state.get("MainPID") == "0" and state.get("Result") == "success"
+                and state.get("ExecMainStatus") == "0" and state.get("ExecMainCode") == "1")
+    if state.get("MainPID", "0") != "0" and not process_matches:
+        return {"verified": False}
+    updates = {"A_original": set(), "B_symmetric_tail": set()}
+    for line in log.splitlines():
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(row, dict) or row.get("event") != "arm_update_complete":
+            continue
+        arm, step = row.get("arm"), row.get("update")
+        if arm not in updates or type(step) is not int or not 1 <= step <= 16 or step in updates[arm]:
+            return {"verified": False}
+        updates[arm].add(step)
+    if any(steps != set(range(1, len(steps)+1)) for steps in updates.values()):
+        return {"verified": False}
+    return {"verified": True, "running": running, "exited_success": terminal,
+            "updates": {k: len(v) for k, v in updates.items()}, "admission": False}
+
+
+def _fcp020_live(root: Path) -> dict:
+    try:
+        approval = root / "docs/FC_P020_EXECUTION_APPROVAL_20261005.json"
+        if hashlib.sha256(approval.read_bytes()).hexdigest() != "ab69dfc9559a7e5458aba08c85b57d8d4aa41529ac7980e28f739ef667fab30a":
+            return {"verified": False}
+        launcher = root / "artifacts/fcp020_symmetric_statistics_source_20261005_immutable/scripts/run_fcp020_symmetric_statistics_spark.sh"
+        if hashlib.sha256(launcher.read_bytes()).hexdigest() != "f2d2dba8fc7668beeb346ab89e935fae402e42406b5b50898fbbd32dc2067e11":
+            return {"verified": False}
+        fields = ("InvocationID", "MainPID", "ActiveState", "SubState", "Result", "ExecMainCode", "ExecMainStatus")
+        raw = subprocess.check_output(["systemctl", "--user", "show", "fluid-control-fcp020-symmetric-statistics-20261005.service",
+             *[arg for key in fields for arg in ("-p", key)]], text=True, timeout=5)
+        state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+        pid = state.get("MainPID", "0")
+        matches = pid.isdigit() and pid != "0" and str(launcher).encode() in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+        log = (root / "artifacts/fcp020_symmetric_statistics_20261005/run.log").read_text()
+        return {**_parse_fcp020_live(state, log, matches), "sampled_at_utc": datetime.now(UTC).isoformat()}
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return {"verified": False}
 
 
 def _fcp018_formal_result(root: Path) -> dict:
@@ -2917,6 +2979,7 @@ class Handler(BaseHTTPRequestHandler):
             data["reduced_rate_training"] = _fcp018_training(self.root)
             data["p018_formal_live"] = _fcp018_formal_live(self.root)
             data["p018_formal_result"] = _fcp018_formal_result(self.root)
+            data["p020_live"] = _fcp020_live(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")
