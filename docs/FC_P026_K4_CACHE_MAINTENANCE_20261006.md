@@ -313,3 +313,36 @@ invocation `eee5a6fbad40411cac2f05e00520b079`, PID 941365,
 `activating/start`. This review performed no HDF reread or cache advice.
 No later maintenance pass, training completion or scientific acceptance is
 authorized or established by this result.
+
+## Separate r9 authorization
+
+At timestamp 1791241619 the same live K4 invocation had reached 1002
+windows/125 updates; MemFree was 23,104,516 KiB (about 22.03 GiB).
+Root authorizes one bounded r9 pass using unchanged reviewed helper
+`d116b55b67c50d2e618ec4188fe4fc8a4bc8b732deda8ca89f5b942d4b654e25`.
+Create only K4 `cache_advice_20261006_r9.jsonl` and preserve r1-r8.
+The exact 44-file identity checks and all memory/deadline limits apply.
+No global cache action, data/model modification, restart or later pass is
+authorized. This approval does not establish execution completion.
+
+## Actual r9 receipt review
+
+Root confirmed session 83760 exit 0. Independent saved-JSON review verified
+90 records: begin, 44 ordered file-begin/advised pairs, complete. All 44
+paths and reported hashes match the pinned audit; every file's start,
+before/hash/advice stat snapshots agree. Begin binds the approved
+d116b55b…b654e25 helper, K4 and exact r9 output. Receipt SHA-256:
+`c65a530003086f85b620be20b4456d0028da0b1cc708b7610372a5a4c3a4dc7b`.
+
+Start/end Unix timestamps were 1791241642.3366215/1791241653.9030135;
+elapsed **11.566590663 seconds**. Receipt minima were MemFree
+**21.807205 GiB**, MemAvailable **106.010109 GiB**, above applicable floors.
+The growing host-watch snapshot through 1791241655, 1938 samples, had minima
+MemFree **21.006046 GiB**, MemAvailable **105.671360 GiB**; snapshot SHA:
+`e62eb4e9c3f870ca2bb6e5542f9c2c019be8d53ec7e86a61b91963af76589719`.
+
+All r1–r8 hashes were rechecked unchanged. Actual training remained live under
+invocation `eee5a6fbad40411cac2f05e00520b079`, PID 941365,
+`activating/start`. No HDF reread or cache advice was performed by this
+review. No subsequent pass, training completion or scientific acceptance is
+authorized or established by the maintenance result.
