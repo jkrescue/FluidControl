@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E058 — Reflection projection meets unchanged b00 primary physical criteria
+
+Actualafa5cde4daec474eb52b61c08f86746f completed800cycles,1097.174830s,PID0/exit0. Sameunique32768policy/pairedrestart148/80D-U/resources asFC-E055; onlyrequestedaction=.5(pi(o)-pi(Ro)) beforeoneexistingfilter. Approval87944e807a68caab6ce7a46e01207e1d7ba432b86ccd639b6f47424de481c64c;driver5c3f40728cd383913a256a2f46b6bfaf0b02cc7d91586e198c354a007fcb9e76.
+
+Primary(168,228]12000:drag3.8919799397%,RMSratio.8156957479,bias.0113852067; alloriginal2%/1.05/.10criteria met. Companion12001:3.8918146724%/.8156948719/.0112901058;full80:3.7516809558%/.8243555266/.0136988610. Earlyfirst6.2bias.1354617484fails10%while20%sensitivitypasses. Maxomega.65537,0saturation/2ratelimits. Comparedoriginalprimary,drag/biasimprove butRMSratio.795798→.815696slightlyhigherstillbelowzero; reportalltradeoffs.
+
+Independent3200rawhashes/6windows/all800formula-filter/zeroallcolumnsidenticalFC-E055,9sources8inputs;1600cleansolversegments/minAvailable121917501440/ownedcontainersabsent. Result199127979c6cb43e6304c60fc3373a2b1a8465476ffdd265d30c108dfffd0ca6;report docs/EXPLORATORY_PROJECTED_32768_PPO_LONG_CFD_TERMINAL_REVIEW_20261006.md. Singleb00physicalsuccessnotK1formaladmission/broadrobustness. Fixedb01replication separatelyapproved only; noautomaticretraining/thresholdchange.
+
 ## FC-E058 — Actual projected-policy paired800 CFD running
 
 One authorized execution is live: `fluid-control-exploratory-projected-32768-ppo-long-cfd-20261006.service`, invocation `afa5cde4daec474eb52b61c08f86746f`, initial PID3059882. Approval `87944e807a68caab6ce7a46e01207e1d7ba432b86ccd639b6f47424de481c64c`; immutable driver `5c3f40728cd383913a256a2f46b6bfaf0b02cc7d91586e198c354a007fcb9e76`. Final persisted preflight verified nine source and eight input identities, image identity and exclusive output.

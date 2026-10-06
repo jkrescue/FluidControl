@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-06 — FC-E058 supports fixed cross-phase replication, not broader admission
+
+The explicitreflectionwrapper aroundtheunchanged32768policy achievesb00primary3.89198%dragreduction/.815696centeredRMS/.011385meanbias underoriginalcriteria. Exactpairedzeroreproductionandunchangedphysics supportthematchedinterventioncontrast. Preserve earlyfirsthalf10%biasfailure andslightlyhigherRMSversusunprojectedcontroller; do not claim allwindows orallmodels improved. Next ispredeclaredb01/restart130withsamepolicy/projection/horizon/resources, subjecttoRootexecutionapproval; no thresholdtuning, checkpointselection ornewPPO. Even asecondphasepass isnotfreshindependentfinaltesting orrepair ofK1H100formalFAIL. Operationalchainandonephasephysicalcriteriaareverified; generalizationandformalsurrogateacceptanceremainseparate.
+
 ## 2026-10-06 — FC-E055 measured long-window benefits do not resolve mean-lift bias
 
 The completed800-cycle pairedtrial establishes real direct-policy feedback over80D/U. Primary paired drag reduction2.377964895% and centeredliftRMSratio0.795798378 improve physical performance, butmeanbias0.322286722 failsboth10%and20%; inclusivecompanion agrees anddoesnotreplaceprimary. Thus neither blanketfailure ofallcontrolbenefit norcompletephysicalsuccess is accurate. Saturation404/800 and worsenedearlybias versus4096policy remain material. Preserve K1formalFAIL, originalCFD-onlybaseline, and source-bound rawproof. Do not relaxthresholds or automatically escalate PPO budget: fixed24surrogate reward improved only.002769 withmixedcases. Next scientific intervention must explain/test persistentbias or model/reward/observation limitations under a separatelyapproved fixedcomparison; no newrun is authorized here.

@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E058 已核验：b00主窗物理三约束通过，跨相位仍待验证
+
+同一afa5cde4daec474eb52b61c08f86746f已PID0/exit0，800配对周期完成。唯一控制变化为冻结32768策略的反射投影 `.5*(pi(o)-pi(Ro))` 后一次原actionfilter。Primary (168,228]12000点减阻 **3.89197994%**、rearCl centeredRMS比 **0.815695748**、平均升力偏置比 **0.011385207**，满足原2%/1.05/10%标准，无阈值变更。全80D/U为3.75168096%/0.824355527/0.013698861；早期first6.2偏置0.135462仍未过10%，不能隐去。
+
+独立3200rawhash/all6windows/800projection-filter等式复算通过，新zero16000点全部原始列与FC-E055一致，两容器已清理，最低Available121917501440字节。结果SHA `199127979c6cb43e6304c60fc3373a2b1a8465476ffdd265d30c108dfffd0ca6`；报告 `docs/EXPLORATORY_PROJECTED_32768_PPO_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `44ef122bae110d22b8046b98ced195e9c4f7548441bc22f863015106bfbe7ff4`。
+
+这是一个b00训练相位真实长窗闭环的实测成功，不是全部项目完成：K1 H100正式surrogate仍FAIL，PPO外层显式投影不是新训练策略，跨相位鲁棒性尚未成立。下一项固定b01/restart130同策略同投影复验仍须单独Root执行审批；历史validation相位也不是新的独立最终测试。以下running/失败条目为历史保留，不代表当前FC-E058仍运行。
+
 ## FC-E058 已实际启动：反射投影32768策略的匹配800周期真实CFD
 
 唯一科学变化为请求动作 `0.5*(pi(o)-pi(Ro))`，随后仅调用一次既有幅值/变化率过滤器；策略、VecNormalize、restart148、配对zero、800周期、六个窗口、CFD数值与物理标准不变。实际unit `fluid-control-exploratory-projected-32768-ppo-long-cfd-20261006.service`，invocation `afa5cde4daec474eb52b61c08f86746f`，启动时PID3059882、active/running。批准SHA `87944e807a68caab6ce7a46e01207e1d7ba432b86ccd639b6f47424de481c64c`，不可变driver SHA `5c3f40728cd383913a256a2f46b6bfaf0b02cc7d91586e198c354a007fcb9e76`。
