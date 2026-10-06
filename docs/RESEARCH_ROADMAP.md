@@ -1,5 +1,57 @@
 # Research roadmap and prioritized backlog
 
+## Current — verified constrained CFD feedback, prediction replay and delivery review
+
+Updated 2026-10-06 after FC-E061 independent raw-data review. This section
+supersedes the execution priorities below, which remain historical records.
+The physical scope remains Re100, L/D5, fixed upstream cylinder and rotating
+downstream cylinder. Do not restart previously completed experiments because
+an older section describes them as pending.
+
+Completed chain: real OpenFOAM data → official PhysicsNeMo FNO → explicit
+project adapter using HydroGym FlowEnv and SB3 PPO training → frozen PPO with
+reflection projection and one action limiter → real OpenFOAM observations
+and feedback. Projection is project control code, not a newly trained policy
+or an official NVIDIA model. FNO is used in the training environment; the
+successful deployed feedback controller does not invoke FNO/MPC each step.
+
+FC-E058/059/061 each completed 800 paired control intervals. Their primary
+60 D/U windows satisfy the original drag, lift fluctuation and mean-bias
+criteria without relaxation. Total drag reductions are 3.89198%, 3.92364%
+and 3.89714%. Keep early b00/b01 bias failures and the non-independent phase
+provenance visible. This proves finite-case simulated feedback benefit, not
+universal robustness, physical real-time deployment or net energy savings.
+
+Current ordered work:
+
+1. Independently recompute the completed fixed-policy H1–H5 replay from all
+   16 saved field arrays / 80 endpoints, separating controlled and zero
+   branches and comparing state persistence. Execution returned zero, but
+   numerical review is still pending. Recorded future actions make this
+   retrospective conditional replay, not an online future-action forecast.
+2. Publish fixed-start CFD / FNO / error images and verified three-phase
+   control results in the existing dashboard. Show terminal jobs as completed,
+   not running, and distinguish absent metrics from zero values.
+3. Audit the finite-case delivery against source, model and policy identities,
+   official-library calls, independent physical results, reproducibility,
+   resource receipts and browser presentation. Record genuinely missing
+   evidence before approving another scientific experiment.
+4. Keep K1 H100 formal failure explicit. Neither a passing physical trial nor
+   good H5 prediction silently admits the model under the old H100 protocol.
+   Any additional training must address a measured failure with a fixed
+   comparison; do not extend budgets merely to raise GPU utilization.
+
+No multi-Re extension, moving-cylinder study, optional active-learning loop
+or replacement of successful PPO by MPC is required for this immediate
+finite-case delivery. Those require separate scientific justification. The
+long-term goal remains active until its actual requirements are verified.
+
+Evidence: `CURRENT_DELIVERY_SUMMARY_20261006.md` and the linked independent
+FC-E058/059/061 reports; `PROJECTED_POLICY_H1_H5_CONVERSION_R2_REVIEW_20261006.md`;
+inference result under `artifacts/projected_policy_h1_h5_inference_20261006/`.
+Physical available unified memory must remain at least 20 GiB; existing
+isolated runtime limits and source-preserving failure records remain mandatory.
+
 ## Current — exploratory closed-loop development without erasing formal criteria
 
 The latest user prioritizes actual feedback over waiting for every long-rollout
