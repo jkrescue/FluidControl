@@ -4898,6 +4898,8 @@ class Handler(BaseHTTPRequestHandler):
             data["projected_ppo_b01_long_cfd"]["reported_terminal"] = (
                 _projected_b01_reported_terminal(
                     self.root, data["projected_ppo_b01_long_cfd"]))
+            data["projected_ppo_b01_long_cfd"]["primary_physical_criteria_verified"] = (
+                data["projected_ppo_b01_long_cfd"]["reported_terminal"] is not None)
             data["short_horizon_frozen_confirmation"] = _short_horizon_frozen_confirmation(
                 self.root)
             data["exploratory_final_ppo_real_cfd"] = _exploratory_final_ppo_real_cfd(self.root)
@@ -4998,7 +5000,7 @@ def _short_horizon_frozen_confirmation(root):
                 result_path: "77ab4fb85f238d1e76b6e5a20c18f8992182d24a82b38d7b4b5a52483f9fce20",
                 evaluation_path: "cab65822d1c8ce5588cbcd6e1ce105d245c62d9214067a1befa4c14993fa95ec",
                 segments_path: "fb39a1efe690424c92267c7f01f6bf4c2ab54df0d9615e95c35a783ae6a8250d",
-                review_path: "cb627b87e425f0ff39cdd1aab41d9c12b0de54adddf838b4d825d1612c289797",
+                review_path: "6c6c883396a142c875e0d50758be5a10646f8ec817ed7f9cc15dac522b0ea20c",
             }
             if any(hashlib.sha256(path.read_bytes()).hexdigest() != digest
                    for path, digest in expected.items()):

@@ -90,7 +90,7 @@ def test_short_horizon_terminal_binds_review_and_compact_h1_h5_metrics(tmp_path,
       (payload/'result.json').read_bytes():'77ab4fb85f238d1e76b6e5a20c18f8992182d24a82b38d7b4b5a52483f9fce20',
       (payload/'evaluation.json').read_bytes():'cab65822d1c8ce5588cbcd6e1ce105d245c62d9214067a1befa4c14993fa95ec',
       (payload/'segments.json').read_bytes():'fb39a1efe690424c92267c7f01f6bf4c2ab54df0d9615e95c35a783ae6a8250d',
-      review.read_bytes():'cb627b87e425f0ff39cdd1aab41d9c12b0de54adddf838b4d825d1612c289797'}
+      review.read_bytes():'6c6c883396a142c875e0d50758be5a10646f8ec817ed7f9cc15dac522b0ea20c'}
     monkeypatch.setattr(m.hashlib,'sha256',lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
     unit='\n'.join(['InvocationID=7a887ed792ec4d60a429f4a7a3660b3a','MainPID=0',
       'ActiveState=active','SubState=exited','Result=success','ExecMainStatus=0',
