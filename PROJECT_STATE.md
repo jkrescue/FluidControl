@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 当前实际训练：FC-E091 D25 b00/b02 覆盖候选
+
+Unit `fluid-control-p064-controlled-coverage-d-20261007.service`，invocation `171686b7ec154a0194348d26fd736cec`，PID1078751 running；独立已观察至少5个真实训练窗口，包括 consumed1 b00/start0、consumed5 b02/start0。批准 `docs/P064_B00_B02_COVERAGE_D_TRAINING_APPROVAL_20261007.json` SHA `fa8a99d22426f7c6e73fc56ff8f0c6062c0b11c0dcae146ee51f40aa7e32a3e8`；输出 `artifacts/fcp064_controlled_aero_arm_d_b00_b02_20261007`。固定256窗口/32更新，192原数据＋32b00＋32b02，受控总比例25%；气动力FNO分支28tensor微调，flow/两bias冻结，非PPO或CFD。本次尚无候选精度结论；B/canonical已验物理收益与早期失败、C50拒绝和完整预测FAIL均保留。终态独审已准备，当前不读取live checkpoint。以下为此前完成与历史记录。
+
 术语澄清：P064 A/B/C执行的是**气动力FNO分支微调**，该分支除两项冻结bias外共28参数tensor参与优化，不是仅末层readout。独立flow FNO分支冻结，故本轮不会改善流场预测；此澄清不改变任何算法、预算、结果或失败记录。
 
 ## 当前：E090 CPU转换完成并独审；尚未启动新的模型训练

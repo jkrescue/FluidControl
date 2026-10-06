@@ -54,6 +54,17 @@ def test_bad_event(field,value):
     row={'event':'training_window_complete','history_k':1,'consumed':8};row[field]=value
     with pytest.raises(ValueError):parse_journal(json.dumps({'MESSAGE':json.dumps(row)}))
 
+@pytest.mark.parametrize('sub,pid,n,training',[('running','12',0,False),('running','12',5,True),('exited','0',256,False)])
+def test_d_training_needs_actual_event(tmp_path,monkeypatch,sub,pid,n,training):
+    import p064_dashboard_progress as m
+    p=tmp_path/'docs/P064_B00_B02_COVERAGE_D_TRAINING_APPROVAL_20261007.json';p.parent.mkdir();p.write_text('{}')
+    monkeypatch.setattr(m.hashlib,'sha256',lambda data:type('Digest',(),{'hexdigest':lambda self:'fa8a99d22426f7c6e73fc56ff8f0c6062c0b11c0dcae146ee51f40aa7e32a3e8'})())
+    def run(cmd,**kwargs):
+        if cmd[0]=='journalctl':return json.dumps({'MESSAGE':json.dumps({'event':'training_window_complete','history_k':1,'consumed':n})}) if n else ''
+        return f'InvocationID=171686b7ec154a0194348d26fd736cec\nMainPID={pid}\nActiveState=active\nSubState={sub}\nExecMainStatus=0'
+    value=m.coverage_d_training_status(tmp_path,run)
+    assert value['training'] is training and value['windows']==n and value['scientific_pass'] is None
+
 def test_b02_conversion_review_bound_terminal(tmp_path,monkeypatch):
     import p064_dashboard_progress as m
     docs=tmp_path/'docs';docs.mkdir()

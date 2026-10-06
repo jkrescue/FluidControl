@@ -642,6 +642,25 @@ def development_summary(root):
     except (OSError,ValueError,KeyError,TypeError) as exc:
         return {'verified':False,'error':str(exc)}
 
+def coverage_d_training_status(root,run=subprocess.check_output):
+    root=Path(root)
+    info={'status':'D25覆盖训练状态待核验','running':False,'training':False,'windows':0,'updates':0,'target_windows':256,'target_updates':32,'invocation':None,'last_update_utc':None,'scientific_pass':None,
+          'note':'气动力FNO分支微调28参数tensor，两bias及flow分支冻结；不是PPO。固定192原训练窗＋32b00＋32b02，总受控比例仍25%。C50拒绝、B/canonical真实闭环收益与预测FAIL保留；本次尚无精度结论。'}
+    try:
+        approval=root/'docs/P064_B00_B02_COVERAGE_D_TRAINING_APPROVAL_20261007.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='fa8a99d22426f7c6e73fc56ff8f0c6062c0b11c0dcae146ee51f40aa7e32a3e8':raise ValueError('D approval SHA')
+        raw=run(['systemctl','--user','show','fluid-control-p064-controlled-coverage-d-20261007.service','-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        invocation='171686b7ec154a0194348d26fd736cec'
+        if state.get('InvocationID')!=invocation:raise ValueError('D invocation')
+        info['invocation']=invocation
+        info.update(parse_journal(run(['journalctl','--user',f'_SYSTEMD_INVOCATION_ID={invocation}','-o','json','--no-pager','-n','2000'],text=True,timeout=3)))
+        info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['training']=info['running'] and info['windows']>0
+        info['status']=('D25 气动力FNO训练进行中' if info['training'] else 'D25进程初始化中，尚无训练窗口') if info['running'] else ('D25程序退出0，等待独立终态审查' if state.get('ExecMainStatus')=='0' else 'D25工程失败，未自动重试')
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['error']=str(exc)
+    return info
+
 def c50_training_status(root,run=subprocess.check_output):
     root=Path(root)
     info={'status':'C50状态待核验','running':False,'training':False,'windows':0,'updates':0,'target_windows':256,'target_updates':32,'invocation':None,'last_update_utc':None,'scientific_pass':None,

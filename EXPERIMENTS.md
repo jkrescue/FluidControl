@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## FC-E091 — actual D25 controlled-coverage training, outcome pending
+
+Unit fluid-control-p064-controlled-coverage-d-20261007.service / invocation171686b7ec154a0194348d26fd736cec / PID1078751 running; independently observed real consumed1 b00 and consumed5 b02 events. Approvalfa8a99d22426f7c6e73fc56ff8f0c6062c0b11c0dcae146ee51f40aa7e32a3e8; output artifacts/fcp064_controlled_aero_arm_d_b00_b02_20261007. Same32updates/256windows/K1parent/freshAdam,192original+32b00+32b02 at within-update slots0/4;28aero branch tensors trainable,flow/two biases frozen. No new model accuracy or physical claim and no running scientificCSV rows. Prepared read-only terminal checker retains original actualexit gate,source/order/journal/records/28Adam/bias/flow checks, only extends exactb02 schedule/data identity. No livecheckpoint read.
+
 ## FC-E090 — terminal data conversion independently accepted, no training
 
 Separately approved CPU view completed inv2ea9508cf6194847b6f8337a0c98ac74/exit0,8GiB/noSwap/CPU1/180s. Official DataPipe701windows, first0→100/last700→800 actual verification; manifestc8201847a7bbb77a0a3e7c2d1f121e9aef2cd294358fcc2d4f9d8d88037d0c4a and verificationc5a24716fc285983fbd6042e5be8d7625b5630ccda26f39dc47b7fa645f62b80. [Narrow review](docs/P064_B02_TRAIN_VIEW_INDEPENDENT_REVIEW_20261007.md) SHAaab1bacba13c6ed8a2611d59d2e46a7f132ae1178a5030398fc512d4e471cdc6. Train-only hardlink/source/norm bytes unchanged, not a training/accuracy result.
