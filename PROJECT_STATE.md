@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-P064 最新：A 工程终态已独审，B 已实际启动；尚无候选精度结论
+
+A R2 同 invocation `50de1d8b43ce42ac923752fad76ca4d9` 已 PID0 / normal exit0。独立检查434冻结源码、256条实际采样日志、32×8窗口记录、目标均值与clip、来源/归一化/候选文件；CPU weights-only 检查28个Adam状态均step32且有限，两个冻结bias逐值等于K1，flow文件保持原字节。结果SHA `03951fee3c1ba66ae48d451fe35aeb7735f092e40ef0b76deff90738c9f8e6a1`；独审receipt SHA `2d51c4f84b53fa9b29748c77200cac279ab5a3a4b8ebb5aa6309b4ae9a45f52a`。训练观察最低Available106.844551GiB，cgroup峰值9884188672B。官方fresh reload为producer逐role实际CPU重载；独审未新建模型/forward，不冒称新dual-loader整链实际重载。报告 `docs/FC_P064_ARM_A_TERMINAL_ENGINEERING_REVIEW_20261006.md`。
+
+Root另行批准并实际启动B：unit `fluid-control-fcp064-aero-arm-b-20261006.service` / invocation `450ef57c25c14ec38e722cbd597ffb50`，本次归档独立观测PID528728 / active-running。批准 `docs/FC_P064_ARM_B_TRAINING_APPROVAL_20261006.json` SHA `a1e79d108f5067027742f08f3e04b2d73cb059286e2bd433e53f4e0d51247b29`。B从同K1/fresh Adam独立开始，不续训A；固定32updates/256windows中64窗来自b00，仅运行，不宣称成功。
+
+A开发评估PENDING首次生成因434训练闭包没有旧selector而在写pending前失败，无GPU评估；原失败保留，正独审source-pinned旧selector导入最小修正。A工程完成不是科学准入，A/B尚无同协议开发精度比较；不覆盖原K1 H100失败，不阻断已完成三相位真实物理闭环，也不放宽10%偏置标准。下方旧运行/未批准描述为历史阶段记录。
+
 ## FC-P064 当前工程里程碑：A 臂 R1 在训练前失败，R2 同源恢复并持续运行
 
 已冻结并推送 P064 训练、显式 A/B 候选身份、官方 Reader/DataPipe 适配与 CPU 合同测试，代码提交 `977a027d51c3ae03ade858deae0030d194a79eb8`。A 臂首次 unit `fluid-control-fcp064-aero-arm-a-20261006.service` / invocation `cfc40285f8ec49fdba9a99defe2960cc` 在第一个 CUDA 迁移处退出1，完成 **0/32 optimizer updates、0/256 windows**，没有候选输出；批准 `docs/FC_P064_ARM_A_TRAINING_APPROVAL_20261006.json` SHA `c1872be6e816a2f058a111084594882ebfd9d3f0222e642ba58bfba71487ee1e`。这是启动失败，不是科学负结果。

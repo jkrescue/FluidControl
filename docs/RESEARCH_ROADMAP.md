@@ -2,7 +2,7 @@
 
 ## Current — verified constrained CFD feedback, prediction replay and delivery review
 
-Updated 2026-10-06 after FC-E063/064 reviews and FC-E066 data conversion. This section
+Updated 2026-10-06 after P064 arm A terminal review and actual arm B launch. This section
 supersedes the execution priorities below, which remain historical records.
 The physical scope remains Re100, L/D5, fixed upstream cylinder and rotating
 downstream cylinder. Do not restart previously completed experiments because
@@ -30,15 +30,25 @@ Current ordered work:
    accumulation. Recorded future actions make it retrospective conditional
    replay, not an online forecast. Fixed CFD/FNO/error images and verified
    physical results are published; completion audit is recorded.
-2. Current: finish same-invocation b00 full801-frame controlled train conversion
-   (FC-E065), then independently verify its final HDF/provenance. b01/b03 fixed
-   development96-frame conversion (FC-E066) is already independently complete.
-   Whole b00 is train, opened replay origins are development, not fresh tests.
-3. Prepare P064 equal-budget A/B: same official FNO, initialization, training
-   protocol and optimizer budget; change only addition of controlled b00 data.
-   Evaluate both candidates under the same predeclared H1/H5 development
-   protocol, with true-input force readout and retention on old train44.
-   No automatic training or tuning authorization follows from data conversion.
+2. Completed: b00 full801-frame controlled train conversion (FC-E065), its
+   independent provenance review, and the train-only official DataPipe view.
+   b01/b03 development96-frame conversion (FC-E066) and K1 H1-H5 baseline
+   inference (FC-E067) are also independently complete. Whole b00 is train;
+   b01/b03 are already opened development, not fresh tests. K1 H1 force errors
+   exceed persistence in both development phases; H5 benefits do not erase this.
+3. Current P064 equal-budget A/B: arm A completed 256 windows / 32 updates and
+   independent terminal engineering review. Arm B actually started in unit
+   `fluid-control-fcp064-aero-arm-b-20261006.service`, invocation
+   `450ef57c25c14ec38e722cbd597ffb50`; it is not yet a completed result.
+   Both start from K1 with fresh AdamW and frozen flow weights; only B replaces
+   64 of 256 windows with real b00 controlled-flow data. This experiment targets
+   force prediction, not improvement of the frozen velocity/pressure model.
+   Compare K1/A/B under the same fixed H1-H5 development protocol and report
+   old-train retention. A pending-evaluation preparation failed safely before
+   inference on a missing selector import; a separately reviewed compatibility
+   correction is being prepared without modifying the running training source.
+   After B exits, independently verify its actual terminal artifacts before
+   inference. Do not infer scientific improvement from training completion.
 4. If evidence supports adopting a candidate, verify its loader/PPO interface
    compatibility and then execute separately approved genuine trained-policy
    real CFD feedback confirmation. Do not substitute surrogate improvement

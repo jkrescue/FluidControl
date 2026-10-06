@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-P064 — A terminal engineering verified; independent B training running
+
+A R2 invocation `50de1d8b43ce42ac923752fad76ca4d9` completed normal exit0. Result SHA `03951fee3c1ba66ae48d451fe35aeb7735f092e40ef0b76deff90738c9f8e6a1`, manifest SHA `049d29df94a410ba3dbcedf52484447e828cde7787593ad837cbe38be7abd778`. Independent bounded CPU checker invocation `8b65dab971bf48ce92268e8d6056d570` exited0 under8GiB/noSwap/CPU1/CUDAhidden; receipt `artifacts/fcp064_arm_a_terminal_cpu_review_20261006/receipt.json` SHA `2d51c4f84b53fa9b29748c77200cac279ab5a3a4b8ebb5aa6309b4ae9a45f52a`. Verified434sources,256scheduled journal windows,32updates×8records, finite statistics/recomputed means/clip, source/norm identities,28Adam states allstep32, frozenbias2 exact and originalflow bytes. Training sampled minimumAvailable106.844551GiB, cgrouppeak9884188672B; reviewerMemoryPeak unavailable, notzero. Producer official per-role fresh reload evidence is distinct from independent weights-only tensor checks, not an independent model forward/reload. Report `docs/FC_P064_ARM_A_TERMINAL_ENGINEERING_REVIEW_20261006.md` records boundaries.
+
+Root separately launched B unit `fluid-control-fcp064-aero-arm-b-20261006.service`, invocation `450ef57c25c14ec38e722cbd597ffb50`; independently observedPID528728 active/running. Exact approval SHA `a1e79d108f5067027742f08f3e04b2d73cb059286e2bd433e53f4e0d51247b29`. Same originalK1/freshAdam/32updates256windows, with64mechanical b00 replacements; B does not continue A. No B terminal or accuracy claim, no CSV scientific row.
+
+The first A development-PENDING preparation failed before publication because the434training closure lacks the historical selector module. No evaluation/GPU occurred; minimal source-bound import correction is separately reviewed and original failure retained. Existing A R1 CUDA startup failure also remains. Engineering completion is not scientific admission or evidence that augmentation improves generalization. Same fixed development comparison remains prospective; originalH100FAIL, three-phase physical results and10% constraint are unchanged.
+
 ## FC-P064 — A R1 启动失败、精确缓存建议完成、A R2 已越过首批更新
 
 Canonical P064 source/tests/plan/approval files are committed as `977a027d51c3ae03ade858deae0030d194a79eb8`. A R1 (`fluid-control-fcp064-aero-arm-a-20261006.service`, invocation `cfc40285f8ec49fdba9a99defe2960cc`) exited1 at the first CUDA transfer with **0 optimizer updates and 0 consumed windows**; no candidate was written. Its approval SHA is `c1872be6e816a2f058a111084594882ebfd9d3f0222e642ba58bfba71487ee1e`. This is an engineering startup failure, not a scientific A-arm outcome.
