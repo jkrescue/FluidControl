@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-P026 K4 original formal evaluation — terminal scientific failure
+
+Observed 2026-10-06: actual invocation `d5d2201c8e2c4bf2ab40201cca0dcb1e` exited0/PID0. Receipt SHA `729f9ce1f307d5462307470af20491806f6cfe31b5c81fc74ec284a2461841d9`; development SHA `ce60621723ce364e4f8cdc165268a64ca5fd1a0185b7529bc21c1f91ac8aab9e`. Original validation10/dynamic6 endpoint components passed, but six-window joint count is1/6, Cd5/6, rear-Cl fluctuation RMS2/6, rear-Cl mean4/6. Four rotating RMS errors are0.06823553510506697/0.12234179725403527/0.06830637102663029/0.08125565316417882. K4 does not repair the matched K1 admission failure; no PPO or frozen-test access. Minimum observed free/available memory20.770393/110.100964GiB. Independent terminal review is being completed before the final scientific CSV entry and milestone push.
+
+Independent terminal review is now complete: all35 output and411 source hashes agree; eight containers exited0/noOOM; unchanged auditor under Python3.12 reproduces the complete gate dictionary exactly. Review: `docs/FC_P026_K4_FORMAL_TERMINAL_REVIEW_20261006.md`; scientific ledger FC-E038. The preceding review-in-progress sentence is the earlier observation.
+
+Next: FC-P027 separates true-field-conditioned force error from recorded-action H10 autoregressive error on existing training trajectories. Root approved isolated CPU implementation and synthetic engineering unit tests only; no real-data scan/model load/GPU execution yet. No new training, architecture, CFD generation, or relaxed admission is authorized by this negative result.
+
 ## FC-P026 K4 original formal evaluation — actual running observation
 
 Observed2026-10-05T23:38:24Z: unit `fluid-control-fcp026-k4-formal-20261006.service`,

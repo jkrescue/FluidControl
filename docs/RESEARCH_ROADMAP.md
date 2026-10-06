@@ -1,5 +1,13 @@
 # Research roadmap and prioritized backlog
 
+## Current — 2026-10-06: matched K1/K4 formal suites completed; both rejected
+
+Update: independent terminal review is complete and FC-E038 records the failure. FC-P027 design was read by Root; isolated CPU implementation/unit tests are authorized, not real-data/model/GPU execution. See `FC_P026_K4_FORMAL_TERMINAL_REVIEW_20261006.md` and `FC_P027_SHORT_HORIZON_ERROR_DECOMPOSITION_PLAN_20261006.md`. Earlier review-in-progress wording below is historical.
+
+K4 actual receipt `729f9ce1f307d5462307470af20491806f6cfe31b5c81fc74ec284a2461841d9`, development gate `ce60621723ce364e4f8cdc165268a64ca5fd1a0185b7529bc21c1f91ac8aab9e`: joint1/6, Cd5/6, lift-fluctuation2/6, mean-lift4/6. This is the same admission outcome as K1. Independent terminal review and ledger integration are in progress; neither candidate proceeds to PPO.
+
+Next: prepare a bounded train-only H10 error decomposition, comparing true-field-conditioned H1 force predictions with free autoregression using identical K1/K4 origins and recorded actions. Check timestamp provenance before claiming causal force prehistory. Report the predicted ten endpoints separately from the62-point mixed-history cost. This is a diagnostic design, not a new model, training authorization, short-horizon admission or MPC success. Retain the full objective: accepted surrogate → compatible HydroGym/PPO policy → paired real-CFD closed-loop verification. All older running-status sections below are historical.
+
 ## Current — 2026-10-05 21:43 UTC: K1 evaluation live; matched K4 next
 
 K1 training completed 1,368 windows / 171 optimizer updates. Actual candidate

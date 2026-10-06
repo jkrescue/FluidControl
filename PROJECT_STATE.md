@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 最新终态：2026-10-06，K1/K4均未满足代理控制精度要求
+
+K4原协议完整评估已实际结束：unit `fluid-control-fcp026-k4-formal-20261006.service`，invocation `d5d2201c8e2c4bf2ab40201cca0dcb1e`，PID0、active/exited、ExecMainStatus0。receipt SHA `729f9ce1f307d5462307470af20491806f6cfe31b5c81fc74ec284a2461841d9`；development gate SHA `ce60621723ce364e4f8cdc165268a64ca5fd1a0185b7529bc21c1f91ac8aab9e`，状态 `DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL`。程序正常完成不等于模型合格。
+
+六个受力窗口仅1/6同时通过；总阻力5/6、升力波动2/6、平均升力4/6，与K1相同。四个旋转分支的升力波动误差为0.068236、0.122342、0.068306、0.081256，均超过约0.0294的预测误差限值。1126次资源记录最低MemFree20.770393GiB、MemAvailable110.100964GiB。未自动启动PPO，未使用冻结测试集；实际物理平均升力10%要求不变。
+
+独立终态审查已完成：35项输出和411项源码哈希一致，8阶段正常退出，原审计程序在Python3.12完整重算一致。报告 `docs/FC_P026_K4_FORMAL_TERMINAL_REVIEW_20261006.md`，科学记录FC-E038。下一优先为FC-P027：复用44条真实训练轨迹，区分真实流场条件下的受力误差与H10连续预测误差。Root已批准隔离CPU实现与小型工程测试，尚未批准真实数据扫描、模型加载或GPU执行。不追加小幅参数扫描，不用混入52点真值后的成本误差替代10点预测本身的误差。下方运行中描述均为历史观测。
+
 **最新实际状态（2026-10-06）：K4原协议formal已启动，仍在运行，无结果结论。** 独立观测时间2026-10-05 23:38:24 UTC；unit `fluid-control-fcp026-k4-formal-20261006.service`、invocation `d5d2201c8e2c4bf2ab40201cca0dcb1e`、PID1156613为activating/start。实际官方b40容器 `0be58547…f84b64` 正执行validation10 H1/10/50/100、stride25/batch4、显式p026_k4，绑定候选manifest9d1fb9bd…2ae1b5e。审批SHA `03f6880893a730307a6a6acf0ed19276ca8dc958fc3266ebf14e8e2a1323cbb8`；源码/候选/数据挂载只读。启动不等于阶段通过、整体准入或PPO授权。实际观测见 `docs/FC_P026_K4_FORMAL_RUNNING_OBSERVATION_20261006.json`；下方此前里程碑保留为历史。
 
 **当前里程碑更新（2026-10-06）：FC-P026 K4训练1368窗/171更新已实际完成，终态完整性审计及官方CPU双模型重载已通过；尚无K4正式评估结果或科学准入。** 同一训练invocation `eee5a6fbad40411cac2f05e00520b079` 已active/exited、PID0、success/exit0。实际审计SHA `423ad58a3d441d26f174174bc68824a59ccd453b2e49f0577888530a81083b0b`；实际官方CPU重载SHA `491d6e4e8868edd0c0a222ceb1e1ed5cc1c5b2c3a8b88f0f4a053895aed1a729`，7项候选文件与416项运行源码及双模型tensor身份独立核对一致。内部最低MemFree20.803394GiB、host-watch21.006046GiB、guard CUDAfree21.071632GiB，均保留原20GiB下限。固定训练窗诊断仅有小幅改善，不是held-out或准入证据。下一步仍需独立审批并完成原协议formal；无PPO自动授权。详见 `docs/FC_P026_K4_TERMINAL_REVIEW_20261006.md`。以下此前运行记录保留为历史。
