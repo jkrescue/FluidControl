@@ -90,3 +90,10 @@ def test_b01_clock_is_explicit():
     from p064_dashboard_progress import cfd_progress_counts
     row={'completed_cycles':1,'rows':[{'step':1,'end_time':130.1,'applied_omega':.1}]}
     assert cfd_progress_counts(row,start=130.)['current_time']==130.1
+
+def test_formal_missing_identity_does_not_claim_running(tmp_path):
+    from p064_dashboard_progress import formal_evaluation_status
+    result=formal_evaluation_status(tmp_path)
+    assert result['invocation'] is None
+    assert result['training'] is False
+    assert result['scientific_pass'] is None

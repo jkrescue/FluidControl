@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 并行实际：P064-B 原完整formal评估 R2 已启动，尚无验收结果
+
+2026-10-06 12:41:45 UTC，unit `fluid-control-p064-b-formal-r2-20261006.service`，invocation `01806bdc150841f7b9efd04360a441f2`，实际 active/running。批准 `docs/FC_P064_ARM_B_FORMAL_APPROVAL_20261006.json` SHA `cd58fd47e991ec6dac200bd82d414347f72b778ea78415377427e430dfd47478`；输出 `artifacts/fcp064_arm_b_formal_20261006`。这是原完整科学协议评估，不是训练；precision阶段已结束，validation10进入CUDA/PhysicsNeMo初始化，尚无完整数值结果，不凭进程或GPU利用率声称forward/通过。R1 invocation `6d7cea57ea7740c991223448dfc45e0a` 因错误cwd相对路径在打开执行源码/容器/GPU前exit2，保留失败；R2同批准仅改正确cwd与绝对路径。b01 CPU真实CFD同432c12继续运行，原H100失败历史未被覆盖。实际launch报告 `docs/FC_P064_ARM_B_FORMAL_LAUNCH_20261006.md` SHA `ac3dc4b3262a943128277b4acf3f53e014dfd3d2a604f99968d3a3ce36c85cda`。
+
 ## 当前实际：同 B policy 的 b01 配对800周期验证已启动
 
 2026-10-06 12:37:56 UTC，unit `fluid-control-p064-b-projected-ppo-b01-long-cfd-20261006.service`，invocation `432c12de32b0444d9a6f6626e12616d1` 已实际 running，首查14/800周期。固定130→210，主窗口(150,210]，同B policy、镜像投影及单次动作限制，原物理标准不变。批准 `docs/P064_B_PROJECTED_PPO_B01_LONG_CFD_APPROVAL_20261006.json` SHA `3a19e326ebfd37df24060b8b5717b5af08b405ed63165e4034974aeb7b0abcb6`；immutable driver `4b8fa43f8ac020521ae8cde1047b6ec2f80d35ec0512bc7606d1050835010619`。CPU真实CFD反馈，无新训练、无在线FNO，尚无物理结论。b01是已打开开发相位，不是全新独立测试；不能继承旧policy结果。此前b00已独审通过原主窗口标准，H100失败仍保留。

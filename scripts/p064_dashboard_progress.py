@@ -114,6 +114,26 @@ def candidate_cfd_status(root,run=subprocess.check_output):
         info['status']='身份或状态未验证';info['note']=str(exc)
     return info
 
+def formal_evaluation_status(root,run=subprocess.check_output):
+    root=Path(root)
+    info={'status':'正式评估身份/状态未验证','invocation':None,'training':False,'scientific_pass':None}
+    try:
+        approval=root/'docs/FC_P064_ARM_B_FORMAL_APPROVAL_20261006.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='cd58fd47e991ec6dac200bd82d414347f72b778ea78415377427e430dfd47478':raise ValueError('formal approval SHA')
+        unit='fluid-control-p064-b-formal-r2-20261006.service'
+        raw=run(['systemctl','--user','show',unit,'-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!='01806bdc150841f7b9efd04360a441f2':raise ValueError('formal invocation')
+        info['invocation']=state['InvocationID']
+        if state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0:
+            info['status']='原完整formal评估进程运行中（非训练，尚不代表GPU forward或通过）'
+        elif state.get('MainPID')=='0':
+            info['status']='formal进程退出，等待各科学门槛独审' if state.get('ExecMainStatus')=='0' else 'formal进程失败/停止，保留证据'
+        info['note']='R1工作目录错误在打开源码/GPU前退出2；R2同批准改用正确cwd和绝对路径。原H100失败历史与所有门槛保持，不能以exit0判通过。'
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
+        info['note']=str(exc)
+    return info
+
 def development_summary(root):
     """Only small independently reviewed JSON; never load checkpoint/field arrays."""
     root=Path(root)
