@@ -1437,13 +1437,21 @@ def _registered_formal_progress(root: Path, registration: dict, state: dict, mat
     if hashlib.sha256(approval_raw).hexdigest() != registration["approval_sha256"]:
         raise ValueError("formal approval differs")
     approval = json.loads(approval_raw)
-    if (approval.get("status") != "FC_P026_APPROVED_ORIGINAL_FORMAL_EVALUATION"
-            or approval.get("formal_evaluation_authorized") is not True
-            or approval.get("ppo_auto_launch") is not False
-            or type(approval.get("history_k")) is not int
-            or approval["history_k"] not in (1, 4)):
+    if (approval.get("formal_evaluation_authorized") is not True
+            or approval.get("ppo_auto_launch") is not False):
         raise ValueError("not an approved formal evaluation")
-    arm = f"K{approval['history_k']}"
+    if approval.get("status") == "FC_P026_APPROVED_ORIGINAL_FORMAL_EVALUATION":
+        if type(approval.get("history_k")) is not int or approval["history_k"] not in (1, 4):
+            raise ValueError("not an approved formal evaluation")
+        arm = f"K{approval['history_k']}"
+    elif approval.get("status") == "FC_P028_APPROVED_ORIGINAL_FORMAL_EVALUATION":
+        if (approval.get("reviewed_by_lead") is not True
+                or approval.get("independent_terminal_audit", {}).get("reviewed_by_lead") is not True
+                or approval.get("official_dual_reload", {}).get("reviewed_by_lead") is not True):
+            raise ValueError("not an approved formal evaluation")
+        arm = "P028"
+    else:
+        raise ValueError("not an approved formal evaluation")
     if registration["planned_updates"] != {arm: len(FORMAL_STAGE_LABELS)}:
         raise ValueError("formal step plan differs")
     output = confined(approval["output_relative_directory"])

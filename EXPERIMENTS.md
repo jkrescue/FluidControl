@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E040 — P028 matched H10: field improvement, force deterioration
+
+Actual 44-case origin51/H10 comparison completed under invocation `74d9e3115791403ab96e55a5d06b8ffd`. Result SHA `6146ea9276570981cc72c949e3e6fac46737c43aa83c561a37eaa0e54a4ab793`; independently recomputed force arrays and field aggregation in `docs/FC_P028_H10_TERMINAL_REVIEW_20261006.md`. All old P027 K1/K4/persistence arrays reproduce exactly; P028 true-field-conditioned force equals frozen K1 exactly.
+
+Mean-case normalized full-field AR RMSE improves0.0389092432081→0.0335438993167 (not pooled RMSE). Rear-Cl AR MAE worsens0.0386932160032→0.0395074439053; pooled RMSE worsens0.0542399828243→0.0556543162316; total-Cd MAE worsens0.0169093010778→0.0172835624353.24/44 cases improve rear-Cl, but base20 and overall performance deteriorate. No scientific admission; train-only H10 cannot replace original formal H100/window criteria.
+
+Original full formal is now actually running: invocation `eb4e12507302498bb8944373e0717a25`, output `artifacts/fcp028_original_formal_20261006`; actual observation01:57UTC isvalidation10, not a final scientific result. P029 is conditional design preparation only, not approved training. Older entries below describe historical states.
+
 ## P028 training and official independent CPU reload complete
 
 Actual result `74bc0d491d82da8c3b897a330e1397ac7db2e92465221801ae1868a57114840d` verifies1368windows/171updates; source/protocol/role metadata and actual terminal container independently checked. Actual candidate audit `dd3390d0ac09f8f8e4673ed8eb48d2fbe47293a1dd1689a7abae29972ddddaea`; official CPU reload `685d55a9a2116d1554f14c26e54ce2d2913a4f9c47553c70407f3c4e25d3aecd` verifies saved flow tensorfac5f298...5406 and unchanged aero b0ec7405...80eb. No matching-evaluation improvement claim yet; complete report `docs/FC_P028_TRAINING_TERMINAL_REVIEW_20261006.md`. Next matchedP027 H10 and unchanged full formal. Formal preflight passed without numerical execution; no PPO admission.

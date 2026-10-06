@@ -1,14 +1,14 @@
 {
-  "experiment": "P028-flow-training",
-  "label": "官方FNO十步流场预测训练",
-  "description": "使用44条真实CFD训练轨迹，固定受力模型，仅更新流场FNO。1368个原始训练窗口，每窗学习连续10步；每8窗更新一次，共171次更新。尚未通过完整精度评估，不代表闭环控制成功。北京时间11:27前提供完整阶段结论。",
-  "unit": "fluid-control-fcp028-flow-train-20261006.service",
-  "invocation": "c46c60f3c2634802b2646bb094f9d201",
-  "approval": "docs/FC_P028_TRAIN_EXECUTION_APPROVAL_20261006.json",
-  "approval_sha256": "655f4d924036ef1e23857c4bc1892b8f0bbce40af1a1b22f8bd4657eca097837",
-  "launcher": "artifacts/fcp028_training_launcher_20261006_immutable/run_p028_flow_training.py",
-  "launcher_sha256": "62ff300395785291de790e26e5c60d072a89fa43f165f2711747e4b0afd2b8e0",
-  "log": "artifacts/fcp028_flow_training_20261006/run.log",
-  "progress_kind": "flow_training",
-  "planned_updates": {"FNO": 171}
+  "experiment": "P028-original-formal",
+  "label": "新流场模型的完整预测精度评估",
+  "description": "已完成171次训练更新。同一起点的十步对照中，全场误差降低约14%，但后圆柱升力误差增加约2%；目前正在执行原完整长时预测和气动力评估。没有启动新强化学习，也没有宣称闭环成功。北京时间11:27前报告完整阶段结论。",
+  "unit": "fluid-control-fcp028-original-formal-20261006.service",
+  "invocation": "eb4e12507302498bb8944373e0717a25",
+  "approval": "docs/FC_P028_FORMAL_EXECUTION_APPROVAL_20261006.json",
+  "approval_sha256": "c061e50dc1d868e80d1c858ea79b03e8fe5560a204bbb30d2ef9236373838d55",
+  "launcher": "artifacts/fcp028_formal_source_20261006_immutable/orchestration/scripts/run_fcp028_posteval.py",
+  "launcher_sha256": "7ba31bc02e892b860a2ec9edd9e7187661bedc36c7437c44aa7a078ed221bbd4",
+  "log": "artifacts/fcp028_original_formal_20261006/memory.jsonl",
+  "progress_kind": "formal_evaluation",
+  "planned_updates": {"P028": 7}
 }

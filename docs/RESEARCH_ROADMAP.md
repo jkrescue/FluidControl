@@ -1,5 +1,11 @@
 # Research roadmap and prioritized backlog
 
+## Current — P028 training/H10 complete; original full formal running
+
+At01:57UTC actual formal invocation `eb4e12507302498bb8944373e0717a25` is in validation10. Matched H10 demonstrates13.79% lower mean-case field RMSE but2.10% worse rear-Cl MAE; this is not a successful control-model repair. Finish unchanged complete formal and independent review. In parallel prepare one conditional P029 control-aware flow objective, not GPU training; retain official architecture, exact parent/data/order/budget, frozen aerodynamic parameters and fixed evaluation. Do not choose weights using validation outcomes. Any new backward graph requires its own safe resource check.
+
+Remaining delivery sequence is unchanged: accepted surrogate → compatible HydroGym/PPO policy → paired real-CFD closed-loop validation of total drag and rear-lift constraints. Existing CFD-only PPO is a separate successful baseline, not fulfillment of the FNO-assisted goal. Full progress conclusion due03:26:54UTC; explicitly report unfinished steps. All earlier running-status notes below are historical.
+
 ## Actual current stage — fixed P028 GPU training running
 
 At01:30UTC,37/171updates and302/1368windows were observed from the same live invocationc46c60f3c2634802b2646bb094f9d201. Next: monitor this job without duplicate launches; actual terminal identity audit and bounded official CPU dual reload; unchanged full formal evaluation. Only accepted surrogate evidence permits compatible HydroGym/PPO and paired real-CFD control. User's two-hour conclusion is due03:26:54UTC; any unfinished stage must be explicitly reported, not inferred complete. Formal411/CPU9 immutable source preparation is complete; actual post-training evaluation remains outstanding.
