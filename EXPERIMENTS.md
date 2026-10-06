@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E053 — Actual diverse-final-policy paired CFD running
+
+Root launched `fluid-control-exploratory-diverse-ppo-cfd-20261006`, invocation `464de68ee1114eea8e8ae214d18dc045`, initialPID2474346. Approval `67fda1a404f844d89b986442a4a9000561b02757417d5a8d366fdf9f9e6033db`; executed immutable driver `89e0d8bea92440babd3d647eed31758db9cfc2a43e31ed6e9d9bdf5047b77b6e`, captured in Git after launch. Final diverse policy `8dc8cabf2104654345f270e3fb86edca7752cf4c883112c0a4cbd3a181acea9b` alone supplies deterministic CPU actions; no MPC or onlineFNO. Same paired148→160.4/124cycles, physical69 observation, constraints, full/halves open-left metrics and10% physical reference. Outer8GiB/noSwap/4CPU, two8GiB/noSwap solvers, Available50/22,1950s/stop120. No scientific CSV outcome while running; not80D/U admission.
+
+## FC-E052 — Independent terminal training review complete
+
+Result `cd5775e4647280b77803de9a5ced6abdf6378cded4f676f935bd9836350c3640` and all6 listed artifacts rehashed. Independently counted4096 rows with per-env six-slot steps `[174,170,170,170,170,170]`, matching205 resets `[35,34,34,34,34,34]`,204 complete episodes plus4 partial steps. Actual64 optimizer hooks/32epochs; policy changed and reviewed trainer checked frozenK1 tensors unchanged.172 memory rows minimumAvailable119470489600bytes. Applied actions now span±.75 and both lift penalties are active, but these training diagnostics do not establish CFD benefit. Report `docs/EXPLORATORY_DIVERSE_H5_PPO_TERMINAL_REVIEW_20261006.md` SHA `c93b1e6b7d0127c204a5dd8795b080e11068fb990c19e559314920f26c80964e`. Sourcecapture0e38e49 was afterlaunch; actual identity is immutable trainer SHAaae8c9a4. Historical observed/pending entries below remain unchanged.
+
 ## FC-E052 — Training terminal observed; direct-policy physical outcome still pending
 
 Same `3a34c4d621244e4bbacdf1816b5b1374` exited0. Actualresult `cd5775e4647280b77803de9a5ced6abdf6378cded4f676f935bd9836350c3640` records4096steps/32epochs/64optimizersteps and eachphase resetcounts `[35,34,34,34,34,34]`. Finalpolicy `8dc8cabf2104654345f270e3fb86edca7752cf4c883112c0a4cbd3a181acea9b`; VecNormalize `6988d4d161bc69c8bbd89d477e9320ad9ef264d35c9dee0bbf63954d4cdfce70`; wall83.807s. No final-policy selection or FNO update. Independent terminal resource/artifact review is assigned separately; training completion is not CFD benefit.

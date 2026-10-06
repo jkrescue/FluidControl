@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E053实际运行：多真实起点训练的唯一PPO策略直接验证CFD
+
+Root已启动 `fluid-control-exploratory-diverse-ppo-cfd-20261006`，invocation `464de68ee1114eea8e8ae214d18dc045`，初始PID2474346。批准SHA `67fda1a404f844d89b986442a4a9000561b02757417d5a8d366fdf9f9e6033db`；不可变driver `89e0d8bea92440babd3d647eed31758db9cfc2a43e31ed6e9d9bdf5047b77b6e`。固定148→160.4、124周期配对zero，CPU策略推理，无在线FNO/MPC；原69观察、单次动作变化率限制、全/前/后窗统计与10%物理参考不变。尚无终态物理结论，不是80D/U准入；先前FC-E051负结果保留。
+
+FC-E052训练独立终态审查已完成：4096转移、32epoch/64optimizersteps、816完整H5episodes；24起点全部覆盖，每相位reset `[35,34,34,34,34,34]`。6项结果artifact逐字节复核，172次内存记录最低MemAvailable119470489600字节；策略改变、冻结FNO不变由受审执行代码的tensor校验记录支持。报告 `docs/EXPLORATORY_DIVERSE_H5_PPO_TERMINAL_REVIEW_20261006.md` SHA `c93b1e6b7d0127c204a5dd8795b080e11068fb990c19e559314920f26c80964e`。训练诊断不是真实减阻。以下时间点状态均保留作历史。
+
 ## FC-E052已结束：24真实reset的4096步PPO训练完成，待真实CFD验证
 
 同一 `3a34c4d621244e4bbacdf1816b5b1374` 已exit0/PID0；实际结果SHA `cd5775e4647280b77803de9a5ced6abdf6378cded4f676f935bd9836350c3640`。4096转移/32PPO epoch/64优化器step，四相位reset次数各 `[35,34,34,34,34,34]`，没有选取表现好的起点或策略。唯一终态策略 `8dc8cabf2104654345f270e3fb86edca7752cf4c883112c0a4cbd3a181acea9b`，identity VecNormalize `6988d4d161bc69c8bbd89d477e9320ad9ef264d35c9dee0bbf63954d4cdfce70`，训练83.807秒。官方FNO冻结不变；独立终态资源/日志审计由非训练实现者完成后归档。
