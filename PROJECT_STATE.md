@@ -6,7 +6,7 @@
 
 同44训练轨迹origin51/H10对照（FC-E042）已完成：P029相对原K1场mean-case RMSE下降2.50%，rear-Cl MAE下降13.79%，总Cd MAE下降9.01%。但场误差仍比P028高13.10%，升力波动改善并不跨所有数据族/相位一致。这是train-only诊断，不是独立验证或闭环成功。结果SHA `aed040eb22766f8f47b1f6093f50bc1aa753dd748cd90b8d68ac9db1095b329d`；报告 `docs/FC_P029_H10_TERMINAL_REVIEW_20261006.md`。
 
-**实际运行原完整正式验证**：user unit `fluid-control-fcp029-original-formal-20261006.service`，invocation `85ae29a422fc48739136418317de8ca5`，输出 `artifacts/fcp029_original_formal_20261006`，批准SHA `b339d1175ea17dfd110763c044b0d9a2a15ce088062b1834c3627969f279fec5`。7项数值步骤与标准保持不变，观测当前validation10。尚无完整验收结论，不批准新PPO。北京时间11:27前报告包括未完成事项的完整阶段结论；此前记录中的运行状态均为历史。
+**实际运行原完整正式验证**：user unit `fluid-control-fcp029-original-formal-20261006.service`，invocation `85ae29a422fc48739136418317de8ca5`，输出 `artifacts/fcp029_original_formal_20261006`，批准SHA `b339d1175ea17dfd110763c044b0d9a2a15ce088062b1834c3627969f279fec5`。7项数值步骤与标准保持不变，11:26观测当前dynamic6。validation10端点子项通过，动作Cd变化MAE 0.020434、符号8/8、排序20/20；但H100速度L2/后圆柱Cl MAE/总Cd MAE为0.056598/0.045117/0.018809，均高于K1的0.043591/0.040186/0.010928。短期训练收益未稳定转化为长期验证收益，尚无完整验收结论，不批准新PPO。两小时结论已按时发布 `docs/TWO_HOUR_CONCLUSION_20261006.md`（GitLab提交1c3230b），明确目标未完成；此前记录中的运行状态均为历史。
 
 ## 训练资源故障已处置；实际第二次运行（2026-10-06 02:51 UTC）
 

@@ -1,7 +1,7 @@
 {
   "experiment":"P029-original-formal",
   "label":"新FNO完整验证：长期流场及升阻力预测",
-  "description":"已完成171次联合目标训练及官方独立重载。同起点44条训练轨迹十步对照中，后圆柱升力MAE约降低13.8%，流场误差约降低2.5%；完整独立验证尚在运行，不能把短期改善当成全部达标。尚未启动新PPO或FNO辅助真实CFD闭环。11:27前给出实测阶段结论。",
+  "description":"已完成171次训练及官方重载。训练轨迹十步升力误差降低13.8%，但独立验证100步升力/阻力误差仍高于原基线。10个验证工况的端点子项通过，另外6个动态工况及完整统计仍在运行；不能据子项通过宣布整体达标。新PPO及FNO辅助真实CFD闭环尚未执行。两小时报告已同步GitLab：docs/TWO_HOUR_CONCLUSION_20261006.md。",
   "unit":"fluid-control-fcp029-original-formal-20261006.service",
   "invocation":"85ae29a422fc48739136418317de8ca5",
   "approval":"docs/FC_P029_FORMAL_EXECUTION_APPROVAL_20261006.json",
