@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E082 当前实际：固定对称坐标PPO正在训练，未批准新CFD
+
+实际unit `fluid-control-p064-b-symmetry-canonical-ppo-20261007.service`，invocation `029124675a0d459e82455c59f831ba3b`，PID3286386 running；独查真实1868/32768 transitions（时点快照，页面动态更新）。批准 `docs/P064_B_SYMMETRY_CANONICAL_PPO_APPROVAL_20261007.json` SHA `1a49d9a72a8dabcb1159b2d04ebcf19f039cbdb70f87ba1e1c4d714d898368c7`；输出 `artifacts/p064_b_symmetry_canonical_h5_32768_ppo_20261007/payload`。同B/seed20261007/H5/24reset/69obs/奖励/32768预算，唯一科学变化为固定、与policy无关的对称坐标wrapper；未改标准PPO优化器或选checkpoint。12GiB/noSwap、Available50/22保留20。新策略尚无物理结果，终态须独审方向/动作映射及冻结FNO，再另批CFD。
+
+第二seed增阻0.6174%失败、旧seed三相位约3.90%减阻成功、完整预测FAIL、H25未采用及E081因果限制全部保留；不是抹掉负结果重命名通过。
+
 ## FC-E080 当前终态：第二seed未重现减阻，执行链完成但稳健性未证明
 
 同inv111022bf已800/800、PID0/exit0，独审3200raw SHA/1600solver/六窗复算通过，全部zero前后力16000行所有列与旧seed完全相同。主窗(168,228]新seed **减阻−0.6174007%（增阻）**，RMS比1.0062202、bias1.694578%；旧seed+3.8952839%/.8156230/1.137815%。新seed六窗均减阻FAIL、两项升力均PASS，原2%/1.05/10%未改。报告 [第二seed真实CFD独审](docs/P064_B_SEED20261007_CFD_TERMINAL_REVIEW_20261006.md)，result SHA `6221a7d2f8868eba8622f2e6b76d110d206dd4d9304627d890e01d71b6a7d893`。

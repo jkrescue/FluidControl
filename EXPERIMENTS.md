@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## FC-E082 — actual symmetry-canonical PPO training; no CFD authorization
+
+Actual029124675a0d459e82455c59f831ba3b, unit `fluid-control-p064-b-symmetry-canonical-ppo-20261007.service`, PID3286386 running; independently observed1868/32768 transitions. Approval `docs/P064_B_SYMMETRY_CANONICAL_PPO_APPROVAL_20261007.json` SHA `1a49d9a72a8dabcb1159b2d04ebcf19f039cbdb70f87ba1e1c4d714d898368c7`; output `artifacts/p064_b_symmetry_canonical_h5_32768_ppo_20261007/payload`. Same frozenB/seed20261007/32768/H5/24reset/reward/resources, sole intended change is policy-independent canonical-coordinate wrapper. Final-only PPO policy, no checkpoint/reward selection; no new physical success or runningCSV metric. Independent terminal audit will check orientation-before/after and canonical-to-physical requests plus original32768/256/512/FNO/resource checks; CFD remains separately authorized only.
+
 ## FC-E080 — second-seed CFD complete; original drag criterion failed
 
 Same111022bf terminal exit0/800cycles. Independent3200raw hashes/1600solver/action-clock/six-window checks pass, maximum metric discrepancy4.44e-16; every zero column in both16000-row streams exactly matches oldseed. Primary drag reduction−.0061740071620 (increase), RMSratio1.0062202287, biasratio.01694578015 versus oldseed .0389528388335/.8156230434/.01137814688. All six newseed drag windows fail; both lift conditions pass. Original criteria unchanged; retain old success but do not infer across-seed stability. [Review](docs/P064_B_SEED20261007_CFD_TERMINAL_REVIEW_20261006.md), resultSHA `6221a7d2f8868eba8622f2e6b76d110d206dd4d9304627d890e01d71b6a7d893`.1098.06s/minimumAvailable122809610240B/noOOM/ownedcleanup. No rerun or candidate selection.
