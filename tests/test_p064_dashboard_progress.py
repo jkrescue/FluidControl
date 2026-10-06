@@ -74,3 +74,15 @@ def test_ppo_terminal_producer_not_independent_review():
     assert row['optimizer_steps']==512 and row['terminal_verified'] is False
     result['optimizer_steps'].pop()
     with pytest.raises(ValueError):producer_terminal_counts(result,spec)
+def test_cfd_count_is_not_physical_pass():
+    import pytest
+    from p064_dashboard_progress import cfd_progress_counts
+    row=cfd_progress_counts({'completed_cycles':1,'rows':[{'step':1,'end_time':148.1,'applied_omega':.1}]})
+    assert row['cycles']==1 and 'physical_pass' not in row
+    with pytest.raises(ValueError):cfd_progress_counts({'completed_cycles':800,'rows':[]})
+
+
+def test_cfd_unbound_not_running(tmp_path):
+    from p064_dashboard_progress import candidate_cfd_status
+    row=candidate_cfd_status(tmp_path)
+    assert row['invocation'] is None and row['physical_pass'] is None

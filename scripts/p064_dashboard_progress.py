@@ -55,6 +55,10 @@ def candidate_ppo_status(root,run=subprocess.check_output):
             info['status']='PPO程序退出0，等待独立终态审查' if state.get('ExecMainStatus')=='0' else 'PPO失败/停止（未自动重试）'
             if state.get('ExecMainStatus')=='0' and (output/'result.json').exists():
                 info.update(producer_terminal_counts(json.loads((output/'result.json').read_text()),spec))
+                report=root/'docs/P064_B_PPO_TERMINAL_REVIEW_20261006.md'
+                if hashlib.sha256(report.read_bytes()).hexdigest()!='0cc1494286f85b930b43b1a11713ae6ac3719d8ff599cfa0780a8d9fe71b0d65':raise ValueError('PPO independent report SHA')
+                info.update(status='PPO训练完成，独立工程审查通过（非物理验收）',terminal_verified=True,
+                            counts_scope='实际终态与独立保存证据复核',review=str(report.relative_to(root)))
         else:info['status']='PPO状态待确认'
         info['note']='计数来自真实transition日志；训练步数不等于优化器更新，启动不代表更新成功。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
@@ -71,6 +75,42 @@ def producer_terminal_counts(result,spec):
         raise ValueError('PPO producer terminal contract differs')
     return {'timesteps':32768,'reported_ppo_epochs':256,'optimizer_steps':512,
             'counts_scope':'实际终态producer日志；仍待独立审查','terminal_verified':False}
+
+def cfd_progress_counts(progress):
+    n=progress.get('completed_cycles');rows=progress.get('rows',[])
+    if type(n) is not int or not 0<=n<=800 or len(rows)!=n:raise ValueError('CFD progress count')
+    if rows and (rows[-1].get('step')!=n or abs(rows[-1]['end_time']-(148+.1*n))>1e-8):raise ValueError('CFD endpoint clock')
+    return {'cycles':n,'target':800,'current_time':148. if not rows else rows[-1]['end_time'],
+            'applied_omega':None if not rows else rows[-1]['applied_omega']}
+
+def candidate_cfd_status(root,run=subprocess.check_output):
+    root=Path(root);info={'status':'身份或状态未验证','cycles':0,'target':800,'invocation':None,
+                         'scientific_admission':False,'physical_pass':None}
+    unit='fluid-control-p064-b-projected-ppo-long-cfd-20261006.service'
+    invocation='3a078c62ed9e4f7b8876f0f166bdb510'
+    try:
+        approval=root/'docs/P064_B_PROJECTED_PPO_LONG_CFD_APPROVAL_20261006.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='5fc8ab36e69e7e6ea27ed7c4d60ae207bc67be3c9513e89800cedccf46970a99':raise ValueError('CFD approval SHA')
+        spec=json.loads(approval.read_text())
+        output=root/'artifacts/p064_b_projected_ppo_long_cfd_20261006'
+        if (root/spec['output']).resolve()!=output.resolve() or spec['candidate_arm']!='B':raise ValueError('CFD output/arm')
+        raw=run(['systemctl','--user','show',unit,'-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!=invocation:raise ValueError('CFD invocation')
+        info['invocation']=invocation
+        progress=output/'progress.json'
+        if progress.exists():
+            if progress.stat().st_size>8*2**20:raise ValueError('CFD progress size')
+            info.update(cfd_progress_counts(json.loads(progress.read_text())))
+        if state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0:
+            info['status']='新B策略＋镜像对称处理：CPU真实CFD运行中'
+        elif state.get('MainPID')=='0':
+            info['status']='CFD程序退出0，等待独立原始力复核' if state.get('ExecMainStatus')=='0' else 'CFD失败/停止（未自动重试）'
+        else:info['status']='CFD状态待确认'
+        info['note']='新策略与同起点不旋转zero配对；PPO已完成，当前无GPU训练/FNO在线调用；未完成不能判定物理PASS。'
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
+        info['status']='身份或状态未验证';info['note']=str(exc)
+    return info
 
 def development_summary(root):
     """Only small independently reviewed JSON; never load checkpoint/field arrays."""
