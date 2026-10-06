@@ -228,7 +228,8 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 <div class="card" id="exploratory-diverse-ppo-real-cfd" hidden><h3>24-reset PPO · 新一轮真实 CFD 配对运行</h3><div id="exploratory-diverse-ppo-real-cfd-summary"></div><canvas class="actual-series" id="exploratory-diverse-ppo-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-ppo-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-ppo-lift" width="1000" height="180"></canvas><p class="small">这是新策略的实时真实 OpenFOAM 配对执行；与上方已完成且未达标的旧 PPO 结果分开。当前没有新场图，也不复用旧 PPO/MPC 场图；完成前不声明物理收益或科学准入。</p></div>
 <div class="card" id="exploratory-diverse-32768-long-cfd" hidden><h3>当前阶段 · 32768-step PPO 长窗口真实 CFD</h3><div id="exploratory-diverse-32768-long-cfd-summary"></div><canvas class="actual-series" id="exploratory-diverse-32768-long-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-32768-long-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-32768-long-lift" width="1000" height="180"></canvas><p class="small">唯一实际800周期配对运行，不重复另做124周期。主物理窗口预注册为 t=168→228（先丢弃20 D/U）；前124周期只用于与历史短窗作次级比较。CPU策略推理+真实CFD，GPU空闲是预期，不代表任务停滞。</p></div>
 <div class="card" id="final-ppo-real-cfd" hidden><h3>冻结最终 PPO · 真实 CFD 配对运行</h3><div id="final-ppo-real-cfd-summary"></div><div id="final-ppo-field-evidence" hidden><p id="final-ppo-field-note" class="small"></p><img id="final-ppo-field" alt="最终PPO实际CFD速度模长和ROI去均值压力" loading="lazy"></div><canvas class="actual-series" id="final-ppo-real-cfd-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-lift" width="1000" height="180"></canvas><p class="small">这些折线只来自本次 PPO/zero 两支真实 OpenFOAM 周期终点；不使用上方旧 MPC 流场图。这里若显示场图，只来自本次最终 PPO 分支在 t=160.4 的真实 CFD，也不包含模型预测。运行结束前不声明减阻或科学准入。</p></div>
-<section id="real-cfd-t228" hidden><h2>同一时刻的真实 CFD 流场</h2><img id="real-cfd-t228-image" alt="t228真实CFD：无控制、原策略、第二次训练；上速度下ROI去均值压力" loading="lazy" style="width:100%;height:auto"><p class="small">t=228 同时刻真实CFD；左无控制，中原策略（完整主窗平均减阻3.90%），右第二次训练（增阻0.62%）；上速度大小，下同ROI去均值压力。瞬时图不用于计算减阻，当前E083尚未包含。</p></section>
+<section id="canonical-seeds-real-cfd-t228" hidden><h2>两个指定seed：同一时刻真实 CFD 流场</h2><img id="canonical-seeds-real-cfd-t228-image" alt="t228真实CFD：左无控制，中E083 seed20261007，右E086 seed20261006；上速度下去均值压力" loading="lazy" style="width:100%;height:auto"><p class="small">t=228 同时刻真实CFD：左无控制，中E083对称坐标策略（seed20261007），右E086对称坐标策略（seed20261006）。上为速度大小，下为各帧在同一ROI内去均值压力，各行三列共享色标。主窗口平均减阻分别3.9567%和3.7440%，来自完整力序列统计，不是由瞬时图得出。不是FNO预测或误差图；早期偏置失败与预测精度FAIL保留。</p></section>
+<section id="real-cfd-t228" hidden><h2>历史策略：同一时刻的真实 CFD 流场</h2><img id="real-cfd-t228-image" alt="t228真实CFD：无控制、原策略、第二次训练；上速度下ROI去均值压力" loading="lazy" style="width:100%;height:auto"><p class="small">t=228 同时刻真实CFD；左无控制，中原策略（完整主窗平均减阻3.90%），右第二次训练（增阻0.62%）；上速度大小，下同ROI去均值压力。瞬时图不用于计算减阻，当前E083尚未包含。</p></section>
 <section id="flow-current"><h2>历史流场预测 · 真实 CFD / FNO / 误差</h2>
 <div class="card" id="projected-replay-fields" hidden><h3>投影策略轨迹 · 固定 H1 / H5 回顾性预测</h3><div id="projected-replay-summary"></div><div class="field-stack"><div class="field-card"><h3>固定起点 0000 · t=148.0</h3><img id="projected-replay-field-0000" alt="投影策略控制分支起点0000的H1/H5真实CFD、冻结K1预测和绝对误差" loading="lazy"></div><div class="field-card"><h3>固定起点 0700 · t=218.0</h3><img id="projected-replay-field-0700" alt="投影策略控制分支起点0700的H1/H5真实CFD、冻结K1预测和绝对误差" loading="lazy"></div></div><p class="small">固定显示机械预声明起点0与700，不按误差挑图。每图左列是真实CFD，中列是冻结K1 FNO回顾性预测，右列是绝对误差；上两行H1=0.1 D/U，下两行H5=0.5 D/U。速度图显示|U|，汇总velocity L2则按u/v矢量计算，二者不要混为同一量；压力为ROI去均值压力。预测使用真实轨迹中已经实现的未来动作，因此不是在线未知未来动作预测，也不是在线FNO/MPC控制。</p></div>
 <div class="card"><div class="row"><h3>历史 C 模型 · 第一轮训练预览</h3><select id="c-preview-step"><option value="001">1 步 / 0.1 D/U</option><option value="010">10 步 / 1 D/U</option><option value="050">50 步 / 5 D/U</option><option value="100" selected>100 步 / 10 D/U</option></select></div><p id="c-preview-status">等待预测图及数据校验完成。</p><img id="c-preview-image" alt="第一轮模型：真实 CFD、连续预测及绝对误差" style="width:100%" hidden><p class="small">历史模型可视化：仅一条 b01 动态转速验证轨迹，从 tU/D=130 的真实流场出发，之后连续预测；不是当前长程试验的流场，不是完整验证集的精度，也不是最终模型或闭环控制结果。左列：真实 CFD；中列：模型预测；右列：绝对误差。</p></div>
@@ -441,6 +442,7 @@ function renderShortHorizonConfirmation(run){
  card.innerHTML=`<h3>FNO预留工况预测评估（推理，非训练）</h3><p><b>${t?'已完成并独立复核':run.running?'GPU推理评估正在运行':'运行已停止，等待独立结果核验'}</b> · 10个预留工况 × H1–H5 × 每工况32个起点</p>${t?`<p>1600/1600端点，失败/非有限值 0/0。H1→H5：速度相对L2 ${pct(m.h1.velocity_relative_l2)} → ${pct(m.h5.velocity_relative_l2)}；ROI中心化压力相对L2 ${pct(m.h1.pressure_relative_l2)} → ${pct(m.h5.pressure_relative_l2)}。</p><p>总Cd MAE ${num(m.h1.total_drag_mae,6)} → ${num(m.h5.total_drag_mae,6)}；后柱Cl MAE ${num(m.h1.rear_cl_mae,6)} → ${num(m.h5.rear_cl_mae,6)}。</p><p class="small">定量支持预声明固定动作工况的短时预测；不证明任意策略动作分布、长递推或物理闭环成功，也不推翻旧K1 H100正式FAIL。未自造新的通过门槛。报告SHA ${t.review_sha256.slice(0,12)}…</p>`:`<p>当前/最低 MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；外层进程当前/峰值内存 ${num(run.unit_memory_current_gib,2)} / ${num(run.unit_memory_peak_gib,2)} GiB。</p><p class="small">这是固定FNO在预留工况上的预测推理：0个optimizer step，不学习、不运行CFD。当前产物没有逐case完成记录，因此不显示或估算百分比。旧K1 H100正式FAIL仍是独立结论，本卡不会覆盖它。</p>`}`;
 }
 function renderActiveExperiment(d){
+ for(const [key,section,route] of [['canonical_seeds_real_cfd_t228','canonical-seeds-real-cfd-t228','/canonical-seeds-real-cfd-t228.png'],['real_cfd_t228_comparison','real-cfd-t228','/real-cfd-t228-comparison.png']]){const f=d[key];$(section).hidden=f?.verified!==true;if(f?.verified){const img=$(section+'-image'),url=route+'?v='+f.sha256;if(img.getAttribute('src')!==url)img.src=url;}}
  if(d.p064_b02_acquisition?.invocation){const x=d.p064_b02_acquisition;$('lead-now').textContent=`${x.status}：${x.cycles}/800 周期，CFD时刻 ${x.current_time??'尚无'}。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；原2%/1.05/10%标准不变，采集运行中不预判收益。C50已评估退化且未采用。`;return;}
  if(d.p064_c50?.invocation){const x=d.p064_c50;$('lead-now').textContent=`${x.status}：已完成窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。原物理标准2%/1.05/10%不变；计算结束不代表预测通过。`;return;}
  const active=d.registered_experiment;
@@ -4900,6 +4902,13 @@ class Handler(BaseHTTPRequestHandler):
                 if hashlib.sha256(payload).hexdigest() == evidence["sha256"]:
                     return self._send(payload, "image/png")
             return self._send(b"not found", "text/plain", 404)
+        if path == "/canonical-seeds-real-cfd-t228.png":
+            evidence = _canonical_seeds_real_cfd_t228(self.root)
+            if evidence.get("verified") and parse_qs(parsed.query).get("v") == [evidence["sha256"]]:
+                payload = (self.root / "artifacts/p064_canonical_seeds_real_cfd_t228_comparison_20261007/real_cfd_t228_comparison.png").read_bytes()
+                if hashlib.sha256(payload).hexdigest() == evidence["sha256"]:
+                    return self._send(payload, "image/png")
+            return self._send(b"not found", "text/plain", 404)
         if path == "/projected-ppo-paired-field.png":
             evidence = _projected_long_ppo_field(self.root)
             if evidence.get("verified") and parse_qs(parsed.query).get("v") == [evidence["sha256"]]:
@@ -5127,6 +5136,7 @@ class Handler(BaseHTTPRequestHandler):
             data["exploratory_diverse_32768_long_cfd"]["paired_field"] = _long_ppo_field(self.root)
             data["policy_h5_comparison"] = _policy_h5_comparison(self.root)
             data["real_cfd_t228_comparison"] = _real_cfd_t228_comparison(self.root)
+            data["canonical_seeds_real_cfd_t228"] = _canonical_seeds_real_cfd_t228(self.root)
             data["projected_ppo_long_cfd"] = _exploratory_diverse_32768_long_cfd(self.root, projected=True)
             data["projected_ppo_long_cfd"]["reported_terminal"] = (
                 _projected_b00_reported_terminal(self.root, data["projected_ppo_long_cfd"]))
@@ -5158,6 +5168,29 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_message(self, fmt, *args):
         print("dashboard:", fmt % args, flush=True)
+
+
+def _canonical_seeds_real_cfd_t228(root):
+    base = root / "artifacts/p064_canonical_seeds_real_cfd_t228_comparison_20261007"
+    png_sha = "7926b3ba6919afc211faa941644df3df37ff75614604acba35869161653d4afe"
+    manifest_sha = "fd63bbfbd5adb3a04606cd7335c76de9ecab04f4bc53025afa928abe223b10c1"
+    try:
+        raw = (base / "figure_manifest.json").read_bytes()
+        d = json.loads(raw)
+        if not (hashlib.sha256(raw).hexdigest() == manifest_sha
+                and d["status"] == "REAL_SAVED_CFD_FIELD_VISUALIZATION_COMPLETE"
+                and d["time"] == 228 and d["model_inference"] is False
+                and d["new_cfd_steps"] == 0 and d["source_unchanged"] is True
+                and d["zero_fields_byte_identical"] is True
+                and set(d["packets"]) == {"zero", "canonical_seed20261007", "canonical_seed20261006"}
+                and d["png_sha256"] == png_sha
+                and hashlib.sha256((base / "real_cfd_t228_comparison.png").read_bytes()).hexdigest() == png_sha):
+            return {"verified": False}
+        return {"verified": True, "sha256": png_sha, "manifest_sha256": manifest_sha,
+                "actual_cfd": True, "model_prediction": False, "time": 228,
+                "experiments": ["FC-E083", "FC-E086"]}
+    except (OSError, ValueError, KeyError, TypeError):
+        return {"verified": False}
 
 
 def _real_cfd_t228_comparison(root):
