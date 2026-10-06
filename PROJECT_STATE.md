@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 最新：实际FNO-MPC→CFD短反馈完成，阻力目标未达（2026-10-06 05:37 UTC）
+
+FC-E046：同实例 `e3b9eb7b58724a1c9ec4e64d63ac7bbe` 正常终态，10次实际当前场重观测/官方K1双FNO H2选动作/两分支真实OpenFOAM推进完成；不是shadow-only，也不是新HydroGym/PPO任务。200个真实力样本/分支的全指标独立重算与结果完全一致。MPC总Cd均值2.4192140666805，配对零控制2.413592168615，阻力增加0.23293%；后Cl波动RMS降低5.6891%，是短时取舍而非总体目标成功。
+
+实际1D/U窗口短于涡脱落周期，不能代替原80D/U评价或物理10%平均升力标准；K1原formal FAIL保留。结果SHA `45fcab568ed7456e521ed17c4469f44716d231ca4ec5c08820864803ae856fbb`，独立报告 `docs/EXPLORATORY_PAIRED_H2_TERMINAL_REVIEW_20261006.md`；同源双case与owned容器清理已核验，CPU可用内存保护满足。当前阶段是FNO辅助真实短闭环工程完成、长期减阻目标未达。
+
+Lead已批准准备单一代价改动：复用canonical62点实际过去力历史，再分别加入H2预测并平均各阶段代价；实现/测试准备中，尚未批准或执行新试验。先确认因果时序和目标含义，不改变物理门槛，不把该短窗收益外推长期。以下记录按时间作为历史保留。
+
 ## 当前优先：两段真实CFD场桥接已完成，下一步配对10周期MPC试验（2026-10-06 05:21 UTC）
 
 R4同invocation `99e5c019c08240668241f7ac036320f3` 已实际exit0/PID0：固定零动作148→148.1→148.2，各20个dt=.005求解步，两个新端点均由原Curator采样并经canonical适配器得到[1,6,128,256]当前场输入。原restart/source哈希独立核对不变，owned容器已清理；结果SHA `be3c57e00003d7092b116058604a47d2ea2b2c1f033551adb39188f1c91f7584`，报告 `docs/TWO_SEGMENT_CURRENT_FRAME_R4_TERMINAL_REVIEW_20261006.md`。
