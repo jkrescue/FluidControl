@@ -1,5 +1,11 @@
 # DECISIONS
 
+## 2026-10-07 — E105 limited train-fit improvement; prepare no-save temporal-delta probe
+
+Accept [E105 independent audit](docs/P064_K1BG_B00_TRAIN_FIT_TERMINAL_REVIEW_20261007.md), not admission: B/G improve true-state pooled force fit on40 fixed b00 training points versus K1; G improves rearCl/totalCd MAE1.46%/8.08% versusB, but material residual errors remain. These points do not establish convergence/generalization. Retain B default, G's verified physical single condition, original prediction failures and physical thresholds.
+
+Next is only [temporal force-delta preparation](docs/P064_TEMPORAL_FORCE_DELTA_PLAN_20261007.md): causal current-force skip plus learned temporal increment and explicit initialization/control comparison, not P022's already unsuccessful additional current-force input planes. This ledger authorizes no GPU probe, saved candidate or training. A future single-window no-save gradient/update/resource check is engineering evidence, not scientific admission; no automatic extension. Keep fixed development/retention rules and distinguish persistence-prior benefit from learning.
+
 ## 2026-10-07 — E auxiliary candidate not promoted after fixed development
 
 [E097 independent evaluation](docs/P064_RESPONSE_AUX_E_DEVELOPMENT_REVIEW_20261007.md) verifies both principal pooled H1 force MAEs and both fixed-six retention objectives slightly worsen versus B. Lead rejects E promotion under the predeclared rule, retainsB and existing validated policies, and does not label the small differences significant. No continuation ofE, coefficient/data-ratio sweep or automatic PPO/CFD is authorized. The next single-factor H1-only training-objective comparison is preparation only, not execution. E095 basic closed-loop reproduction remains complete; original prediction failures and overall unfinished scope remain unchanged.

@@ -1,6 +1,12 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前唯一摘要 — G探索闭环800步完成、六窗原物理标准通过；B默认与预测FAIL保留
+## 当前唯一摘要 — E105训练拟合诊断完成；B默认、G物理结果与预测FAIL保留
+
+FC-E105已终态独审：[报告](docs/P064_K1BG_B00_TRAIN_FIT_TERMINAL_REVIEW_20261007.md) SHA `1f0516357ffc069a9c516e080c68554af073cfcaa8406caccfabb63d7b4e4d20`，result `bb256396fe174f7d1f8ef3cd68a06bc1653c0e8ff039604714479f44391da26c`。同 `04335bedb4954871ac118381da81721c` PID0/exited/exit0；120行＝K1/B/G×8固定b00训练起点×5个真实状态单步，40三方输入/动作/target配对、2025统计复算差0；120aero/0flow/0optimizer。全部40点 rearCl/totalCd MAE：K1 .200856927/.051195516，B .181738779/.050531504，G .179079254/.046448530。B/G确有训练轨迹拟合改善，但残差仍在；不是5步AR、独立泛化或收敛证明，不改G原选择FAIL。906项来源/大文件inventory验证另属工程交付检查，不是E105新增模型计算。
+
+下一明确动作仅为[temporal force delta no-save probe准备](docs/P064_TEMPORAL_FORCE_DELTA_PLAN_20261007.md)：审查因果当前力skip/时间增量参数化的有限无保存probe及CPU测试，目前未执行GPU、未产生候选或准入结论。不是重复已未获局部支持的P022 current-force输入平面；实际probe/训练须另批，不自动续训/换控制器。原物理2%/1.05/10%不变，B默认和下述G已验单工况结果保留。
+
+### 已完成的G物理闭环（E104）
 
 FC-E104同 `c14a66a1464a4919a3904c1f4d2efb2d` 已PID0/exited/exit0。[完整独审](docs/P064_G_SYMMETRY_CANONICAL_B01_CFD_TERMINAL_REVIEW_20261007.md) SHA `1d7979cace631eb02ed5fe2f76f5f00b4ed6eaa3eeee6bb235d3fb4f6b132022`，result `f6319771a93541275f4fe7183d49fba9d607100fcdb7d9bf31b9fc92946594a4`。3200force/1600solver/800canonical单filter/799反馈连续/端点力→obs全核，zero全列与B一致；六窗原2%/1.05/10%全PASS，包括first6.2偏置8.0054%。主窗减阻3.9513458%、升力波动降低18.3622480%、均值偏置3.0716936%；减阻略低原B4.0090689%，不称优越，不改G预测保留性FAIL或B默认。wall1108.8643秒/800＝1.38608秒每反馈周期（含总开销），D/U不是现实秒、不证明物理实时控制。ω²仅动作成本proxy，未核功率换算。此训练及CFD均已结束；整体代理精度目标仍未完成，新作业必须明确批准。
 
