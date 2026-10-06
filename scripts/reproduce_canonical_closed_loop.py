@@ -1,4 +1,4 @@
-"""Read-only default preflight / explicit, newly approved E085 reproduction launch."""
+"""Read-only default B preflight; fixed B/G profiles require new launch approval."""
 import argparse
 import hashlib
 import json
@@ -11,6 +11,34 @@ BASE = 'docs/P064_B_SYMMETRY_CANONICAL_B01_CFD_APPROVAL_20261007.json'
 BASE_SHA = 'ee010bbe1932e0b48b2f2e90a1b9dd77d463f86dad6367e0c0dd49a46f0b45f1'
 DRIVER = 'artifacts/p064_symmetry_canonical_b01_cfd_source_20261007_immutable/run_p064_symmetry_canonical_b_ppo_b01_long_cfd.py'
 ALLOWED = {'output', 'lead_statement', 'interpretation', 'reproduction'}
+PROFILES = {
+    'b': {'base': BASE, 'base_sha': BASE_SHA, 'driver': DRIVER},
+    'g': {
+        'base': 'docs/P064_G_SYMMETRY_CANONICAL_B01_CFD_APPROVAL_20261007.json',
+        'base_sha': 'f72cace2befb6aef72ed6878ec83d675cc92b4992ec0b9e6e45cd38be97bbb48',
+        'driver': 'artifacts/p064_g_canonical_b01_cfd_source_20261007_immutable/run_p064_g_symmetry_canonical_b01_cfd.py',
+        'driver_sha': '23bac1e31122cf227d37c4b50df05b7b5b487cbc6ec35e758e2d2386da32c10a',
+        # Lead accepted independent physical audit; prediction selection remains FAIL.
+        'terminal_review': 'docs/P064_G_SYMMETRY_CANONICAL_B01_CFD_TERMINAL_REVIEW_20261007.md',
+        'terminal_review_sha': '1d7979cace631eb02ed5fe2f76f5f00b4ed6eaa3eeee6bb235d3fb4f6b132022',
+        'terminal_result': 'artifacts/p064_g_symmetry_canonical_b01_cfd_20261007/result.json',
+        'terminal_result_sha': 'f6319771a93541275f4fe7183d49fba9d607100fcdb7d9bf31b9fc92946594a4',
+        'verified_reproduction_accepted': True,
+    },
+}
+
+def profile_binding(name):
+    require(name in PROFILES, 'unknown fixed reproduction profile')
+    return PROFILES[name]
+
+def verify_profile_terminal(repo, name, profile):
+    if name == 'b':
+        return  # Preserve the already reviewed B entry contract unchanged.
+    require(profile['verified_reproduction_accepted'] is True,
+            'G terminal review/Lead disposition not bound; no verified reproduction')
+    for prefix in ('terminal_review', 'terminal_result'):
+        require(bool(profile[prefix]) and bool(profile[prefix + '_sha']), 'missing G independent terminal evidence')
+        require(sha(inside(repo, profile[prefix])) == profile[prefix + '_sha'], 'G terminal evidence SHA mismatch')
 
 def require(ok, message):
     if not ok:
@@ -28,7 +56,7 @@ def inside(repo, path):
     require(p.is_relative_to(repo), 'path escapes repository')
     return p
 
-def compare_approval(base, spec, unit):
+def compare_approval(base, spec, unit, base_sha=BASE_SHA):
     require(set(spec) - set(base) <= {'reproduction'}, 'unexpected new fields')
     require({k: v for k, v in base.items() if k not in ALLOWED} ==
             {k: v for k, v in spec.items() if k not in ALLOWED}, 'scientific/resource binding changed')
@@ -37,12 +65,12 @@ def compare_approval(base, spec, unit):
             'unique reproduction unit required')
     r = spec.get('reproduction', {})
     require(set(r) == {'base_approval_sha256', 'unit', 'execution_authorized'}
-            and r['base_approval_sha256'] == BASE_SHA and r['unit'] == unit
+            and r['base_approval_sha256'] == base_sha and r['unit'] == unit
             and type(r['execution_authorized']) is bool, 'explicit reproduction binding required')
     require(spec['lead_statement'] != base['lead_statement'], 'historical one-run approval is not new authority')
 
-def check_files(repo, spec):
-    driver = inside(repo, DRIVER)
+def check_files(repo, spec, driver_path=DRIVER):
+    driver = inside(repo, driver_path)
     require(sha(driver) == spec['driver_sha256'], 'driver SHA mismatch')
     for path, digest in spec['source_files'].items():
         require(sha(inside(repo, path)) == digest, 'source SHA mismatch: ' + path)
@@ -79,19 +107,24 @@ def main():
     ap.add_argument('--approval-sha256')
     ap.add_argument('--unit')
     ap.add_argument('--execute', action='store_true')
+    ap.add_argument('--profile', choices=tuple(PROFILES), default='b')
     args = ap.parse_args()
     repo = args.repo.resolve()
-    base_path = repo / BASE
-    require(sha(base_path) == BASE_SHA, 'historical approval identity differs')
+    profile = profile_binding(args.profile)
+    verify_profile_terminal(repo, args.profile, profile)
+    base_path = repo / profile['base']
+    require(sha(base_path) == profile['base_sha'], 'historical approval identity differs')
     base = json.loads(base_path.read_text())
+    if args.profile == 'g':
+        require(base['driver_sha256'] == profile['driver_sha'], 'G driver profile differs')
     require(Path(base['repo']).resolve() == repo, 'run on original pinned Spark repository')
-    spec, approval, digest = base, base_path, BASE_SHA
+    spec, approval, digest = base, base_path, profile['base_sha']
     if args.approval:
         approval = inside(repo, args.approval)
         digest = sha(approval)
         require(digest == args.approval_sha256, 'new approval SHA mismatch')
         spec = json.loads(approval.read_text())
-        compare_approval(base, spec, args.unit)
+        compare_approval(base, spec, args.unit, profile['base_sha'])
         execution_gate(spec, args.execute)
         output = inside(repo, spec['output'])
         require(output.is_relative_to(repo / 'artifacts') and output != repo / 'artifacts', 'output must be artifacts child')
@@ -100,7 +133,7 @@ def main():
         require(load == 'not-found', 'unit already exists; no duplicate launch')
     else:
         require(not args.execute, '--execute requires a separately approved new spec and SHA/unit')
-    driver = check_files(repo, spec)
+    driver = check_files(repo, spec, profile['driver'])
     available = int(next(x.split()[1] for x in Path('/proc/meminfo').read_text().splitlines() if x.startswith('MemAvailable:'))) * 1024
     require(available >= 50 * 2**30, 'startup MemAvailable below 50 GiB')
     require(shutil.disk_usage(repo).free >= 20 * 2**30, 'disk free below 20 GiB')
@@ -112,6 +145,9 @@ def main():
     summary = {'status': 'PREFLIGHT_PASS_NOT_RUNNING', 'phase': 'b01', 'steps': 800,
                'approval_sha256': digest, 'driver_sha256': sha(driver), 'output': spec['output'],
                'resource_contract': spec['resource_contract'], 'unit': args.unit}
+    if args.profile == 'g':
+        summary.update(profile='g', scope='exploratory single-condition physical verification; prediction selection FAIL unchanged',
+                       terminal_review_sha256=profile['terminal_review_sha'], terminal_result_sha256=profile['terminal_result_sha'])
     if args.approval:
         summary['argv'] = command(repo, spec, approval, digest, args.unit, driver)
     print(json.dumps(summary, indent=2), flush=True)
