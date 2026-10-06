@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E051实际运行：唯一终态PPO直接驱动真实配对CFD，尚无收益结论
+
+2026-10-06 07:07:51UTC启动的user unit `fluid-control-exploratory-final-ppo-cfd-20261006.service`，invocation `fd6d92f7ea9946b49c91c07e21f1d74b`，已独立观察active/running、MainPID2346139。唯一终态SB3策略 `3af2b2863f7fffa3579832c10dd2e7053caf80fc2719ed72ad842858f3da9fe1` 在CPU上确定性推理，从真实69通道CFD探针/双圆柱受力/实际omega选择请求动作；保持原±0.75幅值、每周期±0.1变化率及线性边界ramp。不调用在线FNO，也不以MPC代选动作。
+
+固定同148起点，PPO与zero配对124周期到160.4；全12.4D/U及前/后6.2D/U均按 `(begin,end]` 报告，保留原10%物理均值参考。这是明确批准的探索性直接策略验证，不是原80D/U准入。当前没有终态收益数字；五步代理训练向124步真实CFD的分布差异仍在。训练网格插值探针与CFD原始探针仅声明坐标、通道顺序和物理单位相同，不假定数值完全相等。
+
+批准 `docs/EXPLORATORY_FINAL_PPO_CFD_APPROVAL_20261006.json` SHA `7ace192519a08795fe9217473fae33941fc5edbb1075daeeb3701e672c521cb3`；不可变driver `44b488a97a2882e1325da8871d3ac4905cdae2a6f2cbb17202ced91afc58b91a`，输出 `artifacts/exploratory_final_ppo_real_cfd_20261006`。CPU控制器8GiB无swap、两个求解器各8GiB；MemAvailable启动50/运行22GiB保护至少20GiB余量。保留K1原formal失败；不自动重启。
+
 ## FC-E050实际终态：真正FNO→HydroGym→SB3 PPO训练已完成，尚无该策略CFD收益
 
 同一user unit `fluid-control-exploratory-h5-ppo-20261006.service` / invocation `21cb82da66214924b38f120eb30723e5` 于06:53:11UTC正常结束，PID0/exit0。四个真实train-zero起点、H5回合完成4096条转移、32个PPO epoch更新、64次实际优化器step；policy tensor SHA确实改变，官方K1双FNO冻结且权重不变。816个完成回合均为5步，真实HydroGym/SB3截断自举已由CPU生命周期验证。不是MPC替代PPO，也不是原100步formal准入。

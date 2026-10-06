@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E051 — Running: final surrogate-trained PPO directly controls paired real CFD
+
+Actual user unit `fluid-control-exploratory-final-ppo-cfd-20261006.service`, invocation `fd6d92f7ea9946b49c91c07e21f1d74b`, started2026-10-06 07:07:51UTC and independently observed active/running withPID2346139. This is a real launch, not a terminal outcome. ApprovalSHA `7ace192519a08795fe9217473fae33941fc5edbb1075daeeb3701e672c521cb3`; executed immutable driverSHA `44b488a97a2882e1325da8871d3ac4905cdae2a6f2cbb17202ced91afc58b91a`. Git source capture follows launch and is not represented as launchHEAD.
+
+The single finalPPO policySHA `3af2b2863f7fffa3579832c10dd2e7053caf80fc2719ed72ad842858f3da9fe1` and identityVecNormalizeSHA `54a08a438501aac0663e50da931f41aabb63cdeb8255aa80051e7af1b4eaaba2` are bound to actual4096-transition training resultSHA `138a7b192eef1a6454cefa47cda7803c9b362937641a645c00889ac5a5d7a0c4`. No policy selection, onlineFNO, or MPC substitution. DeterministicCPU inference consumes actual69-channel physicalCFD observations before applying one canonical rate limit and the existing linear boundaryramp. Probe coordinates/channel semantics match training; grid interpolation versus rawCFD probes is explicitly not asserted numerically exact.
+
+Predeclared pairedzero148→160.4,124cycles; report all2480 solver-step samples and full/first/trailing windows using fixed open-left bounds. Original10% mean-lift reference unchanged; exploratory12.4D/U is not formal80D/U admission. Outer8GiB and two8GiB solver caps/noSwap, CPUonly, MemAvailable50/22GiB, internal1800s/external1950s/stop120s. Source-only independent10CPUtests passed; actual policy/CFD outcome remains pending in `artifacts/exploratory_final_ppo_real_cfd_20261006`. No scientificCSV result is inserted while running.
+
 ## FC-E050 — Actual exploratory frozen-FNO / HydroGym / SB3 PPO training completed
 
 Same invocation `21cb82da66214924b38f120eb30723e5`,06:51:48–06:53:11UTC, exit0/PID0. Explicit exploratory approval `8aa44f5f177d6c7d831a1efc55abf9d8db4b700d640cb640c5fcbb709cc44569` permits H5 while leaving canonical100-step admission unchanged. Read-only39-source manifest `730c9f315234a59c381fefa176d46a124eb310d41886176547496bce8b998856` and trainer `8806682ec66d0a1b8dde30b0f361bb77e115f9add85f207651d9d01d1d8d4100` identify actual execution; baseHEAD76f13dc did not yet contain these new scripts. Later Git capture is not execution HEAD.
