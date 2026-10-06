@@ -47,6 +47,21 @@ def test_causal_profile_rejects_old_unit_and_status(tmp_path):
     assert m._exploratory_mpc_progress(tmp_path,reg,state,True)=={'verified':False}
 
 
+def test_h5_live_profile_uses_separate_output_and_never_claims_success(tmp_path):
+    reg={'progress_kind':'exploratory_causal_history_h5_feedback','unit':'fluid-control-exploratory-causal-h5-real-cfd-20261006.service','invocation':'6adc59fae65344d2b49b57cbe5b30f70'}
+    state={'InvocationID':reg['invocation'],'ActiveState':'active','SubState':'running','MainPID':'42'}
+    force={'front_cd':1.4,'rear_cd':1.0,'front_cl':.2,'rear_cl':.3}
+    row={'step':1,'start_time':148.,'end_time':148.1,'selected_omega':0.,'previous_omega':0.,'selected_predicted_next_forces':force,'actual_endpoint_forces':{'mpc':force,'zero':force}}
+    doc={'status':'EXPLORATORY_REAL_CFD_CANONICAL_HISTORY_H5_RUNNING_NOT_ADMISSION','completed_cycles':1,'identity':{'k1_manifest_sha256':'7adca21e3a75691b10f164c342ea91995cc38060e7416dd217b8bd8e5feeacc7'},'rows':[row]}
+    progress=tmp_path/'artifacts/exploratory_causal_history_h5_real_cfd_20261006/progress.json'
+    progress.parent.mkdir(parents=True);progress.write_text(json.dumps(doc))
+    result=m._exploratory_mpc_progress(tmp_path,reg,state,True)
+    assert result['verified'] and result['running'] and result['completed_cycles']==1
+    assert result['progress_kind']=='exploratory_causal_history_h5_feedback'
+    assert not result['terminal_review_verified'] and not result['control_success_verified']
+    assert '真实CFD因果历史H5短时控制试验' in m.PAGE
+
+
 def test_causal_terminal_binding_is_distinct_and_nonadmitting(tmp_path, monkeypatch):
     from types import SimpleNamespace
     base=tmp_path/'artifacts/exploratory_causal_history_h2_real_cfd_20261006';base.mkdir(parents=True)

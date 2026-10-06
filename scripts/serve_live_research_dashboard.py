@@ -338,7 +338,8 @@ function renderActiveExperiment(d){
  const active=d.registered_experiment;
  if(active?.mpc_trial===true&&active.verified===true){
   const causal=active.progress_kind==='exploratory_causal_history_h2_feedback';
-  const title=active.terminal_review_verified?(causal?'10/10因果历史H2真实闭环完成；全部HOLD、配对收益为零':'10/10真实闭环已跑通；短窗口阻力上升0.23%，不是减阻达标'):'真实CFD短时控制试验 · '+(active.running?'正在计算':active.exited_success?'计算退出，结果和清理待独立复核':'已停止，需检查');
+  const causalH5=active.progress_kind==='exploratory_causal_history_h5_feedback';
+  const title=active.terminal_review_verified?(causal?'10/10因果历史H2真实闭环完成；全部HOLD、配对收益为零':'10/10真实闭环已跑通；短窗口阻力上升0.23%，不是减阻达标'):(causalH5?'真实CFD因果历史H5短时控制试验 · ':'真实CFD短时控制试验 · ')+(active.running?'正在计算':active.exited_success?'计算退出，结果和清理待独立复核':'已停止，需检查');
   const reviewedDetail=causal?' 独立复核：10次动作均为0，两支各200点真实CFD与首轮零控制字节一致；没有阻力或升力波动收益。':' 独立复核：每支200点，升力波动短窗口下降约5.69%；短窗口阻力上升0.23%。';
   const detail=`已完成 ${active.completed_cycles}/10 个配对周期。CPU运行官方FNO选动作，真实OpenFOAM求解；不是GPU训练，也不是HydroGym求解器。`+(active.terminal_review_verified?reviewedDetail+' 仅1 D/U，不满足原80 D/U评价长度，没有新增PPO或长期达标结论。':'');
   $('lead-now').textContent=title+'。'+detail;
@@ -1629,6 +1630,13 @@ _EXPLORATORY_MPC_PROFILES = {
         "base": "artifacts/exploratory_causal_history_h2_real_cfd_20261006",
         "running_status": "EXPLORATORY_REAL_CFD_CANONICAL_HISTORY_H2_RUNNING_NOT_ADMISSION",
         "terminal_review": "causal_history_h2",
+    },
+    "exploratory_causal_history_h5_feedback": {
+        "unit": "fluid-control-exploratory-causal-h5-real-cfd-20261006.service",
+        "invocation": "6adc59fae65344d2b49b57cbe5b30f70",
+        "base": "artifacts/exploratory_causal_history_h5_real_cfd_20261006",
+        "running_status": "EXPLORATORY_REAL_CFD_CANONICAL_HISTORY_H5_RUNNING_NOT_ADMISSION",
+        "terminal_review": None,
     },
 }
 

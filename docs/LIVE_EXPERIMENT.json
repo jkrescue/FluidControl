@@ -1,11 +1,11 @@
 {
-  "experiment": "exploratory-paired-canonical-history-H2-real-CFD",
-  "progress_kind": "exploratory_causal_history_h2_feedback",
-  "unit": "fluid-control-exploratory-causal-h2-real-cfd-20261006.service",
-  "invocation": "6f554f10e87e4b9f9d6b6ed8b555c548",
-  "approval": "docs/EXPLORATORY_CAUSAL_HISTORY_H2_APPROVAL_20261006.json",
-  "approval_sha256": "b273716de8edb19b8517126d3d8232cc50cc5b2ab5a7af04cb16f96aeae1e5a1",
-  "launcher": "artifacts/exploratory_causal_h2_source_20261006/run_exploratory_causal_history_h2_feedback.py",
-  "launcher_sha256": "ace9871ac27e2b92de0d90010aa1db3f4cd037cdcf3e49ce5f3f87deb32f06cc",
-  "history": "首轮即时H2真实CFD试验已完成并保留；62点真实因果历史H2试验也已完成，10次均HOLD、配对物理收益为零，独立终审已绑定。两者均非准入，K1原正式仍未通过。"
+  "experiment": "exploratory-paired-canonical-history-H5-real-CFD",
+  "progress_kind": "exploratory_causal_history_h5_feedback",
+  "unit": "fluid-control-exploratory-causal-h5-real-cfd-20261006.service",
+  "invocation": "6adc59fae65344d2b49b57cbe5b30f70",
+  "approval": "docs/EXPLORATORY_CAUSAL_HISTORY_H5_APPROVAL_20261006.json",
+  "approval_sha256": "f927f6b956f847766d899745ebc0e679a7638db63f27cfb1f9a489eb69fb6c0e",
+  "launcher": "artifacts/exploratory_causal_h5_source_20261006/run_exploratory_causal_history_h5_feedback.py",
+  "launcher_sha256": "0917cd5c62e43fc3f7b2cdc23900aa9d0932dff9ef4842a155bcf4288524b14d",
+  "history": "即时H2与62点因果历史H2两轮真实CFD结果均已保留；H2因果历史10次均HOLD、配对收益为零。当前仅把同一canonical成本规划时域改为H5，仍为非准入探索，K1原正式未通过。"
 }
