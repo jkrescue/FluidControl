@@ -1,7 +1,7 @@
 {
   "experiment":"P029-original-formal",
   "label":"新FNO完整验证已结束：尚未达标",
-  "description":"计算流程正常结束；初步完整结果为六个长期窗口仅2/6同时通过，总阻力6/6、升力波动2/6、平均升力4/6。正在独立复核全部结果，不能进入新PPO。下一项固定44轨迹的长短时预测诊断正在CPU实现与测试；未启动新训练，未完成FNO辅助真实CFD闭环。",
+  "description":"完整评估及独立复核已结束：六个长期窗口仅2/6同时通过，总阻力6/6、升力波动2/6、平均升力4/6。两个旋转分支改善，但两个零控制分支的波动预测退步，不能进入新PPO。下一项固定44轨迹的长短时预测诊断正在CPU实现与测试；未启动新训练，未完成FNO辅助真实CFD闭环。",
   "unit":"fluid-control-fcp029-original-formal-20261006.service",
   "invocation":"85ae29a422fc48739136418317de8ca5",
   "approval":"docs/FC_P029_FORMAL_EXECUTION_APPROVAL_20261006.json",
