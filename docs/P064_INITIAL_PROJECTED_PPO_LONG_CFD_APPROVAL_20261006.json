@@ -1,0 +1,144 @@
+{
+  "repo": "/workspace/fluid_control",
+  "source_restart": "cfd/tandem_cylinders/cases/tandem_backward_dt005",
+  "source_restart_tree_sha256": {
+    "148": {
+      "U": "f8edea2a5e2363cdb47789075111a654c94c858151d88e9f03cadfac3d8b3841",
+      "U_0": "6257e54018d03d01d01876e24d511d9c7af5b5caa2318d5da73628d233dec8c0",
+      "p": "911d36973cb722c011c2f79c716b3c27a89e69e697a1eb4dc89eea6852efaee1",
+      "phi": "b331ed8547306f874c3de07f0cb2aaefaf7ea59b1d46a2a7cb61b4d45b444215",
+      "phi_0": "be1e19fa6e71200fe57a0d2ba253907ecebbd8d6caf196fd32f7d711969effd9",
+      "uniform/cumulativeContErr": "1f9a07392effcc4ed928bd3724a818689d1165b81f31be6882db4a62db9686c2",
+      "uniform/functionObjects/functionObjectProperties": "788b4a59b6a2ad03b66cedbfb8f1d61ccb8f2d19e8bfec0694b1baa10ba9d073",
+      "uniform/time": "81a035a6610953dff6be1e4a80cb3294d97389a069dee09f3921613a47c7a6b3"
+    },
+    "constant": {
+      "polyMesh/boundary": "c4c245add642a3a724d6215bca30d8d36afbbbe132148e5c7174dbd1d142d29b",
+      "polyMesh/faces": "244553acb1682cafddbaa1b3f5f30dba5b7893a91aacfff379ee332edc629b55",
+      "polyMesh/neighbour": "7531e36b8010d9c27cf595cccf92d0c9bc97a37a0a4f3072b74b0aebf6c73e86",
+      "polyMesh/owner": "3b588f0eda45d795bf1dabe765006fc5d55f445042dc87a348b6c77fc968c1ca",
+      "polyMesh/points": "918d6531db25f5d241d0fa81930ecd064cf06f09429a500d7cc920b11b77eb49",
+      "transportProperties": "a784053859cf96cdf4a3d06abce219a4f5e977b2557d408cc86a7771c95b1996",
+      "turbulenceProperties": "e9851724678491c7618adda5757d313afdcd9f3af09ee8261696d3aba76a4269"
+    },
+    "system": {
+      "blockMeshDict": "a3faf63c69548315b5346ec4d0969ea52fefe3b18e8aad811a972a10d9408ee6",
+      "controlDict": "8c8bbd6413517d497387067562316c9ac2996a56bd7ebb67c6965939611d29eb",
+      "fvSchemes": "7d86a42aa20d2af384dc9512bf3407032a89da801a93e177d9c39eff664d7856",
+      "fvSolution": "2e1095094118f7efb7c985794f1816e6289494e199ee897c2e3cf01420afb448",
+      "setFieldsDict": "5f9a102d86505b3427d52d522a1372ce3375af63ff1471c2762a1aa4f195df62"
+    }
+  },
+  "openfoam_image_id": "sha256:24205c9677d39c95221eb903988094dd7a228fc41a2054df3eaa13f80e465fcb",
+  "status": "P064_INITIAL_WEIGHT_PROJECTED_PPO_LONG_CFD_EXECUTION_APPROVED",
+  "intended_execution_status": "P064_INITIAL_WEIGHT_PROJECTED_PPO_LONG_CFD_EXECUTION_APPROVED",
+  "execution_authorized": true,
+  "steps": 800,
+  "start_time": 148,
+  "deadline_seconds": 3600,
+  "inference_device": "cpu",
+  "scientific_admission": false,
+  "output": "artifacts/p064_initial_projected_ppo_long_cfd_20261006",
+  "driver_sha256": "2777f8b8a2dc948c1714c64fa7b8bddaec7c9dc9b7edc764e572324cd398c277",
+  "source_files": {
+    "cfd/tandem_cylinders/analyze_baseline.py": "fb2fb651ab498c41ea632581a255cb3e7e4f76d87ccb1daf712ffb03cb0bf7cb",
+    "cfd/tandem_cylinders/make_expanded_control_dataset.py": "1c48ee0e5761ac90d5f04b4cb4dfeb6580b3f0ed2a9863c2dc7f860792020ec2",
+    "cfd/tandem_cylinders/make_probe_feedback_case.py": "9960e38cbfc9afc6ec2a56ae01ce3da3974167b101a3274e33faa770728ebbbd",
+    "scripts/run_exploratory_causal_history_h5_feedback.py": "0917cd5c62e43fc3f7b2cdc23900aa9d0932dff9ef4842a155bcf4288524b14d",
+    "scripts/run_full40_canonical_ppo_openfoam_feedback.py": "3dbb20106f45ed709e0c91731817540903db961555930177f81f0394104594cc",
+    "scripts/run_tandem_phase_feedback_pair.py": "866b4dce33c7401eb447e897641d734828e04b10b38ccde8a0b724e8b5e65d3d",
+    "src/fluid_control/__init__.py": "fb12ae7ff289ab8cba77024b3589ec96b0201a59ceaf11880d9f527e9cb6253d",
+    "src/fluid_control/canonical_joint_v1.py": "138ab2b49ebddcbed2a24486c995b85a3a5ae226ee936ff2ed5de318496ee8bd",
+    "src/fluid_control/openfoam_observation.py": "799d569c3f986a5e0e5cda95a3f07cd3b3993814ff0867763166549ef312293e"
+  },
+  "inputs": {
+    "training_result": {
+      "path": "artifacts/p064_b_diverse_h5_32768_ppo_20261006/payload/result.json",
+      "sha256": "3c70e21327baae98f682fc0982ca3c3910cf6d1902f3d62175f980fd685817b3"
+    },
+    "policy": {
+      "path": "artifacts/p064_b_diverse_h5_32768_ppo_20261006/payload/ppo_final.zip",
+      "sha256": "f764463983355779efff8d1b1994cfaf560ab7274d54b014d34a1f084b4b307e"
+    },
+    "vecnormalize": {
+      "path": "artifacts/p064_b_diverse_h5_32768_ppo_20261006/payload/vecnormalize.pkl",
+      "sha256": "8c07ef15bd41a8981f2ec0d241c85092b643ca740fea9f44866eecceac1197ad"
+    },
+    "training_approval": {
+      "path": "docs/P064_B_PPO_APPROVAL_20261006.json",
+      "sha256": "ae327fee310bad562aceef35029595d20c9a3421d5d5be3dc3b68bb82649e9fe"
+    },
+    "training_review": {
+      "path": "docs/P064_B_PPO_TERMINAL_REVIEW_20261006.md",
+      "sha256": "0cc1494286f85b930b43b1a11713ae6ac3719d8ff599cfa0780a8d9fe71b0d65"
+    },
+    "pair_driver": {
+      "path": "scripts/run_exploratory_causal_history_h5_feedback.py",
+      "sha256": "0917cd5c62e43fc3f7b2cdc23900aa9d0932dff9ef4842a155bcf4288524b14d"
+    },
+    "transport": {
+      "path": "scripts/run_full40_canonical_ppo_openfoam_feedback.py",
+      "sha256": "3dbb20106f45ed709e0c91731817540903db961555930177f81f0394104594cc"
+    },
+    "initial_policy": {
+      "path": "artifacts/p064_exact_initial_policy_cpu_20261006_r3/ppo_initial.zip",
+      "sha256": "8a99bc1ad855b6ca510950206253021accb186cab393d136dbc4935ac3cc0108"
+    },
+    "initial_reconstruction": {
+      "path": "artifacts/p064_exact_initial_policy_cpu_20261006_r3/result.json",
+      "sha256": "25be144cf75c7694c11264db754a6d3949c03b4ec3d5c42405b6e9257212429e"
+    },
+    "initial_reconstruction_source": {
+      "path": "artifacts/p064_initial_policy_cfd_source_20261006_immutable/reconstruct_initial_policy_r3.py",
+      "sha256": "c6884bb1c12c72bb6954e627d16796da312f3ccdb00ed884742e6f8c18eb8de2"
+    },
+    "trained_cfd_reference": {
+      "path": "artifacts/p064_b_projected_ppo_long_cfd_20261006/result.json",
+      "sha256": "8b31091d5e69edfbfd5ea78ba99dd7709623e6eeb0bd4f13c54e984b7fc28907"
+    }
+  },
+  "required_systemd": {
+    "MemoryMax": "8G",
+    "MemorySwapMax": 0,
+    "CPUQuota": "400%",
+    "RuntimeMaxSec": 3750,
+    "TimeoutStopSec": 120,
+    "KillMode": "control-group",
+    "OOMPolicy": "stop"
+  },
+  "runtime_env": {
+    "CUDA_VISIBLE_DEVICES": "",
+    "OMP_NUM_THREADS": "4",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONNOUSERSITE": "1",
+    "PYTHONPATH": "/workspace/fluid_control/.runtime/exploratory-h5-ppo-py312"
+  },
+  "interpretation": "Actual B PPO result/policy/Vec, successful training invocation and independent terminal review are bound. One exploratory paired800 feedback evaluation is approved; no formal admission or old-policy replacement.",
+  "immutable_driver": "/workspace/fluid_control/artifacts/p064_candidate_policy_source_20261006_immutable/scripts/run_p064_candidate_projected_32768_ppo_long_cfd.py",
+  "resource_contract": {
+    "startup_memavailable_gib": 50,
+    "runtime_memavailable_gib": 22,
+    "physical_reserve_gib": 20,
+    "memfree_observational_only": true,
+    "solver_memory_gib_each": 8,
+    "solver_swap_bytes": 0,
+    "solver_cpus_each": 2
+  },
+  "training_execution": {
+    "unit": "fluid-control-p064-b-ppo-32768-20261006.service",
+    "invocation_id": "f613395cbf1140549dc60e7b046e0f6b"
+  },
+  "reviewed_by_lead": true,
+  "lead_statement": "Lead approved ONE fixed initial-weight b00 paired800 CFD control after independent R3 reconstruction/entry/spec ACCEPT. Exact seed20261006 initial tensor6bc539, R3 policy8a99 and original identity Vec retained; only policy weights differ from the trained reference. Keep original 148→228 windows, physical thresholds, resource/cleanup protections. No seed/gain tuning, automatic restart, threshold relaxation, new training or claim of general RL superiority.",
+  "candidate_arm": "B",
+  "candidate_manifest_sha256": "92766915cb11ca75d313608a5f75e61a218371dcc789f5b44725f0a8260e7891",
+  "training_payload": "artifacts/p064_b_diverse_h5_32768_ppo_20261006/payload",
+  "hypothesis": "The trained B policy weights outperform exact original initialization under identical reflection, one action filter and paired CFD.",
+  "decision_rule": "Report all six windows and original physical criteria; compare trained and initial controllers without a posthoc improvement threshold. Similar/no benefit weakens the learning-contribution claim. One fixed seed/phase cannot establish general RL superiority.",
+  "control_intervention": "Only policy tensor values: exact original seed20261006 initialization; same frozen identity VecNormalize bytes, not nontrivial trained normalization statistics.",
+  "initialization_cpu_invocation": "5f256594d5994101b1fe9410e2658b3a",
+  "initialization_failed_cpu_invocation_preserved": "9deaab9fd4f94d0aadff97d71fda6ee6",
+  "unit": "fluid-control-p064-initial-projected-ppo-long-cfd-20261006.service",
+  "driver_path": "artifacts/p064_initial_policy_cfd_source_20261006_immutable/run_p064_initial_projected_ppo_long_cfd.py",
+  "initialization_superseded_r2": "801925ab812745fd99ea8e03f3e9c0a8 (weights match but serialized spaces float32; not used)"
+}
