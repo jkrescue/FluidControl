@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E056 — Actual fixed24 H5 deterministic policy comparison, engineering only
+
+Unitfluid-control-diverse-policy-h5-comparison-20261006 invocationf4ba411c1bcf4cae9ebd178ad0c30a1f exited0. Approvala9c3eaf77f9dc2a444459e2a17da3dc8ea556ce0eb0d952e09cae1880e2fd08f, worker630bc478ed17475539b21e206242598d7bbaa044b3acaf00829d95eb1424008c. Result3f8c6f7e5b03877601a3b25b26409e9d6f943fcbaec62600fa51343995922b9f. Same24train packets/frozenK1/H5/precision/canonicalreward; deterministic final4096vs32768 policies, allcases equalweight. Meanreturns−3.6902918374361167→−3.6875228003375486,delta+.0027690370985678316;7better10worse7equal. Dragpenalty improves whilebias/actuation/rate worsen. No optimization, newCFD, heldout or checkpointselection; no convergence/physicalbenefit claim.
+
+Independent47source/192runtime hash and24×5×2 telemetry/component recomputation passed. Executedpolicy/FNOtensor checks unchanged, not independent tensorreload. MinimumAvailable120472039424bytes; peakGPUallocated755589120bytes. Supervisor22.019s total versus7.069s workerpostsetup; actualevaluation240s limit, inheritedtrainingprotocol1800/32768 onlyprovenance. FiveCPUtests passed. Reportdocs/DIVERSE_POLICY_H5_COMPARISON_REVIEW_20261006.md; sourcecapture afterexecution. FC-E055 longCFD untouched.
+
 ## FC-E055 — Actual800-cycle final32768-policy paired CFD running
 
 Root launched `fluid-control-exploratory-diverse-32768-ppo-long-cfd-20261006`, invocation `285bea88ff234cd5acfb9cb03c2b3cf3`, initialPID2588512. Approvale103288a0558c10784a43a199a3c4d731ffc0e6509753646da7bb6930cb4dc12; immutable driver17060dda570ead4fdc8e33920fcc559b5bb8ad8d640a7e154579f8a795507afa, source captured afterlaunch. Fixed800cycles148→228, same69observation/CPUdeterministicpolicy/slew/ramp/pairedzero/solver. Sixpredeclared windows retain early124 comparison and final60primary12000 versus explicitlydifferent historicalinclusive12001. Originalcriteria unchanged;20%sensitivity labeled. No extra124trial was executed and no physicaloutcome inferred fromlaunch. Same8G+2×8G/noSwap/Available50,22; time-only3600inner3750outer120stop approved following cumulativeprobe-read estimate. Four independentCPUtests passed.

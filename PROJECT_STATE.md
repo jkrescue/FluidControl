@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E056已完成：同24起点确定性H5回报仅微小改善，长CFD继续
+
+独立核验诊断unit `fluid-control-diverse-policy-h5-comparison-20261006` / `f4ba411c1bcf4cae9ebd178ad0c30a1f` exit0，无优化/CFD/模型修改。4096与32768最终策略同24真实reset各5步、等权宏回报−3.6902918374→−3.6875228003，delta+0.0027690371；7起点改善、10恶化、7相同。drag惩罚改善，但mean-bias/actuation/rate惩罚恶化；不能据此宣称普遍收益或已收敛。H5相对62历史的奖励问题仍是假说，不是原因证明。
+
+结果SHA `3f8c6f7e5b03877601a3b25b26409e9d6f943fcbaec62600fa51343995922b9f`，报告 `docs/DIVERSE_POLICY_H5_COMPARISON_REVIEW_20261006.md`。独立复算全部24×5行/组件，47source/192runtime哈希一致；无独立模型重载。最低Available120472039424字节，GPUpeakallocated755589120字节，12GiB/noSwap/240s监督。实际评估协议不是继承元数据中的32768训练协议。FC-E055原800周期配对CFD同285bea继续，原物理标准不变。
+
 ## FC-E055已实际运行：最终32768策略的800周期配对CFD
 
 Root启动 `fluid-control-exploratory-diverse-32768-ppo-long-cfd-20261006`，invocation `285bea88ff234cd5acfb9cb03c2b3cf3`，初始PID2588512。批准 `e103288a0558c10784a43a199a3c4d731ffc0e6509753646da7bb6930cb4dc12`，不可变driver `17060dda570ead4fdc8e33920fcc559b5bb8ad8d640a7e154579f8a795507afa`。唯一最终策略直接CPU驱动148→228真实CFD，无在线FNO/MPC。固定早期12.4及其两半窗、主要(168,228]12000点、历史[168,228]12001点伴随窗和全80窗，不择优统计；10%物理参考不变，20%仅标注敏感性。未执行另外124周期试验。3600inner/3750outer/120stop，8GiB控制器及两个8GiBsolver/noSwap、Available50/22不变。尚无终态物理结论。

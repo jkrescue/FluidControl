@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-06 — FC-E056 does not justify blanket budget escalation
+
+Actual deterministic comparison of unique4096/32768policies on same24verifiedtrainH5 starts yields macroreturn gain only0.0027690371 (7better/10worse/7equal), trading improveddrag penalty for worsemean-bias/actuation/rate penalties. Keep allcase/component evidence; do not infer convergence, physicalgain or choose favorablecases. H5 versus62sample rewardhistory and omittedhistory in69observations remain possible explanations, not causalproof. No threshold/weight/architecture change follows automatically. Preserveoriginal10%physicalreference and await unchanged actual800cycleFC-E055; diagnostic is inferenceonly, not a new training run.
+
 ## 2026-10-06 — FC-E051 operational RL loop complete, physical objective incomplete
 
 唯一终态PPO真实配对CFD124周期已完成并独立重算：全窗减阻+0.4118%，rearCl波动RMS增加10.59%，均值偏置为同窗zero RMS的52.7%。前/后窗同时保留，10%改20%仍全部不满足，故不调整物理标准、不据短窗宣布成功。原80D/U CFD-only成功与K1完整formal失败保持独立；结果SHA `4007493f22de5855cbd0574e0ec006ca715941b8396f4e48af6527dc11e03d47`。
