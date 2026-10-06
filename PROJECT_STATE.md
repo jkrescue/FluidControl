@@ -6,6 +6,8 @@
 
 当前无GPU训练或CFD运行。FC-E098 F训练和FC-E099固定开发评估均已终态独审：[训练工程审计](docs/P064_H1_ONLY_F_TERMINAL_REVIEW_20261007.md)、[16NPZ/80端点评估](docs/P064_H1_ONLY_F_DEVELOPMENT_REVIEW_20261007.md)。训练同31f1692d9f984b91a17e21a133426e99，32更新/256窗口、28Adam步32、两bias/flow冻结；评估同0f75311df5d248fab0dd12e6ce76c2ed退出0，result `642445fc3ad17491d3898c1bd3f49f34062b277302896796b67090a473482cee`。Pooled H1 rearCl MAE B .138998316601→F .136573601048，总Cd .038065373898→.033974312246改善；但H5两项退化、fixed-six AR .008946200483→.009550093227退化，未满足原保留性规则。Lead不采用F、保留B，不放宽标准、不自动续训。F反传仅H1，诊断total仍为H1/AR各半；flow预测逐值不变不是场改善，保存标量loss未独立forward复算。
 
+当前下一步仅为已确定的B/F固定16×5真状态受力对照准备：Closed负责源准备，Sota独立审查，Lead负责执行批准；尚未科学运行。准备、审查不计作GPU训练或诊断推理，须实际unit/invocation及执行证据后再更新运行状态。本次状态同步不发起训练、CFD或新增实验。
+
 FC-E096 E训练及FC-E097固定开发评估已终态独审：[训练报告](docs/P064_RESPONSE_AUX_E_TERMINAL_REVIEW_20261007.md)、[开发报告](docs/P064_RESPONSE_AUX_E_DEVELOPMENT_REVIEW_20261007.md)。E的pooled H1 rearCl MAE .139014150482、Cd MAE .038086727262，均略差于B .138998316601/.038065373898；fixed-six H1/AR也略差。Lead按预定规则不晋级，保留B及已验证控制器，不称显著更差。flow预测与B逐值一致，aux损失仅标量记录未独立复算。不延长E、不扫λ或比例。
 
 基本官方组件→FNO代理训练→HydroGym/SB3策略→CPU策略与真实CFD在线反馈链已有可预检入口和实际复现；[一页指南](docs/CANONICAL_CLOSED_LOOP_QUICKSTART.md)。整体代理预测精度目标仍未完成，旧seed/早期偏置失败及C50/D25/H25拒绝完整保留。在线FNO/MPC是可选后续，不是基本闭环缺失项。

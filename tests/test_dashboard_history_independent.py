@@ -46,6 +46,7 @@ def test_terminal_and_aux_are_separate():
     assert '尚无已完成窗口' in html
     assert '两项H1误差与保留指标均略差，未采用' in html
     assert 'H1 Cl/Cd改善，但H5与AR保留性退化，未采用，保留B' in html
+    assert 'f.development_verified&&f.next_step' in html
 
 
 def test_f_uses_actual_events_and_stops_on_exited():
@@ -69,6 +70,8 @@ def test_f_uses_actual_events_and_stops_on_exited():
     with patch.object(subprocess,'check_output',side_effect=[complete,log]):
         result=fn(root)
         assert result['terminal_verified'] and result['development_verified'] and not result['promoted']
+        assert result['next_step_running'] is False
+        assert '源准备与独立审查中，尚未科学运行' in result['next_step']
     with patch.object(subprocess,'check_output',return_value=state.replace('31f1692d9f984b91a17e21a133426e99','other')):
         assert fn(root)=={'verified':False}
 
