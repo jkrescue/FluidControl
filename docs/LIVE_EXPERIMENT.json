@@ -1,23 +1,14 @@
 {
-  "experiment": "P027-diagnostic",
-  "label": "真实流场与连续预测：受力误差诊断",
-  "description": "44条真实CFD训练轨迹，每条连续预测10步。仅诊断，不更新模型，不是控制收益验收。",
-  "unit": "fluid-control-fcp027-diagnostic-20261006.service",
-  "invocation": "af09e82d407c413caff707c60535db9a",
-  "approval": "docs/FC_P027_EXECUTION_APPROVAL_20261006.json",
-  "approval_sha256": "fe218527b6f85daf08999673b9525a2b93144e1722235f5769dc2ea055e567a5",
-  "launcher": "artifacts/fcp027_launcher_runtime_20261006/run_p027_short_horizon_diagnostic.py",
-  "launcher_sha256": "aa8e337dbeac04ef5a0a79009ef31f50679ec8eab5f5db2d663c2a1b45259d90",
-  "log": "artifacts/fcp027_short_horizon_diagnostic_20261006/run.log",
-  "progress_kind": "diagnostic_origins",
-  "planned_updates": {"CFD": 44},
-  "review": {
-    "kind": "p027_diagnostic",
-    "report": "docs/FC_P027_TERMINAL_REVIEW_20261006.md",
-    "report_sha256": "e07c4e83d02d6ffab26184b9edfefbd049325d55ceca6f3764f134601ce26378",
-    "result": "artifacts/fcp027_short_horizon_diagnostic_20261006/result.json",
-    "result_sha256": "7785ebb92ca932b4fb572175b4bd66497fc3b7495f6ecdb534f3b587a0096366",
-    "summary": "单帧模型的后圆柱升力平均绝对误差：真实流场输入0.02655，连续预测输入0.03869，增加约46%。四帧历史模型仅改善约0.27%。原完整精度评估仍未通过，尚无新的代理辅助闭环结果。",
-    "next_action": "最新进展：官方FNO已在GPU完成10步流场前向和反向资源试验，模型未更新。最低物理空闲20.90 GiB；正在增加完整训练所需内存余量，并完成正式评估接口。下一项为1368个窗口、171次更新的流场训练，再按原完整标准评估；当前尚无新训练或PPO运行。"
-  }
+  "experiment": "P028-flow-training",
+  "label": "官方FNO十步流场预测训练",
+  "description": "使用44条真实CFD训练轨迹，固定受力模型，仅更新流场FNO。1368个原始训练窗口，每窗学习连续10步；每8窗更新一次，共171次更新。尚未通过完整精度评估，不代表闭环控制成功。北京时间11:27前提供完整阶段结论。",
+  "unit": "fluid-control-fcp028-flow-train-20261006.service",
+  "invocation": "c46c60f3c2634802b2646bb094f9d201",
+  "approval": "docs/FC_P028_TRAIN_EXECUTION_APPROVAL_20261006.json",
+  "approval_sha256": "655f4d924036ef1e23857c4bc1892b8f0bbce40af1a1b22f8bd4657eca097837",
+  "launcher": "artifacts/fcp028_training_launcher_20261006_immutable/run_p028_flow_training.py",
+  "launcher_sha256": "62ff300395785291de790e26e5c60d072a89fa43f165f2711747e4b0afd2b8e0",
+  "log": "artifacts/fcp028_flow_training_20261006/run.log",
+  "progress_kind": "flow_training",
+  "planned_updates": {"FNO": 171}
 }

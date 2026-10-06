@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 当前实际运行：P028流场多步训练（2026-10-06 01:30 UTC观测）
+
+实际unit `fluid-control-fcp028-flow-train-20261006.service`、invocation `c46c60f3c2634802b2646bb094f9d201` 为activating/start且PID1371882；日志已完成37/171次更新、302/1368个窗口。该数字是一次观测，不是实时常量；看板已按同一真实实例显示更新与窗口数。训练配置SHA `655f4d924036ef1e23857c4bc1892b8f0bbce40af1a1b22f8bd4657eca097837`；官方FNO流场模型H10训练，K1受力模型冻结，目标和数据不变。仍未产生终态候选或科学准入。
+
+训练前按限定22个旧模型文件及44个核验训练文件实施缓存提示，物理空闲达到35.4GiB；观测训练中约22.9GiB，持续守卫保留双20GiB/CUDA20GiB要求。没有删除/改写数据。实际训练结束后仍须模型重载、原完整正式评估，合格后才进入兼容HydroGym/PPO及真实CFD闭环。
+
+正式评估源码已实际固定：`artifacts/fcp028_formal_source_20261006_immutable`，411个数值源码、独立外部执行器、9个CPU重载依赖，receipt SHA `fb5fd1ef87a09188d78453d0c5f93e49cf1a795dc7fa9fcee5fd77bf14cc910d`，独立核验进行中。用户要求两小时结论：不晚于2026-10-06 03:26:54UTC/北京时间11:26:54，详见 `docs/TWO_HOUR_REVIEW_20261006.md`；报告实测进度和未达目标，不保证按时制造成功。
+
 ## 最新实测：P028十步前向/反向资源检查完成，尚未训练（2026-10-06）
 
 R3实际unit `fluid-control-fcp028-resource-r3-20261006.service` 已exit0、PID0，官方容器退出0且无OOM。结果 `artifacts/fcp028_flow_resource_probe_r3_20261006/payload/result.json` SHA `e808095f9c4de77f838c7132615427ba76985f78d3c0c7803b1d8528008a40f1`；独立报告 `docs/FC_P028_RESOURCE_TERMINAL_REVIEW_20261006.md`。原窗口816实际完成H10完整反向，30项梯度有限且非零，模型前后张量完全相同；零优化器更新、无新候选。这不是模型精度改善或闭环成功。

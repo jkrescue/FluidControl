@@ -1292,7 +1292,9 @@ def _parse_registered_progress(state: dict, log: str, matches: bool, registratio
         return {"verified": False}
     counts = {key: set() for key in plan}
     kind = registration.get("progress_kind", "optimizer_updates")
-    if kind not in ("optimizer_updates", "resource_arms", "history_training", "diagnostic_origins"):
+    if kind not in ("optimizer_updates", "resource_arms", "history_training", "flow_training", "diagnostic_origins"):
+        return {"verified": False}
+    if kind == "flow_training" and plan != {"FNO": 171}:
         return {"verified": False}
     if kind == "diagnostic_origins" and plan != {"CFD": 44}:
         return {"verified": False}
@@ -1303,6 +1305,15 @@ def _parse_registered_progress(state: dict, log: str, matches: bool, registratio
             row = json.loads(line)
         except ValueError:
             continue
+        if kind == "flow_training" and isinstance(row, dict) and row.get("event") == "training_window_complete":
+            case, start, dataset = row.get("case"), row.get("start"), row.get("dataset_index")
+            if not isinstance(case, str) or not case or type(start) is not int or start < 0 or type(dataset) is not int or dataset not in (0, 1, 2) or row.get("split") != "train":
+                return {"verified": False}
+            key = (dataset, case, start)
+            if key in windows["FNO"] or len(windows["FNO"]) >= 1368:
+                return {"verified": False}
+            windows["FNO"].add(key)
+            continue
         if kind == "history_training" and isinstance(row, dict) and row.get("event") == "training_window_complete":
             k, consumed = row.get("history_k"), row.get("consumed")
             arm = "K" + str(k)
@@ -1310,7 +1321,7 @@ def _parse_registered_progress(state: dict, log: str, matches: bool, registratio
                 return {"verified": False}
             windows[arm].add(consumed)
             continue
-        event = {"resource_arms": "arm_complete", "history_training": "accumulation_update_complete", "diagnostic_origins": "origin_complete"}.get(kind, "arm_update_complete")
+        event = {"resource_arms": "arm_complete", "history_training": "accumulation_update_complete", "flow_training": "accumulation_update_complete", "diagnostic_origins": "origin_complete"}.get(kind, "arm_update_complete")
         if not isinstance(row, dict) or row.get("event") != event:
             continue
         if kind == "diagnostic_origins":
@@ -1319,6 +1330,8 @@ def _parse_registered_progress(state: dict, log: str, matches: bool, registratio
                 return {"verified": False}
             cases.add(case)
             arm, step = "CFD", row.get("count")
+        elif kind == "flow_training":
+            arm, step = "FNO", row.get("update")
         elif kind == "resource_arms":
             if type(row.get("k")) is not int or row["k"] not in (1, 4):
                 return {"verified": False}
@@ -1337,12 +1350,14 @@ def _parse_registered_progress(state: dict, log: str, matches: bool, registratio
         return {"verified": False}
     if kind == "history_training" and any(windows[k] != set(range(1, len(windows[k]) + 1)) or len(windows[k]) < 8 * len(counts[k]) for k in plan):
         return {"verified": False}
+    if kind == "flow_training" and len(windows["FNO"]) < 8 * len(counts["FNO"]):
+        return {"verified": False}
     running = (state.get("ActiveState"), state.get("SubState")) in (("active", "running"), ("activating", "start")) and pid != "0" and matches
     terminal = state.get("ActiveState") == "active" and state.get("SubState") == "exited" and pid == "0" and state.get("Result") == "success" and state.get("ExecMainCode") == "1" and state.get("ExecMainStatus") == "0"
     return {"verified": True, "running": running, "exited_success": terminal,
             "updates": {k: len(v) for k, v in counts.items()}, "planned_updates": plan,
             "label": registration["label"], "description": registration["description"],
-            **({"windows": {k: len(v) for k, v in windows.items()}} if kind == "history_training" else {}),
+            **({"windows": {k: len(v) for k, v in windows.items()}} if kind in ("history_training", "flow_training") else {}),
             "progress_unit": "个诊断工况（无参数更新）" if kind == "diagnostic_origins" else "项无更新计算" if kind == "resource_arms" else "次更新", "admission": False}
 
 

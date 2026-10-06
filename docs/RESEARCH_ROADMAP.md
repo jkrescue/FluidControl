@@ -1,5 +1,9 @@
 # Research roadmap and prioritized backlog
 
+## Actual current stage — fixed P028 GPU training running
+
+At01:30UTC,37/171updates and302/1368windows were observed from the same live invocationc46c60f3c2634802b2646bb094f9d201. Next: monitor this job without duplicate launches; actual terminal identity audit and bounded official CPU dual reload; unchanged full formal evaluation. Only accepted surrogate evidence permits compatible HydroGym/PPO and paired real-CFD control. User's two-hour conclusion is due03:26:54UTC; any unfinished stage must be explicitly reported, not inferred complete. Formal411/CPU9 immutable source preparation is complete; actual post-training evaluation remains outstanding.
+
 ## Latest — P028 actual resource check complete; training preparation continues
 
 Official GPU H10 forward/backward succeeded without optimizer updates or model changes. Minimum free20.9028GiB is above the user floor but leaves narrow room for Adam state and temporaries. Next: establish extra headroom using only validated completed-project file cache hints if needed; finish original formal caller identity compatibility; execute fixed1368-window/171-update flow training with continuous20GiB guards; official reload and unchanged full evaluation; only an accepted candidate proceeds to compatible HydroGym/PPO and paired real-CFD feedback control. See `FC_P028_RESOURCE_TERMINAL_REVIEW_20261006.md`. No new surrogate has been admitted. Older preparation entries below are historical.
