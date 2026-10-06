@@ -10,6 +10,31 @@ PROFILES={arm:{'unit':f'fluid-control-fcp064-aero-arm-{arm.lower()}-20261006.ser
 PROFILES['A']['unit']='fluid-control-fcp064-aero-arm-a-r2-20261006.service'
 LABELS={'A':'A 原数据对照','B':'B 加入真实闭环数据'}
 
+def development_summary(root):
+    """Only small independently reviewed JSON; never load checkpoint/field arrays."""
+    root=Path(root)
+    bindings={
+        'K1':('artifacts/p064_k1_development_h1_h5_20261006/result.json','9ea3e0e781e76265bbc65ea52d6fec92ebe5b5cb7a93d91c3c9addb454f7c4de'),
+        'A':('artifacts/p064_arm_a_development_h1_h5_20261006/result.json','c8b0242658a101120603514e6d2e5076c827c518965c92470810fe9693840fe6'),
+        'B':('artifacts/p064_arm_b_development_h1_h5_20261006/result.json','47e7d4c6931fadc62730790500bb9a8a07f44792d1bef82c900d10c36f9a8665')}
+    try:
+        report=root/'docs/P064_AB_DEVELOPMENT_COMPARISON_REVIEW_20261006.md'
+        if hashlib.sha256(report.read_bytes()).hexdigest()!='2fa7e5d71e4b163bfff2261ec2b38ef43c1c5aa75acc7cea7d47c1f3296c225a':raise ValueError('comparison report SHA')
+        rows=[]
+        for label,(name,digest) in bindings.items():
+            path=root/name
+            if hashlib.sha256(path.read_bytes()).hexdigest()!=digest:raise ValueError('comparison result SHA')
+            summary=json.loads(path.read_text())['summary']
+            rows.append({'label':label, 'h1_cl':summary['1']['force_channel_mae'][3],
+                'h1_cd':summary['1']['total_drag_mae'], 'h5_cl':summary['5']['force_channel_mae'][3],
+                'h5_cd':summary['5']['total_drag_mae']})
+        return {'verified':True,'rows':rows,'report':str(report.relative_to(root)),
+                'scope':'已打开开发集；绝对力系数MAE，非百分比；非正式验收',
+                'current_stage':'新 PPO 运行包检查中，尚未训练',
+                'field_note':'流场冻结、三者预测相同：H1/H5速度相对L2 1.03%/4.30%，压力3.20%/13.70%，未改善。H100失败保留。'}
+    except (OSError,ValueError,KeyError,TypeError) as exc:
+        return {'verified':False,'error':str(exc)}
+
 def parse_journal(text):
     consumed=updates=0;last=None
     for line in text.splitlines():

@@ -37,3 +37,18 @@ def test_actual_identity_and_zero_exit_not_success(tmp_path):
     assert status(tmp_path,'A',reg,failed)['status']=='失败/停止（未自动重试）'
     reg['invocation']='b'*32
     assert status(tmp_path,'A',reg,running)['status']=='身份或状态未验证'
+def test_development_missing_evidence_fails_closed(tmp_path):
+    from p064_dashboard_progress import development_summary
+    assert development_summary(tmp_path)['verified'] is False
+
+
+def test_actual_small_reviewed_development_json():
+    from pathlib import Path
+    from p064_dashboard_progress import development_summary
+    root=Path('/workspace/fluid_control')
+    data=development_summary(root)
+    assert data['verified'] is True
+    assert [row['label'] for row in data['rows']]==['K1','A','B']
+    assert data['rows'][2]['h1_cl'] < data['rows'][1]['h1_cl']
+    assert data['rows'][2]['h5_cd'] > data['rows'][0]['h5_cd']
+    assert '尚未训练' in data['current_stage']
