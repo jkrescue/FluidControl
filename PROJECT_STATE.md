@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 最新：真实模型H100诊断已启动（2026-10-06 04:16 UTC）
+
+P030固定44条真实训练轨迹、start0、K1/P029连续100步对照已实际启动。user unit `fluid-control-fcp030-train-horizon-20261006.service`，invocation `d7739a9bf4fe42f68a584e8ec5edc684`，启动观测MainPID1756637。批准 `docs/FC_P030_EXECUTION_APPROVAL_20261006.json` SHA `2f80dab06ca1916495272dac0adf155745969534ce3d5b1626e7a4295eadc98f`；v2源码17项manifest SHA `a14bd2c00ff5c905ccd6193843736a6ccc2806cd2c2d7a51827635cb09fdb6e3`。23项集成CPU测试与15项核心CPU测试通过，独立审查 `docs/FC_P030_INTEGRATION_REVIEW_20261006.md` SHA `fa72abdd5686feff177a45ba615744c10c8098a2b7f1b0f51a92ea3843f36e7f`。v1固定源码保留。
+
+该任务不更新参数、不保存新模型、不授予策略训练或闭环准入。输出 `artifacts/fcp030_train_horizon_diagnostic_20261006`，先记录selection.json，再对照各预测时长的流场与气动力误差。900秒上限、原20GiB物理/CUDA守卫保持。实际CUDA预检31.7396GiB通过；启动后资源监控仍在持续。看板已经登记本次真实实例与44轨迹进度。整体闭环目标尚未完成；下方GPU空闲或准备中状态均为此前记录。
+
 ## 最新：P029完整计算已结束，科学判定未通过（2026-10-06 03:47 UTC）
 
 同一正式实例 `85ae29a422fc48739136418317de8ca5` 已结束（MainPID0、exit0），不是资源故障。原始development gate为FAIL：六个窗口joint2/6、总Cd6/6、后Cl波动2/6、后Cl均值4/6。通过的是b01-minus及b05-plus；两个zero分支的波动预测现在均失败，不能只报旋转分支改善。原始收据SHA `96e207af491ef4abe0c9e9c85983672111d86d70fe88b2d88551b29d0739a334`，gate SHA `aa7dd557bc516e898339655517eba8bf16cf27b4579751c6b9f75a4de9153c53`。独立复核已完成：35项输出、411项源码哈希一致，8个容器exit0/noOOM；原审计器所有离散判断一致，浮点重算最大差4.44e-16；最低物理空闲21.200443GiB。报告 `docs/FC_P029_ORIGINAL_FORMAL_TERMINAL_REVIEW_20261006.md` SHA `020042bb6846e9be14ccb10e36035bba7c5d3fa4d6e164c81ee5d027f9a62527`。未授予PPO准入。

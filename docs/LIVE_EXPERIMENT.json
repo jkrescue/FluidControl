@@ -1,14 +1,14 @@
 {
-  "experiment":"P029-original-formal",
-  "label":"新FNO完整验证已结束：尚未达标",
-  "description":"完整评估及独立复核已结束：六个长期窗口仅2/6同时通过，总阻力6/6、升力波动2/6、平均升力4/6。两个旋转分支改善，但两个零控制分支的波动预测退步，不能进入新PPO。下一项固定44轨迹的长短时预测诊断正在CPU实现与测试；未启动新训练，未完成FNO辅助真实CFD闭环。",
-  "unit":"fluid-control-fcp029-original-formal-20261006.service",
-  "invocation":"85ae29a422fc48739136418317de8ca5",
-  "approval":"docs/FC_P029_FORMAL_EXECUTION_APPROVAL_20261006.json",
-  "approval_sha256":"b339d1175ea17dfd110763c044b0d9a2a15ce088062b1834c3627969f279fec5",
-  "launcher":"artifacts/fcp029_formal_source_20261006_immutable/orchestration/scripts/run_fcp029_posteval.py",
-  "launcher_sha256":"6c26f080d5da821ee240eef6772a065b04d963e9eb77a2aa2a22cced7a1136ae",
-  "log":"artifacts/fcp029_original_formal_20261006/memory.jsonl",
-  "progress_kind":"formal_evaluation",
-  "planned_updates":{"P029":7}
+  "experiment": "P030-train-horizon",
+  "label": "连续流场预测诊断：旧模型与新模型对照",
+  "description": "固定44条真实CFD训练轨迹，各从起点连续预测100步，比较第1、10、25、50、100步的流场、总阻力和后圆柱升力误差。这是无参数更新的诊断，不是新训练或闭环验收；原物理和预测指标不变。",
+  "unit": "fluid-control-fcp030-train-horizon-20261006.service",
+  "invocation": "d7739a9bf4fe42f68a584e8ec5edc684",
+  "approval": "docs/FC_P030_EXECUTION_APPROVAL_20261006.json",
+  "approval_sha256": "2f80dab06ca1916495272dac0adf155745969534ce3d5b1626e7a4295eadc98f",
+  "launcher": "artifacts/fcp030_train_horizon_source_20261006_v2_immutable/scripts/run_p030_train_horizon.py",
+  "launcher_sha256": "b5e07d162267f709950e58adf02b9e0eb8a68433fc31203319bfa5bc6ded5a3b",
+  "log": "artifacts/fcp030_train_horizon_diagnostic_20261006/run.log",
+  "progress_kind": "diagnostic_origins",
+  "planned_updates": {"CFD": 44}
 }
