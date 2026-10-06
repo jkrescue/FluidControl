@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E063 最新预测审查：已执行动作条件回放完成，受控轨迹 H1 力预测劣于 persistence
+
+实际推理 invocation `627cb6b8b59a40aca3bb9159fb617eb3` 已 PID0/exit0；16 个 NPZ、80 个 H1–H5 端点独立复算通过。受控分支 H1/H5 rear-Cl MAE 为 **.186710/.149926**（persistence **.088235/.423392**），total-Cd MAE 为 **.048653/.035954**（persistence **.017126/.084684**）；零控制 H1/H5 rear-Cl MAE 仅 **.013311/.010806**。受控 H1 的 rear-Cl/Cd 仅 3/8、1/8 起点优于 persistence；H5 为 8/8、7/8，但不等于普遍准确。起点0误差较小不能代表后续受控状态，合并两分支会掩盖差异。
+
+结果 SHA `247af0405d9e622f0b3b3b5dbc64e46c20890439fcd5216682b8d973957fd00d`；独审 `docs/PROJECTED_POLICY_H1_H5_INFERENCE_TERMINAL_REVIEW_20261006.md` SHA `197b385617420e5f0e9cb7c8dfb25d957e98f85ea93f280bb2d6c0effc898faa`。378 源文件、192 runtime、5 输入身份通过，最低 sampled MemAvailable 121518190592B；模型不变、无优化器/新 CFD。源码按已执行字节归档，canonical 7 CPU tests PASS，仅工程覆盖。此为给定真实已实现未来命令的离线回放，不是在线 FNO/MPC，不改变三个相位的真实物理闭环结果，也不覆盖 H100 FAIL。下一项仅建议另审 train-only 状态/动作历程诊断，未自动批准训练或调参；FC-E062 的首轮转换失败与历史记录全部保留。
+
 ## 当前：真实策略闭环已完成，b00 / b01 / b03 三个观测相位 primary 均通过原标准
 
 FC-E061 b03 已终态，不再运行训练或该 CFD：同一 invocation `47612677a9f64dfc968917fada5e9ba8`，PID0 / exit0，完成 800 个真实策略反馈周期。独立复核 3200 个原始受力文件哈希、全部六窗口、800 次投影与单次动作限幅、1600 个干净求解段及容器清理。Primary **(164,224]** 的 12000 点结果为减阻 **3.89714021%**、rear-Cl centered RMS 降低 **18.51412210%**、均值偏置/配对零旋转 RMS **1.68885808%**；原 ≥2% / ≤1.05 / ≤10% 三项均通过，无阈值放宽。本次六窗口均通过，不能据此改写 b00/b01 的早期窗口失败。

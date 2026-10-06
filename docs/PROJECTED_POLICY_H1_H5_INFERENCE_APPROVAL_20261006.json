@@ -1,0 +1,2368 @@
+{
+  "base": {
+    "path": "scripts/probe_k1_uma_no_tf32.py",
+    "sha256": "7f8567b0f41474294a45a864d4024cf0d64508b7e8351e19feb8e8aee9219b73"
+  },
+  "driver": {
+    "path": "artifacts/projected_policy_h1_h5_inference_source_20261006_immutable/infer_projected_policy_h1_h5_replay.py",
+    "sha256": "94e583182b453d8200a91700f1e68a997e47a9033debf1a9e08ed37cf297841f"
+  },
+  "evaluation_protocol": {
+    "allocator_bytes": 6442450944,
+    "branches": [
+      "mpc",
+      "zero"
+    ],
+    "deadline_seconds": 600,
+    "endpoints": 80,
+    "horizon": 5,
+    "optimizer_steps": 0,
+    "starts": [
+      0,
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700
+    ]
+  },
+  "execution_authorized": true,
+  "import_bindings": {
+    "dual": "fluid_control.dual_fno",
+    "history": "p026_state_history",
+    "selector": "fluid_control.exploratory_short_mpc",
+    "trainer": "train_tandem_fno"
+  },
+  "inputs": {
+    "config": {
+      "path": "artifacts/fcp027_diagnostic_source_20261006_immutable/training_config.yaml",
+      "sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
+    },
+    "conversion_result": {
+      "path": "artifacts/projected_policy_h1_h5_conversion_20261006_r2/result.json",
+      "sha256": "a22c3aa67509e9b3a342071398ae85da2ce4e07c74a3cbbd87e2a493c2b248bf"
+    },
+    "manifest": {
+      "path": "artifacts/fcp026_history_training_k1_20261005/candidate/dual_model_manifest.json",
+      "sha256": "7adca21e3a75691b10f164c342ea91995cc38060e7416dd217b8bd8e5feeacc7"
+    },
+    "normalization": {
+      "path": "data/curated/tandem_cylinders_matched_start_full40_dev30_v1/normalization.json",
+      "sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+    },
+    "selection": {
+      "path": "artifacts/projected_policy_h1_h5_conversion_20261006_r2/selection.json",
+      "sha256": "26506735c33417b26c15c407d2a1fe5e39d4812d03436e6c67c6147229c921ac"
+    }
+  },
+  "output": "artifacts/projected_policy_h1_h5_inference_20261006",
+  "pythonpath": [
+    "/workspace/fluid_control/artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src",
+    "/workspace/fluid_control/artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts"
+  ],
+  "resources": {
+    "cpu_quota_percent": 100,
+    "gpu_visible": "0",
+    "memory_bytes": 12884901888,
+    "outer_seconds": 630,
+    "runtime_available_gib": 22,
+    "startup_available_gib": 50,
+    "stop_seconds": 20,
+    "supervisor_seconds": 600,
+    "swap_bytes": 0,
+    "tasks_max": 64
+  },
+  "runtime_sources": {
+    "0": {
+      "path": ".runtime/exploratory-h5-ppo-py312/Farama_Notifications-0.0.4.dist-info/METADATA",
+      "sha256": "bb07fdce31f3c0ebb716a97cec663d2d7b1c3918a415ff5120299b354a5babe9"
+    },
+    "1": {
+      "path": ".runtime/exploratory-h5-ppo-py312/farama_notifications/__init__.py",
+      "sha256": "0a8f9364fee3dccede9b522ba12cf7623ee5fa17d70f2453ca9f2ab04bcc0d7b"
+    },
+    "10": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/box2d/lunar_lander.py",
+      "sha256": "af2a7f8910b4ffc30cfe1ab0aa441092e374d5085918d0f1b99e0c0dffec2869"
+    },
+    "100": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/jax_to_numpy.py",
+      "sha256": "74a9ca59ef07d0ac7f08e35a764f2694ac60ea5907b6f45b06468ae8ace3fc05"
+    },
+    "101": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/jax_to_torch.py",
+      "sha256": "d617a5f8023c1021aff04176b77c2788ca9a2d40a6fdbdcf991d9dcc69d82340"
+    },
+    "102": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/numpy_to_torch.py",
+      "sha256": "f3cd96caa89d318b174211ad67ae0f9801c5b5c2aaceb9030f4411d9a2d26197"
+    },
+    "103": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/rendering.py",
+      "sha256": "6f797225a7f80db04c554357ccac44d16b8347bff36f8537e06e7f014d0debb8"
+    },
+    "104": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/stateful_action.py",
+      "sha256": "5bdd188961e9a6013fbec20f5b08a0ed6142e7be478784f1c5c678c4ad46347e"
+    },
+    "105": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/stateful_observation.py",
+      "sha256": "7fd46c116ea5aaf97b72ad6abf59258d58d570ea8861a9dd91d6e363eabc1b17"
+    },
+    "106": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/stateful_reward.py",
+      "sha256": "d6d461349d9b0c17b3d868823f79194aad08ea7777f557494dedc41b31d7f809"
+    },
+    "107": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/transform_action.py",
+      "sha256": "441bd43171ebdce02f9aafc48c45616fa125668accb184998e107b1bf4f92c57"
+    },
+    "108": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/transform_observation.py",
+      "sha256": "3cdab7236ff422c6ca0304e035f2caf7d405b7018f3c70be5992af033bc8f935"
+    },
+    "109": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/transform_reward.py",
+      "sha256": "7ec1a538f26f196d7eb341f68a850ac0532504958f32f00b3596f0f67fbfd2a6"
+    },
+    "11": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/classic_control/__init__.py",
+      "sha256": "6a23ea5190661684832dbedbdf313684985cd06602f7f04eaa2f569c2d09622a"
+    },
+    "110": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/utils.py",
+      "sha256": "d859d64e105b53b7dd6210ccca3db4e1504247ed914867ff8ab87bbcaad58c7d"
+    },
+    "111": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/__init__.py",
+      "sha256": "815d3207e46a094d9b208e029acb9e0f6ba237e171732f8001af730904227364"
+    },
+    "112": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/array_conversion.py",
+      "sha256": "f16e2d6ff1a679302b1fd77824ee5d47e750c011386a80c382e9cccaf7d5929e"
+    },
+    "113": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/common.py",
+      "sha256": "3d688b68baaa6524fee26cac5a84a7e9add1ad9ed2597f1af5177271a82cf580"
+    },
+    "114": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/dict_info_to_list.py",
+      "sha256": "9bde184572443b186bdcb718083fa49c58fc81b11da31c39c1855f63dc14bfca"
+    },
+    "115": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/jax_to_numpy.py",
+      "sha256": "4209f6706a7696f0bdf58f54a58c2a1d1867a73a9a8a4da74a23afaaea185ecd"
+    },
+    "116": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/jax_to_torch.py",
+      "sha256": "4bcfd140af7e4680f3b6d1f0bdf1d0ba05dfbecaeb0837a212f44d0682a1d23d"
+    },
+    "117": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/numpy_to_torch.py",
+      "sha256": "28e09431fffa82de15725f3e5cab60cf4f6822222b1bed572fe9d24e7af602cd"
+    },
+    "118": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/rendering.py",
+      "sha256": "8e79f76abdf49309200a626cd82843afa8ca1963f5c1034d1f36391f58ee766b"
+    },
+    "119": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/stateful_observation.py",
+      "sha256": "530fee2b2aa926b0878be72ae0a0e7a924efe442b8125f0894b5205a9dace2c2"
+    },
+    "12": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/classic_control/acrobot.py",
+      "sha256": "89bd2cee2e115e95c72bda97ce5cf8b315638be8b83aa37941b8e84b21ee3b9d"
+    },
+    "120": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/stateful_reward.py",
+      "sha256": "dc0bcb9a46bc5e62fad688444cb9372c76245c900f284c144819f0a693cff49c"
+    },
+    "121": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/vectorize_action.py",
+      "sha256": "4116fa1031e39ec2f574dd9a2116277a0a12d92fbaa6e8ba8083f19d9dbbc13a"
+    },
+    "122": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/vectorize_observation.py",
+      "sha256": "cd3c0dc38af6bfa20cb82ba32ac6c690a1649ea719f2a06e9b3e0ef99313a3b9"
+    },
+    "123": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/vectorize_reward.py",
+      "sha256": "5d32dad9ec270953f1666d0368ad38a7bd77b289a787a6dc7aa6053a63c704be"
+    },
+    "124": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3-2.7.1.dist-info/METADATA",
+      "sha256": "6952912c5ba48aeb0e1b05d5044ddbdf291086f60cfa7e5e7b175aa16587ff32"
+    },
+    "125": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/__init__.py",
+      "sha256": "a8d5d1b88605932e9d03c6acc37eadc54319bb1b563faf00cd173fbfdf059cf6"
+    },
+    "126": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/a2c/__init__.py",
+      "sha256": "7460d0bedd470910de7e98474e1f41cef76b46c8f1b213e116e9c117e7620c7b"
+    },
+    "127": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/a2c/a2c.py",
+      "sha256": "974e0591f846c9c33171c82cd77fea08e302667fd5a08c028929746cb7ee4449"
+    },
+    "128": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/a2c/policies.py",
+      "sha256": "ad8cd1b486fb1b9b7d4e962d8ed7ade01c58229e60c61f7c6fc0fbce55a41864"
+    },
+    "129": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "13": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/classic_control/cartpole.py",
+      "sha256": "b758e3286711a2c44b0817265412c9fab1dce8b1b385e2126bc710ceedd47378"
+    },
+    "130": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/atari_wrappers.py",
+      "sha256": "4e1a42ae65a568ad8d403d066aea7eccdfbac67cb15b1f8de2bf9c2f54e8b14c"
+    },
+    "131": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/base_class.py",
+      "sha256": "7a118cb9fb49c15548f1793ab4883653ac83e379ca354de79d8b1b309238688d"
+    },
+    "132": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/buffers.py",
+      "sha256": "eadb4950eff1722663cbe98e025b6b505f85a7d67a2382db8cb21c36f8cb028a"
+    },
+    "133": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/callbacks.py",
+      "sha256": "1659f783e53c00ee0f50d0666135f1e0d8febe23deb958dffb4dd9fe5f3bd32c"
+    },
+    "134": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/distributions.py",
+      "sha256": "18b1101b5f0687f2a7e12983315c0ab0c89a195afe664283b453351cd000cfa8"
+    },
+    "135": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/env_checker.py",
+      "sha256": "903091b976b9f90f0f6077a9f464a408c620fe573a7717758a14d57c1dbb32f3"
+    },
+    "136": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/env_util.py",
+      "sha256": "5b5c7fa9f06f2dd4ae65e2e5ed164c0df0b7b5f65a9a249ed56d57c2a1cc2e60"
+    },
+    "137": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/envs/__init__.py",
+      "sha256": "2a167d3e4775a647367e385a25ebee4603b59b7f4a88170915a071f0e4076580"
+    },
+    "138": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/envs/bit_flipping_env.py",
+      "sha256": "f13043bcc9c2925946c360bbb44b3c23c31aa6aac3174dbb2376620d308635ae"
+    },
+    "139": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/envs/identity_env.py",
+      "sha256": "5a133282e1c279bf998af1e7b6e1d1aa6dcbc7147b85b5170cc4a8abde394e09"
+    },
+    "14": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/classic_control/continuous_mountain_car.py",
+      "sha256": "ba9d0a5795afaf30bb32e0131bfe42a9b90141d99fab6509f647f56e221369e9"
+    },
+    "140": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/envs/multi_input_envs.py",
+      "sha256": "4014b731942a3a5e435d12acea21a62c1bf63f004cccca83745fdd07a1a6e334"
+    },
+    "141": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/evaluation.py",
+      "sha256": "018eeea91dc1d8693aa6adec25b5d9a99c33b4b991c8770bd64dc816e1f349ba"
+    },
+    "142": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/logger.py",
+      "sha256": "5abae0f7cf00a55945a5fac16d0d3b9e5de654ae29b499df9b946b4b2b558bbf"
+    },
+    "143": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/monitor.py",
+      "sha256": "e2267b522427acfc5ceb2bb50dddfd9aca265b6496e3864e4cc8f3963307252b"
+    },
+    "144": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/noise.py",
+      "sha256": "e0b228c64756ec24a440c35271715649c985e234db265de9a87896b4308675cb"
+    },
+    "145": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/off_policy_algorithm.py",
+      "sha256": "6d295168a5f9607b7784470c24b3fff77a5b43dc10f507dabb88fb63b0a8f285"
+    },
+    "146": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/on_policy_algorithm.py",
+      "sha256": "d5a03557d25a33edbf8ef1328085433623e13f1a2cb01d3167ac306ddbf744bf"
+    },
+    "147": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/policies.py",
+      "sha256": "28a7b69ef3c3d7ebb5a3dad17980165c77ee7f0b6d30b9371d58b1499d670751"
+    },
+    "148": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/preprocessing.py",
+      "sha256": "cbd260d0164be15e6f1f691c1f13877b9141550bebd94da9c3fd74f1ee59153f"
+    },
+    "149": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/results_plotter.py",
+      "sha256": "ed4d31e899d0a1649c9bcbdc5802240dd9c031213d82cb791888fe9e37065a3b"
+    },
+    "15": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/classic_control/mountain_car.py",
+      "sha256": "f97a9b162f329b6c8a1234b25d3df620fd45186fa333b7a789c1568265866309"
+    },
+    "150": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/running_mean_std.py",
+      "sha256": "39f3ac4243d10fd7375deb9c43db1b94e6f878bf53bc5e633b6dcf12917c21d1"
+    },
+    "151": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/save_util.py",
+      "sha256": "53feda59c5a35ccc9d8980613a60aecd4fc9a458cfaeb95fb470ded083b6d1e6"
+    },
+    "152": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/sb2_compat/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "153": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/sb2_compat/rmsprop_tf_like.py",
+      "sha256": "eadb8d4b5b4faafcd24e38366755715ecde3811894680b46ccb307837714a9d5"
+    },
+    "154": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/torch_layers.py",
+      "sha256": "b5a9fdf013ea55e0119715932cc7f82f5d3f20850199d2e0114062777126dce9"
+    },
+    "155": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/type_aliases.py",
+      "sha256": "f7cf3c3ec77ab5da4f49c5aee941ecfa08f95ccaa1e5f75a42db913809f6bfc7"
+    },
+    "156": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/utils.py",
+      "sha256": "092289daf310c114b55a1bc59d9be53cf8bdd685396d398220556946d55c1c7d"
+    },
+    "157": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/__init__.py",
+      "sha256": "efa59c18b9bfecfe4124cf26061ebed62486c6b5eadf61d9306840bc4974aec7"
+    },
+    "158": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/base_vec_env.py",
+      "sha256": "3af7d0b55d4de0ba1bed29649e9a5d588fb4cff6e74cad70e1e989368879533f"
+    },
+    "159": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/dummy_vec_env.py",
+      "sha256": "391ac9e447e9b9b2823b2edc3be2cfbfd54239036494ea2f0ff4e8e5585407b8"
+    },
+    "16": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/classic_control/pendulum.py",
+      "sha256": "ff7149cbcd2e1d196bced43f664b1dde0ea3580c8144ed0393bda3dcc0d554b9"
+    },
+    "160": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/patch_gym.py",
+      "sha256": "8669d9c71cb5894903a8e87ed86855b8e4207c73b82635e8996a06061bb8fe11"
+    },
+    "161": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/stacked_observations.py",
+      "sha256": "172fb2d79fbb64a92a521a8b2d319c843310bf55b592b98d8452899923035c36"
+    },
+    "162": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/subproc_vec_env.py",
+      "sha256": "e3acbeb465d5ca1288a7b9fa812eeacb9b03e3c52e757a1130b5d57a04baf942"
+    },
+    "163": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/util.py",
+      "sha256": "494267f8dbb1e25d181ab6a2af05e4633b9e75fe91365ec40cc0f85733f4ae7e"
+    },
+    "164": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/vec_check_nan.py",
+      "sha256": "d5484253a50c2bb3fea2376fa7d3d075b3ef038ea7db834f03e0a8e605ca4456"
+    },
+    "165": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/vec_extract_dict_obs.py",
+      "sha256": "951d2418b83d48ff5fabc78cf7a7a0e0dc1085bfec754593a0763fa9b504e253"
+    },
+    "166": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/vec_frame_stack.py",
+      "sha256": "d235046ebfa6371347b3db99e243e81dbe97e4b0e563c3ddb97eef17b5400d03"
+    },
+    "167": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/vec_monitor.py",
+      "sha256": "e1eab6c2235d7e4a818f8d87cd9f855e5fca370da92492bd37183694e5dda2ef"
+    },
+    "168": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/vec_normalize.py",
+      "sha256": "ed8815fd44bd2e913b4f5ac820a16c9fd498727645ba4b0e957feb843ed1348b"
+    },
+    "169": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/vec_transpose.py",
+      "sha256": "48d6a1391ad10e840fb23d3e018725d96d07d4c391282d4acd3c2ee03bf65f6e"
+    },
+    "17": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/classic_control/utils.py",
+      "sha256": "5077e47a6ef0e49a9f65eced4032567be21a837270898f6066b08067d3aec962"
+    },
+    "170": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/vec_video_recorder.py",
+      "sha256": "f0245fb855c225ebb36213c9528c476711753baa9dfdbac1767a4c6a2cf6bbbc"
+    },
+    "171": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/ddpg/__init__.py",
+      "sha256": "57e45661eec3f611c62a8e611c0da01dd3cf387cd97cf6695e4f7dc8d5df82ac"
+    },
+    "172": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/ddpg/ddpg.py",
+      "sha256": "709689eb95026840d1b586cd02525bdcc5114946984a271e1e2a1f4277f77786"
+    },
+    "173": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/ddpg/policies.py",
+      "sha256": "4645b42a6194a324b5e2f947a447dae5e98f5426bf30d06ae7143e257db360e5"
+    },
+    "174": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/dqn/__init__.py",
+      "sha256": "cfd2589e94384d46957425565fedd1af6e78ce1cb127218754a25b4a85b80b37"
+    },
+    "175": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/dqn/dqn.py",
+      "sha256": "ae5e4106f317ee0937fefa0d4707dd967d0fb231b089ee1f217872f9b5623db9"
+    },
+    "176": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/dqn/policies.py",
+      "sha256": "6e5c2cf544b9088c3cd270356eb0ab8a457f4561405afa2de9ff085ab54fcd5a"
+    },
+    "177": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/her/__init__.py",
+      "sha256": "22d38de4cbc7c52b8b518b51efe6e16e8a5a02ec0cfc617d2cc373aa58c4d218"
+    },
+    "178": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/her/goal_selection_strategy.py",
+      "sha256": "c747b071a5d85410c5cc508ffe4f0eb43d6d009afa2ce60e22015a8c7542baab"
+    },
+    "179": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/her/her_replay_buffer.py",
+      "sha256": "6bd06c0b68b4d74b3aa22594607b980459996a87e62ad6621ba2581f5fb1d2e6"
+    },
+    "18": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/functional_jax_env.py",
+      "sha256": "fec1c0e56e1aa5833445f597a35bd8d4578ccd3e1d9acc83887c182307e8f75c"
+    },
+    "180": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/ppo/__init__.py",
+      "sha256": "1c3be462460c36578c74cd724325e9606a0bcce139bd66d4ebfdbc12b1212b9f"
+    },
+    "181": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/ppo/policies.py",
+      "sha256": "1dbfff512b3d669c16d933dce377286f2ec7559efcd5f5ddaeab46493f092abf"
+    },
+    "182": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/ppo/ppo.py",
+      "sha256": "9f8860ceeb9d81952178daf3fc9da8c685eee4a7b0337fb72a16f736587df3b4"
+    },
+    "183": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/sac/__init__.py",
+      "sha256": "d916666b183a8e1bb8b853c96a83ef336c4fb1264adf15033d67cf8dc6ca9a37"
+    },
+    "184": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/sac/policies.py",
+      "sha256": "6381c5d4b1a6d962bebdfafb884c485c2f9dda906d7b1d8cc1295553cb08e876"
+    },
+    "185": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/sac/sac.py",
+      "sha256": "a8606c1c55404f3aa16a4346b2bf0b69321d59818f0018cc73426710de19e236"
+    },
+    "186": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/td3/__init__.py",
+      "sha256": "fbccd748b1dee1ae45376d665822db374ca7bc1edd7bb07abdf2d471d95dad1a"
+    },
+    "187": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/td3/policies.py",
+      "sha256": "c7ffc1148acc615c7799fd0c6d6d47e0c85b011ddf0903c212035c2c1f646e6d"
+    },
+    "188": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/td3/td3.py",
+      "sha256": "4a63ea4ee5b46c6cccbbacaae9a03dfa74beb4ea0b611b2202f230a55fad0465"
+    },
+    "189": {
+      "path": ".venv-curator-py312/lib/python3.12/site-packages/physicsnemo/datapipes/readers/hdf5.py",
+      "sha256": "cafa65d615555e1e4b1d6cb58895983682aae826957765c105142b71e934caa0"
+    },
+    "19": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/__init__.py",
+      "sha256": "d359b24a0ad29564bb855a8217c1b0a1faf277e60116fc5c5d59a9c7c74b4d53"
+    },
+    "190": {
+      "path": ".venv-curator-py312/lib/python3.12/site-packages/physicsnemo/models/fno/fno.py",
+      "sha256": "e64eb9bef031bfdae5d84f0ed35a1ebb27915f18aed4a333b2dd985a083c71a9"
+    },
+    "191": {
+      "path": ".venv-curator-py312/lib/python3.12/site-packages/physicsnemo/utils/checkpoint.py",
+      "sha256": "0d26a62251c3724a1ceebfa1daa1bb5ba9dcdc5e73a0ded3ccb955355af2f78e"
+    },
+    "2": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium-1.2.3.dist-info/METADATA",
+      "sha256": "e1435ba6c78bc0f32b7f70e6c6c163669fa95f0a702ab97ffb00e9e597767139"
+    },
+    "20": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/ant_v4.py",
+      "sha256": "97b98c60dcff664b850dff0635cc4443a0217fece1e0af1f4808c236e5b7f6a0"
+    },
+    "21": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/ant_v5.py",
+      "sha256": "df1d38643b3b7702d8497726cc0cea98e5bc2ebf5f47235f136839ff3f6f7fa0"
+    },
+    "22": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/half_cheetah_v4.py",
+      "sha256": "00028e87059de4bbfe8973d30c014d5989b445f474c0c3f3230f63a17ba95485"
+    },
+    "23": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/half_cheetah_v5.py",
+      "sha256": "393b47f45514d064cd17c5da995adb6a95f8b8ed015e4ffbf73a9217e5384724"
+    },
+    "24": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/hopper_v4.py",
+      "sha256": "a9015aff4f5d3a4add78992282264b62151286b46558d7c8cd1d6d4426c003ff"
+    },
+    "25": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/hopper_v5.py",
+      "sha256": "7a899dd748041a04d92d84c8702f67a92c5c62f4989a2dd31a24e8510114ce97"
+    },
+    "26": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/humanoid_v4.py",
+      "sha256": "372fa91ce66b81ce9c4df5c8eb970637f28277fe40a5349a2c93b6099a7a38dc"
+    },
+    "27": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/humanoid_v5.py",
+      "sha256": "a7d40f8380c22f6fcb73fc7afd6bdc1c10d7f1e337f84f68544d2b86e5327275"
+    },
+    "28": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/humanoidstandup_v4.py",
+      "sha256": "2e5e8bf8c0e3c69337177f183a59bcd186565df9b93a5451f31a34a9904e79c8"
+    },
+    "29": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/humanoidstandup_v5.py",
+      "sha256": "061015e2318f5315e0f30bfce1b8ec7ef9929ae3dbe8d6e3eb85d43670beca9a"
+    },
+    "3": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/__init__.py",
+      "sha256": "3f4e4cdb2180d6259ae55a9449d725d5af774546d2e30b69996f040161f46894"
+    },
+    "30": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/inverted_double_pendulum_v4.py",
+      "sha256": "06ff692152e829109a21757e36a56804754ce15978575835dbd20da7d96bd37f"
+    },
+    "31": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/inverted_double_pendulum_v5.py",
+      "sha256": "023220b85b4343699a87c5c83bbb53ab8ab5f24fa782997f08cf2fbb59a66e60"
+    },
+    "32": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/inverted_pendulum_v4.py",
+      "sha256": "a55fe3349b418ee5ac333d1c3d2ba237dc4e329f98629a5a05aabf253f47d0cd"
+    },
+    "33": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/inverted_pendulum_v5.py",
+      "sha256": "a78ce1013890fcbd6cdfd9ac249738bf003ccde2a4a66633e3fddaee99551f2a"
+    },
+    "34": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/mujoco_env.py",
+      "sha256": "879f6dad1197797dd7fa9e0cddfe8ac6d31562beb2d301f928c969087405d743"
+    },
+    "35": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/mujoco_py_env.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "36": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/mujoco_rendering.py",
+      "sha256": "e1ba5d5ac3f00b4b64dd93bce00caf8038bb05bd228db960ce10478e4786385b"
+    },
+    "37": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/pusher_v4.py",
+      "sha256": "50f3a8db7e54a0334ceacf6411dab0b78cd3035d6edc026e0c69a3b8a2cfe66b"
+    },
+    "38": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/pusher_v5.py",
+      "sha256": "f6f163b058f4f48a436b26d389173ffcd1548f885c20afd51aeda811f996d953"
+    },
+    "39": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/reacher_v4.py",
+      "sha256": "39d5d6df4d543c12c9889e13cbea41915e4d7346363ec9fe4fdca6821d7f4b7f"
+    },
+    "4": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/core.py",
+      "sha256": "92226890db5bec675bce52b6b9ceba350baef86d86e6f279d02e96f1a39c2258"
+    },
+    "40": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/reacher_v5.py",
+      "sha256": "5e9ae83479730e875d5192e74c53a878d766ffb56607e677a4d7f0cd81b7abd7"
+    },
+    "41": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/swimmer_v4.py",
+      "sha256": "b8698696c7ec5ac799320310746e5d2336f81e1ca065353501178497e820302c"
+    },
+    "42": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/swimmer_v5.py",
+      "sha256": "150db34346718cff1a09991e24c60998e7ccd11a5d8e4936edf841e4f3c6857e"
+    },
+    "43": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/utils.py",
+      "sha256": "2e4ff6b345c2e905159622a575dde80c0caf252e1c7e50d8352e82dbd24b596b"
+    },
+    "44": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/walker2d_v4.py",
+      "sha256": "019e3062055f85006a43fc66640f55019f79bdd34154f4c225134aacf0327a53"
+    },
+    "45": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/walker2d_v5.py",
+      "sha256": "19d1b72f0deda2fd51b31984c08ca97081f5fe35021dedb41d487eb96041176d"
+    },
+    "46": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/phys2d/__init__.py",
+      "sha256": "7d38f2e5533844b9f1cdff46f430773f4d71d312db89b67acc597fbd727f6e7c"
+    },
+    "47": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/phys2d/cartpole.py",
+      "sha256": "8cabd5a8524d0ef2ac95b10ba82fdbacbe012c2cef8fd0e1d5efc0a7a2b88d0e"
+    },
+    "48": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/phys2d/pendulum.py",
+      "sha256": "6855295c43c79b07bd8ca31de424a6d7f2f1507ff05a9c40d1d38dba52a38785"
+    },
+    "49": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/registration.py",
+      "sha256": "3053db8b8d4716a2eaa56dc7a5b5d65e80085a091a21dd9fb63e060d524f6d01"
+    },
+    "5": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/__init__.py",
+      "sha256": "107470023c9b82cab9b57a6efdc36c3b18358d73aca0940a4bdf011f46ae6e3b"
+    },
+    "50": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/tabular/__init__.py",
+      "sha256": "20f6833bab400821a6434a3b9a6a6d92560dfb76ff9358db683ccf6524852a1b"
+    },
+    "51": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/tabular/blackjack.py",
+      "sha256": "e77cd5dfcad8ab816d50c3f70104d657516f5893358922c62e5342960d949609"
+    },
+    "52": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/tabular/cliffwalking.py",
+      "sha256": "02e1ba97ef4dc605c6894cd600bad171c3660c081eac1ec30abfb87aec34b9d1"
+    },
+    "53": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/toy_text/__init__.py",
+      "sha256": "cbb33af955903c26c764c73ed2911884592e49eb6cf25929394f7ae42f41cfd2"
+    },
+    "54": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/toy_text/blackjack.py",
+      "sha256": "e29415ed45feb49a9a0eb733e7c48cf7d61baf63528b80abdab479f619880b90"
+    },
+    "55": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/toy_text/cliffwalking.py",
+      "sha256": "b7c142b924c2d18fa08ae1aa8a2dc495a884d295af3e8b89d62e7c62f35b83fe"
+    },
+    "56": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/toy_text/frozen_lake.py",
+      "sha256": "994cb58dffeeb55cf07d97d673fa69ff03d1a52e2b5120decc287dfa9b58e294"
+    },
+    "57": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/toy_text/taxi.py",
+      "sha256": "158cfeb253c008139b86e83eaaf90a40ab30552bf29e8f02cd795aefe28838cf"
+    },
+    "58": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/toy_text/utils.py",
+      "sha256": "3739667fe0ded69624599a9e6b8d3305de70a8f3675e47c6a5a8b8bc1aafcf22"
+    },
+    "59": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/error.py",
+      "sha256": "44f44e8666b5bd41a15d9a58fb88b3fced3fb054be0e197acebf893ed310c53c"
+    },
+    "6": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/box2d/__init__.py",
+      "sha256": "ed2327da31b45048f330f15fc1a5807627403c96bdc615182cf614ae70e8b68a"
+    },
+    "60": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/experimental/__init__.py",
+      "sha256": "b852b64cecf40b44e9b793a26e12afcb169a55a24d7ddfa1ff9674dd09249ab4"
+    },
+    "61": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/experimental/functional.py",
+      "sha256": "330149fb3941e527580f4db929e35e0a581c95d33b5451bda5546b1ce2bd03fc"
+    },
+    "62": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/logger.py",
+      "sha256": "ff729eaa331e16090dd0b68a48d18460d453b5459c405ffe7a039a0226e9443c"
+    },
+    "63": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/__init__.py",
+      "sha256": "e1c24f7bb0de4dc0f76be390d0cf7663eadc8aaf99897f6d5bd75b94b90b0337"
+    },
+    "64": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/box.py",
+      "sha256": "b5ad274e40f84f197c84ea9ebf05b108d2ae5da1ccdee6e090adce417bcd3231"
+    },
+    "65": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/dict.py",
+      "sha256": "7101051852bc9b2ac6dfacbcea444b0fe5c07b3b4f4f9e78387060dd5c17486a"
+    },
+    "66": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/discrete.py",
+      "sha256": "540cbe070e14129292630dd023a8f899e939da61873a3e1e974dacfa0e32ce0a"
+    },
+    "67": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/graph.py",
+      "sha256": "17c0d3afe98b6a42f06021ef267a29daaf11a533bd073776f8455ad761776b5a"
+    },
+    "68": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/multi_binary.py",
+      "sha256": "00b73452be419261c1164277353a9567473df15270e87859761b438f449be6b4"
+    },
+    "69": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/multi_discrete.py",
+      "sha256": "6efe86f07df51fff818ed6751a0a182266f8893b855422619bca35115913ecf3"
+    },
+    "7": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/box2d/bipedal_walker.py",
+      "sha256": "e96db6df5e74b1d1da011fee69d2c95d81f37f577ee653a55e53edd5a88cbb7e"
+    },
+    "70": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/oneof.py",
+      "sha256": "144f7f8f3877d2dbea40db0ce3943cf9fcb548eb6dd673c0742724758650e3cc"
+    },
+    "71": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/sequence.py",
+      "sha256": "3c50ed6068fbf2765cef2f935f1b54b7c8eb959a4ab1c4c33022aeb50aa1cbc0"
+    },
+    "72": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/space.py",
+      "sha256": "e9f12f9bc7bd26e686a2cf557ccfa23d7d0c5e6472fc11bf743eb88049c16108"
+    },
+    "73": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/text.py",
+      "sha256": "3eb20b2d3b2c2f519aa4c96462d4fd0bc32a0921999103764b782520e866fc25"
+    },
+    "74": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/tuple.py",
+      "sha256": "a873ea508c189d430384cad0813572a51c9f79c636905e421d99543518ba8acf"
+    },
+    "75": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/utils.py",
+      "sha256": "7b19fb1d79a0a5dbeca4b87e0d80d0e3df0bdab8b4b7f2a5d847724057c5e7e8"
+    },
+    "76": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/__init__.py",
+      "sha256": "e52f5e3c886c7489d36a52c7ea9a05006edcdd4fca5ba163e65a9c46aecb6312"
+    },
+    "77": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/colorize.py",
+      "sha256": "5a84ebf93548d49b051799812e50995f11dc243bc85b9b11b07c7dc252031b1c"
+    },
+    "78": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/env_checker.py",
+      "sha256": "2d7fbfc54665e4dff7321ba24305c64ef542f44cb12a92f6f1c8f41253d367f9"
+    },
+    "79": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/env_match.py",
+      "sha256": "f5a06e5bba422a2f9f6d5dfb3f54e9f63420faccf9599c851fc7b80671ef69dc"
+    },
+    "8": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/box2d/car_dynamics.py",
+      "sha256": "1d47cc6405871a3ff268b79f0f1b44a2b796873c1a05b8036cd44220cd8de703"
+    },
+    "80": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/ezpickle.py",
+      "sha256": "a2a1f863d1bb180b49c66874cb609fb26974e6cd10a8c138de5da8e9a8b9b4e0"
+    },
+    "81": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/passive_env_checker.py",
+      "sha256": "e8b4a41363bde3352343bc5034ac4f623e6db2347d2eb6a8a70597224d62da39"
+    },
+    "82": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/performance.py",
+      "sha256": "37cc5672beba3d0e23d3a3416455697fe9ded4c042ae08ee04cc561f1dff9883"
+    },
+    "83": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/play.py",
+      "sha256": "1eb89dc134d9ff163a234d1254c0f7d461c2d0a6db2252a3c9d7747be92200cb"
+    },
+    "84": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/record_constructor.py",
+      "sha256": "6cc738e70aac81fd18d10c16e72e8a91f11177b369c13ba555e5c8ffb3cf04bf"
+    },
+    "85": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/save_video.py",
+      "sha256": "e8c05279f1a9d23c2b4584feff681780f570c01f35e2ed54b6c55572be61a6f6"
+    },
+    "86": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/seeding.py",
+      "sha256": "eb2a223b92604b7d1df2a859338e4a175c60f3fb11b87f8f316f306f1b97de53"
+    },
+    "87": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/step_api_compatibility.py",
+      "sha256": "4742fc05ae5b06403eb6fe9f67262826e7c80f84613183005aae6ea02fca4744"
+    },
+    "88": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/__init__.py",
+      "sha256": "ccb2729736d370c13a2bc257291ba06f15ca3576725cf540c835c16d8dc6c240"
+    },
+    "89": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/async_vector_env.py",
+      "sha256": "b1535350adc38b403cf5fdc731c9f9713ba37db1c097e7fe3b6757cd854af985"
+    },
+    "9": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/box2d/car_racing.py",
+      "sha256": "d0d8c61ba32101d480b46c416b6a0854614efd6f7180aba1276ac0ec4e7f3662"
+    },
+    "90": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/sync_vector_env.py",
+      "sha256": "b4875b19b5043eda052d151ed967dc20d2f0d948174b472047943cbb744a4b2f"
+    },
+    "91": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/utils/__init__.py",
+      "sha256": "598f2352721e3655a6077dc9b061ef139d279d9368a790ecfb8f2d21540f8a80"
+    },
+    "92": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/utils/misc.py",
+      "sha256": "650ea425ff478f2a863a49a6b34cb8e1043d5a86b00fb7e6533c2093feac2700"
+    },
+    "93": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/utils/shared_memory.py",
+      "sha256": "0300dbc0652f9dd556406e866ab3a22c914fbac737158d541bd5b74c2445ff5c"
+    },
+    "94": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/utils/space_utils.py",
+      "sha256": "c8fb5b3e04e7c00e437b91b7f1cd6021c6e81b6846392da24f23d757e584329f"
+    },
+    "95": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/vector_env.py",
+      "sha256": "488f8bc2117ced7e8fa7b2547c477923120aa704fe07bb58e56747c652b540ee"
+    },
+    "96": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/__init__.py",
+      "sha256": "6f8395392be63c0a4d3fb7a5057aaa39c5600d487453fee85223c26e5e090659"
+    },
+    "97": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/array_conversion.py",
+      "sha256": "7a5fa9b2f04437f00afe239ebe565a412dafdb8a979e94f5d8895f611b3bf7b9"
+    },
+    "98": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/atari_preprocessing.py",
+      "sha256": "23ab5a578ee04df9e4a05d1e24f3f2a3eeaf1fb37c5b110dcf5550a75569f16d"
+    },
+    "99": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/common.py",
+      "sha256": "bc0ebcd8d1cb65286fc2d610c43bd262accfef2f06869460861a9ec0b1d86824"
+    }
+  },
+  "runtime_versions": {
+    "numpy": "2.5.3",
+    "nvidia-physicsnemo": "2.2.2",
+    "torch": "2.14.1"
+  },
+  "sources": {
+    "0": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_cem_stage_c.yaml",
+      "sha256": "b5e6760b9bca29ab03db81ddd31b302512991acbe4e843f8c27806940cd5bfd0"
+    },
+    "1": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno.yaml",
+      "sha256": "ba951dd03e6848f8a68edd064a143ed0274b8ac553fc32b343dc902d07206dd6"
+    },
+    "10": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_full40_free_ar_h20.yaml",
+      "sha256": "439756e268dbb17b49ef17ac35e254b662dd51c15be87b1a4e462b7aec0ac4a0"
+    },
+    "100": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/build_stage_c_phase_baselines.py",
+      "sha256": "d31da60ab8017dd608532914aa7bc77604e39e4d9ba1c9286e1dd5629d96eb44"
+    },
+    "101": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/build_tandem_visual_report.py",
+      "sha256": "5da655800f8dc8dab8d9909582b165fbe48dbf428b3825b8705466928bd4ea65"
+    },
+    "102": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/build_train20_paired_datapipe_manifest.py",
+      "sha256": "9fbd35a72d7bb43db1b331767fcdc43507347902971205ebdde3394844a7da1b"
+    },
+    "103": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/calibrate_tandem_surrogate_uncertainty.py",
+      "sha256": "0a2d8ae798b1116a567678dc41f0ee6829ab6dc663b92af7bb1bfbfcda6d0941"
+    },
+    "104": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/capture_fcp013_running_evidence.py",
+      "sha256": "add92be347952d2e2f8131b3e4d17f1523f6ccbf0421c949b85cebbf37cc6411"
+    },
+    "105": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/capture_fcp015_running_evidence.py",
+      "sha256": "fd026c63ae01230a0dd2e56798532be51b6812c2d5cdd4853922e7a8f4de8171"
+    },
+    "106": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/check_dynamic6_qs1_coexistence.py",
+      "sha256": "ac0816168d7a10533fe252d2759edbaccf37212508e5e614a4c203d256971060"
+    },
+    "107": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/compare_force_sources.py",
+      "sha256": "65b49cad5c8362f9bd46ace372be46a21a0a89507dbe0b15cc297f9319076eba"
+    },
+    "108": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/compare_rollout_evaluations.py",
+      "sha256": "5be8283ae11d0131a8b1ff4e843c315d57aae50c7bc1fcc5db018dc4596c4f58"
+    },
+    "109": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/control_tandem_cfd_feedback.py",
+      "sha256": "7ed5fe9defe2a0f127fdfa54edba4a8b862f47b6a6c2666074d52198f94c3c8b"
+    },
+    "11": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_full40_free_ar_h50.yaml",
+      "sha256": "d2cb4512763f42b13e56a1b96cd2eaeba2fa3fa718e3e255f124df4238f545d4"
+    },
+    "110": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/control_tandem_mpc.py",
+      "sha256": "d8640be743dcb32113f508e81b0eabc3db92123989cd99b8809be99867e42d1d"
+    },
+    "111": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/curate_low_action_phase94_validation.py",
+      "sha256": "39aeb6b3f1dd2ef22afbbc368c552b645308549072e2e49266ee3e7b3bb5140b"
+    },
+    "112": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/curate_matched_start_full40_remainder.py",
+      "sha256": "31fdbf391b1465563e57bbf60c199272439203b5b4bcf8ff76cf5a0f385822c1"
+    },
+    "113": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/curate_tandem_cfd.py",
+      "sha256": "d182c5c8093ca6a303aca34d3b4c0b4d40c55ed598f18b2d97d356f057a0926e"
+    },
+    "114": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/derive_d012_fcp003c_step_receipts.py",
+      "sha256": "2fd4dd1953d458c922ecf23a8c106c30fc4b9160fdbb47abd4b3944272ba3238"
+    },
+    "115": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/derive_d012_fcp008_step_receipts.py",
+      "sha256": "8603480f90409a908c477ba04a17ba3f15b9f564da49c083eafa23afb8db9e27"
+    },
+    "116": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/derive_d012_p003b_step_receipts.py",
+      "sha256": "2c202b15cbf6afaee23f2e43042e0ce700ff5bee39277d2ebec0a05b01699dd5"
+    },
+    "117": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/diagnose_fcp003c_fixed_feature_force_readout.py",
+      "sha256": "d9bcc3e77eeb4da432a2341c7b2aab5413049dd813434d400f40a380a43a9426"
+    },
+    "118": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/diagnose_fcp003c_gradient_balance.py",
+      "sha256": "ec10b754dbf83e7cddbed36047a4d2042507d14e309e2c13a48f21e3bd983457"
+    },
+    "119": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/diagnose_fcp003c_phase_blocked_ridge.py",
+      "sha256": "fefd0657ee535e9ae3d36b47801898890ee7f2ccf4cb8ed3c6cc3560627075a3"
+    },
+    "12": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_full40_h20.yaml",
+      "sha256": "933d3c8036528dc4a52b8ee7031f66aa808f05e9d08f662eefd4dc61c86b1748"
+    },
+    "120": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/diagnose_fcp003c_train_vs_validation_true_state_h1.py",
+      "sha256": "530bdf99a13454e7ee050d73ad55bd3c79a9417ece19c8f77496fe424c76f405"
+    },
+    "121": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/diagnose_fcp009_native_ideal_windows.py",
+      "sha256": "26adb78407483e8bcd1332b768523143a88eb8b674b7fae32918d1447f9606e6"
+    },
+    "122": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/diagnose_fcp012_decoder_gradient_alignment.py",
+      "sha256": "978d28da0fd42d087a22c3a5620ee15c32c1edc63bf65ef07e5602803ff924c0"
+    },
+    "123": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/diagnose_fcp014_train_objective.py",
+      "sha256": "849570afd814faeaa92af99b1cc26cf71182439aa5c4c42f76b9e3b90bb1c30d"
+    },
+    "124": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/diagnose_fno_force_window.py",
+      "sha256": "eee1f59fa269a22556048f3fde8fc7ecbc31bb913571e49075dead92618a8576"
+    },
+    "125": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/diagnose_p027_short_horizon_errors.py",
+      "sha256": "f398c86f66cb2f30df9b1832b3081d851bac8fd0f9dad3a3d150cc9d25ce99d2"
+    },
+    "126": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/diagnose_p028_short_horizon_comparison.py",
+      "sha256": "f42f74b58f89ca836ce15e7253869b967dbd70a81e09bab6d82ffb47ee5883d5"
+    },
+    "127": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/diagnose_p030_train_horizon.py",
+      "sha256": "a874ad0860f95361861a7f594e3f7044dc8d3c2a0112db320eae83e68051d9e8"
+    },
+    "128": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/diagnose_tandem_gpus.py",
+      "sha256": "e7698f051a9dfb5b83fc59ad61f0b4a73958e464f3008a3abdcfbd3bcd13a99a"
+    },
+    "129": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/diagnose_tandem_hydrogym_rollout.py",
+      "sha256": "50cbb627964a2cdcfe91248612ee2113cf8264933cbeb479e16bae06721ee90c"
+    },
+    "13": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_full40_onestep.yaml",
+      "sha256": "867b6e5b3eea73172635bd180625ae702133c076da7327dab935f0a0e74c3dd0"
+    },
+    "130": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/diagnose_tandem_nccl.py",
+      "sha256": "9f0bde24d7194e109782038b90045179c48fb74553ea5f4ad2a40c8b38417149"
+    },
+    "131": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/direct_cfd_openfoam_worker.py",
+      "sha256": "dbc4af55010658bd31429f77b1e411b97ffc7a09f6d4d4b4c2f6139cc34e7ec6"
+    },
+    "132": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/evaluate_control.py",
+      "sha256": "6db7c7dc09984e605adf15f0775e05d0e78f51db18910f0b32d408ec186fc755"
+    },
+    "133": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/evaluate_direct_cfd_ppo_pair.py",
+      "sha256": "394cf141431bf9429f1d6502ad9ec7c68c61f77fc4698195053b1ffaa6492f6f"
+    },
+    "134": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/evaluate_diverse_policy_h5_comparison.py",
+      "sha256": "630bc478ed17475539b21e206242598d7bbaa044b3acaf00829d95eb1424008c"
+    },
+    "135": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/evaluate_fcp013_fixed_train_windows.py",
+      "sha256": "ba759d9147445288e6c41c8ee9bdbda147e88dda4f81216b6c25595e869546ee"
+    },
+    "136": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/evaluate_hydrogym_rotary_policies.py",
+      "sha256": "078de3fc8b405310e8511dd43f8f2b868e4134de89c6834038c8567c77984eed"
+    },
+    "137": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/evaluate_tandem_checkpoints_at_start.py",
+      "sha256": "d1657b2fa14d4013e22e9d6817a172023d60f16d0ea847541888de3b040ddf14"
+    },
+    "138": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/evaluate_tandem_fno.py",
+      "sha256": "daef4a3a6eb1b9190f5cde728581b0c1b4b9656f56e865cf61a53deb1f37de88"
+    },
+    "139": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/evaluate_tandem_window_mean_cd.py",
+      "sha256": "42c7450770c38ceeea6984e65aa1f628ea920433c6a71f791676d5cbc495cc13"
+    },
+    "14": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_full40_quickscreen_h20.yaml",
+      "sha256": "a51ee8aa49b9a075ac8d1622e0432461fbf6857ef24073b8d512f23811380f0a"
+    },
+    "140": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/exploratory_diverse_h5_resets.py",
+      "sha256": "a01c0af63b6f8d1c23ce5a7f8dd3a85d0d8f9410ac68e4a8e07b228606465319"
+    },
+    "141": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/exploratory_h5_hydrogym.py",
+      "sha256": "cfda96c4d8bd6e1fa6b47bd41dd01b2308b0b9a7d264f10f54301431c50e0532"
+    },
+    "142": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/export_tandem_prediction_vtk.py",
+      "sha256": "dd43372a9b0428c08378b293b7d95d0c8886daf9f1ed9e8aaede10192004e9cd"
+    },
+    "143": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/finalize_fcp013_collected_training.py",
+      "sha256": "272d1115853fe7d9f4c94f58598b78683fd20a113d98aea6bc0c0730be672d7b"
+    },
+    "144": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/finalize_fcp013_training.py",
+      "sha256": "994418a7b5672f142953c6c22742007098dfebfd1c27207c5676a71262dd77ff"
+    },
+    "145": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/finalize_fcp015_training.py",
+      "sha256": "f9fa4290316b3ff74736e1c9a54f8886b70651039a03c36c4dbbf3ce4c55bcdd"
+    },
+    "146": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/finalize_fcp018_training.py",
+      "sha256": "475eb8712bbaa8dedef3daf8f6ed71ac9aaa236901ec7f16af962fc66ba8e04e"
+    },
+    "147": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/finalize_low_action_phase94_curated.py",
+      "sha256": "45c8973c050680a8d1c33547274da7ef4bceb758467eb72c036f62883de162eb"
+    },
+    "148": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/finalize_matched_start_commissioning.py",
+      "sha256": "0bb88634474ab2cbf0c09a1733bc7c076e025003824452aadd5799701bcf7056"
+    },
+    "149": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/finalize_matched_start_full40.py",
+      "sha256": "42e7551426246772e358089e673468fdfab743945bc5fa87e2cf320542dd3504"
+    },
+    "15": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_full40_quickscreen_onestep.yaml",
+      "sha256": "26de0d67e15328e186dd514d883fedb2527892c733b9580ff3975904c110561a"
+    },
+    "150": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/finalize_matched_start_full40_dev30.py",
+      "sha256": "29510666e57d3838cf41930dac87032c14546636590a10cdec5a8cb37bc16143"
+    },
+    "151": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/flow_repair_profiles.py",
+      "sha256": "e6d333b4b2630d06151d9fcf557c85f95fb4d1be5760a1aa5b9199227215e553"
+    },
+    "152": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/fno_spatial_diagnostics.py",
+      "sha256": "e8e0dbf7ba449d576554ce669a9ab298d84c616efdb722975d6a01475083d67f"
+    },
+    "153": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/generate_dataset.py",
+      "sha256": "cf27ca69e11993b25a4ebf5e55ea9bde4b216e77663b12f8431e37caaf01b933"
+    },
+    "154": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/infer_full40_canonical_ppo_action.py",
+      "sha256": "ecb18fb7c7bd8954dc6127401a3466ab87f509e9829c35df48fa03931634c970"
+    },
+    "155": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/infer_tandem_ppo_action.py",
+      "sha256": "37518bc5dfff31ae8c28059e3c93c4b075f1e1289d3476c0d97b3838b0b84aee"
+    },
+    "156": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/inspect_fcp003b_checkpoint_metadata.py",
+      "sha256": "6eb31b7da9112330a8f42e95ff1cf16c90d8adb0401ccc37a2df4d1ed7cbdb62"
+    },
+    "157": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/inspect_public_data.py",
+      "sha256": "376bb4bbdecbbba94645732666615b06d5d763b416bba50f6fe288acbebe2bc8"
+    },
+    "158": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/inspect_tandem_model.py",
+      "sha256": "824a99fecc8acebca84254d3e321c4f620c755a589c1df455cc713721cc8ade5"
+    },
+    "159": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/long_h5_sequence.py",
+      "sha256": "c1011780b4e72f45e43127f3d7a728cf546d90b07dd1a7d41e57cf0dfc750688"
+    },
+    "16": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_paired_stats_h100.yaml",
+      "sha256": "cec8941fbe47ef1830b99e38fb2f2ca16b41dcd9405d58248763c66ece55fd55"
+    },
+    "160": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/materialize_p029_h10_source_closure.py",
+      "sha256": "267be3e4afabc528f3f530d2fb34c2102fc31d6febd1a36094547fae99811611"
+    },
+    "161": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/materialize_p030_train_horizon_source.py",
+      "sha256": "2ff0e1422471af77cf5a8835cc1b833a8c999680e266fbe3ec567c08febb1016"
+    },
+    "162": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/monitor_research_window.py",
+      "sha256": "eef74b419f8a66125447260002f0766a038ded9ce8c6b87832d40b6beb986e7f"
+    },
+    "163": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/official_evaluation_input.py",
+      "sha256": "68870966e09ff0ed0beab9ca2021becae5f4ef92e16289e613974a325b4dbab1"
+    },
+    "164": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/orchestrate_matched_start_curator.py",
+      "sha256": "bf300447b28642526582a51624776e4f0908bd8a5cb2ce857d7fdb51e9ee1faf"
+    },
+    "165": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/p021_causal_force.py",
+      "sha256": "bcefcad2fa622e5b69133725aa8d39db5a1b0a41a1b5e6c7dcb1f6b7d99a4962"
+    },
+    "166": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/p023_force_block.py",
+      "sha256": "367a532b395e2cef06332990ffcbfc769677102858f0ed3a46bb28689d7b92d2"
+    },
+    "167": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/p026_history_inference.py",
+      "sha256": "fd568f6457b980046a0419be96562291e9f96736270d45f20dd2adb2ffc5878c"
+    },
+    "168": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/p026_history_objective.py",
+      "sha256": "4d27fb53e05df73ba94d84bf42ba8205d78ebe6f91de832a68659870ea7d77c0"
+    },
+    "169": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/p026_state_history.py",
+      "sha256": "2b5b37dc79211bb5c4985a1d44d25262080f503011766206c536938f49a6b64c"
+    },
+    "17": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_paired_stats_interleaved_h100.yaml",
+      "sha256": "32a1b7905f5e22892340c8bf8ad69467eac493da77207a42e7e7123cf00e3f22"
+    },
+    "170": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/p028_flow_h10_objective.py",
+      "sha256": "28a9a462f72a7ed5965fc97d22de47ef7fd12740edd66c3f505e822eb1ffd41a"
+    },
+    "171": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/p029_control_aware_flow_objective.py",
+      "sha256": "e34721dbf4e6d921394800edcc2df451884a43ce9f3d2d36bc5ec3ded7851b23"
+    },
+    "172": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/p030_train_horizon_core.py",
+      "sha256": "90d99902d87fb07494eb87e7e5f91c6420e70c5ee773dd3b55af77e0541a3560"
+    },
+    "173": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/package_tandem_cfd_vtk.py",
+      "sha256": "1cdd77bd4ceada16158063b9cd1c20ddb81848a45b2ae5d5436a2360cfab01ff"
+    },
+    "174": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/persistent_curator_frame.py",
+      "sha256": "6c1ae12c0b7382347547b2049a3f82d9f18cc9b5c5c4ff71a5b9d5895d067416"
+    },
+    "175": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/plan_full40_dev30_fno_retrain.py",
+      "sha256": "6b67de517b91afbd0a6d79508dde3e32fae2c1f843ba6a3bd1fdf2ffebdab2e4"
+    },
+    "176": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/plan_full40_fno_retrain.py",
+      "sha256": "324b92ee289b1242b4d27b7bf99c320b34f92594490bf575a1695b789c42ddf6"
+    },
+    "177": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/plan_matched_start_full40_curator.py",
+      "sha256": "bf1c43026f13356f95241befe2d0f0d879b0b09ab82b4c855f2ea465c83fb05f"
+    },
+    "178": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/plot_direct_cfd_ppo_pair.py",
+      "sha256": "76f481b303407956e01269d20da3216449caa6516b0ca727262396fc0def56d9"
+    },
+    "179": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/plot_public_piv.py",
+      "sha256": "16a7d38c71f59473c211fa8b6850a6e9a29b8e38e0cc33f7f07ab567f794cd9a"
+    },
+    "18": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_rollout.yaml",
+      "sha256": "31bd379a6a7b04ce40c138b492655ecbe4632de637acd9279d6b8c43f101845c"
+    },
+    "180": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/plot_tandem_training_history.py",
+      "sha256": "5a13d27d8a6292c68c66612e070a7e7eb899b7257d0fce2c823af887335974e3"
+    },
+    "181": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/preflight_fcp003c_train_fit_calibration.py",
+      "sha256": "e45b68810382d56b3126193d8ff159f4cca613649ab40a47a8b1e3a1708f753e"
+    },
+    "182": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/preflight_fcp026_training_cpu.py",
+      "sha256": "dce38fc338eaf100483c0d7631307f23fb2787620296dc8b4a53c73a54394913"
+    },
+    "183": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/prepare_diverse_h5_32768_spec.py",
+      "sha256": "34411e5b323978967327dc47cb52ebdbd849408de59299d72b2c172ea43c7c53"
+    },
+    "184": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/prepare_diverse_policy_h5_comparison.py",
+      "sha256": "2c0dff593f3537fbd6c22196252121ea5eb95fe418f1d57ced1d80c1afc46412"
+    },
+    "185": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/prepare_exploratory_diverse_h5_ppo_spec.py",
+      "sha256": "336e5182893dc71184d04fd9aa7379636d88c4417cef055567ae84715c74f4ab"
+    },
+    "186": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/prepare_exploratory_h5_ppo_spec.py",
+      "sha256": "91fc1edad9ad90715585132473c3cf55194acd490d35cc593d21e6ce4a5aeabc"
+    },
+    "187": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/prepare_fcp028_formal_approval.py",
+      "sha256": "4ba51d03a1fd7cb1f98514755648692457dad7d2ff51e68d1d5e177709b0854c"
+    },
+    "188": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/prepare_fcp028_formal_source_freeze.py",
+      "sha256": "ea18970b030f640616a7ff9301f44d79643417e2b764264fd32b511f07aea7fe"
+    },
+    "189": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/prepare_fcp029_formal_approval.py",
+      "sha256": "e5b57f5639a75cfe88cb2714dd0a69280e0b49dcfd5f434fb399a2ddd885279d"
+    },
+    "19": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_rollout_expanded.yaml",
+      "sha256": "235931ae9ec7ad3e8d74c420e5ca4aaab5cba27a76d9f4a3a915e21023688cd0"
+    },
+    "190": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/prepare_fcp029_formal_source_freeze.py",
+      "sha256": "caeec9e83034f8951f6bdc1d03a49f9ba1cd8ee041b28ab7f4973967e1deff3b"
+    },
+    "191": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/prepare_matched_start_full40_vtk.py",
+      "sha256": "a2f5718b0ca15106ebecd8eeabcca9d2334a9c39a0fe2c029698aefa1a3bd8bb"
+    },
+    "192": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/prepare_official_reader_evaluator.py",
+      "sha256": "b56fb305c77f12fd3ef32583789cb7d938984c42243fcd025c8ba10c16a2b529"
+    },
+    "193": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/prepare_p028_h10_comparison_spec.py",
+      "sha256": "ae77975795c44bb99bdad3cdb00cec6a84e0458546eb65f36a6f032466ee722f"
+    },
+    "194": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/prepare_p029_training_source.py",
+      "sha256": "9bae9f03ab7bbcea36f996dd722a1417d4f9575afd4d3934784180dd4cecd719"
+    },
+    "195": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/prepare_p030_train_horizon_spec.py",
+      "sha256": "f8df1e7a2473e4ff7646c8d6ca4cc50fad2a1c165a62f3f98f5cd8cc0000354e"
+    },
+    "196": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/prepare_piv.py",
+      "sha256": "112a746ddc33ac70efbefc9f0fee76b8ea2668faebe23f2cfe911622870f0462"
+    },
+    "197": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_directppo_train16_datapipe.py",
+      "sha256": "125d63b60296965a5fdfba09482509c55e29d105aeecaa0546104ec1b6596a6c"
+    },
+    "198": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_fc_p003_dynamic_pair_datapipe.py",
+      "sha256": "58437db07ea8a6527286e2bc5c47d9a0cc185c81606e0f6c09f604a80ebffa5f"
+    },
+    "199": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_fcp003c_mixed_loss.py",
+      "sha256": "887b3610b17ff77bfae7045d1b649923678dfdbaa3ae4f54aa2ad73dd1b5b4e2"
+    },
+    "2": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_control_train16_h100.yaml",
+      "sha256": "1ea6e162f1cf4994f1dd628b1ee9b06bded99c382e346839697df3a74b7ccfbb"
+    },
+    "20": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_rollout_no_tf.yaml",
+      "sha256": "06fc9d4ec44ff636c6817d40690529882222da977a31ec23947d8acc9b123846"
+    },
+    "200": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_fcp016_fixed_panel_fit.py",
+      "sha256": "18b210077a93bbd21a327ae6578a73fb371bf0d2f48d0541f6ca8bd87aa42bbb"
+    },
+    "201": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_fcp017_first_step.py",
+      "sha256": "2427d91976fb7ff71ad8435dd3e24e21cec27a581b5eee7d1dd9a29bc9c10d24"
+    },
+    "202": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_fcp019_gradient_alignment.py",
+      "sha256": "03e0ba375bf131bcc30bbe0d96c8b44bcc5c18ef1ed99de5d9e563e1b6525a64"
+    },
+    "203": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_fcp020_symmetric_statistics.py",
+      "sha256": "139dee2c3dcd4ee97de78a7a0e343ca9ab9d9708a1cafab447f0d9e4988b5d8c"
+    },
+    "204": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_fcp021_causal_resource.py",
+      "sha256": "11c9712ca5f8e93ce3db49207569754c4b346e31f791ff79540774629ed444a5"
+    },
+    "205": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_fcp022_causal_conditioning.py",
+      "sha256": "538cbd51205aec8a6566a463d636df49b3794fabbe4ecefb8fccba939d1593bf"
+    },
+    "206": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_fcp023_input_block.py",
+      "sha256": "960cc44a59398c8ec68ca42243e506a6c2ae79b88766986d123bf34d5f5450d5"
+    },
+    "207": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_fcp024_response_scale.py",
+      "sha256": "6f658e2144c0d520a2dbed9458d703625de495727e45c6d965995139d13261a4"
+    },
+    "208": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_fcp025_isolated_statistics.py",
+      "sha256": "3411fccebaaa61301250c64ca4220a3c8900598ada227aab274bae770e3128bf"
+    },
+    "209": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_fcp026_history_resource.py",
+      "sha256": "b806ded8258c787807e67ccb42b5166dbd06e36fc40eba5025d9bda0769eedc6"
+    },
+    "21": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_total_drag.yaml",
+      "sha256": "6da0ae6d0ef8992ff7a9c0be99bb17224947eddaf08eef8b416ec54efec8592f"
+    },
+    "210": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_k1_uma_inference.py",
+      "sha256": "56c17443245c60f51b4e4c8f15b1851136a091c73441e5ecd76eebe0695f5e74"
+    },
+    "211": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_k1_uma_no_tf32.py",
+      "sha256": "7f8567b0f41474294a45a864d4024cf0d64508b7e8351e19feb8e8aee9219b73"
+    },
+    "212": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_paired_stat_parent.py",
+      "sha256": "e77764def4b33610d3d816cc8bf26bbbc945a13cfa9ee32e02bab772631ad61c"
+    },
+    "213": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_train20_paired_datapipe.py",
+      "sha256": "ba37529154f7b810eabfefe6aa945d41322ff5ba3f5c9b24ba35dc88b5172391"
+    },
+    "214": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/probe_true_state_paired_force_backward.py",
+      "sha256": "d9552f7f96b3c4d73109fcf81c9557c7aaf23492c863f2fbcc9e89b4e2f28331"
+    },
+    "215": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/produce_canonical_surrogate_compatibility_gates.py",
+      "sha256": "52486eb9087247781bcf21961f9e85e1d6f777c457df5e7403814944d0ee9d8e"
+    },
+    "216": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/reclaim_completed_cfd_cache.py",
+      "sha256": "b23e247b0939320d15b1454b37aaca03ab22b3f262a2df6eab381d221263b21b"
+    },
+    "217": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/reconcile_training_evaluation_state.py",
+      "sha256": "270de5a281d8dfd02adc951feccff5def7bc97749da0741d8b5a6453e3ba82c0"
+    },
+    "218": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/record_environment.py",
+      "sha256": "3758de22c7eb7d5332907780ff086c9d50432925f744fe06a2dfbb2441f1905c"
+    },
+    "219": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/recover_accelerated_long_h5_metrics.py",
+      "sha256": "5003424f0e8abf4e89733f62d6515a72239eb98a01690188813cadd08d542e7b"
+    },
+    "22": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_total_drag_rollout.yaml",
+      "sha256": "c1dfe57787f009e04d85b0a30461b21194a200b8099be369d64f5a5126781f0f"
+    },
+    "220": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/replay_exploratory_causal_h5_gpu.py",
+      "sha256": "e2e6c6fada4e41eb48493d2ced79118173677ae8b5a2822cab41d2173a71dd0e"
+    },
+    "221": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/replay_persistent_curator.py",
+      "sha256": "521b26b52b987e7a38c9b2faa3020b6871557337bd52791e990211564eee8a86"
+    },
+    "222": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_accelerated_long_h5.py",
+      "sha256": "4cca28757f44e80f693d2d4a33c15cea0ea5bc74368eda669aead292b37464bf"
+    },
+    "223": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_b00_actions_b01_openloop.py",
+      "sha256": "c71e82f0d4ae3765b6339bbe4de56de86d96c4a2eea483f9d9f52dc2f6852360"
+    },
+    "224": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_candidate_full40_canonical_ppo.py",
+      "sha256": "fce01d85400bd8ed0fce8a6ff2097ecade4be45d68a5af6229cc5424f3e4c1eb"
+    },
+    "225": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_direct_cfd_ppo.py",
+      "sha256": "89dd26a94f32dc35ed8c5465074dfdff8e0c611a8607bd59d2b8d8905e8feeda"
+    },
+    "226": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_direct_cfd_ppo_evaluation.py",
+      "sha256": "b396d6a01d5adbda6894f512de95ca85609d589718490131b0b57bbc52b43102"
+    },
+    "227": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_exploratory_causal_history_h2_feedback.py",
+      "sha256": "ace9871ac27e2b92de0d90010aa1db3f4cd037cdcf3e49ce5f3f87deb32f06cc"
+    },
+    "228": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_exploratory_causal_history_h5_feedback.py",
+      "sha256": "0917cd5c62e43fc3f7b2cdc23900aa9d0932dff9ef4842a155bcf4288524b14d"
+    },
+    "229": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_exploratory_diverse_32768_ppo_long_cfd.py",
+      "sha256": "17060dda570ead4fdc8e33920fcc559b5bb8ad8d640a7e154579f8a795507afa"
+    },
+    "23": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_total_drag_rollout_dense_ckpt.yaml",
+      "sha256": "3968ae2fa6d8b939f2a06c59cea69d8ec20d079694f35acefef62532f21e8457"
+    },
+    "230": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_exploratory_diverse_ppo_real_cfd.py",
+      "sha256": "89e0d8bea92440babd3d647eed31758db9cfc2a43e31ed6e9d9bdf5047b77b6e"
+    },
+    "231": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_exploratory_paired_h2_feedback.py",
+      "sha256": "c8260b21d742f54814bf04e81bb13eeff491a971df4d177f3a384c8f8c940e3f"
+    },
+    "232": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_exploratory_ppo_real_cfd.py",
+      "sha256": "44b488a97a2882e1325da8871d3ac4905cdae2a6f2cbb17202ced91afc58b91a"
+    },
+    "233": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_exploratory_projected_32768_ppo_b01_long_cfd.py",
+      "sha256": "8b653f43bd1ffc69b6285dd10523199898d88d74aebe4279f65a66fb4807c741"
+    },
+    "234": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_exploratory_projected_32768_ppo_long_cfd.py",
+      "sha256": "5c3f40728cd383913a256a2f46b6bfaf0b02cc7d91586e198c354a007fcb9e76"
+    },
+    "235": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_fcp003c_train_fit_calibration.py",
+      "sha256": "069ce14157d2bee9b7b3adc9f47125c47247fe0bcd280ef51cf3167da4b3b421"
+    },
+    "236": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_fcp026_posteval.py",
+      "sha256": "03c5862e34a648a1254284d1709bd74c3b995d3a91ae06c4a6f92a945029c0f3"
+    },
+    "237": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_fcp028_posteval.py",
+      "sha256": "f3acd198e2cc0a977f93b99b523470d46e4b07f64ad66044c94a37f2170de5e6"
+    },
+    "238": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_fcp029_posteval.py",
+      "sha256": "6c26f080d5da821ee240eef6772a065b04d963e9eb77a2aa2a22cced7a1136ae"
+    },
+    "239": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_full40_canonical_ppo_openfoam_feedback.py",
+      "sha256": "3dbb20106f45ed709e0c91731817540903db961555930177f81f0394104594cc"
+    },
+    "24": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_total_drag_rollout_h20_rear_drag.yaml",
+      "sha256": "54bec41fe96fac2b2dd2c38a131b9c1601618e9e8a8f980cad3191990c5ba0d2"
+    },
+    "240": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_full40_curator_batch_spark.py",
+      "sha256": "121c864b1377d74f5d421e118a8d9cebf4230f939704e418868c9d4fd362b17a"
+    },
+    "241": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_p027_short_horizon_diagnostic.py",
+      "sha256": "aa8e337dbeac04ef5a0a79009ef31f50679ec8eab5f5db2d663c2a1b45259d90"
+    },
+    "242": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_p028_flow_training.py",
+      "sha256": "62ff300395785291de790e26e5c60d072a89fa43f165f2711747e4b0afd2b8e0"
+    },
+    "243": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_p028_h10_comparison.py",
+      "sha256": "5eab8e681000d88437257c5253f1c56d941c0a8e7a7cb865012265b12b7b0153"
+    },
+    "244": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_p028_official_cpu_reload.py",
+      "sha256": "7df248c745bcb8721a20aedad6904eb5940e1f9d46482a4dbaba73ca600d54a6"
+    },
+    "245": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_p028_resource_probe.py",
+      "sha256": "dc127248d78e4a8b63f5ca3b0f56d919b71090e742b9fc79154b440afdd0293f"
+    },
+    "246": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_p029_control_aware_flow.py",
+      "sha256": "354112951e20729c24027370de1eafb6ce70640fc9dd8ef380226c432a27e9d7"
+    },
+    "247": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_p029_official_cpu_reload.py",
+      "sha256": "3a5c709df7f089f9c1c154fb85fd7f28fa469197c27d2fb4b0d9321877d4fb8e"
+    },
+    "248": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_p030_train_horizon.py",
+      "sha256": "d0bb73b2e722d78bb6ac31b85b3e65891b2d0addc2f8eb4ad8f5e04dbb6d9c78"
+    },
+    "249": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_p031_control_aware_flow.py",
+      "sha256": "928de1536ccff031633785ffd6eaff0367ee7057af5f0eafbf36e5be50065058"
+    },
+    "25": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_total_drag_rollout_rear_drag.yaml",
+      "sha256": "d624da9e70b6c8ecc43a17702333c089e037daf16b3516558bd13554eacde842"
+    },
+    "250": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_short_horizon_confirmation.py",
+      "sha256": "f64b0f5aa714c087f1b0cac3e6b70773fbd353ace3b89212da8326cd4a8b9eec"
+    },
+    "251": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_tandem_phase_feedback_pair.py",
+      "sha256": "866b4dce33c7401eb447e897641d734828e04b10b38ccde8a0b724e8b5e65d3d"
+    },
+    "252": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_tandem_ppo_cfd_feedback.py",
+      "sha256": "b70ef69e9ad3959b397c53481a4caf9040a13abb4de0cb16e3b7a877262cc481"
+    },
+    "253": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_tandem_probe_feedback_schedule.py",
+      "sha256": "a039775a0c38594cff04816841009502d8ce7b20f111f06ed6bf5dfe8f720456"
+    },
+    "254": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_tandem_probe_feedback_zero.py",
+      "sha256": "e58bdbc30e88f11e5f0a8ecda37b6bca56f4c95b3370a2573a7f38a4e7b60976"
+    },
+    "255": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/run_two_segment_current_frame.py",
+      "sha256": "ce443c9b575f7b3492609808de7d322cb10babacd7733d093b6637fe9e990b35"
+    },
+    "256": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/sample_tandem_vtk_frame.py",
+      "sha256": "bbd04828a4de3c9f54b1c2deb8227c4e8616173ee945d905fed41d905af9cfa6"
+    },
+    "257": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/schedule_matched_start_full40_extension.py",
+      "sha256": "4ad48b2ff21627d1ac58e0c84b6893e924be2a0a91cac9ca0ceee74481f7825c"
+    },
+    "258": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/schedule_matched_start_worker.py",
+      "sha256": "9ea92d726c12eae3ec9e296c763ad1f98587f33fafed617c7361f421fe1ee033"
+    },
+    "259": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/screen_tandem_cem_mpc.py",
+      "sha256": "3af0b0c4d6f3eea906b287b2e942b3a1623dcc8b3082fe68c7bf098baf49e494"
+    },
+    "26": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_mpc.yaml",
+      "sha256": "de91ba5b4d303ab009e2798ec951523eda47e7d6aba25558f0cda35fc9e3290e"
+    },
+    "260": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/serve_live_research_dashboard.py",
+      "sha256": "7383ff2195c9a599cbd4d3c1cc0f2ee03cf49f333cd8598aa16ad06e6099ddce"
+    },
+    "261": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/serve_tandem_training_dashboard.py",
+      "sha256": "bd2e2b977d6fe09f26bf2faf224696debd869a23f361ea30e74b94dbc2d8f4e8"
+    },
+    "262": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/spark_gpu_guard.py",
+      "sha256": "75d14e5fd926f797f3c3ee8b913d07e9d22c7c365344b6de722edb3b40d39195"
+    },
+    "263": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/spark_ppo_gpu_guard.py",
+      "sha256": "3da61590dedb4ea95c02f83b15d79a935d20ad98a24453e47e1514c38868abec"
+    },
+    "264": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/summarize_fc_p002_phase_action_horizon.py",
+      "sha256": "8f97b97c727a5da6d7e4c9ee063e59aa8bd54a4f82d7b5b53ce2128ef783e7bb"
+    },
+    "265": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/summarize_full40_train20_physics.py",
+      "sha256": "f504488f9ae21bc8cde1c1ced46aee4de532fda201fbddc334152a7dd38d99bf"
+    },
+    "266": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/summarize_full40_train_increment_physics.py",
+      "sha256": "a50fc1435ff9be2384e5aa3260644cfa155066ca4a373945a6a73e411215afb9"
+    },
+    "267": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/summarize_matched_start_commissioning_physics.py",
+      "sha256": "05a438d91c0e46e28613985d26681ca54f1da6819656ad779263e22c02524f5b"
+    },
+    "268": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/summarize_tandem_action_error_bins.py",
+      "sha256": "3c89cbbc5706d1b5d0861ffbec5260296252e68d738ee3d27a52a7d80a3302e1"
+    },
+    "269": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/summarize_tandem_action_sensitivity.py",
+      "sha256": "4fd65dd1993b7db46b5bf27270a6252ced5f71cdd98d8864a502120bb34119f3"
+    },
+    "27": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/adapt_candidate_ppo_openfoam_readiness.py",
+      "sha256": "f78f027bcf51683129633d1851fe17047d75a65e07ef7be40e5cf0816a898927"
+    },
+    "270": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/supervise_curator_replay.py",
+      "sha256": "5c7dde9d354b12988e3d54f84a2641dc363b814356eb2cdcbdb507b20dd621b1"
+    },
+    "271": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/supervise_diverse_policy_h5_comparison.py",
+      "sha256": "d90b77374ea14ee4bcb108936401182e85168c8079214ff74129b906d775cd2c"
+    },
+    "272": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/supervise_exploratory_diverse_h5_32768_ppo.py",
+      "sha256": "8363986dc675cc8efe09285b60c25557f1307c7ffcf49a54e0e4388ce3ff9a47"
+    },
+    "273": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/supervise_exploratory_diverse_h5_ppo.py",
+      "sha256": "de87c86b813c3ec460bed2b74ee63a5d922f1a32fc2beb2b8e789b3d234ed5d0"
+    },
+    "274": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/supervise_exploratory_h5_ppo.py",
+      "sha256": "fb1f61f1fdcbc6d9d29192a09f77ad29f6aed3589737a45f7b5d9b116d24d482"
+    },
+    "275": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/supervise_fcp015_formal.py",
+      "sha256": "bf3668d852f80d56134d53a4c16a546ec65982f85e91db3b4c6ae6f95d5c7254"
+    },
+    "276": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/supervise_fcp018_formal.py",
+      "sha256": "4bb55e02a1e14bef92e69ac881603608233b3b1c996c277df77a8287e7124a0c"
+    },
+    "277": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/supervise_short_horizon_confirmation.py",
+      "sha256": "49dc5977d1049dac9425edbbc72adbe34ee35ab7852dbff4495e40ebdda04e0a"
+    },
+    "278": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_direct_cfd_ppo.py",
+      "sha256": "dbc1ba1b5e730b1fad1247cd9cd047f03e8d837fc3f3eb24ad6e58acf48b7fb8"
+    },
+    "279": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_exploratory_diverse_h5_32768_ppo.py",
+      "sha256": "4d681771736b63b628712d3b62fcdde831601e80221aef6f1fd78a4b6840ff01"
+    },
+    "28": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/add_all_force_normalization.py",
+      "sha256": "0e4e110b34afe062718c4f41c0d5df025a7a5785d6cb2ea2f63b79de73fa04b3"
+    },
+    "280": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_exploratory_diverse_h5_ppo.py",
+      "sha256": "aae8c9a4311112439251b695001c7601ffd3d7cd3010937f86bd9a0bfebf3040"
+    },
+    "281": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_exploratory_h5_ppo.py",
+      "sha256": "8806682ec66d0a1b8dde30b0f361bb77e115f9add85f207651d9d01d1d8d4100"
+    },
+    "282": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_fcp011_decoder_scope.py",
+      "sha256": "9c761cfcb3d4f18dbe35aed1b3defe0614b29db867006055dae63d9fa94485a5"
+    },
+    "283": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_fcp013_independent_force_fno.py",
+      "sha256": "f3cf4b9a745cc0cbee39db9385cbfc398e4834e25bc487d8fb2d6eca07b483d7"
+    },
+    "284": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_fcp015_window_accumulation.py",
+      "sha256": "2f5de1a946b040c42c21f8164da41a5afc642fd6174e7bb35372bb7ba98eb996"
+    },
+    "285": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_fcp018_reduced_rate.py",
+      "sha256": "56eed43b2f0664bfe42038602955a39eac18168045091da50e82568d3ee44a76"
+    },
+    "286": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_fcp026_history.py",
+      "sha256": "562d268545ba5cd2559374f4bd8bd34bf59a2e49f2e886e4e286bb12aac5d49e"
+    },
+    "287": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_full40_hydrogym_ppo_canonical.py",
+      "sha256": "8dfe63a1a7588a20f7af897a91554feb3b4dc59b38ae13d5e0989a580d49afca"
+    },
+    "288": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_hydrogym_rotary_spark.py",
+      "sha256": "700d321acd644bc1fb1eb2c07115c1dfb88d5a8a503cea8fe9268034ccb42138"
+    },
+    "289": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_p028_flow_rollout.py",
+      "sha256": "4ad0dfa41fcfeb93481e313d2f0ca24685ea3ea183a074a7b017284f8c5ee057"
+    },
+    "29": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/advise_p026_verified_train_cache_once.py",
+      "sha256": "98efe4a3c7fd08268d82cac9be97b79f3eadfe69217d7f1943b250f28f43ae2c"
+    },
+    "290": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_p029_control_aware_flow.py",
+      "sha256": "e7dd8b9a261b4a47dbfcec6ce4be792dce0294454460b9924e81c37fb87c4aa0"
+    },
+    "291": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_p031_control_aware_flow_h25.py",
+      "sha256": "24076d0ff282fe5c0780c8fe3ea528fc2ef2fbfa2ffe91120d87ca2b7cded89d"
+    },
+    "292": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_piv_dynamics.py",
+      "sha256": "5ff6f10b13273ad2a81be4c49b16b9af3e331d2acd1a5f659a13e3ab2d169d23"
+    },
+    "293": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_piv_force_observer.py",
+      "sha256": "4edcf61d122b404f9740a818ed02425e944506f05a99c1326e6f1c29ad8374a8"
+    },
+    "294": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_public_piv.py",
+      "sha256": "bad821ac35a82c0e8d30fc02c0f655ef0fba4f8c7980b666bf5dee8df499e68c"
+    },
+    "295": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_surrogate.py",
+      "sha256": "8cb13080ed2775ecdececee5faf3df7f949bee2d0c8ffe78d1816aedc54ac7fc"
+    },
+    "296": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_tandem_fno.py",
+      "sha256": "9e5bbebd338af02b1d73530c9cb74fc2f840455f56b7bf34ed2bb517be19a22a"
+    },
+    "297": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_tandem_fno_paired_stats.py",
+      "sha256": "3c58a8c4d59c41723dcdff7227f766d3cf00b30aad0e5fabfbc7479c53f19d88"
+    },
+    "298": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_tandem_fno_rollout.py",
+      "sha256": "e54428596bfd858f10f8a6205060023ea5a444d4726b26fe1e3fd7b0748382a9"
+    },
+    "299": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_tandem_hydrogym_ppo_pilot.py",
+      "sha256": "08810a8228565d1c8547722fbb565a6c12b1f727b4f2729543764e0b87c4cbf2"
+    },
+    "3": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_control_train16_h100_lift_balanced.yaml",
+      "sha256": "5d93a5acadd532bb5828746660dc09f3a8b7d91111083724aa2ebc04d0904239"
+    },
+    "30": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/advise_p028_verified_train_cache_once.py",
+      "sha256": "72a0daeb3d6cf240b1cd8b8e45679a5aed20a7d22664336d477b2704efa8b0b9"
+    },
+    "300": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_tandem_hydrogym_ppo_smoke.py",
+      "sha256": "8f993c44d602bbda2c35d221ada71a3a15851df614a16f883754ca7edcd6c9ba"
+    },
+    "301": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/two_segment_current_frame.py",
+      "sha256": "cc77d8e88550d6c68d47f26532ff6211932c7ab207984efbf2f61c1569850c53"
+    },
+    "302": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_control_train16_posteval_step.py",
+      "sha256": "9e3ef79d43fef37ff6a2f41b6d1729f69f82f2bddd9e50e5ecac86e54be389e9"
+    },
+    "303": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_control_train16_posteval_step_78d827f_immutable.py",
+      "sha256": "9e3ef79d43fef37ff6a2f41b6d1729f69f82f2bddd9e50e5ecac86e54be389e9"
+    },
+    "304": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_control_train16_posteval_step_fc_p003_immutable.py",
+      "sha256": "9e3ef79d43fef37ff6a2f41b6d1729f69f82f2bddd9e50e5ecac86e54be389e9"
+    },
+    "305": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_expanded_curated_cases.py",
+      "sha256": "52aa8077f77c3c9e2844bcc2b8944602c371a814399a89dd697cc6f5f236ba40"
+    },
+    "306": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_fc_p003_posteval_step.py",
+      "sha256": "f0a0c01e92097e04bb267c6c0d2312ad39c6129536e98a7dcf9a0a15589bffef"
+    },
+    "307": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_fc_p003_posteval_step_immutable.py",
+      "sha256": "f0a0c01e92097e04bb267c6c0d2312ad39c6129536e98a7dcf9a0a15589bffef"
+    },
+    "308": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_fcp003b_worker_output.py",
+      "sha256": "11885f2a54e9e82cf75c82855137b13005b43adf74a554b26e2e699c7aa3f468"
+    },
+    "309": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_fcp003c_gradient_diagnostic.py",
+      "sha256": "aa42815f2978392aa07b91382e1c9b312a834e61cacc22e54a4b59bdadf20d06"
+    },
+    "31": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/advise_p029_verified_train_cache_once.py",
+      "sha256": "c0069d06428f5a834919d2e132f66b2ef62c858fe1353497def9cc085f8f0481"
+    },
+    "310": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_fcp003c_mixed_probe_output.py",
+      "sha256": "80dfa0240712daabeb3d76a780b218683a9caf52283e7a16ced9de3fc592579c"
+    },
+    "311": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_fcp003c_posteval.py",
+      "sha256": "204bab20571e319006d1d58ba4967e88ab45d035590065a9b547f87c372b81c3"
+    },
+    "312": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_fcp008_posteval.py",
+      "sha256": "b6bf1dd8ec67ff0bccbe240afb07ed8bfb1d30cec2407551085dc1defeb8362f"
+    },
+    "313": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_paired_posteval_step.py",
+      "sha256": "7fcc8c2650afc660f53242fd092790af7b4f4b5abc698dc6764acc1ecbd48c3d"
+    },
+    "314": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_paired_posteval_step_5534f8d_immutable.py",
+      "sha256": "c2588d1ad4e7fbea0840fe4d97ccf780865cf912cf25b0ef86d2f4e2689af3c0"
+    },
+    "315": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_processed_piv.py",
+      "sha256": "f1c3795adb796babcfa0db3e683b258eac7153833257bc5e288db09a1c2fe17f"
+    },
+    "316": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_tandem_69d_observation_parity.py",
+      "sha256": "a4dffdcde6dcc488664697ec0a7b20fa2b3844bbea2b88d3d2f0e4333a1bd444"
+    },
+    "317": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_tandem_action_schedule.py",
+      "sha256": "13a30d96afe7aaa094847c0d605a9c0e8f5d8ba1aceef575dc2279c352f6cb17"
+    },
+    "318": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_tandem_curated.py",
+      "sha256": "a30dc171faae3bab235aa3aa5a4caf643e4dbebbee30afec170658da4aa474a6"
+    },
+    "319": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_tandem_datapipe.py",
+      "sha256": "89568c55b3dcebd2f43c464516435dd2e88d072bad5a79dd300e7f0c2c207542"
+    },
+    "32": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/analyze_fcp009_cache_result.py",
+      "sha256": "89aca6576bfdbe117ac6918ca5bee62c5c4e03325cd2cd68b4ba395a2b516a12"
+    },
+    "320": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_tandem_fno_real_frame_spark.py",
+      "sha256": "72b6a9e669ce5a194778eace50d6e44283a2017383821bf8f2500b1282c5c537"
+    },
+    "321": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_tandem_fno_stage.py",
+      "sha256": "51e63ca5d975c9d61ed511af31eed448f754ef1c14fee1dfd51b81fc6853c5ad"
+    },
+    "322": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_tandem_hydrogym_adapter.py",
+      "sha256": "d6ece09f6feb3d12c0c8f0f7a142f0af2815075e616f890fce701ff5a3594711"
+    },
+    "323": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_tandem_observation_parity.py",
+      "sha256": "ef5e20dc1eba431666e6b6cbf1d58d18c4b217c07184ec3d410daf529627886f"
+    },
+    "324": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_tandem_probe_mapping.py",
+      "sha256": "63fbf3c3841d3d5eb28068ff6b11c3cef354a4a521267deb9b948d4e9a5b38c0"
+    },
+    "325": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_tandem_segmented_zero_reference.py",
+      "sha256": "69e19dc84ed5971be378084f9fdb127b1e47066acacf640d17d52d2385357edc"
+    },
+    "326": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/validate_tandem_vtk_export.py",
+      "sha256": "6f2a4b59c1981e3859a004de1ab705d135b66b7e300491677081b40b70d6c3e1"
+    },
+    "327": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_cfd.py",
+      "sha256": "8df211f22dc8e4293556a19d418941972bfb2da41608fee254e2be07c0d3d93a"
+    },
+    "328": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_dev30_full40_promotion.py",
+      "sha256": "59d06fa6b4b4e14e869b74e3c1ea3cbdc0fbca6b79829d921fb92f6d9d2f0b1e"
+    },
+    "329": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_diverse_h5_reset_packets_cpu.py",
+      "sha256": "3b11f2c37da1798b8b711c1d7d4b5ab2f612d430abaeea165a1287b4fd1b44d2"
+    },
+    "33": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/analyze_fcp009_joint_readout.py",
+      "sha256": "ba84aaff03f6a9e818311f7b2237e9613010dc3a1dff89ef8dbe4ed1d31c176a"
+    },
+    "330": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_fcp015_dual_reload.py",
+      "sha256": "5313da40965d3ce4048da11a488a46ee5d0b8ad86771931234c606e2bcfe73c7"
+    },
+    "331": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_fcp018_dual_reload.py",
+      "sha256": "0c205ae2278ba7b29751c24af79d61be3feb6e892aaca22f2a874be82e81df3c"
+    },
+    "332": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_fcp021_official_cpu.py",
+      "sha256": "06f3eaacc59c7e6b9ca24e6fa7fbbd02cfc55dd9d91423514e33e20b9c7b9e0a"
+    },
+    "333": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_fcp023_official_cpu.py",
+      "sha256": "fe4cda1734bf5d31a9a85d28291fab1ee64d8b45169b986cd0a48b2e9609e477"
+    },
+    "334": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_fcp026_checkpoint_cpu.py",
+      "sha256": "433a2f8bd5e2c3a27a59c5e4c3a1426dcccfefa0b98379fbb83e6269a0627708"
+    },
+    "335": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_fcp026_dual_reload.py",
+      "sha256": "43785bd2151b9de415e8723c0d42f49d9420284475096fb1169f585a9ae3c06d"
+    },
+    "336": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_fcp026_official_cpu.py",
+      "sha256": "647de8e9a6f286e3f95a3d2542da9fa66dc6ec2291199b80fa8e2f0116720bd8"
+    },
+    "337": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_fcp026_real_hdf_cpu.py",
+      "sha256": "17ad02b3a9162fa8f746e3ed5671f0a8c50d71c7e0ec1fad1548742e59989179"
+    },
+    "338": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_fcp028_dual_reload.py",
+      "sha256": "ff669e9f2b9e029a552b3f647c058fd7d9324802f9401277c3a964aac9930bd6"
+    },
+    "339": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_fcp029_dual_reload.py",
+      "sha256": "5cc1e8f2be22706c0221ab7f074f6103d5496bb56f1d6b854375a7843eece72c"
+    },
+    "34": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/analyze_fcp009_window_statistics.py",
+      "sha256": "1e26bea08543ea02ca4e0d3313a4fce76c1aa0d114266c5effc56060c121a849"
+    },
+    "340": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_online_current_frame_cpu.py",
+      "sha256": "4386e8d9920ffe24cce1c43d2bff089ceecdabae4704b9a188519927c67599ff"
+    },
+    "341": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/verify_source.py",
+      "sha256": "b44fcaa5d72b4afeede363d1bf41335efec985c8c740d2dec812c968d2bc659a"
+    },
+    "342": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/watch_dual_node_utilization.py",
+      "sha256": "6afbc66f058124bb3c6b08e7fa5767a7826897eef021cae3cd8a6bcd762d77a3"
+    },
+    "343": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/watch_training_evaluation_state.py",
+      "sha256": "d182a126ad3f92f5cc364b30356a748ee42a09f11f3bafeba46db60b03ffaa2f"
+    },
+    "344": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/__init__.py",
+      "sha256": "fb12ae7ff289ab8cba77024b3589ec96b0201a59ceaf11880d9f527e9cb6253d"
+    },
+    "345": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/augmented_datapipe.py",
+      "sha256": "d407476e281be6deff46a87fd3f76b4125e8c584e0496b80ef5849ad1267e148"
+    },
+    "346": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/calibrated_checkpoint.py",
+      "sha256": "23f004aefb5ab4acf40523b188e1353d48a3cc04d6b2d886b6cdf435353c8a88"
+    },
+    "347": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/canonical_joint_v1.py",
+      "sha256": "138ab2b49ebddcbed2a24486c995b85a3a5ae226ee936ff2ed5de318496ee8bd"
+    },
+    "348": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/cem_mpc.py",
+      "sha256": "b610deec9c40d0f21868dbac95a58a10922fa9696846227bb83482408d1158b2"
+    },
+    "349": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/cfd.py",
+      "sha256": "02cb88c294bbd06bb7f596b732542471bd55a82656206deff0e895f283bbec6b"
+    },
+    "35": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/analyze_fcp010_tail_rms_supervision.py",
+      "sha256": "31213283c128c8f4d35918ba03ba53f9c481fa91f41fc793e3d17bb1ae8a2438"
+    },
+    "350": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/direct_cfd_hydrogym.py",
+      "sha256": "b48fc0fa471c8e042377ed7885d793ff92fc2eb5cb33c001738f74a9a2c6b5d0"
+    },
+    "351": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/dual_control_contract.py",
+      "sha256": "933e3e6dd59268820327b16a1aca0beda1ec722d0f4ba0f7cb9b07543586c11b"
+    },
+    "352": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/dual_fno.py",
+      "sha256": "d769f16d649dabd17712b611b463083ef35491f095b2138033480fb029c71dba"
+    },
+    "353": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/dynamic_pair_stat_datapipe.py",
+      "sha256": "2414b0a2b2635f87e0842ed12d36ad7a3eb6b1b8759cacdb5b8c8fa9fed5af31"
+    },
+    "354": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/exploratory_causal_history_horizon.py",
+      "sha256": "bbcebc9d2decba6b14433af12c8a5df75331530fea9ed91192af064bfeeff82e"
+    },
+    "355": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/exploratory_causal_history_mpc.py",
+      "sha256": "866c5e14aecb272b9fe4db63bb023fa77be2904159bcefa1e134e3b6c7a8db97"
+    },
+    "356": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/exploratory_paired_causal_history_feedback.py",
+      "sha256": "12b8ac47e292af011ffdde7c34f6b2eeada8418a36dfdd5fe21dfb14bd63d3c4"
+    },
+    "357": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/exploratory_paired_causal_history_h5_feedback.py",
+      "sha256": "6916d86d817b8fc401b60f3955e35c2865f5b58df45e89a01a8f0d527a8d5d29"
+    },
+    "358": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/exploratory_paired_h2_feedback.py",
+      "sha256": "3cfa02c5920955287730bd7d9c021a518c1f813677d863e004ab8b338579e73c"
+    },
+    "359": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/exploratory_short_mpc.py",
+      "sha256": "ec22561f60c183dc7fa9dfe68b32477de60faff9a41a5e051dccdad48d74f587"
+    },
+    "36": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/assess_tandem_control_readiness.py",
+      "sha256": "95b7dd903ce9981164b40d35fad66e323192f7e9c4f617edb8ccc61667916247"
+    },
+    "360": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/full40_canonical_hydrogym.py",
+      "sha256": "ca64f7c0c8d6f2486423e68f9cb313984d6c1bd0f264045a8c6d473263775395"
+    },
+    "361": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/online_current_frame.py",
+      "sha256": "2945d38773100ca05e66d4be268839fad7f2d78fca016ab867fdd5c7b742eaa4"
+    },
+    "362": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/openfoam_force_history.py",
+      "sha256": "ec8720581e0f362c308a2bf82fb1f05585eaf876cf17956a6c8e7df0ca14c763"
+    },
+    "363": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/openfoam_observation.py",
+      "sha256": "799d569c3f986a5e0e5cda95a3f07cd3b3993814ff0867763166549ef312293e"
+    },
+    "364": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/paired_force_statistics.py",
+      "sha256": "2245f599a013eee51f39fb0864d4200589306e81bcd24733bf094f09750f2a2c"
+    },
+    "365": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/paired_stat_datapipe.py",
+      "sha256": "0507b99eb68ae16a473b344bbd4e3f75db320d94b31b9b706a9312471a336232"
+    },
+    "366": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/paired_step_force.py",
+      "sha256": "e9d1d0b9145508c06b4df9d887624b3a1d0d224fcf469b216e367c95f6b66045"
+    },
+    "367": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/paired_step_training.py",
+      "sha256": "5612f3b238b4d52858c20562f65d670e00cf8473516c48c5fd7cb325e2139996"
+    },
+    "368": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/paired_training.py",
+      "sha256": "5d96142f815df0206451f066a47a2170b1e5b197c5a76ec3e7bc6a7044f32ad5"
+    },
+    "369": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/stage_c_objective.py",
+      "sha256": "218a83300af54208f2daf893b093b6913ecf992dd749fc77e1997f709efb8b8f"
+    },
+    "37": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_candidate_ppo_readiness.py",
+      "sha256": "cde1311715f4204aec13039163ac33eccc49d19ebb0ec48923566f200f92031f"
+    },
+    "370": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/tandem_datapipe.py",
+      "sha256": "c939e4553dbef9e227b6a3a4d5f36242114a690b32ff907339b5be2a4ec693ae"
+    },
+    "371": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/tandem_hydrogym.py",
+      "sha256": "f0797bab64a4b73d5ca461b277c7ab6338377ccf509c4ab18ac7a6a5f75ab6a7"
+    },
+    "38": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_control_gap_v4_action_coverage.py",
+      "sha256": "f5715229706b75d897acfb678cf2b6ab4e6d2929db9742efc92d168cd60989f6"
+    },
+    "39": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_control_gap_v4_validation.py",
+      "sha256": "9a19e2cc44d68a56408f2fbd9d8ec5711dfa9e7ee89856edfbbac8a91686234c"
+    },
+    "4": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_dynamic_paired_interleaved_h100.yaml",
+      "sha256": "a8e4033240af24ec6ee0c537059244bda765800c239c292b6b18085a42c9ffc9"
+    },
+    "40": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_crossphase_ranking.py",
+      "sha256": "eff5b17f48b72ee69ef3e1add87a6ba09b4a1f6115ebf87aa6f394f5134ed833"
+    },
+    "41": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_curated_control_response.py",
+      "sha256": "13554f6d7844155a1daff3cb91816957bfcef8f8f96752b93a125f575967dab7"
+    },
+    "42": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_dev30_validation_diagnostic.py",
+      "sha256": "72832b7d134b6f4f67ab1d944b4299c74cd97463eb2324956db44a11ef5be372"
+    },
+    "43": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_dynamic6_time_alignment.py",
+      "sha256": "f0ce11747358cce91136efe8e31135fd2330d7cbe96ea9010435108d25b387fb"
+    },
+    "44": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_dynamic_fno_candidate_lineage.py",
+      "sha256": "176a35a1e9e17b7650f60f6fc9d8a6c59b10b91ffa2947ac3c2b898dd6d27930"
+    },
+    "45": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_dynamic_fno_development_gates.py",
+      "sha256": "ca6da0afdce5859be1c060eb48ba2cdd1ccc5ee3aeb2570d9c9b53067d5bc412"
+    },
+    "46": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_dynamic_fno_formal_handoff.py",
+      "sha256": "0c0a3a60da4749e9129fd5ebd2abbb60f25cb53362e1fe9d27dc4ea6af9ca543"
+    },
+    "47": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fc_p002_action_coverage.py",
+      "sha256": "fc04aaa00142c56cc462533bbfc941fa76e94bd7dcf17cea098e65553549b2be"
+    },
+    "48": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fc_p003_candidate_lineage.py",
+      "sha256": "9f3a98e7af957863a62cd9c82814c15272aa5bb0091dde3611416fa2d57b95cf"
+    },
+    "49": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fc_p003_candidate_lineage_immutable.py",
+      "sha256": "9f3a98e7af957863a62cd9c82814c15272aa5bb0091dde3611416fa2d57b95cf"
+    },
+    "5": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_dynamic_paired_true_state_step_h100.yaml",
+      "sha256": "17f15f6cb4b4b92a118ea6b4604c5b3b9ce44cb1f50660b8970bad0d7b51c459"
+    },
+    "50": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fc_p003_dataloader_order.py",
+      "sha256": "764f8a17ba829239b42d93e74537f7fbd796bf077dd611e97be5a01820ebe097"
+    },
+    "51": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fc_p003b_real_sampling_contract.py",
+      "sha256": "f33dcb4cfc2bb172e2aba0e873c119673bc06b021d0fa7290d8e459ff71fd4ca"
+    },
+    "52": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fcp003b_candidate_lineage.py",
+      "sha256": "0730690dfce369d3c9b6a84725aa7ed1720d3692a1094ccd2521f3dd515ef99d"
+    },
+    "53": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fcp003c_candidate.py",
+      "sha256": "68579eccb081106b0cc6dcd09455bf25ca294d4ce3e565f3bfa98d6e8afd1478"
+    },
+    "54": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fcp008_candidate.py",
+      "sha256": "b60909c94bccb7c8a33916acf3de86a219f75e59ce38b82af91e2251fb4f25eb"
+    },
+    "55": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fcp009_candidate.py",
+      "sha256": "27ae8700f69408fac1b630b7db5c1bcdfc3f144fedb47fd595f2fb68f40b6a05"
+    },
+    "56": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fcp011_candidate.py",
+      "sha256": "494748e938d8b5d7575013451be2c3db92a484dc864c25b8cadb4c3bbd0e3594"
+    },
+    "57": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fcp013_dual_candidate.py",
+      "sha256": "cb554a59a0e25cbc41eb556e0ab09023f29f9268f006d6e9126958c5f721ad35"
+    },
+    "58": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fcp015_candidate.py",
+      "sha256": "ec0aebd9dc23b81dc387cc3b4e32d2f30ab650b95507fc6c8e4d18a1226cd21a"
+    },
+    "59": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fcp018_candidate.py",
+      "sha256": "b3e788de04f3f517cbb601f0b54f5eab5816a3df13de4b8cc74e56d16e6f67b0"
+    },
+    "6": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_dynamic_train8_h100.yaml",
+      "sha256": "e9944f70cc2f5e0ec93d30d1b5b9119f0a358dfecd251314afe90b319cabf8ae"
+    },
+    "60": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fcp026_candidate.py",
+      "sha256": "fc15ad1d691e857d1c70a2c00e56e32a516529db47d26e66c2f57fc54fe937ab"
+    },
+    "61": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fcp028_candidate.py",
+      "sha256": "f40637340ff848cb30de3c45d40e16594c700c9b8d7de43d18918d9da286c202"
+    },
+    "62": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_fcp029_candidate.py",
+      "sha256": "dfbc5419a1be0d1be2e3c724617df5c6828da62b6107af96a35202aa5ecfb521"
+    },
+    "63": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_full40_dynamic_validation_panel.py",
+      "sha256": "7332c53307601911986eae307f473914c16aad5b000fa6d1ff53ff8d965b207f"
+    },
+    "64": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_full40_train_frame0_69d_parity.py",
+      "sha256": "2b5e21008c09b0723336cb820e3b25f1f535660afd8a6d02da4b103070b48088"
+    },
+    "65": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_full40_validation_gate.py",
+      "sha256": "f80ec3130fdb7786925fd8a480c869cda45fe492fa7cb1ac34931e0d44879543"
+    },
+    "66": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_full40_validation_gate_fc_p003_immutable.py",
+      "sha256": "eedc114549eacd787951ef8d8531db6a1ef40c088ce8bff6fcf10d351fa09269"
+    },
+    "67": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_gate_b_metric_integrity.py",
+      "sha256": "da41c3d965328adf02b9a64c3495a2951311c5beb5510d336ce6129311dfb8e8"
+    },
+    "68": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_identity_vecnormalize_persistent_policy.py",
+      "sha256": "f36d64454db69efa35181101b7eafb859ecfcf2d59e307525953fcc925825447"
+    },
+    "69": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_long_dwell075_panel.py",
+      "sha256": "bd8417975d6217e253a76add48a15dc3aebd47817cd77f29518878a1a72b5a0d"
+    },
+    "7": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_dynamic_train8_h20.yaml",
+      "sha256": "62c117b467c9cee2792cd2e0a1c7d9a869b00a33838e1da2e31ecda44b023f8c"
+    },
+    "70": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_low_action_pairwise_fno.py",
+      "sha256": "d1e382022bce977eadd0ea750da4a22d4d84438ba337dfd92843aabac293ed07"
+    },
+    "71": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_low_action_phase94_physics.py",
+      "sha256": "9367eb3acd782691884c75b32320092d85090297e37e4b5f95b0641393d2baf2"
+    },
+    "72": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_low_action_rollout_segments.py",
+      "sha256": "a0ca620a0f7def954a1cbef8fdb3f1f8d6f31ba529b9bd85fcef354d3d54e224"
+    },
+    "73": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_matched_start_acquisition_commissioning.py",
+      "sha256": "1d23b3a26b4ac6147306b1b177b4e79ac48d50f8e7e02772bd34b288e90d4e33"
+    },
+    "74": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_matched_start_full40_extension.py",
+      "sha256": "d021951aafd1021f1bf4e3b96409f07e360003dd51e5d741565b11e97351879c"
+    },
+    "75": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_matched_start_phase_restarts.py",
+      "sha256": "ba4192da0f9825b18fa40ef540e5071320785852f6795a94bf23278c356f03cc"
+    },
+    "76": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_paired_fno_candidate_lineage.py",
+      "sha256": "a61e9767dae72c556cb50febd42f9b883c87528c808aa8509ea110dc8cd6fba6"
+    },
+    "77": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_paired_fno_candidate_lineage_5534f8d_immutable.py",
+      "sha256": "a61e9767dae72c556cb50febd42f9b883c87528c808aa8509ea110dc8cd6fba6"
+    },
+    "78": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_phase90_long_signed_robustness.py",
+      "sha256": "2673816e30c01918e2f97f24529222aab72a2f1e479c613c55b582ea2281509d"
+    },
+    "79": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_policy_reflection_defect.py",
+      "sha256": "bc4906e8c4c483ef16458819bd80fd210ff4046137fcae638ccd4f3d007aa384"
+    },
+    "8": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_dynamic_train8_h50.yaml",
+      "sha256": "1375f8e36247c253c35e98f09cd71b9517ce2c8626fa7d07d679cabf328167f1"
+    },
+    "80": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_raw_cfd_control_response.py",
+      "sha256": "7d7d770bee0233da41c09138b8cc863215fb950337dc5e8b5920841ed9553ca8"
+    },
+    "81": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_same_endpoint_force_error.py",
+      "sha256": "956ec784acc2043d6fdbe0ccabaf3554c276aebb05b1a635d5ce94ff2e129934"
+    },
+    "82": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_tandem_actions.py",
+      "sha256": "f78faf019eb0b956b0b7fe4f0cede9a5005cdf5601d5dadc5d4f18ec012170a5"
+    },
+    "83": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_tandem_control_objective.py",
+      "sha256": "40bce88d0d15d9aed49db462831f7fe97713dc625ffcc3cd87b1ae6c1408fa8c"
+    },
+    "84": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_tandem_frame0_force_alignment.py",
+      "sha256": "53e1321f68cead582cf708f8446364b8cc48f7742b093df875956ae82582dab8"
+    },
+    "85": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_tandem_gate_b.py",
+      "sha256": "780a450867ecf67295c2a4f64492db4d5ff649c1f4e9f3a11266b62cfc918c0d"
+    },
+    "86": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_tandem_phase_feedback_torque.py",
+      "sha256": "b43eedcea0fea38654af09a257c900e2f871e2f654c28eb2819c198e682952c2"
+    },
+    "87": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_tandem_ppo_checkpoint.py",
+      "sha256": "8d57152a829b834be9a111e12de2e4623519510544184da5cb0fd07fcde44d39"
+    },
+    "88": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_tandem_split_integrity.py",
+      "sha256": "640559fa66b4353d98b508e90ea0ceab5bba890f2ab51ebb8c09e9b68efc33ff"
+    },
+    "89": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_tandem_state_support.py",
+      "sha256": "4cfa58b35983aa1f17e834895e8b886875a92b578707f1dbaa8c34640791dd00"
+    },
+    "9": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/conf/tandem_fno_expanded.yaml",
+      "sha256": "2e3a7e396673d28abb639836f21aac136018e63ae4e469d8b1f895e8ec0c4bc3"
+    },
+    "90": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_tandem_validation_action_ranking.py",
+      "sha256": "ae667537923774d92f99c69e3208532c5daeff42cd0945c25babe8e748b27e63"
+    },
+    "91": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_train20_matched_pair_targets.py",
+      "sha256": "6a19a750dab6fb29923a95fee28a8e30a2052b3edbda7bb2f27ce770f8a7f066"
+    },
+    "92": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/audit_two_phase_alternating_panel.py",
+      "sha256": "0f6b3d9ee507a2ab0512ddcee8eb1eae3ac1f2d4a3e932b02c1c70cf667e1dfa"
+    },
+    "93": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/benchmark_tandem_fno_h20_resource.py",
+      "sha256": "c4214bb9da21978bc3d115eaac15d02766c210ec27ddb92f7a68a63cd047b250"
+    },
+    "94": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/benchmark_tandem_fno_inference.py",
+      "sha256": "5752103918f05d2c0e00428cd62d1a1df805075791247dd6b385a999c2a13366"
+    },
+    "95": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/build_fc_p003_dynamic8_pair_candidate.py",
+      "sha256": "032f2929b01d1a0a6806f6703669995426e554a3568128f1e48edfaba6b1f44a"
+    },
+    "96": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/build_fcp008_force_readout_candidate.py",
+      "sha256": "649864f9d3efae2cd8f5efcc6cf93be54b1f64fefa942f5f4ce2f038a31bf585"
+    },
+    "97": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/build_fcp009_free_ar_force_readout_candidate.py",
+      "sha256": "a2c83846714b3d5575840dcd89c0c8e955fc40f217dad011f3e74d277807bfdf"
+    },
+    "98": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/build_fcp009_joint_force_row_candidate.py",
+      "sha256": "dbe75763f8c480feefc54cb657f53848c24055e88ecc70a9a0aaaad544d81ecf"
+    },
+    "99": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/build_low_action_phase94_decision.py",
+      "sha256": "8b3d51c653203212d575aa52e36d54269aa6b43a4d4ff9d8c6fadacec5113137"
+    },
+    "core": {
+      "path": "artifacts/projected_policy_h1_h5_conversion_source_20261006_immutable/scripts/diagnose_projected_policy_h1_h5_replay.py",
+      "sha256": "3dcfa6d028e49df845b5dbf0fb7e72c04a03c0662244b57a40f6637a386c5681"
+    },
+    "dual": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/dual_fno.py",
+      "sha256": "d769f16d649dabd17712b611b463083ef35491f095b2138033480fb029c71dba"
+    },
+    "history": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/p026_state_history.py",
+      "sha256": "2b5b37dc79211bb5c4985a1d44d25262080f503011766206c536938f49a6b64c"
+    },
+    "reader": {
+      "path": "artifacts/projected_policy_h1_h5_conversion_source_20261006_immutable/scripts/official_evaluation_input.py",
+      "sha256": "68870966e09ff0ed0beab9ca2021becae5f4ef92e16289e613974a325b4dbab1"
+    },
+    "selector": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/exploratory_short_mpc.py",
+      "sha256": "ec22561f60c183dc7fa9dfe68b32477de60faff9a41a5e051dccdad48d74f587"
+    },
+    "trainer": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/scripts/train_tandem_fno.py",
+      "sha256": "9e5bbebd338af02b1d73530c9cb74fc2f840455f56b7bf34ed2bb517be19a22a"
+    }
+  },
+  "status": "PROJECTED_POLICY_H1_H5_INFERENCE_EXECUTION_APPROVED",
+  "unit": "fluid-control-projected-policy-h1-h5-inference-20261006.service"
+}
