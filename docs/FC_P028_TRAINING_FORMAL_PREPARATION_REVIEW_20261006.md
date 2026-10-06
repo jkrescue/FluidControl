@@ -1,0 +1,13 @@
+# P028 training and formal evaluation preparation
+
+Engineering review only: no new candidate accuracy, optimizer update, or closed-loop benefit is claimed.
+
+The fixed-budget training launcher is integrated. Root and an independent reviewer each passed13 CPU contract tests; canonical Root rerun passed13. It keeps the original1368-window/171-update protocol, exact R3 source map and actual resource receipt, read-only inputs, official image,4h limit,12GiB container memory and continuous20GiB host/CUDA guards. No eightfold graph accumulation is introduced: each of eight windows backpropagates separately before an averaged update. Adam moment storage adds at least0.35184GiB beyond the no-optimizer probe; other temporary storage is additional.
+
+The P028 formal wrapper delegates numerical commands to the unchanged pinned P026 runner `03c5862e34a648a1254284d1709bd74c3b995d3a91ae06c4a6f92a945029c0f3`, checked before import and kept outside the exact numerical source closure. The dev30 change only accepts the explicit P028 identity with existing K1 history semantics. Thresholds, horizons, windows, normalization and aggregation are unchanged. Actual execution still requires separately bound candidate/runtime evidence.
+
+Terminal audit and official CPU reload producers are integrated and matched to the actual trainer's direct `payload` directory. The seven-file map uses `candidate/` as a logical receipt prefix, not a new on-disk nesting requirement. Independent review found and repaired two operational issues: registering a dynamically imported dataclass loader and setting the original high/TF32 precision before CPU role loading. Root canonical16 CPU tests passed in0.06s after those repairs. These tests do not load a newly trained official candidate or establish its scientific validity.
+
+The terminal audit checks result records and file identities; its171-update statement is not an independent deserialization of Adam state. The official CPU reload will verify both actual role tensors after training. No PPO admission follows automatically.
+
+Resource preparation: scoped cache hints for four completed CFD cases advised20,916 files, without deletion or modification, but only increased physical free memory26.01654→26.11127GiB. Receipt `artifacts/fcp028_cache_advice_20261006/completed_cfd_cache_r1.json` SHA `530730639c0f1880e75af29989c48b583a8174e7de28ebd35208a18a24b332ff`. This small observed gain, not their10.63GiB disk size, informs the next capacity action. A separate exact22 prior-checkpoint cache pass is under preparation, excluding the current K1 parent. The44-training-file cache wrapper now supports a separately exclusive r2 receipt; four synthetic CPU tests pass. Neither preparation constitutes a training execution authorization.

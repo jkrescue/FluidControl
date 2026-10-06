@@ -1,4 +1,4 @@
-"""Reuse the reviewed same-descriptor cache helper with one P028-only receipt."""
+"""Route one separately approved P028 cache pass to exclusive r1 or r2 evidence."""
 import argparse
 import hashlib
 import importlib.util
@@ -9,11 +9,35 @@ ROOT = Path('/workspace/fluid_control')
 HELPER = ROOT / 'scripts/advise_p026_verified_train_cache_once.py'
 HELPER_SHA = '98efe4a3c7fd08268d82cac9be97b79f3eadfe69217d7f1943b250f28f43ae2c'
 OUTPUT = ROOT / 'artifacts/fcp028_cache_advice_20261006/cache_advice_20261006_r1.jsonl'
+RECEIPT_NAMES = ('cache_advice_20261006_r1.jsonl', 'cache_advice_20261006_r2.jsonl')
 
-def main():
+
+def arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--execute', action='store_true')
-    args = parser.parse_args()
+    parser.add_argument('--receipt-name', choices=RECEIPT_NAMES, default=RECEIPT_NAMES[0])
+    return parser.parse_args(argv)
+
+
+def prepare_receipt(receipt_name):
+    if receipt_name not in RECEIPT_NAMES:
+        raise ValueError('fixed r1/r2 receipt only')
+    destination = OUTPUT.with_name(receipt_name)
+    for component in (destination, *destination.parents):
+        if component.is_symlink():
+            raise ValueError('receipt path symlink')
+    if destination.exists():
+        raise FileExistsError(destination)
+    if receipt_name == RECEIPT_NAMES[0]:
+        destination.parent.mkdir(exist_ok=False)
+    elif not destination.parent.is_dir():
+        raise ValueError('r2 requires the existing nonsymlink P028 receipt directory')
+    # Actual receipt remains exclusively opened with x by the unchanged helper.
+    return destination
+
+
+def main():
+    args = arguments()
     if HELPER.is_symlink() or hashlib.sha256(HELPER.read_bytes()).hexdigest() != HELPER_SHA:
         raise ValueError('reviewed cache helper differs')
     spec = importlib.util.spec_from_file_location('p028_verified_cache_helper', HELPER)
@@ -23,11 +47,12 @@ def main():
     # POSIX_FADV_DONTNEED call and read-only descriptors remain unchanged.
     module.OUTPUTS = {1: OUTPUT, 4: OUTPUT}
     if args.execute:
-        OUTPUT.parent.mkdir(exist_ok=False)
-    sys.argv = [str(HELPER), '--history-k', '1', '--receipt-name', OUTPUT.name]
+        prepare_receipt(args.receipt_name)
+    sys.argv = [str(HELPER), '--history-k', '1', '--receipt-name', args.receipt_name]
     if args.execute:
         sys.argv.append('--execute')
     module.main()
+
 
 if __name__ == '__main__':
     main()
