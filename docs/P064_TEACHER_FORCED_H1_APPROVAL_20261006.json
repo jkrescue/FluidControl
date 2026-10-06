@@ -1,0 +1,85 @@
+{
+  "status": "P064_TEACHER_FORCED_H1_EXECUTION_APPROVED",
+  "execution_authorized": true,
+  "reviewed": true,
+  "lead_approved": true,
+  "hypothesis": "Signed one-step force errors from true q_s separate force-readout amplitude and bias from additional autoregressive state error.",
+  "decision_scope": "Diagnostic only: no admission, training, threshold change, model selection, or automatic CFD action.",
+  "official_image_id": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e",
+  "container_name": "p064-teacher-forced-h1-20261006",
+  "unit": "fluid-control-p064-b-teacher-forced-h1-20261006.service",
+  "worker": {
+    "path": "artifacts/p064_teacher_forced_h1_source_v2_20261006_immutable/scripts/diagnose_fno_force_window_p064_teacher_forced.py",
+    "sha256": "507f6d908c3e95de7d55c39850f0e7ad1657e14b23e50d4327b8146b3804499a"
+  },
+  "supervisor": {
+    "path": "artifacts/p064_teacher_forced_h1_source_v2_20261006_immutable/scripts/supervise_p064_teacher_forced_h1.py",
+    "sha256": "57f65114b6bf7c93118f6c33ccee0735d4e8af65255f3259405042d4fffa1d6a"
+  },
+  "python_source_root": "artifacts/p064_formal_source_v2_20261006_immutable/numerical_source",
+  "inputs": {
+    "data_manifest": {
+      "path": "data/curated/tandem_cylinders_full40_dynamic_validation_v1/manifest.json",
+      "sha256": "bfa49031a1ab2b8e10a5cc5d95f1fbd8713e289c3ac8155838334e3c3d007dae"
+    },
+    "normalization": {
+      "path": "data/curated/tandem_cylinders_matched_start_full40_dev30_v1/normalization.json",
+      "sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+    },
+    "normalization_manifest": {
+      "path": "data/curated/tandem_cylinders_matched_start_full40_dev30_v1/manifest.json",
+      "sha256": "5213c7bb07c824c6e601636c3cfa974b80ec7c051633b0c8368a045cea41ddd2"
+    },
+    "config": {
+      "path": "artifacts/p064_formal_source_v2_20261006_immutable/numerical_source/conf/tandem_fno_full40_h20.yaml",
+      "sha256": "933d3c8036528dc4a52b8ee7031f66aa808f05e9d08f662eefd4dc61c86b1748"
+    },
+    "aerodynamic_model": {
+      "path": "artifacts/fcp064_controlled_aero_arm_b_20261006/aerodynamic/FNO.0.1.mdlus",
+      "sha256": "57d4634df22ce96c1c4467a2ed52412be452375129af05b89f10a690e363356e"
+    },
+    "candidate_manifest": {
+      "path": "artifacts/fcp064_controlled_aero_arm_b_20261006/dual_model_manifest.json",
+      "sha256": "92766915cb11ca75d313608a5f75e61a218371dcc789f5b44725f0a8260e7891"
+    },
+    "training_config": {
+      "path": "artifacts/p064_formal_source_v2_20261006_immutable/numerical_source/training_config.yaml",
+      "sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
+    },
+    "autoregressive_reference": {
+      "path": "artifacts/fcp064_arm_b_formal_resume_r3_20261006/force_window/result.json",
+      "sha256": "6195b21e6fc820382d580ae8339b47af3d4fb92598135d0d97c6c732e9516173"
+    },
+    "source_receipt": {
+      "path": "artifacts/p064_formal_source_v2_20261006_immutable/numerical_source/source_chain_receipt.json",
+      "sha256": "1be4606582f1d96fa9ab7aeb1b13e45b6ef09f702c9278c5de1580b5a451aaa4"
+    }
+  },
+  "protocol": {
+    "mode": "teacher_forced_h1",
+    "cases": 6,
+    "starts_per_case": 100,
+    "dual_steps": 600,
+    "flow_forwards": 600,
+    "aerodynamic_forwards": 600,
+    "total_submodel_forwards": 1200,
+    "batch_size": 1,
+    "history_k": 1,
+    "optimizer_steps": 0,
+    "precision": "high_tf32"
+  },
+  "resources": {
+    "memory_bytes": 12884901888,
+    "swap_bytes": 0,
+    "cpu_quota_percent": 100,
+    "tasks_max": 64,
+    "worker_deadline_seconds": 600,
+    "outer_runtime_seconds": 630,
+    "stop_seconds": 120,
+    "startup_available_gib": 50,
+    "runtime_available_gib": 22,
+    "allocator_bytes": 6442450944,
+    "cuda_visible_devices": "0"
+  },
+  "output": "artifacts/p064_teacher_forced_h1_signed_force_20261006"
+}

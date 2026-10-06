@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E074 — B-parent H10/1368 loss-scale computation running; no training
+
+R1 (`ad33d8d4c9194612b2b175a3661192aa`) exited1 before the first scale window because its inherited P031 source tree rejected the actual P064-B parent kind. It created no optimizer/model/result, was not OOM-killed, and its owned container was removed. R2 changes only that parent loader to reviewed SHA `83ac4e41…3d7b`; actual B manifest validation passed before launch. Approval SHA is `cb60cf7bcc146a51f085957d6c4c68a7792fe41803fd925fed1aa7c1b3c1d77e`, unit invocation `88e5e31e611c45dab28dbe6c3ad11c8c`, and output is `artifacts/fcp064_b_h25_scales_20261006_r2`.
+
+The running job evaluates all original 1,368 train-only windows at H10 on the fixed B parent to obtain field/force loss scales. It has no backward pass, optimizer, model save, validation/frozen access, admission claim, or authorization for the subsequent H25 probe/train. Resource enforcement is real MemAvailable 80 GiB startup/22 GiB runtime, 48 GiB no-swap container and 32 GiB Torch cap contract; MemFree remains truthful telemetry and is not used as an UMA cache gate. Terminal scales and receipt are pending.
+
 ## FC-E072 — B-policy b07 paired80D/U independently completed
 
 Same unit invocation `c45add13aeff41fe9526e835e384a52d` exited0 after800 actual CPU PPO/OpenFOAM intervals110→190. Approvaldf4d7881; immutable driverc3d63d9d; unchanged policyf7644639/Vec8c07ef15/Bmanifest92766915. Result SHA `dd579e7443c6693daef4173ed53ea2cb6836878fafff365bc12c1db8fe4ab7fc`; independent report `docs/P064_B_PROJECTED_PPO_B07_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `6a76bbb74673dfdfdba57746471a836ce741f4855206efb5605677934133e953` verifies3200raw hashes/all six windows/1600solver logs/800projected single-filter actions/source preservation/owned cleanup. Maximum numerical discrepancy4.44e-16; minimumAvailable120378871808B, wall1097.565s. No independent model or CFD rerun.

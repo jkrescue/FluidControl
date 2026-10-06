@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E074 当前实际：B父本H10尺度计算R2运行中，非训练
+
+首次 scales unit `fluid-control-p064-b-h25-scales-20261006.service`（invocation `ad33d8d4c9194612b2b175a3661192aa`）在加载实际B父manifest时立即失败：旧P031来源树的`dual_fno.py`不识别P064-B kind；无optimizer、无模型保存、无尺度结果，exit1/OOMfalse且容器已清理。失败证据与输出保留，未冒充科学结果。
+
+R2仅将父本loader替换为已在P064 official CPU proof和600点signed-H1中实际使用的审查版`83ac4e41…3d7b`，其余427个source条目、数值协议和资源合同不变。批准`docs/P064_B_H25_SCALES_R2_APPROVAL_20261006.json` SHA `cb60cf7bcc146a51f085957d6c4c68a7792fe41803fd925fed1aa7c1b3c1d77e`；实际unit `fluid-control-p064-b-h25-scales-r2-20261006.service`、invocation `88e5e31e611c45dab28dbe6c3ad11c8c` 已出现真实`window_complete`，正在计算原44 train-only的1368个H10窗口。该阶段仅重算B父本field/force loss尺度，optimizer=0且不保存模型；H25 scratch probe及32步训练均未授权、未启动。
+
 ## FC-E072 当前终态：同B策略b07真实闭环六窗口通过原标准
 
 同inv `c45add13aeff41fe9526e835e384a52d` 已800/800、PID0/exit0，110→190真实CPU PPO/OpenFOAM反馈完成，无在线FNO。独审3200rawSHA/16000点严格网格、1600solver段、800投影单filter、全部六窗及源/资源/清理通过，统计最大差4.44e-16。主(130,190]12000点减阻3.9026772898%、rearCl RMS ratio .814994542203、mean-bias ratio .012920799096；六窗均过原2%/1.05/10%，早首6.2偏置.083038892388。结果SHA `dd579e7443c6693daef4173ed53ea2cb6836878fafff365bc12c1db8fe4ab7fc`；独审 `docs/P064_B_PROJECTED_PPO_B07_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `6a76bbb74673dfdfdba57746471a836ce741f4855206efb5605677934133e953`。
