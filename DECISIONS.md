@@ -1,5 +1,11 @@
 # DECISIONS
 
+## 2026-10-07 — Reject C50 promotion after the fixed development comparison
+
+Lead decision after FC-E087/E088: C50 executed its equal-budget32updates/256windows training and fixed16×H5 development evaluation successfully, but both designated pooledH1 force errors worsen versus B, as do both metrics for each b01/b03 phase at all five leads. Flow arrays are exactly equal because flow was frozen. Execution/resource success is not prediction improvement. [Independent development review](docs/P064_CONTROLLED_DATA_DOSE_C_DEVELOPMENT_REVIEW_20261007.md), SHA `e26d6e49186616f3818c33f438055d707e3c66b881640696006e280a6bc4e091`.
+
+C is not promoted to PPO or CFD. Retain B and the two specified-seed validated canonical controllers; no automatic proportion/seed/phase sweep. Existing original physical criteria2%/1.05/10%, early failures, complete prediction FAIL, rejected H25, negative oldseed and R1 engineering failure remain visible. Lead next authorized preparation only: one E082 frozen-policy b02 paired800 long controlled-data profile,106→186/primary126→186; it is not execution authorization and not a claim b02 lacked older short closed-loop data. A prospective later25%-total-controlled mixture across b00/b02 is distinct from another C50 sweep and is not approved training. No extra full-formal C run is implied; existing saved six-window retention evidence is limited. Overall goal remains incomplete.
+
 ## 2026-10-07 — Stop adding seed/phase trials; prepare one controlled-data-dose comparison
 
 FC-E083 and FC-E086 independently confirm original primary physical criteria for the two predeclared canonical-coordinate seeds: seed20261007 drag reduction3.9567%/RMS ratio0.816543/bias1.0660%, seed20261006 3.7440%/0.773790/3.6741%. Fixed same-policy b01 FC-E085 also passes all six windows. Evidence: [E086 terminal review](docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_CFD_TERMINAL_REVIEW_20261007.md), SHA `24e9a5ad02b0b36b34910ebe32e72de4c8cc5692f6090e4efa0dcad8439ac7fc`. This supports these two specified seeds, not arbitrary-seed robustness. E086 early12.4 and first6.2 mean-bias11.2623%/21.1797% fail10%; first6.2 also exceeds20% sensitivity. E083 early failure and older negative results remain unchanged.

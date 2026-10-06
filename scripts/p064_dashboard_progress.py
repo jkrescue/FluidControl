@@ -608,6 +608,11 @@ def c50_training_status(root,run=subprocess.check_output):
         info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
         info['training']=info['running'] and info['windows']>0
         info['status']=('C50 FNO气动力训练进行中' if info['training'] else 'C50 R2进程初始化中，尚无训练窗口') if info['running'] else ('C50程序退出0，等待独立终态审查' if state.get('ExecMainStatus')=='0' else 'C50工程失败，未自动重试')
+        review=root/'docs/P064_CONTROLLED_DATA_DOSE_C_DEVELOPMENT_REVIEW_20261007.md'
+        result=root/'artifacts/p064_arm_c50_development_h1_h5_20261007/result.json'
+        if not info['running'] and review.is_file() and result.is_file() and hashlib.sha256(review.read_bytes()).hexdigest()=='e26d6e49186616f3818c33f438055d707e3c66b881640696006e280a6bc4e091' and hashlib.sha256(result.read_bytes()).hexdigest()=='9fa7c88759bf83fdca87d79ff305c0f3d4654368c7ec3059d7f9ba3f96c48c1a':
+            info.update(status='C50训练和开发评估已完成，预测未改善，不采用',terminal_verified=True,scientific_pass=False)
+            info['note']='真实256窗口/32更新已独审；同面板H1后Cl MAE B0.13900→C0.13915、总Cd0.03807→0.04295，H1–H5各phase均退化。流场冻结、预测完全相同。Lead拒绝C晋级PPO/CFD，不自动再扫比例。保留B及两指定seed闭环主窗收益、早期失败和完整预测FAIL。当前无新训练/CFD；R1导入工程失败仍保留。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['error']=str(exc)
     return info

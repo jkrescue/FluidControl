@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E087 / FC-E088 — C50 training complete; fixed development regresses and promotion rejected
+
+E087 actual d80f exit0: independent439source/256journal/128controlled/32records/28Adamstep32/frozenflow+bias checks pass; official fresh reload is producer evidence, no independent forward. Result b130f2a6a92247ee70eff10a4c35ce3670514faee9f50bb76122d34e97098e0a, manifest b4a150370101b4214b5085c8884516fbf44aa1560f11f527f85fc1811bf65529. R1 import failure remains engineering-only.
+
+E088 actual d7a29fc521d44952a85827a8a4cf911c exit0; result9fa7c88759bf83fdca87d79ff305c0f3d4654368c7ec3059d7f9ba3f96c48c1a. Independent16HDF/16NPZ/80endpoint,440source192runtime9inputs verified. C H1 rearCl/Cd .139148227/.042953398 versus B .138998317/.038065374; H5 .166302826/.032763399 versus .165744981/.030762494. Each phase/lead regresses; fields exactly equal because frozen. Lead rejects C promotion; retain B/controllers and original failures. No new experiment authorized. Reports [training](docs/P064_CONTROLLED_DATA_DOSE_C_TERMINAL_REVIEW_20261007.md) and [development](docs/P064_CONTROLLED_DATA_DOSE_C_DEVELOPMENT_REVIEW_20261007.md), final development report SHA e26d6e49186616f3818c33f438055d707e3c66b881640696006e280a6bc4e091. No full C formal evaluation; saved small retention panel is not all44-trajectory evidence.
+
 ## FC-E087 — C50 aero training R2 actual startup; R1 engineering failure retained
 
 Actual unit `fluid-control-p064-controlled-dose-c50-r2-20261007.service`, invocation `d80f61c62da64497bf378b6c7fd9c917`, PID480866 running with observed training_window_complete. Fixed256 windows/32updates, controlled mix128/256 versus B64/256, sameK1 parent/budget and frozenflow. Not PPO/CFD; no scientific outcome or running CSV metrics. Approval `6d0d0f8dbdbae17a89d3b7dcc1717145b8e5a44464e928b5cb1a4e6debf2800f`; output `artifacts/fcp064_controlled_aero_arm_c50_20261007_r2`. R1 `9595da6d9092476298f597ef8ed08fb2` exit1 before model/training because missing PYTHONPATH; R2 is environment-only retry preserving source. Independent preparation17CPU tests passed, including actual official-environment import origins; this is not actual C checkpoint reload or prediction validation.

@@ -1,5 +1,11 @@
 # Research roadmap and prioritized backlog
 
+## Current status — C50 completed and rejected; retain the demonstrated B closed loop
+
+FC-E087/E088 are complete, not running. [Independent C50 development review](P064_CONTROLLED_DATA_DOSE_C_DEVELOPMENT_REVIEW_20261007.md), SHA `e26d6e49186616f3818c33f438055d707e3c66b881640696006e280a6bc4e091`, confirms pooledH1 rearCl/Cd and eachphase H1–H5 regress versus B. Frozen flow is exactly unchanged. The equal-budget data-dose hypothesis was not supported; do not proceed to C PPO/CFD or automatically scan other ratios.
+
+Current priority is retain the negative C evidence and prepare one separately authorized source profile for E082 frozen-policy b02 paired800 data collection (106→186, primary126→186). This is long controlled training-coverage preparation, not a claim b02 has never seen closed loop: existing train16 already includes eight12.8D/U exploratory trajectories. Execution is not yet authorized. A later proposed mixture retains totalcontrolled25% split across b00/b02, rather than another C50 dose sweep; no new model training is authorized. Two specified-seed primary successes do not erase early bias failures or complete surrogate prediction FAIL. Original physical criteria and the overall objective remain unchanged; this is not full-project completion. Previous preparation priorities below are historical.
+
 ## Current priority — one C50 prediction-improvement preparation after fixed replication
 
 Updated2026-10-07 after [E086 independent terminal review](P064_B_SYMMETRY_CANONICAL_SEED20261006_CFD_TERMINAL_REVIEW_20261007.md), SHA `24e9a5ad02b0b36b34910ebe32e72de4c8cc5692f6090e4efa0dcad8439ac7fc`. Both specified canonical seeds meet original primary physical criteria (drag3.9567% and3.7440%); fixed b01 also passes. These finite confirmations do not establish arbitrary-seed robustness. E086 early bias11.2623%/21.1797%, E083 early failure, old negative trials and complete FNO prediction FAIL remain visible.
