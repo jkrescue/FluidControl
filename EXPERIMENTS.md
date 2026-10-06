@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E049 — Accelerated fixed H5 real CFD124 cycles; failed summary, offline recovered negative drag result
+
+Execution is identified by immutable driver `4cca28757f44e80f693d2d4a33c15cea0ea5bc74368eda669aead292b37464bf`, approval `03e2bac8f55c4bbd09e377b60bfef849515b53a6d418d490ec682b2cde95bc75`. Source capture commit `aae121a` was created after launch, not HEAD at launch; CSV code_commit identifies that reproducible capture. Actual unit invocation `a601eec2da7649b4af6f9354a4deb470` ran06:28:56–06:40:19UTC, completed124 CFD cycles but exited1 at trailing-window summary: legacy inclusive-left reader returned1241 instead of1240. Original failed state and absent result.json preserved.
+
+Approved offline recovery source `5003424f0e8abf4e89733f62d6515a72239eb98a01690188813cadd08d542e7b` used original metric function and explicit intended `(begin,end]`, no new CFD/model. Recovered artifact `artifacts/exploratory_accelerated_long_h5_real_cfd_20261006/recovered_metrics.json` SHA `1605604dc27f106acd05e6a721f26c4ba24527ac53996d6e65fbc70c601fa2b1`; report `docs/EXPLORATORY_ACCELERATED_LONG_H5_TERMINAL_REVIEW_20261006.md`. Raw windows2480/1240/1240 yield paired drag reduction full−0.006505988003726815, first+0.041150445558386095, trailing−0.05416384473057234; rearCl fluctuationRMS ratios0.8322411751/0.9135812066/0.7003219964. All windows are reported; no favorable-window selection. This is exploratory12.4D/U, NOT_ADMISSION and not original80D/U completion.
+
+First10 actions and all4 raw-force prefixes exactly reproduce priorCPU H5. Original restart rehashed unchanged; both containers absent/noOOM. Resource minimumAvailable120401592320bytes. PredictionMAE rearCd0.05848863/rearCl0.09056808 and38 saturated endpoints motivate further separately reviewed investigation, not causal proof or automatic rerun. Original10% criterion unchanged; relaxing bias cannot remove recorded full/trailing drag worsening.
+
 ## Active — Accelerated fixed-H5 paired124-cycle real-CFD trial (no outcome yet)
 
 Actual user unit `fluid-control-accelerated-long-h5-20261006.service`, invocation `a601eec2da7649b4af6f9354a4deb470`, PID2131269 was observed active/running with5/124 completed cycles. Approval SHA `03e2bac8f55c4bbd09e377b60bfef849515b53a6d418d490ec682b2cde95bc75`; driver `4cca28757f44e80f693d2d4a33c15cea0ea5bc74368eda669aead292b37464bf`, sequencer `c1011780b4e72f45e43127f3d7a728cf546d90b07dd1a7d41e57cf0dfc750688`; output `artifacts/exploratory_accelerated_long_h5_real_cfd_20261006`. No scientific CSV outcome is recorded before terminal evidence.

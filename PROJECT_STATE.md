@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E049实际终态：124周期CFD完成，汇总失败后离线恢复，整体减阻为负
+
+同一invocation `a601eec2da7649b4af6f9354a4deb470` 于06:40:19UTC以exit1结束：124周期全部到160.4，但旧inclusive受力reader令trailing窗口1241点触发汇总计数错误。原failed unit与缺失result.json保留；未重跑CFD。经Lead读审批准，独立离线按原定 `(begin,end]` 完整/前6.2/末6.2D/U恢复2480/1240/1240点。
+
+真实paired drag reduction：全12.4D/U **−0.6505988%**、前半 **+4.1150446%**、后半 **−5.4163845%**；rearCl波动RMS比分别0.832241/0.913581/0.700322。全窗meanCl近零掩盖两半+0.203434/−0.205213偏移；不能挑前半报成功，放宽10%均值标准也不能修复全/后窗阻力为负。不是原80D/U物理准入或新PPO成果。
+
+离线恢复 `artifacts/exploratory_accelerated_long_h5_real_cfd_20261006/recovered_metrics.json` SHA `1605604dc27f106acd05e6a721f26c4ba24527ac53996d6e65fbc70c601fa2b1`；详见 `docs/EXPLORATORY_ACCELERATED_LONG_H5_TERMINAL_REVIEW_20261006.md`。原restart完整重验不变，两容器已清理；第一10周期动作及4路200点原始受力与先前CPU H5完全一致。以下running状态只作历史。下一步保持探索路线，但不得自动重跑、扫阈值或以lift降低替代减阻目标；另行评审后决定干预。
+
 ## 当前实际运行：加速H5真实配对反馈124周期（2026-10-06）
 
 实际user unit `fluid-control-accelerated-long-h5-20261006.service`，invocation `a601eec2da7649b4af6f9354a4deb470` 已核active/running、PID2131269，阶段观测5/124。输出 `artifacts/exploratory_accelerated_long_h5_real_cfd_20261006`；批准SHA `03e2bac8f55c4bbd09e377b60bfef849515b53a6d418d490ec682b2cde95bc75`，不可变driver `4cca28757f44e80f693d2d4a33c15cea0ea5bc74368eda669aead292b37464bf`。没有终态控制收益结论，也没有正在进行模型/PPO训练。

@@ -1,5 +1,11 @@
 # DECISIONS
 
+## 2026-10-06 — 保留长H5汇总失败，批准仅离线恢复全部固定窗口
+
+FC-E049实际124周期完成而末窗汇总失败，原因是legacy reader包含154.2左端点；不重跑CFD、不覆盖失败unit或伪造原result。Lead完整读审恢复源码及7项CPU测试后批准一次离线计算，明确采用预定 `(begin,end]`、无插值/其他删点，原force_metrics不变。新recovered_metrics SHA `1605604dc27f106acd05e6a721f26c4ba24527ac53996d6e65fbc70c601fa2b1`。
+
+全窗减阻−0.6506%、前窗+4.1150%、末窗−5.4164%；不能选前窗作为成功证据。全窗meanCl小是两半异号抵消，lift波动降低不等于减阻目标。保留GPU/Curator前缀工程复现证据与真实负结果分离；不宣称80D/U准入，不自动延长/换权重/放宽阈值或启动新PPO。后续干预需独立明确审批。
+
 ## 2026-10-06 — 已启动固定H5的124周期探索，保留原正式评价
 
 Lead已以批准SHA `03e2bac8f55c4bbd09e377b60bfef849515b53a6d418d490ec682b2cde95bc75` 启动同K1/H5、同代价/五候选/动作约束、同初态的12.4D/U配对真实CFD反馈。实际unit/invocation为 `fluid-control-accelerated-long-h5-20261006.service` / `a601eec2da7649b4af6f9354a4deb470`。新变化是经已有帧/十状态验证的采样和GPU实现加速，以及124周期物理时长；不扫权重或预测时域，不重训模型/PPO。
