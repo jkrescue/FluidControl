@@ -1,5 +1,20 @@
 # Experiment ledger
 
+## FC-E067 — Independent terminal baseline metrics retained without admission
+
+Actual K1 result `9ea3e0e781e76265bbc65ea52d6fec92ebe5b5cb7a93d91c3c9addb454f7c4de`, report `docs/P064_K1_DEVELOPMENT_TERMINAL_REVIEW_20261006.md` SHA `a15a6699cf20d0d3b76a8569357bd3580e1bb11fe232207164bff5cc08ab2fef`. Samea39f8106 PID0/exit0, supervisorerrornull. Independent reviewer rehashed16NPZ,378source/192runtime/5inputs and recomputed all80 field/force/persistence endpoints plus phase/pooled summaries. Largest field-sum reduction-order absolute difference2.614e-8, agreement relative1e-12/absolute1e-10; force metrics agree. Runtime12GiB/noSwap, minimumAvailable120994258944B; unchangedmodel/zerooptimizer source/runtime evidence, no independent model reload.
+
+| Phase | Lead | velocity relativeL2 | pressure relativeL2 | rearCl MAE / persistence | totalCd MAE / persistence |
+|---|---|---:|---:|---:|---:|
+| b01 | H1 | .010296 | .031852 | .167390 / .080909 | .046173 / .020139 |
+| b01 | H5 | .043053 | .136114 | .189925 / .400050 | .033153 / .103384 |
+| b03 | H1 | .010336 | .032233 | .150352 / .099758 | .033088 / .020498 |
+| b03 | H5 | .043027 | .137900 | .169775 / .479915 | .027891 / .098731 |
+| pooled16 | H1 | .010316 | .032042 | .158871 / .090334 | .039630 / .020318 |
+| pooled16 | H5 | .043040 | .137006 | .179850 / .439982 | .030522 / .101058 |
+
+Exact H1/H5 perphase+pooled model/persistence values are preserved in CSV with coefficient units for force MAE, ratio units for field relativeL2, no invented force percentages. Field pooling sums physical masked SSE/reference before sqrt, not average per-case L2. Persistence holds each origin's initial state/force. Both phases' mean H1 force errors exceed persistence before recurrent field accumulation; H5 beats the stale baseline on average but retains material errors. No causal state-coverage explanation or scientific admission follows. Already-opened development, no new CFD, no altered10% physical constraint or H100 label; same fixed panel/precision for prospective A/B comparison only after separate approval.
+
 ## FC-E067 — K1 fixed development baseline executed; independent metrics review pending
 
 Lead launched unit `fluid-control-p064-k1-development-h1-h5-20261006.service`, invocation `a39f8106aa9b4559b1fb1587e7a8e38c`, initialPID425486. Same-handle observation now PID0/active-exited/ExecMainStatus0. Exact approval SHA `05891a360ffaa17d61e6854a8dce632d818a3ab1ec5b4a616244d4abb6a85b79`; executed source SHA `e86ef8ea3c55be63287b0f9d5e9e0cf0034e7fc6959df25e53e49c0fe23d90a8`. Canonical promotion preserves these worker bytes; only test import-path portability changed,6CPUtests PASS0.06s. Output `artifacts/p064_k1_development_h1_h5_20261006`.

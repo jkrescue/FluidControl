@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E067 最新终态独审：K1 在两开发相位的 H1 力预测均劣于持力基线
+
+同a39f8106任务已退出0且独立核验全部16NPZ/80端点、每起点/相位/pooled统计、378source/192runtime/5inputs。结果SHA `9ea3e0e781e76265bbc65ea52d6fec92ebe5b5cb7a93d91c3c9addb454f7c4de`；独审 `docs/P064_K1_DEVELOPMENT_TERMINAL_REVIEW_20261006.md` SHA `a15a6699cf20d0d3b76a8569357bd3580e1bb11fe232207164bff5cc08ab2fef`。最低Available120994258944B、零优化器/模型不变；独审只重算保存数组，没有再次加载模型。
+
+pooled H1/H5 velocity relativeL2 .010316/.043040、pressure .032042/.137006；rearCl MAE .158871/.179850，对应持力 .090334/.439982；totalCd MAE .039630/.030522，对应持力 .020318/.101058。力误差是系数绝对误差，不是百分比。b01与b03的H1两项力平均都劣于持力；H5优于逐渐陈旧的持力仍不代表普遍准确。该基线仅用于随后同协议P064 A/B开发比较，不是新测试/在线FNO/新控制试验；原三相位物理收益与H100失败不变。
+
 ## FC-E067 当前实际执行：K1 开发集 H1–H5 基线已退出0，数值独审中
 
 Lead实际启动 `fluid-control-p064-k1-development-h1-h5-20261006.service`，invocation `a39f8106aa9b4559b1fb1587e7a8e38c`（启动PID425486）；最新同handle PID0/active-exited/ExecMainStatus0。批准SHA `05891a360ffaa17d61e6854a8dce632d818a3ab1ec5b4a616244d4abb6a85b79`；不可变执行源码 `e86ef8ea3c55be63287b0f9d5e9e0cf0034e7fc6959df25e53e49c0fe23d90a8`，canonical精确归档，6CPU源/合同测试通过0.06s。
