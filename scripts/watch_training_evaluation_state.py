@@ -12,7 +12,9 @@ import argparse
 import hashlib
 import json
 import math
+import os
 import re
+import stat
 import shlex
 import subprocess
 import tempfile
@@ -436,6 +438,92 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def historical_payload_sha256(path: Path, receipt_path: Path) -> str:
+    """Monitor optimization only: prior byte SHA plus unchanged FD identity.
+
+    This is not a new candidate/scientific audit. Only completed-receipt model
+    payloads use this cache; authority, receipts and live logs remain uncached.
+    """
+    absolute = path.absolute()
+    artifacts = next((p for p in receipt_path.absolute().parents if p.name == "artifacts"), None)
+    if artifacts is None:
+        return file_sha256(path)
+    cache = artifacts / "monitor/historical_payload_sha_cache.json"
+    entries = {}
+    try:
+        if any(p.is_symlink() for p in (cache, *cache.parents)):
+            raise ValueError("unsafe cache path")
+        info = cache.stat()
+        if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
+                or info.st_mode & 0o022 or info.st_size > 2_000_000):
+            raise ValueError("unsafe cache file")
+        document = json.loads(cache.read_text())
+        if document.get("schema") != 1 or not isinstance(document.get("entries"), dict):
+            raise ValueError("cache schema")
+        if len(document["entries"]) > 1024:
+            raise ValueError("cache size")
+        entries = document["entries"]
+    except (OSError, ValueError, TypeError, AttributeError):
+        entries = {}
+
+    def persist():
+        # Cache failure must never substitute for a successful byte verification.
+        try:
+            if any(p.is_symlink() for p in (cache, *cache.parents)):
+                return
+            while len(entries) > 1024:
+                entries.pop(next(iter(entries)))
+            atomic_json(cache, {"schema": 1, "scope": "monitor_only_not_scientific_audit", "entries": entries})
+        except OSError:
+            pass
+
+    key = str(absolute)
+    fd = None
+    try:
+        # Open every ancestor without following links, not resolve-then-open.
+        directory = os.open("/", os.O_PATH | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            for part in absolute.parts[1:-1]:
+                child = os.open(part, os.O_PATH | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=directory)
+                os.close(directory)
+                directory = child
+            fd = os.open(absolute.name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory)
+        finally:
+            os.close(directory)
+        before = os.fstat(fd)
+        if not stat.S_ISREG(before.st_mode):
+            raise OSError("nonregular historical payload")
+        fields = ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns")
+        identity = [getattr(before, name) for name in fields]
+        entry = entries.get(key, {})
+        cached = (isinstance(entry, dict) and entry.get("identity") == identity
+                  and isinstance(entry.get("sha256"), str)
+                  and re.fullmatch(r"[0-9a-f]{64}", entry["sha256"]) is not None)
+        if cached:
+            digest = entry["sha256"]
+        else:
+            hasher = hashlib.sha256()
+            while chunk := os.read(fd, 1024 * 1024):
+                hasher.update(chunk)
+            digest = hasher.hexdigest()
+        after = os.fstat(fd)
+        current = absolute.stat(follow_symlinks=False)
+        if (identity != [getattr(after, name) for name in fields]
+                or identity != [getattr(current, name) for name in fields]):
+            raise OSError("historical payload changed during verification")
+        entries[key] = {"identity": identity, "sha256": digest,
+                        "last_verification": "cached_prior_sha_stat_unchanged" if cached else "new_same_fd_sha256"}
+        persist()
+        return digest
+    except OSError:
+        entries.pop(key, None)
+        persist()
+        raise
+    finally:
+        if fd is not None:
+            os.close(fd)
+
+
 def verify_receipt(path: Path, expected_status: str) -> tuple[bool, list[str]]:
     receipt = read_json(path, None)
     if not isinstance(receipt, dict):
@@ -449,11 +537,21 @@ def verify_receipt(path: Path, expected_status: str) -> tuple[bool, list[str]]:
         return False, issues
     root = path.parent.resolve()
     for relative, expected in hashes.items():
-        target = (root / relative).resolve()
-        if root not in target.parents or not target.is_file():
+        unresolved = root / relative
+        target = unresolved.resolve()
+        if root not in target.parents or not target.is_file() or any(p.is_symlink() for p in (unresolved, *unresolved.parents)):
             issues.append(f"missing/unsafe payload: {relative}")
-        elif file_sha256(target) != expected:
-            issues.append(f"payload SHA differs: {relative}")
+        else:
+            completed = receipt.get("status") == expected_status and any(
+                token in expected_status for token in ("COMPLETE", "VERIFIED", "PASS"))
+            try:
+                digest = (historical_payload_sha256(target, path)
+                          if completed and target.suffix in (".pt", ".mdlus")
+                          else file_sha256(target))
+                if digest != expected:
+                    issues.append(f"payload SHA differs: {relative}")
+            except OSError as error:
+                issues.append(f"payload unavailable/changed: {relative}: {error}")
     return not issues, issues
 
 
