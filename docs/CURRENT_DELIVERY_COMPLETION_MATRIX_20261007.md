@@ -1,10 +1,23 @@
 # End-to-end delivery / completion matrix
 
-## Latest update — E091/E092 complete; D25 not promoted
+## Current conclusion — through E104, replacing current-status readings below
+
+| Delivery question | Current evidence and limit |
+|---|---|
+| Basic official-component RL → real CFD feedback case | Implemented and reproduced: E095 runs the frozen canonical B policy for800 paired CFD feedback intervals, all six original physical windows PASS. This is an engineering reproduction, not a new holdout. |
+| Canonical repeatability | E083/E086, the two specified seeds, both pass the b00 primary window. Early bias failures remain (including21.18% for E086). E085 b01 and E089 train-b02 add phase evidence, not arbitrary-seed statistical robustness. The old noncanonical E080 failure remains valid history. |
+| Latest G control exploration | E104 b01 completes800 intervals and passes all six original physical windows. Primary drag reduction3.9513%, lift fluctuation RMS ratio0.816378, bias ratio0.030717. Matched B drag reduction4.0091% is slightly higher; G does not replace B and its prediction-selection FAIL remains. |
+| Model/forecasting acceptance | Incomplete. B full prediction FAIL, rejected C/D/E/F/H25 cases and G retention FAIL are not erased by successful control. Fine-tuning trains28 aerodynamic-FNO tensors, with two biases and separate flow model frozen, not merely a final layer. |
+| Reproduction scope | Safe B-default/G-explicit entrypoints exist, defaulting to readonly preflight. They start from existing policy/model/data payloads. A complete canonical data→upstream model→policy rebuild runbook is still missing; Git alone does not provision scientific payloads. |
+| Current work / authorization | The cited training/CFD jobs are terminal; documentation/UI integration is not scientific computation. New work requires its own approval. Online FNO/MPC is optional, not a missing mandatory element of the basic case. Overall high-accuracy prediction plus constrained-control goal remains incomplete. |
+
+Original physical criteria stay≥2% drag reduction,≤1.05 rear-lift RMS ratio and≤10% mean-bias ratio. See the [current end-to-end delivery audit](END_TO_END_DELIVERY_AUDIT_20261007.md), [safe quickstart](CANONICAL_CLOSED_LOOP_QUICKSTART.md), [B/G profiles](CANONICAL_B_G_REPRODUCTION_PROFILES_20261007.md), [E095 reproduction](CANONICAL_B01_REPRODUCTION_TERMINAL_REVIEW_20261007.md) and [E104 G physical review](P064_G_SYMMETRY_CANONICAL_B01_CFD_TERMINAL_REVIEW_20261007.md). All material below is a preserved historical snapshot, not current execution status or new authorization.
+
+## Historical update — E091/E092 complete; D25 not promoted
 
 [E091 training](P064_B00_B02_COVERAGE_D_TERMINAL_REVIEW_20261007.md) completed256windows/32updates with192original+32b00+32b02 and frozen flow. [E092 independent fixed-development review](P064_B00_B02_COVERAGE_D_DEVELOPMENT_REVIEW_20261007.md), SHAee4258a9733074a8f25912298ab58d5814ef8b8176671a9526bd25d10fc37c58, verifies all80endpoints and exact B/D field/target/action alignment. H1 lift MAE worsens despite slightly better drag, H5 and fixed-six retention, so the predetermined jointH1 improvement rule fails. D is not promoted; B/canonical physical results remain the deployed evidence. Current work is existing-evidence diagnosis only, not new training/CFD. Overall goal remains incomplete; no threshold or historical failure is removed. This paragraph supersedes earlier "D preparation" status below without changing its provenance.
 
-## Current evidence supplement — through E090 independent conversion review
+## Historical evidence supplement — through E090 independent conversion review
 
 This section supersedes the *current-status* conclusions of the historical E080 snapshot below, not its recorded failures. The basic official PhysicsNeMo/Curator/HDF5Reader → HydroGym/SB3 training → real OpenFOAM feedback chain is implemented. Deployment uses a frozen CPU policy and real CFD observations; online FNO/MPC is an optional subsequent method, not a missing mandatory component of the original basic closed-loop goal. The overall goal remains incomplete because control-relevant prediction quality and validation under the stated limits are insufficient; the original prediction failure and physical thresholds are unchanged.
 
@@ -36,7 +49,7 @@ All literal evidence paths in the table are repository-relative (including `arti
 | Git / ledger / UI | commit `041eecc`; `PROJECT_STATE.md`, `EXPERIMENTS.md`, `experiments/results.csv`, `scripts/p064_dashboard_progress.py` | **Traceable delivery, bounded assurance.** Source/approvals/reports pushed; large scientific payloads remain on Spark, not supplied by Git alone. UI is presentation of bound unit/artifacts, not scientific authority. This assessment did not rerun UI tests or inspect the browser. Historical running paragraphs must be read as historical, not live state. |
 | Reproduction entrypoints | `docs/CURRENT_CLOSED_LOOP_REPRODUCTION_GUIDE_20261006.md` | **Available but not fully replay-validated.** Three executable stages from frozen data/K1 parent with per-stage identities, official runtimes and resources. No one-command raw-CFD-to-policy pipeline, and no fresh three-stage replay driven by that guide. E078 stale wording was corrected in `5873bae`; commands remained identical. Second-seed execution confirms interfaces operate, not that physical benefit repeats. |
 
-## Completion judgement and next action
+## Historical E080 completion judgement and proposed next action (superseded)
 
 The bounded real AI-CFD-PPO feedback case has independently verified physical value for the original policy and a matched learning-contribution control. **The full original high-accuracy-surrogate plus constrained-control goal is not complete.** The second predeclared seed did not reproduce drag benefit despite successful training and execution. Neither the original physical primary PASS nor a working UI substitutes for repeatability or the failed model gate. Multi-Re, VIV, new architectures or additional threshold changes are not necessary to describe this fixed case honestly.
 

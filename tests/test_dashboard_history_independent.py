@@ -27,6 +27,7 @@ def test_terminal_summary_does_not_skip_historical_curves():
     program = 'const calls=[]; const elements={}; const $=id=>(elements[id]??={});\n'
     program += ''.join(f'function {name}(){{calls.push({json.dumps(name)});}}\n' for name in renderers)
     program += 'function renderHistoricalClosedLoopEvidence(d){' + history
+    program += 'function renderCurrentGClosedLoop(){}\n'
     program += 'function renderActiveExperiment(d){' + active
     program += '''renderActiveExperiment({p064_coverage_d:{invocation:'old-terminal',training:false,windows:256,updates:32}});
 if (!calls.includes('renderProjectedCFD') || !calls.includes('renderFinalPPORealCFD') || !calls.includes('renderExploratoryDiverse32768LongCFD')) throw Error('historical rendering skipped');
@@ -38,6 +39,24 @@ if (!elements['lead-monitor'].textContent.includes('已结束')) throw Error('te
 
 def test_old_projected_is_not_labeled_canonical():
     assert '历史 FC-E058 · PPO策略＋镜像对称处理（旧projected，非当前canonical策略）' in page()
+
+
+def test_current_g_curves_map_real_rows_without_b():
+    html=page()
+    mapper=html.split('function currentGSeries(rows){',1)[1].split('function renderCurrentGClosedLoop(c){',1)[0]
+    program='function currentGSeries(rows){'+mapper+'''
+const o=Array(69).fill(0),z=Array(69).fill(0);
+o[64]=1;o[65]=99;o[66]=2;o[67]=-3;z[64]=4;z[66]=5;z[67]=6;
+const rows=Array.from({length:800},(_,i)=>({end_time:130+(i+1)*.1,applied_omega:.2,output_observation:o,zero_observation:z}));
+const a=currentGSeries(rows);
+if(a.length!==800||a[0].end_time!==130.1||a[799].end_time!==210||a[0].omega!==.2||a[0].ppo_total_cd!==3||a[0].zero_total_cd!==9||a[0].ppo_rear_cl!==-3||a[0].zero_rear_cl!==6)throw Error('wrong G mapping/clock');
+let rejected=false;try{currentGSeries([{...rows[0],output_observation:[1]}]);}catch(e){rejected=true;}if(!rejected)throw Error('bad observation accepted');
+'''
+    p=subprocess.run(['node'],input=program,text=True,capture_output=True)
+    assert p.returncode==0,p.stderr
+    render=html.split('function renderCurrentGClosedLoop(c){',1)[1].split('function renderActiveExperiment(d){',1)[0]
+    assert 'currentGSeries(c.rows)' in render and 'reproduction' not in render
+    assert '历史详情 · B默认策略 b01 工程复现（E095，非G曲线）' in html
 
 def test_terminal_and_aux_are_separate():
     html = page()

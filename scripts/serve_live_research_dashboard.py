@@ -441,9 +441,26 @@ function renderShortHorizonConfirmation(run){
  let t=run.terminal,m=t?.metrics;
  card.innerHTML=`<h3>FNO预留工况预测评估（推理，非训练）</h3><p><b>${t?'已完成并独立复核':run.running?'GPU推理评估正在运行':'运行已停止，等待独立结果核验'}</b> · 10个预留工况 × H1–H5 × 每工况32个起点</p>${t?`<p>1600/1600端点，失败/非有限值 0/0。H1→H5：速度相对L2 ${pct(m.h1.velocity_relative_l2)} → ${pct(m.h5.velocity_relative_l2)}；ROI中心化压力相对L2 ${pct(m.h1.pressure_relative_l2)} → ${pct(m.h5.pressure_relative_l2)}。</p><p>总Cd MAE ${num(m.h1.total_drag_mae,6)} → ${num(m.h5.total_drag_mae,6)}；后柱Cl MAE ${num(m.h1.rear_cl_mae,6)} → ${num(m.h5.rear_cl_mae,6)}。</p><p class="small">定量支持预声明固定动作工况的短时预测；不证明任意策略动作分布、长递推或物理闭环成功，也不推翻旧K1 H100正式FAIL。未自造新的通过门槛。报告SHA ${t.review_sha256.slice(0,12)}…</p>`:`<p>当前/最低 MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；外层进程当前/峰值内存 ${num(run.unit_memory_current_gib,2)} / ${num(run.unit_memory_peak_gib,2)} GiB。</p><p class="small">这是固定FNO在预留工况上的预测推理：0个optimizer step，不学习、不运行CFD。当前产物没有逐case完成记录，因此不显示或估算百分比。旧K1 H100正式FAIL仍是独立结论，本卡不会覆盖它。</p>`}`;
 }
+function currentGSeries(rows){
+ return rows.map(r=>{
+  const o=r.output_observation,z=r.zero_observation;
+  if(!Array.isArray(o)||o.length!==69||!Array.isArray(z)||z.length!==69||![r.end_time,r.applied_omega,o[64],o[66],o[67],z[64],z[66],z[67]].every(Number.isFinite))throw Error('invalid G physical row');
+  return {end_time:r.end_time,force_time:r.end_time,time:r.end_time,omega:r.applied_omega,ppo_total_cd:o[64]+o[66],zero_total_cd:z[64]+z[66],ppo_rear_cl:o[67],zero_rear_cl:z[67]};
+ });
+}
+function renderCurrentGClosedLoop(c){
+ let card=$('current-closed-loop');if(!card){card=document.createElement('div');card.id='current-closed-loop';card.className='card';$('projected-ppo-cfd').before(card);card.innerHTML='<h3>最新完成 · G探索策略真实CFD闭环（B仍为默认）</h3><p id="current-closed-loop-summary"></p><canvas width="1000" height="220" id="current-g-action"></canvas><canvas width="1000" height="220" id="current-g-drag"></canvas><canvas width="1000" height="220" id="current-g-lift"></canvas>';}
+ card.hidden=c?.verified!==true;if(card.hidden)return;
+ const rows=currentGSeries(c.rows);
+ $('current-closed-loop-summary').textContent=`${c.running?'CPU真实CFD反馈运行中':c.terminal_verified?'已完成独审：六窗原物理标准通过':'进程已结束，等待独审'}，${c.cycles}/800，t=${c.latest_end_time??'—'} /210 D/U。${c.terminal_verified?'主窗减阻3.9513% / 后升力波动降低18.3622% / 均值偏置3.0717%。G减阻略低于B的4.0091%，不是改进证明。':''} 曲线来自本G任务周期末真实观测及配对zero；不是B历史曲线、不是FNO预测。无新训练，G预测筛选FAIL保留。inv ${c.invocation}`;
+ drawActualSeries('current-g-action',rows,[{key:'omega',label:'G实际ω',color:'#60c9fb'}],'真实施加动作（一个安全滤波器）');
+ drawActualSeries('current-g-drag',rows,[{key:'ppo_total_cd',label:'G总Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'配对zero总Cd',color:'#f2c879'}],'真实CFD周期末总Cd，非主窗均值');
+ drawActualSeries('current-g-lift',rows,[{key:'ppo_rear_cl',label:'G后柱Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'配对zero后柱Cl',color:'#f69d97'}],'真实CFD周期末后柱Cl');
+}
 function renderActiveExperiment(d){
  // Historical evidence renders independently of the current-summary priority.
  renderHistoricalClosedLoopEvidence(d);
+ renderCurrentGClosedLoop(d.g_exploratory_cfd);
  for(const [key,section,route] of [['canonical_seeds_real_cfd_t228','canonical-seeds-real-cfd-t228','/canonical-seeds-real-cfd-t228.png'],['real_cfd_t228_comparison','real-cfd-t228','/real-cfd-t228-comparison.png']]){const f=d[key];$(section).hidden=f?.verified!==true;if(f?.verified){const img=$(section+'-image'),url=route+'?v='+f.sha256;if(img.getAttribute('src')!==url)img.src=url;}}
  const reproduction=d.canonical_b01_reproduction;
  if(reproduction?.verified){
@@ -456,10 +473,11 @@ function renderActiveExperiment(d){
   if(d.ar5_reset_g?.verified){const g=d.ar5_reset_g;$('lead-monitor').textContent+=` G代理候选：${g.running?(g.windows?'GPU气动力FNO分支训练':'进程初始化，尚无已完成训练窗口'):(g.development_verified?'训练与预测评估均已完成，原保留性规则未通过，不自动替换B':g.terminal_verified?'训练已完成并通过工程独审，预测评估另行核验':'进程已停止，等待独立终态核验')}；窗口${g.windows}/256、参数更新${g.updates}/32。${g.development_verified?'H1两项力误差改善，但固定六窗连续AR100退化；基本800步真实闭环仍已验证。后续探索须单独明确批准。':'训练AR每5步重置真状态，H1/AR权重各半；flow冻结，原六窗诊断仍连续100步。'} inv ${g.invocation}。`;}
   if(d.g_exploratory_ppo?.verified){const p=d.g_exploratory_ppo;$('lead-monitor').textContent=` G-PPO单独探索：${p.running?(p.timesteps?'正在训练策略':'进程初始化，尚无完成步数'):(p.terminal_verified?'训练已完成并通过独立工程核验':'进程已结束，等待独立终态核验')}；真实步数${p.timesteps}/32768、PPO epochs ${p.ppo_epochs}/256。G原预测筛选仍FAIL，B保留；这不是FNO续训。后续CFD已作条件规划，实际启动状态另行显示。inv ${p.invocation}。`+$('lead-monitor').textContent;}
   if(d.g_exploratory_cfd?.verified){const c=d.g_exploratory_cfd;$('lead-monitor').textContent=` G策略b01真实闭环探索：${c.running?'CPU配对OpenFOAM反馈运行中':c.terminal_verified?'已完成并独审六窗全部通过':'进程已结束，等待独立六窗核验'}，${c.cycles}/800周期；${c.terminal_verified?'主窗减阻3.9513%、后升力波动降低18.3622%、均值偏置3.0717%；减阻略低于原B的4.0091%，不称更优。当前本作业无训练/CFD运行。':'不是GPU训练或在线FNO/MPC，物理结论尚未形成。'}原2%/1.05/10%标准不变，保留B默认与G预测FAIL；这是实时接收CFD反馈，不是已证明物理实时速度。inv ${c.invocation}。`+$('lead-monitor').textContent;}
-  let card=$('canonical-reproduction');if(!card){card=document.createElement('div');card.id='canonical-reproduction';card.className='card';$('projected-ppo-cfd').before(card);card.innerHTML='<h3>当前 canonical b01 · 真实反馈曲线（非旧projected策略）</h3><canvas width="1000" height="220" id="canonical-reproduction-action"></canvas><canvas width="1000" height="220" id="canonical-reproduction-drag"></canvas><canvas width="1000" height="220" id="canonical-reproduction-lift"></canvas>';}
+  let card=$('canonical-reproduction');if(!card){card=document.createElement('div');card.id='canonical-reproduction';card.className='card';$('projected-ppo-cfd').before(card);card.innerHTML='<h3>历史详情 · B默认策略 b01 工程复现（E095，非G曲线）</h3><canvas width="1000" height="220" id="canonical-reproduction-action"></canvas><canvas width="1000" height="220" id="canonical-reproduction-drag"></canvas><canvas width="1000" height="220" id="canonical-reproduction-lift"></canvas>';}
   drawActualSeries('canonical-reproduction-action',x.rows,[{key:'requested_omega',label:'物理请求ω',color:'#60c9fb'},{key:'omega',label:'实际ω',color:'#79d5a3'}],'单次物理限速后的动作');
   drawActualSeries('canonical-reproduction-drag',x.rows,[{key:'ppo_total_cd',label:'canonical Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero Cd',color:'#f2c879'}],'真实CFD周期末总Cd（非窗口均值）');
   drawActualSeries('canonical-reproduction-lift',x.rows,[{key:'ppo_rear_cl',label:'canonical Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero Cl',color:'#f69d97'}],'真实CFD周期末rear Cl');
+  if(d.g_exploratory_cfd?.verified){const c=d.g_exploratory_cfd;$('lead-now').textContent=`最新G探索闭环：${c.terminal_verified?'800次真实反馈已完成并独审，六窗物理标准通过':c.running?'CPU真实反馈运行中':'进程已结束，待独审'}；${c.cycles}/800。${c.terminal_verified?'主窗减阻3.9513%、后升力波动降低18.3622%、偏置3.0717%；本任务已结束，无新训练。':''} B仍为默认，G预测FAIL未改变；当前G三曲线见 #current-closed-loop，B历史见 #canonical-reproduction。`;}
   return;
  }
  if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
