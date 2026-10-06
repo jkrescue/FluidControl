@@ -1,0 +1,12 @@
+{
+  "status": "K1_UMA_GPU_NO_TF32_INFERENCE_APPROVED",
+  "execution_authorized": true,
+  "source_sha256": "7f8567b0f41474294a45a864d4024cf0d64508b7e8351e19feb8e8aee9219b73",
+  "output": "/workspace/fluid_control/artifacts/k1_uma_gpu_no_tf32_probe_20261006",
+  "hypothesis": "Post-load highest FP32 and disabled TF32 reduce observed CPU GPU prediction discrepancy; quantify without inventing equivalence tolerance.",
+  "scope": "Three existing K1/t148 five-action H2 inference calls; no CFD, optimizer or model changes. Explicit post-load precision override, not original precision protocol.",
+  "resources": "GPU0; allocator0.06; cgroup12GiB/noSwap/1CPU;200s outer180s inner;50GiB startup22GiB runtime MemAvailable,0.5s monitoring;20GiB physical reserve unchanged.",
+  "review": "Lead read full original probe and complete variant diff, protocol and tests. Lifecycle and source checks unchanged. Independent of CPU H5 experiment.",
+  "decision": "Retain failure or raw numerical comparisons; do not automatically replace controller device or change scientific thresholds.",
+  "scientific_admission": false
+}
