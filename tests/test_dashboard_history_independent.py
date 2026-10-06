@@ -47,6 +47,27 @@ def test_terminal_and_aux_are_separate():
     assert '两项H1误差与保留指标均略差，未采用' in html
 
 
+def test_f_uses_actual_events_and_stops_on_exited():
+    import hashlib
+    from unittest.mock import patch
+    tree = ast.parse(SOURCE.read_text())
+    node = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == '_h1_only_f')
+    scope = dict(hashlib=hashlib, json=json, subprocess=subprocess, Path=Path)
+    exec(compile(ast.Module(body=[node], type_ignores=[]), str(SOURCE), 'exec'), scope)
+    fn = scope[node.name]
+    root = SOURCE.parents[1]
+    state = 'InvocationID=31f1692d9f984b91a17e21a133426e99\nMainPID=123\nSubState=running\n'
+    log = '\n'.join([json.dumps(dict(event='training_window_complete',consumed=9)),json.dumps(dict(event='accumulation_update_complete',update=1))])
+    with patch.object(subprocess,'check_output',side_effect=[state,log]):
+        result=fn(root)
+        assert result['running'] and result['windows']==9 and result['updates']==1
+        assert not result['terminal_verified']
+    with patch.object(subprocess,'check_output',side_effect=[state.replace('123','0').replace('running','exited'),log]):
+        assert not fn(root)['running']
+    with patch.object(subprocess,'check_output',return_value=state.replace('31f1692d9f984b91a17e21a133426e99','other')):
+        assert fn(root)=={'verified':False}
+
+
 def test_reproduction_uses_canvas_and_images_before_return():
     text = page().split('function renderActiveExperiment(d){', 1)[1]
     assert text.index('canonical_seeds_real_cfd_t228') < text.index('if(reproduction?.verified)')

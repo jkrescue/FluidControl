@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## FC-E098 — F H1-only training actually started; no outcome yet
+
+Unit `fluid-control-p064-h1-only-f-20261007.service`, invocation `31f1692d9f984b91a17e21a133426e99`, PID1781483 observed active/running with actual `training_window_complete` events. Approval `docs/P064_H1_ONLY_F_TRAINING_APPROVAL_20261007.json`, SHA `d157e311d70261511144c9fc22a27a468730b4ea2b5ea37705c773b43aea8ef2`; output `artifacts/p064_h1_only_candidate_f_20261007`. Fixed original B order/256 windows/32 updates, fresh K1/Adam, frozen flow and two aerodynamic biases; H1-only backward replaces equal H1/AR backward, while diagnostic total retains the original equal mixture. No E auxiliary term. Actual 12GiB/noSwap unit; scientific outcome not yet available, no running scientific CSV metrics. Not PPO, CFD, admission or policy replacement. Terminal CPU audit and separately authorized fixed development assessment are required; prior negative results remain.
+
 ## FC-E097 — E fixed development complete; joint improvement and retention not met
 
 Actual unit `fluid-control-p064-response-aux-development-h1-h5-20261007.service`, inv78e385e2abe6486a83d9e53471063cd2, PID0/exit0. Approval481e0e906ce739ee6122f7187f6bb6e3ad91798fbb7a83b2c3935c90881654fa; result3c4970d7d60e83567157137b28064f805c2ec28a3c990d031819ef5d68a53f80. [Independent NPZ review](docs/P064_RESPONSE_AUX_E_DEVELOPMENT_REVIEW_20261007.md), SHAe3d5257377b211e11eeb5e9cada0aa91a1365302036de4a207bf7a9561b7d3f7, verifies16NPZ80endpoints/449sources192runtime10inputs and exact B truth/action/flow alignment. PooledH1 Cl.139014150482 and Cd.038086727262 are both slightly higher thanB; fixed-six objectives also slightly higher. H5 mixed, allphase/horizon/persistence reported. Lead rejects promotion, retainsB; no automatic PPO/CFD/extension. Scientific negative result retained, not labelled statistically significant. MinimumAvailable121170219008B,11.01s,optimizer0.

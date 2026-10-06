@@ -1,10 +1,12 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前唯一摘要 — E095基本在线闭环工程复现已完成并独审
+## 当前唯一摘要 — E095闭环已复现；E098候选F正在训练，尚无精度结论
 
 同 `f6c3fc3464074493b19ea5418ddfada5` PID0/exited/exit0，安全入口完成800次真实OpenFOAM反馈，主窗减阻4.0091%、后升力波动降低18.2810%、均值偏置3.6366%，六窗均过原2%/1.05/10%标准。[独审报告](docs/CANONICAL_B01_REPRODUCTION_TERMINAL_REVIEW_20261007.md)核3200force/1600solver/800动作、799反馈连续及原始力→观测，和原E085动作/观测逐值一致。result SHA `f22047b62c8bdb50547122e61d3e523d0cb101d90b1ed98037e4524cb98c342a`。这是已打开b01的工程复现，不是新泛化证据。
 
-当前无训练/CFD运行。FC-E096 E训练及FC-E097固定开发评估均已终态独审：训练同618fcaf1d72742069d31a37393523349，256窗口/32更新/28Adam步32，flow与两bias冻结；评估同78e385e2abe6486a83d9e53471063cd2，全16NPZ/80端点复算通过。[训练报告](docs/P064_RESPONSE_AUX_E_TERMINAL_REVIEW_20261007.md)、[开发报告](docs/P064_RESPONSE_AUX_E_DEVELOPMENT_REVIEW_20261007.md)。E的pooled H1 rearCl MAE .139014150482、Cd MAE .038086727262，均略差于B .138998316601/.038065373898；fixed-six H1/AR也略差。Lead按预定规则不晋级，保留B及已验证控制器，不称显著更差。flow预测与B逐值一致，aux损失仅标量记录未独立复算。下一H1-only单因素目标对照仅准备，未批准执行；不延长E、不扫λ或比例。
+FC-E098 候选F已获单次授权并实际运行：unit `fluid-control-p064-h1-only-f-20261007.service`，invocation `31f1692d9f984b91a17e21a133426e99`，PID1781483；journal已出现实际训练窗口。批准 `docs/P064_H1_ONLY_F_TRAINING_APPROVAL_20261007.json` SHA `d157e311d70261511144c9fc22a27a468730b4ea2b5ea37705c773b43aea8ef2`，输出 `artifacts/p064_h1_only_candidate_f_20261007`。这是32更新/256窗口的气动力FNO分支微调：原K1新Adam、原B数据顺序、28参数张量与两冻结bias、flow冻结；仅反传目标改为H1，诊断total仍为H1/AR各半。12GiB/noSwap；不是PPO或CFD。实时计数看仪表板，运行不等于预测改善，终态须独立审核，固定开发评估另行授权。
+
+FC-E096 E训练及FC-E097固定开发评估已终态独审：[训练报告](docs/P064_RESPONSE_AUX_E_TERMINAL_REVIEW_20261007.md)、[开发报告](docs/P064_RESPONSE_AUX_E_DEVELOPMENT_REVIEW_20261007.md)。E的pooled H1 rearCl MAE .139014150482、Cd MAE .038086727262，均略差于B .138998316601/.038065373898；fixed-six H1/AR也略差。Lead按预定规则不晋级，保留B及已验证控制器，不称显著更差。flow预测与B逐值一致，aux损失仅标量记录未独立复算。不延长E、不扫λ或比例。
 
 基本官方组件→FNO代理训练→HydroGym/SB3策略→CPU策略与真实CFD在线反馈链已有可预检入口和实际复现；[一页指南](docs/CANONICAL_CLOSED_LOOP_QUICKSTART.md)。整体代理预测精度目标仍未完成，旧seed/早期偏置失败及C50/D25/H25拒绝完整保留。在线FNO/MPC是可选后续，不是基本闭环缺失项。
 
