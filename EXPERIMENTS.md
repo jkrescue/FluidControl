@@ -1,6 +1,12 @@
 # Experiment ledger
 
-## FC-E103 — separately approved exploratory G canonical PPO actually running
+## FC-E104 — exploratory G-policy fixed b01 paired CFD actually running
+
+Unit `fluid-control-p064-g-symmetry-canonical-b01-cfd-20261007.service`, invocation `c14a66a1464a4919a3904c1f4d2efb2d`, PID2110235 running; first independent sample32/800 actual feedback cycles. Approval `docs/P064_G_SYMMETRY_CANONICAL_B01_CFD_APPROVAL_20261007.json` SHA `f72cace2befb6aef72ed6878ec83d675cc92b4992ec0b9e6e45cd38be97bbb48`; output `artifacts/p064_g_symmetry_canonical_b01_cfd_20261007`. E103 actual policy/Vec/proof bound before this conditional launch. Same fixed b01 restart130→210, paired zero,800cycles and all six original physical windows; CPU real feedback, no FNO/MPC inference and no training. Primary2%/1.05/10% gates unchanged, G prediction FAIL and retained B unchanged. No running scientific metrics or physical PASS; independent3200force/1600solver/800canonical+feedback/zero-B comparison follows only terminal.
+
+## FC-E103 — exploratory G canonical PPO terminal engineering ACCEPT
+
+Actual same6aa96fbfeeb34269b1f49e04380cd417 PID0/exited/exit0. Independent audit7cc62121c4194f2f96b6243a5a64d968 exit0 under2GiB/noSwap/CPU1/120s:32768 transitions/6552 episodes/512 hooks/256 epochs, six reward means, action/reset clocks,75source192runtime and artifacts verified. [Report](docs/P064_G_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md) SHA `ca025b858ba12ae267a58e4a237574ee01bdf26f1fb4a42203d364327a4c767f`; result `5c1a1cfb3bebbbacb37c64e7f985f538605a85e6503e01773d242b5cea7af8b5`, policy `c1157806b2efc54fcf979df4734e09e846068908562f5415af1a43775881821b`, Vec `043125f7b6ccab8bea70cbee1b43c6797c747ce0a107b088d2fad9d5bb5e5de9`. Recorded frozen FNO unchanged; no independent model load/forward or reconstruction of unsaved physical observations. MinimumAvailable120028901376B/12GiBnoSwap. Final artifact only, no reward selection. Engineering ACCEPT enables final conditional b01 handoff only; no physical outcome, no G prediction promotion/B replacement. Historical launch follows.
 
 Subsequent Lead conditional approval covers fixed b01 paired800 CFD only after actual PPO terminal, independent engineering ACCEPT, final policy/Vec identities and resource/exclusive-output preflight. It has not started and is not a physical outcome; the launch observation below preceded that conditional decision.
 

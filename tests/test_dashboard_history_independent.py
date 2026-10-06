@@ -128,10 +128,29 @@ def test_g_exploratory_ppo_actual_identity_and_terminal_not_automatic():
     state='InvocationID=6aa96fbfeeb34269b1f49e04380cd417\nMainPID=2067872\nSubState=running\n'
     with patch.object(subprocess,'check_output',return_value=state):
         r=fn(root);assert r['running'] and r['timesteps']>0
-        assert not r['selection_passed'] and not r['replaces_B'] and not r['cfd_authorized']
+        assert not r['selection_passed'] and not r['replaces_B'] and r['cfd_authorized']
     with patch.object(subprocess,'check_output',return_value=state.replace('2067872','0').replace('running','exited')):
         r=fn(root);assert not r['running'] and not r['terminal_verified']
+    with patch.object(subprocess,'check_output',return_value=state.replace('2067872','0').replace('running','exited')+'Result=success\nExecMainStatus=0\n'):
+        r=fn(root);assert r['terminal_verified'] and not r['selection_passed']
     with patch.object(subprocess,'check_output',return_value=state.replace('6aa96fbfeeb34269b1f49e04380cd417','wrong')):
+        assert fn(root)=={'verified':False}
+
+
+def test_g_exploratory_cfd_is_actual_cpu_not_training():
+    import hashlib
+    from unittest.mock import patch
+    node=next(n for n in ast.parse(SOURCE.read_text()).body if isinstance(n,ast.FunctionDef) and n.name=='_g_exploratory_cfd')
+    scope=dict(hashlib=hashlib,json=json,subprocess=subprocess,Path=Path)
+    exec(compile(ast.Module(body=[node],type_ignores=[]),str(SOURCE),'exec'),scope)
+    fn=scope[node.name];root=SOURCE.parents[1]
+    state='InvocationID=c14a66a1464a4919a3904c1f4d2efb2d\nMainPID=2110235\nSubState=running\n'
+    with patch.object(subprocess,'check_output',return_value=state):
+        r=fn(root);assert r['running'] and 0<r['cycles']<=800 and not r['training']
+        assert r['scientific_pass'] is None and not r['surrogate_selection_passed']
+    with patch.object(subprocess,'check_output',return_value=state.replace('2110235','0').replace('running','exited')):
+        r=fn(root);assert not r['running'] and not r['terminal_verified']
+    with patch.object(subprocess,'check_output',return_value=state.replace('c14a66a1464a4919a3904c1f4d2efb2d','wrong')):
         assert fn(root)=={'verified':False}
 
 

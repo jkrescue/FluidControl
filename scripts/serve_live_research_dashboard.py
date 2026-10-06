@@ -454,7 +454,8 @@ function renderActiveExperiment(d){
   if(d.h1_only_f?.verified){const f=d.h1_only_f;$('lead-monitor').textContent+=` 候选F：${f.development_verified?'训练及固定评估已完成；H1 Cl/Cd改善，但H5与AR保留性退化，未采用，保留B':f.terminal_verified?'训练已完成并通过工程独审；固定预测评估另列，尚无采用结论':f.running?(f.windows?'GPU气动力FNO分支训练（仅H1反传目标）':'进程运行/初始化，尚无已完成窗口'):'进程已停止，等待独立终态核验'}，真实窗口${f.windows}/256、参数更新${f.updates}/32；flow冻结，不是PPO或CFD。诊断total仍为H1/AR各半，不是训练目标；inv ${f.invocation}。`;if(f.development_verified&&f.next_step&&!d.bf_true_state?.verified)$('lead-monitor').textContent+=` 下一步：${f.next_step}。`;}
   if(d.bf_true_state?.verified){const q=d.bf_true_state;$('lead-monitor').textContent+=` B/F真状态受力对照：诊断已完成，160次气动力调用、0流场调用、0参数更新；${q.review_verified?'独立复算通过；换成真实状态并未普遍降低力误差，不能只归因流场累积误差，F仍未采用':'科学解释待独立复算'}。`;}
   if(d.ar5_reset_g?.verified){const g=d.ar5_reset_g;$('lead-monitor').textContent+=` G代理候选：${g.running?(g.windows?'GPU气动力FNO分支训练':'进程初始化，尚无已完成训练窗口'):(g.development_verified?'训练与预测评估均已完成，原保留性规则未通过，不自动替换B':g.terminal_verified?'训练已完成并通过工程独审，预测评估另行核验':'进程已停止，等待独立终态核验')}；窗口${g.windows}/256、参数更新${g.updates}/32。${g.development_verified?'H1两项力误差改善，但固定六窗连续AR100退化；基本800步真实闭环仍已验证。后续探索须单独明确批准。':'训练AR每5步重置真状态，H1/AR权重各半；flow冻结，原六窗诊断仍连续100步。'} inv ${g.invocation}。`;}
-  if(d.g_exploratory_ppo?.verified){const p=d.g_exploratory_ppo;$('lead-monitor').textContent=` 当前单独批准的G-PPO探索：${p.running?(p.timesteps?'正在训练策略':'进程初始化，尚无完成步数'):'进程已结束，等待独立终态核验'}；真实步数${p.timesteps}/32768、PPO epochs ${p.ppo_epochs}/256。G原预测筛选仍FAIL，B保留；这不是FNO续训。后续CFD已作条件规划，尚未启动，须先完成训练独审与实际产物绑定。inv ${p.invocation}。`+$('lead-monitor').textContent;}
+  if(d.g_exploratory_ppo?.verified){const p=d.g_exploratory_ppo;$('lead-monitor').textContent=` G-PPO单独探索：${p.running?(p.timesteps?'正在训练策略':'进程初始化，尚无完成步数'):(p.terminal_verified?'训练已完成并通过独立工程核验':'进程已结束，等待独立终态核验')}；真实步数${p.timesteps}/32768、PPO epochs ${p.ppo_epochs}/256。G原预测筛选仍FAIL，B保留；这不是FNO续训。后续CFD已作条件规划，实际启动状态另行显示。inv ${p.invocation}。`+$('lead-monitor').textContent;}
+  if(d.g_exploratory_cfd?.verified){const c=d.g_exploratory_cfd;$('lead-monitor').textContent=` 当前G策略b01真实闭环探索：${c.running?'CPU配对OpenFOAM反馈运行中':'进程已结束，等待独立六窗核验'}，${c.cycles}/800周期；不是GPU训练或在线FNO/MPC，物理结论尚未形成。原2%减阻/1.05波动比/10%均值偏置标准不变，保留B对照与G预测FAIL。inv ${c.invocation}。`+$('lead-monitor').textContent;}
   let card=$('canonical-reproduction');if(!card){card=document.createElement('div');card.id='canonical-reproduction';card.className='card';$('projected-ppo-cfd').before(card);card.innerHTML='<h3>当前 canonical b01 · 真实反馈曲线（非旧projected策略）</h3><canvas width="1000" height="220" id="canonical-reproduction-action"></canvas><canvas width="1000" height="220" id="canonical-reproduction-drag"></canvas><canvas width="1000" height="220" id="canonical-reproduction-lift"></canvas>';}
   drawActualSeries('canonical-reproduction-action',x.rows,[{key:'requested_omega',label:'物理请求ω',color:'#60c9fb'},{key:'omega',label:'实际ω',color:'#79d5a3'}],'单次物理限速后的动作');
   drawActualSeries('canonical-reproduction-drag',x.rows,[{key:'ppo_total_cd',label:'canonical Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero Cd',color:'#f2c879'}],'真实CFD周期末总Cd（非窗口均值）');
@@ -5125,6 +5126,7 @@ class Handler(BaseHTTPRequestHandler):
             data['bf_true_state'] = _bf_true_state(self.root)
             data['ar5_reset_g'] = _ar5_reset_g(self.root)
             data['g_exploratory_ppo'] = _g_exploratory_ppo(self.root)
+            data['g_exploratory_cfd'] = _g_exploratory_cfd(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5607,10 +5609,36 @@ def _g_exploratory_ppo(root):
                 except ValueError: continue
                 steps=max(steps,int(row.get('time/total_timesteps',0)))
                 epochs=max(epochs,int(row.get('train/n_updates',0)))
-        return dict(verified=True,invocation=inv,running=int(state['MainPID'])>0 and state['SubState']=='running',
+        running=int(state['MainPID'])>0 and state['SubState']=='running'
+        report=root/'docs/P064_G_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md'
+        terminal=(not running and state.get('Result')=='success' and state.get('ExecMainStatus')=='0'
+                  and (out/'result.json').exists() and report.exists()
+                  and hashlib.sha256((out/'result.json').read_bytes()).hexdigest()=='5c1a1cfb3bebbbacb37c64e7f985f538605a85e6503e01773d242b5cea7af8b5'
+                  and hashlib.sha256(report.read_bytes()).hexdigest()=='ca025b858ba12ae267a58e4a237574ee01bdf26f1fb4a42203d364327a4c767f')
+        return dict(verified=True,invocation=inv,running=running,
                     timesteps=steps,expected_timesteps=32768,ppo_epochs=epochs,expected_ppo_epochs=256,
-                    terminal_verified=False,exploratory=True,selection_passed=False,replaces_B=False,
-                    cfd_authorized=False,cfd_conditionally_planned=True,cfd_started=False)
+                    terminal_verified=terminal,exploratory=True,selection_passed=False,replaces_B=False,
+                    cfd_authorized=True,cfd_conditionally_planned=True,cfd_started=True)
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError): return {'verified':False}
+
+
+def _g_exploratory_cfd(root):
+    try:
+        approval=root/'docs/P064_G_SYMMETRY_CANONICAL_B01_CFD_APPROVAL_20261007.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='f72cace2befb6aef72ed6878ec83d675cc92b4992ec0b9e6e45cd38be97bbb48': return {'verified':False}
+        inv='c14a66a1464a4919a3904c1f4d2efb2d'
+        raw=subprocess.check_output(['systemctl','--user','show','fluid-control-p064-g-symmetry-canonical-b01-cfd-20261007.service','-p','InvocationID','-p','MainPID','-p','SubState','-p','Result','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!=inv: return {'verified':False}
+        out=root/'artifacts/p064_g_symmetry_canonical_b01_cfd_20261007'
+        progress=json.loads((out/'progress.json').read_text()) if (out/'progress.json').exists() else {}
+        cycles=int(progress.get('completed_cycles',0));rows=progress.get('rows',[])
+        if len(rows)!=cycles or not 0<=cycles<=800: return {'verified':False}
+        return dict(verified=True,invocation=inv,running=int(state['MainPID'])>0 and state['SubState']=='running',
+                    cycles=cycles,expected_cycles=800,rows=rows,
+                    latest_end_time=rows[-1].get('end_time') if rows else None,terminal_verified=False,
+                    scientific_pass=None,backend='CPU paired real OpenFOAM feedback',training=False,
+                    surrogate_selection_passed=False,replaces_B=False)
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError): return {'verified':False}
 
 

@@ -1,10 +1,16 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前唯一摘要 — 基本800步闭环已复现；单独批准G-PPO探索实际运行
+## 当前唯一摘要 — G策略b01真实CFD运行；PPO已完成，预测FAIL保留
 
-随后Lead对同固定b01配对800步CFD作条件批准：只有PPO正常终态、独立工程ACCEPT、真实policy/Vec绑定与最终预检通过后才可启动。当前这些条件尚未全部满足，CFD没有运行；不将条件规划计为物理结果。
+FC-E104已满足条件授权并实际启动：unit `fluid-control-p064-g-symmetry-canonical-b01-cfd-20261007.service`，invocation `c14a66a1464a4919a3904c1f4d2efb2d`，PID2110235 running；首独查32/800真实反馈周期。批准 `docs/P064_G_SYMMETRY_CANONICAL_B01_CFD_APPROVAL_20261007.json` SHA `f72cace2befb6aef72ed6878ec83d675cc92b4992ec0b9e6e45cd38be97bbb48`，output `artifacts/p064_g_symmetry_canonical_b01_cfd_20261007`。这是同固定b01/800周期/配对zero的CPU真实OpenFOAM反馈，不是GPU训练、在线FNO或MPC；未产生终态物理结论。六窗口/原2%减阻、1.05波动比、10%均值偏置标准不变，B保留，G原预测selection FAIL不改写。
 
-FC-E103不是G自动晋级：Lead单独授权一次同E082预算/seed20261007/32768步/H5/canonical坐标PPO控制探索，B正式模型和控制器不替换。unit `fluid-control-p064-g-symmetry-canonical-ppo-20261007.service`，invocation `6aa96fbfeeb34269b1f49e04380cd417`，PID2067872实际running；首独查日志已1024步/4 PPO epochs。批准 `docs/P064_G_SYMMETRY_CANONICAL_PPO_APPROVAL_20261007.json` SHA `1c33f2551c4e98d777599a64b73453b6b607837331ccce85dc0d21274c0ccc7f`；output `artifacts/p064_g_symmetry_canonical_32768_ppo_20261007/payload`。这是策略训练，不是气动力FNO续训；真实CFD尚未授权。G预测保留性FAIL和原物理标准不变。进度只由实际journal/progress与相同unit身份确认，不凭服务active或GPU利用率断言完成。
+FC-E103同 `6aa96fbfeeb34269b1f49e04380cd417` 已PID0/exited/exit0，[独审报告](docs/P064_G_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md) SHA `ca025b858ba12ae267a58e4a237574ee01bdf26f1fb4a42203d364327a4c767f`。实际32768转换/6552episodes/512optimizer hooks/256PPO epochs、75source192runtime、六reward均值/24reset/单filter/方向映射通过；CPU审计不加载模型，无法从未保存的物理观测独立重建全部orientation。result `5c1a1cfb3bebbbacb37c64e7f985f538605a85e6503e01773d242b5cea7af8b5`；最终policy `c1157806b2efc54fcf979df4734e09e846068908562f5415af1a43775881821b`、Vec `043125f7b6ccab8bea70cbee1b43c6797c747ce0a107b088d2fad9d5bb5e5de9`。最低Available120028901376B，12GiB/noSwap。当前训练已结束，物理结果未知；G预测FAIL/B保留不变。以下启动段为本次历史记录，不代表仍在训练。
+
+Lead此前对同固定b01配对800步CFD作条件批准；PPO终态、独审与实际policy/Vec绑定和最终预检现已满足，并按顶部实际handle启动，不将启动计为物理成功。
+
+## 本轮证据与历史启动记录（下方时态仅指当时）
+
+FC-E103不是G自动晋级：Lead单独授权一次同E082预算/seed20261007/32768步/H5/canonical坐标PPO控制探索，B正式模型和控制器不替换。unit `fluid-control-p064-g-symmetry-canonical-ppo-20261007.service`，invocation `6aa96fbfeeb34269b1f49e04380cd417`，启动时PID2067872实际running；首独查日志1024步/4 PPO epochs。批准 `docs/P064_G_SYMMETRY_CANONICAL_PPO_APPROVAL_20261007.json` SHA `1c33f2551c4e98d777599a64b73453b6b607837331ccce85dc0d21274c0ccc7f`；output `artifacts/p064_g_symmetry_canonical_32768_ppo_20261007/payload`。这是策略训练，不是气动力FNO续训；此启动快照时CFD尚未授权，后续条件批准和当前状态见顶部。G预测保留性FAIL和原物理标准不变。
 
 FC-E102固定开发评估同 `ef7cd3cfb6f34975935bab28a7f5b3c7` 已PID0/exited/exit0，16NPZ/80端点逐数组独审通过，[报告](docs/P064_AR5_RESET_G_DEVELOPMENT_REVIEW_20261007.md) SHA `5f7531514b66cb4cee6440cc5b41ead7290c1b2668868650f67fd1453726aa4d`；result `1da616b91019b3084c58e45a6e0e85010a6baecd48baa55dd91b03aa03ed180a`。G pooled H1 rearCl MAE .137072701938、Cd .035423174500均优于B .138998316601/.038065373898；但原fixed-six continuousAR100目标 .008946200483→.009264696273退化，虽H1 .003976855262→.003752365301改善，原共同改善及保留性规则仍FAIL。H5 Cl略差/Cd略好，phase不一致均保留，不事后加H5硬门槛、不称显著变化。Flow场逐值相同不是改善。Lead不自动晋级G或替换B；随后单独批准E103探索，见上方实际状态，不改此预测FAIL。
 
