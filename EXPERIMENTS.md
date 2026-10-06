@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E055 — Completed 800-cycle direct PPO / real-CFD paired evaluation
+
+Actual unit `fluid-control-exploratory-diverse-32768-ppo-long-cfd-20261006.service`, invocation `285bea88ff234cd5acfb9cb03c2b3cf3`, exited0 at08:15:05UTC after800 pairedcycles (1099.09s worker). Approval `e103288a0558c10784a43a199a3c4d731ffc0e6509753646da7bb6930cb4dc12`; executeddriver `17060dda570ead4fdc8e33920fcc559b5bb8ad8d640a7e154579f8a795507afa`. Final32768policy `5ab92ebe04459419bc724b48c6e20bde2464d7b6d880396e504406aa08806d4a` directly controls CFD; no onlineFNO orMPC substitution.
+
+Primary (168,228]12000points: dragreduction2.377964895%, centeredrearClRMSratio0.795798378, meanbiasratio0.322286722. Companion[168,228]12001points:2.378337717%/0.795798492/0.322366798. Full80D/U:2.441019142%/0.803539927/0.343010009. Allsixwindows showdrag/fluctuationbenefits, butallfail10%and20%meanbias. Earlyzero rawarrays exactlyequalFC-E053, enablingpairedcomparison: earlydrag improves0.505760%→2.522740%, butbias worsens0.123721→0.368591. No fullconstraint success orformalK1admission.
+
+Independent3200rawhashes, nine sources/seveninputs, allsixmetrics recomputed;1600clean20stepsegments,404/800saturatedendpoints,255ratelimited, minAvailable120469553152bytes, bothownedcontainersabsent/OOMfalse. Result `artifacts/exploratory_diverse_32768_ppo_long_cfd_20261006/result.json` SHA `b425bd28ea6e1ca6786ee6ea38dd3a09e13191849a5778270b987a830584e827`; report `docs/EXPLORATORY_DIVERSE_32768_PPO_LONG_CFD_TERMINAL_REVIEW_20261006.md`. Preserve originalbaseline and predeclaredprimary; no threshold/budget sweep authorized by this outcome.
+
 ## FC-E056 — Actual fixed24 H5 deterministic policy comparison, engineering only
 
 Unitfluid-control-diverse-policy-h5-comparison-20261006 invocationf4ba411c1bcf4cae9ebd178ad0c30a1f exited0. Approvala9c3eaf77f9dc2a444459e2a17da3dc8ea556ce0eb0d952e09cae1880e2fd08f, worker630bc478ed17475539b21e206242598d7bbaa044b3acaf00829d95eb1424008c. Result3f8c6f7e5b03877601a3b25b26409e9d6f943fcbaec62600fa51343995922b9f. Same24train packets/frozenK1/H5/precision/canonicalreward; deterministic final4096vs32768 policies, allcases equalweight. Meanreturns−3.6902918374361167→−3.6875228003375486,delta+.0027690370985678316;7better10worse7equal. Dragpenalty improves whilebias/actuation/rate worsen. No optimization, newCFD, heldout or checkpointselection; no convergence/physicalbenefit claim.

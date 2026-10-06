@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-06 — FC-E055 measured long-window benefits do not resolve mean-lift bias
+
+The completed800-cycle pairedtrial establishes real direct-policy feedback over80D/U. Primary paired drag reduction2.377964895% and centeredliftRMSratio0.795798378 improve physical performance, butmeanbias0.322286722 failsboth10%and20%; inclusivecompanion agrees anddoesnotreplaceprimary. Thus neither blanketfailure ofallcontrolbenefit norcompletephysicalsuccess is accurate. Saturation404/800 and worsenedearlybias versus4096policy remain material. Preserve K1formalFAIL, originalCFD-onlybaseline, and source-bound rawproof. Do not relaxthresholds or automatically escalate PPO budget: fixed24surrogate reward improved only.002769 withmixedcases. Next scientific intervention must explain/test persistentbias or model/reward/observation limitations under a separatelyapproved fixedcomparison; no newrun is authorized here.
+
 ## 2026-10-06 — FC-E056 does not justify blanket budget escalation
 
 Actual deterministic comparison of unique4096/32768policies on same24verifiedtrainH5 starts yields macroreturn gain only0.0027690371 (7better/10worse/7equal), trading improveddrag penalty for worsemean-bias/actuation/rate penalties. Keep allcase/component evidence; do not infer convergence, physicalgain or choose favorablecases. H5 versus62sample rewardhistory and omittedhistory in69observations remain possible explanations, not causalproof. No threshold/weight/architecture change follows automatically. Preserveoriginal10%physicalreference and await unchanged actual800cycleFC-E055; diagnostic is inferenceonly, not a new training run.

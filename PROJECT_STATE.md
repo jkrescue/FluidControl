@@ -1,5 +1,15 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E055 已完成真实80D/U：减阻与波动改善，但平均升力约束未完成
+
+范围仍只有一个训练相位b00/初始状态，不能称跨相位鲁棒性。即使后续单因素投影满足primary约束，也需另行批准第二匹配相位b01或另一真实初始状态验证；当前不启动。K1 H100正式评估仍FAIL，探索性闭环许可不等于论文级通用性证明。
+
+同一 `285bea88ff234cd5acfb9cb03c2b3cf3` 已PID0/exit0，800个配对周期完成，实际策略来自32768步全新PPO训练。独立核验3200份raw文件及六个预声明窗口；primary (168,228] 12000点减阻 **2.37796490%**、rear-Cl centered RMS比 **0.795798378**、平均升力偏置比 **0.322286722**。10%与20%均失败；不能称全部物理约束完成，更不能覆盖K1既有正式surrogate FAIL。
+
+结果SHA `b425bd28ea6e1ca6786ee6ea38dd3a09e13191849a5778270b987a830584e827`，报告 `docs/EXPLORATORY_DIVERSE_32768_PPO_LONG_CFD_TERMINAL_REVIEW_20261006.md`。inclusive [168,228] 12001点作为独立companion保留，不替换primary。全80D/U减阻2.44101914%、RMS比0.803539927、偏置0.343010009；404/800动作端点饱和。两容器已清理，1600 solver segments正常，最低MemAvailable120469553152字节。当前没有此trial仍运行的计算。
+
+已真正完成FNO→HydroGym/SB3 PPO训练→直接policy真实CFD长窗闭环；已测得同起点配对收益，但持续mean-bias仍是失败约束。FC-E056同24训练reset确定性诊断只显示微小、混合的surrogate回报变化，不支持自动继续增加预算或改阈值。下一步须单独审阅针对偏置/模型与观测局限的假设；保留原CFD-only成功baseline和所有失败。以下running条目均为历史。
+
 ## FC-E056已完成：同24起点确定性H5回报仅微小改善，长CFD继续
 
 独立核验诊断unit `fluid-control-diverse-policy-h5-comparison-20261006` / `f4ba411c1bcf4cae9ebd178ad0c30a1f` exit0，无优化/CFD/模型修改。4096与32768最终策略同24真实reset各5步、等权宏回报−3.6902918374→−3.6875228003，delta+0.0027690371；7起点改善、10恶化、7相同。drag惩罚改善，但mean-bias/actuation/rate惩罚恶化；不能据此宣称普遍收益或已收敛。H5相对62历史的奖励问题仍是假说，不是原因证明。
