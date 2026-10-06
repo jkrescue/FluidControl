@@ -459,6 +459,7 @@ def main() -> None:
             *P026_KINDS,
             P028_KIND,
             P029_KIND,
+            P064_KIND,
         ),
         required=True,
     )
