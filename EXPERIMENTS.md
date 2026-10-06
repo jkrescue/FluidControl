@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## FC-E084 — actual fixed-seed canonical PPO replication startup
+
+Unit `fluid-control-p064-b-symmetry-canonical-seed20261006-ppo-20261007.service`, invocation `e236b09e33564b0bb4e6aad5c46eff60`, PID3857457 running; independently observed876 real environment transitions. Approval `docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_PPO_APPROVAL_20261007.json` SHA `d62cccbcf1d896ed812cca7cac27e8e5df9d1fd7623a84ae1b5478494cabdd39`; output `artifacts/p064_b_symmetry_canonical_seed20261006_h5_32768_ppo_20261007/payload`. Runner b75b3716 exact one-seed-line change from E082; same B/a55b/H5/24-reset/reward/32768/final-only policy.12GiB/noSwap/CPU1,physicalAvailable50/22/20,1950outer/1800inner. No running scientific CSV or physical outcome; future policy CFD needs separate approval after terminal audit. Concurrent E085 uses the already completed E082 policy, not this unfinished training.
+
 ## FC-E085 — actual fixed-policy canonical b01 CFD startup
 
 Unit `fluid-control-p064-b-symmetry-canonical-ppo-b01-long-cfd-20261007.service`, invocation `3a678d0c1d604f0eb821255c2848fdd4`, PID3770148 running; independently observed29/800 cycles. Approval `docs/P064_B_SYMMETRY_CANONICAL_B01_CFD_APPROVAL_20261007.json` SHA `ee010bbe1932e0b48b2f2e90a1b9dd77d463f86dad6367e0c0dd49a46f0b45f1`; output `artifacts/p064_b_symmetry_canonical_ppo_b01_long_cfd_20261007`. Driver ebc6f266 phase-only adaptation of E083, same E082 policy and canonical mapping,800 intervals130→210/six windows/original2%/1.05/10%. No new physical outcome or running scientific CSV. CPU CFD is separate from the separately approved seed replication; startup failures and scientific outcomes remain distinct.

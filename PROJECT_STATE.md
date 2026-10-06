@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E084 当前实际：canonical固定seed20261006 PPO训练中
+
+实际unit `fluid-control-p064-b-symmetry-canonical-seed20261006-ppo-20261007.service`，invocation `e236b09e33564b0bb4e6aad5c46eff60`，PID3857457 running；独查876/32768真实transition、MemoryMax12GiB/Swap0。批准 `docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_PPO_APPROVAL_20261007.json` SHA `d62cccbcf1d896ed812cca7cac27e8e5df9d1fd7623a84ae1b5478494cabdd39`；输出 `artifacts/p064_b_symmetry_canonical_seed20261006_h5_32768_ppo_20261007/payload`。相对E082仅seed变为20261006，B/映射/H5/24reset/奖励/32768/资源保持，不扫seed或选reward。环境步不是optimizer更新，更不是物理通过；终态须独审32768/256/512、方向动作映射及冻结FNO，新的策略CFD尚未授权。E085并行CPU b01采用之前已冻结的E082策略，两任务不混淆。
+
 ## FC-E085 当前实际：固定同一canonical策略的b01真实CFD运行中
 
 实际unit `fluid-control-p064-b-symmetry-canonical-ppo-b01-long-cfd-20261007.service`，invocation `3a678d0c1d604f0eb821255c2848fdd4`，PID3770148 running；独查29/800周期（启动时点快照，实时页面继续更新）。批准 `docs/P064_B_SYMMETRY_CANONICAL_B01_CFD_APPROVAL_20261007.json` SHA `ee010bbe1932e0b48b2f2e90a1b9dd77d463f86dad6367e0c0dd49a46f0b45f1`，输出 `artifacts/p064_b_symmetry_canonical_ppo_b01_long_cfd_20261007`。只变相位，130→210/主(150,210]，E082policy/Vec/canonical映射/单filter和原物理门槛不变。CPU真实反馈不是训练、无在线FNO/MPC；未有本次物理结论，不填运行中科学指标。FC-E084固定seed20261006训练已批准但此时尚未独查实际启动，不显示running。

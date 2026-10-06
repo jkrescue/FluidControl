@@ -219,3 +219,10 @@ def test_canonical_terminal_binding_keeps_early_failure():
     assert '165b78194f84676b5ea0091b1d160ccf25f913a9f49c74a9424a7d0f03cde7dc' in source
     assert 'cf7975dbd02da5dca41ddfafe409b86b3676c49e541dc2026988b02ca9f5408e' in source
     assert '17.56%仍失败' in source and '完整预测精度FAIL未改变' in source
+
+def test_seed_replication_is_actual_transition_not_startup_claim():
+    import inspect,p064_dashboard_progress as m
+    source=inspect.getsource(m.candidate_ppo_status)
+    assert 'e236b09e33564b0bb4e6aad5c46eff60' in source
+    assert "active and info['timesteps']>0" in source
+    assert "spec['protocol']['seed']!=20261006" in source

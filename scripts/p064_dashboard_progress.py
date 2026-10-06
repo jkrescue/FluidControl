@@ -96,7 +96,7 @@ def second_seed_ppo_status(root,run=subprocess.check_output):
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
-def candidate_ppo_status(root,run=subprocess.check_output):
+def canonical_seed20261007_ppo_status(root,run=subprocess.check_output):
     root=Path(root)
     info={'status':'身份或状态未验证','timesteps':0,'target':32768,'running':False,'training':False,'reported_ppo_epochs':None,'optimizer_steps':None,'invocation':None}
     try:
@@ -125,6 +125,32 @@ def candidate_ppo_status(root,run=subprocess.check_output):
             if hashlib.sha256((output/'result.json').read_bytes()).hexdigest()!='44ef56114e17db88077d5f3e7920a2a9031023be74e31d359bd8c66be7441d1e' or hashlib.sha256(review.read_bytes()).hexdigest()!='72a03435e0ed954743694ca785e8de1616c6860db457b2ad20ef6f40d330e562':raise ValueError('canonical terminal binding')
             info.update(status='对称坐标PPO训练完成，方向/动作映射独审通过',terminal_verified=True,training=False,running=False,counts_scope='32768步/256epochs/512参数更新；物理效果另验')
         info['note']='同B模型/seed20261007/32768步/H5/24起点，只改固定对称坐标处理；标准PPO优化不变。实际计数不是物理成功；此前第二seed增阻0.62%和旧seed减阻3.90%均保留，预测精度FAIL未消失。新策略物理验证见当前CFD卡。'
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
+    return info
+
+def candidate_ppo_status(root,run=subprocess.check_output):
+    root=Path(root)
+    info={'status':'身份或状态未验证','timesteps':0,'target':32768,'running':False,'training':False,'reported_ppo_epochs':None,'optimizer_steps':None,'invocation':None}
+    try:
+        approval=root/'docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_PPO_APPROVAL_20261007.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='d62cccbcf1d896ed812cca7cac27e8e5df9d1fd7623a84ae1b5478494cabdd39':raise ValueError('canonical seed20261006 approval SHA')
+        spec=json.loads(approval.read_text());output=root/'artifacts/p064_b_symmetry_canonical_seed20261006_h5_32768_ppo_20261007/payload'
+        if Path(spec['output']).resolve()!=output.resolve() or spec['protocol']['seed']!=20261006:raise ValueError('canonical replication output/seed')
+        raw=run(['systemctl','--user','show','fluid-control-p064-b-symmetry-canonical-seed20261006-ppo-20261007.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!='e236b09e33564b0bb4e6aad5c46eff60':raise ValueError('canonical replication invocation')
+        info['invocation']=state['InvocationID']
+        if (output/'source_spec.json').exists() and json.loads((output/'source_spec.json').read_text())!=spec:raise ValueError('canonical replication executed spec')
+        row=last_json_row(output/'transitions.jsonl')
+        if row:
+            n=row['num_timesteps']
+            if type(n) is not int or not 0<=n<=32768:raise ValueError('canonical replication transition count')
+            info['timesteps']=n
+            info['last_event_file_utc']=datetime.datetime.fromtimestamp((output/'transitions.jsonl').stat().st_mtime,datetime.timezone.utc).isoformat()
+        active=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['running']=active;info['training']=active and info['timesteps']>0
+        info['status']=('固定seed20261006：对称坐标PPO实际训练中' if info['training'] else '训练程序启动中，尚未观测transition') if active else '训练进程已停止，等待独立终态核验'
+        info['note']='FC-E084仅改既定seed，冻结B/对称坐标/H5/24起点/32768预算与奖励不变；不扫seed、不按reward选checkpoint。当前计数为真实环境步，不等于参数更新或物理成功。前次canonical b00主窗减阻3.96%，早期偏置失败保留；并行b01用前次已冻结策略。完整预测FAIL不变。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
