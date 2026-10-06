@@ -12,6 +12,16 @@ import re
 import subprocess
 import sys
 
+# Pin the new shared identity dependency even for legacy P028 approvals.
+_PROFILE_SHA = "e6d333b4b2630d06151d9fcf557c85f95fb4d1be5760a1aa5b9199227215e553"
+_PROFILE_PATH = Path(__file__).with_name("flow_repair_profiles.py")
+if (_PROFILE_PATH.is_symlink()
+        or hashlib.sha256(_PROFILE_PATH.read_bytes()).hexdigest() != _PROFILE_SHA):
+    raise ValueError("shared flow repair identity source differs before import")
+from flow_repair_profiles import repair_profile, validate_p029_result_binding
+if hashlib.sha256(Path(sys.modules["flow_repair_profiles"].__file__).read_bytes()).hexdigest() != _PROFILE_SHA:
+    raise ValueError("imported flow repair identity source differs")
+
 
 STATUS = "FC_P028_CANDIDATE_INTEGRITY_VERIFIED_NOT_ADMISSION"
 KIND = "FC_P028_FLOW_ROLLOUT_REPAIR"
@@ -74,7 +84,8 @@ def terminal(unit, invocation):
     return value
 
 
-def validate(candidate, loader, loader_sha, unit, invocation):
+def validate(candidate, loader, loader_sha, unit, invocation, experiment="FC-P028"):
+    profile = repair_profile(experiment)
     candidate = Path(candidate).resolve()
     require(re.fullmatch(r"[0-9a-f]{32}", invocation) is not None, "invalid invocation")
     require(Path(loader).is_file() and not Path(loader).is_symlink() and sha(loader) == loader_sha, "reviewed loader differs")
@@ -90,11 +101,13 @@ def validate(candidate, loader, loader_sha, unit, invocation):
         candidate / "dual_model_manifest.json",
         expected_sha256=files["candidate/dual_model_manifest.json"],
     )
-    require(identity.payload.get("kind") == KIND, "candidate kind differs")
+    require(identity.payload.get("kind") == profile.kind, "candidate kind differs")
     result = read(candidate / "result.json")
     protocol = read(candidate / "training_protocol.json")
+    if experiment == "FC-P029":
+        validate_p029_result_binding(result, protocol, identity.payload)
     require(
-        result.get("status") == "FC_P028_TRAINING_COMPLETE_NOT_ADMISSION"
+        result.get("status") == profile.status("TRAINING_COMPLETE_NOT_ADMISSION")
         and result.get("mode") == "train"
         and result.get("optimizer_steps") == 171
         and result.get("training_windows") == 1368
@@ -122,7 +135,7 @@ def validate(candidate, loader, loader_sha, unit, invocation):
     }
     require(all(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) for value in tensors.values()), "tensor digest differs")
     return {
-        "status": STATUS,
+        "status": profile.status("CANDIDATE_INTEGRITY_VERIFIED_NOT_ADMISSION"),
         "training_protocol_sha256": files["candidate/training_protocol.json"],
         "dual_manifest_sha256": identity.manifest_sha256,
         "candidate_result_sha256": files["candidate/result.json"],
@@ -143,7 +156,7 @@ def validate(candidate, loader, loader_sha, unit, invocation):
     }
 
 
-def main():
+def main(experiment="FC-P028"):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--loader", type=Path, required=True)
@@ -161,6 +174,7 @@ def main():
                 args.loader_sha256,
                 args.training_unit,
                 args.training_invocation,
+                experiment,
             ),
             stream,
             indent=2,

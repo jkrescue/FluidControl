@@ -11,6 +11,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -51,6 +52,9 @@ P028_AERO_PARENT_MODEL_SHA256 = "e2f67dbde0ab28ccd7aa46b34ee3904178c7549cd1539f4
 P028_AERO_PARENT_STATE_SHA256 = "ab2fe103bca0a8c84156e2c9fd7ded5336f2d4236436b593fc414e564d7e92d3"
 P028_AERO_PROTOCOL_SHA256 = "daf22b2464744509260f1eb9e0b20d3b80da484c8985f3a22887293bbb40cb30"
 P028_LEARNING_RATE = 1e-5
+P029_MANIFEST_STATUS = "FC_P029_DUAL_FNO_MANIFEST_VERIFIED"
+P029_SYSTEM_KIND = "FC_P029_CONTROL_AWARE_FLOW_REPAIR"
+P029_FLOW_KIND = "FC_P029_CONTROL_AWARE_FLOW_CHECKPOINT"
 FLOW_MODEL_SHA256 = "dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31"
 FLOW_STATE_SHA256 = "4998e534d4b82b17393c217357ed18220fb8e739166a88147483bb9cc5fb771e"
 CONFIG_SHA256 = "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
@@ -170,20 +174,22 @@ def _experiment_contract(kind: str) -> dict[str, Any]:
                 "training_protocol_file": "training_protocol.json",
             },
         }
-    if kind == P028_SYSTEM_KIND:
+    if kind in (P028_SYSTEM_KIND, P029_SYSTEM_KIND):
+        p029 = kind == P029_SYSTEM_KIND
         return {
-            "status": P028_MANIFEST_STATUS,
+            "status": P029_MANIFEST_STATUS if p029 else P028_MANIFEST_STATUS,
             "aero_kind": P026_K1_AERO_KIND,
-            "flow_kind": P028_FLOW_KIND,
+            "flow_kind": P029_FLOW_KIND if p029 else P028_FLOW_KIND,
             "flow_epoch": 1,
             "flow_frozen": False,
             "aero_epoch": 1,
             "aero_frozen": True,
             "optimizer_steps": 171,
             "p026_history_k": 1,
-            "p028": True,
+            "flow_repair": True,
+            "p029": p029,
             "extra": {
-                "training_experiment": "FC-P028",
+                "training_experiment": "FC-P029" if p029 else "FC-P028",
                 "accumulation_windows": 8,
                 "training_windows": 1368,
                 "optimizer_steps": 171,
@@ -246,7 +252,7 @@ def _validate_p026_protocol(
         or payload.get("training_semantics") != protocol
     ):
         raise ValueError("P026 training protocol bytes or semantics differ")
-    if contract.get("p028"):
+    if contract.get("flow_repair"):
         protocol_exact = {
             "experiment": "FC-P028",
             "optimized_role": "flow",
@@ -268,6 +274,26 @@ def _validate_p026_protocol(
             "terminal_selection": False,
             "future_truth_inputs": False,
         }
+        if contract.get("p029"):
+            protocol_exact.update(
+                experiment="FC-P029",
+                objective="half_parent_scaled_field_MSE_plus_half_parent_scaled_four_force_MSE",
+                field_weight=0.5, force_weight=0.5, scale_windows=1368,
+                force_loss=True,
+                force_timing="aero_current_state_and_current_next_action_predicts_next_force",
+            )
+            scales = payload.get("fixed_scales")
+            if (not isinstance(scales, dict) or set(scales) != {"field", "force"}
+                    or any(type(v) not in (int, float) or not math.isfinite(v) or v <= 0
+                           for v in scales.values())):
+                raise ValueError("P029 fixed scales must be finite positive numbers")
+            scale_sha = payload.get("scales_receipt_sha256")
+            if not isinstance(scale_sha, str) or re.fullmatch(r"[0-9a-f]{64}", scale_sha) is None:
+                raise ValueError("P029 scales receipt SHA differs")
+            protocol_exact.update(fixed_scales=scales, scales_receipt_sha256=scale_sha)
+            for key, expected in protocol_exact.items():
+                if type(expected) in (bool, int) and type(protocol.get(key)) is not type(expected):
+                    raise ValueError("P029 fixed protocol scalar type differs")
         if protocol != protocol_exact:
             raise ValueError("P028 training protocol values differ")
         return
@@ -439,7 +465,7 @@ def validate_dual_fno_manifest(
     }
     if any(payload.get(key) != value for key, value in exact.items()):
         raise ValueError("dual FNO manifest fixed identity differs")
-    if contract.get("p028") and (
+    if contract.get("flow_repair") and (
         payload.get("aerodynamic_parent_model_sha256") != P028_AERO_PARENT_MODEL_SHA256
         or payload.get("aerodynamic_parent_state_sha256") != P028_AERO_PARENT_STATE_SHA256
     ):
@@ -462,11 +488,11 @@ def validate_dual_fno_manifest(
         expected_kind=contract["aero_kind"], expected_epoch=contract["aero_epoch"],
         expected_frozen=contract["aero_frozen"],
     )
-    if not contract.get("p028") and (
+    if not contract.get("flow_repair") and (
         flow.model_sha256 != FLOW_MODEL_SHA256 or flow.state_sha256 != FLOW_STATE_SHA256
     ):
         raise ValueError("dual FNO flow checkpoint is not the frozen P009 parent")
-    if contract.get("p028") and (
+    if contract.get("flow_repair") and (
         aerodynamic.model_sha256 != P028_AERO_PARENT_MODEL_SHA256
         or aerodynamic.state_sha256 != P028_AERO_PARENT_STATE_SHA256
     ):
@@ -652,7 +678,7 @@ def load_dual_fno(
     )
     if flow_epoch != identity.flow.epoch or aerodynamic_epoch != identity.aerodynamic.epoch:
         raise ValueError("dual FNO loaded checkpoint epoch differs")
-    if not contract.get("p028"):
+    if not contract.get("flow_repair"):
         from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
 
         validate_calibrated_epoch_zero(
@@ -665,8 +691,8 @@ def load_dual_fno(
         )
     else:
         required_flow_metadata = {
-            "status": P028_FLOW_KIND,
-            "training_experiment": "FC-P028",
+            "status": contract["flow_kind"],
+            "training_experiment": contract["extra"]["training_experiment"],
             "checkpoint_epoch": 1,
             "training_protocol_sha256": identity.payload["training_protocol_sha256"],
             "training_protocol_file": "training_protocol.json",
@@ -680,6 +706,11 @@ def load_dual_fno(
             "aerodynamic_parent_model_sha256": P028_AERO_PARENT_MODEL_SHA256,
             "aerodynamic_parent_state_sha256": P028_AERO_PARENT_STATE_SHA256,
         }
+        if contract.get("p029"):
+            required_flow_metadata.update(
+                fixed_scales=identity.payload["fixed_scales"],
+                scales_receipt_sha256=identity.payload["scales_receipt_sha256"],
+            )
         if any(flow_metadata.get(key) != value for key, value in required_flow_metadata.items()):
             raise ValueError("P028 flow checkpoint metadata differs")
     required_aero_metadata = {
@@ -704,7 +735,7 @@ def load_dual_fno(
         "frozen_test_accessed": False,
         "ppo_executed": False,
     }
-    if history_k is not None and not contract.get("p028"):
+    if history_k is not None and not contract.get("flow_repair"):
         required_aero_metadata.update(
             {
                 "history_profile": f"p026_k{history_k}",
@@ -719,7 +750,7 @@ def load_dual_fno(
                 "history_inventory": _p026_inventory(),
             }
         )
-    if contract.get("p028"):
+    if contract.get("flow_repair"):
         required_aero_metadata = {
             "status": P026_K1_AERO_KIND,
             "checkpoint_epoch": 1,

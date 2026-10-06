@@ -20,6 +20,17 @@ import subprocess
 import sys
 import time
 
+# Pin the new shared identity dependency even for legacy P028 approvals.
+_PROFILE_SHA = "e6d333b4b2630d06151d9fcf557c85f95fb4d1be5760a1aa5b9199227215e553"
+_PROFILE_PATH = Path(__file__).with_name("flow_repair_profiles.py")
+if (_PROFILE_PATH.is_symlink()
+        or hashlib.sha256(_PROFILE_PATH.read_bytes()).hexdigest() != _PROFILE_SHA):
+    raise ValueError("shared flow repair identity source differs before import")
+import flow_repair_profiles
+from flow_repair_profiles import repair_profile
+if hashlib.sha256(Path(sys.modules["flow_repair_profiles"].__file__).read_bytes()).hexdigest() != _PROFILE_SHA:
+    raise ValueError("imported flow repair identity source differs")
+
 
 P028_STATUS = "FC_P028_DUAL_FNO_MANIFEST_VERIFIED"
 P028_KIND = "FC_P028_FLOW_ROLLOUT_REPAIR"
@@ -28,6 +39,7 @@ P026_AERO_KIND = "FC_P026_K1_HISTORY_AERODYNAMIC_CHECKPOINT"
 FORMAL_APPROVAL = "FC_P028_APPROVED_ORIGINAL_FORMAL_EVALUATION"
 FORMAL_COMPLETE = "FC_P028_ORIGINAL_FORMAL_COMPLETE_NOT_ADMISSION"
 TRAINING_COMPLETE = "FC_P028_TRAINING_COMPLETE_NOT_ADMISSION"
+FORMAL_PREFLIGHT = "FC_P028_FORMAL_PREFLIGHT_ONLY"
 NUMERICAL_RUNNER_SHA256 = "03c5862e34a648a1254284d1709bd74c3b995d3a91ae06c4a6f92a945029c0f3"
 FILES = {
     "result.json",
@@ -53,7 +65,8 @@ def _base_runner(path: Path):
     return module
 
 
-def candidate_contract(base, candidate: Path, approval: dict) -> dict:
+def candidate_contract(base, candidate: Path, approval: dict, experiment="FC-P028") -> dict:
+    profile = repair_profile(experiment)
     """Bind the trained-flow/frozen-aero P028 role pair without admission."""
     files = approval.get("candidate_sha256")
     base.require(isinstance(files, dict) and set(files) == FILES, "candidate proof incomplete")
@@ -63,10 +76,12 @@ def candidate_contract(base, candidate: Path, approval: dict) -> dict:
     protocol = json.loads((candidate / "training_protocol.json").read_text())
     manifest = json.loads((candidate / "dual_model_manifest.json").read_text())
     protocol_sha = files["training_protocol.json"]
+    if experiment == "FC-P029":
+        flow_repair_profiles.validate_p029_result_binding(result, protocol, manifest)
     base.fields(
         result,
         {
-            "status": TRAINING_COMPLETE,
+            "status": profile.status("TRAINING_COMPLETE_NOT_ADMISSION"),
             "mode": "train",
             "training_windows": 1368,
             "optimizer_steps": 171,
@@ -80,7 +95,7 @@ def candidate_contract(base, candidate: Path, approval: dict) -> dict:
     base.fields(
         protocol,
         {
-            "experiment": "FC-P028",
+            "experiment": profile.experiment,
             "optimized_role": "flow",
             "fixed_role": "aerodynamic",
             "horizon": 10,
@@ -88,8 +103,8 @@ def candidate_contract(base, candidate: Path, approval: dict) -> dict:
             "optimizer_steps": 171,
             "accumulation_windows": 8,
             "learning_rate": 1e-5,
-            "objective": "ten_equal_masked_normalized_state_MSE",
-            "force_loss": False,
+            "objective": profile.objective,
+            "force_loss": profile.force_loss,
             "terminal_selection": False,
             "future_truth_inputs": False,
         },
@@ -97,9 +112,9 @@ def candidate_contract(base, candidate: Path, approval: dict) -> dict:
     base.fields(
         manifest,
         {
-            "status": P028_STATUS,
-            "kind": P028_KIND,
-            "training_experiment": "FC-P028",
+            "status": profile.status("DUAL_FNO_MANIFEST_VERIFIED"),
+            "kind": profile.kind,
+            "training_experiment": profile.experiment,
             "training_protocol_sha256": protocol_sha,
             "parent_manifest_sha256": approval["parent_manifest_sha256"],
             "scientific_admission": False,
@@ -123,7 +138,7 @@ def candidate_contract(base, candidate: Path, approval: dict) -> dict:
             "role": "flow",
             "frozen": False,
             "checkpoint_epoch": 1,
-            "metadata_kind": P028_FLOW_KIND,
+            "metadata_kind": profile.flow_kind,
             "model_sha256": files["flow/FNO.0.1.mdlus"],
             "state_sha256": files["flow/checkpoint.0.1.pt"],
         },
@@ -150,7 +165,7 @@ def candidate_contract(base, candidate: Path, approval: dict) -> dict:
     return manifest
 
 
-def validate_candidate_loader(base, source: Path, candidate: Path, approval: dict):
+def validate_candidate_loader(base, source: Path, candidate: Path, approval: dict, experiment="FC-P028"):
     loader = source / "src/fluid_control/dual_fno.py"
     base.require(base.sha(loader) == approval["source_sha256"]["src/fluid_control/dual_fno.py"], "loader bytes differ")
     spec = importlib.util.spec_from_file_location("_fcp028_frozen_loader", loader)
@@ -164,13 +179,14 @@ def validate_candidate_loader(base, source: Path, candidate: Path, approval: dic
         )
     finally:
         sys.modules.pop(spec.name, None)
-    base.fields(identity.payload, {"kind": P028_KIND})
+    base.fields(identity.payload, {"kind": repair_profile(experiment).kind})
     base.require(identity.flow.directory == (candidate / "flow").resolve(), "flow role differs")
     base.require(identity.aerodynamic.directory == (candidate / "aerodynamic").resolve(), "aero role differs")
     return identity
 
 
-def validate_terminal_proofs(base, repo: Path, candidate: Path, approval: dict) -> None:
+def validate_terminal_proofs(base, repo: Path, candidate: Path, approval: dict, experiment="FC-P028") -> None:
+    profile = repair_profile(experiment)
     """Require externally reviewed audit/reload receipts; never infer admission."""
     expected = approval["candidate_sha256"]
     expected_prefixed = {"candidate/" + name: digest for name, digest in expected.items()}
@@ -197,7 +213,7 @@ def validate_terminal_proofs(base, repo: Path, candidate: Path, approval: dict) 
     base.fields(
         audit,
         {
-            "status": "FC_P028_CANDIDATE_INTEGRITY_VERIFIED_NOT_ADMISSION",
+            "status": profile.status("CANDIDATE_INTEGRITY_VERIFIED_NOT_ADMISSION"),
             "actual_optimizer_steps": 171,
             "actual_training_windows": 1368,
             "accumulation_windows": 8,
@@ -214,7 +230,7 @@ def validate_terminal_proofs(base, repo: Path, candidate: Path, approval: dict) 
     base.fields(
         reload,
         {
-            "status": "FC_P028_OFFICIAL_CPU_DUAL_RELOAD_VERIFIED_NOT_ADMISSION",
+            "status": profile.status("OFFICIAL_CPU_DUAL_RELOAD_VERIFIED_NOT_ADMISSION"),
             "candidate_audit_sha256": approval["independent_terminal_audit"]["sha256"],
             "config_sha256": approval["training_config_sha256"],
             "required_official_image_id": base.IMAGE,
@@ -247,7 +263,7 @@ def validate_terminal_proofs(base, repo: Path, candidate: Path, approval: dict) 
     )
 
 
-def commands(base, manifest_sha: str, aero_model_sha: str):
+def commands(base, manifest_sha: str, aero_model_sha: str, experiment="FC-P028"):
     plan = base.commands(1, aero_model_sha, manifest_sha)
     expected = "FC_P026_K1_HISTORY_FORCE_FNO"
     replaced = 0
@@ -255,26 +271,32 @@ def commands(base, manifest_sha: str, aero_model_sha: str):
         if name == "validation_diagnostic":
             index = command.index("--candidate-kind") + 1
             base.require(command[index] == expected, "numerical base candidate identity drifted")
-            command[index] = P028_KIND
+            command[index] = repair_profile(experiment).kind
             replaced += 1
     base.require(replaced == 1, "P028 diagnostic identity was not routed")
     return plan
 
 
 def preflight(base, args) -> dict:
+    experiment = getattr(args, "experiment", "FC-P028")
+    profile = repair_profile(experiment)
     base.require(base.sha(args.approval) == args.approval_sha256, "formal approval SHA differs")
     approval = json.loads(args.approval.read_text())
+    if experiment == "FC-P029":
+        bound_sources = approval.get("orchestration_sha256", {})
+        for path in (Path(__file__), Path(flow_repair_profiles.__file__), Path(args.entry_file)):
+            base.require(bound_sources.get(path.name) == base.sha(path), "P029 orchestration bytes differ")
     base.fields(
         approval,
         {
-            "status": FORMAL_APPROVAL,
+            "status": profile.status("APPROVED_ORIGINAL_FORMAL_EVALUATION"),
             "formal_evaluation_authorized": True,
             "frozen_test_accessed": False,
             "ppo_auto_launch": False,
             "protocol": base.PROTOCOL,
             "numerical_base_commit": base.BASE,
             "official_image_id": base.IMAGE,
-            "runner_sha256": base.sha(Path(__file__)),
+            "runner_sha256": base.sha(Path(getattr(args, "entry_file", __file__))),
             "numerical_runner_sha256": NUMERICAL_RUNNER_SHA256,
         },
     )
@@ -310,10 +332,11 @@ def preflight(base, args) -> dict:
         base.bound(args.repo, base.DATA[role] + "/" + filename, digest)
     base.bound(args.repo, base.PREDECL, base.PREDECL_SHA)
     base.bound(args.repo, base.QC, base.QC_SHA)
-    candidate_contract(base, args.candidate, approval)
-    validate_candidate_loader(base, args.source, args.candidate, approval)
-    validate_terminal_proofs(base, args.repo, args.candidate, approval)
-    base.require(re.fullmatch(r"fluid-control-fcp028-[a-zA-Z0-9-]+\.service", approval["training_unit"]) is not None, "training unit differs")
+    candidate_contract(base, args.candidate, approval, experiment)
+    validate_candidate_loader(base, args.source, args.candidate, approval, experiment)
+    validate_terminal_proofs(base, args.repo, args.candidate, approval, experiment)
+    unit_prefix = profile.experiment.lower().replace("-", "")
+    base.require(re.fullmatch(r"fluid-control-" + unit_prefix + r"-[a-zA-Z0-9-]+\.service", approval["training_unit"]) is not None, "training unit differs")
     base.require(
         re.fullmatch(r"[0-9a-f]{32}", approval["training_invocation"]) is not None,
         "invalid invocation",
@@ -327,7 +350,8 @@ def preflight(base, args) -> dict:
     return approval
 
 
-def main() -> None:
+def main(experiment="FC-P028", entry_file=__file__) -> None:
+    profile = repair_profile(experiment)
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("repo", "source", "candidate", "output", "approval"):
         parser.add_argument("--" + name, type=Path, required=True)
@@ -340,17 +364,20 @@ def main() -> None:
         help="Reviewed unchanged run_fcp026_posteval.py used for numerical orchestration",
     )
     args = parser.parse_args()
+    args.experiment = experiment
+    args.entry_file = entry_file
     base = _base_runner(args.numerical_runner)
     approval = preflight(base, args)
     plan = commands(
         base,
         approval["candidate_sha256"]["dual_model_manifest.json"],
         approval["candidate_sha256"]["aerodynamic/FNO.0.1.mdlus"],
+        experiment,
     )
     if not args.execute:
         print(
             json.dumps(
-                {"status": "FC_P028_FORMAL_PREFLIGHT_ONLY", "commands": plan},
+                {"status": FORMAL_PREFLIGHT if experiment == "FC-P028" else profile.status("FORMAL_PREFLIGHT_ONLY"), "commands": plan},
                 indent=2,
             )
         )
@@ -400,14 +427,14 @@ def main() -> None:
     )
     for name in required_outputs:
         base.require((args.output / name).is_file(), f"missing formal output: {name}")
-    candidate_contract(base, args.candidate, approval)
+    candidate_contract(base, args.candidate, approval, experiment)
     outputs = {
         str(path.relative_to(args.output)): base.sha(path)
         for path in args.output.rglob("*")
         if path.is_file()
     }
     receipt = {
-        "status": FORMAL_COMPLETE,
+        "status": profile.status("ORIGINAL_FORMAL_COMPLETE_NOT_ADMISSION"),
         "formal_approval_sha256": args.approval_sha256,
         "candidate_sha256": approval["candidate_sha256"],
         "source_sha256": approval["source_sha256"],

@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## P029 conditional CPU preparation — no scientific result
+
+Same original parent/data/order/171-update budget; the sole planned intervention is a fixed50/50 parent-normalized field/four-force objective through the frozen K1 aerodynamic model. Official architecture is unchanged. Root canonical68new CPU tests and133legacy/1skip pass; additional host collection lackingPhysicsNeMo is explicitly not included. Independent423-source closure verification and launcher review completed; mapSHA `c6584b8fdbbb38cf7149ad2f086526169f44174a800ef49a32fcda08a678627a`. No actual P029 scales, resource probe, training, evaluation or PPO yet. No scientific results.csv row is warranted. See `docs/FC_P029_CONTROL_AWARE_FLOW_PLAN_20261006.md` and `docs/FC_P029_CPU_PREPARATION_REVIEW_20261006.md`.
+
 ## FC-E040 — P028 matched H10: field improvement, force deterioration
 
 Actual 44-case origin51/H10 comparison completed under invocation `74d9e3115791403ab96e55a5d06b8ffd`. Result SHA `6146ea9276570981cc72c949e3e6fac46737c43aa83c561a37eaa0e54a4ab793`; independently recomputed force arrays and field aggregation in `docs/FC_P028_H10_TERMINAL_REVIEW_20261006.md`. All old P027 K1/K4/persistence arrays reproduce exactly; P028 true-field-conditioned force equals frozen K1 exactly.

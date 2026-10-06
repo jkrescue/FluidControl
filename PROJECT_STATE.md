@@ -2,6 +2,8 @@
 
 ## 当前结论与运行状态（2026-10-06 01:57 UTC）
 
+工程更新（02:15UTC）：P028仍在同一实例运行dynamic6。P029已完成独立CPU准备，现有官方FNO增加固定50/50流场/气动力训练损失；423项训练源码只读副本已核验，尚无P029 GPU执行。canonical新增68项CPU测试通过，旧兼容133通过/1跳过；一项需PhysicsNeMo的额外测试不能在无该包的host环境收集，未改环境。详见 `docs/FC_P029_CPU_PREPARATION_REVIEW_20261006.md`。只有原完整评估结束、实际尺度和新反向图资源检查之后才可批准下一训练。
+
 - **目标未完成**：官方FNO代理、兼容的HydroGym/PPO策略、真实CFD在线反馈控制须一起验证；已有CFD-only PPO基线不能当FNO辅助闭环成果。
 - P028已完成1368训练窗、171次参数更新及官方独立CPU重载。相同44条训练轨迹、相同起点/动作的H10对照已完成：平均单例全场RMSE从0.038909降到0.033544（改善13.79%），但后圆柱升力MAE从0.038693升到0.039507（恶化2.10%），总阻力MAE亦恶化。不能只报有利的流场指标。
 - **实际正在运行原完整正式评估**：unit `fluid-control-fcp028-original-formal-20261006.service`，invocation `eb4e12507302498bb8944373e0717a25`，观测PID1436370、activating/start，当前validation10。7项数值步骤原样保留，输出 `artifacts/fcp028_original_formal_20261006`。没有新PPO或闭环成功结论。

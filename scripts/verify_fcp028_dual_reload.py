@@ -11,6 +11,16 @@ import os
 from pathlib import Path
 import sys
 
+# Pin the new shared identity dependency even for legacy P028 approvals.
+_PROFILE_SHA = "e6d333b4b2630d06151d9fcf557c85f95fb4d1be5760a1aa5b9199227215e553"
+_PROFILE_PATH = Path(__file__).with_name("flow_repair_profiles.py")
+if (_PROFILE_PATH.is_symlink()
+        or hashlib.sha256(_PROFILE_PATH.read_bytes()).hexdigest() != _PROFILE_SHA):
+    raise ValueError("shared flow repair identity source differs before import")
+from flow_repair_profiles import repair_profile
+if hashlib.sha256(Path(sys.modules["flow_repair_profiles"].__file__).read_bytes()).hexdigest() != _PROFILE_SHA:
+    raise ValueError("imported flow repair identity source differs")
+
 
 IMAGE = "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e"
 OFFICIAL_FNO_SHA = "e64eb9bef031bfdae5d84f0ed35a1ebb27915f18aed4a333b2dd985a083c71a9"
@@ -34,7 +44,7 @@ def read(path):
     return value
 
 
-def verify_sources(root, manifest, manifest_sha):
+def verify_sources(root, manifest, manifest_sha, experiment="FC-P028", entry_file=__file__):
     require(sha(manifest) == manifest_sha, "runtime source manifest differs")
     mapping = read(manifest)
     required = {
@@ -46,21 +56,28 @@ def verify_sources(root, manifest, manifest_sha):
         "scripts/audit_fcp028_candidate.py",
         "scripts/verify_fcp028_dual_reload.py",
     }
+    if experiment == "FC-P029":
+        required.update({"scripts/flow_repair_profiles.py", "scripts/audit_fcp029_candidate.py", "scripts/verify_fcp029_dual_reload.py"})
     require(required <= set(mapping), "runtime source closure incomplete")
     root = Path(root).resolve()
     for name, digest in mapping.items():
         path = root / name
         require(path.is_file() and path.resolve().is_relative_to(root) and sha(path) == digest, "runtime source differs")
     require(sha(__file__) == mapping["scripts/verify_fcp028_dual_reload.py"], "executed verifier differs")
+    if experiment == "FC-P029":
+        import flow_repair_profiles
+        require(sha(flow_repair_profiles.__file__) == mapping["scripts/flow_repair_profiles.py"], "imported profile source differs")
+        require(sha(entry_file) == mapping["scripts/verify_fcp029_dual_reload.py"], "P029 verifier entry differs")
     return mapping
 
 
-def bindings(args):
-    sources = verify_sources(args.source_root, args.runtime_source_manifest, args.runtime_source_manifest_sha256)
+def bindings(args, experiment="FC-P028", entry_file=__file__):
+    profile = repair_profile(experiment)
+    sources = verify_sources(args.source_root, args.runtime_source_manifest, args.runtime_source_manifest_sha256, experiment, entry_file)
     audit = read(args.candidate_audit)
     require(sha(args.candidate_audit) == args.candidate_audit_sha256, "candidate audit SHA differs")
     require(
-        audit.get("status") == "FC_P028_CANDIDATE_INTEGRITY_VERIFIED_NOT_ADMISSION"
+        audit.get("status") == profile.status("CANDIDATE_INTEGRITY_VERIFIED_NOT_ADMISSION")
         and audit.get("scientific_admission") is False
         and audit.get("ppo_authorized") is False,
         "candidate audit contract differs",
@@ -83,7 +100,7 @@ def bindings(args):
     manifest = read(args.candidate / "dual_model_manifest.json")
     require(sha(args.config) == manifest.get("config_sha256"), "candidate config identity differs")
     return {
-        "status": STATUS,
+        "status": profile.status("OFFICIAL_CPU_DUAL_RELOAD_VERIFIED_NOT_ADMISSION"),
         "training_protocol_sha256": audit["training_protocol_sha256"],
         "dual_manifest_sha256": audit["dual_manifest_sha256"],
         "candidate_result_sha256": audit["candidate_result_sha256"],
@@ -136,7 +153,7 @@ def configure_precision(torch):
     return observed
 
 
-def execute(args, expected):
+def execute(args, expected, experiment="FC-P028"):
     require(os.environ.get("CUDA_VISIBLE_DEVICES") == "", "CUDA must be hidden")
     import torch
     from omegaconf import OmegaConf
@@ -174,7 +191,7 @@ def execute(args, expected):
             load_checkpoint=load_checkpoint,
             expected_manifest_sha256=expected["dual_manifest_sha256"],
         )
-    require(identity.payload.get("kind") == "FC_P028_FLOW_ROLLOUT_REPAIR", "P028 kind differs")
+    require(identity.payload.get("kind") == repair_profile(experiment).kind, "flow repair kind differs")
     require(getattr(adapter, "history_length", None) == 1, "P028 K1 history differs")
     require(all(not parameter.requires_grad and parameter.grad is None for parameter in adapter.parameters()), "adapter not frozen")
     observed = {
@@ -185,7 +202,7 @@ def execute(args, expected):
     require(not torch.cuda.is_initialized(), "CUDA initialized during CPU reload")
 
 
-def main():
+def main(experiment="FC-P028", entry_file=__file__):
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("candidate", "candidate-audit", "config", "source-root", "runtime-source-manifest", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
@@ -194,10 +211,10 @@ def main():
     parser.add_argument("--execute-cpu", action="store_true")
     args = parser.parse_args()
     sys.path[:0] = [str(args.source_root / "src"), str(args.source_root / "scripts")]
-    expected = bindings(args)
+    expected = bindings(args, experiment, entry_file)
     require(args.execute_cpu, "explicit CPU execution required")
     require(not args.output.exists(), "output exists")
-    execute(args, expected)
+    execute(args, expected, experiment)
     with args.output.open("x") as stream:
         json.dump(expected, stream, indent=2)
 
