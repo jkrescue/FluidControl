@@ -1,0 +1,69 @@
+{
+  "status": "P064_SEED_MATCHED_OBSERVATION_CPU_REPLAY_APPROVED",
+  "execution_authorized": true,
+  "purpose": "matched_observation_action_decomposition_no_filter",
+  "decision": "Lead lifted the prior failure-only gate before execution because the already observed two-seed projected-action divergence independently justifies this bounded diagnostic; do not use it to judge the live physical result early.",
+  "rows": 800,
+  "device": "cpu",
+  "candidate_manifest_sha256": "92766915cb11ca75d313608a5f75e61a218371dcc789f5b44725f0a8260e7891",
+  "old_b00_result": "/workspace/fluid_control/artifacts/p064_b_projected_ppo_long_cfd_20261006/result.json",
+  "old_b00_result_sha256": "8b31091d5e69edfbfd5ea78ba99dd7709623e6eeb0bd4f13c54e984b7fc28907",
+  "driver": "/workspace/fluid_control/artifacts/p064_seed_matched_observation_replay_source_20261007_immutable/reviewed_projected_cfd_driver.py",
+  "driver_sha256": "83e08d66aa6c52b4f0164b9ab41eb3a161a52d7b50fa67db078d6b65cf2cbb26",
+  "source_files": {
+    "/workspace/fluid_control/artifacts/p064_seed_matched_observation_replay_source_20261007_immutable/replay_p064_seed_matched_observations.py": "3bc56d3fb6d1e9e9591d6e4ad769ad65edd4f616d4637a27200c19ac7f50c59d",
+    "/workspace/fluid_control/artifacts/p064_seed_matched_observation_replay_source_20261007_immutable/reviewed_projected_cfd_driver.py": "83e08d66aa6c52b4f0164b9ab41eb3a161a52d7b50fa67db078d6b65cf2cbb26",
+    "/workspace/fluid_control/artifacts/p064_seed_matched_observation_replay_source_20261007_immutable/PLAN.md": "c66d9afe4b8d351d184346edcccfcd25fd0c6170f7660074d322b8f4eb6571d3"
+  },
+  "training": {
+    "seed20261006": {
+      "result": {
+        "path": "/workspace/fluid_control/artifacts/p064_b_diverse_h5_32768_ppo_20261006/payload/result.json",
+        "sha256": "3c70e21327baae98f682fc0982ca3c3910cf6d1902f3d62175f980fd685817b3"
+      },
+      "policy": {
+        "path": "/workspace/fluid_control/artifacts/p064_b_diverse_h5_32768_ppo_20261006/payload/ppo_final.zip",
+        "sha256": "f764463983355779efff8d1b1994cfaf560ab7274d54b014d34a1f084b4b307e"
+      },
+      "vecnormalize": {
+        "path": "/workspace/fluid_control/artifacts/p064_b_diverse_h5_32768_ppo_20261006/payload/vecnormalize.pkl",
+        "sha256": "8c07ef15bd41a8981f2ec0d241c85092b643ca740fea9f44866eecceac1197ad"
+      }
+    },
+    "seed20261007": {
+      "result": {
+        "path": "/workspace/fluid_control/artifacts/p064_b_seed20261007_diverse_h5_32768_ppo_20261006/payload/result.json",
+        "sha256": "47dc970756bd608c8a1c3f4744c5b44a1ee87f3524737ea42c4f0fbdf9f82afd"
+      },
+      "policy": {
+        "path": "/workspace/fluid_control/artifacts/p064_b_seed20261007_diverse_h5_32768_ppo_20261006/payload/ppo_final.zip",
+        "sha256": "578ab9561d104976b16af427c8ee8c89f964ce50b4b3dbf9010e24c987ffb4ce"
+      },
+      "vecnormalize": {
+        "path": "/workspace/fluid_control/artifacts/p064_b_seed20261007_diverse_h5_32768_ppo_20261006/payload/vecnormalize.pkl",
+        "sha256": "ac756f59cb1743678654cdee01bf57d3a15680cd4ab51583a63c7b07b4006c9c"
+      }
+    }
+  },
+  "runtime": {
+    "python": "/workspace/fluid_control/.venv-curator-py312/bin/python",
+    "stable-baselines3": "2.7.1",
+    "gymnasium": "1.2.3",
+    "cuda_visible_devices": ""
+  },
+  "resources": {
+    "MemoryMax": 4294967296,
+    "MemorySwapMax": 0,
+    "CPUQuota": "200%",
+    "TasksMax": 128,
+    "RuntimeMaxSec": 180,
+    "TimeoutStopSec": 30,
+    "minimum_MemAvailable_GiB": 22
+  },
+  "unit": "fluid-control-p064-seed-matched-observation-replay-20261007.service",
+  "output": "/workspace/fluid_control/artifacts/p064_seed_matched_observation_replay_20261007",
+  "scientific_admission": false,
+  "cfd_authorized": false,
+  "training_authorized": false,
+  "remedial_model_change_authorized": false
+}
