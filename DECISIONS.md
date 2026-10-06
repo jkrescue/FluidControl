@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — E095 basic closed-loop entry reproduced; retain broader accuracy gaps
+
+Accept [E095 guarded-entry reproduction](docs/CANONICAL_B01_REPRODUCTION_TERMINAL_REVIEW_20261007.md) as completed engineering delivery:800 real feedback cycles, exact historical E085 actions/observations, all six unchanged physical windows PASS. It is not new holdout evidence or an improvement to the frozen model. Keep original10% bias, early/seed failures and full surrogate FAIL; no automatic training, CFD or ratio search follows. Separately approved auxiliary E training is now running under invocation618fcaf1d72742069d31a37393523349; initialization is not evidence of completed updates. The basic demo and the unresolved overall prediction-quality goal are separate; optional online FNO/MPC must not become a new mandatory prerequisite.
+
 ## 2026-10-07 — E094 closes the narrow precision question; prioritize safe canonical reproduction
 
 The independently verified [paired precision diagnostic](docs/P064_FIRST_STEP_PRECISION_TERMINAL_REVIEW_20261007.md) exactly reproduced E073 high/TF32 first-step outputs, then found the selected local response reversals also under highest/noTF32. Do not explain them away as TF32 alone, extrapolate six cases into global causality, or launch another precision probe automatically.

@@ -1,6 +1,10 @@
 # Research roadmap and prioritized backlog
 
-## Current priority — safely reproduce the established canonical closed loop
+## Current priority — deliver the now-reproduced basic canonical closed loop
+
+[E095 independent terminal review](CANONICAL_B01_REPRODUCTION_TERMINAL_REVIEW_20261007.md) confirms the [safe one-page entry](CANONICAL_CLOSED_LOOP_QUICKSTART.md) actually completed800 real feedback cycles and all six original physical windows. Primary drag reduction4.0091%, RMS reduction18.2810%, bias3.6366%; actions/observations reproduce E085 exactly. This CFD has ended; separately Lead-approved auxiliary E training process is now running under invocation618fcaf1d72742069d31a37393523349. Finish presentation of these bound real-field/action/Cd/Cl results; do not delay basic delivery for further model searches. No candidate quality improvement is yet established. Overall control-related surrogate accuracy remains incomplete; original prediction and early/seed failures stay visible. OnlineFNO/MPC remains optional, not a new gate. No new scientific execution is authorized here.
+
+## Historical priority — before E095 completed
 
 [E094](P064_FIRST_STEP_PRECISION_TERMINAL_REVIEW_20261007.md) is complete and independently reviewed: six high/TF32 first steps reproduce E073 exactly; highest/noTF32 still retains selected local action-response reversals. No further precision run is proposed. This does not remove the original prediction-accuracy requirement or establish global force-response failure.
 

@@ -1,6 +1,14 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前唯一摘要 — E094终态独审；优先安全复现已有canonical闭环
+## 当前唯一摘要 — E095基本在线闭环工程复现已完成并独审
+
+同 `f6c3fc3464074493b19ea5418ddfada5` PID0/exited/exit0，安全入口完成800次真实OpenFOAM反馈，主窗减阻4.0091%、后升力波动降低18.2810%、均值偏置3.6366%，六窗均过原2%/1.05/10%标准。[独审报告](docs/CANONICAL_B01_REPRODUCTION_TERMINAL_REVIEW_20261007.md)核3200force/1600solver/800动作、799反馈连续及原始力→观测，和原E085动作/观测逐值一致。result SHA `f22047b62c8bdb50547122e61d3e523d0cb101d90b1ed98037e4524cb98c342a`。这是已打开b01的工程复现，不是新泛化证据。
+
+当前E095 CFD已结束；另经Lead批准的辅助监督候选E训练进程已实际启动：`fluid-control-p064-response-aux-e-20261007.service` / `618fcaf1d72742069d31a37393523349`，启动时PID1664742，尚待真实窗口日志，不以初始化/GPU利用率冒充已完成更新。批准SHA `93efb40cf57c3e260c4b31b86b767601ed9562f46102e4b8d2b4eef75ef96e39`，output `artifacts/p064_response_aux_candidate_e_20261007`。这是气动力FNO分支训练，非PPO/CFD，flow冻结。
+
+基本官方组件→FNO代理训练→HydroGym/SB3策略→CPU策略与真实CFD在线反馈链已有可预检入口和实际复现；[一页指南](docs/CANONICAL_CLOSED_LOOP_QUICKSTART.md)。整体代理预测精度目标仍未完成，旧seed/早期偏置失败及C50/D25/H25拒绝完整保留。在线FNO/MPC是可选后续，不是基本闭环缺失项。
+
+## 历史快照 — E094终态独审与当时复现计划
 
 E094同 `22bc9a45344a4969bae30c33f4d85c04` PID0/exited/exit0，六个同B/同q0首步在high/TF32下逐值复现E073，再做highest/noTF32；12双FNO调用、模型tensor不变、无训练/CFD。Sota独立复算通过，[终态报告](docs/P064_FIRST_STEP_PRECISION_TERMINAL_REVIEW_20261007.md)，result `7de34f709d3993ed3e1fc2cd28d4dbd3b3a72a1f3ac1e867b18bda03a5a00eab`。关TF32仍保留b01±总Cd和b05±rearCl的局部响应反号；不能归因单纯TF32，也不能从六小响应推广为全球因果。18.00s、最低Available112.711GiB，已清理容器。
 

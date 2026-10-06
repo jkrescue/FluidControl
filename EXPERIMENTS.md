@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E095 — canonical b01 guarded-entry engineering reproduction complete
+
+Actual unit `fluid-control-canonical-reproduce-b01-20261007.service`, invocation `f6c3fc3464074493b19ea5418ddfada5`, PID0/exited/exit0. Frozen E082 policy, E085 driver and original paired800 protocol unchanged. Approval SHA `f10547240d5a89430f2967bfb9859868fc00ee625447fcc56ce68b2b93b4152d`; result SHA `f22047b62c8bdb50547122e61d3e523d0cb101d90b1ed98037e4524cb98c342a`. [Independent review](docs/CANONICAL_B01_REPRODUCTION_TERMINAL_REVIEW_20261007.md), report SHA `67f583b80fbe8f2bf4a68fe181eef70d7c1261cf865d3e959d89eca540a198d6`, verifies3200 raw hashes,1600 clean solver segments,800 canonical/filter steps and799 exact feedback links. Actual endpoint forces match observations; new/old E085 actions/observations and zero arrays are exact.
+
+All six original windows PASS; primary(150,210]12000 samples gives4.0090689485% drag reduction, RMS ratio.8171901322, bias ratio.0363660762. Wall1104.364s, minimumAvailable122040713216B; owned solver cleanup verified. No retraining/onlineFNO/MPC. This is reproducibility evidence, not a new independent physical sample or surrogate admission. E095 scientific execution ended. Separately Lead-approved auxiliary E training has now started under invocation618fcaf1d72742069d31a37393523349; no outcome yet. Historical failures retained.
+
 ## FC-E094 — completed paired first-step precision diagnostic
 
 Actual unit `fluid-control-p064-first-step-precision-20261007.service`, invocation `22bc9a45344a4969bae30c33f4d85c04`, exited 0. Six fixed B-model/q0 cases reproduced all four E073 high/TF32 forces exactly, then repeated with highest/noTF32: 12 dual calls, unchanged model tensors, no optimizer or CFD. Result SHA `7de34f709d3993ed3e1fc2cd28d4dbd3b3a72a1f3ac1e867b18bda03a5a00eab`; [terminal review](docs/P064_FIRST_STEP_PRECISION_TERMINAL_REVIEW_20261007.md). Sota independently verified all paired rows and response differences. Elapsed 18.00 s; minimum physical Available 112.711 GiB; owned container removed.

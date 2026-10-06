@@ -1,0 +1,17 @@
+{
+  "status": "INDEPENDENT_RAW_FEEDBACK_REPRODUCTION_VERIFIED_NOT_FULL_MODEL_ADMISSION",
+  "invocation": "f6c3fc3464074493b19ea5418ddfada5",
+  "result_sha256": "f22047b62c8bdb50547122e61d3e523d0cb101d90b1ed98037e4524cb98c342a",
+  "report_sha256": "67f583b80fbe8f2bf4a68fe181eef70d7c1261cf865d3e959d89eca540a198d6",
+  "audit_exit_code": 0,
+  "raw_files_verified": 3200,
+  "solver_logs_verified": 1600,
+  "canonical_rows_verified": 800,
+  "feedback_exact_links": 799,
+  "raw_force_endpoint_max_fp32_difference": 0.0,
+  "historical_E085_observations_and_actions_exact": true,
+  "all_zero_columns_exact": true,
+  "six_original_physical_windows_pass": true,
+  "minimum_available_bytes": 122040713216,
+  "scientific_admission": false
+}

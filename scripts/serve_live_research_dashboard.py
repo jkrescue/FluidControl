@@ -448,8 +448,9 @@ function renderActiveExperiment(d){
  const reproduction=d.canonical_b01_reproduction;
  if(reproduction?.verified){
   const x=reproduction;
-  $('lead-now').textContent=`Canonical b01 安全复现：${x.running?'实际CPU CFD运行中':'进程已停止，等待终态独立复核'}，${x.cycles}/800 周期，t=${x.current_time} / 210。冻结既有策略，无GPU训练或FNO推理。`;
-  $('lead-monitor').textContent=`实际 invocation ${x.invocation}；PID ${x.pid}；MemAvailable ${num(x.available_gib,2)} GiB，控制进程内存 ${num(x.memory_gib,2)} GiB（不含两个solver容器）。原2%/1.05/10%标准保持，当前进度不是物理收益。`;
+  $('lead-now').textContent=`Canonical b01 安全复现：${x.terminal_verified?'800次真实反馈已完成并独审；主窗减阻4.0091%，升力波动降低18.2810%，均值偏置3.6366%，六窗原标准通过':x.running?'实际CPU CFD运行中':'进程已停止，等待终态独立复核'}，${x.cycles}/800 周期，t=${x.current_time} / 210。冻结既有策略，无GPU训练或FNO推理。`;
+  $('lead-monitor').textContent=`实际 invocation ${x.invocation}；PID ${x.pid}；MemAvailable ${num(x.available_gib,2)} GiB。${x.terminal_verified?'与原E085动作和观测逐值一致；工程复现不等于新泛化证据，整体代理预测精度仍未完成。':'原2%/1.05/10%标准保持，当前进度不是物理收益。'}`;
+  if(d.response_aux_e?.verified){const e=d.response_aux_e;$('lead-monitor').textContent+=` 辅助监督候选E：${e.running?(e.windows?'GPU气动力FNO分支训练':'进程运行/初始化，尚无已完成窗口'):'进程已停止，等待终态核验'}，窗口${e.windows}/256、参数更新${e.updates}/32；inv ${e.invocation}。不是PPO或新CFD，flow冻结。`;}
   let card=$('canonical-reproduction');if(!card){card=document.createElement('div');card.id='canonical-reproduction';card.className='card';$('projected-ppo-cfd').before(card);card.innerHTML='<h3>当前 canonical b01 · 真实反馈曲线（非旧projected策略）</h3><canvas width="1000" height="220" id="canonical-reproduction-action"></canvas><canvas width="1000" height="220" id="canonical-reproduction-drag"></canvas><canvas width="1000" height="220" id="canonical-reproduction-lift"></canvas>';}
   drawActualSeries('canonical-reproduction-action',x.rows,[{key:'requested_omega',label:'物理请求ω',color:'#60c9fb'},{key:'omega',label:'实际ω',color:'#79d5a3'}],'单次物理限速后的动作');
   drawActualSeries('canonical-reproduction-drag',x.rows,[{key:'ppo_total_cd',label:'canonical Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero Cd',color:'#f2c879'}],'真实CFD周期末总Cd（非窗口均值）');
@@ -5115,6 +5116,7 @@ class Handler(BaseHTTPRequestHandler):
             from p064_dashboard_progress import coverage_d_training_status
             data['p064_coverage_d'] = coverage_d_training_status(self.root)
             data['canonical_b01_reproduction'] = _canonical_b01_reproduction(self.root)
+            data['response_aux_e'] = _response_aux_e(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5422,7 +5424,7 @@ def _canonical_b01_reproduction(root):
         if spec.get('execution_authorized') is not True:
             return {'verified': False}
         unit = 'fluid-control-canonical-reproduce-b01-20261007.service'
-        raw = subprocess.check_output(['systemctl', '--user', 'show', unit, '-p', 'InvocationID', '-p', 'MainPID', '-p', 'ActiveState', '-p', 'SubState', '-p', 'MemoryCurrent'], text=True, timeout=3)
+        raw = subprocess.check_output(['systemctl', '--user', 'show', unit, '-p', 'InvocationID', '-p', 'MainPID', '-p', 'ActiveState', '-p', 'SubState', '-p', 'MemoryCurrent', '-p', 'Result', '-p', 'ExecMainStatus'], text=True, timeout=3)
         state = dict(line.split('=', 1) for line in raw.splitlines() if '=' in line)
         if state.get('InvocationID') != 'f6c3fc3464074493b19ea5418ddfada5':
             return {'verified': False}
@@ -5440,13 +5442,45 @@ def _canonical_b01_reproduction(root):
         mem = dict(line.split(':', 1) for line in Path('/proc/meminfo').read_text().splitlines())
         pid = int(state.get('MainPID', '0'))
         memory = state.get('MemoryCurrent', '')
+        terminal_verified = False
+        result_path = progress.parent / 'result.json'
+        receipt_path = root / 'docs/CANONICAL_B01_REPRODUCTION_AUDIT_RECEIPT_20261007.json'
+        report_path = root / 'docs/CANONICAL_B01_REPRODUCTION_TERMINAL_REVIEW_20261007.md'
+        result_sha = 'f22047b62c8bdb50547122e61d3e523d0cb101d90b1ed98037e4524cb98c342a'
+        receipt_sha = '67c145d755ac1b1146b5e9cb228813ae5bf957c816acce6a5bef9a2cd09e600a'
+        if pid == 0 and state.get('Result') == 'success' and state.get('ExecMainStatus') == '0' and all(p.exists() for p in (result_path, receipt_path, report_path)):
+            terminal_verified = (hashlib.sha256(result_path.read_bytes()).hexdigest() == result_sha
+                and hashlib.sha256(receipt_path.read_bytes()).hexdigest() == receipt_sha
+                and hashlib.sha256(report_path.read_bytes()).hexdigest() == '67f583b80fbe8f2bf4a68fe181eef70d7c1261cf865d3e959d89eca540a198d6')
         return {'verified': True, 'unit': unit, 'invocation': state['InvocationID'], 'pid': pid,
+                'terminal_verified': terminal_verified, 'result_sha256': result_sha if terminal_verified else None,
+                'receipt_sha256': receipt_sha if terminal_verified else None,
                 'running': pid > 0 and state.get('ActiveState') == 'active' and state.get('SubState') == 'running',
                 'cycles': len(rows), 'current_time': rows[-1]['end_time'] if rows else 130,
                 'rows': compact, 'available_gib': int(mem['MemAvailable'].split()[0]) / 1024**2,
                 'memory_gib': int(memory) / 1024**3 if memory.isdigit() else None}
     except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
         return {'verified': False}
+
+
+def _response_aux_e(root):
+    try:
+        approval = root / 'docs/P064_RESPONSE_AUX_E_TRAINING_APPROVAL_20261007.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest() != '93efb40cf57c3e260c4b31b86b767601ed9562f46102e4b8d2b4eef75ef96e39':
+            return {'verified': False}
+        inv = '618fcaf1d72742069d31a37393523349'
+        raw = subprocess.check_output(['systemctl','--user','show','fluid-control-p064-response-aux-e-20261007.service','-p','InvocationID','-p','MainPID','-p','SubState'],text=True,timeout=3)
+        state = dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID') != inv: return {'verified':False}
+        log = subprocess.check_output(['journalctl','--user','_SYSTEMD_INVOCATION_ID='+inv,'-n','3000','--no-pager','-o','cat'],text=True,timeout=3)
+        windows, updates = 0, 0
+        for line in log.splitlines():
+            try: row=json.loads(line)
+            except ValueError: continue
+            if row.get('event') == 'training_window_complete': windows=max(windows,int(row['consumed']))
+            if row.get('event') == 'accumulation_update_complete': updates=max(updates,int(row['update']))
+        return {'verified':True,'invocation':inv,'running':int(state['MainPID'])>0 and state['SubState']=='running','windows':windows,'updates':updates}
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError): return {'verified':False}
 
 
 def main():

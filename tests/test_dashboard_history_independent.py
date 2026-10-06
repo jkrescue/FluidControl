@@ -39,6 +39,12 @@ if (!elements['lead-monitor'].textContent.includes('已结束')) throw Error('te
 def test_old_projected_is_not_labeled_canonical():
     assert '历史 FC-E058 · PPO策略＋镜像对称处理（旧projected，非当前canonical策略）' in page()
 
+def test_terminal_and_aux_are_separate():
+    html = page()
+    assert '六窗原标准通过' in html
+    assert '不是PPO或新CFD，flow冻结' in html
+    assert '尚无已完成窗口' in html
+
 
 def test_reproduction_uses_canvas_and_images_before_return():
     text = page().split('function renderActiveExperiment(d){', 1)[1]
@@ -58,11 +64,14 @@ def test_live_reproduction_requires_exact_invocation_and_active_pid(tmp_path):
     assert fn(tmp_path) == {'verified': False}
     root = SOURCE.parents[1]
     def state(inv='f6c3fc3464074493b19ea5418ddfada5', pid=123, sub='running'):
-        return f'InvocationID={inv}\nMainPID={pid}\nActiveState=active\nSubState={sub}\nMemoryCurrent=1024\n'
+        return f'InvocationID={inv}\nMainPID={pid}\nActiveState=active\nSubState={sub}\nMemoryCurrent=1024\nResult=success\nExecMainStatus=0\n'
     with patch.object(subprocess, 'check_output', return_value=state()):
         x = fn(root)
         assert x['verified'] and x['running'] and x['cycles'] == len(x['rows'])
     with patch.object(subprocess, 'check_output', return_value=state(pid=0, sub='exited')):
-        assert fn(root)['running'] is False
+        terminal = fn(root)
+        assert terminal['running'] is False
+        assert terminal['terminal_verified'] is True
+        assert terminal['receipt_sha256'] == '67c145d755ac1b1146b5e9cb228813ae5bf957c816acce6a5bef9a2cd09e600a'
     with patch.object(subprocess, 'check_output', return_value=state(inv='different')):
         assert fn(root) == {'verified': False}
