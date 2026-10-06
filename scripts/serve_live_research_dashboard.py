@@ -19,7 +19,7 @@ from collections import deque
 from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 C_EPOCH1_PREVIEW = Path("artifacts/fcp003c_epoch1_flow_visualization_preview_20261005")
 C_EPOCH1_SHA = "fac949916859211b24553c410005aaff8ace057ce2bac5e08ac4dec971ecefba"
@@ -202,6 +202,7 @@ svg{width:100%;height:180px;background:#101b2b;border:1px solid #25374b;border-r
 .legend{display:flex;gap:15px;flex-wrap:wrap;font-size:12px;color:#bed0df;margin:6px 0}.sw{display:inline-block;width:11px;height:3px;vertical-align:middle;margin-right:5px}
 select{background:#152237;color:#e5eff9;border:1px solid #42617f;padding:7px;border-radius:5px}
 img{width:100%;height:auto;background:white;border-radius:4px}.row{display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap}
+canvas.actual-series{width:100%;height:180px;background:#101b2b;border:1px solid #25374b;border-radius:5px;margin-top:8px}
 .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:13px}.summary .card{padding:12px}
 .summary b{font-size:19px;display:block;margin:3px 0}.foot{margin-top:35px;border-top:1px solid #2a3d53;padding-top:13px;font-size:12px;color:#9aafc4}
 .casegrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0}.caseitem{background:#101b2b;border:1px solid #25374b;border-radius:5px;padding:8px;font-size:12px}.caseitem b{display:block;margin-bottom:3px}.caseitem .bar{height:4px;background:#26394e;border-radius:3px;margin-top:5px;overflow:hidden}.caseitem .bar i{display:block;height:100%;background:#60c9fb}
@@ -219,8 +220,9 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 <p class="small">Spark 的 CPU 与 GPU 共享物理内存；这里显示系统可用统一内存，不把它当作独立显存。至少保留 20 GiB。页面每 5 秒刷新，资源采样约 10 秒，任务监控约 60 秒。</p>
 <h2>当前 FNO 对照实验</h2><div class="grid" id="lead-models"></div>
 <p class="small">λ=0：不加配对统计损失；λ=10：加入配对统计损失，比较同一初态下不同动作的阻力与升力变化。两者使用同一评估协议。100 步表示连续预测 10 D/U，并非 100 轮训练。最终还需动态动作和时间窗口内的受力统计检验。</p>
-<section id="flow-current"><h2>流场预测 · 真实 CFD / FNO / 误差</h2>
-<div class="card"><div class="row"><h3>当前 C 模型 · 第一轮训练中预览</h3><select id="c-preview-step"><option value="001">1 步 / 0.1 D/U</option><option value="010">10 步 / 1 D/U</option><option value="050">50 步 / 5 D/U</option><option value="100" selected>100 步 / 10 D/U</option></select></div><p id="c-preview-status">等待预测图及数据校验完成。</p><img id="c-preview-image" alt="第一轮模型：真实 CFD、连续预测及绝对误差" style="width:100%" hidden><p class="small">仅一条 b01 动态转速验证轨迹，从 tU/D=130 的真实流场出发，之后连续预测；不是完整验证集的精度，也不是最终模型或闭环控制结果。左列：真实 CFD；中列：模型预测；右列：绝对误差。真实值与预测值共用每幅图的 1–99% 色标，误差使用独立色标。</p></div>
+<div class="card" id="current-trial-evidence" hidden><h3>当前长程试验 · 真实 CFD 状态与实际受力</h3><div id="current-trial-recovered-metrics"></div><p id="current-trial-field-note" class="small"></p><img id="current-trial-field" alt="当前周期起点的真实CFD速度模长和ROI去均值压力" loading="lazy"><canvas class="actual-series" id="current-trial-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="current-trial-forces" width="1000" height="180"></canvas><canvas class="actual-series" id="current-trial-lift" width="1000" height="180"></canvas><p class="small">折线只来自已经完成的真实 OpenFOAM 周期：流场样本在周期起点 t，受力在终点 t+0.1；预测值没有混入这些折线。图像仅覆盖 x=8…25、y=4…11 的采样 ROI，不是完整求解域。</p></div>
+<section id="flow-current"><h2>历史流场预测 · 真实 CFD / FNO / 误差</h2>
+<div class="card"><div class="row"><h3>历史 C 模型 · 第一轮训练预览</h3><select id="c-preview-step"><option value="001">1 步 / 0.1 D/U</option><option value="010">10 步 / 1 D/U</option><option value="050">50 步 / 5 D/U</option><option value="100" selected>100 步 / 10 D/U</option></select></div><p id="c-preview-status">等待预测图及数据校验完成。</p><img id="c-preview-image" alt="第一轮模型：真实 CFD、连续预测及绝对误差" style="width:100%" hidden><p class="small">历史模型可视化：仅一条 b01 动态转速验证轨迹，从 tU/D=130 的真实流场出发，之后连续预测；不是当前长程试验的流场，不是完整验证集的精度，也不是最终模型或闭环控制结果。左列：真实 CFD；中列：模型预测；右列：绝对误差。</p></div>
 <p><label for="c-preview-profile">当前候选图的动作轨迹：</label><select id="c-preview-profile" disabled><option value="plus" selected>正向起始旋转</option><option value="zero">无旋转</option><option value="minus">负向起始旋转</option></select></p>
 <details><summary>历史模型流场与完整验证结果（不是当前 C 模型）</summary><section>
 <div class="card"><div class="row"><h3>最新模型在动态动作上的预测精度</h3><select id="flow-model"><option value="lambda0">λ=0 对照模型</option><option value="lambda10">λ=10 配对统计模型</option></select></div>
@@ -298,7 +300,7 @@ function renderCurrentFlow(d){
  const finalReady=d.fc_p003c_final_preview?.ready===true;
  const preview=finalReady?d.fc_p003c_final_preview:(d.fc_p003c_epoch1_preview||{}), image=$('c-preview-image'), previewH=$('c-preview-step').value;
  const previewProfile=$('c-preview-profile');previewProfile.disabled=!finalReady;if(!finalReady)previewProfile.value='plus';
- image.closest('.card').querySelector('h3').textContent=finalReady?'当前 C 候选 · 第二轮模型预测图':'当前 C 模型 · 第一轮训练中预览';
+ image.closest('.card').querySelector('h3').textContent=finalReady?'历史 C 候选 · 第二轮模型预测图':'历史 C 模型 · 第一轮训练预览';
  image.alt=finalReady?'第二轮候选：真实 CFD、连续预测及绝对误差':'第一轮模型：真实 CFD、连续预测及绝对误差';
  image.closest('.card').querySelector('p.small').textContent='每张图对应一条 b01 动作轨迹，从 tU/D=130 的真实流场出发，之后连续预测；不是完整验证集汇总，也不证明闭环控制通过。左列：真实 CFD；中列：模型预测；右列：绝对误差。真实值与预测值共用每幅图的 1–99% 色标，误差使用独立色标。';
  $('c-preview-status').textContent=finalReady?'第二轮候选的三条 b01 动作轨迹已核验，可切换查看；均为单起点可视化，不是全部验证集汇总，也不代表闭环验收通过。':preview.ready?'第二轮候选图尚未就绪，明确保留第一轮模型预览；不是最终候选结果。':'预览尚未生成或文件校验未通过；不展示历史图片代替当前模型。';
@@ -312,6 +314,28 @@ function renderCurrentFlow(d){
  $('flow-current-note').textContent=ready?'来自本轮候选模型重新生成的真实 CFD / FNO / 误差对照。':'最新候选图片正在生成；暂展示已有真实对比图，模型不同，不能代表上方最新数值。';
  const url=ready?`/figure/paired/${k}/${profile}/${h}.png`:`/figure/h50-dynamic/${profile}/${h}.png`;
  if(im.getAttribute('src')!==url)im.src=url;
+}
+function drawActualSeries(id,rows,series,title){
+ const canvas=$(id),ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,pad=36;
+ ctx.clearRect(0,0,W,H);ctx.fillStyle='#101b2b';ctx.fillRect(0,0,W,H);ctx.font='12px sans-serif';ctx.fillStyle='#d8e8f5';ctx.fillText(title,10,16);
+ if(!rows.length){ctx.fillStyle='#9aafc4';ctx.fillText('等待首个完整真实CFD周期',10,42);return}
+ const values=series.flatMap(s=>rows.map(r=>r[s.key])).filter(Number.isFinite),lo=Math.min(...values),hi=Math.max(...values),span=Math.max(hi-lo,1e-9);
+ ctx.strokeStyle='#36516b';ctx.beginPath();ctx.moveTo(pad,48);ctx.lineTo(pad,H-pad);ctx.lineTo(W-10,H-pad);ctx.stroke();
+ ctx.fillStyle='#9aafc4';ctx.fillText(hi.toFixed(4),2,54);ctx.fillText(lo.toFixed(4),2,H-pad+4);
+ for(const s of series){ctx.strokeStyle=s.color;ctx.lineWidth=2;ctx.beginPath();rows.forEach((r,i)=>{const x=pad+(W-pad-12)*(rows.length===1?0:i/(rows.length-1)),y=48+(H-pad-48)*(1-(r[s.key]-lo)/span);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()}
+ let x=pad;for(const s of series){ctx.fillStyle=s.color;ctx.fillRect(x,29,12,3);ctx.fillStyle='#bed0df';ctx.fillText(s.label,x+16,34);x+=150}
+ ctx.fillStyle='#9aafc4';ctx.fillText(rows[0].force_time.toFixed(1),pad,H-8);ctx.fillText(rows.at(-1).force_time.toFixed(1),W-45,H-8);ctx.fillText('tU/D',W/2,H-8);
+}
+function renderCurrentTrialEvidence(active){
+ const card=$('current-trial-evidence'),field=active?.current_cfd_field,rows=active?.actual_timeseries||[];
+ const visible=active?.progress_kind==='exploratory_accelerated_long_h5_feedback'&&field?.verified===true;card.hidden=!visible;if(!visible)return;
+ const image=$('current-trial-field'),url=`/current-trial-field.png?v=${field.sha256}`;if(image.getAttribute('src')!==url)image.src=url;
+ $('current-trial-field-note').textContent=`真实CFD周期预定起点 t=${field.field_time.toFixed(1)}（NPZ记录 ${field.stored_sample_time.toFixed(8)}，float32时间容差 ${field.time_tolerance.toExponential(2)}）；对应实际受力在终点 t=${field.force_time.toFixed(1)}。速度为求解器单位；压力为CFD pressure with ROI mean removed（solver units），不是绝对Pa，也不是FNO预测场。证据SHA ${field.sha256.slice(0,12)}…`;
+ const recovered=active.recovered_metrics,labels={full:'完整 12.4 D/U',first_6p2:'前 6.2 D/U',trailing_6p2:'后 6.2 D/U'};
+ $('current-trial-recovered-metrics').innerHTML=recovered?.verified===true?`<p><b>离线后处理已独立复核；原执行 unit 仍为 exit1，未重写成成功。</b></p><table><thead><tr><th>窗口</th><th>MPC / zero 平均总 Cd</th><th>减阻率</th><th>MPC / zero 后柱 Cl′ RMS</th><th>Cl′ RMS 变化</th><th>MPC 平均后柱 Cl</th><th>|均值| / zero Cl′ RMS</th></tr></thead><tbody>${recovered.windows.map(r=>`<tr><td>${labels[r.name]}</td><td>${r.mpc_total_cd_mean.toFixed(5)} / ${r.zero_total_cd_mean.toFixed(5)}</td><td>${(r.drag_reduction_percent>=0?'+':'')+r.drag_reduction_percent.toFixed(3)}%</td><td>${r.mpc_rear_cl_rms.toFixed(5)} / ${r.zero_rear_cl_rms.toFixed(5)}</td><td>${(r.rear_cl_rms_change_percent>=0?'+':'')+r.rear_cl_rms_change_percent.toFixed(3)}%</td><td>${r.mpc_rear_cl_mean.toFixed(5)}</td><td>${r.mean_bias_over_zero_rms_percent.toFixed(3)}%</td></tr>`).join('')}</tbody></table><p class="small">减阻率为正表示相对配对零控制阻力降低；Cl′ RMS变化为负表示波动降低。完整窗口减阻率为负，因此整体未减阻。本表不是正式准入或PPO结果。</p>`:'';
+ drawActualSeries('current-trial-actions',rows,[{key:'omega',label:'后圆柱转速',color:'#60c9fb'}],'实际执行动作（周期终点）');
+ drawActualSeries('current-trial-forces',rows,[{key:'mpc_total_cd',label:'MPC total Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero total Cd',color:'#f2c879'}],'实际总阻力 Cd（终点 t+0.1；无预测值）');
+ drawActualSeries('current-trial-lift',rows,[{key:'mpc_rear_cl',label:'MPC rear Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero rear Cl',color:'#f69d97'}],'实际后圆柱升力 Cl（终点 t+0.1；无预测值）');
 }
 function renderAdmission(d){
  if(['lambda0','lambda10'].every(k=>d.research_overview?.[k]?.development?.status==='DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL'))$('lead-now').textContent='两组完整评估已结束：终点指标通过，但旋转动作的升力波动预测未通过。当前进行误差诊断与流场可视化，尚未开始新一轮 PPO。实际计算负载见下方采样。';
@@ -336,13 +360,14 @@ function renderAdmission(d){
 }
 function renderActiveExperiment(d){
  const active=d.registered_experiment;
+ renderCurrentTrialEvidence(active);
  if(active?.mpc_trial===true&&active.verified===true){
   const causal=active.progress_kind==='exploratory_causal_history_h2_feedback';
   const causalH5=active.progress_kind==='exploratory_causal_history_h5_feedback';
   const longH5=active.progress_kind==='exploratory_accelerated_long_h5_feedback';
-  const title=active.terminal_review_verified?(causal?'10/10因果历史H2真实闭环完成；全部HOLD、配对收益为零':'10/10真实闭环已跑通；短窗口阻力上升0.23%，不是减阻达标'):(longH5?'真实CFD加速H5闭环（148→160.4） · ':causalH5?'真实CFD因果历史H5短时控制试验 · ':'真实CFD短时控制试验 · ')+(active.running?'正在计算':active.exited_success?'计算退出，结果和清理待独立复核':'已停止，需检查');
+  const title=active.terminal_review_verified?(causal?'10/10因果历史H2真实闭环完成；全部HOLD、配对收益为零':'10/10真实闭环已跑通；短窗口阻力上升0.23%，不是减阻达标'):longH5&&active.recovered_metrics?.verified?'124周期CFD完成；后处理已恢复，整体未减阻':longH5&&active.postprocessing_failed?'真实CFD加速H5：124个求解周期完成；统计后处理失败，等待恢复复核':(longH5?'真实CFD加速H5闭环（148→160.4） · ':causalH5?'真实CFD因果历史H5短时控制试验 · ':'真实CFD短时控制试验 · ')+(active.running?'正在计算':active.exited_success?'计算退出，结果和清理待独立复核':'已停止，需检查');
   const reviewedDetail=causal?' 独立复核：10次动作均为0，两支各200点真实CFD与首轮零控制字节一致；没有阻力或升力波动收益。':' 独立复核：每支200点，升力波动短窗口下降约5.69%；短窗口阻力上升0.23%。';
-  const detail=`已完成 ${active.completed_cycles}/${active.planned_cycles??10} 个配对周期。${longH5?'GPU运行官方FNO推理选动作':'CPU运行官方FNO选动作'}，真实OpenFOAM求解；不是模型训练，也不是HydroGym求解器。`+(active.terminal_review_verified?reviewedDetail+' 仅1 D/U，不满足原80 D/U评价长度，没有新增PPO或长期达标结论。':longH5?' 本轮计划覆盖12.4 D/U；运行中不声明控制收益、正式准入或PPO完成。':'');
+  const detail=`已完成 ${active.completed_cycles}/${active.planned_cycles??10} 个配对周期。${longH5?'GPU运行官方FNO推理选动作':'CPU运行官方FNO选动作'}，真实OpenFOAM求解；不是模型训练，也不是HydroGym求解器。`+(active.terminal_review_verified?reviewedDetail+' 仅1 D/U，不满足原80 D/U评价长度，没有新增PPO或长期达标结论。':longH5&&active.recovered_metrics?.verified?' 原执行 unit 在统计后处理阶段 exit1；离线恢复只读取已完成CFD受力文件，没有新CFD或模型执行。完整12.4 D/U平均阻力未降低，仍非准入、非PPO完成。':longH5?' 本轮计划覆盖12.4 D/U；运行中不声明控制收益、正式准入或PPO完成。':'');
   $('lead-now').textContent=title+'。'+detail;
   const card=document.createElement('div');card.className='card';
   for(const [tag,text] of [['h3',title],['p',detail],['p',active.latest?`最近周期 ${active.latest.step}：后圆柱转速 ${num(active.latest.omega,3)}；预测/实际总阻力系数 ${num(active.latest.predicted_cd,5)} / ${num(active.latest.actual_cd,5)}；预测/实际后升力系数 ${num(active.latest.predicted_cl,5)} / ${num(active.latest.actual_cl,5)}；配对零控制总阻力/后升力 ${num(active.latest.zero_cd,5)} / ${num(active.latest.zero_cl,5)}。`:'等待首个真实周期。'],['p','这是探索性短时反馈，不是长期稳定控制或模型准入。P031资源失败和K1原正式未通过结论保留；R4两步接口已完成。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
@@ -1650,6 +1675,168 @@ _EXPLORATORY_MPC_PROFILES = {
     },
 }
 
+_CURRENT_FIELD_CACHE = {"sha256": None, "png": None}
+_CURRENT_FIELD_LOCK = threading.Lock()
+_LONG_H5_RECOVERED_SHA = "1605604dc27f106acd05e6a721f26c4ba24527ac53996d6e65fbc70c601fa2b1"
+_LONG_H5_REVIEW_SHA = "aa343c826b683eff840826d3bbcd1db02e2bdbfa1321a33522a965dde5d1f687"
+
+
+def _long_h5_recovered_metrics(root: Path) -> dict | None:
+    """Return compact, independently reviewed recovery evidence; preserve exit1."""
+    base = root / "artifacts/exploratory_accelerated_long_h5_real_cfd_20261006"
+    metrics_path = base / "recovered_metrics.json"
+    review_path = root / "docs/EXPLORATORY_ACCELERATED_LONG_H5_TERMINAL_REVIEW_20261006.md"
+    try:
+        if (hashlib.sha256(metrics_path.read_bytes()).hexdigest() != _LONG_H5_RECOVERED_SHA
+                or hashlib.sha256(review_path.read_bytes()).hexdigest() != _LONG_H5_REVIEW_SHA):
+            return None
+        payload = json.loads(metrics_path.read_text())
+        unit = payload["original_unit"]
+        if (payload.get("status") != "OFFLINE_METRICS_RECOVERED_FROM_FAILED_POSTPROCESSING_NOT_ADMISSION"
+                or payload.get("cycles") != 124 or payload.get("scientific_admission") is not False
+                or payload.get("new_cfd_or_model_execution") is not False
+                or payload.get("original_result_written") is not False
+                or unit.get("InvocationID") != "a601eec2da7649b4af6f9354a4deb470"
+                or unit.get("Result") != "exit-code" or unit.get("ExecMainStatus") != "1"
+                or payload.get("original_restart_rehashed_unchanged") is not True):
+            return None
+        expected = {
+            "full": ([148.0, 160.4], 2480),
+            "first_6p2": ([148.0, 154.2], 1240),
+            "trailing_6p2": ([154.2, 160.4], 1240),
+        }
+        windows = []
+        for name, (interval, samples) in expected.items():
+            row = payload["windows"][name]; mpc, zero = row["branches"]["mpc"], row["branches"]["zero"]
+            values = [row["paired_drag_reduction"], row["paired_rear_cl_fluctuation_rms_ratio"],
+                      row["absolute_mean_rear_cl_over_paired_zero_rms"],
+                      mpc["total_cd_mean"], zero["total_cd_mean"], mpc["rear_cl_mean"],
+                      mpc["rear_cl_fluctuation_rms"], zero["rear_cl_fluctuation_rms"]]
+            if (row.get("interval_open_left_closed_right") != interval
+                    or mpc.get("samples") != samples or zero.get("samples") != samples
+                    or any(type(value) not in (int, float) or not math.isfinite(value)
+                           for value in values)):
+                return None
+            windows.append({"name": name, "interval": interval,
+                            "mpc_total_cd_mean": mpc["total_cd_mean"],
+                            "zero_total_cd_mean": zero["total_cd_mean"],
+                            "drag_reduction_percent": 100 * row["paired_drag_reduction"],
+                            "mpc_rear_cl_mean": mpc["rear_cl_mean"],
+                            "mpc_rear_cl_rms": mpc["rear_cl_fluctuation_rms"],
+                            "zero_rear_cl_rms": zero["rear_cl_fluctuation_rms"],
+                            "rear_cl_rms_change_percent": 100 * (
+                                row["paired_rear_cl_fluctuation_rms_ratio"] - 1),
+                            "mean_bias_over_zero_rms_percent": 100 * row[
+                                "absolute_mean_rear_cl_over_paired_zero_rms"]})
+        return {"verified": True, "metrics_sha256": _LONG_H5_RECOVERED_SHA,
+                "review_sha256": _LONG_H5_REVIEW_SHA, "original_unit_exit_status": 1,
+                "original_result_written": False, "scientific_admission": False,
+                "windows": windows}
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+def _current_trial_field_evidence(root: Path, profile: dict, rows: list[dict],
+                                  requested_sha256: str | None = None) -> dict | None:
+    """Validate the fixed current-trial NPZ; never accept a caller path."""
+    if (profile.get("base") != "artifacts/exploratory_accelerated_long_h5_real_cfd_20261006"
+            or not rows or len(rows) > 124):
+        return None
+    if requested_sha256 is None:
+        row = rows[-1]
+    else:
+        if not re.fullmatch(r"[0-9a-f]{64}", requested_sha256):
+            return None
+        matches = [row for row in rows
+                   if row.get("current_sample_sha256", {}).get("mpc") == requested_sha256]
+        if len(matches) != 1:
+            return None
+        row = matches[0]
+    step, start, end = row.get("step"), row.get("start_time"), row.get("end_time")
+    if (type(step) is not int or type(start) not in (int, float)
+            or type(end) not in (int, float) or abs(end - start - .1) > 1e-8):
+        return None
+    base = root / profile["base"]
+    path = base / f"current_mpc_{float(start):.1f}.npz"
+    try:
+        expected = row["current_sample_sha256"]["mpc"]
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if digest != expected:
+            return None
+        import numpy as np
+        with np.load(path, allow_pickle=False) as packet:
+            if set(packet.files) != {"state", "mask", "time", "x", "y"}:
+                return None
+            state, mask = packet["state"], packet["mask"]
+            sample_time, x, y = packet["time"], packet["x"], packet["y"]
+            time_tolerance = max(
+                2 * float(abs(np.spacing(np.float32(abs(sample_time[0]))))), 1e-7)
+            if (state.shape != (3, 128, 256) or state.dtype != np.float32
+                    or mask.shape != (1, 128, 256) or mask.dtype != np.uint8
+                    or sample_time.shape != (1,) or x.shape != (256,) or y.shape != (128,)
+                    or x.dtype != np.float32 or y.dtype != np.float32
+                    or not np.isfinite(state).all() or not np.isfinite(sample_time).all()
+                    or not np.isfinite(x).all() or not np.isfinite(y).all()
+                    or not np.all((mask == 0) | (mask == 1))
+                    or not np.all(np.diff(x) > 0) or not np.all(np.diff(y) > 0)
+                    or abs(float(sample_time[0]) - float(start)) > time_tolerance):
+                return None
+        return {"verified": True, "sha256": digest, "field_time": float(start),
+                "stored_sample_time": float(sample_time[0]),
+                "time_tolerance": time_tolerance,
+                "force_time": float(end), "step": step,
+                "roi": {"x": [float(x[0]), float(x[-1])],
+                        "y": [float(y[0]), float(y[-1])]},
+                "quantity_semantics": {
+                    "speed": "CFD solver units",
+                    "pressure": "CFD pressure with ROI mean removed (solver units)",
+                }}
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+def _current_trial_field_png(root: Path, profile: dict, rows: list[dict],
+                             requested_sha256: str) -> bytes | None:
+    """Render only the SHA-bound actual CFD start state; no predicted field."""
+    evidence = _current_trial_field_evidence(root, profile, rows, requested_sha256)
+    if evidence is None:
+        return None
+    with _CURRENT_FIELD_LOCK:
+        if _CURRENT_FIELD_CACHE["sha256"] == evidence["sha256"]:
+            return _CURRENT_FIELD_CACHE["png"]
+        try:
+            import io
+            import numpy as np
+            from matplotlib.backends.backend_agg import FigureCanvasAgg
+            from matplotlib.figure import Figure
+            path = (root / profile["base"]
+                    / f"current_mpc_{evidence['field_time']:.1f}.npz")
+            with np.load(path, allow_pickle=False) as packet:
+                state, valid = packet["state"], packet["mask"][0].astype(bool)
+                x, y = packet["x"], packet["y"]
+            speed = np.where(valid, np.sqrt(state[0] ** 2 + state[1] ** 2), np.nan)
+            pressure = np.where(valid, state[2], np.nan)
+            figure = Figure(figsize=(11, 3.8), dpi=120, layout="constrained")
+            canvas = FigureCanvasAgg(figure)
+            for axis, values, title, cmap in (
+                    (figure.add_subplot(1, 2, 1), speed,
+                     "Actual CFD speed |U| (solver units)", "viridis"),
+                    (figure.add_subplot(1, 2, 2), pressure,
+                     "Actual CFD pressure, ROI mean removed (solver units)", "coolwarm")):
+                image = axis.imshow(values, origin="lower", aspect="equal",
+                                    extent=(x[0], x[-1], y[0], y[-1]), cmap=cmap)
+                axis.set(xlabel="x (solver coordinates)", ylabel="y (solver coordinates)", title=title)
+                figure.colorbar(image, ax=axis, shrink=.82)
+            figure.suptitle(
+                f"Actual OpenFOAM sampled ROI at cycle start t={evidence['field_time']:.1f}; "
+                f"not an FNO-predicted field | sha256:{evidence['sha256'][:12]}…",
+                fontsize=10)
+            stream = io.BytesIO(); canvas.print_png(stream); payload = stream.getvalue()
+            _CURRENT_FIELD_CACHE.update(sha256=evidence["sha256"], png=payload)
+            return payload
+        except (OSError, ValueError, KeyError, TypeError, ImportError):
+            return None
+
 
 def _exploratory_mpc_profile(registration: dict) -> dict:
     kind = registration.get("progress_kind", "exploratory_h2_feedback")
@@ -1727,6 +1914,7 @@ def _exploratory_mpc_progress(root: Path, registration: dict, state: dict, match
                      or document.get("identity",{}).get("k1_manifest_sha256") != "7adca21e3a75691b10f164c342ea91995cc38060e7416dd217b8bd8e5feeacc7"):
             return {"verified":False}
         latest=None
+        actual_timeseries=[]
         for step,row in enumerate(rows,1):
             if row.get("step")!=step or abs(row.get("start_time",0)-(148+(step-1)*.1))>1e-8 or abs(row.get("end_time",0)-(148+step*.1))>1e-8:
                 return {"verified":False}
@@ -1736,11 +1924,27 @@ def _exploratory_mpc_progress(root: Path, registration: dict, state: dict, match
             if any(type(v) not in (int,float) or not math.isfinite(v) for v in values) or abs(omega)>.75+1e-12 or abs(omega-previous)>.1+1e-12:
                 return {"verified":False}
             latest={"step":step,"omega":omega,"predicted_cd":predicted["front_cd"]+predicted["rear_cd"],"predicted_cl":predicted["rear_cl"],"actual_cd":actual["front_cd"]+actual["rear_cd"],"actual_cl":actual["rear_cl"],"zero_cd":zero["front_cd"]+zero["rear_cd"],"zero_cl":zero["rear_cl"]}
+            actual_timeseries.append({"step":step,"field_time":float(row["start_time"]),
+                                      "force_time":float(row["end_time"]),"omega":float(omega),
+                                      "mpc_total_cd":float(actual["front_cd"]+actual["rear_cd"]),
+                                      "zero_total_cd":float(zero["front_cd"]+zero["rear_cd"]),
+                                      "mpc_rear_cl":float(actual["rear_cl"]),
+                                      "zero_rear_cl":float(zero["rear_cl"])})
+        current_field = _current_trial_field_evidence(root, profile, rows)
+        recovered_metrics = (_long_h5_recovered_metrics(root)
+                             if planned == 124 else None)
         reviewed=(exited and count==planned
                   and _exploratory_mpc_terminal_review(root, profile["terminal_review"]))
+        postprocessing_failed=(count==planned and state.get("ActiveState")=="failed"
+                               and state.get("SubState")=="failed"
+                               and state.get("Result")=="exit-code")
         return {"verified":True,"mpc_trial":True,"running":running,"exited_success":exited,
                 "completed_cycles":count,"latest":latest,"scientific_admission":False,
                 "planned_cycles":planned,"planned_duration_D_over_U":planned*.1,
+                "solver_cycles_complete":count==planned,
+                "postprocessing_failed":postprocessing_failed,
+                "current_cfd_field":current_field,"actual_timeseries":actual_timeseries,
+                "recovered_metrics":recovered_metrics,
                 "progress_kind":registration.get("progress_kind", "exploratory_h2_feedback"),
                 "terminal_review_verified":reviewed,
                 "terminal_review_pending":exited and not reviewed,"control_success_verified":False}
@@ -3514,9 +3718,27 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
         if path in ("/", "/index.html"):
             return self._send(PAGE.encode(), "text/html; charset=utf-8")
+        if path == "/current-trial-field.png":
+            registration = _read_json(self.root / "docs/LIVE_EXPERIMENT.json", {})
+            if registration.get("progress_kind") != "exploratory_accelerated_long_h5_feedback":
+                return self._send(b"not found", "text/plain", 404)
+            try:
+                versions = parse_qs(parsed.query, strict_parsing=True).get("v", [])
+                if len(versions) != 1:
+                    raise ValueError("one bound SHA is required")
+                profile = _exploratory_mpc_profile(registration)
+                document = _read_json(self.root / profile["base"] / "progress.json", {})
+                rows = document.get("rows", [])
+                payload = _current_trial_field_png(self.root, profile, rows, versions[0])
+                if payload is None:
+                    raise ValueError("current field evidence unavailable")
+                return self._send(payload, "image/png")
+            except (ValueError, KeyError, TypeError):
+                return self._send(b"not found", "text/plain", 404)
         if path == "/direct-cfd-pair.png":
             file = (
                 self.root
