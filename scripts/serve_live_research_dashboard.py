@@ -225,6 +225,7 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 <div class="card" id="exploratory-diverse-h5-ppo-training" hidden><h3>24 个固定真实重置态 · H5 PPO 训练</h3><div id="exploratory-diverse-h5-ppo-training-body"></div></div>
 <div class="card" id="exploratory-diverse-h5-32768-ppo" hidden><h3>当前阶段 · 24-reset PPO 延长训练</h3><div id="exploratory-diverse-h5-32768-ppo-body"></div></div>
 <div class="card" id="exploratory-diverse-ppo-real-cfd" hidden><h3>24-reset PPO · 新一轮真实 CFD 配对运行</h3><div id="exploratory-diverse-ppo-real-cfd-summary"></div><canvas class="actual-series" id="exploratory-diverse-ppo-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-ppo-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-ppo-lift" width="1000" height="180"></canvas><p class="small">这是新策略的实时真实 OpenFOAM 配对执行；与上方已完成且未达标的旧 PPO 结果分开。当前没有新场图，也不复用旧 PPO/MPC 场图；完成前不声明物理收益或科学准入。</p></div>
+<div class="card" id="exploratory-diverse-32768-long-cfd" hidden><h3>当前阶段 · 32768-step PPO 长窗口真实 CFD</h3><div id="exploratory-diverse-32768-long-cfd-summary"></div><canvas class="actual-series" id="exploratory-diverse-32768-long-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-32768-long-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-32768-long-lift" width="1000" height="180"></canvas><p class="small">唯一实际800周期配对运行，不重复另做124周期。主物理窗口预注册为 t=168→228（先丢弃20 D/U）；前124周期只用于与历史短窗作次级比较。CPU策略推理+真实CFD，GPU空闲是预期，不代表任务停滞。</p></div>
 <div class="card" id="final-ppo-real-cfd" hidden><h3>冻结最终 PPO · 真实 CFD 配对运行</h3><div id="final-ppo-real-cfd-summary"></div><div id="final-ppo-field-evidence" hidden><p id="final-ppo-field-note" class="small"></p><img id="final-ppo-field" alt="最终PPO实际CFD速度模长和ROI去均值压力" loading="lazy"></div><canvas class="actual-series" id="final-ppo-real-cfd-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-lift" width="1000" height="180"></canvas><p class="small">这些折线只来自本次 PPO/zero 两支真实 OpenFOAM 周期终点；不使用上方旧 MPC 流场图。这里若显示场图，只来自本次最终 PPO 分支在 t=160.4 的真实 CFD，也不包含模型预测。运行结束前不声明减阻或科学准入。</p></div>
 <section id="flow-current"><h2>历史流场预测 · 真实 CFD / FNO / 误差</h2>
 <div class="card"><div class="row"><h3>历史 C 模型 · 第一轮训练预览</h3><select id="c-preview-step"><option value="001">1 步 / 0.1 D/U</option><option value="010">10 步 / 1 D/U</option><option value="050">50 步 / 5 D/U</option><option value="100" selected>100 步 / 10 D/U</option></select></div><p id="c-preview-status">等待预测图及数据校验完成。</p><img id="c-preview-image" alt="第一轮模型：真实 CFD、连续预测及绝对误差" style="width:100%" hidden><p class="small">历史模型可视化：仅一条 b01 动态转速验证轨迹，从 tU/D=130 的真实流场出发，之后连续预测；不是当前长程试验的流场，不是完整验证集的精度，也不是最终模型或闭环控制结果。左列：真实 CFD；中列：模型预测；右列：绝对误差。</p></div>
@@ -386,6 +387,14 @@ function renderExploratoryDiversePPORealCFD(run){
  drawActualSeries('exploratory-diverse-ppo-drag',rows,[{key:'ppo_total_cd',label:'PPO total Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero total Cd',color:'#f2c879'}],'新策略真实CFD总阻力 Cd（周期终点）');
  drawActualSeries('exploratory-diverse-ppo-lift',rows,[{key:'ppo_rear_cl',label:'PPO rear Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero rear Cl',color:'#f69d97'}],'新策略真实CFD后柱升力 Cl（周期终点）');
 }
+function renderExploratoryDiverse32768LongCFD(run){
+ const card=$('exploratory-diverse-32768-long-cfd');card.hidden=run?.verified!==true;if(card.hidden)return;
+ const rows=run.actual_timeseries||[],latest=run.latest||{},pctDone=100*run.completed_cycles/800;
+ $('exploratory-diverse-32768-long-cfd-summary').innerHTML=`<p><b>${run.running?'800周期真实CFD正在运行':'运行已停止，等待终态复核'}</b> · ${run.completed_cycles}/800（${pctDone.toFixed(1)}%）· t=${num(latest.force_time,1)} / 228.0</p><p>最近周期：请求/实际动作 ${num(latest.requested_omega,3)} / ${num(latest.omega,3)}；PPO/zero总Cd ${num(latest.ppo_total_cd,5)} / ${num(latest.zero_total_cd,5)}；PPO/zero后柱Cl ${num(latest.ppo_rear_cl,5)} / ${num(latest.zero_rear_cl,5)}。当前/最低MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB。</p><p class="small">32768-step策略训练已完成且冻结；这里没有GPU训练或在线FNO。主窗口尚未完整时不计算最终物理成败，也不把前124周期当作正式80 D/U结论。</p>`;
+ drawActualSeries('exploratory-diverse-32768-long-actions',rows,[{key:'requested_omega',label:'请求转速',color:'#60c9fb'},{key:'omega',label:'实际转速',color:'#79d5a3'}],'32768-step PPO实际动作（周期终点）');
+ drawActualSeries('exploratory-diverse-32768-long-drag',rows,[{key:'ppo_total_cd',label:'PPO total Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero total Cd',color:'#f2c879'}],'长窗口真实CFD总阻力 Cd（周期终点）');
+ drawActualSeries('exploratory-diverse-32768-long-lift',rows,[{key:'ppo_rear_cl',label:'PPO rear Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero rear Cl',color:'#f69d97'}],'长窗口真实CFD后柱升力 Cl（周期终点）');
+}
 function renderFinalPPORealCFD(run){
  const card=$('final-ppo-real-cfd');card.hidden=run?.verified!==true;if(card.hidden)return;
  const rows=run.actual_timeseries||[],latest=run.latest||{},terminal=run.terminal_review,labels={full:'完整 12.4 D/U',first_6p2:'前 6.2 D/U',trailing_6p2:'后 6.2 D/U'};
@@ -404,6 +413,7 @@ function renderActiveExperiment(d){
  renderExploratoryDiverseH5PPO(d.exploratory_diverse_h5_ppo_training);
  renderExploratoryDiverse32768PPO(d.exploratory_diverse_h5_32768_ppo_training);
  renderExploratoryDiversePPORealCFD(d.exploratory_diverse_ppo_real_cfd);
+ renderExploratoryDiverse32768LongCFD(d.exploratory_diverse_32768_long_cfd);
  renderFinalPPORealCFD(d.exploratory_final_ppo_real_cfd);
  if(active?.mpc_trial===true&&active.verified===true){
   const causal=active.progress_kind==='exploratory_causal_history_h2_feedback';
@@ -1739,6 +1749,8 @@ _DIVERSE_PPO_CFD_APPROVAL_SHA = "67fda1a404f844d89b986442a4a9000561b02757417d5a8
 _DIVERSE_PPO_CFD_DRIVER_SHA = "89e0d8bea92440babd3d647eed31758db9cfc2a43e31ed6e9d9bdf5047b77b6e"
 _DIVERSE_PPO_CFD_RESULT_SHA = "8c909aa4bd0b73e3cf570dd55cb2a1abd7346a9c424695a5e0056b4e5e833bdc"
 _DIVERSE_PPO_CFD_REVIEW_SHA = "31a338bfc81e4ece0adeee943c074686e7065e57048d5783697d062856aa4e53"
+_DIVERSE_32768_LONG_CFD_APPROVAL_SHA = "e103288a0558c10784a43a199a3c4d731ffc0e6509753646da7bb6930cb4dc12"
+_DIVERSE_32768_LONG_CFD_DRIVER_SHA = "17060dda570ead4fdc8e33920fcc559b5bb8ad8d640a7e154579f8a795507afa"
 _FINAL_PPO_CFD_APPROVAL_SHA = "7ace192519a08795fe9217473fae33941fc5edbb1075daeeb3701e672c521cb3"
 _FINAL_PPO_CFD_DRIVER_SHA = "44b488a97a2882e1325da8871d3ac4905cdae2a6f2cbb17202ced91afc58b91a"
 _FINAL_PPO_CFD_RESULT_SHA = "4007493f22de5855cbd0574e0ec006ca715941b8396f4e48af6527dc11e03d47"
@@ -2163,6 +2175,83 @@ def _exploratory_diverse_ppo_real_cfd(root: Path) -> dict:
                 "inference_device": "cpu", "scientific_admission": False,
                 "control_success_verified": False, "terminal_result": terminal,
                 "approval_sha256": _DIVERSE_PPO_CFD_APPROVAL_SHA}
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
+            subprocess.SubprocessError):
+        return {"verified": False, "running": False,
+                "scientific_admission": False, "control_success_verified": False}
+
+
+def _exploratory_diverse_32768_long_cfd(root: Path) -> dict:
+    """Read the one actual 800-cycle CFD pair only after a completed cycle exists."""
+    base = root / "artifacts/exploratory_diverse_32768_ppo_long_cfd_20261006"
+    approval_path = root / "docs/EXPLORATORY_DIVERSE_32768_PPO_LONG_CFD_APPROVAL_20261006.json"
+    driver_path = (root / "artifacts/exploratory_diverse_32768_ppo_long_cfd_source_20261006_immutable"
+                   / "run_exploratory_diverse_32768_ppo_long_cfd.py")
+    try:
+        if (hashlib.sha256(approval_path.read_bytes()).hexdigest()
+                != _DIVERSE_32768_LONG_CFD_APPROVAL_SHA
+                or hashlib.sha256(driver_path.read_bytes()).hexdigest()
+                != _DIVERSE_32768_LONG_CFD_DRIVER_SHA):
+            raise ValueError("long CFD identity mismatch")
+        approval = json.loads(approval_path.read_text())
+        if (approval.get("status")
+                != "EXPLORATORY_DIVERSE_32768_PPO_LONG_CFD_EXECUTION_APPROVED"
+                or approval.get("execution_authorized") is not True
+                or approval.get("steps") != 800 or approval.get("inference_device") != "cpu"
+                or approval.get("scientific_admission") is not False
+                or approval.get("driver_sha256") != _DIVERSE_32768_LONG_CFD_DRIVER_SHA):
+            raise ValueError("unexpected long CFD approval")
+        fields = ("InvocationID", "MainPID", "ActiveState", "SubState", "Result",
+                  "ExecMainCode", "ExecMainStatus")
+        raw = subprocess.check_output(["systemctl", "--user", "show",
+            "fluid-control-exploratory-diverse-32768-ppo-long-cfd-20261006.service",
+            *[arg for key in fields for arg in ("-p", key)]], text=True, timeout=5)
+        state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+        if state.get("InvocationID") != "285bea88ff234cd5acfb9cb03c2b3cf3":
+            raise ValueError("unexpected long CFD invocation")
+        running = (state.get("MainPID", "0").isdigit() and int(state["MainPID"]) > 0
+                   and state.get("ActiveState") == "active"
+                   and state.get("SubState") in ("running", "start"))
+        document = json.loads((base / "progress.json").read_text())
+        rows = document.get("rows", []); completed = document.get("completed_cycles")
+        if (type(completed) is not int or completed != len(rows) or not 0 < completed <= 800):
+            raise ValueError("invalid long CFD progress count")
+        series = []
+        for index, row in enumerate(rows, 1):
+            ppo, zero = row["output_observation"], row["zero_observation"]
+            values = [row["start_time"], row["end_time"], row["requested_omega"],
+                      row["applied_omega"], ppo[64], ppo[66], ppo[67],
+                      zero[64], zero[66], zero[67]]
+            if (row.get("step") != index or len(ppo) != 69 or len(zero) != 69
+                    or any(type(value) not in (int, float) or not math.isfinite(value)
+                           for value in values)
+                    or abs(row["start_time"] - (148.0 + .1 * (index - 1))) > 1e-8
+                    or abs(row["end_time"] - (148.0 + .1 * index)) > 1e-8
+                    or row.get("solver_health", {}).get("ppo", {}).get("steps") != 20
+                    or row.get("solver_health", {}).get("zero", {}).get("steps") != 20
+                    or row["solver_health"]["ppo"].get("solver_ended_cleanly") is not True
+                    or row["solver_health"]["zero"].get("solver_ended_cleanly") is not True):
+                raise ValueError("invalid long CFD row")
+            series.append({"force_time": row["end_time"],
+                           "requested_omega": row["requested_omega"],
+                           "omega": row["applied_omega"],
+                           "ppo_total_cd": ppo[64] + ppo[66],
+                           "zero_total_cd": zero[64] + zero[66],
+                           "ppo_rear_cl": ppo[67], "zero_rear_cl": zero[67]})
+        available = [row["MemAvailable"] for row in _complete_jsonl(base / "resources.jsonl")
+                     if type(row.get("MemAvailable")) in (int, float)
+                     and math.isfinite(row["MemAvailable"])]
+        if not available:
+            raise ValueError("missing long CFD resources")
+        return {"verified": True, "running": running, "completed_cycles": completed,
+                "planned_cycles": 800, "actual_timeseries": series,
+                "latest": series[-1], "current_available_gib": available[-1] / 2**30,
+                "minimum_available_gib": min(available) / 2**30,
+                "policy_training_complete": True, "gpu_training": False,
+                "inference_device": "cpu", "primary_window": [168.0, 228.0],
+                "discarded_warmup_cycles": 200, "early_comparison_cycles": 124,
+                "scientific_admission": False, "control_success_verified": False,
+                "approval_sha256": _DIVERSE_32768_LONG_CFD_APPROVAL_SHA}
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
             subprocess.SubprocessError):
         return {"verified": False, "running": False,
@@ -4659,6 +4748,8 @@ class Handler(BaseHTTPRequestHandler):
                 _exploratory_diverse_h5_32768_ppo_training(self.root))
             data["exploratory_diverse_ppo_real_cfd"] = (
                 _exploratory_diverse_ppo_real_cfd(self.root))
+            data["exploratory_diverse_32768_long_cfd"] = (
+                _exploratory_diverse_32768_long_cfd(self.root))
             data["exploratory_final_ppo_real_cfd"] = _exploratory_final_ppo_real_cfd(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)

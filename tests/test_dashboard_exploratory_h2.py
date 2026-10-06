@@ -465,6 +465,40 @@ def test_diverse_ppo_real_cfd_live_card_is_separate_from_old_result(tmp_path, mo
     assert '不复用旧 PPO/MPC 场图' in m.PAGE
 
 
+def test_32768_long_cfd_card_requires_actual_cycle_and_fixed_800_contract(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    docs=tmp_path/'docs';docs.mkdir()
+    approval=docs/'EXPLORATORY_DIVERSE_32768_PPO_LONG_CFD_APPROVAL_20261006.json'
+    approval.write_text(json.dumps({'status':'EXPLORATORY_DIVERSE_32768_PPO_LONG_CFD_EXECUTION_APPROVED',
+      'execution_authorized':True,'steps':800,'inference_device':'cpu',
+      'scientific_admission':False,'driver_sha256':m._DIVERSE_32768_LONG_CFD_DRIVER_SHA}))
+    driver=tmp_path/'artifacts/exploratory_diverse_32768_ppo_long_cfd_source_20261006_immutable/run_exploratory_diverse_32768_ppo_long_cfd.py'
+    driver.parent.mkdir(parents=True);driver.write_text('driver')
+    base=tmp_path/'artifacts/exploratory_diverse_32768_ppo_long_cfd_20261006';base.mkdir()
+    def obs(front,rear,cl,omega):
+        x=[0.0]*69;x[64]=front;x[66]=rear;x[67]=cl;x[68]=omega;return x
+    row={'step':1,'start_time':148.,'end_time':148.1,'requested_omega':-.75,
+         'applied_omega':-.1,'output_observation':obs(1.3,1.0,.4,-.1),
+         'zero_observation':obs(1.31,1.01,.42,0.),
+         'solver_health':{'ppo':{'steps':20,'solver_ended_cleanly':True},
+                          'zero':{'steps':20,'solver_ended_cleanly':True}}}
+    (base/'progress.json').write_text(json.dumps({'completed_cycles':1,'rows':[row]}))
+    (base/'resources.jsonl').write_text(json.dumps({'MemAvailable':109*2**30})+'\n')
+    hashes={approval.read_bytes():m._DIVERSE_32768_LONG_CFD_APPROVAL_SHA,
+            driver.read_bytes():m._DIVERSE_32768_LONG_CFD_DRIVER_SHA}
+    monkeypatch.setattr(m.hashlib,'sha256',lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
+    unit='\n'.join(['InvocationID=285bea88ff234cd5acfb9cb03c2b3cf3','MainPID=2588512',
+      'ActiveState=active','SubState=running','Result=success','ExecMainCode=0','ExecMainStatus=0'])
+    monkeypatch.setattr(m.subprocess,'check_output',lambda *args,**kwargs:unit)
+    run=m._exploratory_diverse_32768_long_cfd(tmp_path)
+    assert run['verified'] and run['running'] and run['completed_cycles']==1
+    assert run['planned_cycles']==800 and run['primary_window']==[168.,228.]
+    assert run['discarded_warmup_cycles']==200 and run['early_comparison_cycles']==124
+    assert not run['gpu_training'] and run['inference_device']=='cpu'
+    assert '当前阶段 · 32768-step PPO 长窗口真实 CFD' in m.PAGE
+    assert '主物理窗口预注册为 t=168→228' in m.PAGE
+
+
 def test_final_ppo_terminal_review_reports_all_windows_and_keeps_constraints(tmp_path,monkeypatch):
     from types import SimpleNamespace
     docs=tmp_path/'docs';docs.mkdir()
