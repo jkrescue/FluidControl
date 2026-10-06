@@ -24,3 +24,20 @@ def test_running_and_wrong_invocation(tmp_path):
 def test_render_no_training_claim():
     assert '仅 CPU Curator→训练 HDF，无模型训练/新 CFD' in m.PAGE
     assert 'b00_train_conversion' in m.PAGE
+
+def test_terminal_needs_bound_result(tmp_path):
+    base=tmp_path/'artifacts/b00_controlled_train_conversion_20261006';base.mkdir(parents=True)
+    (base/'progress.json').write_text(json.dumps({'written_frames':801}))
+    approval=tmp_path/'docs/B00_CONTROLLED_TRAIN_CONVERSION_APPROVAL_20261006.json';approval.parent.mkdir()
+    approval.write_text(json.dumps({'driver':{'path':'driver.py'}}))
+    hashes=['4fa7192e13bf7ad3a141bffb483710e2400fd8ee243caa60a6e67ab695927686','f96c882a90e7ecaf4a2f8a5fc327764909ab42b4e6bbb11cde8e99205488b075']
+    terminal='InvocationID=f5ee31dd92624f0980a509084de9c756\nActiveState=active\nSubState=exited\nExecMainStatus=0\n'
+    result=dict(status='B00_CONTROLLED_TRAIN_HDF_COMPLETE_NOT_TRAINING',frames=801,trajectories=1,split='train',source_spec_sha256=hashes[0],official_reader_verified=True,source_unchanged=True,owned_containers_cleaned=True,model_loaded=False,optimizer_steps=0,scientific_admission=False)
+    for mutation, completed in (({},True),({'source_spec_sha256':'wrong'},False),({'official_reader_verified':False},False)):
+        (base/'result.json').write_text(json.dumps(dict(result,**mutation)))
+        with patch.object(m,'_small_file_sha256',side_effect=hashes),patch.object(m.subprocess,'check_output',return_value=terminal):
+            out=m._b00_train_conversion(tmp_path)
+        assert (out['label']=='转换程序已完成') is completed
+    (base/'result.json').unlink()
+    with patch.object(m,'_small_file_sha256',side_effect=hashes),patch.object(m.subprocess,'check_output',return_value=terminal):
+        assert m._b00_train_conversion(tmp_path)['label']!='转换程序已完成'

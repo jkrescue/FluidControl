@@ -3659,6 +3659,19 @@ def _b00_train_conversion(root: Path) -> dict:
         info['note'] = '写入计数不是最终数据验证；GPU未训练。'
         if not running and state.get('ExecMainStatus') != '0':
             info['label'] = '转换失败（未自动重启）'
+        elif state.get('ActiveState') == 'active' and state.get('SubState') == 'exited':
+            result = _read_json(base / 'result.json', {})
+            expected = {
+                'status': 'B00_CONTROLLED_TRAIN_HDF_COMPLETE_NOT_TRAINING',
+                'frames': 801, 'trajectories': 1, 'split': 'train',
+                'source_spec_sha256': '4fa7192e13bf7ad3a141bffb483710e2400fd8ee243caa60a6e67ab695927686',
+                'official_reader_verified': True, 'source_unchanged': True,
+                'owned_containers_cleaned': True, 'model_loaded': False,
+                'optimizer_steps': 0, 'scientific_admission': False,
+            }
+            if count == 801 and all(result.get(k) == v for k, v in expected.items()):
+                info['label'] = '转换程序已完成'
+                info['note'] = '程序已完成官方 Reader 回读；独立数据审查另行记录。尚未开始模型训练。'
         rows = _tail_text(base / 'resources.jsonl', 4096).splitlines()
         if rows:
             info['available_gib'] = json.loads(rows[-1])['MemAvailable'] / 2**30
