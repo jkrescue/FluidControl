@@ -587,6 +587,27 @@ def development_summary(root):
     except (OSError,ValueError,KeyError,TypeError) as exc:
         return {'verified':False,'error':str(exc)}
 
+def c50_training_status(root,run=subprocess.check_output):
+    root=Path(root)
+    info={'status':'C50状态待核验','running':False,'training':False,'windows':0,'updates':0,'target_windows':256,'target_updates':32,'invocation':None,'last_update_utc':None,'scientific_pass':None,
+          'note':'R1因PYTHONPATH遗漏在项目导入时退出，0模型/0训练；R2仅补运行环境。只训练FNO气动力网络，非PPO。既有闭环收益与预测精度FAIL均保留。'}
+    try:
+        approval=root/'docs/P064_CONTROLLED_DATA_DOSE_C_TRAINING_R2_APPROVAL_20261007.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='6d0d0f8dbdbae17a89d3b7dcc1717145b8e5a44464e928b5cb1a4e6debf2800f':raise ValueError('C50 approval SHA')
+        raw=run(['systemctl','--user','show','fluid-control-p064-controlled-dose-c50-r2-20261007.service','-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        invocation='d80f61c62da64497bf378b6c7fd9c917'
+        if state.get('InvocationID')!=invocation:raise ValueError('C50 invocation')
+        info['invocation']=invocation
+        journal=run(['journalctl','--user',f'_SYSTEMD_INVOCATION_ID={invocation}','-o','json','--no-pager','-n','2000'],text=True,timeout=3)
+        info.update(parse_journal(journal))
+        info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['training']=info['running'] and info['windows']>0
+        info['status']=('C50 FNO气动力训练进行中' if info['training'] else 'C50 R2进程初始化中，尚无训练窗口') if info['running'] else ('C50程序退出0，等待独立终态审查' if state.get('ExecMainStatus')=='0' else 'C50工程失败，未自动重试')
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
+        info['error']=str(exc)
+    return info
+
 def parse_journal(text):
     consumed=updates=0;last=None
     for line in text.splitlines():

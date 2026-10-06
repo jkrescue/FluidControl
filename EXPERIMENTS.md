@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## FC-E087 — C50 aero training R2 actual startup; R1 engineering failure retained
+
+Actual unit `fluid-control-p064-controlled-dose-c50-r2-20261007.service`, invocation `d80f61c62da64497bf378b6c7fd9c917`, PID480866 running with observed training_window_complete. Fixed256 windows/32updates, controlled mix128/256 versus B64/256, sameK1 parent/budget and frozenflow. Not PPO/CFD; no scientific outcome or running CSV metrics. Approval `6d0d0f8dbdbae17a89d3b7dcc1717145b8e5a44464e928b5cb1a4e6debf2800f`; output `artifacts/fcp064_controlled_aero_arm_c50_20261007_r2`. R1 `9595da6d9092476298f597ef8ed08fb2` exit1 before model/training because missing PYTHONPATH; R2 is environment-only retry preserving source. Independent preparation17CPU tests passed, including actual official-environment import origins; this is not actual C checkpoint reload or prediction validation.
+
 ## FC-E086 — canonical seed20261006 b00 terminal: primary pass with early failures
 
 Samebe48ee PID0/exit0. Primary drag .037440147745185226/RMS .7737896929681215/bias .036740531816147184 passes unchanged physical criteria. Early12.4 bias .11262252053132817 and first6.2 .21179712689211713 fail10%; first6.2 also exceeds20% sensitivity. Other four windows pass.3200raw hashes/1600solver segments/800canonical maps and filters/zero all columns exact oldB independently verified; six-window max discrepancy4.44e-16.1108.872s/minAvailable121698250752B/cleanup/noOOM. [Review](docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_CFD_TERMINAL_REVIEW_20261007.md) SHA `24e9a5ad02b0b36b34910ebe32e72de4c8cc5692f6090e4efa0dcad8439ac7fc`, result `9a7db1cff37e614dbefa908ec132cd8376cdfddd1f3149e2ba3436cebad57df4`. Both predeclared canonical seeds pass primary, not arbitrary-seed robustness or surrogate admission. Action-square proxy reported separately, not energy; no automatic next execution.

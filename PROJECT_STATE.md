@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E087 当前：C50 FNO气动力训练 R2 已实际开始
+
+R2 unit `fluid-control-p064-controlled-dose-c50-r2-20261007.service`，invocation `d80f61c62da64497bf378b6c7fd9c917`，PID480866 running，journal已有真实 `training_window_complete`。本轮固定256窗口/32参数更新，受控数据占比25%→50%，同K1父本/预算，流场冻结；不是PPO训练，无新CFD。批准 `docs/P064_CONTROLLED_DATA_DOSE_C_TRAINING_R2_APPROVAL_20261007.json` SHA `6d0d0f8dbdbae17a89d3b7dcc1717145b8e5a44464e928b5cb1a4e6debf2800f`，输出 `artifacts/fcp064_controlled_aero_arm_c50_20261007_r2`。尚无训练终态或预测改善结论，固定开发评估另批。
+
+保留R1 invocation `9595da6d9092476298f597ef8ed08fb2`：systemd遗漏PYTHONPATH，项目import报 `ModuleNotFoundError: fluid_control`，PID0/exit1，输出未创建，0模型/0训练；这是工程失败而非科学负结果。R2仅补已冻结src/scripts运行环境。既有两指定canonical seed物理主窗通过、早期失败及完整代理预测FAIL均不改变，整体目标未完成。下文是历史记录。
+
 ## FC-E086 终态：两指定canonical seed主窗通过；早期失败/预测FAIL仍保留
 
 E086同be48ee PID0/exit0，800真实反馈完成并独审。主窗减阻 **3.7440%**、升力波动降低 **22.6210%**、均值偏置 **3.6741%**，原2%/1.05/10%通过；早12.4偏置11.2623%、首6.2偏置21.1797%失败（首段也超过20%敏感性）。其余四窗通过，不能称全窗PASS。报告 [E086独审](docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_CFD_TERMINAL_REVIEW_20261007.md) SHA `24e9a5ad02b0b36b34910ebe32e72de4c8cc5692f6090e4efa0dcad8439ac7fc`；result `9a7db1cff37e614dbefa908ec132cd8376cdfddd1f3149e2ba3436cebad57df4`。3200raw/1600solver/800canonical映射/单filter/六窗复算与配对zero全列通过，1108.872s/minAvailable121698250752B/cleanup通过。

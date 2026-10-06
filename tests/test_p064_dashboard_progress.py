@@ -16,6 +16,20 @@ def test_parser():
     result=parse_journal(events());assert result['windows']==8 and result['updates']==1
     assert result['last_update_utc'].endswith('+00:00')
 
+@pytest.mark.parametrize('sub,pid,journal,training',[('running','123','',False),('running','123',events(),True),('exited','0',events(),False)])
+def test_c50_live_requires_actual_windows(tmp_path,monkeypatch,sub,pid,journal,training):
+    import p064_dashboard_progress as m
+    path=tmp_path/'docs/P064_CONTROLLED_DATA_DOSE_C_TRAINING_R2_APPROVAL_20261007.json'
+    path.parent.mkdir();path.write_text('{}')
+    monkeypatch.setattr(m.hashlib,'sha256',lambda data:type('Digest',(),{'hexdigest':lambda self:'6d0d0f8dbdbae17a89d3b7dcc1717145b8e5a44464e928b5cb1a4e6debf2800f'})())
+    def run(argv,**kwargs):
+        if argv[0]=='journalctl':return journal
+        return f'InvocationID=d80f61c62da64497bf378b6c7fd9c917\nMainPID={pid}\nActiveState=active\nSubState={sub}\nExecMainStatus=0'
+    result=m.c50_training_status(tmp_path,run)
+    assert result['training'] is training
+    assert result['scientific_pass'] is None
+    assert result['updates']==(1 if journal else 0)
+
 @pytest.mark.parametrize('field,value',[('history_k',True),('consumed',257),('consumed',False)])
 def test_bad_event(field,value):
     row={'event':'training_window_complete','history_k':1,'consumed':8};row[field]=value
