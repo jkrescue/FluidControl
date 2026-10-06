@@ -1,6 +1,14 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## FC-E082 当前实际：固定对称坐标PPO正在训练，未批准新CFD
+## FC-E083 当前实际：对称坐标策略真实CFD已启动，物理结果待核
+
+actual unit `fluid-control-p064-b-symmetry-canonical-ppo-long-cfd-20261007.service`，invocation `545ba2aebfb6412aaf41ee3281ccc802`，PID3311091 running。批准 `docs/P064_B_SYMMETRY_CANONICAL_CFD_APPROVAL_20261007.json` SHA `afb03b9e86931d1031d8e0ab1ce76dc180816ac76446d46823cf4aa350ee9f1e`；输出 `artifacts/p064_b_symmetry_canonical_ppo_long_cfd_20261007`。同b00 148→228/800周期/六窗/配对zero/原2%/1.05/10%，CPU策略不调用在线FNO/MPC。新driver11096使用训练一致的canonical观测→policy→符号还原→一次物理限幅，不是旧的两个policy请求取半差。终态独审将从保存physical rows重算全部canonical方向/pivot/margin/动作及raw力；当前不声明收益。E082训练已完成，E080负结果/E081窄诊断与旧seed成功保留。
+
+## FC-E082 训练终态：对称坐标PPO完成并独审，物理效果尚未知
+
+同029124已PID0/exit0，32768/256epochs/512optimizerhooks与75source192runtime/6产物身份通过；全部canonical→physical请求及非reset方向链/单filter检查通过，546次方向切换、0固定点。FNO冻结，initialtensor与前seed20261007一致，finaltensor改变；587.35s，最低Available119839916032B。独审 [E082报告](docs/P064_B_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md) SHA `72a03435e0ed954743694ca785e8de1616c6860db457b2ad20ef6f40d330e562`。未保存的全部原physical observations不能宣称已逐点重算orientation。finalpolicy5c056/Vec1d250已交另批固定CFD，未根据reward选择；不等于物理或预测准入。
+
+### FC-E082 历史启动记录（已完成）
 
 实际unit `fluid-control-p064-b-symmetry-canonical-ppo-20261007.service`，invocation `029124675a0d459e82455c59f831ba3b`，PID3286386 running；独查真实1868/32768 transitions（时点快照，页面动态更新）。批准 `docs/P064_B_SYMMETRY_CANONICAL_PPO_APPROVAL_20261007.json` SHA `1a49d9a72a8dabcb1159b2d04ebcf19f039cbdb70f87ba1e1c4d714d898368c7`；输出 `artifacts/p064_b_symmetry_canonical_h5_32768_ppo_20261007/payload`。同B/seed20261007/H5/24reset/69obs/奖励/32768预算，唯一科学变化为固定、与policy无关的对称坐标wrapper；未改标准PPO优化器或选checkpoint。12GiB/noSwap、Available50/22保留20。新策略尚无物理结果，终态须独审方向/动作映射及冻结FNO，再另批CFD。
 

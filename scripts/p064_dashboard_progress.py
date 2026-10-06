@@ -119,13 +119,18 @@ def candidate_ppo_status(root,run=subprocess.check_output):
         active=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
         info['running']=active;info['training']=active and info['timesteps']>0
         info['status']=('对称坐标PPO：实际训练中' if info['training'] else '对称坐标PPO已启动，尚未观测transition') if active else '对称坐标PPO已停止，等待独立终态审查'
-        info['note']='同B模型/seed20261007/32768步/H5/24起点，只改固定对称坐标处理；标准PPO优化不变。实际计数不是物理成功；此前第二seed增阻0.62%和旧seed减阻3.90%均保留，预测精度FAIL未消失。新策略尚未获CFD执行批准。'
+        if state.get('MainPID')=='0' and state.get('ExecMainStatus')=='0' and (output/'result.json').exists():
+            info.update(producer_terminal_counts(json.loads((output/'result.json').read_text()),spec,expected_status='P064_B_SYMMETRY_CANONICAL_H5_32768_PPO_TRAINING_COMPLETE_NOT_ADMISSION'))
+            review=root/'docs/P064_B_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md'
+            if hashlib.sha256((output/'result.json').read_bytes()).hexdigest()!='44ef56114e17db88077d5f3e7920a2a9031023be74e31d359bd8c66be7441d1e' or hashlib.sha256(review.read_bytes()).hexdigest()!='72a03435e0ed954743694ca785e8de1616c6860db457b2ad20ef6f40d330e562':raise ValueError('canonical terminal binding')
+            info.update(status='对称坐标PPO训练完成，方向/动作映射独审通过',terminal_verified=True,training=False,running=False,counts_scope='32768步/256epochs/512参数更新；物理效果另验')
+        info['note']='同B模型/seed20261007/32768步/H5/24起点，只改固定对称坐标处理；标准PPO优化不变。实际计数不是物理成功；此前第二seed增阻0.62%和旧seed减阻3.90%均保留，预测精度FAIL未消失。新策略物理验证见当前CFD卡。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
-def producer_terminal_counts(result,spec):
+def producer_terminal_counts(result,spec,expected_status='P064_CANDIDATE_DIVERSE_H5_32768_PPO_TRAINING_COMPLETE_NOT_ADMISSION'):
     """Producer telemetry only; independent-review status must remain separate."""
-    if (result.get('status')!='P064_CANDIDATE_DIVERSE_H5_32768_PPO_TRAINING_COMPLETE_NOT_ADMISSION'
+    if (result.get('status')!=expected_status
         or result.get('candidate_arm')!=spec['candidate_arm']
         or result.get('candidate_manifest_sha256')!=spec['candidate_manifest_sha256']
         or result.get('timesteps')!=32768 or result.get('ppo_n_updates')!=256
@@ -255,7 +260,7 @@ def initial_candidate_cfd_status(root,run=subprocess.check_output):
 
 SEED_CFD_BINDINGS={'approval':'4bd940f088373c3c9e0c2d227d18364b23457e0ef933a4add9d2345d74038364','result':'6221a7d2f8868eba8622f2e6b76d110d206dd4d9304627d890e01d71b6a7d893','review':'637d1e4a14c6fbd114f0a399ece07ab767502a9f7a1d556336b7ccafdf59354b'}
 
-def candidate_cfd_status(root,run=subprocess.check_output):
+def second_seed_cfd_status(root,run=subprocess.check_output):
     root=Path(root)
     info={'status':'第二seed真实CFD状态未核验','cycles':0,'target':800,'running':False,'training':False,'physical_pass':None,'terminal_verified':False,'invocation':None,'previous_initial':initial_candidate_cfd_status(root,run)}
     try:
@@ -277,6 +282,24 @@ def candidate_cfd_status(root,run=subprocess.check_output):
         info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
         info['status']='第二seed策略：真实CFD闭环复验中' if info['running'] else '第二seedCFD已停止，等待独立终态复核'
         info['note']='CPU策略反馈＋配对不旋转基线，800周期；不是GPU训练，无在线FNO/MPC。第二seed PPO已完成32768步并独审，新物理效果尚未知。旧B约3.90%减阻/18.4%升力波动改善，初始权重无减阻，均为已完成历史对照；原物理2%/1.05/10%与预测FAIL不变。'
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
+    return info
+
+def candidate_cfd_status(root,run=subprocess.check_output):
+    root=Path(root)
+    info={'status':'对称坐标CFD状态未核验','cycles':0,'target':800,'running':False,'training':False,'physical_pass':None,'terminal_verified':False,'invocation':None,'previous_seed':second_seed_cfd_status(root,run)}
+    try:
+        approval=root/'docs/P064_B_SYMMETRY_CANONICAL_CFD_APPROVAL_20261007.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='afb03b9e86931d1031d8e0ab1ce76dc180816ac76446d46823cf4aa350ee9f1e':raise ValueError('canonical CFD approval SHA')
+        raw=run(['systemctl','--user','show','fluid-control-p064-b-symmetry-canonical-ppo-long-cfd-20261007.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!='545ba2aebfb6412aaf41ee3281ccc802':raise ValueError('canonical CFD invocation')
+        info['invocation']=state['InvocationID']
+        path=root/'artifacts/p064_b_symmetry_canonical_ppo_long_cfd_20261007/progress.json'
+        if path.exists():info.update(cfd_progress_counts(json.loads(path.read_text()),start=148.))
+        info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['status']='对称坐标策略：真实CFD闭环验证中' if info['running'] else '对称坐标CFD已停止，等待独立复核'
+        info['note']='CPU策略＋真实CFD，800周期，不是训练、无在线FNO/MPC。训练已完成32768步，当前检验物理效果，尚无通过结论。旧seed减阻3.90%、第二seed增阻0.62%都保留；固定2%/1.05/10%标准不变，完整预测FAIL仍独立存在。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 

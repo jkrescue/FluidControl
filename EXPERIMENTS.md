@@ -1,6 +1,14 @@
 # Experiment ledger
 
-## FC-E082 — actual symmetry-canonical PPO training; no CFD authorization
+## FC-E083 — actual canonical-coordinate paired CFD running; no outcome yet
+
+Actual545ba2aebfb6412aaf41ee3281ccc802, unit `fluid-control-p064-b-symmetry-canonical-ppo-long-cfd-20261007.service`, PID3311091 running. Approval `docs/P064_B_SYMMETRY_CANONICAL_CFD_APPROVAL_20261007.json` SHA `afb03b9e86931d1031d8e0ab1ce76dc180816ac76446d46823cf4aa350ee9f1e`; output `artifacts/p064_b_symmetry_canonical_ppo_long_cfd_20261007`. Finalpolicy5c056/Vec1d250; fixed148→228/800 paired intervals/six windows/physical thresholds/resources. New11096 deployment uses same canonical-coordinate mapping and one physical filter, not old two-call projection. CPUCFD, not training/onlineFNO/MPC. Raw terminal audit pending; no running scientificCSV metrics, no benefits claimed.
+
+## FC-E082 — symmetry-canonical PPO terminal independently verified
+
+Same029124 exited0.32768/256epochs/512hooks,24reset and62history clock,75sources192runtime/six output hashes pass.546orientation changes; all recorded canonical×current-orientation physical requests and consecutive orientation/filter checks pass. Initial tensor equals priorseed20261007, final differs; frozenFNO b108 unchanged.587.35s/Available minimum119839916032B/12GiBswap0. [Review](docs/P064_B_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md) SHA `72a03435e0ed954743694ca785e8de1616c6860db457b2ad20ef6f40d330e562`, result `44ef56114e17db88077d5f3e7920a2a9031023be74e31d359bd8c66be7441d1e`. No independent full original-observation orientation recomputation or model rerun; physical effect unknown, fixedCFD separately approved, no reward selection.
+
+### FC-E082 historical startup
 
 Actual029124675a0d459e82455c59f831ba3b, unit `fluid-control-p064-b-symmetry-canonical-ppo-20261007.service`, PID3286386 running; independently observed1868/32768 transitions. Approval `docs/P064_B_SYMMETRY_CANONICAL_PPO_APPROVAL_20261007.json` SHA `1a49d9a72a8dabcb1159b2d04ebcf19f039cbdb70f87ba1e1c4d714d898368c7`; output `artifacts/p064_b_symmetry_canonical_h5_32768_ppo_20261007/payload`. Same frozenB/seed20261007/32768/H5/24reset/reward/resources, sole intended change is policy-independent canonical-coordinate wrapper. Final-only PPO policy, no checkpoint/reward selection; no new physical success or runningCSV metric. Independent terminal audit will check orientation-before/after and canonical-to-physical requests plus original32768/256/512/FNO/resource checks; CFD remains separately authorized only.
 

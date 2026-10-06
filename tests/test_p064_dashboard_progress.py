@@ -191,8 +191,8 @@ def test_unbound_second_seed_never_claims_training(tmp_path):
     assert not x['training'] and not x['running'] and x['timesteps']==0 and x['invocation'] is None
 
 def test_second_seed_cfd_missing_binding_not_physical_pass(tmp_path):
-    from p064_dashboard_progress import candidate_cfd_status
-    x=candidate_cfd_status(tmp_path)
+    from p064_dashboard_progress import second_seed_cfd_status
+    x=second_seed_cfd_status(tmp_path)
     assert not x['training'] and not x['running'] and x['physical_pass'] is None
     assert x['invocation'] is None and 'previous_initial' in x
 
@@ -202,7 +202,13 @@ def test_second_seed_terminal_is_negative_not_running(tmp_path,monkeypatch):
     for k,p in files.items():p.parent.mkdir(parents=True,exist_ok=True);p.write_text(k)
     monkeypatch.setattr(m,'SEED_CFD_BINDINGS',{k:hashlib.sha256(p.read_bytes()).hexdigest() for k,p in files.items()})
     monkeypatch.setattr(m,'initial_candidate_cfd_status',lambda *a,**kw:{})
-    x=m.candidate_cfd_status(tmp_path,run=lambda *a,**kw:(_ for _ in ()).throw(AssertionError('no live query needed')))
+    x=m.second_seed_cfd_status(tmp_path,run=lambda *a,**kw:(_ for _ in ()).throw(AssertionError('no live query needed')))
     assert x['terminal_verified'] and x['cycles']==800 and not x['physical_pass'] and not x['running'] and not x['training']
     files['review'].write_text('tampered')
-    assert not m.candidate_cfd_status(tmp_path)['terminal_verified']
+    assert not m.second_seed_cfd_status(tmp_path)['terminal_verified']
+
+def test_unbound_canonical_cfd_not_running(tmp_path):
+    from p064_dashboard_progress import candidate_cfd_status
+    x=candidate_cfd_status(tmp_path)
+    assert not x['running'] and not x['training'] and x['physical_pass'] is None
+    assert x['invocation'] is None and 'previous_seed' in x
