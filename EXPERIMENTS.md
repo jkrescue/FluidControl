@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E065 — b00 whole-train conversion and dedicated view verified
+
+Originalf5ee31 exited0 at10:38:17UTC after1240s. ResultSHA `f24f2fbc8b283c0781b2a01189d291b43da0203e9ede28208ec575173bbe0bd9`; HDF `45041e79e70043838763e5dd8da0fe9c02dba4cfe6df01356f8dcd1389e32d8f`. Independent1614 source hashes,801 official-reader/HDF finite arrays, actual progress time/action/four-force endpoints and48 retained packets match.753 temporary new packets were deleted, so no independent post-hoc NPZ comparison/resampling claim.16 exporters exit0/OOMfalse/absent; root-owned scratch retained.20571 samples minimumAvailable121431912448B, actual12GiB/noSwap/CPU1, peak2883301376B.
+
+Exclusive `artifacts/b00_controlled_train_dataset_view_20261006` retains source inode permissions and original norm bytes. Manifest97a82e2a…929a5f is train-only with actualCFD endpoint labels; no normalization refit/development leakage. Actual official DataPipe yields701 H100 starts, exact0→100 and700→800 field/101action/100force targets. This hardlink view requires read-only use, not an OS ROmount; source SHA checked afterward. CPU auditR2 166133d841f24be2a409caaec40e0b89 passed4.37s after preserved audit-only inventory-schema failure; conversion not rerun. ReportSHA `c265cc7254d1cd423626bce84d0b064e90a2686bff4c651021017e09952657eb`, viewreceipt41e75928…d1ef9e. Engineering milestone only; no new inference/training/CFD or scientific admission. Candidate A/B still requires separate approval.
+
 ## FC-E066 — Independent development conversion terminal, no scientific metrics
 
 Actual invocation `8ac389027a954b79bc1d766f89029a6b` completed PID0/exit0. Approval `c82e4a865d0d6e0927faee026baa84ebca2fcabb0707daa00f988174349dd5a3`; result `1da29262fa8cbfa7c41687439ad34cc1967ce8c7d9faa35c435668705ca9351f`; independent report `docs/DEVELOPMENT_PHASE_H5_CONVERSION_TERMINAL_REVIEW_20261006.md` SHA `aa1417d9d6d05d282e2b00606985c31b9070bdb31b45378d6dba8dcc746e1c94`. Independently rehashed6source/approval/selection,216originalfiles,16HDF and compared96 sampled arrays plus actual force/action endpoints. Max nominal-time difference6.103515630684342e-6, preserved VTK FP32 rounding. Two exporter containers exited0/noOOM and exact CIDs are absent; runtime resource span154.883s, minimumAvailable121511297024B; systemd12GiB/swap0/CPU1/15min verified.

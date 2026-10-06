@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E065 最新终态：b00完整训练轨迹及专用视图已独审
+
+原f5ee31已PID0/exited/exit0。转换结果SHA `f24f2fbc8b283c0781b2a01189d291b43da0203e9ede28208ec575173bbe0bd9`，801帧官方Reader/HDF全量、真实progress时间/动作/四力、1614原源SHA与旧48NPZ一致；753新packet已删除，未独立重采样，不声称全801NPZ复核。16export容器已清理，最低Available121431912448B。
+
+`artifacts/b00_controlled_train_dataset_view_20261006` 专用hardlink视图manifest SHA `97a82e2a157b87ecf9b9ea626ad079852a8d29ba89628ca5034ef99545929a5f`，保留原归一化；实际官方DataPipe有701个H100窗，首0→100/末700→800数据、101动作和100四力targets exact。源inode权限不改，要求只读使用而非虚构OS只读mount。报告 `docs/B00_CONTROLLED_TRAIN_CONVERSION_TERMINAL_REVIEW_20261006.md` SHA `c265cc7254d1cd423626bce84d0b064e90a2686bff4c651021017e09952657eb`；审核R1仅schema解析失败且保留，R2成功未重跑转换。数据准备不自动批准P064 GPU训练，不影响三相位物理成功、10%原标准或K1 H100失败。
+
 ## FC-E066 最新实际终态：b01/b03 开发数据96帧转换已独立验证
 
 unit `fluid-control-development-b01-b03-h5-conversion-20261006.service` / invocation `8ac389027a954b79bc1d766f89029a6b` PID0/exit0；结果SHA `1da29262fa8cbfa7c41687439ad34cc1967ce8c7d9faa35c435668705ca9351f`。216原源文件、16 HDF、96帧state/mask/time/grid及实际动作/四力端点独立核对通过，两个export容器已清理，最低Available121511297024B。官方Reader真实复读完成；时间保留VTK float32误差≤6.104e-6，不声称十进制精确。
