@@ -7,6 +7,7 @@ import subprocess
 
 PROFILES={arm:{'unit':f'fluid-control-fcp064-aero-arm-{arm.lower()}-20261006.service',
               'output':f'artifacts/fcp064_controlled_aero_arm_{arm.lower()}_20261006'} for arm in ('A','B')}
+PROFILES['A']['unit']='fluid-control-fcp064-aero-arm-a-r2-20261006.service'
 LABELS={'A':'A 原数据对照','B':'B 加入真实闭环数据'}
 
 def parse_journal(text):
@@ -38,6 +39,7 @@ def status(root, arm, registration=None, run=subprocess.check_output):
           'last_update_utc':None,'invocation':None,'terminal_verified':False,
           'note':'顺序执行；计数不是模型或科学验收。'}
     if registration is None:return info
+    info['previous_attempt_note']=registration.get('previous_attempt_note','')
     try:
         expected=PROFILES[arm]
         if registration['unit']!=expected['unit'] or registration['output']!=expected['output']:
