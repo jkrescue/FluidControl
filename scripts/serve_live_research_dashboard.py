@@ -424,6 +424,11 @@ function renderFinalPPORealCFD(run){
  drawActualSeries('final-ppo-real-cfd-drag',rows,[{key:'ppo_total_cd',label:'PPO total Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero total Cd',color:'#f2c879'}],'真实CFD总阻力 Cd（周期终点）');
  drawActualSeries('final-ppo-real-cfd-lift',rows,[{key:'ppo_rear_cl',label:'PPO rear Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero rear Cl',color:'#f69d97'}],'真实CFD后柱升力 Cl（周期终点）');
 }
+function renderShortHorizonConfirmation(run){
+ let card=$('short-horizon-frozen-confirmation');if(!card){card=document.createElement('div');card.id='short-horizon-frozen-confirmation';card.className='card';$('projected-ppo-cfd')?.before(card);}
+ card.hidden=run?.verified!==true;if(card.hidden)return;
+ card.innerHTML=`<h3>FNO预留工况预测评估（推理，非训练）</h3><p><b>${run.running?'GPU推理评估正在运行':'运行已停止，等待独立结果核验'}</b> · 10个预留工况 × H1–H5 × 每工况32个起点</p><p>当前/最低 MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；外层进程当前/峰值内存 ${num(run.unit_memory_current_gib,2)} / ${num(run.unit_memory_peak_gib,2)} GiB。</p><p class="small">这是固定FNO在预留工况上的预测推理：0个optimizer step，不学习、不运行CFD。当前产物没有逐case完成记录，因此不显示或估算百分比。旧K1 H100正式FAIL仍是独立结论，本卡不会覆盖它。</p>`;
+}
 function renderActiveExperiment(d){
  const active=d.registered_experiment;
  renderCurrentTrialEvidence(active);
@@ -434,6 +439,7 @@ function renderActiveExperiment(d){
  renderExploratoryDiverse32768LongCFD(d.exploratory_diverse_32768_long_cfd);
  renderPolicyH5Comparison(d.policy_h5_comparison);
  renderProjectedCFD(d.projected_ppo_long_cfd,d.projected_ppo_b01_long_cfd);
+ renderShortHorizonConfirmation(d.short_horizon_frozen_confirmation);
  renderFinalPPORealCFD(d.exploratory_final_ppo_real_cfd);
  if(active?.mpc_trial===true&&active.verified===true){
   const causal=active.progress_kind==='exploratory_causal_history_h2_feedback';
@@ -4856,6 +4862,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.root)
             data["projected_ppo_b01_long_cfd"] = _exploratory_diverse_32768_long_cfd(
                 self.root, projected_b01=True)
+            data["short_horizon_frozen_confirmation"] = _short_horizon_frozen_confirmation(
+                self.root)
             data["exploratory_final_ppo_real_cfd"] = _exploratory_final_ppo_real_cfd(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
@@ -4903,6 +4911,57 @@ def _projected_long_ppo_field(root):
                 "source_result_sha256": d['source_result_sha256']}
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
         return {"verified": False}
+
+
+def _short_horizon_frozen_confirmation(root):
+    approval_path = root / "docs/SHORT_HORIZON_FROZEN_CONFIRMATION_APPROVAL_20261006.json"
+    base = root / "artifacts/short_horizon_frozen_confirmation_20261006"
+    approval_sha = "1ae960dcee7c9aa81e438a990dbf88397f5593decd1cdbb3ba1336ea4888c162"
+    unit = "fluid-control-short-horizon-frozen-confirmation-20261006.service"
+    invocation = "7a887ed792ec4d60a429f4a7a3660b3a"
+    try:
+        if hashlib.sha256(approval_path.read_bytes()).hexdigest() != approval_sha:
+            raise ValueError("short-horizon approval identity")
+        approval = json.loads(approval_path.read_text())
+        if (approval.get("status") != "SHORT_HORIZON_FROZEN_CONFIRMATION_EXECUTION_APPROVED"
+                or approval.get("execution_authorized") is not True
+                or approval.get("heldout_access_authorized") is not True
+                or approval.get("optimizer_steps") != 0
+                or approval.get("scientific_admission") is not False
+                or approval.get("horizons") != [1,2,3,4,5]
+                or len(approval.get("cases", [])) != 10
+                or approval.get("output") != str(base / "payload")):
+            raise ValueError("short-horizon approval contract")
+        fields = ("InvocationID", "MainPID", "ActiveState", "SubState", "Result",
+                  "ExecMainStatus", "MemoryCurrent", "MemoryPeak")
+        raw = subprocess.check_output(["systemctl", "--user", "show", unit,
+            *[arg for key in fields for arg in ("-p", key)]], text=True, timeout=5)
+        state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+        if state.get("InvocationID") != invocation:
+            raise ValueError("short-horizon invocation")
+        running = (state.get("MainPID", "0").isdigit() and int(state["MainPID"]) > 0
+                   and state.get("ActiveState") == "active"
+                   and state.get("SubState") in ("running", "start"))
+        resources = [row for row in _complete_jsonl(base / "memory.jsonl")
+                     if type(row.get("MemAvailable")) in (int,float)
+                     and math.isfinite(row["MemAvailable"])]
+        if not resources:
+            raise ValueError("short-horizon resources missing")
+        current = int(state.get("MemoryCurrent", "0")) if state.get("MemoryCurrent", "0").isdigit() else 0
+        peak = int(state.get("MemoryPeak", "0")) if state.get("MemoryPeak", "0").isdigit() else 0
+        return {"verified": True, "running": running, "cases": 10,
+                "horizons": [1,2,3,4,5], "starts_per_case": 32,
+                "progress_available": False, "optimizer_steps": 0,
+                "cfd_executed": False, "gpu_inference": True,
+                "current_available_gib": resources[-1]["MemAvailable"] / 2**30,
+                "minimum_available_gib": min(row["MemAvailable"] for row in resources) / 2**30,
+                "unit_memory_current_gib": current / 2**30,
+                "unit_memory_peak_gib": peak / 2**30,
+                "approval_sha256": approval_sha, "scientific_admission": False}
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
+            subprocess.SubprocessError):
+        return {"verified": False, "running": False,
+                "scientific_admission": False}
 
 
 def _policy_h5_comparison(root):

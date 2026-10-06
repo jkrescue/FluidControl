@@ -39,6 +39,27 @@ def test_projected_field_is_separate_sha_bound_actual_cfd(tmp_path,monkeypatch):
 
 def test_projected_field_missing_or_changed_fails_closed(tmp_path):
     assert not m._projected_long_ppo_field(tmp_path)['verified']
+
+def test_short_horizon_confirmation_is_inference_only_without_fake_progress(tmp_path,monkeypatch):
+    docs=tmp_path/'docs';docs.mkdir()
+    out=tmp_path/'artifacts/short_horizon_frozen_confirmation_20261006';out.mkdir(parents=True)
+    approval=docs/'SHORT_HORIZON_FROZEN_CONFIRMATION_APPROVAL_20261006.json'
+    approval.write_text(json.dumps({'status':'SHORT_HORIZON_FROZEN_CONFIRMATION_EXECUTION_APPROVED',
+      'execution_authorized':True,'heldout_access_authorized':True,'optimizer_steps':0,
+      'scientific_admission':False,'horizons':[1,2,3,4,5],
+      'cases':[f'case{i}' for i in range(10)],'output':str(out/'payload')}))
+    (out/'memory.jsonl').write_text(json.dumps({'MemAvailable':110*2**30})+'\n'+json.dumps({'MemAvailable':108*2**30})+'\n')
+    monkeypatch.setattr(m.hashlib,'sha256',lambda raw:SimpleNamespace(hexdigest=lambda:'1ae960dcee7c9aa81e438a990dbf88397f5593decd1cdbb3ba1336ea4888c162'))
+    unit='\n'.join(['InvocationID=7a887ed792ec4d60a429f4a7a3660b3a','MainPID=3832775',
+      'ActiveState=active','SubState=running','Result=success','ExecMainStatus=0',
+      f'MemoryCurrent={4*2**30}',f'MemoryPeak={5*2**30}'])
+    monkeypatch.setattr(m.subprocess,'check_output',lambda *args,**kwargs:unit)
+    run=m._short_horizon_frozen_confirmation(tmp_path)
+    assert run['verified'] and run['running'] and run['starts_per_case']==32
+    assert run['optimizer_steps']==0 and not run['cfd_executed'] and run['gpu_inference']
+    assert run['progress_available'] is False and run['minimum_available_gib']==108
+    assert 'FNO预留工况预测评估（推理，非训练）' in m.PAGE
+    assert '不显示或估算百分比' in m.PAGE and '旧K1 H100正式FAIL' in m.PAGE
     p=tmp_path/'artifacts/exploratory_projected_32768_long_field_preview_20261006';p.mkdir(parents=True)
     (p/'result.json').write_text('{}');(p/'paired_actual_cfd_228.png').write_bytes(b'wrong')
     assert not m._projected_long_ppo_field(tmp_path)['verified']
