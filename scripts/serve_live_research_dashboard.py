@@ -387,10 +387,12 @@ function renderExploratoryDiversePPORealCFD(run){
  drawActualSeries('exploratory-diverse-ppo-drag',rows,[{key:'ppo_total_cd',label:'PPO total Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero total Cd',color:'#f2c879'}],'新策略真实CFD总阻力 Cd（周期终点）');
  drawActualSeries('exploratory-diverse-ppo-lift',rows,[{key:'ppo_rear_cl',label:'PPO rear Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero rear Cl',color:'#f69d97'}],'新策略真实CFD后柱升力 Cl（周期终点）');
 }
-function renderProjectedCFD(run){
+function renderProjectedCFD(run,b01){
  let card=$('projected-ppo-cfd');if(!card){card=document.createElement('div');card.id='projected-ppo-cfd';card.className='card';$('exploratory-diverse-32768-long-cfd').before(card);}
  const active=run?.verified===true,latest=run?.latest||{};
- card.innerHTML=`<h3>FC-E058 · PPO策略＋镜像对称处理</h3><p><b>${active?(run.running?'真实CFD正在运行':'已停止，等待独立终态复核'):'尚未启动或运行证据尚未核实'}</b>${active?` · ${run.completed_cycles}/800 周期 · t=${num(latest.force_time,1)} / 228.0`:''}</p>${active?`<p>当前/最低MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；当前实际转速 ${num(latest.omega,3)}。</p>`:''}<p class="small">复用同一32768步冻结策略，仅增加镜像对称处理；不是新训练或新模型。CPU策略推理与真实CFD配对执行；原10%均值偏置约束不变，20%仅敏感性参考。下方保留前次未处理策略的已完成结果，不能当作本次结果。</p>`;
+ const terminal=run?.reported_terminal;
+ card.innerHTML=`<h3>FC-E058 · PPO策略＋镜像对称处理</h3><p><b>${terminal?'b00 800周期已完成并独立复核':active?(run.running?'真实CFD正在运行':'已停止，等待独立终态复核'):'尚未启动或运行证据尚未核实'}</b>${active?` · ${run.completed_cycles}/800 周期 · t=${num(latest.force_time,1)} / 228.0`:''}</p>${terminal?`<p>主窗(168,228]：减阻 <b>${(100*terminal.paired_drag_reduction).toFixed(3)}%</b>，后柱Cl′ RMS比 <b>${terminal.paired_rear_cl_fluctuation_rms_ratio.toFixed(3)}</b>，平均Cl偏置比 <b>${(100*terminal.absolute_mean_rear_cl_over_paired_zero_rms).toFixed(2)}%</b>；三项原标准均通过。</p><p class="small">早期first6.2偏置比 ${(100*terminal.early_mean_bias_ratio).toFixed(2)}%，未通过原10%；不能写成全部窗口通过。</p>`:active?`<p>当前/最低MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；当前实际转速 ${num(latest.omega,3)}。</p>`:''}<p class="small">复用同一32768步冻结策略，仅增加镜像对称处理；不是新训练或新模型。CPU策略推理与真实CFD配对执行；原10%均值偏置约束不变，20%仅敏感性参考。下方保留前次未处理策略的已完成结果，不能当作本次结果。</p>`;
+ if(b01?.verified===true){let phase=document.createElement('div');phase.innerHTML=`<hr><h3>FC-E059 · b01固定相位复验</h3><p><b>${b01.running?'真实CFD正在运行':'运行已停止，等待独立终态复核'}</b> · ${b01.completed_cycles}/800 周期 · t=${num(b01.latest.force_time,1)} / 210.0</p><p>当前/最低MemAvailable ${num(b01.current_available_gib,2)} / ${num(b01.minimum_available_gib,2)} GiB；当前实际转速 ${num(b01.latest.omega,3)}。</p><p class="small">同一冻结策略、投影、过滤器和800周期，只把预声明初态改为历史validation相位b01/restart130。首次unit因漏传--execute在模型和CFD前失败；本卡绑定Root批准的r2实际运行。尚无跨相位成功或科学准入。</p>`;card.appendChild(phase);}
 }
 function renderPolicyH5Comparison(run){
  let card=$('policy-h5-comparison');if(!card){card=document.createElement('div');card.id='policy-h5-comparison';card.className='card';$('exploratory-diverse-32768-long-cfd').after(card);}
@@ -430,7 +432,7 @@ function renderActiveExperiment(d){
  renderExploratoryDiversePPORealCFD(d.exploratory_diverse_ppo_real_cfd);
  renderExploratoryDiverse32768LongCFD(d.exploratory_diverse_32768_long_cfd);
  renderPolicyH5Comparison(d.policy_h5_comparison);
- renderProjectedCFD(d.projected_ppo_long_cfd);
+ renderProjectedCFD(d.projected_ppo_long_cfd,d.projected_ppo_b01_long_cfd);
  renderFinalPPORealCFD(d.exploratory_final_ppo_real_cfd);
  if(active?.mpc_trial===true&&active.verified===true){
   const causal=active.progress_kind==='exploratory_causal_history_h2_feedback';
@@ -2198,7 +2200,8 @@ def _exploratory_diverse_ppo_real_cfd(root: Path) -> dict:
                 "scientific_admission": False, "control_success_verified": False}
 
 
-def _exploratory_diverse_32768_long_cfd(root: Path, projected=False) -> dict:
+def _exploratory_diverse_32768_long_cfd(root: Path, projected=False,
+                                        projected_b01=False) -> dict:
     """Read the one actual 800-cycle CFD pair only after a completed cycle exists."""
     base = root / "artifacts/exploratory_diverse_32768_ppo_long_cfd_20261006"
     approval_path = root / "docs/EXPLORATORY_DIVERSE_32768_PPO_LONG_CFD_APPROVAL_20261006.json"
@@ -2209,6 +2212,7 @@ def _exploratory_diverse_32768_long_cfd(root: Path, projected=False) -> dict:
     status = "EXPLORATORY_DIVERSE_32768_PPO_LONG_CFD_EXECUTION_APPROVED"
     unit = "fluid-control-exploratory-diverse-32768-ppo-long-cfd-20261006.service"
     invocation = "285bea88ff234cd5acfb9cb03c2b3cf3"
+    start, end, primary = 148.0, 228.0, [168.0, 228.0]
     if projected:
         base = root / "artifacts/exploratory_projected_32768_ppo_long_cfd_20261006"
         approval_path = root / "docs/EXPLORATORY_PROJECTED_32768_PPO_LONG_CFD_APPROVAL_20261006.json"
@@ -2218,6 +2222,16 @@ def _exploratory_diverse_32768_long_cfd(root: Path, projected=False) -> dict:
         status = "EXPLORATORY_PROJECTED_32768_PPO_LONG_CFD_EXECUTION_APPROVED"
         unit = "fluid-control-exploratory-projected-32768-ppo-long-cfd-20261006.service"
         invocation = "afa5cde4daec474eb52b61c08f86746f"
+    if projected_b01:
+        base = root / "artifacts/exploratory_projected_32768_ppo_b01_long_cfd_20261006"
+        approval_path = root / "docs/EXPLORATORY_PROJECTED_32768_PPO_B01_LONG_CFD_APPROVAL_20261006.json"
+        driver_path = root / "artifacts/exploratory_projected_32768_ppo_b01_long_cfd_source_20261006_immutable/run_exploratory_projected_32768_ppo_b01_long_cfd.py"
+        approval_sha = "790bb12fae2f5df729efda98ef59e5d99f75521d220cb9b39e8caf04808e4c59"
+        driver_sha = "8b653f43bd1ffc69b6285dd10523199898d88d74aebe4279f65a66fb4807c741"
+        status = "EXPLORATORY_PROJECTED_32768_PPO_B01_LONG_CFD_EXECUTION_APPROVED"
+        unit = "fluid-control-exploratory-projected-32768-ppo-b01-long-cfd-r2-20261006.service"
+        invocation = "9ef43959e065431490bd4725fa8fb7fe"
+        start, end, primary = 130.0, 210.0, [150.0, 210.0]
     try:
         if (hashlib.sha256(approval_path.read_bytes()).hexdigest()
                 != approval_sha
@@ -2256,8 +2270,8 @@ def _exploratory_diverse_32768_long_cfd(root: Path, projected=False) -> dict:
             if (row.get("step") != index or len(ppo) != 69 or len(zero) != 69
                     or any(type(value) not in (int, float) or not math.isfinite(value)
                            for value in values)
-                    or abs(row["start_time"] - (148.0 + .1 * (index - 1))) > 1e-8
-                    or abs(row["end_time"] - (148.0 + .1 * index)) > 1e-8
+                    or abs(row["start_time"] - (start + .1 * (index - 1))) > 1e-8
+                    or abs(row["end_time"] - (start + .1 * index)) > 1e-8
                     or row.get("solver_health", {}).get("ppo", {}).get("steps") != 20
                     or row.get("solver_health", {}).get("zero", {}).get("steps") != 20
                     or row["solver_health"]["ppo"].get("solver_ended_cleanly") is not True
@@ -2279,14 +2293,50 @@ def _exploratory_diverse_32768_long_cfd(root: Path, projected=False) -> dict:
                 "latest": series[-1], "current_available_gib": available[-1] / 2**30,
                 "minimum_available_gib": min(available) / 2**30,
                 "policy_training_complete": True, "gpu_training": False,
-                "inference_device": "cpu", "primary_window": [168.0, 228.0],
+                "inference_device": "cpu", "primary_window": primary,
                 "discarded_warmup_cycles": 200, "early_comparison_cycles": 124,
+                "phase": "b01_validation" if projected_b01 else "b00_train",
                 "scientific_admission": False, "control_success_verified": False,
                 "approval_sha256": approval_sha}
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
             subprocess.SubprocessError):
         return {"verified": False, "running": False,
                 "scientific_admission": False, "control_success_verified": False}
+
+
+def _projected_b00_reported_terminal(root: Path, run: dict):
+    """Expose only the independently verified b00 result; never borrow its field image."""
+    if run.get("verified") is not True or run.get("running") is True:
+        return None
+    result_path = root / "artifacts/exploratory_projected_32768_ppo_long_cfd_20261006/result.json"
+    review_path = root / "docs/EXPLORATORY_PROJECTED_32768_PPO_LONG_CFD_TERMINAL_REVIEW_20261006.md"
+    try:
+        if (hashlib.sha256(result_path.read_bytes()).hexdigest()
+                != "199127979c6cb43e6304c60fc3373a2b1a8465476ffdd265d30c108dfffd0ca6"
+                or hashlib.sha256(review_path.read_bytes()).hexdigest()
+                != "44ef122bae110d22b8046b98ced195e9c4f7548441bc22f863015106bfbe7ff4"):
+            raise ValueError("projected b00 terminal evidence differs")
+        result = json.loads(result_path.read_text())
+        primary = result["windows"]["primary_final_60"]
+        early = result["windows"]["early_first_6p2"]
+        if (result.get("status") != "EXPLORATORY_PROJECTED_32768_PPO_LONG_CFD_COMPLETE_NOT_ADMISSION"
+                or result.get("cycles") != 800 or result.get("scientific_admission") is not False
+                or result.get("owned_containers_cleaned") is not True
+                or result.get("source_restart_unchanged") is not True
+                or primary.get("interval") != [168.0, 228.0]
+                or primary.get("left_endpoint_included") is not False):
+            raise ValueError("projected b00 terminal contract differs")
+        return {"paired_drag_reduction": primary["paired_drag_reduction"],
+                "paired_rear_cl_fluctuation_rms_ratio":
+                    primary["paired_rear_cl_fluctuation_rms_ratio"],
+                "absolute_mean_rear_cl_over_paired_zero_rms":
+                    primary["absolute_mean_rear_cl_over_paired_zero_rms"],
+                "early_mean_bias_ratio":
+                    early["absolute_mean_rear_cl_over_paired_zero_rms"],
+                "result_sha256":
+                    "199127979c6cb43e6304c60fc3373a2b1a8465476ffdd265d30c108dfffd0ca6"}
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+        return None
 
 
 def _exploratory_final_ppo_real_cfd(root: Path) -> dict:
@@ -4792,6 +4842,10 @@ class Handler(BaseHTTPRequestHandler):
             data["exploratory_diverse_32768_long_cfd"]["paired_field"] = _long_ppo_field(self.root)
             data["policy_h5_comparison"] = _policy_h5_comparison(self.root)
             data["projected_ppo_long_cfd"] = _exploratory_diverse_32768_long_cfd(self.root, projected=True)
+            data["projected_ppo_long_cfd"]["reported_terminal"] = (
+                _projected_b00_reported_terminal(self.root, data["projected_ppo_long_cfd"]))
+            data["projected_ppo_b01_long_cfd"] = _exploratory_diverse_32768_long_cfd(
+                self.root, projected_b01=True)
             data["exploratory_final_ppo_real_cfd"] = _exploratory_final_ppo_real_cfd(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)

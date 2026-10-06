@@ -45,3 +45,51 @@ def test_projected_missing_evidence_never_claims_live(tmp_path):
     assert not r['verified'] and not r['running']
     assert 'PPO策略＋镜像对称处理' in m.PAGE
     assert '不是新训练或新模型' in m.PAGE
+
+def test_b01_projected_r2_requires_exact_phase_identity_and_progress(tmp_path,monkeypatch):
+    docs=tmp_path/'docs';docs.mkdir()
+    approval=docs/'EXPLORATORY_PROJECTED_32768_PPO_B01_LONG_CFD_APPROVAL_20261006.json'
+    approval.write_text(json.dumps({'status':'EXPLORATORY_PROJECTED_32768_PPO_B01_LONG_CFD_EXECUTION_APPROVED',
+      'execution_authorized':True,'steps':800,'inference_device':'cpu','scientific_admission':False,
+      'driver_sha256':'8b653f43bd1ffc69b6285dd10523199898d88d74aebe4279f65a66fb4807c741'}))
+    driver=tmp_path/'artifacts/exploratory_projected_32768_ppo_b01_long_cfd_source_20261006_immutable/run_exploratory_projected_32768_ppo_b01_long_cfd.py'
+    driver.parent.mkdir(parents=True);driver.write_text('driver')
+    base=tmp_path/'artifacts/exploratory_projected_32768_ppo_b01_long_cfd_20261006';base.mkdir()
+    def obs(front,rear,cl,omega):
+        x=[0.0]*69;x[64]=front;x[66]=rear;x[67]=cl;x[68]=omega;return x
+    row={'step':1,'start_time':130.,'end_time':130.1,'requested_omega':0.,'applied_omega':0.,
+         'output_observation':obs(1.3,1.0,.4,0.),'zero_observation':obs(1.31,1.01,.42,0.),
+         'solver_health':{'ppo':{'steps':20,'solver_ended_cleanly':True},
+                          'zero':{'steps':20,'solver_ended_cleanly':True}}}
+    (base/'progress.json').write_text(json.dumps({'completed_cycles':1,'rows':[row]}))
+    (base/'resources.jsonl').write_text(json.dumps({'MemAvailable':111*2**30})+'\n')
+    hashes={approval.read_bytes():'790bb12fae2f5df729efda98ef59e5d99f75521d220cb9b39e8caf04808e4c59',
+            driver.read_bytes():'8b653f43bd1ffc69b6285dd10523199898d88d74aebe4279f65a66fb4807c741'}
+    monkeypatch.setattr(m.hashlib,'sha256',lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
+    unit='\n'.join(['InvocationID=9ef43959e065431490bd4725fa8fb7fe','MainPID=3509955',
+      'ActiveState=active','SubState=running','Result=success','ExecMainCode=0','ExecMainStatus=0'])
+    monkeypatch.setattr(m.subprocess,'check_output',lambda *args,**kwargs:unit)
+    run=m._exploratory_diverse_32768_long_cfd(tmp_path,projected_b01=True)
+    assert run['verified'] and run['running'] and run['completed_cycles']==1
+    assert run['phase']=='b01_validation' and run['primary_window']==[150.,210.]
+    assert run['latest']['force_time']==130.1 and not run['scientific_admission']
+    assert 'FC-E059 · b01固定相位复验' in m.PAGE
+
+def test_projected_b00_terminal_is_sha_bound_and_reports_early_failure(tmp_path,monkeypatch):
+    base=tmp_path/'artifacts/exploratory_projected_32768_ppo_long_cfd_20261006';base.mkdir(parents=True)
+    result=base/'result.json';result.write_text(json.dumps({
+      'status':'EXPLORATORY_PROJECTED_32768_PPO_LONG_CFD_COMPLETE_NOT_ADMISSION',
+      'cycles':800,'scientific_admission':False,'owned_containers_cleaned':True,
+      'source_restart_unchanged':True,'windows':{
+       'primary_final_60':{'interval':[168.,228.],'left_endpoint_included':False,
+         'paired_drag_reduction':.0389197994,'paired_rear_cl_fluctuation_rms_ratio':.815695748,
+         'absolute_mean_rear_cl_over_paired_zero_rms':.011385207},
+       'early_first_6p2':{'absolute_mean_rear_cl_over_paired_zero_rms':.135461748}}}))
+    review=tmp_path/'docs/EXPLORATORY_PROJECTED_32768_PPO_LONG_CFD_TERMINAL_REVIEW_20261006.md';review.parent.mkdir();review.write_text('review')
+    hashes={result.read_bytes():'199127979c6cb43e6304c60fc3373a2b1a8465476ffdd265d30c108dfffd0ca6',
+            review.read_bytes():'44ef122bae110d22b8046b98ced195e9c4f7548441bc22f863015106bfbe7ff4'}
+    monkeypatch.setattr(m.hashlib,'sha256',lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
+    terminal=m._projected_b00_reported_terminal(tmp_path,{'verified':True,'running':False})
+    assert terminal['paired_drag_reduction']==.0389197994
+    assert terminal['early_mean_bias_ratio']>.1
+    assert '三项原标准均通过' in m.PAGE and '不能写成全部窗口通过' in m.PAGE
