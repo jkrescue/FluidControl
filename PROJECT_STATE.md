@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E065 当前实际任务：b00 整轨训练 HDF 转换中（不是训练或新 CFD）
+
+Root 于10:17:37UTC启动 `fluid-control-b00-controlled-train-conversion-20261006.service`，invocation `f5ee31dd92624f0980a509084de9c756`，独立观测同handle PID348063/active-running、59/801帧。进度来自已写入计数，不代表最终官方Reader验证完成。输入为已完成投影PPO b00真实CFD的801帧；仅整轨train，48已审控制帧复用、753新转换，不混zero轨迹，不重新拟合归一化。
+
+批准SHA `4fa7192e13bf7ad3a141bffb483710e2400fd8ee243caa60a6e67ab695927686`；实际immutable源码 `f96c882a90e7ecaf4a2f8a5fc327764909ab42b4e6bbb11cde8e99205488b075`。12GiB/noSwap/CPU1、Available50/22GiB、3600秒上限，保留root-owned批次导出供诊断，计划磁盘10GiB/启动余量20GiB。无模型/GPU/优化器/solver推进；原H100失败和已有三相位物理结果不变。待实际终态再验证HDF与源文件，运行中不登记科学metrics。
+
 ## FC-E064 最新缓存诊断：动作变化已有覆盖，但不能证明晚期受控状态覆盖
 
 仅小JSON分析已完成，unit `fluid-control-train-cache-coverage-20261006.service` / invocation `08658ea0d6a5435a847df4de1223d21f` PID0/exit0。固定原P027全44条、origin51、前5步及H1/AR/持力三流，独立复算误差与分组差异为0；无新HDF/模型/推理/训练/CFD。反转18条中16来自train16，恒定21条中20来自base，变化不反转5条全来自train8；分层与family强混杂，不构成因果识别。反转组五步rearClMAE .020870(H1)/.023243(AR)，低于恒定 .038894/.045342，不能声称动作反转简单导致更大误差。

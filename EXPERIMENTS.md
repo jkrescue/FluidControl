@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E065 — b00 controlled train trajectory conversion actually running
+
+Launched by Lead at10:17:37UTC, unit `fluid-control-b00-controlled-train-conversion-20261006.service`, invocation `f5ee31dd92624f0980a509084de9c756`. Independent same-handle observation: PID348063 active/running,59/801 written frames; official-reader terminal verification remains false. Approval SHA `4fa7192e13bf7ad3a141bffb483710e2400fd8ee243caa60a6e67ab695927686`; immutable executed adapter SHA `f96c882a90e7ecaf4a2f8a5fc327764909ab42b4e6bbb11cde8e99205488b075`. Output `artifacts/b00_controlled_train_conversion_20261006`; exact1602 U/p plus12 metadata files are SHA-bound, original source read-only.48 controlled cached frames are checked against old receipt-bound HDF arrays/actions/forces;753 remaining frames use unchanged official Curator sampler in16 batches, then one801-frame physical HDF is roundtripped through the official HDF5Reader.
+
+Whole b00 is train-only, no random-frame split, no zero trajectory addition, no normalization refit. Actual endpoint coefficient labels differ in provenance from older interpolated HDF labels. This is CPU data engineering, not FNO/PPO training, new CFD, model repair, or admission. Source tests13PASS0.54s before launch; these synthetic checks are not proof of actual conversion completion. Requested12GiB/noSwap/CPU1 and3600s, hostAvailable50startup/22runtime; retained batch exports avoid invalid unprivileged deletion of root-owned VTK.10GiB planning disk budget with20GiB startup headroom. No scientific CSV metrics while running; failures and prior results remain unchanged.
+
 ## FC-E064 — Existing train-cache action coverage, descriptive not causal
 
 One approved JSON-only execution completed at10:07:34UTC under unit `fluid-control-train-cache-coverage-20261006.service` / invocation `08658ea0d6a5435a847df4de1223d21f`, PID0/exit0. Source SHA `1fbd532caae13240f62a45922e499f02cf6402ad1c860828cd1a100350288317` unchanged on canonical promotion; approval SHA `87ede7d20203c2cb5bb77e5f9af96c1f1d8b53c0355fec2180098fb47aa5fdc3`; result `artifacts/train_cache_coverage_20261006.json` SHA `34ec16db0540c0dabb2f44caf3240ae386893ea85bd28bc1436e8820212b039d`; independent report SHA `582f5d04ef7fcab10349a858cd4c618ddc98e44bcf9eb99da84de552d48a8754`.
