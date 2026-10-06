@@ -104,3 +104,106 @@ def test_validate_scales_receipt_is_b_parent_h10_not_h25(tmp_path):
     receipt["source_spec"] = dict(spec, source_sha256={"runner": "d" * 64})
     with pytest.raises(ValueError):
         module.validate_scales_receipt(receipt, spec)
+
+
+def test_actual_h25_eight_window_accumulation_and_adam_step():
+    module = load()
+    torch = pytest.importorskip("torch")
+    model = torch.nn.Linear(1, 1, bias=False)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5)
+
+    def run(value):
+        loss = model(torch.tensor([[float(value)]])).square().mean()
+        loss.backward()
+        return {"total": float(loss.detach()), "rollout_steps": 25}
+
+    before = model.weight.detach().clone()
+    record = module.accumulate_eight_h25_gradients(
+        torch, model, optimizer, range(1, 9), run)
+    assert record["windows"] == 8
+    assert record["optimizer_step_performed"] is False
+    assert model.weight.grad is not None and torch.isfinite(model.weight.grad).all()
+    optimizer.step()
+    assert not torch.equal(before, model.weight.detach())
+
+    with pytest.raises(FloatingPointError):
+        module.accumulate_eight_h25_gradients(
+            torch, model, optimizer, range(8),
+            lambda _: {"total": 1.0, "rollout_steps": 10})
+
+
+def test_v3_receipts_allow_only_reviewed_runner_repair():
+    module = load()
+    common = {
+        "parent_manifest": {"sha256": module.PARENT_SHA},
+        "config": {"sha256": module.CONFIG_SHA},
+        "train_audit": {"sha256": module.AUDIT_SHA},
+    }
+    old = dict(common, source_sha256={
+        module.RUNNER_RELATIVE: module.V3_RUNNER_SHA,
+        "scripts/p029_control_aware_flow_objective.py": "a" * 64,
+    })
+    current = dict(common, source_sha256={
+        module.RUNNER_RELATIVE: module.sha(SCRIPT),
+        "scripts/p029_control_aware_flow_objective.py": "a" * 64,
+    })
+    assert module.receipt_source_matches_v4(old, current)
+    current["source_sha256"] = dict(current["source_sha256"])
+    current["source_sha256"]["scripts/p029_control_aware_flow_objective.py"] = "b" * 64
+    assert not module.receipt_source_matches_v4(old, current)
+    current["source_sha256"]["scripts/p029_control_aware_flow_objective.py"] = "a" * 64
+    current["parent_manifest"] = {"sha256": "c" * 64}
+    assert not module.receipt_source_matches_v4(old, current)
+
+
+def test_real_h25_objective_feeds_eight_window_accumulator():
+    module = load()
+    torch = pytest.importorskip("torch")
+    objective_path = SCRIPT.with_name("p029_control_aware_flow_objective.py")
+    spec = importlib.util.spec_from_file_location("bounded_h25_objective", objective_path)
+    objective = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(objective)
+
+    class Flow(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.weight = torch.nn.Parameter(torch.tensor(0.01))
+
+    class Aero(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.anchor = torch.nn.Parameter(torch.tensor(0.0), requires_grad=False)
+
+    flow, aero = Flow(), Aero().eval()
+    optimizer = torch.optim.AdamW(flow.parameters(), lr=1e-5)
+    initial = torch.zeros(1, 3, 1, 1)
+    target = torch.zeros(1, 100, 3, 1, 1)
+    mask = torch.ones(1, 1, 1, 1)
+    actions = torch.zeros(1, 101, 1)
+    forces = torch.zeros(1, 100, 4)
+
+    def predict(model, inputs, current_mask):
+        if model is flow:
+            return model.weight.expand_as(initial), torch.zeros(1, 4)
+        return torch.zeros_like(initial), torch.zeros(1, 4)
+
+    def run(_):
+        return objective.field_force_rollout_objective(
+            flow, aero, initial, target, mask, actions, forces,
+            predict, lambda current, *_: current,
+            field_scale=1.0, force_scale=1.0, backward=True, horizon=25)
+
+    single_flow = Flow()
+    single_flow.weight.data.copy_(flow.weight.data)
+    flow = single_flow
+    single = run(0)
+    expected_gradient = flow.weight.grad.detach().clone()
+    optimizer = torch.optim.AdamW(flow.parameters(), lr=1e-5)
+    record = module.accumulate_eight_h25_gradients(
+        torch, flow, optimizer, range(8), run)
+    assert len(record["records"]) == 8
+    assert all(row["rollout_steps"] == 25 for row in record["records"])
+    assert torch.equal(flow.weight.grad, expected_gradient)
+    before = flow.weight.detach().clone()
+    optimizer.step()
+    assert not torch.equal(before, flow.weight.detach())

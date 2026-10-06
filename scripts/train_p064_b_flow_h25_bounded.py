@@ -23,6 +23,8 @@ AUDIT_SHA = "03153fa51e94db01c7abacfb80037d99bb6757ac7aacdc87f1c7266a002323b9"
 ORDER_SHA = "177ebd9523cde918eb0c1fb8026286dac7e95f3d228ae0e349757a2a9a288f9f"
 MODES = ("scales", "resource-probe", "train")
 SELECTED_ORDER_SHA = "06c922e8f1476af52705fcc88521bc039d3fa6bd7a9c00b130179af712e36691"
+RUNNER_RELATIVE = "scripts/train_p064_b_flow_h25_bounded.py"
+V3_RUNNER_SHA = "a2fd5fb9a017dc3f6ae71134ea9f68d72cc38b15d3e88f0079b46b5b77037eab"
 
 
 def sha(path):
@@ -100,11 +102,72 @@ def summarize_scales(records):
     return validate_scales(values)
 
 
+def accumulate_eight_h25_gradients(torch, model, optimizer, windows, run_window):
+    """Exact reviewed eight-window accumulation, with truthful H25 records."""
+    optimizer.zero_grad(set_to_none=True)
+    records = []
+    for window in windows:
+        if len(records) == 8:
+            raise ValueError("too many bounded H25 windows in accumulation group")
+        record = run_window(window)
+        if set(("total", "rollout_steps")) - set(record):
+            raise ValueError("bounded H25 window record is incomplete")
+        if record["rollout_steps"] != 25 or not torch.isfinite(torch.as_tensor(record["total"])):
+            raise FloatingPointError("invalid bounded H25 window record")
+        records.append(record)
+    if len(records) != 8:
+        raise ValueError("incomplete bounded H25 accumulation group")
+    parameters = [parameter for parameter in model.parameters() if parameter.requires_grad]
+    if not parameters or any(parameter.grad is None for parameter in parameters):
+        raise RuntimeError("missing bounded H25 flow gradient")
+    if any(not torch.isfinite(parameter).all() or not torch.isfinite(parameter.grad).all()
+           for parameter in parameters):
+        raise FloatingPointError("nonfinite bounded H25 parameter/gradient")
+    for parameter in parameters:
+        parameter.grad.div_(8)
+    for state in optimizer.state.values():
+        for value in state.values():
+            if torch.is_tensor(value) and not torch.isfinite(value).all():
+                raise FloatingPointError("nonfinite bounded H25 AdamW state")
+    squared = sum(
+        (parameter.grad.detach().abs().double().square().sum() for parameter in parameters),
+        torch.zeros((), dtype=torch.float64, device=parameters[0].device),
+    )
+    return {
+        "records": records,
+        "windows": 8,
+        "mean_total": sum(float(record["total"]) for record in records) / 8,
+        "mean_gradient_norm_before_scope_mask_and_clip": float(torch.sqrt(squared)),
+        "optimizer_step_performed": False,
+    }
+
+
 def binding(spec):
     keys = ("parent_manifest", "config", "train_audit", "source_sha256")
     if not isinstance(spec, dict) or any(key not in spec for key in keys):
         raise ValueError("receipt source binding missing")
     return {key: spec[key] for key in keys}
+
+
+def receipt_source_matches_v4(receipt_spec, current_spec):
+    """Accept exact binding, or the reviewed v3->v4 runner-only repair."""
+    receipt_binding = binding(receipt_spec)
+    current_binding = binding(current_spec)
+    if receipt_binding == current_binding:
+        return True
+    if any(receipt_binding[key] != current_binding[key]
+           for key in ("parent_manifest", "config", "train_audit")):
+        return False
+    old_sources = receipt_binding["source_sha256"]
+    new_sources = current_binding["source_sha256"]
+    if not isinstance(old_sources, dict) or not isinstance(new_sources, dict):
+        return False
+    if set(old_sources) != set(new_sources) or RUNNER_RELATIVE not in old_sources:
+        return False
+    differing = {key for key in old_sources if old_sources[key] != new_sources[key]}
+    return (differing == {RUNNER_RELATIVE}
+            and old_sources[RUNNER_RELATIVE] == V3_RUNNER_SHA
+            and new_sources[RUNNER_RELATIVE] == sha(__file__))
 
 
 def validate_scales_receipt(receipt, spec):
@@ -121,7 +184,7 @@ def validate_scales_receipt(receipt, spec):
             or receipt.get("sampler_order_sha256") != ORDER_SHA
             or receipt.get("scale_horizon") != 10
             or receipt.get("protocol") != protocol()
-            or binding(receipt.get("source_spec", {})) != binding(spec)):
+            or not receipt_source_matches_v4(receipt.get("source_spec", {}), spec)):
         raise ValueError("actual immutable P064-B parent scales receipt differs")
     return validate_scales(receipt.get("fixed_scales"))
 
@@ -139,7 +202,7 @@ def validate_resource_receipt(receipt, spec):
             or not hex_digest(initial) or not hex_digest(receipt.get("flow_terminal_tensor_sha256"))
             or not hex_digest(receipt.get("frozen_aerodynamic_tensor_sha256"))
             or receipt.get("fixed_scales") != validate_scales(spec["fixed_scales"])
-            or binding(receipt.get("source_spec", {})) != binding(spec)):
+            or not receipt_source_matches_v4(receipt.get("source_spec", {}), spec)):
         raise ValueError("actual immutable bounded H25 optimizer probe receipt differs")
 
 
@@ -324,8 +387,8 @@ def execute(spec, mode, output):
                 if mode == "scales":
                     records.extend(run(*item) for item in windows())
                 else:
-                    record = accumulation.accumulate_eight_window_gradients(
-                        flow, optimizer, windows(), lambda item: run(*item))
+                    record = accumulate_eight_h25_gradients(
+                        torch, flow, optimizer, windows(), lambda item: run(*item))
                     for key in ("raw_field", "raw_force", "normalized_field_contribution", "normalized_force_contribution"):
                         record["mean_" + key] = math.fsum(row[key] for row in record["records"]) / 8
                     record.update(base.optimizer_update(flow, optimizer, saved, step))
