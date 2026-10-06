@@ -72,3 +72,12 @@ def test_runtime_mapping_single_new_profile_only():
         new=ROOT/'src/fluid_control/dual_control_contract_g_canonical.py'
     text=new.read_text().replace('        "FC_P064_AR5_RESET_K1_FRESH_FORCE_FNO": ("p026_k1", 1),\n','')
     assert text.rstrip()==old.read_text().rstrip()
+
+
+def test_cfd_approved_source_set_excludes_independently_hashed_driver():
+    path=ROOT/'docs/P064_G_SYMMETRY_CANONICAL_B01_CFD_APPROVAL_20261007.json'
+    spec=json.loads(path.read_text())
+    m=load('g_approved_cfd_schema',ROOT/'scripts/run_p064_g_symmetry_canonical_b01_cfd.py')
+    assert set(spec['source_files'])==m.SOURCE_PATHS
+    assert spec['driver_path'] not in spec['source_files']
+    m.validate_spec(spec)  # metadata schema only, never policy load or CFD.
