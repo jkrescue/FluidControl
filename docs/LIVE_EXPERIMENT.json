@@ -1,14 +1,14 @@
 {
-  "experiment": "P029-parent-scales",
-  "label": "控制相关流场训练：计算两类误差的初始尺度",
-  "description": "上一轮完整评估仅1/6工况同时达标，未进入强化学习。现在用原1368个训练窗口计算流场误差和升阻力误差的尺度，不更新参数；之后检查反向计算资源，再进行171次联合目标训练。11:27前报告完整阶段结论。",
-  "unit": "fluid-control-fcp029-parent-scales-20261006.service",
-  "invocation": "dc049ec56a1c4b67be118ad05a68bf92",
-  "approval": "docs/FC_P029_SCALES_EXECUTION_APPROVAL_20261006.json",
-  "approval_sha256": "d72d89f8ff43b23ca4a35a65a00a199a83a4f9b683bbcbe6fca6421c3404173a",
+  "experiment": "P029-control-aware-training",
+  "label": "FNO训练：同时改善流场与升阻力预测",
+  "description": "第一次训练触发内存保护，日志已保留；增加约3GiB文件缓存余量后，现从原父模型重新执行完整171次更新，使用新运行记录，不接续失败更新。训练同时考虑流场和升阻力误差，模型与验收标准不变。当前尚未有新精度或强化学习/CFD闭环结果。11:27前报告阶段结论。",
+  "unit": "fluid-control-fcp029-flow-train-20261006.service",
+  "invocation": "7c8b277455444df58825338a6590d684",
+  "approval": "docs/FC_P029_TRAINING_EXECUTION_APPROVAL_20261006.json",
+  "approval_sha256": "4412292ee5695ee86e6dca1facdc1436587e161199da6e5394cea582003e3566",
   "launcher": "scripts/run_p029_control_aware_flow.py",
   "launcher_sha256": "354112951e20729c24027370de1eafb6ce70640fc9dd8ef380226c432a27e9d7",
-  "log": "artifacts/fcp029_parent_scales_20261006/run.log",
-  "progress_kind": "p029_scales",
+  "log": "artifacts/fcp029_control_aware_flow_training_20261006/run.log",
+  "progress_kind": "p029_train",
   "planned_updates": {"FNO":171}
 }
