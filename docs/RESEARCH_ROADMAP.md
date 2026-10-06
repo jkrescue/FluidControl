@@ -1,5 +1,9 @@
 # Research roadmap and prioritized backlog
 
+## Current — 2026-10-06: P027 complete; next intervention design in progress
+
+FC-E039 independently verified44 train-only H10 origins. Free-AR rear-Cl MAE is about45% above true-field conditioning; K4 changes K1 AR MAE by only0.27%. Actual result SHA `7785ebb92ca932b4fb572175b4bd66497fc3b7495f6ecdb534f3b587a0096366`. See `FC_P027_TERMINAL_REVIEW_20261006.md`. Preserve original formal K1/K4 failures. Inspect existing predicted-state training exposure and optimization scale before approving one controlled force-prediction intervention; no blind history-length or tiny-rate sweep. Follow with unchanged full formal evaluation, then compatible HydroGym/PPO training only upon surrogate acceptance, then paired real-CFD closed-loop verification. These downstream requirements are not complete. Older preparation/running sections below are historical.
+
 ## Current — 2026-10-06: matched K1/K4 formal suites completed; both rejected
 
 Update: independent terminal review is complete and FC-E038 records the failure. FC-P027 design was read by Root; isolated CPU implementation/unit tests are authorized, not real-data/model/GPU execution. See `FC_P026_K4_FORMAL_TERMINAL_REVIEW_20261006.md` and `FC_P027_SHORT_HORIZON_ERROR_DECOMPOSITION_PLAN_20261006.md`. Earlier review-in-progress wording below is historical.

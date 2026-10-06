@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 当前：P027真实误差诊断完成，尚无新的代理准入（2026-10-06）
+
+实际unit `fluid-control-fcp027-diagnostic-20261006.service` 已active/exited、exit0；官方b40容器退出0且无OOM。44条训练轨迹各10步，共440次流场推进及1760个受力状态评估（由完整案例和已审循环核对）。结果 `artifacts/fcp027_short_horizon_diagnostic_20261006/result.json` SHA `7785ebb92ca932b4fb572175b4bd66497fc3b7495f6ecdb534f3b587a0096366`，独立复核报告 `docs/FC_P027_TERMINAL_REVIEW_20261006.md`。
+
+后圆柱Cl整体MAE：K1真实流场条件0.026546、连续预测0.038693；K4分别0.026586、0.038588；保持初始力不变的基线0.633210。两模型各29/44轨迹连续预测更差；K4相对K1的连续预测MAE仅改善约0.27%。这支持预测流场输入误差/分布变化的贡献，不证明唯一原因，也不证明缩短控制预测长度即可满足闭环要求。原K1/K4正式FAIL不变，无新PPO或物理成功。
+
+26次主机采样最低MemFree22.5692GiB、MemAvailable111.0762GiB；25次GPU守卫采样最低CUDAfree22.5718GiB，均满足20GiB要求。源码复核确认P026已经包含等权H1/H100连续预测训练，不能重复称为新增预测状态暴露。下一步设计冻结K1受力模型、只训练现有官方FNO流场模型的H10多步对照，检查是否降低预测状态带来的额外受力误差；仍须原完整formal，不能用短期改善代替闭环验收。尚未批准新的GPU训练。以下准备和运行中描述为历史。
+
 ## FC-P027真实诊断执行准备完成（2026-10-06）
 
 诊断及资源启动程序已独立审查并集成，Root canonical联合32项CPU测试通过；只读414文件源码与来源配置完成独立核验。批准单 `docs/FC_P027_EXECUTION_APPROVAL_20261006.json` SHA `fe218527b6f85daf08999673b9525a2b93144e1722235f5769dc2ea055e567a5` 批准一次44训练轨迹、origin51、H10的只读误差分解，无优化器、无新模型、无validation/frozen/PPO。官方镜像b40，GPU0、allocator0.06、容器12GiB、900秒，启动free30/available50，运行双20与CUDA20GiB守卫。dry-run已通过但尚不能据此称为实际运行；实际unit/container观察后另记。K1/K4原正式FAIL保持有效。

@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E039 / P027 — actual short-horizon diagnostic complete
+
+Result SHA `7785ebb92ca932b4fb572175b4bd66497fc3b7495f6ecdb534f3b587a0096366`; actual official-b40 container exited0/noOOM. Independent review reproduced rear-Cl MAE directly from44 unique case prediction/target arrays. K1 true-field/free-AR MAE0.026546/0.038693; K4 0.026586/0.038588; persistence0.633210. Corresponding pooled rear-Cl RMSE: K1 0.038826406092363715/0.05423998282426294; K4 0.03881085177318823/0.054197059487591556. Each model worsens under AR on29/44 cases. Train8 K4 MAE rises0.026061→0.061876. First-lead H1/AR outputs match exactly for both models/all cases.
+
+Protocol: train-only44 trajectories, origin51, ten recorded-action transitions; K1/K4 fixed frozen-flow parents and unchanged targets; no optimizer/checkpoint/validation/frozen/PPO. Shared440 flow transitions and1760 aero evaluations follow the audited loop and completed case count, not independent hardware counters. Mixed62 costs include52 truth samples and are not admission evidence; eight terminal costs unavailable, with cases retained in force metrics. Independent report: `docs/FC_P027_TERMINAL_REVIEW_20261006.md`. Next hypothesis is robustness of the force model to predicted flow inputs, subject to checking existing training exposure before approving a controlled intervention. Original full formal failures remain authoritative.
+
 ## FC-P027 execution preparation — not a scientific result
 
 Root and independent reviews completed for diagnostic f398c86f and launcher aa8e337d. Canonical32 CPU tests passed0.64s. Frozen414 source manifest `ffdd7e623f9c8da0b39ccb167ca0b74c9013313fdf9cddc37266e884df578c1d`; independent source/metadata checks read no HDF/model payload. Approval `docs/FC_P027_EXECUTION_APPROVAL_20261006.json` SHA `fe218527b6f85daf08999673b9525a2b93144e1722235f5769dc2ea055e567a5` authorizes one bounded read-only44-origin/H10 diagnostic. Dry-run command preparation succeeded without Docker/GPU. No scientific CSV result until actual output and independent review; no policy training follows automatically.
