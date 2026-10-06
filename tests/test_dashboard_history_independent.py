@@ -109,6 +109,11 @@ def test_g_initialization_uses_actual_journal_not_gpu():
         assert not fn(root)['running']
     with patch.object(subprocess,'check_output',return_value=state.replace('a8e2f0a18136461c99e8154df953aa7e','other')):
         assert fn(root)=={'verified':False}
+    terminal=state.replace('1940841','0').replace('running','exited')+'Result=success\nExecMainStatus=0\n'
+    with patch.object(subprocess,'check_output',side_effect=[terminal,log]):
+        assert fn(root)['terminal_verified']
+    with patch.object(subprocess,'check_output',side_effect=[terminal.replace('ExecMainStatus=0','ExecMainStatus=1'),log]):
+        assert not fn(root)['terminal_verified']
 
 
 def test_reproduction_uses_canvas_and_images_before_return():

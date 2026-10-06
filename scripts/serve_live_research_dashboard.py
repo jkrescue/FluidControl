@@ -453,7 +453,7 @@ function renderActiveExperiment(d){
   if(d.response_aux_e?.verified){const e=d.response_aux_e;$('lead-monitor').textContent+=` 辅助监督候选E：${e.development_verified?'训练和固定评估已完成；两项H1误差与保留指标均略差，未采用，保留B':e.terminal_verified?'训练已完成并通过工程独审，预测改善待固定评估':e.running?(e.windows?'GPU气动力FNO分支训练':'进程运行/初始化，尚无已完成窗口'):'进程已停止，等待终态核验'}，窗口${e.windows}/256、参数更新${e.updates}/32；inv ${e.invocation}。不是PPO或新CFD，flow冻结。`;}
   if(d.h1_only_f?.verified){const f=d.h1_only_f;$('lead-monitor').textContent+=` 候选F：${f.development_verified?'训练及固定评估已完成；H1 Cl/Cd改善，但H5与AR保留性退化，未采用，保留B':f.terminal_verified?'训练已完成并通过工程独审；固定预测评估另列，尚无采用结论':f.running?(f.windows?'GPU气动力FNO分支训练（仅H1反传目标）':'进程运行/初始化，尚无已完成窗口'):'进程已停止，等待独立终态核验'}，真实窗口${f.windows}/256、参数更新${f.updates}/32；flow冻结，不是PPO或CFD。诊断total仍为H1/AR各半，不是训练目标；inv ${f.invocation}。`;if(f.development_verified&&f.next_step&&!d.bf_true_state?.verified)$('lead-monitor').textContent+=` 下一步：${f.next_step}。`;}
   if(d.bf_true_state?.verified){const q=d.bf_true_state;$('lead-monitor').textContent+=` B/F真状态受力对照：诊断已完成，160次气动力调用、0流场调用、0参数更新；${q.review_verified?'独立复算通过；换成真实状态并未普遍降低力误差，不能只归因流场累积误差，F仍未采用':'科学解释待独立复算'}。`;}
-  if(d.ar5_reset_g?.verified){const g=d.ar5_reset_g;$('lead-monitor').textContent+=` 当前候选G：${g.running?(g.windows?'GPU气动力FNO分支训练':'进程初始化，尚无已完成训练窗口'):'进程已停止，等待独立终态核验'}；真实窗口${g.windows}/256、参数更新${g.updates}/32。训练AR每5步重置真状态，H1/AR权重各半；flow冻结，原六窗诊断仍连续100步。不是PPO或CFD，未作预测改善结论；inv ${g.invocation}。`;}
+  if(d.ar5_reset_g?.verified){const g=d.ar5_reset_g;$('lead-monitor').textContent+=` 当前候选G：${g.running?(g.windows?'GPU气动力FNO分支训练':'进程初始化，尚无已完成训练窗口'):(g.terminal_verified?'训练已完成并通过工程独审，预测评估另行核验':'进程已停止，等待独立终态核验')}；真实窗口${g.windows}/256、参数更新${g.updates}/32。训练AR每5步重置真状态，H1/AR权重各半；flow冻结，原六窗诊断仍连续100步。不是PPO或CFD，未作预测改善结论；inv ${g.invocation}。`;}
   let card=$('canonical-reproduction');if(!card){card=document.createElement('div');card.id='canonical-reproduction';card.className='card';$('projected-ppo-cfd').before(card);card.innerHTML='<h3>当前 canonical b01 · 真实反馈曲线（非旧projected策略）</h3><canvas width="1000" height="220" id="canonical-reproduction-action"></canvas><canvas width="1000" height="220" id="canonical-reproduction-drag"></canvas><canvas width="1000" height="220" id="canonical-reproduction-lift"></canvas>';}
   drawActualSeries('canonical-reproduction-action',x.rows,[{key:'requested_omega',label:'物理请求ω',color:'#60c9fb'},{key:'omega',label:'实际ω',color:'#79d5a3'}],'单次物理限速后的动作');
   drawActualSeries('canonical-reproduction-drag',x.rows,[{key:'ppo_total_cd',label:'canonical Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero Cd',color:'#f2c879'}],'真实CFD周期末总Cd（非窗口均值）');
@@ -5570,8 +5570,15 @@ def _ar5_reset_g(root):
             if not isinstance(row,dict): continue
             if row.get('event')=='training_window_complete': windows=max(windows,int(row['consumed']))
             if row.get('event')=='accumulation_update_complete': updates=max(updates,int(row['update']))
-        return {'verified':True,'running':int(state['MainPID'])>0 and state['SubState']=='running','invocation':inv,
-                'windows':windows,'updates':updates,'terminal_verified':False,'promoted':False}
+        running=int(state['MainPID'])>0 and state['SubState']=='running'
+        result=root/'artifacts/p064_ar5_reset_candidate_g_20261007/result.json'
+        report=root/'docs/P064_AR5_RESET_G_TERMINAL_REVIEW_20261007.md'
+        terminal=(not running and state.get('Result')=='success' and state.get('ExecMainStatus')=='0'
+                  and result.exists() and report.exists()
+                  and hashlib.sha256(result.read_bytes()).hexdigest()=='d6b406038f452806b4852c36cf818d43600684fa0f7a034dfc7460bf722e5581'
+                  and hashlib.sha256(report.read_bytes()).hexdigest()=='23bf9f6d475477e2eb3c0cdba3616447c36840b6522ae20d99a558af09246715')
+        return {'verified':True,'running':running,'invocation':inv,
+                'windows':windows,'updates':updates,'terminal_verified':terminal,'promoted':False}
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError): return {'verified':False}
 
 

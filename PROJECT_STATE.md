@@ -1,10 +1,10 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前唯一摘要 — 基本800步闭环已复现；G已启动，F未采用
+## 当前唯一摘要 — 基本800步闭环已复现；G训练工程独审完成，预测尚待评估
 
 同 `f6c3fc3464074493b19ea5418ddfada5` PID0/exited/exit0，安全入口完成800次真实OpenFOAM反馈，主窗减阻4.0091%、后升力波动降低18.2810%、均值偏置3.6366%，六窗均过原2%/1.05/10%标准。[独审报告](docs/CANONICAL_B01_REPRODUCTION_TERMINAL_REVIEW_20261007.md)核3200force/1600solver/800动作、799反馈连续及原始力→观测，和原E085动作/观测逐值一致。result SHA `f22047b62c8bdb50547122e61d3e523d0cb101d90b1ed98037e4524cb98c342a`。这是已打开b01的工程复现，不是新泛化证据。
 
-FC-E101 G已按单次授权启动：unit `fluid-control-p064-ar5-reset-g-20261007.service`，invocation `a8e2f0a18136461c99e8154df953aa7e`，PID1940841实际running。批准 `docs/P064_AR5_RESET_G_TRAINING_APPROVAL_20261007.json` SHA `0b01cc385142b188482fa33cf4c1185fb6048a237ddb39b748eb7f80a1514a9a`；output `artifacts/p064_ar5_reset_candidate_g_20261007`。启动观察为初始化，窗口/更新只以journal真实事件计数，不能用输出目录尚未出现判停止。G仍原K1新Adam/B同256窗口32更新/28气动力参数/两bias与flow冻结；唯一训练变化AR每5步重置真状态，H1/AR各半和原six连续100步诊断不变。12GiB/noSwap，不是PPO或CFD；尚无精度结论。
+FC-E101 G同 `a8e2f0a18136461c99e8154df953aa7e` 已PID0/exited/exit0，256窗口/32更新完成。[工程独审](docs/P064_AR5_RESET_G_TERMINAL_REVIEW_20261007.md) SHA `23bf9f6d475477e2eb3c0cdba3616447c36840b6522ae20d99a558af09246715`：434原源+3overlay、28Adam步32、两bias/flow冻结、256条reset审计通过。result `d6b406038f452806b4852c36cf818d43600684fa0f7a034dfc7460bf722e5581`，manifest `6123b587065ad46104c328f276949ba07d3d7b61266b6c781cb5e9a538cfd681`。原K1新Adam/B同预算，仅训练AR每5步重置真状态；H1/AR各半，six诊断仍连续100步。最低Available106.593GiB、12GiB/noSwap。首次CPU审计因冗余approval键缺失失败，最小schema修复后R2通过；不是训练失败、没有重训。未独立forward复算训练loss。已交接条件批准的固定开发评估，尚无精度/晋级结论，B控制器保持。
 
 FC-E098 F训练和FC-E099固定开发评估均已终态独审：[训练工程审计](docs/P064_H1_ONLY_F_TERMINAL_REVIEW_20261007.md)、[16NPZ/80端点评估](docs/P064_H1_ONLY_F_DEVELOPMENT_REVIEW_20261007.md)。训练同31f1692d9f984b91a17e21a133426e99，32更新/256窗口、28Adam步32、两bias/flow冻结；评估同0f75311df5d248fab0dd12e6ce76c2ed退出0，result `642445fc3ad17491d3898c1bd3f49f34062b277302896796b67090a473482cee`。Pooled H1 rearCl MAE B .138998316601→F .136573601048，总Cd .038065373898→.033974312246改善；但H5两项退化、fixed-six AR .008946200483→.009550093227退化，未满足原保留性规则。Lead不采用F、保留B，不放宽标准、不自动续训。F反传仅H1，诊断total仍为H1/AR各半；flow预测逐值不变不是场改善，保存标量loss未独立forward复算。
 

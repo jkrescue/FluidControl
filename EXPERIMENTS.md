@@ -1,6 +1,10 @@
 # Experiment ledger
 
-## FC-E101 — G reset-AR5 training actually running; no outcome yet
+## FC-E101 — G reset-AR5 training engineering review complete; no admission
+
+Terminal invocation `a8e2f0a18136461c99e8154df953aa7e` independently observed PID0/exited/exit0. Result SHA `d6b406038f452806b4852c36cf818d43600684fa0f7a034dfc7460bf722e5581`, manifest `6123b587065ad46104c328f276949ba07d3d7b61266b6c781cb5e9a538cfd681`. [Engineering report](docs/P064_AR5_RESET_G_TERMINAL_REVIEW_20261007.md) SHA `23bf9f6d475477e2eb3c0cdba3616447c36840b6522ae20d99a558af09246715`: 32/256, 28 Adam states step32, frozen biases/flow, 256 exact reset-audit profiles, 434+3 sources verified. Minimum Available106.592533GiB; actual12GiB/noSwap. Producer official reload succeeded; audit did not forward-recompute losses or reopen dataset arrays. First audit failed on absent redundant approval key, retained; independently reviewed schema-only repair and ten fixtures followed by bounded R2 CPU audit `9544954f08154befbd01e987fce35455` exit0. No retraining or candidate promotion. Fixed-development evaluation is separately conditionally authorized; results not yet assessed here.
+
+Historical launch observation:
 
 Unit `fluid-control-p064-ar5-reset-g-20261007.service`, invocation `a8e2f0a18136461c99e8154df953aa7e`, PID1940841 independently observed running; journal completed31/256 windows and3/32 updates at the UI verification sample. Approval `docs/P064_AR5_RESET_G_TRAINING_APPROVAL_20261007.json` SHA `0b01cc385142b188482fa33cf4c1185fb6048a237ddb39b748eb7f80a1514a9a`; output `artifacts/p064_ar5_reset_candidate_g_20261007`. Exact original B budget/order/K1 fresh Adam/28 trainable aero tensors/two frozenbias and frozenflow; sole training change resets AR input to true current state every5 steps. Equal H1/AR objective remains; original fixed-six diagnostic still continuousAR100.12GiB/noSwap, no PPO/CFD/admission. Counts are actual journal events, not process/GPU utilization inference; no scientific metric row while running. F retention failure and completed E095 physical reproduction unchanged.
 
