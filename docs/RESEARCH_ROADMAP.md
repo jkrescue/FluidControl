@@ -1,5 +1,13 @@
 # Research roadmap and prioritized backlog
 
+## Current — P029 full formal running; P030 diagnostic CPU implementation approved
+
+At03:41UTC, actual P029 formal invocation85ae29a422fc48739136418317de8ca5 remains live in dynamic6. Its validation10 endpoint component passed, but H100 field/rear-lift/total-drag errors are worse than K1; no complete admission or new PPO result exists. The two-hour factual report is `TWO_HOUR_CONCLUSION_20261006.md`.
+
+P030 plan07febacc and independent review237d88 define a fixed44-start0, K1/P029 H100 inference diagnostic. Only isolated CPU implementation and synthetic tests are approved in `FC_P030_CPU_IMPLEMENTATION_APPROVAL_20261006.md`. It will distinguish at-lead from cumulative-prefix errors and inspect within-training-trajectory horizon behavior without claiming causal proof or whole-distribution coverage. Real payload/GPU execution needs separate review and approval after the active formal job terminates. No new training or threshold change follows automatically.
+
+Final sequence remains accepted surrogate → compatible HydroGym/PPO or separately validated control architecture → paired real-CFD feedback under original physical criteria. A possible full-field-reset short-horizon MPC path is a design consideration, not an implemented bridge or waiver of the current world-model/PPO gates. Earlier running-state sections below are historical.
+
 ## Current — P028 training/H10 complete; original full formal running
 
 At01:57UTC actual formal invocation `eb4e12507302498bb8944373e0717a25` is in validation10. Matched H10 demonstrates13.79% lower mean-case field RMSE but2.10% worse rear-Cl MAE; this is not a successful control-model repair. Finish unchanged complete formal and independent review. In parallel prepare one conditional P029 control-aware flow objective, not GPU training; retain official architecture, exact parent/data/order/budget, frozen aerodynamic parameters and fixed evaluation. Do not choose weights using validation outcomes. Any new backward graph requires its own safe resource check.
