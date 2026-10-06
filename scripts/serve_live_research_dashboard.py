@@ -373,8 +373,9 @@ function renderExploratoryDiverseH5PPO(ppo){
 }
 function renderExploratoryDiversePPORealCFD(run){
  const card=$('exploratory-diverse-ppo-real-cfd');card.hidden=run?.verified!==true;if(card.hidden)return;
- const rows=run.actual_timeseries||[],latest=run.latest||{};
- $('exploratory-diverse-ppo-real-cfd-summary').innerHTML=`<p><b>${run.running?'真实 CFD 正在运行':'真实 CFD 已停止，等待终态复核'}</b> · ${run.completed_cycles}/124 个配对周期 · CPU策略推理，无GPU训练</p><p>最近周期 t=${num(latest.force_time,1)}：请求/实际动作 ${num(latest.requested_omega,3)} / ${num(latest.omega,3)}；PPO/zero 总 Cd ${num(latest.ppo_total_cd,5)} / ${num(latest.zero_total_cd,5)}；PPO/zero 后柱 Cl ${num(latest.ppo_rear_cl,5)} / ${num(latest.zero_rear_cl,5)}。最低 MemAvailable ${num(run.minimum_available_gib,2)} GiB。</p><p class="small">策略来自24个固定真实重置态的4096步训练；FNO训练权重保持冻结。本卡只报告正在产生的真实CFD，不沿用旧策略的负面终态结论，也不预判新策略成败。</p>`;
+ const rows=run.actual_timeseries||[],latest=run.latest||{},terminal=run.terminal_result,labels={full:'完整 12.4 D/U',first_6p2:'前 6.2 D/U',trailing_6p2:'后 6.2 D/U'};
+ const table=terminal?.verified?`<p><b>124周期真实CFD已完成，但没有达到原物理目标。</b> 完整窗口减阻 ${terminal.windows[0].drag_reduction_percent.toFixed(3)}%（目标≥2%）；Cl′ RMS变化 ${terminal.windows[0].rear_cl_rms_change_percent.toFixed(3)}%；平均Cl偏置比 ${terminal.windows[0].mean_bias_percent.toFixed(2)}%（原门槛≤10%）。</p><table><thead><tr><th>窗口</th><th>PPO / zero平均总Cd</th><th>减阻率</th><th>Cl′ RMS变化</th><th>|平均Cl| / zero RMS</th></tr></thead><tbody>${terminal.windows.map(r=>`<tr><td>${labels[r.name]}</td><td>${r.ppo_total_cd_mean.toFixed(5)} / ${r.zero_total_cd_mean.toFixed(5)}</td><td>${r.drag_reduction_percent.toFixed(3)}%</td><td>${r.rear_cl_rms_change_percent.toFixed(3)}%</td><td>${r.mean_bias_percent.toFixed(2)}%</td></tr>`).join('')}</tbody></table><p class="small">20%均值偏置只作敏感性参考：完整窗会通过20%但仍未达到2%减阻，且原10%门槛仍失败。动作最大绝对值 ${terminal.max_abs_applied_omega.toFixed(3)}，没有饱和终点。独立终态报告仍在整理，本卡不构成科学准入。</p>`:'';
+ $('exploratory-diverse-ppo-real-cfd-summary').innerHTML=`<p><b>${terminal?.verified?'真实 CFD 已完成，目标未完成':run.running?'真实 CFD 正在运行':'真实 CFD 已停止，等待终态复核'}</b> · ${run.completed_cycles}/124 个配对周期 · CPU策略推理，无GPU训练</p><p>最近周期 t=${num(latest.force_time,1)}：请求/实际动作 ${num(latest.requested_omega,3)} / ${num(latest.omega,3)}；PPO/zero 总 Cd ${num(latest.ppo_total_cd,5)} / ${num(latest.zero_total_cd,5)}；PPO/zero 后柱 Cl ${num(latest.ppo_rear_cl,5)} / ${num(latest.zero_rear_cl,5)}。最低 MemAvailable ${num(run.minimum_available_gib,2)} GiB。</p>${table}<p class="small">策略来自24个固定真实重置态的4096步训练；FNO训练权重保持冻结。本卡与旧策略的真实CFD负面结果分开，也不把下一轮32768步准备误写成正在训练。</p>`;
  drawActualSeries('exploratory-diverse-ppo-actions',rows,[{key:'requested_omega',label:'请求转速',color:'#60c9fb'},{key:'omega',label:'实际转速',color:'#79d5a3'}],'24-reset PPO动作（周期终点）');
  drawActualSeries('exploratory-diverse-ppo-drag',rows,[{key:'ppo_total_cd',label:'PPO total Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero total Cd',color:'#f2c879'}],'新策略真实CFD总阻力 Cd（周期终点）');
  drawActualSeries('exploratory-diverse-ppo-lift',rows,[{key:'ppo_rear_cl',label:'PPO rear Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero rear Cl',color:'#f69d97'}],'新策略真实CFD后柱升力 Cl（周期终点）');
@@ -1726,6 +1727,7 @@ _DIVERSE_H5_PPO_SUPERVISOR_SHA = "0b3e2556a5f34136dee3f2749a5803dc9cffffe2852b25
 _DIVERSE_H5_PPO_DRIVER_SHA = "aae8c9a4311112439251b695001c7601ffd3d7cd3010937f86bd9a0bfebf3040"
 _DIVERSE_PPO_CFD_APPROVAL_SHA = "67fda1a404f844d89b986442a4a9000561b02757417d5a8d366fdf9f9e6033db"
 _DIVERSE_PPO_CFD_DRIVER_SHA = "89e0d8bea92440babd3d647eed31758db9cfc2a43e31ed6e9d9bdf5047b77b6e"
+_DIVERSE_PPO_CFD_RESULT_SHA = "8c909aa4bd0b73e3cf570dd55cb2a1abd7346a9c424695a5e0056b4e5e833bdc"
 _FINAL_PPO_CFD_APPROVAL_SHA = "7ace192519a08795fe9217473fae33941fc5edbb1075daeeb3701e672c521cb3"
 _FINAL_PPO_CFD_DRIVER_SHA = "44b488a97a2882e1325da8871d3ac4905cdae2a6f2cbb17202ced91afc58b91a"
 _FINAL_PPO_CFD_RESULT_SHA = "4007493f22de5855cbd0574e0ec006ca715941b8396f4e48af6527dc11e03d47"
@@ -2029,12 +2031,53 @@ def _exploratory_diverse_ppo_real_cfd(root: Path) -> dict:
                 available.append(value)
         if not available:
             raise ValueError("missing diverse PPO CFD resources")
+        terminal = None
+        result_path = base / "result.json"
+        if (completed == 124 and not running and result_path.is_file()
+                and hashlib.sha256(result_path.read_bytes()).hexdigest()
+                == _DIVERSE_PPO_CFD_RESULT_SHA):
+            result = json.loads(result_path.read_text())
+            if (result.get("status") != "EXPLORATORY_DIVERSE_PPO_REAL_CFD_COMPLETE_NOT_ADMISSION"
+                    or result.get("cycles") != 124
+                    or result.get("scientific_admission") is not False
+                    or result.get("approval_sha256") != _DIVERSE_PPO_CFD_APPROVAL_SHA
+                    or result.get("source_restart_unchanged") is not True
+                    or result.get("owned_containers_cleaned") is not True
+                    or result.get("fno_inference") is not False
+                    or result.get("mpc_action_selection") is not False):
+                raise ValueError("unexpected diverse PPO CFD terminal result")
+            expected_windows = {"full": ([148.0, 160.4], 2480),
+                                "first_6p2": ([148.0, 154.2], 1240),
+                                "trailing_6p2": ([154.2, 160.4], 1240)}
+            windows = []
+            for name, (interval, samples) in expected_windows.items():
+                item = result["windows"][name]; ppo = item["branches"]["ppo"]
+                zero = item["branches"]["zero"]
+                values = [item["paired_drag_reduction"],
+                          item["paired_rear_cl_fluctuation_rms_ratio"],
+                          item["absolute_mean_rear_cl_over_paired_zero_rms"],
+                          ppo["total_cd_mean"], zero["total_cd_mean"]]
+                if (item.get("interval_open_left_closed_right") != interval
+                        or ppo.get("samples") != samples or zero.get("samples") != samples
+                        or any(type(value) not in (int, float) or not math.isfinite(value)
+                               for value in values)):
+                    raise ValueError("invalid diverse PPO CFD window")
+                windows.append({"name": name,
+                    "drag_reduction_percent": 100 * values[0],
+                    "rear_cl_rms_change_percent": 100 * (values[1] - 1),
+                    "mean_bias_percent": 100 * values[2],
+                    "ppo_total_cd_mean": values[3], "zero_total_cd_mean": values[4]})
+            action = result["action_summary"]
+            terminal = {"verified": True, "result_sha256": _DIVERSE_PPO_CFD_RESULT_SHA,
+                        "physical_success": False, "windows": windows,
+                        "max_abs_applied_omega": action["max_abs_applied_omega"],
+                        "saturated_endpoints": action["saturated_endpoints"]}
         return {"verified": True, "running": running, "completed_cycles": completed,
                 "planned_cycles": 124, "actual_timeseries": series,
                 "latest": series[-1], "minimum_available_gib": min(available) / 2**30,
                 "policy_training_complete": True, "fno_training": False,
                 "inference_device": "cpu", "scientific_admission": False,
-                "control_success_verified": False,
+                "control_success_verified": False, "terminal_result": terminal,
                 "approval_sha256": _DIVERSE_PPO_CFD_APPROVAL_SHA}
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
             subprocess.SubprocessError):
