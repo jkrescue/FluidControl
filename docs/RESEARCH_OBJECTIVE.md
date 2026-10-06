@@ -4,6 +4,15 @@ Status: active
 Objective version: 1.0
 Locked on: 2026-10-02
 
+> **Current-status note (2026-10-06):** The physical objective and all
+> thresholds below remain unchanged. Later Lead/user decisions authorized
+> explicitly exploratory PPO training and paired real-CFD feedback before the
+> full surrogate/CEM-MPC gates passed. Those runs are real development evidence,
+> not a retrospective PASS of the gates in this version and not a relaxation of
+> the final physical criteria. The current execution state and decision scope are
+> maintained in [PROJECT_STATE](../PROJECT_STATE.md) and
+> [DECISIONS](../DECISIONS.md); this file retains the original staged objective.
+
 This file is the project-level guard against objective drift. Experiments may
 change the method, model horizon, data volume or controller, but must not silently
 change the physical question.

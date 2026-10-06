@@ -6,6 +6,14 @@
 
 迁移注记（2026-10-02）：下文冻结 FNO checkpoint 与 MPC 数字来自旧机器的历史验证；checkpoint 未恢复到 DGX Spark，因此**不代表当前 Spark 已具备可运行的串列双圆柱闭环控制器**。Spark 已用 32 条真实 OpenFOAM 轨迹完成独立 v2 划分和 PhysicsNeMo FNO 5-epoch 试训及留出评估，详见 `docs/PHYSICSNEMO_FNO_5EPOCH_RESULT_20261002.md`。目前 1 步力预测仍比保持力基线差；只有更充分训练和新的 OpenFOAM 闭环回放通过后，才能恢复当前机器上的控制结论。
 
+> **当前状态注记（2026-10-06）：** 上述 2026-10-01/02 旧机 MPC
+> 迁移判断是历史记录，不再表示 Spark 没有控制器。当前 Spark 已完成
+> PhysicsNeMo FNO 环境中的 B-policy PPO 训练，并在多个固定相位完成真实
+> OpenFOAM 配对反馈；其部署路径是 CPU PPO 策略，不调用在线 FNO 或 MPC。
+> 这些探索性结果不把下文旧 MPC 指标、代理 gate 或正式验收追溯改写为
+> PASS。当前权威状态和决策边界见 [PROJECT_STATE](PROJECT_STATE.md) 与
+> [DECISIONS](DECISIONS.md)，原规范正文和物理阈值在下文完整保留。
+
 ## 1. 阶段目标
 
 第二阶段先在现有二维、`U∞=1`、`Re=100`、`L/D=5` 工况上建立可验证的在线闭环原型。控制器读取当前完整流场，在线选择后圆柱转速 `omega`，使用已经冻结的 PhysicsNeMo FNO 预测短期响应。该阶段验证控制方法和代理模型耦合，不宣称已经解决跨来流速度、稀疏传感器或真实结构减振问题。
