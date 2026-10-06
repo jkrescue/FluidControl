@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## FC-E091 — terminal engineering acceptance; development accuracy pending
+
+Same171686 exited0; actual32updates/256windows verified against journal and saved32groups.441sourceSHA,192original+32b00+32b02 exactschedule/dataset indices/starts,28Adam states step32/finiteness, frozenflow bytes/two bias tensors pass. Report [E091](docs/P064_B00_B02_COVERAGE_D_TERMINAL_REVIEW_20261007.md) SHA82a5c50ba114c3aaa96bc33bdb756f950935bdac6d49542a7d0bb5d7a3d8c235; result2c01c3b24a11b30371d40ee9ef799c7fd01090d284778498919080e6323b8733; manifest93d579b910d5a03385a31fb44c0050fa0b8d498fb6c621289a8d1038b5c1741a. CPUreviewdcdb1d4579c04b79bfaf530cb63c4779 actualexit0/8GiB/swap0, receipt960159c0…d2fbc. Training peak7251238912B/minAvailable106.776287GiB. Producer official reload true; reviewer CPU tensor inspection, no model forward. Two audit-schema errors retained, no training rerun. No new accuracy/performanceCSV or admission claim; fixeddev separately authorized.
+
 ## FC-E091 — actual D25 controlled-coverage training, outcome pending
 
 Unit fluid-control-p064-controlled-coverage-d-20261007.service / invocation171686b7ec154a0194348d26fd736cec / PID1078751 running; independently observed real consumed1 b00 and consumed5 b02 events. Approvalfa8a99d22426f7c6e73fc56ff8f0c6062c0b11c0dcae146ee51f40aa7e32a3e8; output artifacts/fcp064_controlled_aero_arm_d_b00_b02_20261007. Same32updates/256windows/K1parent/freshAdam,192original+32b00+32b02 at within-update slots0/4;28aero branch tensors trainable,flow/two biases frozen. No new model accuracy or physical claim and no running scientificCSV rows. Prepared read-only terminal checker retains original actualexit gate,source/order/journal/records/28Adam/bias/flow checks, only extends exactb02 schedule/data identity. No livecheckpoint read.

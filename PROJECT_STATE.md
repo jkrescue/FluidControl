@@ -1,6 +1,10 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前实际训练：FC-E091 D25 b00/b02 覆盖候选
+## 当前：E091 D25训练已独审完成，候选精度尚未评估
+
+同 `171686b7ec154a0194348d26fd736cec` 已PID0/正常exit0，实际256窗口/32参数更新。独审441source SHA、192original/32b00/32b02精确计划、逐组loss均值/clip、28Adam step32有限、两bias逐tensor及flow保存字节不变；生产官方freshreload成功。报告 [E091独审](docs/P064_B00_B02_COVERAGE_D_TERMINAL_REVIEW_20261007.md) SHA `82a5c50ba114c3aaa96bc33bdb756f950935bdac6d49542a7d0bb5d7a3d8c235`；result `2c01c3b24a11b30371d40ee9ef799c7fd01090d284778498919080e6323b8733`、manifest `93d579b910d5a03385a31fb44c0050fa0b8d498fb6c621289a8d1038b5c1741a`。独审不重跑模型forward；CPU审计前两schema兼容失败保留，R3通过，训练无重试。固定dev需另批；没有精度改善/PPO/CFD晋级结论。以下为实际启动历史。
+
+## 历史启动：FC-E091 D25 b00/b02 覆盖候选
 
 Unit `fluid-control-p064-controlled-coverage-d-20261007.service`，invocation `171686b7ec154a0194348d26fd736cec`，PID1078751 running；独立已观察至少5个真实训练窗口，包括 consumed1 b00/start0、consumed5 b02/start0。批准 `docs/P064_B00_B02_COVERAGE_D_TRAINING_APPROVAL_20261007.json` SHA `fa8a99d22426f7c6e73fc56ff8f0c6062c0b11c0dcae146ee51f40aa7e32a3e8`；输出 `artifacts/fcp064_controlled_aero_arm_d_b00_b02_20261007`。固定256窗口/32更新，192原数据＋32b00＋32b02，受控总比例25%；气动力FNO分支28tensor微调，flow/两bias冻结，非PPO或CFD。本次尚无候选精度结论；B/canonical已验物理收益与早期失败、C50拒绝和完整预测FAIL均保留。终态独审已准备，当前不读取live checkpoint。以下为此前完成与历史记录。
 

@@ -658,6 +658,13 @@ def coverage_d_training_status(root,run=subprocess.check_output):
         info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
         info['training']=info['running'] and info['windows']>0
         info['status']=('D25 气动力FNO训练进行中' if info['training'] else 'D25进程初始化中，尚无训练窗口') if info['running'] else ('D25程序退出0，等待独立终态审查' if state.get('ExecMainStatus')=='0' else 'D25工程失败，未自动重试')
+        review=root/'docs/P064_B00_B02_COVERAGE_D_TERMINAL_REVIEW_20261007.md'
+        result=root/'artifacts/fcp064_controlled_aero_arm_d_b00_b02_20261007/result.json'
+        if not info['running'] and state.get('MainPID')=='0' and state.get('ExecMainStatus')=='0' and review.exists() and result.exists():
+            if hashlib.sha256(review.read_bytes()).hexdigest()!='82a5c50ba114c3aaa96bc33bdb756f950935bdac6d49542a7d0bb5d7a3d8c235':raise ValueError('D review SHA')
+            if hashlib.sha256(result.read_bytes()).hexdigest()!='2c01c3b24a11b30371d40ee9ef799c7fd01090d284778498919080e6323b8733':raise ValueError('D result SHA')
+            info.update(status='D25气动力FNO训练完成并独审，精度待评估',terminal_verified=True)
+            info['note']='实际256窗口/32更新，192原数据＋32b00＋32b02；28Adam状态及冻结flow/两bias已独审。没有仍在训练，也不表示预测改善；固定开发评估需另批。B/canonical物理收益、早期失败、C50拒绝及完整预测FAIL保留。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['error']=str(exc)
     return info
 
