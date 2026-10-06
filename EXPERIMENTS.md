@@ -1,6 +1,12 @@
 # Experiment ledger
 
-## FC-E078 — exact initial-weight paired b00 CFD control running; no new training
+## FC-E078 — terminal matched initial-weight control; learned weights contribute
+
+Same invocation `dbc0e8f47f994e7280694e9ed6714c56` completed800 intervals, exit0/cleanup verified. Independent3200 raw hashes/1600 solver logs/six windows pass; both entire zero force streams equal the trained-B comparator in every column. Primary initial drag reduction −.0075572161% versus trained +3.8952838833%; RMS ratio1.0008821412 versus .8156230434; bias1.6502793569% versus1.1378146878%. Initial fails original2%drag criterion; trained passes primary, with early first6.2 bias13.55% failure retained. This is evidence for learned weights within this fixed pipeline, not RL-only attribution or general controller superiority.
+
+All800 applied actions additionally yield mean omega²3.556147918e-6 versus .219663505393, omega RMS .00188577515 versus .46868273426, endpoint-square integral .000284491833 versus17.5730804314, delta RMS .000200127762 versus .052209038834. These are action-cost proxies, not physical energy; no torque/net-power claim. [Independent review](docs/P064_INITIAL_POLICY_CFD_TERMINAL_REVIEW_20261006.md), result SHA `48b2b37ddccb6ab4bbf7f04ec6a51c5c071a9b7ed4de504afe0d725af2cebea1`. No new optimization, FNO call or CFD rerun; original surrogate FAIL remains.
+
+### Historical launch observation (superseded by terminal evidence above)
 
 Actual invocation `dbc0e8f47f994e7280694e9ed6714c56`, unit `fluid-control-p064-initial-projected-ppo-long-cfd-20261006.service`, was independently observed active/running with49/800 cycles at t152.9. Approval `docs/P064_INITIAL_PROJECTED_PPO_LONG_CFD_APPROVAL_20261006.json` SHA `f4e35a92a227b29fcf216018f09b3d320b382ffc392d9aad7e73616dc32c3797`; output `artifacts/p064_initial_projected_ppo_long_cfd_20261006`. No terminal metrics are inserted into CSV while running.
 

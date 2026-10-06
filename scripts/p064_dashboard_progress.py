@@ -157,6 +157,18 @@ def trained_candidate_cfd_status(root,run=subprocess.check_output):
         info['note']=str(exc)
     return info
 
+INITIAL_TERMINAL_BINDINGS={'result':'48b2b37ddccb6ab4bbf7f04ec6a51c5c071a9b7ed4de504afe0d725af2cebea1','review':'8e66c497acfcc3483d760a77469330028bd12f9cd233ec36d445d15557c34d34'}
+
+def verified_initial_terminal(root):
+    root=Path(root)
+    result=root/'artifacts/p064_initial_projected_ppo_long_cfd_20261006/result.json'
+    review=root/'docs/P064_INITIAL_POLICY_CFD_TERMINAL_REVIEW_20261006.md'
+    for key,path in [('result',result),('review',review)]:
+        if hashlib.sha256(path.read_bytes()).hexdigest()!=INITIAL_TERMINAL_BINDINGS[key]:raise ValueError('initial terminal '+key+' SHA')
+    data=json.loads(result.read_text())
+    if data['cycles']!=800 or not data['owned_containers_cleaned']:raise ValueError('initial terminal incomplete')
+    return {'status':'真实闭环有效；初始权重对照完成，学习后策略贡献已验证','cycles':800,'target':800,'current_time':228.,'running':False,'training':False,'physical_pass':False,'terminal_verified':True,'invocation':'dbc0e8f47f994e7280694e9ed6714c56','note':'同zero全部原始力匹配：初始权重主窗减阻−0.00756%，训练后B +3.89528%；同投影/限幅下学习后权重有贡献。不是RL单独归因或跨控制器最优证明。训练后早期偏置失败保留；动作平方成本不等于物理能耗。H25新模型未采用，预测精度仍待改善。当前文档集成，非训练/CFD运行。'}
+
 def candidate_cfd_status(root,run=subprocess.check_output):
     root=Path(root)
     trained=trained_candidate_cfd_status(root,run)
@@ -164,6 +176,9 @@ def candidate_cfd_status(root,run=subprocess.check_output):
     try:
         approval=root/'docs/P064_INITIAL_PROJECTED_PPO_LONG_CFD_APPROVAL_20261006.json'
         if hashlib.sha256(approval.read_bytes()).hexdigest()!='f4e35a92a227b29fcf216018f09b3d320b382ffc392d9aad7e73616dc32c3797':raise ValueError('initial policy CFD approval SHA')
+        if (root/'docs/P064_INITIAL_POLICY_CFD_TERMINAL_REVIEW_20261006.md').exists():
+            info.update(verified_initial_terminal(root))
+            return info
         raw=run(['systemctl','--user','show','fluid-control-p064-initial-projected-ppo-long-cfd-20261006.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
         state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
         if state.get('InvocationID')!='dbc0e8f47f994e7280694e9ed6714c56':raise ValueError('initial policy CFD invocation')

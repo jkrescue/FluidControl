@@ -172,3 +172,15 @@ def test_unbound_initial_control_not_training_or_physical_pass(tmp_path):
     x=candidate_cfd_status(tmp_path)
     assert not x['running'] and not x['training'] and x['physical_pass'] is None
     assert x['invocation'] is None and 'trained_reference' in x
+
+def test_initial_terminal_requires_bound_review_and_does_not_claim_initial_pass(tmp_path,monkeypatch):
+    import json,hashlib,pytest,p064_dashboard_progress as module
+    result=tmp_path/'artifacts/p064_initial_projected_ppo_long_cfd_20261006/result.json'
+    review=tmp_path/'docs/P064_INITIAL_POLICY_CFD_TERMINAL_REVIEW_20261006.md'
+    result.parent.mkdir(parents=True);review.parent.mkdir(parents=True)
+    result.write_text(json.dumps({'cycles':800,'owned_containers_cleaned':True}));review.write_text('review')
+    monkeypatch.setattr(module,'INITIAL_TERMINAL_BINDINGS',{'result':hashlib.sha256(result.read_bytes()).hexdigest(),'review':hashlib.sha256(review.read_bytes()).hexdigest()})
+    x=module.verified_initial_terminal(tmp_path)
+    assert x['terminal_verified'] and not x['running'] and not x['training'] and x['physical_pass'] is False
+    review.write_text('changed')
+    with pytest.raises(ValueError):module.verified_initial_terminal(tmp_path)

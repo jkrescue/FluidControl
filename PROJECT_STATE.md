@@ -1,6 +1,12 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## FC-E078 当前实际：初始权重对照已启动，CPU真实CFD，非训练
+## FC-E078 当前终态：学习后权重有贡献；初始权重未获得减阻
+
+同 `dbc0e8f47f994e7280694e9ed6714c56` 已完成800次真实反馈，exit0、容器清理完成；无当前训练/CFD任务由本对照触发。独审3200原始力文件、1600段solver与六窗口通过；两次zero前后力16000行全部列完全相同。主窗(168,228]初始策略减阻 **−0.007557%**（未满足原2%），训练后B为 **+3.895284%**；RMS比分别1.000882/.815623，bias分别1.650279%/1.137815%。原2%/1.05/10%不变，训练后早6.2偏置13.55%失败仍保留。
+
+这支持固定seed/相位/同投影与限幅流程中学习后权重有贡献，不是RL单独归因或跨控制器最优证明。动作平方mean分别3.55615e-6/.219664，属于控制成本代理；原始moment列尚未核验转矩/功率换算，**未计算物理能耗，不能声称净节能**。预测FAIL与H25未采用保留，当前转既有链复现/交付，非全目标完成。报告 [FC-E078独审](docs/P064_INITIAL_POLICY_CFD_TERMINAL_REVIEW_20261006.md)，result SHA `48b2b37ddccb6ab4bbf7f04ec6a51c5c071a9b7ed4de504afe0d725af2cebea1`。
+
+## FC-E078 历史启动记录（已完成，以下为当时观测）
 
 实际unit `fluid-control-p064-initial-projected-ppo-long-cfd-20261006.service`，invocation `dbc0e8f47f994e7280694e9ed6714c56`，独查PID2315536 active/running、49/800周期、t152.9。批准 `docs/P064_INITIAL_PROJECTED_PPO_LONG_CFD_APPROVAL_20261006.json` SHA `f4e35a92a227b29fcf216018f09b3d320b382ffc392d9aad7e73616dc32c3797`；输出 `artifacts/p064_initial_projected_ppo_long_cfd_20261006`。此启动计数是当时观测，最新进度由同invocation的progress与unit共同确认，active/exited不算运行。
 
