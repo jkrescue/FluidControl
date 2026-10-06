@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E047 — Canonical causal-history H2 real feedback: HOLD, zero benefit
+
+Code c75bf01; approval SHA b273716de8edb19b8517126d3d8232cc50cc5b2ab5a7af04cb16f96aeae1e5a1; immutable driver ace9871ac27e2b92de0d90010aa1db3f4cd037cdcf3e49ce5f3f87deb32f06cc. Compared with FC-E046, only scoring changed to canonical causal62-history H2 stage average. Invocation 6f554f10e87e4b9f9d6b6ed8b555c548 completed05:48:59–05:52:01UTC, exit0. Result artifacts/exploratory_causal_history_h2_real_cfd_20261006/result.json SHA74a28d45dce9b84ec5044700fe470390cde899a2fcf40a0b893c1b28817d99ca; independent report docs/EXPLORATORY_CAUSAL_HISTORY_H2_TERMINAL_REVIEW_20261006.md SHA9ceb4d58a66b549faa86834d15d0444d57c8fdcc2f2635f18859440a679d2098.
+
+All10 actions HOLD;200 samples/branch exactly equal. Mean totalCd2.413592168615, mean rearCl.887113848192, fluctuationRMS.3953805314509264; paired drag reduction0, RMSratio1. All50 candidate/100 stage costs independently reproduced. Mean-bias/RMS penalties0 throughout; modeled drag gains smaller than action/rate costs. Minimum sampled MemAvailable122066739200bytes. No GPU, optimizer, new PPO or long-window admission. Negative benefit result, not project completion. Next prepare prospective H5-only comparison with all other factors fixed.
+
 ## FC-E046 — Actual paired ten-cycle official-K1 H2 MPC feedback (exploratory)
 
 Executed code `d7f737e`, immutable driver SHA `c8260b21d742f54814bf04e81bb13eeff491a971df4d177f3a384c8f8c940e3f`; approval `docs/EXPLORATORY_PAIRED_H2_APPROVAL_20261006.json` SHA `1679f6bee293eae200c95bc078a20db5873e81afcd54d81b81bb06445015f8b2`. Actual unit invocation `e3b9eb7b58724a1c9ec4e64d63ac7bbe` completed05:34:11–05:37:14UTC, exit0; two owned solver containers removed. Result `artifacts/exploratory_paired_h2_real_cfd_20261006/result.json` SHA `45fcab568ed7456e521ed17c4469f44716d231ca4ec5c08820864803ae856fbb`; independent review `docs/EXPLORATORY_PAIRED_H2_TERMINAL_REVIEW_20261006.md` SHA `8c600368d836e8c34c09e4ac3be1129ffcfb67fd3587e48e4e4feba33d711dcd`.
