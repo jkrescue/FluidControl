@@ -44,6 +44,7 @@ def test_terminal_and_aux_are_separate():
     assert '六窗原标准通过' in html
     assert '不是PPO或新CFD，flow冻结' in html
     assert '尚无已完成窗口' in html
+    assert '两项H1误差与保留指标均略差，未采用' in html
 
 
 def test_reproduction_uses_canvas_and_images_before_return():

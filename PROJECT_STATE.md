@@ -4,7 +4,7 @@
 
 同 `f6c3fc3464074493b19ea5418ddfada5` PID0/exited/exit0，安全入口完成800次真实OpenFOAM反馈，主窗减阻4.0091%、后升力波动降低18.2810%、均值偏置3.6366%，六窗均过原2%/1.05/10%标准。[独审报告](docs/CANONICAL_B01_REPRODUCTION_TERMINAL_REVIEW_20261007.md)核3200force/1600solver/800动作、799反馈连续及原始力→观测，和原E085动作/观测逐值一致。result SHA `f22047b62c8bdb50547122e61d3e523d0cb101d90b1ed98037e4524cb98c342a`。这是已打开b01的工程复现，不是新泛化证据。
 
-当前E095 CFD已结束；另经Lead批准的辅助监督候选E训练进程已实际启动：`fluid-control-p064-response-aux-e-20261007.service` / `618fcaf1d72742069d31a37393523349`，启动时PID1664742，尚待真实窗口日志，不以初始化/GPU利用率冒充已完成更新。批准SHA `93efb40cf57c3e260c4b31b86b767601ed9562f46102e4b8d2b4eef75ef96e39`，output `artifacts/p064_response_aux_candidate_e_20261007`。这是气动力FNO分支训练，非PPO/CFD，flow冻结。
+当前无训练/CFD运行。FC-E096 E训练及FC-E097固定开发评估均已终态独审：训练同618fcaf1d72742069d31a37393523349，256窗口/32更新/28Adam步32，flow与两bias冻结；评估同78e385e2abe6486a83d9e53471063cd2，全16NPZ/80端点复算通过。[训练报告](docs/P064_RESPONSE_AUX_E_TERMINAL_REVIEW_20261007.md)、[开发报告](docs/P064_RESPONSE_AUX_E_DEVELOPMENT_REVIEW_20261007.md)。E的pooled H1 rearCl MAE .139014150482、Cd MAE .038086727262，均略差于B .138998316601/.038065373898；fixed-six H1/AR也略差。Lead按预定规则不晋级，保留B及已验证控制器，不称显著更差。flow预测与B逐值一致，aux损失仅标量记录未独立复算。下一H1-only单因素目标对照仅准备，未批准执行；不延长E、不扫λ或比例。
 
 基本官方组件→FNO代理训练→HydroGym/SB3策略→CPU策略与真实CFD在线反馈链已有可预检入口和实际复现；[一页指南](docs/CANONICAL_CLOSED_LOOP_QUICKSTART.md)。整体代理预测精度目标仍未完成，旧seed/早期偏置失败及C50/D25/H25拒绝完整保留。在线FNO/MPC是可选后续，不是基本闭环缺失项。
 

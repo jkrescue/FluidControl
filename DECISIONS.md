@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — E auxiliary candidate not promoted after fixed development
+
+[E097 independent evaluation](docs/P064_RESPONSE_AUX_E_DEVELOPMENT_REVIEW_20261007.md) verifies both principal pooled H1 force MAEs and both fixed-six retention objectives slightly worsen versus B. Lead rejects E promotion under the predeclared rule, retainsB and existing validated policies, and does not label the small differences significant. No continuation ofE, coefficient/data-ratio sweep or automatic PPO/CFD is authorized. The next single-factor H1-only training-objective comparison is preparation only, not execution. E095 basic closed-loop reproduction remains complete; original prediction failures and overall unfinished scope remain unchanged.
+
 ## 2026-10-07 — E095 basic closed-loop entry reproduced; retain broader accuracy gaps
 
 Accept [E095 guarded-entry reproduction](docs/CANONICAL_B01_REPRODUCTION_TERMINAL_REVIEW_20261007.md) as completed engineering delivery:800 real feedback cycles, exact historical E085 actions/observations, all six unchanged physical windows PASS. It is not new holdout evidence or an improvement to the frozen model. Keep original10% bias, early/seed failures and full surrogate FAIL; no automatic training, CFD or ratio search follows. Separately approved auxiliary E training is now running under invocation618fcaf1d72742069d31a37393523349; initialization is not evidence of completed updates. The basic demo and the unresolved overall prediction-quality goal are separate; optional online FNO/MPC must not become a new mandatory prerequisite.
