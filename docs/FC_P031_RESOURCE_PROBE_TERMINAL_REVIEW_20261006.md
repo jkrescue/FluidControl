@@ -1,5 +1,21 @@
 # FC-P031 first resource attempt: preflight refusal
 
+## Update: separately approved R2 also failed, with an observed floor breach
+
+R2 unit `fluid-control-fcp031-resource-probe-r2-20261006.service`, invocation `48a1f83e007a4bb59f1ea025af2e7dd7`, terminated failed/exit1, MainPID0. It used the same approval/source after Root's separately approved16-file cache pass. Actual container `b6964cb89fcc3b38ecf733a786ba31b8b24815ee81bb6bddf11ebb0abdac2050` started04:48:41.543211313UTC and ended04:49:05.391445413UTC, exit75/noOOM.
+
+Preflight CUDA free33.690525GiB passed. Execution subsequently reached the H25 objective and the guarded flow-prediction callback raised `physical/CUDA memory floor`. The outer guard explicitly recorded CUDA free **19.816570281982422GiB**, below20. This is an actual recorded resource-floor breach; stopping on detection does **not** prove the floor was maintained. There is no completed forward/backward result, gradient audit, optimizer step, saved candidate or reload result.
+
+Twelve host watcher samples show MemFree36,597,305,344→21,282,054,144bytes, a14.2634GiB drop; MemAvailable fell7.8881GiB. Before the final sample, free fell9.0331GiB while available fell2.7206GiB, consistent with substantial reclaimable cache growth during model/data reads and the exact44 hash scan. In the final2s both fell about5.2GiB, consistent with active allocation during objective execution. These are phase-consistent inferences, not exact attribution: the inner runner checked before appending its readings and lost its in-memory resource list on failure. The actual failed allocation phase/rollout index and complete H25/backward peak remain unknown.
+
+A proposed≥40GiB startup would provide about25.7GiB after the same observed14.26GiB consumption, but cannot guarantee the unobserved remaining graph/backward peak. Preserve all20GiB floors, allocator and scientific arithmetic. Before any new approval, minimally persist the measured failing inner-guard row before raising and log phase boundaries; do not fabricate a successful result or silently retry.
+
+R2 hashes: run.log `139498090154ec79d23ee83f8d4f3828ecdb5fac3e29a788d5218acbb9fb77a6`; resource_watch.jsonl `9985e98a774764dc0280e773a6497b816ccd2a7bdfc564d7090336847842574f`; terminal inspect `fc8a4f381004ff434c6aa50f041f65812e632ecc05aba026e3d0f99c71365b3e`.
+
+Read-only exact22 completed-checkpoint eligibility: manifest `/tmp/p028-runner-review.hf3bdM/p028_checkpoint_cache_exact22_manifest.json`, SHA `c0ae36af0de1c1a582e615bc978eda2b54b62b5a0ef512446c8b9d5720dd1b42`, lists22 files totaling3,589,185,354bytes. All stored stat identities, no-symlink paths and small audit-reference hashes matched. `fuser` returned1/empty, Docker and GPU compute lists were empty at inspection. The size is an upper bound, not measured resident reclaimable memory; no checkpoint payload was read or advised. A separately approved new receipt would be required. No additional cache pass or retry was executed by this reviewer.
+
+## Original first-attempt evidence
+
 Status: operational preflight failure; no H25 objective/resource result was produced. No retry or cache advice was executed by this reviewer.
 
 Exact unit `fluid-control-fcp031-resource-probe-20261006.service`, invocation `42df9cff77e24312a23a431ef1c5870a`, was independently observed failed, MainPID=0, ExecMainStatus=1. Approval SHA: `3177f364230fe4900c7f1d3062d0a80483c8771861fe0efdd92093d54a42acca`.
