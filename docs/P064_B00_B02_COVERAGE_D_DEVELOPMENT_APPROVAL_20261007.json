@@ -29,7 +29,13 @@
       700
     ]
   },
-  "execution_authorized": false,
+  "execution_authorized": true,
+  "lead_approval": {
+    "authorized": true,
+    "date": "2026-10-07",
+    "scope": "one fixed D development H1-H5 evaluation over the existing b01/b03 16-origin, 80-endpoint panel; no training, optimizer, PPO, CFD, or checkpoint selection",
+    "statement": "Lead approved E092 after reading the E091 independent terminal review and independently binding the actual D result and manifest."
+  },
   "import_bindings": {
     "dual": "fluid_control.dual_fno",
     "history": "p026_state_history",
@@ -2628,7 +2634,7 @@
       "sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
     }
   },
-  "status": "P064_B00_B02_COVERAGE_D_DEVELOPMENT_H1_H5_FUTURE_BINDINGS_PENDING_NOT_AUTHORIZED",
+  "status": "P064_DEVELOPMENT_H1_H5_EVALUATION_EXECUTION_APPROVED",
   "future_bindings_complete": true,
   "training_terminal_observation": {
     "ActiveState": "active",
