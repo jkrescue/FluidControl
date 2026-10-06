@@ -126,18 +126,18 @@ def formal_evaluation_status(root,run=subprocess.check_output):
     root=Path(root)
     info={'status':'完整预测精度评估身份/状态未验证','invocation':None,'training':False,'scientific_pass':None}
     try:
-        approval=root/'docs/FC_P064_ARM_B_FORMAL_APPROVAL_20261006.json'
-        if hashlib.sha256(approval.read_bytes()).hexdigest()!='cd58fd47e991ec6dac200bd82d414347f72b778ea78415377427e430dfd47478':raise ValueError('formal approval SHA')
-        unit='fluid-control-p064-b-formal-r2-20261006.service'
+        approval=root/'docs/FC_P064_ARM_B_FORMAL_RESUME_R3_APPROVAL_20261006.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='19be2d6aad903ffc94b807803bd5fd0902c7ec5b7a0f0b4212423744db89cb56':raise ValueError('formal approval SHA')
+        unit='fluid-control-p064-b-formal-r3-20261006.service'
         raw=run(['systemctl','--user','show',unit,'-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
         state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
-        if state.get('InvocationID')!='01806bdc150841f7b9efd04360a441f2':raise ValueError('formal invocation')
+        if state.get('InvocationID')!='3bded2dcb4a24f808879987962a9ef8b':raise ValueError('formal invocation')
         info['invocation']=state['InvocationID']
         if state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0:
-            info['status']='完整预测精度评估进程运行中（非训练，尚无科学结论）'
+            info['status']='完整预测精度评估R3续跑中（非训练，尚无完整科学结论）'
         elif state.get('MainPID')=='0':
-            info['status']='完整预测精度评估退出，等待各门槛独审' if state.get('ExecMainStatus')=='0' else '完整预测精度评估R2已失败：候选身份参数解析错误，修复准备中'
-        info['note']='validation10已完成，完整科学门槛尚未评估；保留R1/R2失败，当前不运行。实际torch allocator .15，外层.06仅启动核算；原H100失败与门槛不变，exit0不等于通过。'
+            info['status']='完整预测精度评估R3退出，等待各门槛独审' if state.get('ExecMainStatus')=='0' else '完整预测精度评估R3失败/停止，证据保留'
+        info['note']='精确复用R2 precision与validation10两阶段，仅运行其余6阶段；保留R1/R2失败与来源，未重算validation10。实际torch allocator .15，外层.06仅启动核算；原H100失败与科学门槛不变，exit0不等于通过。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['note']=str(exc)
     return info

@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## P064-B complete prediction evaluation — actual R3 resumed execution
+
+Actual unit `fluid-control-p064-b-formal-r3-20261006.service`, invocation `3bded2dcb4a24f808879987962a9ef8b`, PID1582344 active/running; current memory logstep dynamic6. Approval SHA `19be2d6aad903ffc94b807803bd5fd0902c7ec5b7a0f0b4212423744db89cb56`; new output `artifacts/fcp064_arm_b_formal_resume_r3_20261006`. Resume runner SHA `3bb215f93f5d6d468f8b22267b5f1fb485516f865c45d32723fe33b3fe56ec84` passed independent5CPUtests. Only explicitP064 argparse identity is corrected; original numerical commands/data/thresholds unchanged. Exactly9 SHA-bound R2 files reuse completedprecision/validation10, including their actual container terminal proofs. Six remaining commands execute under R3; validation_diagnostic and endpoint_gate logs already completed, not an overall scientific PASS. Prior failures/output remain. No validation10 recomputation, optimizer, policy change, new CFD or numerical CSV row. Final combined receipt must distinguish R2 reused and R3 executed stages, source identities and invocations; terminal review remains pending.
+
 ## FC-E070 — Same P064-B policy fixed b01 paired800 terminal
 
 Actual unit `fluid-control-p064-b-projected-ppo-b01-long-cfd-20261006.service` / invocation `432c12de32b0444d9a6f6626e12616d1` exited0 after800 cycles130→210. Approval `3a19e326ebfd37df24060b8b5717b5af08b405ed63165e4034974aeb7b0abcb6`; driver4b8fa43f; same policyf7644639/Vec8c07ef15/Bmanifest92766915. Result `0be19e0dfdf8df4d60e2f5040673f2a3ec25cbadb133548671ce31f061e75c88`; report `docs/P064_B_PROJECTED_PPO_B01_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `de7a3f7fa89d50dad190272028f16ed0ea23214ac52cb23323f42c48df9945d3` independently verifies3200raw files,1600solver logs,800actions,all six windows,originalsource and cleanup. MinimumAvailable116194476032B; no model/CFD rerun for review.

@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 当前实际：完整预测精度评估 R3 同协议恢复运行
+
+Unit `fluid-control-p064-b-formal-r3-20261006.service`，invocation `3bded2dcb4a24f808879987962a9ef8b`，实际PID1582344 active/running，当前资源日志step=dynamic6。批准 `docs/FC_P064_ARM_B_FORMAL_RESUME_R3_APPROVAL_20261006.json` SHA `19be2d6aad903ffc94b807803bd5fd0902c7ec5b7a0f0b4212423744db89cb56`；新独占输出 `artifacts/fcp064_arm_b_formal_resume_r3_20261006`。只修复P064候选CLI身份路由，复用R2 precision/validation10的9个SHA核验文件，仅执行余下6阶段；R1/R2失败及原输出保留，新receipt区分来源。runner `3bb215f93f5d6d468f8b22267b5f1fb485516f865c45d32723fe33b3fe56ec84`，独立5CPUtests通过。没有重训或重算validation10，尚无完整科学判定；b00/b01物理主窗口已独审通过与预测模型门槛保持区分。实际allocator .15、Available50/22保护不变。
+
 ## FC-E070 最新终态：同B-policy固定b01复验主标准通过，非新holdout
 
 同inv `432c12de32b0444d9a6f6626e12616d1` 已真实exit0，800周期从130→210完成。独立3200rawSHA、1600solver段、800投影单filter及六窗重算通过，最大统计差4.44e-16。主(150,210]减阻3.9275159299%、rearCl centered RMS ratio .815727792287、mean-bias ratio .027294976565，原2%/1.05/.10标准通过；早首6.2 bias .127825261仍FAIL10%。结果SHA `0be19e0dfdf8df4d60e2f5040673f2a3ec25cbadb133548671ce31f061e75c88`，报告 `docs/P064_B_PROJECTED_PPO_B01_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `de7a3f7fa89d50dad190272028f16ed0ea23214ac52cb23323f42c48df9945d3`。
