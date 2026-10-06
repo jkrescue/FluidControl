@@ -8,7 +8,10 @@ from typing import Any
 import torch
 
 
-HORIZON = 10
+DEFAULT_HORIZON = 10
+# Backward-compatible public constant used by the frozen P029 source contract.
+HORIZON = DEFAULT_HORIZON
+ALLOWED_HORIZONS = (10, 25)
 
 
 def _finite(*values: torch.Tensor) -> None:
@@ -33,15 +36,20 @@ def control_aware_rollout_losses(
     target_force: torch.Tensor,
     predict_fn: Callable,
     make_inputs_fn: Callable,
+    *,
+    horizon: int = DEFAULT_HORIZON,
 ) -> dict[str, torch.Tensor]:
     """Return raw per-step losses with deployed K1 action/target alignment.
 
     Force at step ``j`` is predicted from current q_(s+j), omega_(s+j), and
     omega_(s+j+1), then compared with F_(s+j+1).  It is evaluated before the
     flow update: force step zero therefore has no flow dependency, while steps
-    one through nine consume preceding flow predictions.  qhat_(s+10) remains
-    supervised by the field loss only.
+    one through ``horizon - 1`` consume preceding flow predictions.  The
+    terminal qhat remains supervised by the field loss only.  The default is
+    the original P029 H10 arithmetic; P031 is the sole H25 caller.
     """
+    if type(horizon) is not int or horizon not in ALLOWED_HORIZONS:
+        raise ValueError("horizon must be exactly 10 or 25")
     if initial_state.ndim != 4 or initial_state.shape[1] != 3:
         raise ValueError("initial state must be [B,3,H,W]")
     batch, _, height, width = initial_state.shape
@@ -71,7 +79,7 @@ def control_aware_rollout_losses(
     current = initial_state * mask
     field_losses = []
     force_losses = []
-    for step in range(HORIZON):
+    for step in range(horizon):
         inputs = make_inputs_fn(current, mask, actions[:, step], actions[:, step + 1])
         _, force = predict_fn(aerodynamic_model, inputs, mask)
         if force.shape != (batch, 4):
@@ -87,11 +95,12 @@ def control_aware_rollout_losses(
         denominator = mask.sum((1, 2, 3)).clamp_min(1) * 3
         field_losses.append(field_error.square().sum((1, 2, 3)) / denominator)
         _finite(force, delta, unused_force, current, field_losses[-1], force_losses[-1])
-    return {
+    result = {
         "field_per_step": torch.stack(field_losses, dim=1),
         "force_per_step": torch.stack(force_losses, dim=1),
         "terminal_state": current,
     }
+    return result
 
 
 def field_force_rollout_objective(
@@ -108,6 +117,7 @@ def field_force_rollout_objective(
     field_scale: float | torch.Tensor,
     force_scale: float | torch.Tensor,
     backward: bool,
+    horizon: int = DEFAULT_HORIZON,
 ) -> dict[str, Any]:
     """Apply the preregistered 50/50 parent-normalized P029 objective."""
     if type(backward) is not bool:
@@ -122,6 +132,7 @@ def field_force_rollout_objective(
         target_force,
         predict_fn,
         make_inputs_fn,
+        horizon=horizon,
     )
     raw_field = losses["field_per_step"].mean()
     raw_force = losses["force_per_step"].mean()
@@ -133,7 +144,7 @@ def field_force_rollout_objective(
     _finite(raw_field, raw_force, field_contribution, force_contribution, total)
     if backward:
         total.backward()
-    return {
+    result = {
         "total": float(total.detach()),
         "raw_field": float(raw_field.detach()),
         "raw_force": float(raw_force.detach()),
@@ -143,8 +154,12 @@ def field_force_rollout_objective(
         "force_per_step": [float(value) for value in losses["force_per_step"].mean(0).detach()],
         "field_scale": float(field_denominator),
         "force_scale": float(force_denominator),
-        "rollout_steps": HORIZON,
-        "force_terms_with_flow_gradient": 9,
+        "rollout_steps": horizon,
+        "force_terms_with_flow_gradient": horizon - 1,
         "terminal_state_force_supervised": False,
-        "full_ten_step_field_gradient": bool(backward),
     }
+    if horizon == 10:
+        result["full_ten_step_field_gradient"] = bool(backward)
+    else:
+        result["full_twenty_five_step_field_gradient"] = bool(backward)
+    return result
