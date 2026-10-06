@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E062 工程终态：固定 96 帧已转换，尚未执行 FNO 推理
+
+只读回放输入转换已完成并经独立复核，但这不是模型精度或物理控制结果。首次 unit `fluid-control-project-policy-h1-h5-conversion-20261006.service` / invocation `45e422939f5a477a85f359cd60c5047e` 在第一个采样视图因 Linux `protected_hardlinks=1` 拒绝对 root:root 0644 VTU 建 hardlink 而 exit1；未产生成功 packet、未加载模型、未运行 CFD，失败输出和 journal 保留。R2 只把 `os.link` 换为 `shutil.copy2`，并在采样前后核对字节 SHA，无 chmod/chown/sysctl 或数值协议变化。
+
+R2 unit `fluid-control-project-policy-h1-h5-conversion-r2-20261006.service` / invocation `60aaab28df8d46508bdcb483a2c63074` 已 PID0/exit0。结果 `artifacts/projected_policy_h1_h5_conversion_20261006_r2/result.json` SHA `a22c3aa67509e9b3a342071398ae85da2ce4e07c74a3cbbd87e2a493c2b248bf`；独立报告 `docs/PROJECTED_POLICY_H1_H5_CONVERSION_R2_REVIEW_20261006.md` SHA `4172fb77b3e0afe774e3595537f3217e211102ef4fb7e53a3d5ae5e08b89781e`。固定 b00 投影策略轨迹的 mpc/zero 两分支、8 个机械起点、每个 6 帧，共 96 packet、16 个 official HDF5Reader mini-HDF 和 80 个未来端点；216 个源清单文件、动作/四力时钟、共同 mask/x/y、16 个 HDF 哈希均通过复核。VTK 时间保留 float32 表示，最大名义网格偏差 `6.103515630684342e-6`，不得声称十进制时刻精确相等。
+
+两个导出容器 exit0/OOMfalse 后均已删除；1192 条资源记录最低 MemAvailable `122120433664` 字节。结果明确 `model_loaded=false`、`optimizer_steps=0`、`cfd_executed=false`、`scientific_admission=false`。下一步只能在独立批准下用冻结 K1 做“给定已实现未来动作”的回顾性 H1–H5 推理；在线起点并不知道未来策略动作，转换成功不改变 K1 H100 FAIL，也不构成新的闭环收益。
+
 ## FC-E061 实际运行：固定 b03 的第三次物理策略确认
 
 实际 unit `fluid-control-exploratory-projected-32768-ppo-b03-long-cfd-20261006.service`，invocation `47612677a9f64dfc968917fada5e9ba8`，PID4013554，于2026-10-06 09:30:16UTC启动，独立查询active/running。仅初相位改为预声明b03/restart144，800周期至224，primary(164,224]；同一冻结32768策略、反射投影、一次actionfilter和原2%/1.05/10%标准。当前没有终态物理结果，不得将启动或此前b00/b01成功写成本次成功。

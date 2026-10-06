@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E062 — Fixed 96-frame saved-CFD conversion complete; inference not run
+
+R1 invocation `45e422939f5a477a85f359cd60c5047e` failed at the first sampler view because protected-hardlink rules rejected `os.link` on root-owned0644 exported VTU bytes. It produced no successful sample, model load, optimizer step or CFD trajectory. The failure remains preserved. The separately reviewed R2 changed only that filesystem operation to source-SHA → `shutil.copy2` → destination-SHA equality; converter `304fece8b7c205dbd8182b9cdae24701fc917b102884406b54734f7e0d0cad68`, approval `da1fb69dc51cde9f955a6e9fe2a69dfd32afa00c488fb6ae04fe42579a77d9ed`, unit/invocation `fluid-control-project-policy-h1-h5-conversion-r2-20261006.service` / `60aaab28df8d46508bdcb483a2c63074`.
+
+R2 exited0 and independently verified96 packets,16 six-frame official-reader HDFs and80 endpoints over fixed starts0,100,…700 in both saved branches. All216 source identities,16 HDF hashes, FP32 applied-action/four-force arrays and one common mask/grid identity match the sealed inputs. Result SHA `a22c3aa67509e9b3a342071398ae85da2ce4e07c74a3cbbd87e2a493c2b248bf`; review `docs/PROJECTED_POLICY_H1_H5_CONVERSION_R2_REVIEW_20261006.md` SHA `4172fb77b3e0afe774e3595537f3217e211102ef4fb7e53a3d5ae5e08b89781e`. Sampled VTK times retain float32 rounding (maximum nominal-grid deviation `6.103515630684342e-6`). Both export containers are absent; minimum of1192 MemAvailable observations was122120433664B.
+
+This is an engineering conversion milestone only: model-loaded/optimizer/CFD/scientific-admission flags are all false. The planned replay conditions on future recorded applied actions unavailable to an online forecast. It neither measures K1 accuracy nor reverses H100 failure; separate frozen-source approval and actual inference remain required.
+
 ## FC-E061 — Actual b03 projected-policy physical confirmation running
 
 Started2026-10-06 09:30:16UTC; sameunit `fluid-control-exploratory-projected-32768-ppo-b03-long-cfd-20261006.service` / invocation `47612677a9f64dfc968917fada5e9ba8`, PID4013554 observedrunning. Fixedrestart144→224,800cycles,primary(164,224]12000points plusfiveotherpredeclaredwindows. Uniquechange fromb01 is phase/restart metadata; same frozenpolicy/projection/onefilter/CFD/resources/originalcriteria. Source6516456f07d765728055f58036bed97a5e37036f205c4d1ee2bf2456be8cc3b0; approval3ca5531815c48cff59fd1ca0d96e40e2305402435cb2e28d2adb26eeaf9328a6.6CPUtests independentlypassed beforelaunch; these are engineering evidence, not physical outcomes.
