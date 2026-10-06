@@ -387,10 +387,16 @@ function renderExploratoryDiversePPORealCFD(run){
  drawActualSeries('exploratory-diverse-ppo-drag',rows,[{key:'ppo_total_cd',label:'PPO total Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero total Cd',color:'#f2c879'}],'新策略真实CFD总阻力 Cd（周期终点）');
  drawActualSeries('exploratory-diverse-ppo-lift',rows,[{key:'ppo_rear_cl',label:'PPO rear Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero rear Cl',color:'#f69d97'}],'新策略真实CFD后柱升力 Cl（周期终点）');
 }
+function renderPolicyH5Comparison(run){
+ let card=$('policy-h5-comparison');if(!card){card=document.createElement('div');card.id='policy-h5-comparison';card.className='card';$('exploratory-diverse-32768-long-cfd').after(card);}
+ card.hidden=run?.verified!==true;if(card.hidden)return;
+ card.innerHTML=`<h3>已完成诊断 · 同24真实起点 × H5</h3><p>4096 → 32768步策略：平均回报 <b>${run.mean_returns[0].toFixed(6)} → ${run.mean_returns[1].toFixed(6)}</b>，仅小幅增加 ${run.mean_delta.toFixed(6)}。24起点中 ${run.better} 改善 / ${run.worse} 变差 / ${run.equal} 相同。</p><p class="small">冻结FNO上的确定性策略评估，零优化更新、零CFD；不是正在训练，也不是物理减阻收益或收敛证明。阻力惩罚改善而均值偏置惩罚变差。物理原10%约束未变，20%仅敏感性参考。</p>`;
+}
 function renderExploratoryDiverse32768LongCFD(run){
  const card=$('exploratory-diverse-32768-long-cfd');card.hidden=run?.verified!==true;if(card.hidden)return;
  const rows=run.actual_timeseries||[],latest=run.latest||{},pctDone=100*run.completed_cycles/800;
  $('exploratory-diverse-32768-long-cfd-summary').innerHTML=`<p><b>${run.running?'800周期真实CFD正在运行':'运行已停止，等待终态复核'}</b> · ${run.completed_cycles}/800（${pctDone.toFixed(1)}%）· t=${num(latest.force_time,1)} / 228.0</p><p>最近周期：请求/实际动作 ${num(latest.requested_omega,3)} / ${num(latest.omega,3)}；PPO/zero总Cd ${num(latest.ppo_total_cd,5)} / ${num(latest.zero_total_cd,5)}；PPO/zero后柱Cl ${num(latest.ppo_rear_cl,5)} / ${num(latest.zero_rear_cl,5)}。当前/最低MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB。</p><p class="small">32768-step策略训练已完成且冻结；这里没有GPU训练或在线FNO。主窗口尚未完整时不计算最终物理成败，也不把前124周期当作正式80 D/U结论。</p>`;
+ if(run.reported_terminal){const w=run.reported_terminal; $('exploratory-diverse-32768-long-cfd-summary').innerHTML=`<p><b>800周期真实CFD已完成 · 原始数据已独立复核</b>；当前没有训练或CFD运行。</p><p>主统计窗 <b>(168,228]</b>，每分支12000点：减阻 <b>${(100*w.paired_drag_reduction).toFixed(3)}%</b>，后柱升力波动RMS变化 <b>${(100*(w.paired_rear_cl_fluctuation_rms_ratio-1)).toFixed(2)}%</b>，均值偏置/配对zero RMS <b>${(100*w.absolute_mean_rear_cl_over_paired_zero_rms).toFixed(2)}%</b>。</p><p class="small">执行完成不等于受约束控制成功：均值偏置仍超过原10%和20%敏感性参考。历史伴随窗 [168,228] 含左端点、12001点，单独保存，不混入上述主统计。</p>`;}
  drawActualSeries('exploratory-diverse-32768-long-actions',rows,[{key:'requested_omega',label:'请求转速',color:'#60c9fb'},{key:'omega',label:'实际转速',color:'#79d5a3'}],'32768-step PPO实际动作（周期终点）');
  drawActualSeries('exploratory-diverse-32768-long-drag',rows,[{key:'ppo_total_cd',label:'PPO total Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero total Cd',color:'#f2c879'}],'长窗口真实CFD总阻力 Cd（周期终点）');
  drawActualSeries('exploratory-diverse-32768-long-lift',rows,[{key:'ppo_rear_cl',label:'PPO rear Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero rear Cl',color:'#f69d97'}],'长窗口真实CFD后柱升力 Cl（周期终点）');
@@ -414,6 +420,7 @@ function renderActiveExperiment(d){
  renderExploratoryDiverse32768PPO(d.exploratory_diverse_h5_32768_ppo_training);
  renderExploratoryDiversePPORealCFD(d.exploratory_diverse_ppo_real_cfd);
  renderExploratoryDiverse32768LongCFD(d.exploratory_diverse_32768_long_cfd);
+ renderPolicyH5Comparison(d.policy_h5_comparison);
  renderFinalPPORealCFD(d.exploratory_final_ppo_real_cfd);
  if(active?.mpc_trial===true&&active.verified===true){
   const causal=active.progress_kind==='exploratory_causal_history_h2_feedback';
@@ -4750,6 +4757,8 @@ class Handler(BaseHTTPRequestHandler):
                 _exploratory_diverse_ppo_real_cfd(self.root))
             data["exploratory_diverse_32768_long_cfd"] = (
                 _exploratory_diverse_32768_long_cfd(self.root))
+            data["exploratory_diverse_32768_long_cfd"]["reported_terminal"] = _long_cfd_reported_terminal(self.root, data["exploratory_diverse_32768_long_cfd"])
+            data["policy_h5_comparison"] = _policy_h5_comparison(self.root)
             data["exploratory_final_ppo_real_cfd"] = _exploratory_final_ppo_real_cfd(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
@@ -4758,6 +4767,39 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_message(self, fmt, *args):
         print("dashboard:", fmt % args, flush=True)
+
+
+def _policy_h5_comparison(root):
+    """Small immutable, independently reviewed diagnostic; never an admission gate."""
+    try:
+        path = root / "artifacts/diverse_policy_h5_comparison_20261006/payload/result.json"
+        if hashlib.sha256(path.read_bytes()).hexdigest() != "3f8c6f7e5b03877601a3b25b26409e9d6f943fcbaec62600fa51343995922b9f":
+            raise ValueError("diagnostic result identity")
+        d = json.loads(path.read_text())
+        assert d["status"] == "DIVERSE_POLICY_H5_COMPARISON_COMPLETE_NOT_ADMISSION"
+        assert d["optimizer_steps"] == 0 and d["cfd_executed"] is False and d["scientific_admission"] is False
+        returns = [[row["return"] for row in d["panels"][key]["rows"]] for key in ("4096", "32768")]
+        assert all(len(rows) == 24 for rows in returns)
+        deltas = [b-a for a,b in zip(*returns)]
+        return {"verified": True, "mean_returns": [sum(rows)/24 for rows in returns],
+                "mean_delta": sum(deltas)/24, "better": sum(x>0 for x in deltas),
+                "worse": sum(x<0 for x in deltas), "equal": sum(x==0 for x in deltas),
+                "scientific_admission": False}
+    except Exception as exc:
+        return {"verified": False, "error": str(exc), "scientific_admission": False}
+
+
+def _long_cfd_reported_terminal(root, run):
+    if not run.get("verified") or run.get("running") or run.get("completed_cycles") != 800:
+        return None
+    path = root / "artifacts/exploratory_diverse_32768_ppo_long_cfd_20261006/result.json"
+    if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != "b425bd28ea6e1ca6786ee6ea38dd3a09e13191849a5778270b987a830584e827":
+        return None
+    d = json.loads(path.read_text())
+    w = d["windows"]["primary_final_60"]
+    if w["left_endpoint_included"] is not False or w["interval"] != [168, 228] or any(b["samples"] != 12000 for b in w["branches"].values()):
+        return None
+    return w
 
 
 def main():
