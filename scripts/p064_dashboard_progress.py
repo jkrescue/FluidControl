@@ -60,6 +60,16 @@ def status(root, arm, registration=None, run=subprocess.check_output):
             info['status']='训练中'
         elif state.get('MainPID')=='0' and state.get('SubState') in ('exited','dead','failed'):
             info['status']='程序退出0，等待独立终态审查' if state.get('ExecMainStatus')=='0' else '失败/停止（未自动重试）'
+            review=registration.get('terminal_review')
+            if state.get('ExecMainStatus')=='0' and review:
+                path=Path(root)/review['path']
+                if not path.resolve().is_relative_to(Path(root).resolve()) or path.is_symlink():raise ValueError('review path')
+                if hashlib.sha256(path.read_bytes()).hexdigest()!=review['sha256']:raise ValueError('review SHA')
+                receipt=json.loads(path.read_text())
+                if receipt['unit']['InvocationID']!=invocation or receipt['records']!=32 or receipt['consumed']!=256:raise ValueError('review identity/count')
+                if receipt['status']!='P064_TERMINAL_ENGINEERING_REVIEW_NOT_ADMISSION':raise ValueError('review scope')
+                info['status']='训练完成，独立工程检查通过（非精度验收）'
+                info['terminal_verified']=True
         else:info['status']='状态待确认'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['status']='身份或状态未验证';info['note']=str(exc)

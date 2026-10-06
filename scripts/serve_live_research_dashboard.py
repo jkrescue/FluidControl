@@ -3636,10 +3636,15 @@ P064_TRAINING_REGISTRATIONS = {
     'A': {'unit':'fluid-control-fcp064-aero-arm-a-r2-20261006.service',
           'output':'artifacts/fcp064_controlled_aero_arm_a_20261006',
           'invocation':'50de1d8b43ce42ac923752fad76ca4d9',
+          'terminal_review':{'path':'artifacts/fcp064_arm_a_terminal_cpu_review_20261006/receipt.json','sha256':'2d51c4f84b53fa9b29748c77200cac279ab5a3a4b8ebb5aa6309b4ae9a45f52a'},
           'previous_attempt_note':'首次 cfc40285 CUDA初始化OOM失败已保留；当前为同源同参数R2工程重试。',
           'approval':{'path':'docs/FC_P064_ARM_A_TRAINING_R2_APPROVAL_20261006.json','sha256':'773daa7329a46930b532586d884502d0c4170ea2c3a689ba73b2fb3d5da8b568'},
           'driver':{'path':'artifacts/fcp064_training_source_20261006_immutable/scripts/train_fcp064_controlled_aero_ab.py','sha256':'8066f4a1e092c566e1b84f706ba56737afa06e13998446fee2f79dc2590920dd'}},
-    'B': None}
+    'B': {'unit':'fluid-control-fcp064-aero-arm-b-20261006.service',
+          'output':'artifacts/fcp064_controlled_aero_arm_b_20261006',
+          'invocation':'450ef57c25c14ec38e722cbd597ffb50',
+          'approval':{'path':'docs/FC_P064_ARM_B_TRAINING_APPROVAL_20261006.json','sha256':'a1e79d108f5067027742f08f3e04b2d73cb059286e2bd433e53f4e0d51247b29'},
+          'driver':{'path':'artifacts/fcp064_training_source_20261006_immutable/scripts/train_fcp064_controlled_aero_ab.py','sha256':'8066f4a1e092c566e1b84f706ba56737afa06e13998446fee2f79dc2590920dd'}}}
 
 def _p064_training_progress(root: Path) -> list:
     from p064_dashboard_progress import status
