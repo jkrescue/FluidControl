@@ -1,0 +1,58 @@
+{
+  "status": "EXPLORATORY_POLICY_REFLECTION_DEFECT_AUDIT_APPROVED",
+  "execution_authorized": true,
+  "reviewed_by_lead": true,
+  "scientific_admission": false,
+  "cfd_execution": false,
+  "training_performed": false,
+  "repo": "/workspace/fluid_control",
+  "audit_source": "/workspace/fluid_control/artifacts/exploratory_policy_reflection_defect_source_20261006_immutable/audit_policy_reflection_defect.py",
+  "audit_source_sha256": "bc4906e8c4c483ef16458819bd80fd210ff4046137fcae638ccd4f3d007aa384",
+  "action_filter_source": {
+    "path": "src/fluid_control/canonical_joint_v1.py",
+    "sha256": "138ab2b49ebddcbed2a24486c995b85a3a5ae226ee936ff2ed5de318496ee8bd"
+  },
+  "snapshot": {
+    "path": "artifacts/exploratory_32768_reflection_prefix_20261006/prefix.json",
+    "sha256": "e2e4b0d6363d3ec36f530ad673d92f2d72638be993cf79fc30ce979958c405c5",
+    "cycles": 680,
+    "cfd_time_interval": [148.0, 216.0],
+    "source_progress_read_sha256": "cb6f4d96f05c228c2284ad7fbfdf1a0c7c7858c94440eb4add2b944451cac176"
+  },
+  "runtime_root": "/workspace/fluid_control/.runtime/exploratory-h5-ppo-py312",
+  "deadline_seconds": 300,
+  "outer_timeout_seconds": 330,
+  "cleanup_grace_seconds": 30,
+  "memory_max_bytes": 4294967296,
+  "cpu_quota_percent": 100,
+  "startup_memavailable_bytes": 53687091200,
+  "runtime_memavailable_bytes": 23622320128,
+  "output": "artifacts/exploratory_policy_reflection_defect_audit_20261006/result.json",
+  "policies": [
+    {
+      "label": "diverse_24reset_32768",
+      "policy": "artifacts/exploratory_diverse_h5_32768_ppo_training_20261006_r2/payload/ppo_final.zip",
+      "policy_sha256": "5ab92ebe04459419bc724b48c6e20bde2464d7b6d880396e504406aa08806d4a",
+      "vecnormalize": "artifacts/exploratory_diverse_h5_32768_ppo_training_20261006_r2/payload/vecnormalize.pkl",
+      "vecnormalize_sha256": "3161ba46c65bac3bc23fa4ccb300c52c95fda63ee4190d9f30d2f0bd4b9040ec",
+      "training_result": "artifacts/exploratory_diverse_h5_32768_ppo_training_20261006_r2/payload/result.json",
+      "training_result_sha256": "ff3532a604b6816fb3ad4c7a11edfcd579bcb924445abca52a2fdab8ea4dcf20",
+      "expected_training_status": "EXPLORATORY_DIVERSE_H5_32768_PPO_TRAINING_COMPLETE_NOT_ADMISSION",
+      "expected_timesteps": 32768,
+      "reproduces_snapshot_policy": true
+    },
+    {
+      "label": "diverse_24reset_4096",
+      "policy": "artifacts/exploratory_diverse_h5_ppo_training_20261006/payload/ppo_final.zip",
+      "policy_sha256": "8dc8cabf2104654345f270e3fb86edca7752cf4c883112c0a4cbd3a181acea9b",
+      "vecnormalize": "artifacts/exploratory_diverse_h5_ppo_training_20261006/payload/vecnormalize.pkl",
+      "vecnormalize_sha256": "6988d4d161bc69c8bbd89d477e9320ad9ef264d35c9dee0bbf63954d4cdfce70",
+      "training_result": "artifacts/exploratory_diverse_h5_ppo_training_20261006/payload/result.json",
+      "training_result_sha256": "cd5775e4647280b77803de9a5ced6abdf6378cded4f676f935bd9836350c3640",
+      "expected_training_status": "EXPLORATORY_DIVERSE_H5_PPO_TRAINING_COMPLETE_NOT_ADMISSION",
+      "expected_timesteps": 4096,
+      "reproduces_snapshot_policy": false
+    }
+  ],
+  "interpretation_limit": "Policy symmetry and counterfactual action-filter audit only; no CFD execution and no physical benefit claim."
+}

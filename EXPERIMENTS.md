@@ -1,5 +1,17 @@
 # Experiment ledger
 
+## FC-E058 — Actual projected-policy paired800 CFD running
+
+One authorized execution is live: `fluid-control-exploratory-projected-32768-ppo-long-cfd-20261006.service`, invocation `afa5cde4daec474eb52b61c08f86746f`, initial PID3059882. Approval `87944e807a68caab6ce7a46e01207e1d7ba432b86ccd639b6f47424de481c64c`; immutable driver `5c3f40728cd383913a256a2f46b6bfaf0b02cc7d91586e198c354a007fcb9e76`. Final persisted preflight verified nine source and eight input identities, image identity and exclusive output.
+
+Relative to FC-E055, only the requested action is replaced by `0.5*(pi(o)-pi(Ro))` before exactly one existing filter. Same frozen32768 policy, restart148, pairedzero,800cycles, six windows, physics, criteria and resources. No terminal outcome or CSV result is recorded while running; no automatic retry/admission.
+
+## FC-E057 — Actual fixed-prefix policy reflection-defect audit complete
+
+Unit `fluid-control-policy-reflection-defect-audit-20261006.service`, invocation `dff10f4049dc4b4da84d7d05818d1c9b`, exited0. Fixed680-cycle snapshot SHA `e2e4b0d6363d3ec36f530ad673d92f2d72638be993cf79fc30ce979958c405c5`; result SHA `b0c48354f85a2f3e0b6ccf9f41079e2eded7e33fe4a422f7f3a0c61310fc6809`. Final32768 policy mirror-defect mean/RMS is −0.6702486725962338/0.8046740447610694; the4096 policy is −0.3195020545493154/0.3197158563363626.
+
+Projected-action filter counts are conditioned on recorded original-trajectory previous omega, not a counterfactual rollout. This is a CPU read-only diagnostic with zero optimizer steps and no CFD/model writes; it motivates but does not prove FC-E058.
+
 ## FC-E055 — Completed 800-cycle direct PPO / real-CFD paired evaluation
 
 Actual unit `fluid-control-exploratory-diverse-32768-ppo-long-cfd-20261006.service`, invocation `285bea88ff234cd5acfb9cb03c2b3cf3`, exited0 at08:15:05UTC after800 pairedcycles (1099.09s worker). Approval `e103288a0558c10784a43a199a3c4d731ffc0e6509753646da7bb6930cb4dc12`; executeddriver `17060dda570ead4fdc8e33920fcc559b5bb8ad8d640a7e154579f8a795507afa`. Final32768policy `5ab92ebe04459419bc724b48c6e20bde2464d7b6d880396e504406aa08806d4a` directly controls CFD; no onlineFNO orMPC substitution.

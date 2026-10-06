@@ -1,5 +1,17 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E058 已实际启动：反射投影32768策略的匹配800周期真实CFD
+
+唯一科学变化为请求动作 `0.5*(pi(o)-pi(Ro))`，随后仅调用一次既有幅值/变化率过滤器；策略、VecNormalize、restart148、配对zero、800周期、六个窗口、CFD数值与物理标准不变。实际unit `fluid-control-exploratory-projected-32768-ppo-long-cfd-20261006.service`，invocation `afa5cde4daec474eb52b61c08f86746f`，启动时PID3059882、active/running。批准SHA `87944e807a68caab6ce7a46e01207e1d7ba432b86ccd639b6f47424de481c64c`，不可变driver SHA `5c3f40728cd383913a256a2f46b6bfaf0b02cc7d91586e198c354a007fcb9e76`。
+
+这是FC-E055后的单因素探索，不是重训、正式准入或成功结论。输出 `artifacts/exploratory_projected_32768_ppo_long_cfd_20261006`；尚无终态物理数字。资源合同保持CPU控制器8GiB、两个8GiB/no-swap solver、Available50/22GiB、3600/3750/120秒；未经诊断不得重试。
+
+## FC-E057 已完成：固定680周期上的策略反射缺陷只读审计
+
+unit `fluid-control-policy-reflection-defect-audit-20261006.service` / invocation `dff10f4049dc4b4da84d7d05818d1c9b` exit0。32768策略的 `pi(o)+pi(Ro)` 均值−0.6702486725962338、RMS0.8046740447610694；4096策略分别−0.3195020545493154/0.3197158563363626。该信号支持单因素投影值得实测，但不能证明偏置成因或闭环收益。
+
+结果SHA `b0c48354f85a2f3e0b6ccf9f41079e2eded7e33fe4a422f7f3a0c61310fc6809`；报告 `docs/EXPLORATORY_POLICY_REFLECTION_DEFECT_AUDIT_TERMINAL_REVIEW_20261006.md`。投影过滤统计以原轨迹先前omega为条件，不是反事实轨迹；无训练、CFD或科学准入。
+
 ## FC-E055 已完成真实80D/U：减阻与波动改善，但平均升力约束未完成
 
 范围仍只有一个训练相位b00/初始状态，不能称跨相位鲁棒性。即使后续单因素投影满足primary约束，也需另行批准第二匹配相位b01或另一真实初始状态验证；当前不启动。K1 H100正式评估仍FAIL，探索性闭环许可不等于论文级通用性证明。
