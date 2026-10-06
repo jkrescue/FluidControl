@@ -1,5 +1,9 @@
 # Research roadmap and prioritized backlog
 
+## Live stage — E090 CPU conversion, not new model training
+
+E089 acquisition is complete and independently verified. Lead approved E090 controlled b02 whole-trajectory801frame conversion; actual unit `fluid-control-p064-b02-controlled-train-conversion-20261007.service`, invocation `f7a7550e035e4ee482205379eefa016a`, now runs the pinned official sampler/reader pipeline. Approval64e910fc20c7f5beeb0805ad159be3e0ff3e8d599f4560b7a0f42149aa53766a. Wait for independent terminal data/clock/field identity checks; do not equate801 progress with acceptance. The later fixed-total25% b00/b02 coverage training candidate remains separately unapproved. Below pending-conversion wording is the earlier handoff state, not current execution status.
+
 ## Current priority — E089 complete; prepare approved-data conversion, not another uncontrolled sweep
 
 E089 fixedE082policy b02 acquisition actually completed and independently passed six original physical windows; primary4.2628%drag/0.822972RMSratio/4.4528%bias. [Terminal and801frame inventory](P064_B_SYMMETRY_CANONICAL_B02_TRAIN_CFD_TERMINAL_REVIEW_20261007.md), SHA `283c12c310a779e7c946c162ec1f9f07d4722e49b323157ca6206281c5361064`, binds both801-frame branches and original files. Next controlled-only whole-trajectory train conversion is prepared for separate approval, not running. A later25%-total-controlled b00/b02 coverage candidate still needs its own fixed protocol and training approval; do not imply C50 promotion or automatically extend32updates.

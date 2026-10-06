@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## FC-E090 — actual CPU conversion of the complete controlled b02 trajectory
+
+Unitfluid-control-p064-b02-controlled-train-conversion-20261007.service/invf7a7550e035e4ee482205379eefa016a/PID993601 running, observed48/801writtenframes. Approval64e910fc20c7f5beeb0805ad159be3e0ff3e8d599f4560b7a0f42149aa53766a; immutableconverter2aa5d3e6f52231cd3b5262663b6d33bdd67fcf872788124d42e1d13777098140; output artifacts/p064_b02_controlled_train_conversion_20261007. Controlled-only whole-trajectory train, original normalization and official sampler/reader, no optimizer/FNO/PPO/newCFD. Host12GiB/noSwap plus sequential4GiBexports/Available50startup22runtime20reserve/3600s. Actual progress is not terminalverification; no scientificCSV values at startup. E089 physical results remain independent; later coverage-candidate training requires separate approval.
+
 ## FC-E089 — terminal raw/field inventory verified; six original physical windows pass
 
 Same330e PID0/exit0;800cycles,1106.401629591s,minAvailable121866289152B. Independent3200raw SHA/1600solver/800canonical actions and six-window arithmetic match within6.66e-16;20originalrestart hashes unchanged, actualownedcontainers removed/noOOM. Primary drag .042628021235349256/RMS .8229719660309436/bias .04452841272048061; all six windows pass unchanged criteria. Two branches801U/p each,3204files/1,361,731,056bytes independently inventoried. Result6883ceda495a443bc0edf95047f61bdbfc585cea9217112a92cb21e78299b9eb; progress40c9ea6e8fa7617bf15633778f2d156738f4103000a2b041b765b6feb11d0878; audit2aa79a8dc18455a2280832ec6c10f8a82993d30fc138f67cc824b38ff42a051b. [Review](docs/P064_B_SYMMETRY_CANONICAL_B02_TRAIN_CFD_TERMINAL_REVIEW_20261007.md) SHA283c12c310a779e7c946c162ec1f9f07d4722e49b323157ca6206281c5361064. Conversion-ready does not authorize conversion/training; no unseen-phase or surrogate-pass claim. Prior C50 rejection and all historical failures preserved.

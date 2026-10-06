@@ -347,6 +347,26 @@ def canonical_b00_cfd_status(root,run=subprocess.check_output):
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
+def b02_conversion_status(root,run=subprocess.check_output):
+    root=Path(root);info={'status':'b02转换状态待核验','running':False,'training':False,'written_frames':0,'expected_frames':801,'invocation':None,'official_reader_verified':False}
+    try:
+        approval=root/'docs/P064_B02_CONTROLLED_TRAIN_CONVERSION_APPROVAL_20261007.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='64e910fc20c7f5beeb0805ad159be3e0ff3e8d599f4560b7a0f42149aa53766a':raise ValueError('conversion approval SHA')
+        raw=run(['systemctl','--user','show','fluid-control-p064-b02-controlled-train-conversion-20261007.service','-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!='f7a7550e035e4ee482205379eefa016a':raise ValueError('conversion invocation')
+        info['invocation']=state['InvocationID']
+        path=root/'artifacts/p064_b02_controlled_train_conversion_20261007/progress.json'
+        if path.exists():
+            p=json.loads(path.read_text());n=p['written_frames']
+            if type(n) is not int or not 0<=n<=801 or p['expected_frames']!=801:raise ValueError('conversion count')
+            info.update(written_frames=n,last_global_index=p['last_global_index'],current_batch=p['current_batch'])
+        info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['status']='CPU数据转换：b02受控801帧，非训练' if info['running'] else ('转换程序退出0，等待独立完整性核验' if state.get('ExecMainStatus')=='0' else '转换工程失败，未自动重试')
+        info['note']='已保存真实CFD→官方Curator/Reader训练HDF；只受控branch，整轨train，原归一化不重拟合。没有FNO/PPO训练或新CFD求解；801计数不等于转换验收。E089六窗物理结果已独审，C50拒绝和预测FAIL保留。'
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['error']=str(exc)
+    return info
+
 def b02_acquisition_status(root,run=subprocess.check_output):
     root=Path(root);info={'status':'b02采集尚未核验启动','cycles':0,'target':800,'running':False,'training':False,'physical_pass':None,'invocation':None,'note':'固定E082已训练策略，CPU真实CFD反馈；不是C50模型/PPO训练，无在线FNO/MPC。补充长期受控train数据，已有b02短探索数据并非空白。转换及后续训练另批；旧物理收益和预测FAIL不变。'}
     try:

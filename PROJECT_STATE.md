@@ -1,6 +1,10 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前：E089 b02采集已完成并独审；尚未执行新转换或训练
+## 当前：E090 CPU数据转换实际运行；E089真实采集已独审完成
+
+E090 unit `fluid-control-p064-b02-controlled-train-conversion-20261007.service`，invocation `f7a7550e035e4ee482205379eefa016a`，PID993601 running，已实查48/801写入帧。批准 `docs/P064_B02_CONTROLLED_TRAIN_CONVERSION_APPROVAL_20261007.json` SHA `64e910fc20c7f5beeb0805ad159be3e0ff3e8d599f4560b7a0f42149aa53766a`；输出 `artifacts/p064_b02_controlled_train_conversion_20261007`，不可变converter SHA `2aa5d3e6f52231cd3b5262663b6d33bdd67fcf872788124d42e1d13777098140`。只将已保存受控b02全801帧经既有官方Curator/Reader转train HDF；不混zero，不重新拟合归一化。host12GiB/noSwap+顺序4GiBexport、50/22/20GiB门、3600s。不是GPU/FNO/PPO训练或新CFD，计数未构成终态验收。后续覆盖候选训练仍需另批，C50拒绝/预测FAIL/旧失败保留。以下“尚未转换”属于历史记录。
+
+## 历史交接：E089 b02采集已完成并独审
 
 同330e已PID0/exit0，800/800、主窗减阻4.2628%/后升力RMS降低17.7028%/均值偏置4.4528%，六窗全部通过原2%/1.05/10%。独审3200raw/1600solver/800canonical映射与单filter/原20restart不变/cleanup；两branch各801时刻U/p齐全，共3204文件已SHA库存。报告 [E089终态](docs/P064_B_SYMMETRY_CANONICAL_B02_TRAIN_CFD_TERMINAL_REVIEW_20261007.md) SHA `283c12c310a779e7c946c162ec1f9f07d4722e49b323157ca6206281c5361064`；result `6883ceda495a443bc0edf95047f61bdbfc585cea9217112a92cb21e78299b9eb`；库存 `artifacts/p064_b02_terminal_audit_20261007/audit.jsonstream` SHA `2aa79a8dc18455a2280832ec6c10f8a82993d30fc138f67cc824b38ff42a051b`。可供另批controlled-only whole-trajectory train转换，不代表转换或候选训练已执行。
 

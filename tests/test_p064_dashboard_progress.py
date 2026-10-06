@@ -39,6 +39,16 @@ def test_b02_acquisition_is_not_training(tmp_path,monkeypatch,sub,pid,running):
     assert result['running'] is running and result['training'] is False
     assert result['physical_pass'] is None
 
+@pytest.mark.parametrize('sub,pid,running',[('running','12',True),('exited','0',False)])
+def test_b02_conversion_count_not_admission(tmp_path,monkeypatch,sub,pid,running):
+    import p064_dashboard_progress as m
+    p=tmp_path/'docs/P064_B02_CONTROLLED_TRAIN_CONVERSION_APPROVAL_20261007.json';p.parent.mkdir();p.write_text('{}')
+    q=tmp_path/'artifacts/p064_b02_controlled_train_conversion_20261007/progress.json';q.parent.mkdir(parents=True);q.write_text(json.dumps({'written_frames':48,'expected_frames':801,'last_global_index':47,'current_batch':0}))
+    monkeypatch.setattr(m.hashlib,'sha256',lambda data:type('Digest',(),{'hexdigest':lambda self:'64e910fc20c7f5beeb0805ad159be3e0ff3e8d599f4560b7a0f42149aa53766a'})())
+    result=m.b02_conversion_status(tmp_path,lambda *a,**k:f'InvocationID=f7a7550e035e4ee482205379eefa016a\nMainPID={pid}\nActiveState=active\nSubState={sub}\nExecMainStatus=0')
+    assert result['running'] is running and result['training'] is False
+    assert result['written_frames']==48 and result['official_reader_verified'] is False
+
 @pytest.mark.parametrize('field,value',[('history_k',True),('consumed',257),('consumed',False)])
 def test_bad_event(field,value):
     row={'event':'training_window_complete','history_k':1,'consumed':8};row[field]=value
