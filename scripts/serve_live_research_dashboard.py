@@ -221,6 +221,7 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 <h2>当前 FNO 对照实验</h2><div class="grid" id="lead-models"></div>
 <p class="small">λ=0：不加配对统计损失；λ=10：加入配对统计损失，比较同一初态下不同动作的阻力与升力变化。两者使用同一评估协议。100 步表示连续预测 10 D/U，并非 100 轮训练。最终还需动态动作和时间窗口内的受力统计检验。</p>
 <div class="card" id="current-trial-evidence" hidden><h3>当前长程试验 · 真实 CFD 状态与实际受力</h3><div id="current-trial-recovered-metrics"></div><p id="current-trial-field-note" class="small"></p><img id="current-trial-field" alt="当前周期起点的真实CFD速度模长和ROI去均值压力" loading="lazy"><canvas class="actual-series" id="current-trial-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="current-trial-forces" width="1000" height="180"></canvas><canvas class="actual-series" id="current-trial-lift" width="1000" height="180"></canvas><p class="small">折线只来自已经完成的真实 OpenFOAM 周期：流场样本在周期起点 t，受力在终点 t+0.1；预测值没有混入这些折线。图像仅覆盖 x=8…25、y=4…11 的采样 ROI，不是完整求解域。</p></div>
+<div class="card" id="exploratory-h5-ppo-training" hidden><h3>探索性 H5 PPO · 训练证据</h3><div id="exploratory-h5-ppo-training-body"></div></div>
 <section id="flow-current"><h2>历史流场预测 · 真实 CFD / FNO / 误差</h2>
 <div class="card"><div class="row"><h3>历史 C 模型 · 第一轮训练预览</h3><select id="c-preview-step"><option value="001">1 步 / 0.1 D/U</option><option value="010">10 步 / 1 D/U</option><option value="050">50 步 / 5 D/U</option><option value="100" selected>100 步 / 10 D/U</option></select></div><p id="c-preview-status">等待预测图及数据校验完成。</p><img id="c-preview-image" alt="第一轮模型：真实 CFD、连续预测及绝对误差" style="width:100%" hidden><p class="small">历史模型可视化：仅一条 b01 动态转速验证轨迹，从 tU/D=130 的真实流场出发，之后连续预测；不是当前长程试验的流场，不是完整验证集的精度，也不是最终模型或闭环控制结果。左列：真实 CFD；中列：模型预测；右列：绝对误差。</p></div>
 <p><label for="c-preview-profile">当前候选图的动作轨迹：</label><select id="c-preview-profile" disabled><option value="plus" selected>正向起始旋转</option><option value="zero">无旋转</option><option value="minus">负向起始旋转</option></select></p>
@@ -358,9 +359,15 @@ function renderAdmission(d){
   if(fresh&&rejected)$('lead-now').textContent=`${isTrueState?'FC-P003C 当前候选':isDynamic?'动态动作配对候选':'均匀配对候选'}已完成评估，但旋转动作下的升力波动预测未通过。${isTrueState?'下一步为同一模型在训练前段、训练后段与验证后段的单步受力误差诊断；不是新的 PPO 或模型训练。':''}当前计算状态以实时采样为准；完整评估结束不等于闭环完成。`;
  }
 }
+function renderExploratoryH5PPO(ppo){
+ const card=$('exploratory-h5-ppo-training');card.hidden=ppo?.verified!==true;if(card.hidden)return;
+ const state=ppo.training_complete?'训练完成，等待真实 CFD 配对验证':ppo.running?'训练中':'训练证据不完整';
+ $('exploratory-h5-ppo-training-body').innerHTML=`<p><b>${state}</b> · ${ppo.timesteps}/${ppo.target_timesteps} transitions · ${ppo.environments} 个训练环境</p><table><tbody><tr><th>PPO更新</th><td>${ppo.ppo_updates} epoch-updates；${ppo.optimizer_steps} optimizer steps</td><th>策略张量</th><td>${ppo.policy_changed?'已改变':'未改变'}</td></tr><tr><th>末次 value loss</th><td>${num(ppo.value_loss,6)}</td><th>末次 approx KL</th><td>${num(ppo.approx_kl,6)}</td></tr><tr><th>episode reward均值</th><td>${num(ppo.episode_reward_mean,6)}</td><th>最低 MemAvailable</th><td>${num(ppo.minimum_available_gib,2)} GiB</td></tr></tbody></table><p class="small">官方 K1 双FNO仅作为冻结训练环境：权重SHA前后不变；策略已更新。这里没有执行真实CFD，也没有证明减阻、PPO物理收益或科学准入。下一步必须使用冻结策略做真实CFD配对评价。</p>`;
+}
 function renderActiveExperiment(d){
  const active=d.registered_experiment;
  renderCurrentTrialEvidence(active);
+ renderExploratoryH5PPO(d.exploratory_h5_ppo_training);
  if(active?.mpc_trial===true&&active.verified===true){
   const causal=active.progress_kind==='exploratory_causal_history_h2_feedback';
   const causalH5=active.progress_kind==='exploratory_causal_history_h5_feedback';
@@ -1679,6 +1686,9 @@ _CURRENT_FIELD_CACHE = {"sha256": None, "png": None}
 _CURRENT_FIELD_LOCK = threading.Lock()
 _LONG_H5_RECOVERED_SHA = "1605604dc27f106acd05e6a721f26c4ba24527ac53996d6e65fbc70c601fa2b1"
 _LONG_H5_REVIEW_SHA = "aa343c826b683eff840826d3bbcd1db02e2bdbfa1321a33522a965dde5d1f687"
+_H5_PPO_APPROVAL_SHA = "8aa44f5f177d6c7d831a1efc55abf9d8db4b700d640cb640c5fcbb709cc44569"
+_H5_PPO_RESULT_SHA = "138a7b192eef1a6454cefa47cda7803c9b362937641a645c00889ac5a5d7a0c4"
+_H5_PPO_SUPERVISOR_SHA = "87d9f0be7dfb49565c0ea335691ad598f644f411b22297e6cce7fac4e8ab384c"
 
 
 def _long_h5_recovered_metrics(root: Path) -> dict | None:
@@ -1734,6 +1744,107 @@ def _long_h5_recovered_metrics(root: Path) -> dict | None:
                 "windows": windows}
     except (OSError, ValueError, KeyError, TypeError):
         return None
+
+
+def _complete_jsonl(path: Path):
+    """Yield only newline-terminated JSON objects; reject malformed complete rows."""
+    with path.open("rb") as stream:
+        for raw in stream:
+            if not raw.endswith(b"\n"):
+                continue
+            row = json.loads(raw)
+            if not isinstance(row, dict):
+                raise ValueError("JSONL row is not an object")
+            yield row
+
+
+def _exploratory_h5_ppo_training(root: Path) -> dict:
+    """Bind the completed exploratory PPO training; never imply CFD benefit."""
+    base = root / "artifacts/exploratory_h5_ppo_training_20261006"
+    payload = base / "payload"
+    approval = root / "docs/EXPLORATORY_H5_PPO_APPROVAL_20261006.json"
+    result_path = payload / "result.json"
+    supervisor_path = base / "supervisor_result.json"
+    try:
+        if (hashlib.sha256(approval.read_bytes()).hexdigest() != _H5_PPO_APPROVAL_SHA
+                or hashlib.sha256(result_path.read_bytes()).hexdigest() != _H5_PPO_RESULT_SHA
+                or hashlib.sha256(supervisor_path.read_bytes()).hexdigest()
+                != _H5_PPO_SUPERVISOR_SHA):
+            raise ValueError("PPO receipt identity mismatch")
+        result = json.loads(result_path.read_text())
+        supervisor = json.loads(supervisor_path.read_text())
+        artifacts = result["artifacts"]
+        expected_artifacts = {
+            "ppo_final.zip": artifacts["ppo_final.zip"],
+            "vecnormalize.pkl": artifacts["vecnormalize.pkl"],
+            "transitions.jsonl": artifacts["transitions.jsonl"],
+            "source_spec.json": artifacts["source_spec.json"],
+            "progress.json": artifacts["progress.json"],
+        }
+        for name, expected_sha in expected_artifacts.items():
+            if hashlib.sha256((payload / name).read_bytes()).hexdigest() != expected_sha:
+                raise ValueError("PPO artifact identity mismatch")
+        if (result.get("status") != "EXPLORATORY_H5_PPO_TRAINING_COMPLETE_NOT_ADMISSION"
+                or result.get("timesteps") != 4096
+                or result.get("scientific_admission") is not False
+                or result.get("cfd_executed") is not False
+                or result.get("fno_tensors_unchanged") is not True
+                or result.get("policy_tensor_sha256_before")
+                == result.get("policy_tensor_sha256_after")
+                or supervisor.get("returncode") != 0
+                or supervisor.get("result_sha256") != _H5_PPO_RESULT_SHA
+                or supervisor.get("scientific_admission") is not False):
+            raise ValueError("unexpected PPO terminal contract")
+        progress = {}
+        progress_rows = 0
+        for row in _complete_jsonl(payload / "progress.json"):
+            progress.update(row)
+            progress_rows += 1
+        env_counts = {index: 0 for index in range(4)}
+        transition_count = 0
+        truncated = 0
+        for row in _complete_jsonl(payload / "transitions.jsonl"):
+            index = row.get("env_index")
+            if index not in env_counts or row.get("scientific_admission") is not False:
+                raise ValueError("unexpected transition identity")
+            env_counts[index] += 1
+            transition_count += 1
+            truncated += int(row.get("TimeLimit.truncated") is True)
+        diagnostics = result["diagnostics"]
+        if (progress_rows != 9 or transition_count != 4096
+                or env_counts != {0: 1024, 1: 1024, 2: 1024, 3: 1024}
+                or truncated != 816 or diagnostics.get("episodes_completed") != 816
+                or progress.get("time/total_timesteps") != 4096
+                or len(result.get("optimizer_steps", [])) != 64
+                or result.get("ppo_n_updates") != 32):
+            raise ValueError("incomplete PPO records")
+        fields = ("InvocationID", "MainPID", "ActiveState", "SubState", "Result",
+                  "ExecMainCode", "ExecMainStatus")
+        raw = subprocess.check_output(["systemctl", "--user", "show",
+            "fluid-control-exploratory-h5-ppo-20261006.service",
+            *[arg for key in fields for arg in ("-p", key)]], text=True, timeout=5)
+        state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+        if (state.get("InvocationID") != "21cb82da66214924b38f120eb30723e5"
+                or state.get("MainPID") != "0" or state.get("ActiveState") != "active"
+                or state.get("SubState") != "exited" or state.get("Result") != "success"
+                or state.get("ExecMainCode") != "1" or state.get("ExecMainStatus") != "0"):
+            raise ValueError("PPO unit is not the reviewed terminal execution")
+        return {"verified": True, "running": False, "training_complete": True,
+                "timesteps": transition_count, "target_timesteps": 4096,
+                "environments": 4, "environment_counts": env_counts,
+                "timeouts": truncated, "ppo_updates": result["ppo_n_updates"],
+                "optimizer_steps": len(result["optimizer_steps"]),
+                "value_loss": progress["train/value_loss"],
+                "approx_kl": progress["train/approx_kl"],
+                "episode_reward_mean": diagnostics["episode_return"]["mean"],
+                "policy_changed": True, "fno_tensors_unchanged": True,
+                "cfd_executed": False, "scientific_admission": False,
+                "minimum_available_gib": supervisor["minimum_available_bytes"] / 2**30,
+                "result_sha256": _H5_PPO_RESULT_SHA,
+                "approval_sha256": _H5_PPO_APPROVAL_SHA}
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
+            subprocess.SubprocessError):
+        return {"verified": False, "running": False, "training_complete": False}
 
 
 def _current_trial_field_evidence(root: Path, profile: dict, rows: list[dict],
@@ -3928,6 +4039,7 @@ class Handler(BaseHTTPRequestHandler):
             data["p023_live"] = _fcp023_live(self.root)
             data["p024_live"] = _fcp024_live(self.root)
             data["registered_experiment"] = _registered_experiment_live(self.root)
+            data["exploratory_h5_ppo_training"] = _exploratory_h5_ppo_training(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)
             return self._send(json.dumps(data, ensure_ascii=False, allow_nan=False).encode(), "application/json; charset=utf-8")

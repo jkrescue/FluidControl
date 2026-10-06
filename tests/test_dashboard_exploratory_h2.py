@@ -236,6 +236,68 @@ def test_recovered_metrics_preserve_original_exit1_and_percent_units(tmp_path,mo
     assert '124周期CFD完成；后处理已恢复，整体未减阻' in m.PAGE
 
 
+def test_exploratory_h5_ppo_terminal_card_binds_complete_jsonl_and_frozen_fno(
+        tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    payload=tmp_path/'artifacts/exploratory_h5_ppo_training_20261006/payload'
+    payload.mkdir(parents=True);docs=tmp_path/'docs';docs.mkdir()
+    approval=docs/'EXPLORATORY_H5_PPO_APPROVAL_20261006.json';approval.write_text('approval')
+    artifact_text={'ppo_final.zip':'policy','vecnormalize.pkl':'vec','source_spec.json':'approval'}
+    for name,text in artifact_text.items():(payload/name).write_text(text)
+    progress=[]
+    for i in range(8):
+        progress.append({'time/total_timesteps':512*(i+1),'rollout/ep_rew_mean':-.54})
+    progress.append({'train/value_loss':.021034008590504527,
+                     'train/approx_kl':.010616972111165524})
+    progress_bytes=b''.join(json.dumps(row).encode()+b'\n' for row in progress)
+    (payload/'progress.json').write_bytes(progress_bytes)
+    transitions=[]
+    for step in range(4096):
+        transitions.append(json.dumps({'env_index':step%4,'scientific_admission':False,
+                                       'TimeLimit.truncated':step<816}).encode()+b'\n')
+    transitions_bytes=b''.join(transitions)+b'{incomplete'
+    (payload/'transitions.jsonl').write_bytes(transitions_bytes)
+    artifact_hashes={'ppo_final.zip':'policy-sha','vecnormalize.pkl':'vec-sha',
+                     'source_spec.json':m._H5_PPO_APPROVAL_SHA,
+                     'progress.json':'progress-sha','transitions.jsonl':'transitions-sha'}
+    result={'status':'EXPLORATORY_H5_PPO_TRAINING_COMPLETE_NOT_ADMISSION',
+            'timesteps':4096,'scientific_admission':False,'cfd_executed':False,
+            'fno_tensors_unchanged':True,'policy_tensor_sha256_before':'before',
+            'policy_tensor_sha256_after':'after','ppo_n_updates':32,
+            'optimizer_steps':[{} for _ in range(64)],
+            'diagnostics':{'episodes_completed':816,
+                           'episode_return':{'mean':-.5444709350490196}},
+            'artifacts':artifact_hashes}
+    result_path=payload/'result.json';result_path.write_text(json.dumps(result))
+    supervisor={'returncode':0,'result_sha256':m._H5_PPO_RESULT_SHA,
+                'scientific_admission':False,'minimum_available_bytes':119542509568}
+    supervisor_path=payload.parent/'supervisor_result.json'
+    supervisor_path.write_text(json.dumps(supervisor))
+    hashes={approval.read_bytes():m._H5_PPO_APPROVAL_SHA,
+            result_path.read_bytes():m._H5_PPO_RESULT_SHA,
+            supervisor_path.read_bytes():m._H5_PPO_SUPERVISOR_SHA,
+            b'policy':'policy-sha',b'vec':'vec-sha',b'approval':m._H5_PPO_APPROVAL_SHA,
+            progress_bytes:'progress-sha',transitions_bytes:'transitions-sha'}
+    monkeypatch.setattr(m.hashlib,'sha256',
+        lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
+    unit='\n'.join(['InvocationID=21cb82da66214924b38f120eb30723e5',
+        'MainPID=0','ActiveState=active','SubState=exited','Result=success',
+        'ExecMainCode=1','ExecMainStatus=0'])
+    monkeypatch.setattr(m.subprocess,'check_output',lambda *args,**kwargs:unit)
+    card=m._exploratory_h5_ppo_training(tmp_path)
+    assert card['verified'] and card['training_complete'] and not card['running']
+    assert card['timesteps']==4096 and card['environment_counts']=={0:1024,1:1024,2:1024,3:1024}
+    assert card['optimizer_steps']==64 and card['ppo_updates']==32
+    assert card['value_loss']==pytest.approx(.021034008590504527)
+    assert card['approx_kl']==pytest.approx(.010616972111165524)
+    assert card['episode_reward_mean']==pytest.approx(-.5444709350490196)
+    assert card['minimum_available_gib']==pytest.approx(111.33263778686523)
+    assert card['policy_changed'] and card['fno_tensors_unchanged']
+    assert not card['cfd_executed'] and not card['scientific_admission']
+    assert '训练完成，等待真实 CFD 配对验证' in m.PAGE
+    assert '没有执行真实CFD' in m.PAGE
+
+
 def test_causal_terminal_binding_is_distinct_and_nonadmitting(tmp_path, monkeypatch):
     from types import SimpleNamespace
     base=tmp_path/'artifacts/exploratory_causal_history_h2_real_cfd_20261006';base.mkdir(parents=True)
