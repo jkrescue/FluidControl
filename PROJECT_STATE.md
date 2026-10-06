@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 正在执行：H5真实配对反馈（2026-10-06，阶段观测）
+
+实际unit `fluid-control-exploratory-causal-h5-real-cfd-20261006.service`，invocation `6adc59fae65344d2b49b57cbe5b30f70`，PID2075648已核active/running。批准SHA `f927f6b956f847766d899745ebc0e679a7638db63f27cfb1f9a489eb69fb6c0e`，不可变driver SHA `0917cd5c62e43fc3f7b2cdc23900aa9d0932dff9ef4842a155bcf4288524b14d`，输出 `artifacts/exploratory_causal_history_h5_real_cfd_20261006`。15项CPU测试及独立全源检查通过，代码同步GitLab8f5afb3。
+
+最近已确认3/10周期，前两次转速为+0.1/+0.2，双分支CFD正常推进；仍无最终减阻结论。与FC-E047相比只将H2改H5，CPU/模型/代价/候选/初态/动作约束不变。原长窗口失败保留，未新增PPO训练。终态必须按同一unit与原始力样本核验，不能把此阶段运行记录当最终结果。
+
+并行完成no-TF32 GPU工程对照：同一帧后Cl相对CPU最大差由.013054降至1.87755e-6，热推理约.14秒；最低采样Available120607776768bytes。仅单帧证据，报告 `docs/K1_UMA_GPU_NO_TF32_TERMINAL_REVIEW_20261006.md`，不自动改变当前H5设备或宣称全局等价。以下为历史。
+
 ## 最新工程事实：真实GPU推理完成，H5反馈实现中
 
 统一内存探针 `74f94b14bb81495daed3568042bed798` 正常结束。原官方K1在同一已有帧上完成3次五候选H2推理，首次1.150291秒、热运行0.139241/0.137661秒；最低采样MemAvailable113.4714GiB。CUDAfree约1.78GiB仅作观测，不能等同实际可分配余量。模型权重不变，没有训练/CFD动作；报告 `docs/K1_UMA_GPU_INFERENCE_REVIEW_20261006.md` 已同步GitLab6c27470。不外推长时资源安全或CPU/GPU数值等价。
