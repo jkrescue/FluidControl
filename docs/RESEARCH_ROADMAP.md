@@ -2,7 +2,7 @@
 
 ## Current — verified constrained CFD feedback, prediction replay and delivery review
 
-Updated 2026-10-06 after P064 A/B comparison, new PPO training and b00 CFD review. This section
+Updated 2026-10-06 after both B-policy b00/b01 CFD reviews and the complete B surrogate evaluation. This section
 supersedes the execution priorities below, which remain historical records.
 The physical scope remains Re100, L/D5, fixed upstream cylinder and rotating
 downstream cylinder. Do not restart previously completed experiments because
@@ -44,20 +44,30 @@ Current ordered work:
    all predicted flow arrays are unchanged. See the independent comparison
    report; this is local development support, not formal surrogate acceptance.
 4. Completed exploratory B policy chain: fresh PPO trained for 32768 steps,
-   independently verified, then actual paired800 OpenFOAM feedback at b00.
-   Primary final60 D/U passes original physical criteria: drag reduction
-   3.8952838833%, rear lift RMS ratio 0.8156230434, mean-bias ratio 0.0113781469.
-   Early first6.2 D/U still fails the 10% bias criterion. The improvement over
-   the old b00 projected policy is only 0.00330394 percentage points of drag
-   reduction; no significant superiority is established. b00 was used to
-   train B, so this is not an independent generalization test.
-   Next: fixed b01 initial-phase repetition with the same B policy and no
-   retraining; separately finish the unchanged full surrogate evaluation.
-   Neither next task has yet been executed. Keep the old successful policy.
-5. Keep K1 H100 formal failure explicit. Neither a passing physical trial nor
-   good H5 prediction silently admits the model under the old H100 protocol.
-   Any additional training must address a measured failure with a fixed
-   comparison; do not extend budgets merely to raise GPU utilization.
+   independently verified, then actual paired800 OpenFOAM feedback at both
+   b00 and b01. Primary final60 D/U drag reductions are 3.8952838833% and
+   3.9275159299%; rear lift RMS ratios .8156230434 and .8157277923; mean-bias
+   ratios .0113781469 and .0272949766. Both meet the original physical criteria.
+   Early first6.2 D/U bias still fails10% in both. Gains over the old projected
+   policy are tiny, not significant superiority. b00 is training data and
+   b01 is opened development, not fresh independent generalization evidence.
+5. Completed B full prediction evaluation (FC-E071): R3 engineering exit0,
+   scientific development admission FAIL. Six force windows jointly pass2/6;
+   all four rotating branches fail lift-fluctuation prediction fidelity.
+   H100 validation rear-Cl MAE worsens versus K1; frozen flow does not improve.
+   Preserve K1/B H100 failures and R1/R2 recovery provenance. A physical PASS
+   does not replace prediction accuracy, and the prediction2.5% development
+   error requirement is not a prerequisite for separately approved exploratory
+   real-CFD feedback development.
+6. Next priority: prepare and separately execute the same fixed B policy's
+   next initial-phase paired real-CFD validation, without retraining or changes
+   to projection, action constraints or the original steady physical
+   thresholds (drag reduction >=2%, lift RMS ratio <=1.05, mean-bias <=10%).
+   In parallel, prepare the signed H1 600-endpoint batch1 short diagnostic.
+   The same-six saved-JSON H1/AR comparison is already complete, not a new job;
+   its missing signed H1 series and batch/precision differences limit causal
+   interpretation. No new training is approved. Early-window15% is only a
+   proposed sensitivity analysis, not a replacement for10% or a new PASS.
 
 No multi-Re extension, moving-cylinder study, optional active-learning loop
 or replacement of successful PPO by MPC is required for this immediate
@@ -67,6 +77,10 @@ long-term goal remains active until its actual requirements are verified.
 Evidence: `CURRENT_DELIVERY_SUMMARY_20261006.md` and the linked independent
 FC-E058/059/061 reports; `PROJECTED_POLICY_H1_H5_CONVERSION_R2_REVIEW_20261006.md`;
 inference result under `artifacts/projected_policy_h1_h5_inference_20261006/`.
+Latest evidence: `P064_B_PROJECTED_PPO_LONG_CFD_TERMINAL_REVIEW_20261006.md`,
+`P064_B_PROJECTED_PPO_B01_LONG_CFD_TERMINAL_REVIEW_20261006.md`,
+`P064_B_FORMAL_TERMINAL_REVIEW_20261006.md` (SHA62a6234e…fc8cd6), and
+`P064_B_SAME6_CACHED_H1_AR_REVIEW_20261006.md` (SHAc7433e7b…ba1b7).
 Physical available unified memory must remain at least 20 GiB; existing
 isolated runtime limits and source-preserving failure records remain mandatory.
 
