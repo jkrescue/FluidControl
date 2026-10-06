@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E069 最新终态：B新policy在b00保持物理收益，非显著提升或独立泛化
+
+同inv `3a078c62ed9e4f7b8876f0f166bdb510` 已exit0，800周期真实paired CFD完成。独立复算3200原始文件SHA、1600solver段、全部动作及六窗口：主(168,228]减阻3.8952838833%、rearCl centered RMS ratio .815623043405、mean-bias ratio .011378146878，原2%/1.05/.10标准通过。早首6.2窗口bias .135464513仍未通过10%；full80峰值1.679784159高于zero1.647306236，不能宣称全时域峰值改善。结果SHA `8b31091d5e69edfbfd5ea78ba99dd7709623e6eeb0bd4f13c54e984b7fc28907`；独审 `docs/P064_B_PROJECTED_PPO_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `7b453d9c529d9d5c52988608c89d61050204510d41549cbb2be620fcdcebbe04`。
+
+新旧zero原始forces逐值完全相同；相对旧成功projected K1-policy主减阻仅增加.0033039437百分点，不是显著control提升。B训练包含b00，此次属in-sample物理确认，不能继承旧policy的b01/b03证据。旧成功policy保持不变；下一项仅准备同新policy固定b01复验，须独立批准。P064 formal/H100未因本结果获得准入。
+
+B官方CPU双模型reload R3已实际exit0、无forward/GPU，审计SHA976e0201…51c36d、重载receipt497e1164…fad87c；R1/R2只读缓存路径失败均保留，R3仅临时tmpfs修复。新receipt权限修复前后SHA不变。当前下文的“running”段落为历史启动记录，不代表仍在运行。
+
 ## FC-P064 当前实际执行：B fresh PPO 已独审终态，paired800 CFD 已启动
 
 B fresh PPO 同 unit `fluid-control-p064-b-ppo-32768-20261006.service` / invocation `f613395cbf1140549dc60e7b046e0f6b` 已 PID0、normal exit0。完成 32768 timesteps、256 PPO updates、512 optimizer records；FNO tensor 字节不变。结果/policy/Vec SHA 分别为 `3c70e21327baae98f682fc0982ca3c3910cf6d1902f3d62175f980fd685817b3` / `f764463983355779efff8d1b1994cfaf560ab7274d54b014d34a1f084b4b307e` / `8c07ef15bd41a8981f2ec0d241c85092b643ca740fea9f44866eecceac1197ad`。独审 `docs/P064_B_PPO_TERMINAL_REVIEW_20261006.md` SHA `0cc1494286f85b930b43b1a11713ae6ac3719d8ff599cfa0780a8d9fe71b0d65`；这是工程训练完成，不是 CFD 成功或正式准入。

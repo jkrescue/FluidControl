@@ -2,7 +2,7 @@
 
 ## Current — verified constrained CFD feedback, prediction replay and delivery review
 
-Updated 2026-10-06 after P064 arm A terminal review and actual arm B launch. This section
+Updated 2026-10-06 after P064 A/B comparison, new PPO training and b00 CFD review. This section
 supersedes the execution priorities below, which remain historical records.
 The physical scope remains Re100, L/D5, fixed upstream cylinder and rotating
 downstream cylinder. Do not restart previously completed experiments because
@@ -36,23 +36,24 @@ Current ordered work:
    inference (FC-E067) are also independently complete. Whole b00 is train;
    b01/b03 are already opened development, not fresh tests. K1 H1 force errors
    exceed persistence in both development phases; H5 benefits do not erase this.
-3. Current P064 equal-budget A/B: arm A completed 256 windows / 32 updates and
-   independent terminal engineering review. Arm B actually started in unit
-   `fluid-control-fcp064-aero-arm-b-20261006.service`, invocation
-   `450ef57c25c14ec38e722cbd597ffb50`; it is not yet a completed result.
-   Both start from K1 with fresh AdamW and frozen flow weights; only B replaces
-   64 of 256 windows with real b00 controlled-flow data. This experiment targets
-   force prediction, not improvement of the frozen velocity/pressure model.
-   Compare K1/A/B under the same fixed H1-H5 development protocol and report
-   old-train retention. A pending-evaluation preparation failed safely before
-   inference on a missing selector import; a separately reviewed compatibility
-   correction is being prepared without modifying the running training source.
-   After B exits, independently verify its actual terminal artifacts before
-   inference. Do not infer scientific improvement from training completion.
-4. If evidence supports adopting a candidate, verify its loader/PPO interface
-   compatibility and then execute separately approved genuine trained-policy
-   real CFD feedback confirmation. Do not substitute surrogate improvement
-   for physical control evidence or shrink the overall goal to data preparation.
+3. Completed P064 equal-budget A/B: both arms completed 256 windows / 32 updates,
+   independent terminal review and the same fixed development evaluation.
+   Replacing 64 windows with real b00 controlled data reduced B-versus-A pooled
+   H1 rear-Cl MAE by 10.9652% and total-Cd MAE by 4.72263%. H1 remains worse
+   than persistence, original-train diagnostics show retention tradeoffs, and
+   all predicted flow arrays are unchanged. See the independent comparison
+   report; this is local development support, not formal surrogate acceptance.
+4. Completed exploratory B policy chain: fresh PPO trained for 32768 steps,
+   independently verified, then actual paired800 OpenFOAM feedback at b00.
+   Primary final60 D/U passes original physical criteria: drag reduction
+   3.8952838833%, rear lift RMS ratio 0.8156230434, mean-bias ratio 0.0113781469.
+   Early first6.2 D/U still fails the 10% bias criterion. The improvement over
+   the old b00 projected policy is only 0.00330394 percentage points of drag
+   reduction; no significant superiority is established. b00 was used to
+   train B, so this is not an independent generalization test.
+   Next: fixed b01 initial-phase repetition with the same B policy and no
+   retraining; separately finish the unchanged full surrogate evaluation.
+   Neither next task has yet been executed. Keep the old successful policy.
 5. Keep K1 H100 formal failure explicit. Neither a passing physical trial nor
    good H5 prediction silently admits the model under the old H100 protocol.
    Any additional training must address a measured failure with a fixed
