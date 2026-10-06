@@ -211,7 +211,7 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 .field-stack{display:grid;grid-template-columns:1fr;gap:14px;margin-top:12px}.field-card{background:#101b2b;border:1px solid #2a3d53;border-radius:7px;padding:12px}.field-card h3{margin-bottom:5px}.field-note{line-height:1.6;margin-top:10px}
 @media(max-width:750px){.grid,.resources,.summary,.casegrid,.guide-grid{grid-template-columns:1fr}main{padding:16px}}
 </style></head><body><main>
-<section class="card"><h2>当前 CPU 数据准备 · FC-E065</h2><div id="b00-conversion">等待实际任务状态；不是 GPU 训练。</div></section>
+<section class="card"><h2>当前阶段 · P064 等预算数据对照</h2><div id="b00-conversion">等待实际任务身份；A/B各32次更新、256窗口，未启动不显示运行。</div></section>
 <div class="top"><div><h1>串列双圆柱流动控制 · 实时进展</h1><div class="muted">目标：降低两圆柱总阻力，同时报告侧向载荷与动作代价</div></div><div class="stamp" id="clock">连接中…</div></div>
 <nav class="guide"><a href="#lead-resources" style="color:#79d5a3">计算资源</a> · <a href="#lead-models" style="color:#79d5a3">当前实验</a> · <a href="#flow-current" style="color:#79d5a3">流场预测与误差图</a> · <a href="#legacy-details" style="color:#79d5a3">完整历史证据</a><span class="small"> · 新版科研总览 / 2026-10-04</span></nav>
 <section id="lead-overview">
@@ -891,7 +891,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  $('infer-speed').textContent=d.benchmark?.status==='FNO_REAL_CFD_INFERENCE_BENCHMARK_OK'?`旧数据多步 FNO、真实 CFD 输入：单步中位 ${num(d.benchmark.step_median_ms,2)} ms；连续 100 步 ${num(d.benchmark.rollout_100_step_seconds,2)} s。仅模型前向，不含 CFD 或控制通信。`:'FNO 推理耗时尚未测量。';
  $('cem').textContent=d.cem?'CEM 控制筛选已完成，结果待审计。':`CEM：等待 FNO 的 100 步总阻力误差降至 10% 以下。新增 CFD 平均求解进度 ${num(average,0)}%。`;
  $('ppo').textContent=d.ppo?'HydroGym PPO 有当前目标的新记录。':'当前总阻力目标的 HydroGym PPO 尚未启动。历史末柱目标的 PPO 曾完成 32 步真实 CFD 闭环，但目标差 +0.003855（更差），不能视为当前控制收益。';figure()}
-async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();renderLead(d);renderAdmission(d);renderCurrentFlow(d);render(d);renderActiveExperiment(d);const c=d.b00_train_conversion;$('b00-conversion').textContent=c?`${c.label} · ${c.written_frames}/801 帧 · 仅 CPU Curator→训练 HDF，无模型训练/新 CFD。可用内存 ${c.available_gib==null?'未知':c.available_gib.toFixed(1)+' GiB'}；invocation ${c.invocation}。${c.note}`:'状态不可用，不能据旧计数声称仍运行。'}catch(e){$('clock').textContent='连接失败：'+e.message;$('lead-now').textContent='连接失败，当前页面数值仅是上次采样，不代表实时状态。';$('b00-conversion').textContent='连接失败，转换状态未刷新。'}}
+async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();renderLead(d);renderAdmission(d);renderCurrentFlow(d);render(d);renderActiveExperiment(d);const c=d.b00_train_conversion;$('b00-conversion').textContent=c?`${c.label} · ${c.written_frames}/801 帧 · 仅 CPU Curator→训练 HDF，无模型训练/新 CFD。可用内存 ${c.available_gib==null?'未知':c.available_gib.toFixed(1)+' GiB'}；invocation ${c.invocation}。${c.note}`:'状态不可用，不能据旧计数声称仍运行。';if(d.p064_training){$('b00-conversion').textContent=d.p064_training.map(x=>`${x.label}：${x.status} · 更新 ${x.updates}/32 · 窗口 ${x.windows}/256 · 最后事件 ${x.last_update_utc||'尚无'}${x.invocation?' · inv '+x.invocation:''}`).join(' ｜ ')+'。A先B后；日志计数不是训练成功或科学验收。GPU/内存见现有监控。'}}catch(e){$('clock').textContent='连接失败：'+e.message;$('lead-now').textContent='连接失败，当前页面数值仅是上次采样，不代表实时状态。';$('b00-conversion').textContent='连接失败，转换状态未刷新。'}}
 for(const id of ['flow-model','flow-profile','flow-step','c-preview-step','c-preview-profile'])$(id).onchange=()=>{if(latest)renderCurrentFlow(latest)};
 $('case').onchange=figure;$('horizon').onchange=figure;$('h50-horizon').onchange=()=>{if(latest)renderH50Figures(latest)};window.onresize=()=>{if(latest)render(latest)};refresh();setInterval(refresh,5000);
 </script></body></html>'''
@@ -3632,6 +3632,19 @@ def _fixed_feature_readout(root: Path) -> dict:
         return {"ready": False}
 
 
+P064_TRAINING_REGISTRATIONS = {
+    'A': {'unit':'fluid-control-fcp064-aero-arm-a-20261006.service',
+          'output':'artifacts/fcp064_controlled_aero_arm_a_20261006',
+          'invocation':'cfc40285f8ec49fdba9a99defe2960cc',
+          'approval':{'path':'docs/FC_P064_ARM_A_TRAINING_APPROVAL_20261006.json','sha256':'c1872be6e816a2f058a111084594882ebfd9d3f0222e642ba58bfba71487ee1e'},
+          'driver':{'path':'artifacts/fcp064_training_source_20261006_immutable/scripts/train_fcp064_controlled_aero_ab.py','sha256':'8066f4a1e092c566e1b84f706ba56737afa06e13998446fee2f79dc2590920dd'}},
+    'B': None}
+
+def _p064_training_progress(root: Path) -> list:
+    from p064_dashboard_progress import status
+    return [status(root, arm, P064_TRAINING_REGISTRATIONS[arm]) for arm in ('A','B')]
+
+
 def _b00_train_conversion(root: Path) -> dict:
     unit = 'fluid-control-b00-controlled-train-conversion-20261006.service'
     invocation = 'f5ee31dd92624f0980a509084de9c756'
@@ -5049,6 +5062,7 @@ class Handler(BaseHTTPRequestHandler):
             data["phase_feedback_pilots"] = [_read_json(self.root / "artifacts/tandem_cylinders" / name / "result.json", None) for name in ("phase_feedback_pair_k075_20261003", "phase_feedback_pair_k020_20261003", "phase_feedback_pair_k050_l15_20261003")]
             data.update(_latest_evidence(self.root))
             data['b00_train_conversion'] = _b00_train_conversion(self.root)
+            data['p064_training'] = _p064_training_progress(self.root)
             data["fixed_feature_readout"] = _fixed_feature_readout(self.root)
             data["full_train_calibration"] = _full_train_calibration(self.root)
             data["free_ar_diagnostic"] = _free_ar_diagnostic(self.root)
