@@ -1,14 +1,9 @@
 {
-  "experiment": "P031-H25-resource-probe",
-  "label": "25步资源测试退出：正在修复启动余量不足",
-  "description": "第二次测试通过启动检查，但计算中CUDA空闲降至19.82GiB并触发退出，短暂低于20GiB要求。没有完整反向结果、参数更新或模型。正在提高启动余量、增加提前保护及退出前资源记录，不降低20GiB要求。并行准备真实CFD两步流场输入测试；完整在线闭环尚未完成。",
-  "unit": "fluid-control-fcp031-resource-probe-r2-20261006.service",
-  "invocation": "48a1f83e007a4bb59f1ea025af2e7dd7",
-  "approval": "docs/FC_P031_RESOURCE_PROBE_APPROVAL_20261006.json",
-  "approval_sha256": "3177f364230fe4900c7f1d3062d0a80483c8771861fe0efdd92093d54a42acca",
-  "launcher": "scripts/run_p031_control_aware_flow.py",
-  "launcher_sha256": "928de1536ccff031633785ffd6eaff0367ee7057af5f0eafbf36e5be50065058",
-  "log": "artifacts/fcp031_h25_resource_probe_20261006_r2/run.log",
-  "progress_kind": "p029_probe",
-  "planned_updates": {"FNO": 1}
+  "experiment": "two-segment-current-frame-R4",
+  "progress_kind": "two_segment_bridge",
+  "unit": "fluid-control-two-segment-frame-cpu-r4-20261006.service",
+  "invocation": "99e5c019c08240668241f7ac036320f3",
+  "label": "真实CFD两步接口已完成（非控制验收）",
+  "description": "两段零控制求解及当前场输入已完成；控制接口的软件集成与审查仍在进行，不表示机器正在计算。尚未启动探索性控制试验。",
+  "historical_p031": "两次H25资源探针失败保留，没有训练完成或模型准入。"
 }

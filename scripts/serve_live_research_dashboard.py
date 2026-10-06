@@ -336,6 +336,14 @@ function renderAdmission(d){
 }
 function renderActiveExperiment(d){
  const active=d.registered_experiment;
+ if(active?.bridge_completed===true&&active.verified===true){
+  const title='真实CFD两步接口已完成（不是训练或控制完成）';
+  const detail='两段零控制求解和当前流场输入已完成，148.0 → 148.1 → 148.2；没有加载模型或策略。机器计算：本任务已结束。当前工作：短时控制接口的软件集成与审查，尚未启动控制试验。';
+  $('lead-now').textContent=title+'。'+detail;
+  const card=document.createElement('div');card.className='card';
+  for(const [tag,text] of [['h3',title],['p',detail],['p','P031历史：两次资源测试退出，未完成训练；原失败证据与正式模型未通过的结论保留。下方图像仍是历史结果。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
+  $('lead-models').prepend(card);$('train16-formal-progress').textContent=title;$('train16-formal-detail').textContent=detail;return;
+ }
  if(active){
   const age=Date.now()-Date.parse(active.sampled_at_utc||'');
   const fresh=active.verified===true&&Number.isFinite(age)&&age>=0&&age<60000;
@@ -1549,10 +1557,64 @@ def _registered_formal_progress(root: Path, registration: dict, state: dict, mat
             "progress_unit": "项评估步骤", "progress_detail": detail, "admission": False}
 
 
+def _two_segment_bridge(root: Path, registration: dict, state: dict) -> dict:
+    """Exact completed CPU bridge evidence, never a model/control admission."""
+    try:
+        if (registration["unit"] != "fluid-control-two-segment-frame-cpu-r4-20261006.service"
+                or registration["invocation"] != "99e5c019c08240668241f7ac036320f3"
+                or state.get("InvocationID") != registration["invocation"]
+                or any(state.get(k) != v for k, v in {
+                    "MainPID":"0", "ActiveState":"active", "SubState":"exited",
+                    "Result":"success", "ExecMainCode":"1", "ExecMainStatus":"0"}.items())):
+            return {"verified": False}
+        base = root / "artifacts/online_two_segment_cpu_20261006_r4"
+        files = {
+            root / "docs/TWO_SEGMENT_CURRENT_FRAME_R4_APPROVAL_20261006.json": "9e268e48f2201eeefbbcb67fefcd3f3184d82877339a429b3f847a2134a9ddd6",
+            base / "result.json": "be3c57e00003d7092b116058604a47d2ea2b2c1f033551adb39188f1c91f7584",
+            base / "cleanup.json": "176c4419be678560ac81af6c1b98b88649ac95f7b739f8a441cd1cb24459bdee",
+            base / "container_terminal.json": "4f9948cf37959af9d9a50c32d2a924cf139561116d55c384deca87f84ea24229",
+        }
+        docs = {}
+        for path, expected in files.items():
+            raw = path.read_bytes()
+            if hashlib.sha256(raw).hexdigest() != expected:
+                return {"verified":False}
+            docs[path.name] = json.loads(raw)
+        result, cleanup, terminal = docs["result.json"], docs["cleanup.json"], docs["container_terminal.json"]
+        rows = result.get("rows", [])
+        if (result.get("status") != "TWO_SEGMENT_ENGINEERING_ONLY_NOT_CONTROL_ADMISSION"
+                or any(result.get(k) is not False for k in ("model_loaded", "policy_loaded", "scientific_admission"))
+                or result.get("source_unchanged") is not True
+                or [(r.get("step"),r.get("start"),r.get("end")) for r in rows] != [(1,148.0,148.1),(2,148.1,148.2)]
+                or any(r.get("applied_now") != 0 or r.get("applied_next") != 0
+                       or r.get("health",{}).get("solver_ended_cleanly") is not True
+                       or r.get("health",{}).get("steps") != 20 for r in rows)
+                or cleanup.get("errors") != [] or cleanup.get("cid") != terminal.get("Id")
+                or terminal.get("State",{}).get("Running") is not False
+                or terminal.get("State",{}).get("OOMKilled") is not False
+                or terminal.get("State",{}).get("Status") != "exited"):
+            return {"verified":False}
+        # The retained solver container is intentionally stopped after its exec
+        # segments; container exit137 is not asserted to be solver exit0.
+        return {"verified":True,"bridge_completed":True,"running":False,
+                "machine_compute":False,"scientific_admission":False,
+                "completed_segments":2,"planned_segments":2,
+                "integration_status":"software_preparation_not_compute",
+                "container_exit_code":terminal["State"]["ExitCode"]}
+    except (OSError, ValueError, KeyError, TypeError):
+        return {"verified":False}
+
+
 def _registered_experiment_live(root: Path) -> dict:
     sampled = datetime.now(UTC).isoformat()
     try:
         registration = json.loads((root / "docs/LIVE_EXPERIMENT.json").read_text())
+        if registration.get("progress_kind") == "two_segment_bridge":
+            raw = subprocess.check_output(["systemctl", "--user", "show",
+                "fluid-control-two-segment-frame-cpu-r4-20261006.service",
+                *[arg for key in ("InvocationID","MainPID","ActiveState","SubState","Result","ExecMainCode","ExecMainStatus") for arg in ("-p",key)]], text=True, timeout=5)
+            state = dict(line.split("=",1) for line in raw.splitlines() if "=" in line)
+            return {**_two_segment_bridge(root, registration, state), "sampled_at_utc":sampled}
         def confined(name):
             p = Path(name)
             if p.is_absolute() or not (root / p).resolve().is_relative_to(root.resolve()):
