@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E071 当前终态：完整预测评估已完成，气动力窗口准入仍失败
+
+R3 同 invocation `3bded2dcb4a24f808879987962a9ef8b` 已独立确认 PID0 / exit0；不是仍在训练或评估。复用 R2 已完成两阶段，R3 完成余下六阶段，完整 receipt SHA `30d3d0746580b8423a9f626a0ebe1b76c129acab7800158f74d7d8df3d8a1799`。独审报告 `docs/P064_B_FORMAL_TERMINAL_REVIEW_20261006.md` SHA `62a6234ed0e08ab70532a5252f34e6c8b203a22c6c6abeea5a67ba2635fc8cd6` 核验35输出、411数值源、7候选文件以及原始六条力时间序列；8容器正常退出、无OOM、当前无容器，合并资源记录 minimum MemAvailable116345077760B。
+
+科学结论为 `DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL`：窗口联合通过2/6（两条zero），四条旋转分支均未满足升力波动预测误差标准。validation10 H100 pooled Cd NRMSE K1 .00609718→B .00626447，rear-Cl MAE .04018628→.04311832；场统计因flow冻结不变。dynamic6端点误差有局部改善，但不能抵消时间窗口失败；mean-case和pooled不混比。原物理10%偏置条件与预测2.5%误差条件保持区分、均未放宽。
+
+真实闭环并非未开展：B兼容PPO已经在b00/b01完成实际CFD反馈且主物理标准通过，但这些已观察开发相位及物理收益不代表预测模型全部验收。保持旧成功控制器、H100失败和R1/R2工程失败记录。same-six缓存诊断已完成并归档ed638be，保留batch/precision差异；下一项仅准备signed H1 600端点batch1诊断，尚未执行，不自动重训或改变目标。下文此前running/pending标题均为历史记录。
+
 ## 当前实际：完整预测精度评估 R3 同协议恢复运行
 
 Unit `fluid-control-p064-b-formal-r3-20261006.service`，invocation `3bded2dcb4a24f808879987962a9ef8b`，实际PID1582344 active/running，当前资源日志step=dynamic6。批准 `docs/FC_P064_ARM_B_FORMAL_RESUME_R3_APPROVAL_20261006.json` SHA `19be2d6aad903ffc94b807803bd5fd0902c7ec5b7a0f0b4212423744db89cb56`；新独占输出 `artifacts/fcp064_arm_b_formal_resume_r3_20261006`。只修复P064候选CLI身份路由，复用R2 precision/validation10的9个SHA核验文件，仅执行余下6阶段；R1/R2失败及原输出保留，新receipt区分来源。runner `3bb215f93f5d6d468f8b22267b5f1fb485516f865c45d32723fe33b3fe56ec84`，独立5CPUtests通过。没有重训或重算validation10，尚无完整科学判定；b00/b01物理主窗口已独审通过与预测模型门槛保持区分。实际allocator .15、Available50/22保护不变。
