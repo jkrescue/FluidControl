@@ -1,6 +1,14 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前实际：固定第二seed20261007的PPO复验已训练，尚未新CFD
+## FC-E080 当前实际：第二seed训练已完成，真实CPU CFD闭环复验运行中
+
+实际unit `fluid-control-p064-b-seed20261007-projected-ppo-long-cfd-20261006.service`，invocation `111022bf633246e69165f7b8eb3edb01`，PID2811798 running；独查22/800周期。批准 `docs/P064_B_SEED20261007_CFD_APPROVAL_20261006.json` SHA `4bd940f088373c3c9e0c2d227d18364b23457e0ef933a4add9d2345d74038364`。输出 `artifacts/p064_b_seed20261007_projected_ppo_long_cfd_20261006`。原83e08 driver、b00 148→228/主(168,228]/六窗/原阈值不变；只替换第二seed最终policy578ab956/Vecac756，CPU推理、无在线FNO/MPC。当前新物理结果未知，旧约3.90%减阻收益不能移植为本次PASS。实际PPO32768步已完成，不再训练。
+
+## FC-E079 当前实际：第二seed20261007 PPO完成并独审，固定b00 CFD交接中
+
+同invocation `38013204a3c94b7fb14da04b78b5fb83` 已PID0/exit0，实际32768 transitions、256 PPO epochs、512 optimizer hooks，FNO冻结且policy权重改变。独审全部24reset时钟/finite日志/74source192runtime/6输出hash通过；最低Available119953592320B，583.45s。报告 [第二seed PPO独审](docs/P064_B_SEED20261007_PPO_TERMINAL_REVIEW_20261006.md) SHA `10f0689cd3bb0200542999f94dc05d35c2444904e589154aae8685e6d6aa1d4d`；result `47dc970756bd608c8a1c3f4744c5b44a1ee87f3524737ea42c4f0fbdf9f82afd`。策略 `578ab9561d104976b16af427c8ee8c89f964ce50b4b3dbf9010e24c987ffb4ce` 已交固定b00审批，不以reward选择，不代表新物理效果。
+
+### 第二seed历史启动观测（以下running文字为当时快照）
 
 实际unit `fluid-control-p064-b-seed20261007-ppo-32768-20261006.service`，invocation `38013204a3c94b7fb14da04b78b5fb83`，PID2785207 active/running；独查真实transitions已到1212/32768（观测快照，实时计数由UI更新）。批准 `docs/P064_B_SEED20261007_PPO_APPROVAL_20261006.json` SHA `2a8b0bca02154ed5bf0e7b35035e01f0695c1763b183063251ee619db4fc6604`。输出 `artifacts/p064_b_seed20261007_diverse_h5_32768_ppo_20261006/payload`。12GiB/noSwap、Available50启动/22运行留20，原预算未变。
 

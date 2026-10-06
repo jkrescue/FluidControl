@@ -87,8 +87,12 @@ def candidate_ppo_status(root,run=subprocess.check_output):
         active=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
         info['running']=active;info['training']=active and info['timesteps']>0
         info['status']=('第二seed20261007：实际PPO训练中' if info['training'] else '第二seed程序已启动，尚未观测训练transition') if active else '第二seed训练进程已停止，等待独立终态审查'
-        if state.get('MainPID')=='0' and state.get('ExecMainStatus')=='0' and (output/'result.json').exists():info.update(producer_terminal_counts(json.loads((output/'result.json').read_text()),spec))
-        info['note']='只变seed，冻结B/H5/24真实起点/32768预算不变；计数来自真实transition，不等于optimizer更新。旧B真实闭环减阻约3.90%、升力波动降低18.4%，初始权重无减阻收益；完整预测精度FAIL另列。新策略尚未进行CFD，无reward选checkpoint/seed扫描。'
+        if state.get('MainPID')=='0' and state.get('ExecMainStatus')=='0' and (output/'result.json').exists():
+            info.update(producer_terminal_counts(json.loads((output/'result.json').read_text()),spec))
+            review=root/'docs/P064_B_SEED20261007_PPO_TERMINAL_REVIEW_20261006.md'
+            if hashlib.sha256((output/'result.json').read_bytes()).hexdigest()!='47dc970756bd608c8a1c3f4744c5b44a1ee87f3524737ea42c4f0fbdf9f82afd' or hashlib.sha256(review.read_bytes()).hexdigest()!='10f0689cd3bb0200542999f94dc05d35c2444904e589154aae8685e6d6aa1d4d':raise ValueError('seed terminal review binding')
+            info.update(status='第二seed PPO训练完成，独立工程核验通过',terminal_verified=True,training=False,running=False,counts_scope='实际32768步/256epochs/512optimizer hooks独审')
+        info['note']='只变seed，冻结B/H5/24真实起点/32768预算不变；计数来自真实transition，不等于optimizer更新。旧B真实闭环减阻约3.90%、升力波动降低18.4%，初始权重无减阻收益；完整预测精度FAIL另列。新策略CFD物理验证见实时CFD卡，无reward选checkpoint/seed扫描。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
@@ -197,7 +201,7 @@ def verified_initial_terminal(root):
     if data['cycles']!=800 or not data['owned_containers_cleaned']:raise ValueError('initial terminal incomplete')
     return {'status':'真实闭环有效；初始权重对照完成，学习后策略贡献已验证','cycles':800,'target':800,'current_time':228.,'running':False,'training':False,'physical_pass':False,'terminal_verified':True,'invocation':'dbc0e8f47f994e7280694e9ed6714c56','note':'同zero全部原始力匹配：初始权重主窗减阻−0.00756%，训练后B +3.89528%；同投影/限幅下学习后权重有贡献。不是RL单独归因或跨控制器最优证明。训练后早期偏置失败保留；动作平方成本不等于物理能耗。H25新模型未采用，预测精度仍待改善。本CFD对照已完成；第二seed复验状态见PPO实时卡。'}
 
-def candidate_cfd_status(root,run=subprocess.check_output):
+def initial_candidate_cfd_status(root,run=subprocess.check_output):
     root=Path(root)
     trained=trained_candidate_cfd_status(root,run)
     info={'status':'初始权重CFD对照尚未核验启动','cycles':0,'target':800,'running':False,'training':False,'physical_pass':None,'terminal_verified':False,'invocation':None,'trained_reference':trained}
@@ -219,6 +223,24 @@ def candidate_cfd_status(root,run=subprocess.check_output):
         info['status']='初始权重＋同投影/限幅：b00真实CFD对照进行中' if info['running'] else '初始权重CFD进程已停止，等待独立原始力复核'
         if not info['running'] and state.get('ExecMainStatus')!='0':info['status']='初始权重CFD失败/停止，保留证据'
         info['note']='CPU策略推理与真实CFD反馈，不是PPO训练、无在线FNO/MPC。只替换为同seed精确初始权重，归一化/投影/单次限幅/800周期不变；尚无对照收益结论，不凭当前动作预判。历史已训练B在b00/b01/b07主窗有效（b07减阻3.90%、波动降低18.50%、偏置1.29%）；那不是本次初始策略结果。H25新模型未采用，原预测精度FAIL保留。'
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
+    return info
+
+def candidate_cfd_status(root,run=subprocess.check_output):
+    root=Path(root)
+    info={'status':'第二seed真实CFD状态未核验','cycles':0,'target':800,'running':False,'training':False,'physical_pass':None,'terminal_verified':False,'invocation':None,'previous_initial':initial_candidate_cfd_status(root,run)}
+    try:
+        approval=root/'docs/P064_B_SEED20261007_CFD_APPROVAL_20261006.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='4bd940f088373c3c9e0c2d227d18364b23457e0ef933a4add9d2345d74038364':raise ValueError('seed CFD approval SHA')
+        raw=run(['systemctl','--user','show','fluid-control-p064-b-seed20261007-projected-ppo-long-cfd-20261006.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!='111022bf633246e69165f7b8eb3edb01':raise ValueError('seed CFD invocation')
+        info['invocation']=state['InvocationID']
+        path=root/'artifacts/p064_b_seed20261007_projected_ppo_long_cfd_20261006/progress.json'
+        if path.exists():info.update(cfd_progress_counts(json.loads(path.read_text()),start=148.))
+        info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['status']='第二seed策略：真实CFD闭环复验中' if info['running'] else '第二seedCFD已停止，等待独立终态复核'
+        info['note']='CPU策略反馈＋配对不旋转基线，800周期；不是GPU训练，无在线FNO/MPC。第二seed PPO已完成32768步并独审，新物理效果尚未知。旧B约3.90%减阻/18.4%升力波动改善，初始权重无减阻，均为已完成历史对照；原物理2%/1.05/10%与预测FAIL不变。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 

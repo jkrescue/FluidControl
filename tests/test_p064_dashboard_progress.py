@@ -168,8 +168,8 @@ def test_unbound_h25_training_is_not_running(tmp_path):
     assert not x['running'] and not x['training'] and x['updates']==0 and x['invocation'] is None
 
 def test_unbound_initial_control_not_training_or_physical_pass(tmp_path):
-    from p064_dashboard_progress import candidate_cfd_status
-    x=candidate_cfd_status(tmp_path)
+    from p064_dashboard_progress import initial_candidate_cfd_status
+    x=initial_candidate_cfd_status(tmp_path)
     assert not x['running'] and not x['training'] and x['physical_pass'] is None
     assert x['invocation'] is None and 'trained_reference' in x
 
@@ -189,3 +189,9 @@ def test_unbound_second_seed_never_claims_training(tmp_path):
     from p064_dashboard_progress import candidate_ppo_status
     x=candidate_ppo_status(tmp_path)
     assert not x['training'] and not x['running'] and x['timesteps']==0 and x['invocation'] is None
+
+def test_second_seed_cfd_missing_binding_not_physical_pass(tmp_path):
+    from p064_dashboard_progress import candidate_cfd_status
+    x=candidate_cfd_status(tmp_path)
+    assert not x['training'] and not x['running'] and x['physical_pass'] is None
+    assert x['invocation'] is None and 'previous_initial' in x

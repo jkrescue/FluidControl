@@ -1,6 +1,14 @@
 # Experiment ledger
 
-## Fixed seed20261007 replication — actual PPO running, no new CFD result
+## FC-E080 — actual second-seed paired b00 CFD running
+
+Actual invocation `111022bf633246e69165f7b8eb3edb01`, unit `fluid-control-p064-b-seed20261007-projected-ppo-long-cfd-20261006.service`, PID2811798 running; independently observed22/800 cycles. Approval `docs/P064_B_SEED20261007_CFD_APPROVAL_20261006.json` SHA `4bd940f088373c3c9e0c2d227d18364b23457e0ef933a4add9d2345d74038364`. Unchanged83e08 driver and fixedb00 protocol, new finalseed policy578ab956/Vecac756. CPU feedback CFD, no optimizer/FNO/MPC. No new physical success or running scientific CSV value claimed. Compare all predeclared windows and actualzero arrays with saved oldseed after terminal; do not rerun or select policy by reward.
+
+## FC-E079 — fixed seed20261007 PPO terminal verified; CFD outcome unknown
+
+Same380132 invocation exited0. Independent audit verified32768 transitions/256epochs/512optimizer hooks, four phase reset counts274+273×5, finite65logger rows, reward means within2.42e-15, frozen B and changed policy,74source192runtime and six output hashes.583.45s/minimumAvailable119953592320B/12GiBswap0. [Terminal report](docs/P064_B_SEED20261007_PPO_TERMINAL_REVIEW_20261006.md) SHA `10f0689cd3bb0200542999f94dc05d35c2444904e589154aae8685e6d6aa1d4d`; result `47dc970756bd608c8a1c3f4744c5b44a1ee87f3524737ea42c4f0fbdf9f82afd`. Finalpolicy578ab956 is handed to the predeclared fixed b00 evaluation, not reward-selected. No physical success or surrogate admission follows from training completion.
+
+### Historical launch observation
 
 Actual unit `fluid-control-p064-b-seed20261007-ppo-32768-20261006.service`, invocation `38013204a3c94b7fb14da04b78b5fb83`, PID2785207 active/running; independently observed1212/32768 actual transitions. Approval SHA `2a8b0bca02154ed5bf0e7b35035e01f0695c1763b183063251ee619db4fc6604`, `docs/P064_B_SEED20261007_PPO_APPROVAL_20261006.json`; output `artifacts/p064_b_seed20261007_diverse_h5_32768_ppo_20261006/payload`. Only seed differs from the completed B PPO run. Immutable runner857c3c8d changes exactly one seed literal;5CPU tests and18 actual CUDA-hidden import origins/74sources/192runtime hashes passed. B model/data/reset/reward/32768 budget and50/22 reserve remain unchanged.
 
