@@ -374,11 +374,19 @@ def candidate_cfd_status(root,run=subprocess.check_output):
         info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
         info['status']='同一对称坐标策略：b01真实CFD验证中' if info['running'] else 'b01进程已停止，等待独立终态核验'
         info['note']='FC-E085：只变固定初相位，130→210/800次CPU策略＋真实CFD；无在线FNO/MPC，不是训练，当前无物理结论。已完成b00减阻3.9567%、升力波动降低18.3457%、bias1.066%；其早期17.56%失败保留。原2%/1.05/10%与预测FAIL不变。'
+        result_path=root/'artifacts/p064_b_symmetry_canonical_ppo_b01_long_cfd_20261007/result.json'
+        if not info['running'] and state.get('ExecMainStatus')=='0' and result_path.exists():
+            review=root/'docs/P064_B_SYMMETRY_CANONICAL_B01_CFD_TERMINAL_REVIEW_20261007.md'
+            if hashlib.sha256(result_path.read_bytes()).hexdigest()!='c56a5cbccdf218953a0e1ea040da1c1ee7e2f1b574e7b509939a622f65b7495f' or hashlib.sha256(review.read_bytes()).hexdigest()!='4d77f711e48a3e5472345f7c7e56253955c00ef281943183928e9a66bf4ff40a':raise ValueError('canonical b01 terminal binding')
+            info.update(status='canonical b01已完成：减阻4.01%，六窗原标准通过',cycles=800,physical_pass=True,terminal_verified=True)
+            info['note']='E085独审：主窗减阻4.0091%、升力波动降低18.2810%、均值偏置3.6366%；六窗通过，首6.2偏置8.0614%。原E083 b00早期17.56%失败与预测精度FAIL保留，不是全目标完成或新holdout泛化。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     info['secondary']=canonical_seed6_cfd_status(root,run)
     secondary=info['secondary']
     if secondary.get('invocation'):
         info['note']+=f" 并行FC-E086：{secondary['status']}，{secondary['cycles']}/800周期；同原b00起点，仅新seed最终策略，尚无物理结论。两项均为CPU反馈，不是GPU训练。"
+        if secondary['running']:
+            info['status']=f"新seed b00真实CFD运行中 {secondary['cycles']}/800；b01{'已独审完成' if info['terminal_verified'] else '并行验证中'}"
     return info
 
 FORMAL_TERMINAL_BINDINGS={

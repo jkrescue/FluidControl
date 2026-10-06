@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E085 已独审完成；FC-E086新seed b00仍在实际运行
+
+E085同3a678d已PID0/exit0，主窗减阻 **4.0091%**、后升力波动降低 **18.2810%**、均值偏置 **3.6366%**；六窗全部通过原标准，首6.2 bias8.0614%。全部3200raw/1600solver/800canonical映射/单filter/配对zero全列与旧B b01一致通过，最大统计差4.44e-16。报告 [E085独审](docs/P064_B_SYMMETRY_CANONICAL_B01_CFD_TERMINAL_REVIEW_20261007.md) SHA `4d77f711e48a3e5472345f7c7e56253955c00ef281943183928e9a66bf4ff40a`；result `c56a5cbccdf218953a0e1ea040da1c1ee7e2f1b574e7b509939a622f65b7495f`。1234.019s/minAvailable119373869056B/cleanup通过。不能把b01六窗PASS移植为b00早期PASS、完整预测PASS或统计独立泛化。
+
+E086同be48ee仍运行，新的seed20261006策略固定b00验证，实时进度见页面；它尚无终态收益。训练E084已完成，不是当前训练。下面双运行记录是历史启动快照。
+
 ## FC-E085 / FC-E086 当前：两项独立CPU真实闭环验证并行
 
 E085保持原E082策略固定b01，同inv3a678d/PID3770148，独查645/800。E086已实际启动 `fluid-control-p064-b-symmetry-canonical-seed20261006-ppo-long-cfd-20261007.service`，invocation `be48ee07057c42879d222548045233ef`，PID4112317 running，独查44/800；批准 `docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_CFD_APPROVAL_20261007.json` SHA `da5f4f7681174f24fc5315097de723cbe47e71679b7c202aee11a6277e6bbe52`；输出 `artifacts/p064_b_symmetry_canonical_seed20261006_ppo_long_cfd_20261007`。E086用刚完成E084的固定seed20261006最终policy，原b00 148→228/主(168,228]/六窗，与E083仅seed不同；同canonical映射/单filter/原2%/1.05/10%。两项均无当前物理结论，不复用E083 PASS；PPO训练已结束、无在线FNO/MPC，不是GPU训练。旧失败与预测FAIL完整保留。

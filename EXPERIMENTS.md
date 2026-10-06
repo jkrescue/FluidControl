@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## FC-E085 — fixed canonical policy b01 terminal: all six physical windows pass
+
+Same3a678d PID0/exit0. Primary drag reduction .04009068948526773/RMS ratio .8171901321565957/bias .03636607618056073; first6.2 bias .080613985372868, all six pass unchanged2%/1.05/10%.3200raw hashes/1600solver logs/800canonical maps and filters independently pass; zero full arrays exact prior B b01; metrics discrepancy <=4.44e-16.1234.019s/minAvailable119373869056B/cleanup/noOOM. [Review](docs/P064_B_SYMMETRY_CANONICAL_B01_CFD_TERMINAL_REVIEW_20261007.md) SHA `4d77f711e48a3e5472345f7c7e56253955c00ef281943183928e9a66bf4ff40a`; result `c56a5cbccdf218953a0e1ea040da1c1ee7e2f1b574e7b509939a622f65b7495f`. No early failure in this run; earlier b00 failure and full prediction FAIL retained. Already opened phase; no statistical-independent generalization or meaningful superiority claim. Action-square proxy separately reported, not physical energy. E086 remains running independently and gets no outcome from E085.
+
 ## FC-E086 — actual canonical seed20261006 fixed b00 CFD startup
 
 Unit `fluid-control-p064-b-symmetry-canonical-seed20261006-ppo-long-cfd-20261007.service`, invocation `be48ee07057c42879d222548045233ef`, PID4112317 running, independently observed44/800 cycles. Approval `docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_CFD_APPROVAL_20261007.json` SHA `da5f4f7681174f24fc5315097de723cbe47e71679b7c202aee11a6277e6bbe52`; output `artifacts/p064_b_symmetry_canonical_seed20261006_ppo_long_cfd_20261007`. Driverfd51 identity-only adaptation, actual E084 policyedd616/Vec3035/resultcb1a/reviewd2bf; same E083 physics148→228/800/six windows/thresholds/resources. E085 remains concurrently live645/800 at b01 with prior E082 policy; outputs/identities never merged. No physical outcome or running scientific CSV; no GPU training/online FNO.
