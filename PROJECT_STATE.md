@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 当前实际终态：FC-E048 H5反馈完成，尚无减阻收益（2026-10-06）
+
+同一 invocation `6adc59fae65344d2b49b57cbe5b30f70` 已于06:12:13UTC结束，PID0/exit0；以下旧running条目仅保留历史。10个真实反馈周期、每分支200个原始CFD受力样本独立复算：总Cd均值MPC `2.4137825099145`、zero `2.413592168615`，paired drag reduction `−0.0000788622460641264`（阻力差0.0078862%更差）；后圆柱Cl波动RMS比 `0.9836105589246837`。H5产生非零动作而非H2全HOLD，但仅1D/U，不能判定长时物理目标完成。250个候选阶段成本复算一致，mean-bias惩罚全零，原10%不是这次动作选择的阻断。
+
+执行代码 `8f5afb3`，driver `0917cd5c62e43fc3f7b2cdc23900aa9d0932dff9ef4842a155bcf4288524b14d`；批准 `f927f6b956f847766d899745ebc0e679a7638db63f27cfb1f9a489eb69fb6c0e`。实际结果 `artifacts/exploratory_causal_history_h5_real_cfd_20261006/result.json` SHA `d4c3ad8198f69199606c0fa7a6c1a668c9a0f581e3b52bbeca99e2b0bd902c5e`；独立报告 `docs/EXPLORATORY_CAUSAL_HISTORY_H5_TERMINAL_REVIEW_20261006.md` SHA `e6b7496b3a59b0bfe5a6b4365bbb9076d892ec651b3cf75fa212075b98dbe79f`。两个所属容器已清理，无OOM；CPU Available最低121418903552字节。
+
+下一步仅准备：固定H5、124周期/12.4D/U配对试验，同时报告完整窗口和末6.2D/U；不扫权重/时域。加速采样与GPU精度需先完成工程等价性评估并显式审批，尚未执行该长试验。不作原80D/U准入、新PPO或新GPU训练声明。
+
 ## 正在执行：H5真实配对反馈（2026-10-06，阶段观测）
 
 实际unit `fluid-control-exploratory-causal-h5-real-cfd-20261006.service`，invocation `6adc59fae65344d2b49b57cbe5b30f70`，PID2075648已核active/running。批准SHA `f927f6b956f847766d899745ebc0e679a7638db63f27cfb1f9a489eb69fb6c0e`，不可变driver SHA `0917cd5c62e43fc3f7b2cdc23900aa9d0932dff9ef4842a155bcf4288524b14d`，输出 `artifacts/exploratory_causal_history_h5_real_cfd_20261006`。15项CPU测试及独立全源检查通过，代码同步GitLab8f5afb3。

@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E048 — Canonical-history H5 actual feedback: nonzero control, no demonstrated drag benefit
+
+Code `8f5afb3`; executed driver SHA `0917cd5c62e43fc3f7b2cdc23900aa9d0932dff9ef4842a155bcf4288524b14d`; approval SHA `f927f6b956f847766d899745ebc0e679a7638db63f27cfb1f9a489eb69fb6c0e`. Same K1 and canonical-history cost as FC-E047, horizon changed to H5, CPU retained. Actual invocation `6adc59fae65344d2b49b57cbe5b30f70`,06:08:12–06:12:13UTC, exit0. Result `artifacts/exploratory_causal_history_h5_real_cfd_20261006/result.json` SHA `d4c3ad8198f69199606c0fa7a6c1a668c9a0f581e3b52bbeca99e2b0bd902c5e`; independent report `docs/EXPLORATORY_CAUSAL_HISTORY_H5_TERMINAL_REVIEW_20261006.md` SHA `e6b7496b3a59b0bfe5a6b4365bbb9076d892ec651b3cf75fa212075b98dbe79f`.
+
+Ten actual actions `[.1,.2,.25,.25,.2,.1,0,-.1,-.2,-.3]`; raw200 samples per branch over148.005–149.0 reproduce mean totalCd2.4137825099145 vs zero2.413592168615, paired drag reduction−0.0000788622460641264 (0.0078862% worse), rearCl fluctuationRMS ratio0.9836105589246837. Selected one-step MAEs `[.00011434555,.00133591443,.00599833131,.00971178710]`. All50 candidate/250stage costs reproduced; mean-bias penalty0/250, so the10% term did not block selection. Both owned containers removed; noOOM. Engineering complete, NOT_ADMISSION: oneD/U is insufficient for original80D/U physical criteria or causal attribution of the small drag difference.
+
+Next preparation only: fixedH5 paired124cycles/12.4D/U, report full and trailing6.2D/U windows, retain cost/candidates/constraints. Accelerated sampling and explicit GPU precision require engineering assessment and separate execution approval. No new execution, GPU training, PPO, or threshold change authorized by this entry.
+
 ## FC-E047 — Canonical causal-history H2 real feedback: HOLD, zero benefit
 
 Code c75bf01; approval SHA b273716de8edb19b8517126d3d8232cc50cc5b2ab5a7af04cb16f96aeae1e5a1; immutable driver ace9871ac27e2b92de0d90010aa1db3f4cd037cdcf3e49ce5f3f87deb32f06cc. Compared with FC-E046, only scoring changed to canonical causal62-history H2 stage average. Invocation 6f554f10e87e4b9f9d6b6ed8b555c548 completed05:48:59–05:52:01UTC, exit0. Result artifacts/exploratory_causal_history_h2_real_cfd_20261006/result.json SHA74a28d45dce9b84ec5044700fe470390cde899a2fcf40a0b893c1b28817d99ca; independent report docs/EXPLORATORY_CAUSAL_HISTORY_H2_TERMINAL_REVIEW_20261006.md SHA9ceb4d58a66b549faa86834d15d0444d57c8fdcc2f2635f18859440a679d2098.
