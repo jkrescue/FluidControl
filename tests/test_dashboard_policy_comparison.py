@@ -64,6 +64,44 @@ def test_short_horizon_confirmation_is_inference_only_without_fake_progress(tmp_
     (p/'result.json').write_text('{}');(p/'paired_actual_cfd_228.png').write_bytes(b'wrong')
     assert not m._projected_long_ppo_field(tmp_path)['verified']
 
+def test_short_horizon_terminal_binds_review_and_compact_h1_h5_metrics(tmp_path,monkeypatch):
+    docs=tmp_path/'docs';docs.mkdir()
+    base=tmp_path/'artifacts/short_horizon_frozen_confirmation_20261006';payload=base/'payload';payload.mkdir(parents=True)
+    approval=docs/'SHORT_HORIZON_FROZEN_CONFIRMATION_APPROVAL_20261006.json'
+    approval.write_text(json.dumps({'status':'SHORT_HORIZON_FROZEN_CONFIRMATION_EXECUTION_APPROVED',
+      'execution_authorized':True,'heldout_access_authorized':True,'optimizer_steps':0,
+      'scientific_admission':False,'horizons':[1,2,3,4,5],
+      'cases':[f'case{i}' for i in range(10)],'output':str(payload)}))
+    evaluation={'cases':[{}]*10,'summary':{}}
+    for h in range(1,6):
+      evaluation['summary'][str(h)]={'segments':320,'failed_segments':0,'stable':True,
+        'velocity_relative_l2':.001*h,'field_relative_l2_u_v_p':[.001,.002,.003*h],
+        'total_drag_mae':.004*h,'rear_cl_mae':.005*h}
+    (payload/'evaluation.json').write_text(json.dumps(evaluation))
+    (payload/'segments.json').write_text(json.dumps({'segments':[{}]*1600}))
+    result={'status':'SHORT_HORIZON_CONFIRMATION_COMPLETE_NOT_ADMISSION',
+      'approval_sha256':'1ae960dcee7c9aa81e438a990dbf88397f5593decd1cdbb3ba1336ea4888c162',
+      'evaluation_sha256':'cab65822d1c8ce5588cbcd6e1ce105d245c62d9214067a1befa4c14993fa95ec',
+      'segments_sha256':'fb39a1efe690424c92267c7f01f6bf4c2ab54df0d9615e95c35a783ae6a8250d',
+      'optimizer_steps':0,'scientific_admission':False}
+    (payload/'result.json').write_text(json.dumps(result));(base/'memory.jsonl').write_text(json.dumps({'MemAvailable':108*2**30})+'\n')
+    review=docs/'SHORT_HORIZON_FROZEN_CONFIRMATION_TERMINAL_REVIEW_20261006.md';review.write_text('review')
+    hashes={approval.read_bytes():'1ae960dcee7c9aa81e438a990dbf88397f5593decd1cdbb3ba1336ea4888c162',
+      (payload/'result.json').read_bytes():'77ab4fb85f238d1e76b6e5a20c18f8992182d24a82b38d7b4b5a52483f9fce20',
+      (payload/'evaluation.json').read_bytes():'cab65822d1c8ce5588cbcd6e1ce105d245c62d9214067a1befa4c14993fa95ec',
+      (payload/'segments.json').read_bytes():'fb39a1efe690424c92267c7f01f6bf4c2ab54df0d9615e95c35a783ae6a8250d',
+      review.read_bytes():'cb627b87e425f0ff39cdd1aab41d9c12b0de54adddf838b4d825d1612c289797'}
+    monkeypatch.setattr(m.hashlib,'sha256',lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
+    unit='\n'.join(['InvocationID=7a887ed792ec4d60a429f4a7a3660b3a','MainPID=0',
+      'ActiveState=active','SubState=exited','Result=success','ExecMainStatus=0',
+      'MemoryCurrent=0',f'MemoryPeak={5*2**30}'])
+    monkeypatch.setattr(m.subprocess,'check_output',lambda *args,**kwargs:unit)
+    run=m._short_horizon_frozen_confirmation(tmp_path)
+    assert run['verified'] and not run['running'] and run['terminal']['endpoints']==1600
+    assert run['terminal']['metrics']['h1']['velocity_relative_l2']==.001
+    assert run['terminal']['metrics']['h5']['rear_cl_mae']==.025
+    assert '已完成并独立复核' in m.PAGE and '不证明任意策略动作分布' in m.PAGE
+
 def test_equal_weight_comparison(tmp_path, monkeypatch):
     p = tmp_path/'artifacts/diverse_policy_h5_comparison_20261006/payload/result.json'
     p.parent.mkdir(parents=True)
@@ -133,5 +171,24 @@ def test_projected_b00_terminal_is_sha_bound_and_reports_early_failure(tmp_path,
     monkeypatch.setattr(m.hashlib,'sha256',lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
     terminal=m._projected_b00_reported_terminal(tmp_path,{'verified':True,'running':False})
     assert terminal['paired_drag_reduction']==.0389197994
+
+def test_projected_b01_terminal_is_sha_bound_and_reports_early_failure(tmp_path,monkeypatch):
+    base=tmp_path/'artifacts/exploratory_projected_32768_ppo_b01_long_cfd_20261006';base.mkdir(parents=True)
+    result=base/'result.json';result.write_text(json.dumps({
+      'status':'EXPLORATORY_PROJECTED_32768_PPO_B01_LONG_CFD_COMPLETE_NOT_ADMISSION',
+      'cycles':800,'scientific_admission':False,'owned_containers_cleaned':True,
+      'source_restart_unchanged':True,'windows':{
+       'primary_final_60':{'interval':[150.,210.],'left_endpoint_included':False,
+         'paired_drag_reduction':.039236372469,'paired_rear_cl_fluctuation_rms_ratio':.81578550745,
+         'absolute_mean_rear_cl_over_paired_zero_rms':.02730022153},
+       'early_first_6p2':{'absolute_mean_rear_cl_over_paired_zero_rms':.127807798}}}))
+    review=tmp_path/'docs/EXPLORATORY_PROJECTED_32768_PPO_B01_LONG_CFD_TERMINAL_REVIEW_20261006.md';review.parent.mkdir();review.write_text('review')
+    hashes={result.read_bytes():'961e1bc3ccb7a9f9dae4b54e9f8233c906507c794cff9a497d806391e0fc5c37',
+            review.read_bytes():'1b59fdfdb9d698fd2c0622085c19bf4d59a670070ea7434cb469ac19c72a297b'}
+    monkeypatch.setattr(m.hashlib,'sha256',lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
+    terminal=m._projected_b01_reported_terminal(tmp_path,{'verified':True,'running':False})
+    assert terminal['paired_drag_reduction']==.039236372469
+    assert terminal['early_mean_bias_ratio']>.1 and terminal['review_sha256'].startswith('1b59')
+    assert '800周期已完成，等待独立原始数据复核' in m.PAGE
     assert terminal['early_mean_bias_ratio']>.1
     assert '三项原标准均通过' in m.PAGE and '不能写成全部窗口通过' in m.PAGE

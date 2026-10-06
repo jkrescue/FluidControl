@@ -393,7 +393,7 @@ function renderProjectedCFD(run,b01){
  const terminal=run?.reported_terminal;
  card.innerHTML=`<h3>FC-E058 · PPO策略＋镜像对称处理</h3><p><b>${terminal?'b00 800周期已完成并独立复核':active?(run.running?'真实CFD正在运行':'已停止，等待独立终态复核'):'尚未启动或运行证据尚未核实'}</b>${active?` · ${run.completed_cycles}/800 周期 · t=${num(latest.force_time,1)} / 228.0`:''}</p>${terminal?`<p>主窗(168,228]：减阻 <b>${(100*terminal.paired_drag_reduction).toFixed(3)}%</b>，后柱Cl′ RMS比 <b>${terminal.paired_rear_cl_fluctuation_rms_ratio.toFixed(3)}</b>，平均Cl偏置比 <b>${(100*terminal.absolute_mean_rear_cl_over_paired_zero_rms).toFixed(2)}%</b>；三项原标准均通过。</p><p class="small">早期first6.2偏置比 ${(100*terminal.early_mean_bias_ratio).toFixed(2)}%，未通过原10%；不能写成全部窗口通过。</p>`:active?`<p>当前/最低MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；当前实际转速 ${num(latest.omega,3)}。</p>`:''}<p class="small">复用同一32768步冻结策略，仅增加镜像对称处理；不是新训练或新模型。CPU策略推理与真实CFD配对执行；原10%均值偏置约束不变，20%仅敏感性参考。下方保留前次未处理策略的已完成结果，不能当作本次结果。</p>`;
  if(run?.paired_field?.verified===true){let field=document.createElement('div');field.innerHTML=`<h4>FC-E058 终点 t=228 · 投影策略与配对zero真实CFD</h4><img src="/projected-ppo-paired-field.png?v=${run.paired_field.sha256}" alt="左FC-E058投影策略右配对zero；上速度下ROI去均值压力；同色标真实CFD" loading="lazy" style="width:100%;height:auto"><p class="small">左：FC-E058投影策略；右：配对zero。上：速度模长；下：各支 CFD pressure with own ROI mean removed（solver units），不是绝对压力比较。两支使用相同网格、掩膜和色标。仅一个终点时刻的真实OpenFOAM场，不是FNO预测，也不能单独证明平均减阻或约束通过。下方FC-E055场图仍是未投影策略的历史证据。</p>`;card.appendChild(field);}
- if(b01?.verified===true){let phase=document.createElement('div');phase.innerHTML=`<hr><h3>FC-E059 · b01固定相位复验</h3><p><b>${b01.running?'真实CFD正在运行':'运行已停止，等待独立终态复核'}</b> · ${b01.completed_cycles}/800 周期 · t=${num(b01.latest.force_time,1)} / 210.0</p><p>当前/最低MemAvailable ${num(b01.current_available_gib,2)} / ${num(b01.minimum_available_gib,2)} GiB；当前实际转速 ${num(b01.latest.omega,3)}。</p><p class="small">同一冻结策略、投影、过滤器和800周期，只把预声明初态改为历史validation相位b01/restart130。首次unit因漏传--execute在模型和CFD前失败；本卡绑定Root批准的r2实际运行。尚无跨相位成功或科学准入。</p>`;card.appendChild(phase);}
+ if(b01?.verified===true){let t=b01.reported_terminal,phase=document.createElement('div');phase.innerHTML=`<hr><h3>FC-E059 · b01固定相位复验</h3><p><b>${t?'800周期已完成并独立复核':b01.running?'真实CFD正在运行':'800周期已完成，等待独立原始数据复核'}</b> · ${b01.completed_cycles}/800 周期 · t=${num(b01.latest.force_time,1)} / 210.0</p>${t?`<p>主窗口 (150,210]：总阻力降低 <b>${pct(t.paired_drag_reduction)}</b>；后柱Cl′比 ${num(t.paired_rear_cl_fluctuation_rms_ratio,3)}；mean-Cl偏置比 ${num(t.absolute_mean_rear_cl_over_paired_zero_rms,3)}，三项原始标准均通过。</p><p class="small">首段6.2D/U偏置比 ${num(t.early_mean_bias_ratio,3)}，仍高于10%；b01是历史validation相位，不是新鲜统计独立泛化。报告SHA ${t.review_sha256.slice(0,12)}…</p>`:`<p>当前/最低MemAvailable ${num(b01.current_available_gib,2)} / ${num(b01.minimum_available_gib,2)} GiB；当前实际转速 ${num(b01.latest.omega,3)}。</p><p class="small">同一冻结策略、投影、过滤器和800周期，只把预声明初态改为历史validation相位b01/restart130。首次unit因漏传--execute在模型和CFD前失败；本卡绑定Root批准的r2实际运行。尚无跨相位成功或科学准入。</p>`}`;card.appendChild(phase);}
 }
 function renderPolicyH5Comparison(run){
  let card=$('policy-h5-comparison');if(!card){card=document.createElement('div');card.id='policy-h5-comparison';card.className='card';$('exploratory-diverse-32768-long-cfd').after(card);}
@@ -427,7 +427,8 @@ function renderFinalPPORealCFD(run){
 function renderShortHorizonConfirmation(run){
  let card=$('short-horizon-frozen-confirmation');if(!card){card=document.createElement('div');card.id='short-horizon-frozen-confirmation';card.className='card';$('projected-ppo-cfd')?.before(card);}
  card.hidden=run?.verified!==true;if(card.hidden)return;
- card.innerHTML=`<h3>FNO预留工况预测评估（推理，非训练）</h3><p><b>${run.running?'GPU推理评估正在运行':'运行已停止，等待独立结果核验'}</b> · 10个预留工况 × H1–H5 × 每工况32个起点</p><p>当前/最低 MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；外层进程当前/峰值内存 ${num(run.unit_memory_current_gib,2)} / ${num(run.unit_memory_peak_gib,2)} GiB。</p><p class="small">这是固定FNO在预留工况上的预测推理：0个optimizer step，不学习、不运行CFD。当前产物没有逐case完成记录，因此不显示或估算百分比。旧K1 H100正式FAIL仍是独立结论，本卡不会覆盖它。</p>`;
+ let t=run.terminal,m=t?.metrics;
+ card.innerHTML=`<h3>FNO预留工况预测评估（推理，非训练）</h3><p><b>${t?'已完成并独立复核':run.running?'GPU推理评估正在运行':'运行已停止，等待独立结果核验'}</b> · 10个预留工况 × H1–H5 × 每工况32个起点</p>${t?`<p>1600/1600端点，失败/非有限值 0/0。H1→H5：速度相对L2 ${pct(m.h1.velocity_relative_l2)} → ${pct(m.h5.velocity_relative_l2)}；ROI中心化压力相对L2 ${pct(m.h1.pressure_relative_l2)} → ${pct(m.h5.pressure_relative_l2)}。</p><p>总Cd MAE ${num(m.h1.total_drag_mae,6)} → ${num(m.h5.total_drag_mae,6)}；后柱Cl MAE ${num(m.h1.rear_cl_mae,6)} → ${num(m.h5.rear_cl_mae,6)}。</p><p class="small">定量支持预声明固定动作工况的短时预测；不证明任意策略动作分布、长递推或物理闭环成功，也不推翻旧K1 H100正式FAIL。未自造新的通过门槛。报告SHA ${t.review_sha256.slice(0,12)}…</p>`:`<p>当前/最低 MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；外层进程当前/峰值内存 ${num(run.unit_memory_current_gib,2)} / ${num(run.unit_memory_peak_gib,2)} GiB。</p><p class="small">这是固定FNO在预留工况上的预测推理：0个optimizer step，不学习、不运行CFD。当前产物没有逐case完成记录，因此不显示或估算百分比。旧K1 H100正式FAIL仍是独立结论，本卡不会覆盖它。</p>`}`;
 }
 function renderActiveExperiment(d){
  const active=d.registered_experiment;
@@ -2346,6 +2347,38 @@ def _projected_b00_reported_terminal(root: Path, run: dict):
         return None
 
 
+def _projected_b01_reported_terminal(root: Path, run: dict):
+    """Expose only the independently verified b01 result."""
+    if run.get("verified") is not True or run.get("running") is True:
+        return None
+    result_path = root / "artifacts/exploratory_projected_32768_ppo_b01_long_cfd_20261006/result.json"
+    review_path = root / "docs/EXPLORATORY_PROJECTED_32768_PPO_B01_LONG_CFD_TERMINAL_REVIEW_20261006.md"
+    result_sha = "961e1bc3ccb7a9f9dae4b54e9f8233c906507c794cff9a497d806391e0fc5c37"
+    review_sha = "1b59fdfdb9d698fd2c0622085c19bf4d59a670070ea7434cb469ac19c72a297b"
+    try:
+        if (hashlib.sha256(result_path.read_bytes()).hexdigest() != result_sha
+                or hashlib.sha256(review_path.read_bytes()).hexdigest() != review_sha):
+            raise ValueError("projected b01 terminal evidence differs")
+        result = json.loads(result_path.read_text())
+        primary = result["windows"]["primary_final_60"]
+        early = result["windows"]["early_first_6p2"]
+        if (result.get("status") != "EXPLORATORY_PROJECTED_32768_PPO_B01_LONG_CFD_COMPLETE_NOT_ADMISSION"
+                or result.get("cycles") != 800 or result.get("scientific_admission") is not False
+                or result.get("owned_containers_cleaned") is not True
+                or result.get("source_restart_unchanged") is not True
+                or primary.get("interval") != [150.0, 210.0]
+                or primary.get("left_endpoint_included") is not False):
+            raise ValueError("projected b01 terminal contract differs")
+        return {"paired_drag_reduction": primary["paired_drag_reduction"],
+                "paired_rear_cl_fluctuation_rms_ratio":
+                    primary["paired_rear_cl_fluctuation_rms_ratio"],
+                "absolute_mean_rear_cl_over_paired_zero_rms":
+                    primary["absolute_mean_rear_cl_over_paired_zero_rms"],
+                "early_mean_bias_ratio":
+                    early["absolute_mean_rear_cl_over_paired_zero_rms"],
+                "result_sha256": result_sha, "review_sha256": review_sha}
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+        return None
 def _exploratory_final_ppo_real_cfd(root: Path) -> dict:
     """Read the fixed final-policy/zero real-CFD pair without borrowing MPC fields."""
     base = root / "artifacts/exploratory_final_ppo_real_cfd_20261006"
@@ -4862,6 +4895,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.root)
             data["projected_ppo_b01_long_cfd"] = _exploratory_diverse_32768_long_cfd(
                 self.root, projected_b01=True)
+            data["projected_ppo_b01_long_cfd"]["reported_terminal"] = (
+                _projected_b01_reported_terminal(
+                    self.root, data["projected_ppo_b01_long_cfd"]))
             data["short_horizon_frozen_confirmation"] = _short_horizon_frozen_confirmation(
                 self.root)
             data["exploratory_final_ppo_real_cfd"] = _exploratory_final_ppo_real_cfd(self.root)
@@ -4949,6 +4985,54 @@ def _short_horizon_frozen_confirmation(root):
             raise ValueError("short-horizon resources missing")
         current = int(state.get("MemoryCurrent", "0")) if state.get("MemoryCurrent", "0").isdigit() else 0
         peak = int(state.get("MemoryPeak", "0")) if state.get("MemoryPeak", "0").isdigit() else 0
+        terminal = None
+        if not running:
+            if (state.get("ActiveState") != "active" or state.get("SubState") != "exited"
+                    or state.get("Result") != "success" or state.get("ExecMainStatus") != "0"):
+                raise ValueError("short-horizon unit not successful terminal")
+            payload = base / "payload"
+            result_path, evaluation_path = payload / "result.json", payload / "evaluation.json"
+            segments_path = payload / "segments.json"
+            review_path = root / "docs/SHORT_HORIZON_FROZEN_CONFIRMATION_TERMINAL_REVIEW_20261006.md"
+            expected = {
+                result_path: "77ab4fb85f238d1e76b6e5a20c18f8992182d24a82b38d7b4b5a52483f9fce20",
+                evaluation_path: "cab65822d1c8ce5588cbcd6e1ce105d245c62d9214067a1befa4c14993fa95ec",
+                segments_path: "fb39a1efe690424c92267c7f01f6bf4c2ab54df0d9615e95c35a783ae6a8250d",
+                review_path: "cb627b87e425f0ff39cdd1aab41d9c12b0de54adddf838b4d825d1612c289797",
+            }
+            if any(hashlib.sha256(path.read_bytes()).hexdigest() != digest
+                   for path, digest in expected.items()):
+                raise ValueError("short-horizon terminal evidence identity")
+            result = json.loads(result_path.read_text())
+            evaluation = json.loads(evaluation_path.read_text())
+            segments = json.loads(segments_path.read_text()).get("segments")
+            if (result.get("status") != "SHORT_HORIZON_CONFIRMATION_COMPLETE_NOT_ADMISSION"
+                    or result.get("approval_sha256") != approval_sha
+                    or result.get("evaluation_sha256") != expected[evaluation_path]
+                    or result.get("segments_sha256") != expected[segments_path]
+                    or result.get("optimizer_steps") != 0
+                    or result.get("scientific_admission") is not False
+                    or len(evaluation.get("cases", [])) != 10
+                    or not isinstance(segments, list) or len(segments) != 1600):
+                raise ValueError("short-horizon terminal contract")
+            metrics = {}
+            for horizon in (1, 5):
+                summary = evaluation["summary"][str(horizon)]
+                values = (summary["velocity_relative_l2"],
+                          summary["field_relative_l2_u_v_p"][2],
+                          summary["total_drag_mae"], summary["rear_cl_mae"])
+                if (summary.get("segments") != 320 or summary.get("failed_segments") != 0
+                        or summary.get("stable") is not True
+                        or any(type(value) not in (int, float) or not math.isfinite(value)
+                               for value in values)):
+                    raise ValueError("short-horizon summary contract")
+                metrics[f"h{horizon}"] = dict(zip(
+                    ("velocity_relative_l2", "pressure_relative_l2",
+                     "total_drag_mae", "rear_cl_mae"), values))
+            terminal = {"endpoints": 1600, "failed": 0, "nonfinite": 0,
+                        "metrics": metrics, "result_sha256": expected[result_path],
+                        "review_sha256": expected[review_path],
+                        "scientific_admission": False}
         return {"verified": True, "running": running, "cases": 10,
                 "horizons": [1,2,3,4,5], "starts_per_case": 32,
                 "progress_available": False, "optimizer_steps": 0,
@@ -4957,7 +5041,8 @@ def _short_horizon_frozen_confirmation(root):
                 "minimum_available_gib": min(row["MemAvailable"] for row in resources) / 2**30,
                 "unit_memory_current_gib": current / 2**30,
                 "unit_memory_peak_gib": peak / 2**30,
-                "approval_sha256": approval_sha, "scientific_admission": False}
+                "approval_sha256": approval_sha, "terminal": terminal,
+                "scientific_admission": False}
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
             subprocess.SubprocessError):
         return {"verified": False, "running": False,
