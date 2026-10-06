@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 最新：P030首次运行汇总接口失败（2026-10-06 04:19 UTC）
+
+同一实例d7739a9bf4fe42f68a584e8ec5edc684已终止，MainPID0/exit1。44项origin_complete存在，但driver把tuple键的dict传给要求metadata行列表的grouped_and_paired，触发TypeError。没有result.json，也没有保存rawrecords，不能报告科学指标或成功；必须修复并重跑。观测CUDA最低21.538467GiB、MemAvailable最低111.160320GiB，属于软件汇总接口故障而非内存故障。已授权小范围修复：直接传原始rows、用实际core执行44记录汇总的CPU回归测试，并在汇总前保存原始预测记录。原失败输出和v2源码保留不变，新版本需独立检查及单独重跑批准。下方运行中均为历史。
+
 ## 最新：真实模型H100诊断已启动（2026-10-06 04:16 UTC）
 
 P030固定44条真实训练轨迹、start0、K1/P029连续100步对照已实际启动。user unit `fluid-control-fcp030-train-horizon-20261006.service`，invocation `d7739a9bf4fe42f68a584e8ec5edc684`，启动观测MainPID1756637。批准 `docs/FC_P030_EXECUTION_APPROVAL_20261006.json` SHA `2f80dab06ca1916495272dac0adf155745969534ce3d5b1626e7a4295eadc98f`；v2源码17项manifest SHA `a14bd2c00ff5c905ccd6193843736a6ccc2806cd2c2d7a51827635cb09fdb6e3`。23项集成CPU测试与15项核心CPU测试通过，独立审查 `docs/FC_P030_INTEGRATION_REVIEW_20261006.md` SHA `fa72abdd5686feff177a45ba615744c10c8098a2b7f1b0f51a92ea3843f36e7f`。v1固定源码保留。

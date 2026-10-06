@@ -1,7 +1,7 @@
 {
   "experiment": "P030-train-horizon",
-  "label": "连续流场预测诊断：旧模型与新模型对照",
-  "description": "固定44条真实CFD训练轨迹，各从起点连续预测100步，比较第1、10、25、50、100步的流场、总阻力和后圆柱升力误差。这是无参数更新的诊断，不是新训练或闭环验收；原物理和预测指标不变。",
+  "label": "诊断汇总失败，正在修复接口",
+  "description": "44条轨迹预测完成后，分组汇总的参数类型错误导致退出，最终结果未保存，不能作为成功实验。最低观测CUDA空闲21.54GiB，不是内存故障。正在修复接口、补真实汇总函数的CPU测试，并保留本次失败证据；没有新训练或闭环验收结果。",
   "unit": "fluid-control-fcp030-train-horizon-20261006.service",
   "invocation": "d7739a9bf4fe42f68a584e8ec5edc684",
   "approval": "docs/FC_P030_EXECUTION_APPROVAL_20261006.json",
