@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E070 — Same P064-B policy fixed b01 paired800 terminal
+
+Actual unit `fluid-control-p064-b-projected-ppo-b01-long-cfd-20261006.service` / invocation `432c12de32b0444d9a6f6626e12616d1` exited0 after800 cycles130→210. Approval `3a19e326ebfd37df24060b8b5717b5af08b405ed63165e4034974aeb7b0abcb6`; driver4b8fa43f; same policyf7644639/Vec8c07ef15/Bmanifest92766915. Result `0be19e0dfdf8df4d60e2f5040673f2a3ec25cbadb133548671ce31f061e75c88`; report `docs/P064_B_PROJECTED_PPO_B01_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `de7a3f7fa89d50dad190272028f16ed0ea23214ac52cb23323f42c48df9945d3` independently verifies3200raw files,1600solver logs,800actions,all six windows,originalsource and cleanup. MinimumAvailable116194476032B; no model/CFD rerun for review.
+
+Primary(150,210]12000 samples: drag reduction3.9275159299%, rear lift centered RMS ratio.815727792287, mean-bias ratio.027294976565; original physical criteria pass. Earlyfirst6.2 bias.127825261 fails10%; full80 peak1.704317136 exceedszero1.647302403. Original threshold remains unchanged. All18fixed-window metrics appended; no negative result discarded. New/oldzero raw arrays exactly match; primary improvement over oldpolicy is only.00387868305 percentage points, not significant superiority. This confirms same-new-policy behavior at a second observed phase; b01 is already opened development, not fresh holdout. b00 in-sample status and old H100/formal limitations remain. No automatic additional experiment or replacement of old successful policy is authorized.
+
 ## P064-B formal R2 — partial terminal engineering failure
 
 Invocation `01806bdc150841f7b9efd04360a441f2` terminated12:53:10 UTC, PID0/failed/ExecMainStatus1. Completed validation10 remains valid; next diagnostic argparse rejected `FC_P064_ARM_B_CONTROLLED_AERO_FORCE_FNO`. No complete receipt or full scientific decision exists. Independent partial review `docs/P064_B_FORMAL_R2_PARTIAL_TERMINAL_REVIEW_20261006.md` SHA `2ead80d6ecbca6485bab8bca20183a3aa05a71e568af39565d11086d677638ad` binds evaluation `15c149760171890798a4e1c3aaeb7e9f31d080cbae6bc6244f71967dd009f9a3` and segments `8d68e2212f9e29a8ced2f0add63d0fbf09f7fb5d009a6dae0ac1df9d85bfc364`.

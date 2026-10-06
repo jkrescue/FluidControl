@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E070 最新终态：同B-policy固定b01复验主标准通过，非新holdout
+
+同inv `432c12de32b0444d9a6f6626e12616d1` 已真实exit0，800周期从130→210完成。独立3200rawSHA、1600solver段、800投影单filter及六窗重算通过，最大统计差4.44e-16。主(150,210]减阻3.9275159299%、rearCl centered RMS ratio .815727792287、mean-bias ratio .027294976565，原2%/1.05/.10标准通过；早首6.2 bias .127825261仍FAIL10%。结果SHA `0be19e0dfdf8df4d60e2f5040673f2a3ec25cbadb133548671ce31f061e75c88`，报告 `docs/P064_B_PROJECTED_PPO_B01_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `de7a3f7fa89d50dad190272028f16ed0ea23214ac52cb23323f42c48df9945d3`。
+
+同一新B-policy现于b00/b01两个已观察初相位主窗通过；b00是训练轨迹，b01已用于开发且历史暴露，不能称新holdout/独立泛化。新旧b01 zero全部原始forces逐值相同，新减阻比旧K1-policy仅+.00387868305百分点，不显著优势。全窗lift峰值1.704317136仍高于zero1.647302403，保留transient代价。旧成功policy不替换，formal/H100结论仍须独立终态，不从物理成功推断模型准入。下文live记录为历史。
+
 ## 当前纠正：P064-B 完整评估 R2 工程失败，validation10已完成；没有完整科学判定
 
 同invocation `01806bdc150841f7b9efd04360a441f2` 已在12:53:10 UTC退出1/PID0：后续validation_diagnostic的CLI未接受P064-B kind。不是仍在运行，也不是完整科学gate FAIL。已完成validation10的1240端点独立复算通过：B H1 rearCl/Cd MAE .0377850/.00878357，对照K1 .0202176/.00766464；H100 .0431183/.0112626，对照.0401863/.0109280。场误差统计逐值不变。H100真正pooled Cd NRMSE为K1 .00609718→B .00626447；summary的mean-case为.00580968→.00603306，两种聚合不可混比。后续force-window/fullgate尚未完成，无准入结论。新独审 `docs/P064_B_FORMAL_R2_PARTIAL_TERMINAL_REVIEW_20261006.md` SHA `2ead80d6ecbca6485bab8bca20183a3aa05a71e568af39565d11086d677638ad`。R2证据保留；身份CLI最小修复与新输出续跑另行审查，不重训或重算已完成validation10，不修改科学门槛。下方此前running段落仅为历史。
