@@ -1,6 +1,12 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## FC-E080 当前实际：第二seed训练已完成，真实CPU CFD闭环复验运行中
+## FC-E080 当前终态：第二seed未重现减阻，执行链完成但稳健性未证明
+
+同inv111022bf已800/800、PID0/exit0，独审3200raw SHA/1600solver/六窗复算通过，全部zero前后力16000行所有列与旧seed完全相同。主窗(168,228]新seed **减阻−0.6174007%（增阻）**，RMS比1.0062202、bias1.694578%；旧seed+3.8952839%/.8156230/1.137815%。新seed六窗均减阻FAIL、两项升力均PASS，原2%/1.05/10%未改。报告 [第二seed真实CFD独审](docs/P064_B_SEED20261007_CFD_TERMINAL_REVIEW_20261006.md)，result SHA `6221a7d2f8868eba8622f2e6b76d110d206dd4d9304627d890e01d71b6a7d893`。
+
+当前训练/CFD已结束；旧seed三相位收益仍真实，但不能称跨seed稳定或全目标完成。FC-E081 CPU匹配旧轨迹800观测诊断（Root独立核验，报告 [policy-map复核](docs/P064_SEED_MATCHED_OBSERVATION_REPLAY_REVIEW_20261007.md)）显示新seed odd投影RMS .0439748 vs旧.468962、even .591238 vs .402144；只支持相同观测下策略分解差异，不是闭环因果或已验证remedy。预测FAIL/H25拒绝晋级保留，无自动扫seed/加训/改阈值。
+
+### FC-E080 历史启动记录（已结束）
 
 实际unit `fluid-control-p064-b-seed20261007-projected-ppo-long-cfd-20261006.service`，invocation `111022bf633246e69165f7b8eb3edb01`，PID2811798 running；独查22/800周期。批准 `docs/P064_B_SEED20261007_CFD_APPROVAL_20261006.json` SHA `4bd940f088373c3c9e0c2d227d18364b23457e0ef933a4add9d2345d74038364`。输出 `artifacts/p064_b_seed20261007_projected_ppo_long_cfd_20261006`。原83e08 driver、b00 148→228/主(168,228]/六窗/原阈值不变；只替换第二seed最终policy578ab956/Vecac756，CPU推理、无在线FNO/MPC。当前新物理结果未知，旧约3.90%减阻收益不能移植为本次PASS。实际PPO32768步已完成，不再训练。
 

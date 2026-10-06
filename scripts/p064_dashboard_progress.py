@@ -226,12 +226,21 @@ def initial_candidate_cfd_status(root,run=subprocess.check_output):
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
+SEED_CFD_BINDINGS={'approval':'4bd940f088373c3c9e0c2d227d18364b23457e0ef933a4add9d2345d74038364','result':'6221a7d2f8868eba8622f2e6b76d110d206dd4d9304627d890e01d71b6a7d893','review':'637d1e4a14c6fbd114f0a399ece07ab767502a9f7a1d556336b7ccafdf59354b'}
+
 def candidate_cfd_status(root,run=subprocess.check_output):
     root=Path(root)
     info={'status':'第二seed真实CFD状态未核验','cycles':0,'target':800,'running':False,'training':False,'physical_pass':None,'terminal_verified':False,'invocation':None,'previous_initial':initial_candidate_cfd_status(root,run)}
     try:
         approval=root/'docs/P064_B_SEED20261007_CFD_APPROVAL_20261006.json'
-        if hashlib.sha256(approval.read_bytes()).hexdigest()!='4bd940f088373c3c9e0c2d227d18364b23457e0ef933a4add9d2345d74038364':raise ValueError('seed CFD approval SHA')
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!=SEED_CFD_BINDINGS['approval']:raise ValueError('seed CFD approval SHA')
+        result=root/'artifacts/p064_b_seed20261007_projected_ppo_long_cfd_20261006/result.json'
+        review=root/'docs/P064_B_SEED20261007_CFD_TERMINAL_REVIEW_20261006.md'
+        if result.exists() and review.exists():
+            if hashlib.sha256(result.read_bytes()).hexdigest()!=SEED_CFD_BINDINGS['result'] or hashlib.sha256(review.read_bytes()).hexdigest()!=SEED_CFD_BINDINGS['review']:raise ValueError('seed CFD terminal binding')
+            info.update(status='第二seed闭环完成但未减阻；旧seed成功尚未跨seed重现',cycles=800,current_time=228.,running=False,training=False,physical_pass=False,terminal_verified=True,invocation='111022bf633246e69165f7b8eb3edb01')
+            info['note']='主窗新seed增阻0.6174%，RMS比1.00622、均值偏置1.6946%；六窗减阻均未达原2%，两升力条件通过。旧seed同zero减阻3.8953%仍真实，不能称跨seed稳健。匹配观测诊断显示新策略投影后的动作较小，但未证明修复方法。训练/CFD均已结束，预测FAIL与H25未采用保留。'
+            return info
         raw=run(['systemctl','--user','show','fluid-control-p064-b-seed20261007-projected-ppo-long-cfd-20261006.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
         state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
         if state.get('InvocationID')!='111022bf633246e69165f7b8eb3edb01':raise ValueError('seed CFD invocation')

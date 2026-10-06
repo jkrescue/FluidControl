@@ -1,6 +1,14 @@
 # Experiment ledger
 
-## FC-E080 — actual second-seed paired b00 CFD running
+## FC-E080 — second-seed CFD complete; original drag criterion failed
+
+Same111022bf terminal exit0/800cycles. Independent3200raw hashes/1600solver/action-clock/six-window checks pass, maximum metric discrepancy4.44e-16; every zero column in both16000-row streams exactly matches oldseed. Primary drag reduction−.0061740071620 (increase), RMSratio1.0062202287, biasratio.01694578015 versus oldseed .0389528388335/.8156230434/.01137814688. All six newseed drag windows fail; both lift conditions pass. Original criteria unchanged; retain old success but do not infer across-seed stability. [Review](docs/P064_B_SEED20261007_CFD_TERMINAL_REVIEW_20261006.md), resultSHA `6221a7d2f8868eba8622f2e6b76d110d206dd4d9304627d890e01d71b6a7d893`.1098.06s/minimumAvailable122809610240B/noOOM/ownedcleanup. No rerun or candidate selection.
+
+## FC-E081 — completed CPU matched-observation policy decomposition (not physical evidence)
+
+Actual10a5f9fdeee5443d9e53fd39fc4a82e6 exit0,800old-B observations, deterministicCPU replay/noFNO/noCFD/optimizer. Old policy outputs reproduce exactly. Root independently checked raw odd/even algebra and pooledRMS: old/new odd .4689618221636268/.04397478551491286; even .4021438832908808/.5912380307005245. ResultSHA `71ffa80731f45a91791a16ebdc918ea3aaed39ebf9a4b7edf74a69571db30d6d`, [review](docs/P064_SEED_MATCHED_OBSERVATION_REPLAY_REVIEW_20261007.md) SHA `96f86191a52d8613d01797261362e7a1f5200a56fa355b29e154a9c3131cb42e`. Endogenous old-policy observations limit causal inference; remedy unresolved. No policy/log-prob changes or new training authorized by this diagnostic.
+
+### FC-E080 historical launch observation
 
 Actual invocation `111022bf633246e69165f7b8eb3edb01`, unit `fluid-control-p064-b-seed20261007-projected-ppo-long-cfd-20261006.service`, PID2811798 running; independently observed22/800 cycles. Approval `docs/P064_B_SEED20261007_CFD_APPROVAL_20261006.json` SHA `4bd940f088373c3c9e0c2d227d18364b23457e0ef933a4add9d2345d74038364`. Unchanged83e08 driver and fixedb00 protocol, new finalseed policy578ab956/Vecac756. CPU feedback CFD, no optimizer/FNO/MPC. No new physical success or running scientific CSV value claimed. Compare all predeclared windows and actualzero arrays with saved oldseed after terminal; do not rerun or select policy by reward.
 

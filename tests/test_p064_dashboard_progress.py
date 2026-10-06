@@ -195,3 +195,14 @@ def test_second_seed_cfd_missing_binding_not_physical_pass(tmp_path):
     x=candidate_cfd_status(tmp_path)
     assert not x['training'] and not x['running'] and x['physical_pass'] is None
     assert x['invocation'] is None and 'previous_initial' in x
+
+def test_second_seed_terminal_is_negative_not_running(tmp_path,monkeypatch):
+    import hashlib,p064_dashboard_progress as m
+    files={'approval':tmp_path/'docs/P064_B_SEED20261007_CFD_APPROVAL_20261006.json','result':tmp_path/'artifacts/p064_b_seed20261007_projected_ppo_long_cfd_20261006/result.json','review':tmp_path/'docs/P064_B_SEED20261007_CFD_TERMINAL_REVIEW_20261006.md'}
+    for k,p in files.items():p.parent.mkdir(parents=True,exist_ok=True);p.write_text(k)
+    monkeypatch.setattr(m,'SEED_CFD_BINDINGS',{k:hashlib.sha256(p.read_bytes()).hexdigest() for k,p in files.items()})
+    monkeypatch.setattr(m,'initial_candidate_cfd_status',lambda *a,**kw:{})
+    x=m.candidate_cfd_status(tmp_path,run=lambda *a,**kw:(_ for _ in ()).throw(AssertionError('no live query needed')))
+    assert x['terminal_verified'] and x['cycles']==800 and not x['physical_pass'] and not x['running'] and not x['training']
+    files['review'].write_text('tampered')
+    assert not m.candidate_cfd_status(tmp_path)['terminal_verified']
