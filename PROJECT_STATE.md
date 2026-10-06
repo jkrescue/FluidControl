@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E073 当前诊断已完成：真实输入力误差与自由递推影响均存在
+
+signed H1 batch1同inv `76d21e62134b44c0a97d65b6ad991669` 已独审exit0：6×100真实当前场条件预测，无优化/新训练。result SHA `1eacc9219f2f608c54e6ef48d4856624af64b8ad00eb477bbd5772eff8ad61ef`；报告 `docs/P064_TEACHER_FORCED_H1_TERMINAL_REVIEW_20261006.md` SHA `2141cc0f060e79acf57ad68c530038e1814fb228ba45be2fa4a8ac01da956b36`。600行四力、时钟/动作/真值及411源码独审通过；batch1首步与原AR完全一致。pooled rear-Cl signed bias +.000880643686、MAE .045200950125，pred/truth centered RMS1.173602006843/1.198123401320；跨相位抵消不能冒充每分支偏置通过。
+
+四条旋转分支H1尾窗RMS误差幅值均低于AR，但b01plus及b05minus在真实场输入下仍超原零基准2.5%尺度，不能把问题归因于仅长AR累积，也不构成单一因果分解。B完整精度FAIL和原物理标准保持。独审容器已清、minimumAvailable112.1743GiB；无新训练批准。b07真实CPU闭环仍按原unit独立进行，诊断结束不代表其物理结果完成。历史准备/运行记录保留。
+
 ## FC-E072 当前实际：冻结 B-policy 的预定 b07 真实闭环复验运行中
 
 2026-10-06 14:02:02 UTC 实际启动 `fluid-control-p064-b-projected-ppo-b07-long-cfd-20261006.service`，invocation `c45add13aeff41fe9526e835e384a52d`，首查 MainPID1682828 active/running，随后实际41/800周期。批准 `docs/P064_B_PROJECTED_PPO_B07_LONG_CFD_APPROVAL_20261006.json` SHA `df4d7881226f8ebf53da3aa47ac29f32ba2f0c94d59e431dae3a84dced4b7f56`；冻结driver `c3d63d9d9114a2ec32b8a5d6a4e7a6dee5aa8e31143167fb63229951656777d5`。固定110→190、主(130,190]，原800周期/六窗口、策略、投影+单filter和配对zero完全保持。仅初相位改变，检验同冻结B-policy是否继续满足原2%减阻、1.05波动比、10%平均偏置标准。尚无b07终态或物理结论，无新训练/在线FNO。

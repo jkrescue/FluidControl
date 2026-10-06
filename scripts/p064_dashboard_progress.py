@@ -183,6 +183,14 @@ def signed_h1_status(root,run=subprocess.check_output):
         info['invocation']=state['InvocationID']
         info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
         info['status']='signed H1 batch1 GPU预测诊断进程运行中（非训练，无逐步进度）' if info['running'] else 'signed H1诊断进程已停止，等待独立终态复核'
+        if state.get('MainPID')=='0' and state.get('ExecMainStatus')=='0':
+            paths={
+                'artifacts/p064_teacher_forced_h1_signed_force_20261006/result.json':'1eacc9219f2f608c54e6ef48d4856624af64b8ad00eb477bbd5772eff8ad61ef',
+                'docs/P064_TEACHER_FORCED_H1_TERMINAL_REVIEW_20261006.md':'2141cc0f060e79acf57ad68c530038e1814fb228ba45be2fa4a8ac01da956b36'}
+            for path,digest in paths.items():
+                if hashlib.sha256((Path(root)/path).read_bytes()).hexdigest()!=digest:raise ValueError('H1 terminal binding')
+            info.update(terminal_verified=True,completed_endpoints=600,
+                        status='signed H1预测诊断已独审完成600端点（非训练）：真实输入仍有力误差，不能仅归因长AR；无新准入')
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['verification_note']=str(exc)
     return info

@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E073 — Signed teacher-forced H1 diagnostic completed, not training or admission
+
+Actual unit `fluid-control-p064-b-teacher-forced-h1-20261006.service`, invocation `76d21e62134b44c0a97d65b6ad991669`, independently PID0/exit0. Approval SHA `482628b32be9fcd3879404356e3deeb186c38a96bf59635b76893e8d10d3e0c8`; result `1eacc9219f2f608c54e6ef48d4856624af64b8ad00eb477bbd5772eff8ad61ef`; supervisor receipt `951967332df858729e310d9342c26f7b63d37c6d904629760a3dce78a4964b9d`. Report `docs/P064_TEACHER_FORCED_H1_TERMINAL_REVIEW_20261006.md` SHA `2141cc0f060e79acf57ad68c530038e1814fb228ba45be2fa4a8ac01da956b36` independently verifies411 sources/nine inputs and all600 signed four-force rows, time/action/target matching and per-case/pooled statistics. No HDF/model reload or GPU rerun for review.
+
+Fixed B/high-TF32/batch1/true-current-state K1 reset: first-step predictions exactly equal the original AR reference. Pooled rear-Cl bias +.000880643686, MAE .045200950125, predicted/truth centered RMS1.173602006843/1.198123401320. All four rotating branches have lower true-input tail RMS-error magnitude than free AR, but b01plus and b05minus retain errors beyond the unchanged reference scale. Do not infer a unique causal decomposition or use cross-phase cancellation as physical bias acceptance. CSV records signed descriptive metrics without invented PASS thresholds. Runtime24.006s, minAvailable112.174331665GiB, actual12G/noSwap/CPU1 and owned container absent. No optimizer, candidate selection, frozen-test access or new control action. The full surrogate FAIL and separately running b07 CFD remain distinct.
+
 ## FC-E072 — fixed B-policy b07 paired800 CFD: actual start, no result yet
 
 One Lead-approved run started 2026-10-06 14:02:02 UTC, unit `fluid-control-p064-b-projected-ppo-b07-long-cfd-20261006.service`, invocation `c45add13aeff41fe9526e835e384a52d`, MainPID1682828. A subsequent actual progress snapshot reached41/800. Output `artifacts/p064_b_projected_ppo_b07_long_cfd_20261006` is new/exclusive. Approval SHA `df4d7881226f8ebf53da3aa47ac29f32ba2f0c94d59e431dae3a84dced4b7f56`; driver SHA `c3d63d9d9114a2ec32b8a5d6a4e7a6dee5aa8e31143167fb63229951656777d5`.
