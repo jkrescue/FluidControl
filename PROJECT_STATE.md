@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E086 终态：两指定canonical seed主窗通过；早期失败/预测FAIL仍保留
+
+E086同be48ee PID0/exit0，800真实反馈完成并独审。主窗减阻 **3.7440%**、升力波动降低 **22.6210%**、均值偏置 **3.6741%**，原2%/1.05/10%通过；早12.4偏置11.2623%、首6.2偏置21.1797%失败（首段也超过20%敏感性）。其余四窗通过，不能称全窗PASS。报告 [E086独审](docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_CFD_TERMINAL_REVIEW_20261007.md) SHA `24e9a5ad02b0b36b34910ebe32e72de4c8cc5692f6090e4efa0dcad8439ac7fc`；result `9a7db1cff37e614dbefa908ec132cd8376cdfddd1f3149e2ba3436cebad57df4`。3200raw/1600solver/800canonical映射/单filter/六窗复算与配对zero全列通过，1108.872s/minAvailable121698250752B/cleanup通过。
+
+E083另一指定seed主窗3.9567%/.816543/1.0660%也通过，支持这两个固定seed下重复，不推及任意seed或未知分布；E085固定b01六窗通过但不是独立holdout。当前这些训练和CFD均完成，无自动新作业；C50只是源准备，需另批。完整预测FAIL、H25拒绝及旧负结果不变，整体高精度模型目标未完成；部署CPU政策无在线FNO/MPC。下面运行段落均为历史时点记录。
+
 ## FC-E085 已独审完成；FC-E086新seed b00仍在实际运行
 
 E085同3a678d已PID0/exit0，主窗减阻 **4.0091%**、后升力波动降低 **18.2810%**、均值偏置 **3.6366%**；六窗全部通过原标准，首6.2 bias8.0614%。全部3200raw/1600solver/800canonical映射/单filter/配对zero全列与旧B b01一致通过，最大统计差4.44e-16。报告 [E085独审](docs/P064_B_SYMMETRY_CANONICAL_B01_CFD_TERMINAL_REVIEW_20261007.md) SHA `4d77f711e48a3e5472345f7c7e56253955c00ef281943183928e9a66bf4ff40a`；result `c56a5cbccdf218953a0e1ea040da1c1ee7e2f1b574e7b509939a622f65b7495f`。1234.019s/minAvailable119373869056B/cleanup通过。不能把b01六窗PASS移植为b00早期PASS、完整预测PASS或统计独立泛化。

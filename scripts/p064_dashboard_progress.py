@@ -356,6 +356,12 @@ def canonical_seed6_cfd_status(root,run=subprocess.check_output):
         if path.exists():info.update(cfd_progress_counts(json.loads(path.read_text()),start=148.))
         info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
         info['status']='新seed20261006策略：b00真实CFD验证中' if info['running'] else '新seed b00进程已停止，等待独立复核'
+        result_path=root/'artifacts/p064_b_symmetry_canonical_seed20261006_ppo_long_cfd_20261007/result.json'
+        if not info['running'] and state.get('ExecMainStatus')=='0' and result_path.exists():
+            review=root/'docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_CFD_TERMINAL_REVIEW_20261007.md'
+            if hashlib.sha256(result_path.read_bytes()).hexdigest()!='9a7db1cff37e614dbefa908ec132cd8376cdfddd1f3149e2ba3436cebad57df4' or hashlib.sha256(review.read_bytes()).hexdigest()!='24e9a5ad02b0b36b34910ebe32e72de4c8cc5692f6090e4efa0dcad8439ac7fc':raise ValueError('seed6 CFD terminal binding')
+            info.update(status='新seed b00已独审：主窗减阻3.74%',cycles=800,terminal_verified=True,physical_pass=True)
+            info['note']='主窗减阻3.7440%、升力波动降低22.6210%、偏置3.6741%；早12.4偏置11.26%和首6.2偏置21.18%仍失败（首段也超过20%敏感性）。两个指定canonical seed主窗均通过，不等于任意seed稳健或预测精度通过。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
@@ -384,9 +390,11 @@ def candidate_cfd_status(root,run=subprocess.check_output):
     info['secondary']=canonical_seed6_cfd_status(root,run)
     secondary=info['secondary']
     if secondary.get('invocation'):
-        info['note']+=f" 并行FC-E086：{secondary['status']}，{secondary['cycles']}/800周期；同原b00起点，仅新seed最终策略，尚无物理结论。两项均为CPU反馈，不是GPU训练。"
+        info['note']+=f" FC-E086：{secondary['status']}，{secondary['cycles']}/800周期。"+secondary.get('note','尚无物理结论。两项均为CPU反馈，不是GPU训练。')
         if secondary['running']:
             info['status']=f"新seed b00真实CFD运行中 {secondary['cycles']}/800；b01{'已独审完成' if info['terminal_verified'] else '并行验证中'}"
+        elif secondary.get('terminal_verified'):
+            info['status']='真实闭环复验已完成：两指定seed主窗通过，早期失败保留'
     return info
 
 FORMAL_TERMINAL_BINDINGS={
