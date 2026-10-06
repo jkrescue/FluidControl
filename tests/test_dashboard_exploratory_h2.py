@@ -62,6 +62,30 @@ def test_h5_live_profile_uses_separate_output_and_never_claims_success(tmp_path)
     assert '真实CFD因果历史H5短时控制试验' in m.PAGE
 
 
+def test_accelerated_long_h5_profile_reports_124_gpu_inference_cycles(tmp_path):
+    reg={'progress_kind':'exploratory_accelerated_long_h5_feedback',
+         'unit':'fluid-control-accelerated-long-h5-20261006.service',
+         'invocation':'a601eec2da7649b4af6f9354a4deb470'}
+    state={'InvocationID':reg['invocation'],'ActiveState':'active',
+           'SubState':'running','MainPID':'42'}
+    force={'front_cd':1.4,'rear_cd':1.0,'front_cl':.2,'rear_cl':.3}
+    row={'step':1,'start_time':148.,'end_time':148.1,'selected_omega':.1,
+         'previous_omega':0.,'selected_predicted_next_forces':force,
+         'actual_endpoint_forces':{'mpc':force,'zero':force}}
+    doc={'status':'EXPLORATORY_ACCELERATED_LONG_H5_RUNNING_NOT_ADMISSION',
+         'completed_cycles':1,
+         'identity':{'k1_manifest_sha256':'7adca21e3a75691b10f164c342ea91995cc38060e7416dd217b8bd8e5feeacc7'},
+         'rows':[row]}
+    progress=tmp_path/'artifacts/exploratory_accelerated_long_h5_real_cfd_20261006/progress.json'
+    progress.parent.mkdir(parents=True);progress.write_text(json.dumps(doc))
+    result=m._exploratory_mpc_progress(tmp_path,reg,state,True)
+    assert result['verified'] and result['running']
+    assert result['completed_cycles']==1 and result['planned_cycles']==124
+    assert result['planned_duration_D_over_U']==12.4
+    assert not result['scientific_admission'] and not result['control_success_verified']
+    assert 'GPU运行官方FNO推理选动作' in m.PAGE
+
+
 def test_causal_terminal_binding_is_distinct_and_nonadmitting(tmp_path, monkeypatch):
     from types import SimpleNamespace
     base=tmp_path/'artifacts/exploratory_causal_history_h2_real_cfd_20261006';base.mkdir(parents=True)

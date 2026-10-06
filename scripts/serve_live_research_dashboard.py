@@ -339,9 +339,10 @@ function renderActiveExperiment(d){
  if(active?.mpc_trial===true&&active.verified===true){
   const causal=active.progress_kind==='exploratory_causal_history_h2_feedback';
   const causalH5=active.progress_kind==='exploratory_causal_history_h5_feedback';
-  const title=active.terminal_review_verified?(causal?'10/10因果历史H2真实闭环完成；全部HOLD、配对收益为零':'10/10真实闭环已跑通；短窗口阻力上升0.23%，不是减阻达标'):(causalH5?'真实CFD因果历史H5短时控制试验 · ':'真实CFD短时控制试验 · ')+(active.running?'正在计算':active.exited_success?'计算退出，结果和清理待独立复核':'已停止，需检查');
+  const longH5=active.progress_kind==='exploratory_accelerated_long_h5_feedback';
+  const title=active.terminal_review_verified?(causal?'10/10因果历史H2真实闭环完成；全部HOLD、配对收益为零':'10/10真实闭环已跑通；短窗口阻力上升0.23%，不是减阻达标'):(longH5?'真实CFD加速H5闭环（148→160.4） · ':causalH5?'真实CFD因果历史H5短时控制试验 · ':'真实CFD短时控制试验 · ')+(active.running?'正在计算':active.exited_success?'计算退出，结果和清理待独立复核':'已停止，需检查');
   const reviewedDetail=causal?' 独立复核：10次动作均为0，两支各200点真实CFD与首轮零控制字节一致；没有阻力或升力波动收益。':' 独立复核：每支200点，升力波动短窗口下降约5.69%；短窗口阻力上升0.23%。';
-  const detail=`已完成 ${active.completed_cycles}/10 个配对周期。CPU运行官方FNO选动作，真实OpenFOAM求解；不是GPU训练，也不是HydroGym求解器。`+(active.terminal_review_verified?reviewedDetail+' 仅1 D/U，不满足原80 D/U评价长度，没有新增PPO或长期达标结论。':'');
+  const detail=`已完成 ${active.completed_cycles}/${active.planned_cycles??10} 个配对周期。${longH5?'GPU运行官方FNO推理选动作':'CPU运行官方FNO选动作'}，真实OpenFOAM求解；不是模型训练，也不是HydroGym求解器。`+(active.terminal_review_verified?reviewedDetail+' 仅1 D/U，不满足原80 D/U评价长度，没有新增PPO或长期达标结论。':longH5?' 本轮计划覆盖12.4 D/U；运行中不声明控制收益、正式准入或PPO完成。':'');
   $('lead-now').textContent=title+'。'+detail;
   const card=document.createElement('div');card.className='card';
   for(const [tag,text] of [['h3',title],['p',detail],['p',active.latest?`最近周期 ${active.latest.step}：后圆柱转速 ${num(active.latest.omega,3)}；预测/实际总阻力系数 ${num(active.latest.predicted_cd,5)} / ${num(active.latest.actual_cd,5)}；预测/实际后升力系数 ${num(active.latest.predicted_cl,5)} / ${num(active.latest.actual_cl,5)}；配对零控制总阻力/后升力 ${num(active.latest.zero_cd,5)} / ${num(active.latest.zero_cl,5)}。`:'等待首个真实周期。'],['p','这是探索性短时反馈，不是长期稳定控制或模型准入。P031资源失败和K1原正式未通过结论保留；R4两步接口已完成。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
@@ -1637,6 +1638,15 @@ _EXPLORATORY_MPC_PROFILES = {
         "base": "artifacts/exploratory_causal_history_h5_real_cfd_20261006",
         "running_status": "EXPLORATORY_REAL_CFD_CANONICAL_HISTORY_H5_RUNNING_NOT_ADMISSION",
         "terminal_review": None,
+        "planned_cycles": 10,
+    },
+    "exploratory_accelerated_long_h5_feedback": {
+        "unit": "fluid-control-accelerated-long-h5-20261006.service",
+        "invocation": "a601eec2da7649b4af6f9354a4deb470",
+        "base": "artifacts/exploratory_accelerated_long_h5_real_cfd_20261006",
+        "running_status": "EXPLORATORY_ACCELERATED_LONG_H5_RUNNING_NOT_ADMISSION",
+        "terminal_review": None,
+        "planned_cycles": 124,
     },
 }
 
@@ -1710,7 +1720,8 @@ def _exploratory_mpc_progress(root: Path, registration: dict, state: dict, match
         path=base/"progress.json"
         document=json.loads(path.read_text()) if path.exists() else {"rows":[],"completed_cycles":0}
         rows=document.get("rows",[]); count=document.get("completed_cycles")
-        if type(count) is not int or not 0<=count<=10 or len(rows)!=count:
+        planned = profile.get("planned_cycles", 10)
+        if type(count) is not int or not 0<=count<=planned or len(rows)!=count:
             return {"verified":False}
         if rows and (document.get("status") != profile["running_status"]
                      or document.get("identity",{}).get("k1_manifest_sha256") != "7adca21e3a75691b10f164c342ea91995cc38060e7416dd217b8bd8e5feeacc7"):
@@ -1725,10 +1736,11 @@ def _exploratory_mpc_progress(root: Path, registration: dict, state: dict, match
             if any(type(v) not in (int,float) or not math.isfinite(v) for v in values) or abs(omega)>.75+1e-12 or abs(omega-previous)>.1+1e-12:
                 return {"verified":False}
             latest={"step":step,"omega":omega,"predicted_cd":predicted["front_cd"]+predicted["rear_cd"],"predicted_cl":predicted["rear_cl"],"actual_cd":actual["front_cd"]+actual["rear_cd"],"actual_cl":actual["rear_cl"],"zero_cd":zero["front_cd"]+zero["rear_cd"],"zero_cl":zero["rear_cl"]}
-        reviewed=(exited and count==10
+        reviewed=(exited and count==planned
                   and _exploratory_mpc_terminal_review(root, profile["terminal_review"]))
         return {"verified":True,"mpc_trial":True,"running":running,"exited_success":exited,
                 "completed_cycles":count,"latest":latest,"scientific_admission":False,
+                "planned_cycles":planned,"planned_duration_D_over_U":planned*.1,
                 "progress_kind":registration.get("progress_kind", "exploratory_h2_feedback"),
                 "terminal_review_verified":reviewed,
                 "terminal_review_pending":exited and not reviewed,"control_success_verified":False}
