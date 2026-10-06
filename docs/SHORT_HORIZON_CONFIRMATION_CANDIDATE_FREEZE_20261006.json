@@ -1,0 +1,14 @@
+{
+  "status": "CANDIDATE_IDENTITIES_FROZEN_FOR_PROSPECTIVE_CONFIRMATION",
+  "heldout_access_authorized": false,
+  "execution_authorized": false,
+  "lead_freeze_basis": "Lead explicitly froze these identities after independently verified projected b00 primary result; no heldout accuracy observed.",
+  "k1_manifest_sha256": "7adca21e3a75691b10f164c342ea91995cc38060e7416dd217b8bd8e5feeacc7",
+  "policy_sha256": "5ab92ebe04459419bc724b48c6e20bde2464d7b6d880396e504406aa08806d4a",
+  "vecnormalize_sha256": "3161ba46c65bac3bc23fa4ccb300c52c95fda63ee4190d9f30d2f0bd4b9040ec",
+  "projected_controller_source_sha256": "5c3f40728cd383913a256a2f46b6bfaf0b02cc7d91586e198c354a007fcb9e76",
+  "train_normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+  "projected_b00_result_sha256": "199127979c6cb43e6304c60fc3373a2b1a8465476ffdd265d30c108dfffd0ca6",
+  "original_k1_h100_development_status": "FAIL_PRESERVED",
+  "selection_after_confirmation": "forbidden; no automatic tuning, checkpoint change, or retry"
+}

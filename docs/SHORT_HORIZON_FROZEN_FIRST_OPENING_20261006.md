@@ -1,0 +1,9 @@
+# Authorized frozen confirmation opening
+
+Lead explicitly authorized one fixed prospective H1–H5 confirmation and access to the ten predeclared b03/b07 frozen trajectories after candidate freeze, full source review and independent acceptance. This does not authorize tuning, selection, automatic retries, or changing the model/controller after seeing test results.
+
+Actual unit `fluid-control-short-horizon-frozen-confirmation-20261006.service`, invocation `7a887ed792ec4d60a429f4a7a3660b3a`, started **2026-10-06 09:00:38 UTC** (systemd observed timestamp), initial PID3832775. Approval `docs/SHORT_HORIZON_FROZEN_CONFIRMATION_APPROVAL_20261006.json` SHA `1ae960dcee7c9aa81e438a990dbf88397f5593decd1cdbb3ba1336ea4888c162` passed the actual worker's validation on the final persisted bytes before launch. R3 immutable372-source closure and all frozen candidate identities are bound by that approval.
+
+The worker's actual log reached DistributedManager initialization, which follows its exact ten-file hash and HDF shape preflight. Thus authorized payload access has begun; individual file-open timestamps are not instrumented and are not invented here. This is the first registered prospective model-confirmation opening in this workflow, not a claim of omniscient historical filesystem auditing. Original seal document and preparation-only pending files remain unchanged.
+
+Observed running GPU utilization93%; actual systemd12GiB memory limit, swap0 and1CPU. Supervisor enforces physical Available50GiB startup/22GiB runtime with20GiB reserve, 1200s inner/1230s outer and process-group cleanup. Fixed H1–H5,32starts percase,batch4,officialReader, historical checkpoint precision validation then highest/noTF32 inference, pre-load6GiB allocator cap. No optimization or CFD. Concurrent b01 CFD was not altered. Results and any failures remain to be reviewed; opening is not an accuracy pass.

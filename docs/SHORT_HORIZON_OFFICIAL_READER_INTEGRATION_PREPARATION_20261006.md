@@ -1,0 +1,13 @@
+# Opt-in official-reader integration — preparation only
+
+No frozen payload opened, directory mounted, model imported, inference launched, or seal changed.
+
+Accepted project adapter is `scripts/official_evaluation_input.py`; actual installed official reader source is SHA cafa65d615555e1e4b1d6cb58895983682aae826957765c105142b71e934caa0. Two synthetic-HDF tests pass with actual official Reader and CUDA hidden. Canonical tests use robust scripts imports.
+
+`scripts/prepare_official_reader_evaluator.py` is a preparation-only source function, not an execution launcher. The reviewed draft now has FOUR explicit deltas: official dynamic input reader; historical high/TF32 load identity then highest/noTF32 override after load/runtime validation with per-step checks and metadata; pre-load allocator fraction capped at6GiB with metadata; and an additional explicit frozen_test CLI choice. Reversing these exact replacements reconstructs original source byte-for-byte. Model architecture, weights, recurrence, normalization and metric arithmetic remain unchanged. Three tests pass including actual canonical source; default evaluator is unchanged. This is no longer described as an input-only variant.
+
+Future approved launch metadata must bind original evaluator SHA, opt-in derived source SHA, adapter SHA, all model/config/normalization identities and candidate freeze receipt. The generated file belongs in a new immutable execution-source directory alongside the adapter, not over the default evaluator. Import resolution must bind that adapter before execution.
+
+Superseding the earlier proposed mount alias: the opt-in CLI accepts `--split frozen_test` directly, retaining old defaults. The worker resolves the original full40 frozen directory, compares its exact ten basenames and manifest hashes after explicit authorization and before model load; no mount, symlink, copying or dataset modification. h5py and official Reader open mode r. Train normalization is separate. Use `--horizons 1 2 3 4 5 --segment-stride 25 --action-mode observed` and explicit p026_k1 profile. Independent root+reviewer approval, source/runtime snapshot and a final persisted authorization are required before any payload opening.
+
+This input adapter currently preserves the full-trajectory memory behavior of the original evaluator; it is not a new streaming-memory claim. The actual reader requires array-valued per-frame time/omega (the curated schema); scalar-valued or mismatched synthetic layouts fail explicitly. Final persisted authorization and independent source review remain required before confirmation execution.

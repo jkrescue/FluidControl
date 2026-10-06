@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 当前结论：两相位 primary 物理约束通过，短时预测已测量，H100 FAIL仍保留
+
+Lead已确认投影策略b00与b01两次固定80D/U配对复验的primary原物理约束均通过；b01独立终态报告/账本由评估负责人随后补齐。不能外推所有窗口、所有相位或Re。当前训练和这两次CFD都已完成，以下running标题保留为历史。
+
+FC-E060前瞻冻结测试H1–H5已完成：同一固定K1、b03/b07十条sealed轨迹、32起点/条，1600端点，无失败或非有限数。H1→H5 pooled速度relativeL2为0.22427%→0.95415%，ROI中心化压力0.64234%→2.68274%，rearCl MAE0.01918→0.02212，总Cd MAE0.00708→0.01063。官方Reader实际使用、post-load highest/noTF32明确记录；独立复算已通过。这是短时固定动作预测证据，不覆盖K1 H100正式FAIL，不是新的训练或准入阈值放宽。
+
+实际unit `fluid-control-short-horizon-frozen-confirmation-20261006` / `7a887ed792ec4d60a429f4a7a3660b3a` exit0。结果SHA `77ab4fb85f238d1e76b6e5a20c18f8992182d24a82b38d7b4b5a52483f9fce20`；报告 `docs/SHORT_HORIZON_FROZEN_CONFIRMATION_TERMINAL_REVIEW_20261006.md`。原seal/失败记录不改，不据最终测试自动调参；物理10%与20%敏感性也不改变预测误差。
+
 ## FC-E059 正在执行：固定 b01 相位的同策略、同投影复验
 
 FC-E058 的 b00 primary 三约束经独立原始数据复核通过后，Lead 批准固定 b01 validation 相位复验；这不是按表现挑选相位，也不是新的独立最终测试。实际 r2 unit `fluid-control-exploratory-projected-32768-ppo-b01-long-cfd-r2-20261006.service`，invocation `9ef43959e065431490bd4725fa8fb7fe`，初始 PID `3509955`，已核 active/running。输出 `artifacts/exploratory_projected_32768_ppo_b01_long_cfd_20261006`。

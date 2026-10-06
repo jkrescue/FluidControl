@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-06 — Short-horizon confirmation is measured evidence, not permission to retune final-test performance
+
+FC-E060 completed fixedsealed10×32×H1–H5 with independent numerical confirmation. H5 velocityrelativeL2 .009541481 and centeredpressure .026827415 withrearClMAE .022116273 quantify useful short-time behavior; no retrospectively invented accuracythreshold orH100override. Preserve fixedcandidate/testopening provenance andallcase outputs. Actual projected b00/b01 primary constrainedclosedloop passes are distinct physicalevidence, not proof of arbitraryaction predictionorallphase robustness. No newtraining, thresholdrelaxation orcheckpointselection is authorized by this result.
+
 ## 2026-10-06 — FC-E058 supports fixed cross-phase replication, not broader admission
 
 The explicitreflectionwrapper aroundtheunchanged32768policy achievesb00primary3.89198%dragreduction/.815696centeredRMS/.011385meanbias underoriginalcriteria. Exactpairedzeroreproductionandunchangedphysics supportthematchedinterventioncontrast. Preserve earlyfirsthalf10%biasfailure andslightlyhigherRMSversusunprojectedcontroller; do not claim allwindows orallmodels improved. Next ispredeclaredb01/restart130withsamepolicy/projection/horizon/resources, subjecttoRootexecutionapproval; no thresholdtuning, checkpointselection ornewPPO. Even asecondphasepass isnotfreshindependentfinaltesting orrepair ofK1H100formalFAIL. Operationalchainandonephasephysicalcriteriaareverified; generalizationandformalsurrogateacceptanceremainseparate.

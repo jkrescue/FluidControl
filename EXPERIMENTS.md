@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E060 — Frozen H1–H5 prediction confirmation completed, no training
+
+Actual authorized7a887ed792ec4d60a429f4a7a3660b3a exited0 after1600 fixedendpoints (10b03/b07cases×32starts×5horizons), failed0/nonfinite0. H1/H5 pooledvelocityL2 .0022426952/.0095414810; pressureL2 .0064234466/.0268274147; totalCdMAE .0070819531/.0106288686;rearClMAE .0191755319/.0221162728. Independent reviewer reproduced savedJSON field/force/coverage andstart0pairedresponse calculations (FP32subtraction rounding≤1.3e-11). OfficialHDF5Readeractualexecution; highTF32checkpointidentity thenhighest/noTF32override;6GiBallocator/12GiBnoswap;minimumAvailable117072576512B.
+
+Result77ab4fb85f238d1e76b6e5a20c18f8992182d24a82b38d7b4b5a52483f9fce20; report docs/SHORT_HORIZON_FROZEN_CONFIRMATION_TERMINAL_REVIEW_20261006.md. This finaltestopening followed candidatefreeze andseparateLeadapproval; nooptimizer/CFD/selection. No posthoc accuracyPASS threshold, H100FAIL remains, and physical10%isnotpredictionMAE. Both projected b00/b01 primaryphysicalpasses are separate CFD evidence; b01 ledger follows independentownerhandoff.
+
 ## FC-E059 — Fixed b01 projected-policy replication running
 
 After independent raw verification of FC-E058, Lead approved one fixed b01 replication with the same frozen32768 policy, reflection projection, one existing action filter,800 cycles,six relative windows and resources. The only preregistered physical difference is validation phase b01 at restart130 through210, with primary `(150,210]`; this is not favorable phase selection or an independent final test.
