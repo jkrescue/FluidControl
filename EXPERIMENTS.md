@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## Active — Accelerated fixed-H5 paired124-cycle real-CFD trial (no outcome yet)
+
+Actual user unit `fluid-control-accelerated-long-h5-20261006.service`, invocation `a601eec2da7649b4af6f9354a4deb470`, PID2131269 was observed active/running with5/124 completed cycles. Approval SHA `03e2bac8f55c4bbd09e377b60bfef849515b53a6d418d490ec682b2cde95bc75`; driver `4cca28757f44e80f693d2d4a33c15cea0ea5bc74368eda669aead292b37464bf`, sequencer `c1011780b4e72f45e43127f3d7a728cf546d90b07dd1a7d41e57cf0dfc750688`; output `artifacts/exploratory_accelerated_long_h5_real_cfd_20261006`. No scientific CSV outcome is recorded before terminal evidence.
+
+Same FC-E048 K1/H5 canonical-history controller, candidates, weights, constraints and restart148. Persistent Curator exact-array replay completed21 comparisons; GPU highest/no-TF32 replay on all10 stored H5 states preserved all selected indices/actions/ranks, max force difference2.2649765e-6 (not zero). GPU result SHA `3568870390df28c4f63145317ad89f941ff7d1c6073f5a756b06ab2a46273a69`, independent review `95dca2e1941b2aff46d6c7510cce0ce74ad49d3fcdc439cd1fdb62064eb69524`; Curator result `d8786fde2de19f609df320c0d5df21a8cffa91f91cca6a02d55d83ce53bbcddc`.
+
+Real duration is extended to12.4D/U, with full, first6.2 and trailing6.2 windows reported separately. This is not original80D/U evaluation, model/PPO training, robust-control success or surrogate admission. Terminal raw forces/actions, solver health, identities and cleanup determine the eventual result; earlier short-window negatives remain preserved.
+
 ## FC-E048 — Canonical-history H5 actual feedback: nonzero control, no demonstrated drag benefit
 
 Code `8f5afb3`; executed driver SHA `0917cd5c62e43fc3f7b2cdc23900aa9d0932dff9ef4842a155bcf4288524b14d`; approval SHA `f927f6b956f847766d899745ebc0e679a7638db63f27cfb1f9a489eb69fb6c0e`. Same K1 and canonical-history cost as FC-E047, horizon changed to H5, CPU retained. Actual invocation `6adc59fae65344d2b49b57cbe5b30f70`,06:08:12–06:12:13UTC, exit0. Result `artifacts/exploratory_causal_history_h5_real_cfd_20261006/result.json` SHA `d4c3ad8198f69199606c0fa7a6c1a668c9a0f581e3b52bbeca99e2b0bd902c5e`; independent report `docs/EXPLORATORY_CAUSAL_HISTORY_H5_TERMINAL_REVIEW_20261006.md` SHA `e6b7496b3a59b0bfe5a6b4365bbb9076d892ec651b3cf75fa212075b98dbe79f`.

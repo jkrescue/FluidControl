@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 当前实际运行：加速H5真实配对反馈124周期（2026-10-06）
+
+实际user unit `fluid-control-accelerated-long-h5-20261006.service`，invocation `a601eec2da7649b4af6f9354a4deb470` 已核active/running、PID2131269，阶段观测5/124。输出 `artifacts/exploratory_accelerated_long_h5_real_cfd_20261006`；批准SHA `03e2bac8f55c4bbd09e377b60bfef849515b53a6d418d490ec682b2cde95bc75`，不可变driver `4cca28757f44e80f693d2d4a33c15cea0ea5bc74368eda669aead292b37464bf`。没有终态控制收益结论，也没有正在进行模型/PPO训练。
+
+保持已审K1/H5代价、五候选、动作约束、初态148；实际场每步重观测，以persistent Curator和加载后显式highest/no-TF32 GPU推理加速。Curator20帧加重复帧的105组数组逐字节一致；GPU十状态实际回放10/10动作和排序一致，最大受力差2.2649765e-6。证据见 `docs/PERSISTENT_CURATOR_TERMINAL_REVIEW_20261006.md` 和 `docs/EXPLORATORY_CAUSAL_HISTORY_H5_GPU_REPLAY_REVIEW_20261006.md`（SHA `95dca2e1941b2aff46d6c7510cce0ce74ad49d3fcdc439cd1fdb62064eb69524`）。这些是工程证据，不是科学准入或任意GPU精度等价。
+
+新窗口12.4D/U分别报告完整、前6.2和末6.2；仍短于原80D/U。MemAvailable启动50/运行22GiB，CUDA空闲仅观察；控制器12GiB无swap、两求解器各8GiB，内部1800秒/外部1950秒。K1原formal FAIL保留；以下旧准备/运行条目仅为历史。
+
 ## 当前实际终态：FC-E048 H5反馈完成，尚无减阻收益（2026-10-06）
 
 同一 invocation `6adc59fae65344d2b49b57cbe5b30f70` 已于06:12:13UTC结束，PID0/exit0；以下旧running条目仅保留历史。10个真实反馈周期、每分支200个原始CFD受力样本独立复算：总Cd均值MPC `2.4137825099145`、zero `2.413592168615`，paired drag reduction `−0.0000788622460641264`（阻力差0.0078862%更差）；后圆柱Cl波动RMS比 `0.9836105589246837`。H5产生非零动作而非H2全HOLD，但仅1D/U，不能判定长时物理目标完成。250个候选阶段成本复算一致，mean-bias惩罚全零，原10%不是这次动作选择的阻断。
