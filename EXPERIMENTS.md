@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## Fixed seed20261007 replication — actual PPO running, no new CFD result
+
+Actual unit `fluid-control-p064-b-seed20261007-ppo-32768-20261006.service`, invocation `38013204a3c94b7fb14da04b78b5fb83`, PID2785207 active/running; independently observed1212/32768 actual transitions. Approval SHA `2a8b0bca02154ed5bf0e7b35035e01f0695c1763b183063251ee619db4fc6604`, `docs/P064_B_SEED20261007_PPO_APPROVAL_20261006.json`; output `artifacts/p064_b_seed20261007_diverse_h5_32768_ppo_20261006/payload`. Only seed differs from the completed B PPO run. Immutable runner857c3c8d changes exactly one seed literal;5CPU tests and18 actual CUDA-hidden import origins/74sources/192runtime hashes passed. B model/data/reset/reward/32768 budget and50/22 reserve remain unchanged.
+
+Final-only policy; no reward selection or seed scan. Independent finite training terminal review precedes separately approved fixed b00 CFD. Existing trained/initial controls are not rerun. No running scientific CSV metric or new physical success is claimed; two seeds cannot establish a seed distribution.
+
 ## FC-E078 — terminal matched initial-weight control; learned weights contribute
 
 Same invocation `dbc0e8f47f994e7280694e9ed6714c56` completed800 intervals, exit0/cleanup verified. Independent3200 raw hashes/1600 solver logs/six windows pass; both entire zero force streams equal the trained-B comparator in every column. Primary initial drag reduction −.0075572161% versus trained +3.8952838833%; RMS ratio1.0008821412 versus .8156230434; bias1.6502793569% versus1.1378146878%. Initial fails original2%drag criterion; trained passes primary, with early first6.2 bias13.55% failure retained. This is evidence for learned weights within this fixed pipeline, not RL-only attribution or general controller superiority.

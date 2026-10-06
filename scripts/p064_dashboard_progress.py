@@ -24,7 +24,7 @@ def last_json_row(path):
         except (ValueError,UnicodeDecodeError):continue
     return None
 
-def candidate_ppo_status(root,run=subprocess.check_output):
+def previous_candidate_ppo_status(root,run=subprocess.check_output):
     root=Path(root);info={'status':'身份或状态未验证','timesteps':0,'target':32768,
                          'reported_ppo_epochs':None,'optimizer_steps':None,'invocation':None}
     unit='fluid-control-p064-b-ppo-32768-20261006.service'
@@ -61,6 +61,34 @@ def candidate_ppo_status(root,run=subprocess.check_output):
                             counts_scope='实际终态与独立保存证据复核',review=str(report.relative_to(root)))
         else:info['status']='PPO状态待确认'
         info['note']='计数来自真实transition日志；训练步数不等于优化器更新，启动不代表更新成功。'
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
+    return info
+
+def candidate_ppo_status(root,run=subprocess.check_output):
+    root=Path(root)
+    info={'status':'身份或状态未验证','timesteps':0,'target':32768,'running':False,'training':False,'reported_ppo_epochs':None,'optimizer_steps':None,'invocation':None}
+    try:
+        approval=root/'docs/P064_B_SEED20261007_PPO_APPROVAL_20261006.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='2a8b0bca02154ed5bf0e7b35035e01f0695c1763b183063251ee619db4fc6604':raise ValueError('seed approval SHA')
+        spec=json.loads(approval.read_text())
+        output=root/'artifacts/p064_b_seed20261007_diverse_h5_32768_ppo_20261006/payload'
+        if Path(spec['output']).resolve()!=output.resolve() or spec['protocol']['seed']!=20261007:raise ValueError('seed output/protocol')
+        raw=run(['systemctl','--user','show','fluid-control-p064-b-seed20261007-ppo-32768-20261006.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!='38013204a3c94b7fb14da04b78b5fb83':raise ValueError('seed invocation')
+        info['invocation']=state['InvocationID']
+        if (output/'source_spec.json').exists() and json.loads((output/'source_spec.json').read_text())!=spec:raise ValueError('seed executed spec')
+        row=last_json_row(output/'transitions.jsonl')
+        if row:
+            n=row['num_timesteps']
+            if type(n) is not int or not 0<=n<=32768:raise ValueError('seed transition count')
+            info['timesteps']=n
+            info['last_event_file_utc']=datetime.datetime.fromtimestamp((output/'transitions.jsonl').stat().st_mtime,datetime.timezone.utc).isoformat()
+        active=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['running']=active;info['training']=active and info['timesteps']>0
+        info['status']=('第二seed20261007：实际PPO训练中' if info['training'] else '第二seed程序已启动，尚未观测训练transition') if active else '第二seed训练进程已停止，等待独立终态审查'
+        if state.get('MainPID')=='0' and state.get('ExecMainStatus')=='0' and (output/'result.json').exists():info.update(producer_terminal_counts(json.loads((output/'result.json').read_text()),spec))
+        info['note']='只变seed，冻结B/H5/24真实起点/32768预算不变；计数来自真实transition，不等于optimizer更新。旧B真实闭环减阻约3.90%、升力波动降低18.4%，初始权重无减阻收益；完整预测精度FAIL另列。新策略尚未进行CFD，无reward选checkpoint/seed扫描。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
@@ -167,7 +195,7 @@ def verified_initial_terminal(root):
         if hashlib.sha256(path.read_bytes()).hexdigest()!=INITIAL_TERMINAL_BINDINGS[key]:raise ValueError('initial terminal '+key+' SHA')
     data=json.loads(result.read_text())
     if data['cycles']!=800 or not data['owned_containers_cleaned']:raise ValueError('initial terminal incomplete')
-    return {'status':'真实闭环有效；初始权重对照完成，学习后策略贡献已验证','cycles':800,'target':800,'current_time':228.,'running':False,'training':False,'physical_pass':False,'terminal_verified':True,'invocation':'dbc0e8f47f994e7280694e9ed6714c56','note':'同zero全部原始力匹配：初始权重主窗减阻−0.00756%，训练后B +3.89528%；同投影/限幅下学习后权重有贡献。不是RL单独归因或跨控制器最优证明。训练后早期偏置失败保留；动作平方成本不等于物理能耗。H25新模型未采用，预测精度仍待改善。当前文档集成，非训练/CFD运行。'}
+    return {'status':'真实闭环有效；初始权重对照完成，学习后策略贡献已验证','cycles':800,'target':800,'current_time':228.,'running':False,'training':False,'physical_pass':False,'terminal_verified':True,'invocation':'dbc0e8f47f994e7280694e9ed6714c56','note':'同zero全部原始力匹配：初始权重主窗减阻−0.00756%，训练后B +3.89528%；同投影/限幅下学习后权重有贡献。不是RL单独归因或跨控制器最优证明。训练后早期偏置失败保留；动作平方成本不等于物理能耗。H25新模型未采用，预测精度仍待改善。本CFD对照已完成；第二seed复验状态见PPO实时卡。'}
 
 def candidate_cfd_status(root,run=subprocess.check_output):
     root=Path(root)

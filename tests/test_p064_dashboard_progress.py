@@ -184,3 +184,8 @@ def test_initial_terminal_requires_bound_review_and_does_not_claim_initial_pass(
     assert x['terminal_verified'] and not x['running'] and not x['training'] and x['physical_pass'] is False
     review.write_text('changed')
     with pytest.raises(ValueError):module.verified_initial_terminal(tmp_path)
+
+def test_unbound_second_seed_never_claims_training(tmp_path):
+    from p064_dashboard_progress import candidate_ppo_status
+    x=candidate_ppo_status(tmp_path)
+    assert not x['training'] and not x['running'] and x['timesteps']==0 and x['invocation'] is None

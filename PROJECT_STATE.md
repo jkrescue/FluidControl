@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 当前实际：固定第二seed20261007的PPO复验已训练，尚未新CFD
+
+实际unit `fluid-control-p064-b-seed20261007-ppo-32768-20261006.service`，invocation `38013204a3c94b7fb14da04b78b5fb83`，PID2785207 active/running；独查真实transitions已到1212/32768（观测快照，实时计数由UI更新）。批准 `docs/P064_B_SEED20261007_PPO_APPROVAL_20261006.json` SHA `2a8b0bca02154ed5bf0e7b35035e01f0695c1763b183063251ee619db4fc6604`。输出 `artifacts/p064_b_seed20261007_diverse_h5_32768_ppo_20261006/payload`。12GiB/noSwap、Available50启动/22运行留20，原预算未变。
+
+科学变化仅seed20261006→20261007；B manifest927669、32768/H5/24reset/69obs/奖励/归一化/最高精度设置保持。只保存final policy，不按reward选checkpoint、不扫seed；finite终态并独审后另批固定b00真实CFD，不自动执行。此前B在真实CFD的约3.90%减阻/18.4%升力波动改善及初始权重无减阻结论保留；FNO完整预测FAIL是另一项，当前不是修好预测或新闭环成功。
+
 ## FC-E078 当前终态：学习后权重有贡献；初始权重未获得减阻
 
 同 `dbc0e8f47f994e7280694e9ed6714c56` 已完成800次真实反馈，exit0、容器清理完成；无当前训练/CFD任务由本对照触发。独审3200原始力文件、1600段solver与六窗口通过；两次zero前后力16000行全部列完全相同。主窗(168,228]初始策略减阻 **−0.007557%**（未满足原2%），训练后B为 **+3.895284%**；RMS比分别1.000882/.815623，bias分别1.650279%/1.137815%。原2%/1.05/10%不变，训练后早6.2偏置13.55%失败仍保留。
