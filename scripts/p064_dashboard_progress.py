@@ -261,13 +261,13 @@ def h25_training_counts(text):
 def h25_training_status(root,run=subprocess.check_output):
     root=Path(root);info={'running':False,'training':False,'windows':0,'updates':0,'target_windows':256,'target_updates':32,'invocation':None,'status':'H25训练尚未核验启动'}
     try:
-        approval=root/'docs/P064_B_H25_TRAINING_APPROVAL_20261006.json'
-        if hashlib.sha256(approval.read_bytes()).hexdigest()!='922df0ce388cfb4ac2ed0f65156ce049629f0c7e991910b4ddd633ea926b61b4':raise ValueError('H25 train approval SHA')
-        raw=run(['systemctl','--user','show','fluid-control-p064-b-h25-training-20261006.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        approval=root/'docs/P064_B_H25_TRAINING_R2_APPROVAL_20261006.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='852736b03edbd987da0e4f5a0d0cc55f1b1145fa980c989dc5b9cab298346f02':raise ValueError('H25 train approval SHA')
+        raw=run(['systemctl','--user','show','fluid-control-p064-b-h25-training-r2-20261006.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
         state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
-        if state.get('InvocationID')!='ebea7981d70745889f9a3249977bea16':raise ValueError('H25 train invocation')
+        if state.get('InvocationID')!='9449ac16be65406eabad0515e88b6513':raise ValueError('H25 train invocation')
         info['invocation']=state['InvocationID']
-        log=root/'artifacts/fcp064_b_h25_training_20261006/run.log'
+        log=root/'artifacts/fcp064_b_h25_training_20261006_r2/run.log'
         if log.exists():
             if log.stat().st_size>8*2**20:raise ValueError('H25 train log size')
             info['windows'],info['updates']=h25_training_counts(log.read_text())
@@ -277,7 +277,17 @@ def h25_training_status(root,run=subprocess.check_output):
         if info['running']:info['status']='H25流场微调运行中（气动力网络冻结）'
         elif state.get('ExecMainStatus')!='0':info['status']='H25训练工程失败，未完成参数更新'
         else:info['status']='H25训练进程退出，等待终态独审'
-        info['note']=f"实际窗口{info['windows']}/256，完成更新{info['updates']}/32；日志计数不是训练成功。尺度1368窗及单步资源探针已完成。首次训练在首窗后被旧H10累积器的horizon检查拒绝，失败记录保留；并非已证NaN。完整预测精度FAIL及三相位真实CFD物理成功结论不变。"
+        info['note']=f"25步预测训练：实际窗口{info['windows']}/256，参数更新{info['updates']}/32；100步仅为原采样窗长度。尺度1368窗及单步资源探针已完成。R1首窗后被旧H10累积器horizon检查拒绝，0参数更新，失败保留。闭环：三相位各800次真实CFD反馈；b07总阻力−3.90%、后升力波动−18.50%、均值偏置1.29%。预测精度：四旋转分支RMS仍未满足项目开发阈值。PPO训练使用FNO，部署为CPU策略反馈，无在线FNO/MPC。"
+        if not info['running'] and state.get('MainPID')=='0' and state.get('ExecMainStatus')=='0':
+            for name,digest in [('artifacts/fcp064_b_h25_training_20261006_r2/payload/result.json','557e0792eee538d8152c4997032309423a1197067c7198089768d0ddb40f5cf7'),('docs/P064_B_H25_TRAINING_R2_TERMINAL_REVIEW_20261006.md','e72434c773433ffc3fa3f51c0cb8d8de368d0f43caae34b699378fd37d1fd0dd')]:
+                if hashlib.sha256((root/name).read_bytes()).hexdigest()!=digest:raise ValueError('H25 training terminal SHA')
+            info.update(terminal_verified=True,status='H25训练R2已完成：256窗口／32参数更新；精度待评估')
+            q=root/'artifacts/p064_b_h25_quick_ar_20261006/result.json'
+            review=root/'docs/P064_B_H25_QUICK_AR_TERMINAL_REVIEW_20261006.md'
+            if hashlib.sha256(q.read_bytes()).hexdigest()=='1b7bd2a2e99f9d02398df4cbcefc2d7dc5a486a02866d9a64856d0db9e9dafe0' and hashlib.sha256(review.read_bytes()).hexdigest()=='14e9b96dd2d34aa0280707a998ce808d215bffbe3c6561ceecf2a1ac65a9a851':
+                info['status']='真实闭环有效；H25新模型预测退化，未采用'
+                info['note']='训练已完成256窗口／32参数更新，后续同六案例评估已独审：Cl MAE 0.0624→0.0830，Cd MAE 0.0207→0.0467，六案例场误差均退化。保留原B策略：b07减阻3.90%、升力波动降低18.50%、偏置1.29%，三相位各800次真实CFD反馈。原B预测精度仍待改善；PPO训练用FNO，CPU部署无在线FNO/MPC。当前工作为复现文档与集成，不是训练；R1失败保留。'
+                info['candidate_adopted']=False
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 

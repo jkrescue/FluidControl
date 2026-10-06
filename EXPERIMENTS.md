@@ -1,5 +1,17 @@
 # Experiment ledger
 
+## FC-E077 — H25 same-six H100 comparison complete; candidate not promoted
+
+Actual invocation `b34a1af84199467bad07b61758b92b49` completed the unchanged batch1/high-TF32 numerical worker, six cases ×100 endpoints, no optimization/CFD. Result SHA `1b7bd2a2e99f9d02398df4cbcefc2d7dc5a486a02866d9a64856d0db9e9dafe0`; [independent review](docs/P064_B_H25_QUICK_AR_TERMINAL_REVIEW_20261006.md) rehashed411 sources/22 inputs and recomputed saved force/window/action metrics. Parent B is reused, not rerun; case/HDF/time/action/truth arrays match exactly.
+
+Pooled rearCl MAE .0623860029175→.0830122845010 and totalCd MAE .0207225337625→.0467238451044; action-minus-zero tail-Cd error .0156519934535→.0201665626899. All six cases worsen in mean/final velocity and raw-pressure relative L2, and Cd MAE. Local b01± lift improvements do not justify adoption. Lead rejects H25 promotion to fresh PPO, retains the existing physically successful B-policy, and does not relax thresholds or authorize automatic retraining. This opened development diagnostic is not a new independent test or a full formal rerun.
+
+## FC-E074 / FC-E075 / FC-E076 — terminal engineering progression, failures retained
+
+Scales R2 `88e5e31e…` completed1368 H10 windows/0 updates; independent exact means field .001456146538716282, force .003783821943311762. Probe `74f31b29…` completed one H25 window/one Adam update/no save with30 finite nonzero gradients. Their first initialization failure and the inapplicable inherited no-update warning remain documented. [Scales review](docs/P064_B_H25_SCALES_R2_TERMINAL_REVIEW_20261006.md); [probe review](docs/P064_B_H25_RESOURCE_PROBE_TERMINAL_REVIEW_20261006.md).
+
+Training R1 `ebea7981…` failed after its first window because the old accumulator requiredH10; zero updates. R2 `9449ac16be65406eabad0515e88b6513` completed256 windows/32 updates and official saved-checkpoint reload, with unchanged aerodynamic bytes. Result SHA `557e0792eee538d8152c4997032309423a1197067c7198089768d0ddb40f5cf7`; [independent training review](docs/P064_B_H25_TRAINING_R2_TERMINAL_REVIEW_20261006.md). H25 is the trained horizon; sampled metadataH100 is not a claim ofH100 optimization. Mechanical completion did not predict downstream improvement, as FC-E077 shows. Historical running entries below are retained as history.
+
 ## FC-E074 — B-parent H10/1368 loss-scale computation running; no training
 
 R1 (`ad33d8d4c9194612b2b175a3661192aa`) exited1 before the first scale window because its inherited P031 source tree rejected the actual P064-B parent kind. It created no optimizer/model/result, was not OOM-killed, and its owned container was removed. R2 changes only that parent loader to reviewed SHA `83ac4e41…3d7b`; actual B manifest validation passed before launch. Approval SHA is `cb60cf7bcc146a51f085957d6c4c68a7792fe41803fd925fed1aa7c1b3c1d77e`, unit invocation `88e5e31e611c45dab28dbe6c3ad11c8c`, and output is `artifacts/fcp064_b_h25_scales_20261006_r2`.

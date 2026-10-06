@@ -1,6 +1,16 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## FC-E074 当前实际：B父本H10尺度计算R2运行中，非训练
+## 当前摘要：真实闭环已验证；H25训练完成但预测退化，未采用
+
+FC-E077实际同六案例H100评估已完成（inv `b34a1af84199467bad07b61758b92b49`，24.01秒，非训练/CFD），独审600端点及父B逐条同真值/动作匹配。rearCl MAE .062386→.083012，totalCd MAE .020723→.046724，四对动作差误差 .015652→.020167；六案例velocity/pressure均值及H100终点全部退化。Lead决定H25不晋级PPO，保留旧B成功控制策略；没有新训练或CFD正在由本次结果触发。详见 [独审报告](docs/P064_B_H25_QUICK_AR_TERMINAL_REVIEW_20261006.md)，result SHA `1b7bd2a2e99f9d02398df4cbcefc2d7dc5a486a02866d9a64856d0db9e9dafe0`。
+
+- **训练**：FC-E074 scales已完成1368窗口、0参数更新；FC-E075资源探针已完成1个H25窗口/1次Adam且不保存模型。FC-E076 R1因旧H10累积器拒绝H25记录在首窗后失败，0更新，证据保留。R2同inv `9449ac16be65406eabad0515e88b6513` 已PID0/exited/exit0，实际256窗口/32参数更新；25为训练预测步数，metadata的100只是原采样窗长度。官方保存/新实例reload执行证据及独立字节/记录核验通过，不等于精度通过。
+- **闭环**：原B策略在b00/b01/b07各完成800次真实CFD反馈，主物理条件通过。b07总阻力降低3.90%、后升力波动降低18.50%、均值偏置1.29%；原2%/1.05/10%不变，保留b00/b01早期偏置失败和相位非统计独立限制。PPO训练使用FNO；实际部署是CPU策略与CFD反馈，无在线FNO或MPC。新H25模型尚未用于这些闭环。
+- **预测精度**：原B完整评估仍FAIL，四条旋转分支升力RMS误差不满足项目开发阈值；不能用物理收益替代预测验收。H25同六条H100短评估现已完成且退化，不自动重训或放宽门槛。当前转向既有成功链的复现指南与交付整合，不是宣称全目标完成。
+
+R2 result SHA `557e0792eee538d8152c4997032309423a1197067c7198089768d0ddb40f5cf7`，manifest SHA `decf5f52bc0087fe07f2d3969e39604f19ea273c191ad193660c0af4c02670c0`；独审 [训练报告](docs/P064_B_H25_TRAINING_R2_TERMINAL_REVIEW_20261006.md) SHA `e72434c773433ffc3fa3f51c0cb8d8de368d0f43caae34b699378fd37d1fd0dd`。scales/probe分别见 [尺度报告](docs/P064_B_H25_SCALES_R2_TERMINAL_REVIEW_20261006.md)、[资源探针报告](docs/P064_B_H25_RESOURCE_PROBE_TERMINAL_REVIEW_20261006.md)。当前摘要优先于下文历史running/pending描述；服务active/exited不代表仍在运行。
+
+## FC-E074 历史启动记录：B父本H10尺度计算R2，非训练
 
 首次 scales unit `fluid-control-p064-b-h25-scales-20261006.service`（invocation `ad33d8d4c9194612b2b175a3661192aa`）在加载实际B父manifest时立即失败：旧P031来源树的`dual_fno.py`不识别P064-B kind；无optimizer、无模型保存、无尺度结果，exit1/OOMfalse且容器已清理。失败证据与输出保留，未冒充科学结果。
 
