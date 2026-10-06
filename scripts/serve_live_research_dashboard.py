@@ -1292,6 +1292,40 @@ def _parse_registered_progress(state: dict, log: str, matches: bool, registratio
         return {"verified": False}
     counts = {key: set() for key in plan}
     kind = registration.get("progress_kind", "optimizer_updates")
+    p029_modes = {"p029_scales": "scales", "p029_probe": "resource-probe", "p029_train": "train"}
+    if kind in p029_modes:
+        target = 1 if kind == "p029_probe" else 171
+        if plan != {"FNO": target}:
+            return {"verified": False}
+        seen, groups = set(), set()
+        for line in log.splitlines():
+            try:
+                row = json.loads(line)
+            except ValueError:
+                continue
+            if not isinstance(row, dict) or row.get("event") not in ("window_complete", "group_complete"):
+                continue
+            if row.get("mode") != p029_modes[kind]:
+                return {"verified": False}
+            if row["event"] == "window_complete":
+                case, start, dataset = row.get("case"), row.get("start"), row.get("dataset_index")
+                if not isinstance(case, str) or not case or type(start) is not int or start < 0 or type(dataset) is not int or dataset not in (0, 1, 2) or row.get("split") != "train" or row.get("rollout_steps") != 100:
+                    return {"verified": False}
+                key = (dataset, case, start)
+                if key in seen or len(seen) >= (1 if kind == "p029_probe" else 1368):
+                    return {"verified": False}
+                seen.add(key)
+            else:
+                group = row.get("group")
+                if kind == "p029_probe" or type(group) is not int or group != len(groups) + 1 or group > 171 or len(seen) < 8 * group:
+                    return {"verified": False}
+                groups.add(group)
+        running = (state.get("ActiveState"), state.get("SubState")) in (("active", "running"), ("activating", "start")) and pid != "0" and matches
+        terminal = state.get("ActiveState") == "active" and state.get("SubState") == "exited" and pid == "0" and state.get("Result") == "success" and state.get("ExecMainCode") == "1" and state.get("ExecMainStatus") == "0"
+        return {"verified": True, "running": running, "exited_success": terminal,
+                "updates": {"FNO": len(seen) if kind == "p029_probe" else len(groups)}, "planned_updates": plan,
+                "windows": {"FNO": len(seen)}, "label": registration["label"], "description": registration["description"],
+                "progress_unit": "次参数更新" if kind == "p029_train" else "组计算（不更新参数）", "admission": False}
     if kind not in ("optimizer_updates", "resource_arms", "history_training", "flow_training", "diagnostic_origins"):
         return {"verified": False}
     if kind == "flow_training" and plan != {"FNO": 171}:

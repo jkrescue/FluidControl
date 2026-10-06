@@ -89,6 +89,21 @@ def test_cleanup_and_create_recovery_ast_match_reviewed_base():
     before = {n.name: n for n in ast.parse(base.read_text()).body if isinstance(n, ast.FunctionDef)}
     after = {n.name: n for n in ast.parse(PATH.read_text()).body if isinstance(n, ast.FunctionDef)}
     for name in ("cleanup_owned", "recover_created_cid", "inspect_container", "host_memory"):
+        if name == "recover_created_cid":
+            # The only extension is explicit immutable identity-profile routing.
+            node = after[name]
+            node.args.args.pop()
+            node.args.defaults.pop()
+            class IdentityOnly(ast.NodeTransformer):
+                def visit_Attribute(self, item):
+                    if isinstance(item.value, ast.Name) and item.value.id == "profile" and item.attr == "container":
+                        return ast.Name(id="CONTAINER", ctx=ast.Load())
+                    return self.generic_visit(item)
+                def visit_Call(self, item):
+                    if isinstance(item.func, ast.Name) and item.func.id == "validate_created":
+                        item.args.pop()
+                    return self.generic_visit(item)
+            IdentityOnly().visit(node)
         assert ast.dump(before[name], include_attributes=False) == ast.dump(after[name], include_attributes=False)
 
 

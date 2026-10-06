@@ -3,7 +3,9 @@ from pathlib import Path
 import sys
 
 
-SCRIPT = Path(__file__).parents[1] / "scripts/prepare_fcp028_formal_approval.py"
+SCRIPT = Path(__file__).with_name("prepare_fcp028_formal_approval.py")
+if not SCRIPT.exists():
+    SCRIPT = Path(__file__).parents[1] / "scripts/prepare_fcp028_formal_approval.py"
 spec = importlib.util.spec_from_file_location("prepare_fcp028_formal_approval", SCRIPT)
 module = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = module

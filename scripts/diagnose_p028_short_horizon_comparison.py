@@ -22,6 +22,44 @@ FAMILIES = {
     'train8': ('tandem_cylinders_dynamic_train8_v1', 8),
     'train16': ('tandem_cylinders_directppo_train16_v1', 16),
 }
+PROFILES = {
+    'p028': {
+        'approval_status': 'P028_MATCHED_H10_COMPARISON_EXECUTION_APPROVED',
+        'candidate_key': 'p028_candidate',
+        'candidate_kind': 'FC_P028_FLOW_ROLLOUT_REPAIR',
+        'label': 'p028',
+        'result_status': 'P028_P027_MATCHED_SHORT_HORIZON_COMPARISON_COMPLETE_NOT_ADMISSION',
+    },
+    'p029': {
+        'approval_status': 'P029_MATCHED_H10_COMPARISON_EXECUTION_APPROVED',
+        'candidate_key': 'p029_candidate',
+        'candidate_kind': 'FC_P029_CONTROL_AWARE_FLOW_REPAIR',
+        'label': 'p029',
+        'result_status': 'P029_P027_MATCHED_SHORT_HORIZON_COMPARISON_COMPLETE_NOT_ADMISSION',
+    },
+}
+
+
+def comparison_profile(spec, requested='p028'):
+    """Resolve one explicit identity profile; omitted remains historical P028."""
+    if requested not in PROFILES:
+        raise ValueError('unknown matched-H10 comparison profile')
+    declared = spec.get('comparison_profile', 'p028')
+    if declared != requested:
+        raise ValueError('requested and approved comparison profiles differ')
+    profile = PROFILES[requested]
+    if spec.get('status') != profile['approval_status']:
+        raise ValueError('separate execution approval required')
+    return profile
+
+
+def validate_repair_identity(identity, profile, spec):
+    payload = identity.payload
+    if (payload.get('kind') != profile['candidate_kind']
+            or payload.get('config_sha256') != spec['config']['sha256']
+            or payload.get('normalization_sha256')
+            != 'f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1'):
+        raise ValueError(f"{profile['label'].upper()} candidate identity differs")
 
 
 def finite(value):
@@ -345,10 +383,10 @@ def validate_phase_mapping(mapping, data, predeclaration):
     return result
 
 
-def execute(spec, output):
+def execute(spec, output, profile_name='p028'):
     """Future approved entry; not invoked by software tests or default CLI."""
-    if spec.get('status') != 'P028_MATCHED_H10_COMPARISON_EXECUTION_APPROVED':
-        raise ValueError('separate execution approval required')
+    profile = comparison_profile(spec, profile_name)
+    label = profile['label']
     build_model, load_composed_config, load_dual_fno, TandemRolloutDataset = runtime_dependencies()
     started = time.monotonic()
     def guard(startup=False):
@@ -405,26 +443,22 @@ def execute(spec, output):
         if identity.payload['normalization_sha256'] != 'f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1':
             raise ValueError('candidate normalization identity differs')
         models[k] = model
-    p028_entry = spec['p028_candidate']
-    p028, p028_identity = load_dual_fno(
-        Path(p028_entry['manifest']), cfg, device,
+    repair_entry = spec[profile['candidate_key']]
+    repair, repair_identity = load_dual_fno(
+        Path(repair_entry['manifest']), cfg, device,
         build_model=build_model,
-        expected_manifest_sha256=p028_entry['manifest_sha256'],
+        expected_manifest_sha256=repair_entry['manifest_sha256'],
     )
-    if (p028_identity.payload['kind'] != 'FC_P028_FLOW_ROLLOUT_REPAIR'
-            or p028_identity.payload['config_sha256'] != spec['config']['sha256']
-            or p028_identity.payload['normalization_sha256']
-            != 'f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1'):
-        raise ValueError('P028 candidate identity differs')
+    validate_repair_identity(repair_identity, profile, spec)
     for a, b in zip(models[1].flow_model.state_dict().values(), models[4].flow_model.state_dict().values(), strict=True):
         if not torch.equal(a, b):
             raise ValueError('flow tensors differ across arms')
     for a, b in zip(models[1].aerodynamic_model.state_dict().values(),
-                    p028.aerodynamic_model.state_dict().values(), strict=True):
+                    repair.aerodynamic_model.state_dict().values(), strict=True):
         if not torch.equal(a, b):
-            raise ValueError('P028 aerodynamic tensors differ from frozen K1')
+            raise ValueError(f'{label.upper()} aerodynamic tensors differ from frozen K1')
     models[4].flow_model.cpu()  # One shared device flow, no duplicate flow calls.
-    snapshots = [(value, value._version) for model in (*models.values(), p028)
+    snapshots = [(value, value._version) for model in (*models.values(), repair)
                  for value in list(model.parameters()) + list(model.buffers())]
     rows = []
     for family, (dirname, count) in FAMILIES.items():
@@ -448,11 +482,11 @@ def execute(spec, output):
                     {k: model.aerodynamic_model for k, model in models.items()}, sample,
                     dataset.force_mean.to(device), dataset.force_std.to(device), guard,
                     return_flow_fields=True)
-                p028_predictions, p028_fields = predict_origin(
-                    p028.flow_model, {1: p028.aerodynamic_model}, sample,
+                repair_predictions, repair_fields = predict_origin(
+                    repair.flow_model, {1: repair.aerodynamic_model}, sample,
                     dataset.force_mean.to(device), dataset.force_std.to(device), guard,
                     return_flow_fields=True)
-                if not np.array_equal(predictions['k1']['h1'], p028_predictions['k1']['h1']):
+                if not np.array_equal(predictions['k1']['h1'], repair_predictions['k1']['h1']):
                     raise ValueError('K1 true-state H1 force predictions changed')
                 forces = sample['forces'].numpy()
                 provenance = phases[(family, path.name)]
@@ -461,24 +495,24 @@ def execute(spec, output):
                 delta = omega-float(sample['physical_actions'][60])
                 values = {f'{arm}_{domain}': metrics(pred, forces[52:62], forces[:52], baseline, omega=omega, delta_omega=delta)
                           for arm, domains in predictions.items() for domain, pred in domains.items()}
-                values.update({f'p028_k1_{domain}': metrics(
+                values.update({f'{label}_k1_{domain}': metrics(
                     pred, forces[52:62], forces[:52], baseline, omega=omega, delta_omega=delta)
-                    for domain, pred in p028_predictions['k1'].items()})
+                    for domain, pred in repair_predictions['k1'].items()})
                 values['persistence'] = metrics(np.repeat(forces[51:52], 10, axis=0), forces[52:62], forces[:52], baseline, omega=omega, delta_omega=delta)
                 field_values = {
                     f'parent_{domain}': field_metrics(pred, sample['states'][4:14], sample['mask'][None])
                     for domain, pred in parent_fields.items()
                 }
                 field_values.update({
-                    f'p028_{domain}': field_metrics(pred, sample['states'][4:14], sample['mask'][None])
-                    for domain, pred in p028_fields.items()
+                    f'{label}_{domain}': field_metrics(pred, sample['states'][4:14], sample['mask'][None])
+                    for domain, pred in repair_fields.items()
                 })
                 rows.append(dict(case=path.stem, family=family,
                     **provenance, source_phase_mapping_sha256=phase_entry['sha256'], origin=51,
                     warm=True, times=sample['times'].tolist(), actions_normalized=sample['actions'].cpu().tolist(),
                     stored_physical_actions=sample['physical_actions'].tolist(),
                     metrics=values, normalized_field_metrics=field_values,
-                    k1_h1_force_byte_equal_parent_vs_p028=True))
+                    **{f'k1_h1_force_byte_equal_parent_vs_{label}': True}))
                 print(json.dumps(dict(event='origin_complete', count=len(rows), case=path.stem)), flush=True)
         finally:
             dataset.close()
@@ -487,16 +521,18 @@ def execute(spec, output):
     if any(value._version != version or (value.is_leaf and value.grad is not None)
            for value, version in snapshots):
         raise ValueError('model tensor mutation or gradient detected')
-    result = dict(status='P028_P027_MATCHED_SHORT_HORIZON_COMPARISON_COMPLETE_NOT_ADMISSION', rows=rows,
+    result = dict(status=profile['result_status'], rows=rows,
         summaries=summaries(rows), scientific_admission=False, optimizer_created=False,
         model_saved=False, validation_accessed=False, frozen_test_accessed=False,
         source_spec=spec, original_p027_arms_preserved=True,
-        parent_ar_flow_transitions=440, p028_ar_flow_transitions=440,
-        parent_h1_field_forwards=440, p028_h1_field_forwards=440,
+        parent_ar_flow_transitions=440, **{f'{label}_ar_flow_transitions': 440},
+        parent_h1_field_forwards=440, **{f'{label}_h1_field_forwards': 440},
         total_flow_forward_calls=1760,
         parent_aerodynamic_state_evaluations=1760,
-        p028_aerodynamic_state_evaluations=880,
+        **{f'{label}_aerodynamic_state_evaluations': 880},
         comparison_scope='same44_origin51_H10_recorded_actions_train_only')
+    if profile_name != 'p028':
+        result['comparison_profile'] = profile_name
     with Path(output).open('x') as stream:
         json.dump(result, stream, allow_nan=False)
 
@@ -506,13 +542,14 @@ def main():
     parser.add_argument('--spec', type=Path, required=True)
     parser.add_argument('--spec-sha256', required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--profile', choices=tuple(PROFILES), default='p028')
     parser.add_argument('--execute', action='store_true')
     args = parser.parse_args()
     if not args.execute:
         print('PREPARATION_ONLY_NO_DATA_OR_MODEL_ACCESS')
         return
     checked(args.spec, args.spec_sha256)
-    execute(json.loads(args.spec.read_text()), args.output)
+    execute(json.loads(args.spec.read_text()), args.output, args.profile)
 
 
 if __name__ == '__main__':

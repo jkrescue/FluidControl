@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E041 — P028 original full formal complete: scientific FAIL
+
+Invocation `eb4e12507302498bb8944373e0717a25` completed normally;35 output hashes,411 source hashes and8 containers exit0/noOOM independently verified. Receipt SHA `63fd75d4e90176dd94998f2844f2f70cb5a7e357bd59d5362591019ed8655154`; report `docs/FC_P028_ORIGINAL_FORMAL_TERMINAL_REVIEW_20261006.md` SHA `ae98f3a63b195aca184ce348d2e1991f88ad2f416766105bb8bd5b788107ee44`. Minimum host free28.029789GiB. No PPO/frozen-test access.
+
+Validation10 action-difference Cd MAE .0273935347795 exceeds .023 (K1 .0191296935081). Dynamic6 endpoint diagnostic passes at delta-Cd MAE .0157500505447 and pooled H100 Cd NRMSE .0255184459841, but does not override complete tail-window failure. Joint/Cd/RMS/mean pass counts **1/6,2/6,2/6,2/6**, versus K1 **1/6,5/6,2/6,4/6**. Development SHA `770f004f3a9ea1072abd66719fe31aa34d2e2643206de6839fb9515121f439ff`.
+
+Same-protocol H10 field MAE improves .00632490→.00471157, while H100 field MAE worsens .0191041→.0197010 and rear-Cl MAE .0401863→.0693762. All six mean errors worsen; two rotating RMS errors improve but still fail. Next requires separately approved P029 parent-scale/resource evidence before fixed-budget training. No execution or admission is authorized by this entry; earlier running states below are historical.
+
 ## P029 conditional CPU preparation — no scientific result
 
 Same original parent/data/order/171-update budget; the sole planned intervention is a fixed50/50 parent-normalized field/four-force objective through the frozen K1 aerodynamic model. Official architecture is unchanged. Root canonical68new CPU tests and133legacy/1skip pass; additional host collection lackingPhysicsNeMo is explicitly not included. Independent423-source closure verification and launcher review completed; mapSHA `c6584b8fdbbb38cf7149ad2f086526169f44174a800ef49a32fcda08a678627a`. No actual P029 scales, resource probe, training, evaluation or PPO yet. No scientific results.csv row is warranted. See `docs/FC_P029_CONTROL_AWARE_FLOW_PLAN_20261006.md` and `docs/FC_P029_CPU_PREPARATION_REVIEW_20261006.md`.

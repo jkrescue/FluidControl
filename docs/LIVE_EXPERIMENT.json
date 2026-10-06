@@ -1,14 +1,14 @@
 {
-  "experiment": "P028-original-formal",
-  "label": "新流场模型的完整预测精度评估",
-  "description": "已完成171次训练更新。同一起点的十步对照中，全场误差降低约14%，但后圆柱升力误差增加约2%；目前正在执行原完整长时预测和气动力评估。没有启动新强化学习，也没有宣称闭环成功。北京时间11:27前报告完整阶段结论。",
-  "unit": "fluid-control-fcp028-original-formal-20261006.service",
-  "invocation": "eb4e12507302498bb8944373e0717a25",
-  "approval": "docs/FC_P028_FORMAL_EXECUTION_APPROVAL_20261006.json",
-  "approval_sha256": "c061e50dc1d868e80d1c858ea79b03e8fe5560a204bbb30d2ef9236373838d55",
-  "launcher": "artifacts/fcp028_formal_source_20261006_immutable/orchestration/scripts/run_fcp028_posteval.py",
-  "launcher_sha256": "7ba31bc02e892b860a2ec9edd9e7187661bedc36c7437c44aa7a078ed221bbd4",
-  "log": "artifacts/fcp028_original_formal_20261006/memory.jsonl",
-  "progress_kind": "formal_evaluation",
-  "planned_updates": {"P028": 7}
+  "experiment": "P029-parent-scales",
+  "label": "控制相关流场训练：计算两类误差的初始尺度",
+  "description": "上一轮完整评估仅1/6工况同时达标，未进入强化学习。现在用原1368个训练窗口计算流场误差和升阻力误差的尺度，不更新参数；之后检查反向计算资源，再进行171次联合目标训练。11:27前报告完整阶段结论。",
+  "unit": "fluid-control-fcp029-parent-scales-20261006.service",
+  "invocation": "dc049ec56a1c4b67be118ad05a68bf92",
+  "approval": "docs/FC_P029_SCALES_EXECUTION_APPROVAL_20261006.json",
+  "approval_sha256": "d72d89f8ff43b23ca4a35a65a00a199a83a4f9b683bbcbe6fca6421c3404173a",
+  "launcher": "scripts/run_p029_control_aware_flow.py",
+  "launcher_sha256": "354112951e20729c24027370de1eafb6ce70640fc9dd8ef380226c432a27e9d7",
+  "log": "artifacts/fcp029_parent_scales_20261006/run.log",
+  "progress_kind": "p029_scales",
+  "planned_updates": {"FNO":171}
 }

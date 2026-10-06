@@ -18,6 +18,7 @@ import signal
 import subprocess
 import sys
 import time
+from collections import namedtuple
 
 
 IMAGE = "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e"
@@ -49,39 +50,65 @@ UNIT = "fluid-control-fcp028-flow-train-20261006.service"
 INVOCATION = "c46c60f3c2634802b2646bb094f9d201"
 
 
-def approval_spec(audit_path, audit_sha):
+class ReloadProfile(namedtuple("ReloadProfileFields", (
+        "experiment", "source", "source_sha", "config", "candidate", "unit",
+        "invocation", "container", "source_count", "verifier"))):
+    __slots__ = ()
+
+    def status(self, suffix):
+        return self.experiment.replace("-", "_") + "_" + suffix
+
+
+DEFAULT_PROFILE = ReloadProfile("FC-P028", SOURCE, SOURCE_SHA, CONFIG, CANDIDATE,
+                                UNIT, INVOCATION, CONTAINER, 9, "verify_fcp028_dual_reload.py")
+
+
+def p029_profile(source_sha, invocation):
+    require(isinstance(source_sha, str) and re.fullmatch(r"[0-9a-f]{64}", source_sha),
+            "actual P029 runtime manifest SHA required")
+    require(isinstance(invocation, str) and re.fullmatch(r"[0-9a-f]{32}", invocation),
+            "actual P029 training invocation required")
+    root = ROOT / "artifacts/fcp029_formal_source_20261006_immutable"
+    return ReloadProfile("FC-P029", root / "cpu_reload_source", source_sha,
+                         root / "numerical_source/training_config.yaml",
+                         ROOT / "artifacts/fcp029_control_aware_flow_training_20261006/payload",
+                         "fluid-control-fcp029-flow-train-20261006.service", invocation,
+                         "fcp029-official-cpu-reload-20261006", 12, "verify_fcp029_dual_reload.py")
+
+
+def approval_spec(audit_path, audit_sha, profile=DEFAULT_PROFILE):
     require(re.fullmatch(r"[0-9a-f]{64}", audit_sha) is not None, "actual audit SHA required")
     require(audit_path.is_file() and not audit_path.is_symlink() and sha256(audit_path) == audit_sha,
             "actual audit bytes differ")
     audit = json.loads(audit_path.read_text())
-    require(audit.get("status") == "FC_P028_CANDIDATE_INTEGRITY_VERIFIED_NOT_ADMISSION"
-            and audit.get("training_unit") == UNIT and audit.get("training_invocation") == INVOCATION
+    require(audit.get("status") == profile.status("CANDIDATE_INTEGRITY_VERIFIED_NOT_ADMISSION")
+            and audit.get("training_unit") == profile.unit and audit.get("training_invocation") == profile.invocation
             and audit.get("scientific_admission") is False, "actual terminal audit identity differs")
-    manifest = SOURCE / "source_manifest.json"
-    require(sha256(manifest) == SOURCE_SHA and sha256(CONFIG) == CONFIG_SHA, "runtime/config bytes differ")
+    manifest = profile.source / "source_manifest.json"
+    require(sha256(manifest) == profile.source_sha and sha256(profile.config) == CONFIG_SHA, "runtime/config bytes differ")
     mapping = json.loads(manifest.read_text())
-    require(len(mapping) == 9, "nine runtime sources required")
+    require(len(mapping) == profile.source_count, "exact profile runtime source count required")
     for relative, digest in mapping.items():
-        path = SOURCE / relative
-        require(path.resolve().is_relative_to(SOURCE.resolve()) and not path.is_symlink()
+        path = profile.source / relative
+        require(path.resolve().is_relative_to(profile.source.resolve()) and not path.is_symlink()
                 and path.is_file() and sha256(path) == digest, "runtime source differs")
     return {"audit_path": str(audit_path.resolve()), "audit_sha": audit_sha, "audit": audit}
 
 
-def require_training_terminal():
+def require_training_terminal(profile=DEFAULT_PROFILE):
     fields = ("LoadState", "ActiveState", "SubState", "Result", "ExecMainCode",
               "ExecMainStatus", "MainPID", "InvocationID")
-    raw = subprocess.check_output(["systemctl", "--user", "show", UNIT,
+    raw = subprocess.check_output(["systemctl", "--user", "show", profile.unit,
                                    *["--property=" + key for key in fields]], text=True, timeout=10)
     actual = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
     require(actual == dict(LoadState="loaded", ActiveState="active", SubState="exited",
                           Result="success", ExecMainCode="1", ExecMainStatus="0", MainPID="0",
-                          InvocationID=INVOCATION), "exact successful training terminal required")
+                          InvocationID=profile.invocation), "exact successful training terminal required")
     return actual
 
 
-def readonly_mounts(spec, _unused=None):
-    return [(SOURCE, SOURCE, True), (CONFIG, CONFIG, True), (CANDIDATE, CANDIDATE, True),
+def readonly_mounts(spec, _unused=None, profile=DEFAULT_PROFILE):
+    return [(profile.source, profile.source, True), (profile.config, profile.config, True), (profile.candidate, profile.candidate, True),
             (Path(spec["audit_path"]), Path(spec["audit_path"]), True)]
 
 
@@ -91,8 +118,8 @@ def validate_mount_sources(mounts: list[tuple[Path, Path, bool]]) -> None:
         require(read_only, "non-output mount must be read-only")
 
 
-def create_command(spec, output):
-    command = ["docker", "create", "--name", CONTAINER,
+def create_command(spec, output, profile=DEFAULT_PROFILE):
+    command = ["docker", "create", "--name", profile.container,
                "--cidfile", str((output / "evidence/container.cid").resolve()),
                "--runtime", "runc", "--network", "none", "--read-only", "--cap-drop", "ALL",
                "--security-opt", "no-new-privileges", "--user", f"{os.getuid()}:{os.getgid()}",
@@ -102,16 +129,16 @@ def create_command(spec, output):
                "-e", "PYTHONDONTWRITEBYTECODE=1", "-e", "OMP_NUM_THREADS=2",
                "-e", "XDG_CACHE_HOME=/tmp/cache", "-e", "LOCAL_CACHE=/tmp/physicsnemo-cache",
                "-e", "WARP_CACHE_PATH=/tmp/warp",
-               "-e", f"PYTHONPATH={SOURCE / 'scripts'}:{SOURCE / 'src'}"]
-    for source, target, _ in readonly_mounts(spec):
+               "-e", f"PYTHONPATH={profile.source / 'scripts'}:{profile.source / 'src'}"]
+    for source, target, _ in readonly_mounts(spec, profile=profile):
         command += ["--mount", f"type=bind,src={source},dst={target},readonly"]
     command += ["--mount", f"type=bind,src={output.resolve()},dst={output.resolve()}",
                 IMAGE, "timeout", "-k", "20", "300", "python", "-u",
-                str(SOURCE / "scripts/verify_fcp028_dual_reload.py"),
-                "--candidate", str(CANDIDATE), "--candidate-audit", spec["audit_path"],
-                "--candidate-audit-sha256", spec["audit_sha"], "--config", str(CONFIG),
-                "--source-root", str(SOURCE), "--runtime-source-manifest", str(SOURCE / "source_manifest.json"),
-                "--runtime-source-manifest-sha256", SOURCE_SHA,
+                str(profile.source / ("scripts/" + profile.verifier)),
+                "--candidate", str(profile.candidate), "--candidate-audit", spec["audit_path"],
+                "--candidate-audit-sha256", spec["audit_sha"], "--config", str(profile.config),
+                "--source-root", str(profile.source), "--runtime-source-manifest", str(profile.source / "source_manifest.json"),
+                "--runtime-source-manifest-sha256", profile.source_sha,
                 "--output", str(output.resolve() / "dual_reload_receipt.json"), "--execute-cpu"]
     return command
 
@@ -132,9 +159,10 @@ def validate_created(
     output: Path,
     expected_mounts: list[tuple[Path, Path, bool]],
     expected_command: list[str],
+    profile=DEFAULT_PROFILE,
 ) -> None:
     require(inspect["Id"] == cid and inspect["Image"] == IMAGE, "created identity differs")
-    require(inspect["Name"] == "/" + CONTAINER, "created name differs")
+    require(inspect["Name"] == "/" + profile.container, "created name differs")
     host = inspect["HostConfig"]
     require(host["Memory"] == 8 * GIB and host["MemorySwap"] == 8 * GIB,
             "8GiB/no-extra-swap contract differs")
@@ -209,6 +237,7 @@ def recover_created_cid(
     output: Path,
     expected_mounts: list[tuple[Path, Path, bool]],
     expected_command: list[str],
+    profile=DEFAULT_PROFILE,
 ) -> str | None:
     """Recover a create-timeout container only after exact identity validation."""
     cidfile = output / "evidence" / "container.cid"
@@ -218,7 +247,7 @@ def recover_created_cid(
         if cidfile.is_file():
             candidates.append(cidfile.read_text().strip())
         try:
-            named = inspect_container(CONTAINER)
+            named = inspect_container(profile.container)
             candidates.append(named["Id"])
         except (OSError, subprocess.SubprocessError, RuntimeError):
             pass
@@ -231,24 +260,25 @@ def recover_created_cid(
             "unable to recover unique create-timeout CID")
     cid = candidates[0]
     inspect = inspect_container(cid)
-    validate_created(inspect, cid, output, expected_mounts, expected_command)
+    validate_created(inspect, cid, output, expected_mounts, expected_command, profile)
     return cid
 
 
-def execute(spec: dict, output: Path) -> None:
+def execute(spec: dict, output: Path, profile=DEFAULT_PROFILE) -> None:
     require(not output.exists(), "exclusive output already exists")
     memory = host_memory()
     require(memory["MemFree"] >= 30 * GIB and memory["MemAvailable"] >= 50 * GIB,
             "startup 30/50GiB host guard")
-    training_terminal = require_training_terminal()
-    require(subprocess.run(["docker", "inspect", CONTAINER], stdout=subprocess.DEVNULL,
+    training_terminal = (require_training_terminal() if profile == DEFAULT_PROFILE
+                         else require_training_terminal(profile))
+    require(subprocess.run(["docker", "inspect", profile.container], stdout=subprocess.DEVNULL,
                            stderr=subprocess.DEVNULL).returncode != 0,
             "owned container name already exists")
     image = subprocess.check_output(
         ["docker", "image", "inspect", IMAGE, "--format", "{{.Id}}"],
         text=True, timeout=10).strip()
     require(image == IMAGE, "official image ID differs")
-    validate_mount_sources(readonly_mounts(spec))
+    validate_mount_sources(readonly_mounts(spec, profile=profile))
     output.mkdir(parents=False)
     (output / "evidence").mkdir()
     (output / "evidence/training_terminal.json").write_text(json.dumps(training_terminal, indent=2))
@@ -265,9 +295,9 @@ def execute(spec: dict, output: Path) -> None:
     previous_signals = {
         number: signal.signal(number, request_stop) for number in (signal.SIGINT, signal.SIGTERM)
     }
-    command = create_command(spec, output)
+    command = create_command(spec, output, profile)
     image_index = command.index(IMAGE)
-    expected_mounts = readonly_mounts(spec)
+    expected_mounts = readonly_mounts(spec, profile=profile)
     expected_command = command[image_index + 1:]
     try:
         created_cid = subprocess.check_output(command, text=True, timeout=60).strip()
@@ -275,7 +305,7 @@ def execute(spec: dict, output: Path) -> None:
                 "invalid created CID")
         cid = created_cid
         created = inspect_container(cid)
-        validate_created(created, cid, output, expected_mounts, expected_command)
+        validate_created(created, cid, output, expected_mounts, expected_command, profile)
         (output / "evidence" / "container_created.json").write_text(
             json.dumps(created, indent=2))
         log = (output / "run.log").open("x")
@@ -312,11 +342,11 @@ def execute(spec: dict, output: Path) -> None:
         result_path = output / "dual_reload_receipt.json"
         require(result_path.is_file(), "official CPU reload receipt absent")
         result = json.loads(result_path.read_text())
-        require(result.get("status") == "FC_P028_OFFICIAL_CPU_DUAL_RELOAD_VERIFIED_NOT_ADMISSION"
+        require(result.get("status") == profile.status("OFFICIAL_CPU_DUAL_RELOAD_VERIFIED_NOT_ADMISSION")
                 and result.get("candidate_audit_sha256") == spec["audit_sha"]
                 and result.get("candidate_sha256") == spec["audit"]["candidate_sha256"]
                 and result.get("tensor_sha256") == spec["audit"]["tensor_sha256"]
-                and result.get("runtime_source_manifest_sha256") == SOURCE_SHA
+                and result.get("runtime_source_manifest_sha256") == profile.source_sha
                 and result.get("official_dual_reload_verified") is True
                 and result.get("scientific_admission") is False
                 and result.get("gpu_used") is False
@@ -329,10 +359,10 @@ def execute(spec: dict, output: Path) -> None:
         cleanup_error = None
         if not cid:
             try:
-                cid = recover_created_cid(output, expected_mounts, expected_command) or ""
+                cid = recover_created_cid(output, expected_mounts, expected_command, profile) or ""
             except RuntimeError as error:
                 (output / "create_recovery_failure.json").write_text(
-                    json.dumps({"container_name": CONTAINER, "error": repr(error)}, indent=2))
+                    json.dumps({"container_name": profile.container, "error": repr(error)}, indent=2))
                 cid = ""
         if cid:
             try:
@@ -347,19 +377,26 @@ def execute(spec: dict, output: Path) -> None:
             raise cleanup_error
 
 
-def main() -> None:
+def main(experiment="FC-P028") -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--audit", type=Path, required=True)
     parser.add_argument("--audit-sha256", required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
+    if experiment == "FC-P029":
+        parser.add_argument("--runtime-source-manifest-sha256", required=True)
+        parser.add_argument("--training-invocation", required=True)
+    elif experiment != "FC-P028":
+        raise ValueError("unsupported CPU reload profile")
     args = parser.parse_args()
-    spec = approval_spec(args.audit, args.audit_sha256)
+    profile = (p029_profile(args.runtime_source_manifest_sha256, args.training_invocation)
+               if experiment == "FC-P029" else DEFAULT_PROFILE)
+    spec = approval_spec(args.audit, args.audit_sha256, profile)
     if not args.execute:
-        print(json.dumps({"status": "P028_CPU_RELOAD_COMMAND_PREPARED_NO_EXECUTION",
-                          "command": create_command(spec, args.output)}, indent=2))
+        print(json.dumps({"status": profile.experiment.replace("FC-", "") + "_CPU_RELOAD_COMMAND_PREPARED_NO_EXECUTION",
+                          "command": create_command(spec, args.output, profile)}, indent=2))
         return
-    execute(spec, args.output.resolve())
+    execute(spec, args.output.resolve(), profile)
 
 
 if __name__ == "__main__":

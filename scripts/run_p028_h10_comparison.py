@@ -27,6 +27,26 @@ GUARD_BASENAME = "spark_ppo_gpu_guard.py"
 GUARD_PATH = Path("/workspace/fluid_control/scripts/spark_ppo_gpu_guard.py")
 GUARD_SHA256 = "3da61590dedb4ea95c02f83b15d79a935d20ad98a24453e47e1514c38868abec"
 GIB = 1024**3
+PROFILES = {
+    "p028": {
+        "approval_status": "P028_MATCHED_H10_COMPARISON_EXECUTION_APPROVED",
+        "candidate_key": "p028_candidate",
+        "result_status": "P028_P027_MATCHED_SHORT_HORIZON_COMPARISON_COMPLETE_NOT_ADMISSION",
+    },
+    "p029": {
+        "approval_status": "P029_MATCHED_H10_COMPARISON_EXECUTION_APPROVED",
+        "candidate_key": "p029_candidate",
+        "result_status": "P029_P027_MATCHED_SHORT_HORIZON_COMPARISON_COMPLETE_NOT_ADMISSION",
+    },
+}
+
+
+def configure_profile(spec: dict) -> str:
+    global CONTAINER
+    name = spec.get("comparison_profile", "p028")
+    require(name in PROFILES, "unknown matched-H10 comparison profile")
+    CONTAINER = f"fcp{name[1:]}-matched-h10-comparison-20261006"
+    return name
 
 
 def require(condition: bool, message: str) -> None:
@@ -45,14 +65,18 @@ def load_spec(path: Path, expected_sha256: str) -> dict:
     require(path.is_file() and not path.is_symlink(), "spec must be a regular file")
     require(sha256(path) == expected_sha256, "exact spec SHA differs")
     spec = json.loads(path.read_text())
-    require(spec.get("status") == "P028_MATCHED_H10_COMPARISON_EXECUTION_APPROVED",
-            "P028 matched-H10 execution is not approved")
+    profile_name = spec.get("comparison_profile", "p028")
+    require(profile_name in PROFILES, "unknown matched-H10 comparison profile")
+    profile = PROFILES[profile_name]
+    require(spec.get("status") == profile["approval_status"],
+            "matched-H10 profile execution is not approved")
     require(spec.get("execution_authorized") is True,
             "P028 matched-H10 authorization flag is false")
     require(set(spec["candidates"]) == {"1", "4"}, "exact K1/K4 candidates required")
     require(set(spec["data"]) == {"base", "train8", "train16"},
             "exact train families required")
     require(len(spec["source_files"]) > 0, "source closure is empty")
+    require(profile["candidate_key"] in spec, "profile candidate binding absent")
     return spec
 
 
@@ -79,8 +103,9 @@ def readonly_mounts(spec: dict, spec_path: Path) -> list[tuple[Path, Path, bool]
     for arm in ("1", "4"):
         manifest = Path(spec["candidates"][arm]["manifest"])
         mounts.append((manifest.parent, manifest.parent, True))
-    p028_manifest = Path(spec["p028_candidate"]["manifest"])
-    mounts.append((p028_manifest.parent, p028_manifest.parent, True))
+    profile = PROFILES[spec.get("comparison_profile", "p028")]
+    repair_manifest = Path(spec[profile["candidate_key"]]["manifest"])
+    mounts.append((repair_manifest.parent, repair_manifest.parent, True))
     for family in ("base", "train8", "train16"):
         root = Path(spec["data"][family]["root"])
         # Never mount the whole data root: validation/frozen siblings stay absent.
@@ -107,6 +132,7 @@ def pythonpath(spec: dict) -> str:
 
 
 def create_command(spec: dict, spec_path: Path, spec_sha: str, output: Path) -> list[str]:
+    configure_profile(spec)
     entry = named_source(spec, ENTRY_BASENAME)
     guard = GUARD_PATH
     command = [
@@ -125,12 +151,30 @@ def create_command(spec: dict, spec_path: Path, spec_sha: str, output: Path) -> 
     for source, target, _ in readonly_mounts(spec, spec_path):
         command += ["--mount", f"type=bind,src={source},dst={target},readonly"]
     command += ["--mount", f"type=bind,src={output.resolve()},dst={output.resolve()}"]
+    profile_name = spec.get("comparison_profile", "p028")
     command += [IMAGE, "python", "-u", str(guard), "--min-free-gib", "20",
                 "--allocator-fraction", ".06", "--margin-gib", "4", "--poll-seconds", "2", "--",
                 "timeout", "-k", "20", "900", "python", "-u", str(entry),
                 "--spec", str(spec_path.resolve()), "--spec-sha256", spec_sha,
                 "--output", str((output / "result.json").resolve()), "--execute"]
+    if profile_name != "p028":
+        command += ["--profile", profile_name]
     return command
+
+
+def validate_result(result: dict, spec: dict) -> None:
+    profile_name = spec.get("comparison_profile", "p028")
+    profile = PROFILES[profile_name]
+    require(result.get("status") == profile["result_status"]
+            and result.get("comparison_profile", "p028") == profile_name,
+            "matched-H10 result profile/status differs")
+    require(result.get("source_spec") == spec
+            and result.get("scientific_admission") is False
+            and result.get("optimizer_created") is False
+            and result.get("model_saved") is False
+            and result.get("validation_accessed") is False
+            and result.get("frozen_test_accessed") is False,
+            "matched-H10 result isolation/source differs")
 
 
 def host_memory() -> dict[str, int]:
@@ -267,6 +311,7 @@ def recover_created_cid(
 
 
 def execute(spec: dict, spec_path: Path, spec_sha: str, output: Path) -> None:
+    configure_profile(spec)
     require(not output.exists(), "exclusive output already exists")
     memory = host_memory()
     require(memory["MemFree"] >= 30 * GIB and memory["MemAvailable"] >= 50 * GIB,
@@ -345,7 +390,9 @@ def execute(spec: dict, spec_path: Path, spec_sha: str, output: Path) -> None:
         state = terminal["State"]
         require(state["Running"] is False and state["ExitCode"] == 0
                 and state["OOMKilled"] is False, "container terminal state differs")
-        require((output / "result.json").is_file(), "diagnostic result absent")
+        result_path = output / "result.json"
+        require(result_path.is_file(), "diagnostic result absent")
+        validate_result(json.loads(result_path.read_text()), spec)
     finally:
         cleanup_error = None
         if not cid:
@@ -376,8 +423,10 @@ def main() -> None:
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
     spec = load_spec(args.spec, args.spec_sha256)
+    configure_profile(spec)
     if not args.execute:
-        print(json.dumps({"status": "P028_H10_LAUNCH_PREPARED_NO_DOCKER_NO_GPU",
+        profile_name = spec.get("comparison_profile", "p028")
+        print(json.dumps({"status": f"{profile_name.upper()}_H10_LAUNCH_PREPARED_NO_DOCKER_NO_GPU",
                           "image": IMAGE,
                           "command": create_command(spec, args.spec.resolve(),
                                                     args.spec_sha256, args.output.resolve())}))
