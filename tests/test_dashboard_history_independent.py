@@ -111,7 +111,9 @@ def test_g_initialization_uses_actual_journal_not_gpu():
         assert fn(root)=={'verified':False}
     terminal=state.replace('1940841','0').replace('running','exited')+'Result=success\nExecMainStatus=0\n'
     with patch.object(subprocess,'check_output',side_effect=[terminal,log]):
-        assert fn(root)['terminal_verified']
+        r=fn(root)
+        assert r['terminal_verified'] and r['development_verified']
+        assert r['selection']=='FAIL_RETENTION' and not r['promoted']
     with patch.object(subprocess,'check_output',side_effect=[terminal.replace('ExecMainStatus=0','ExecMainStatus=1'),log]):
         assert not fn(root)['terminal_verified']
 

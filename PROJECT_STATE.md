@@ -1,6 +1,8 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前唯一摘要 — 基本800步闭环已复现；G训练工程独审完成，预测尚待评估
+## 当前唯一摘要 — 基本800步闭环已复现；G评估完成，原保留性规则未通过
+
+FC-E102固定开发评估同 `ef7cd3cfb6f34975935bab28a7f5b3c7` 已PID0/exited/exit0，16NPZ/80端点逐数组独审通过，[报告](docs/P064_AR5_RESET_G_DEVELOPMENT_REVIEW_20261007.md) SHA `5f7531514b66cb4cee6440cc5b41ead7290c1b2668868650f67fd1453726aa4d`；result `1da616b91019b3084c58e45a6e0e85010a6baecd48baa55dd91b03aa03ed180a`。G pooled H1 rearCl MAE .137072701938、Cd .035423174500均优于B .138998316601/.038065373898；但原fixed-six continuousAR100目标 .008946200483→.009264696273退化，虽H1 .003976855262→.003752365301改善，原共同改善及保留性规则仍FAIL。H5 Cl略差/Cd略好，phase不一致均保留，不事后加H5硬门槛、不称显著变化。Flow场逐值相同不是改善。Lead不自动晋级G或替换B；后续探索控制可单独明确批准，不改预测FAIL。当前这两作业均已结束，没有训练/CFD在运行；下一探索仅准备，不冒充已执行。
 
 同 `f6c3fc3464074493b19ea5418ddfada5` PID0/exited/exit0，安全入口完成800次真实OpenFOAM反馈，主窗减阻4.0091%、后升力波动降低18.2810%、均值偏置3.6366%，六窗均过原2%/1.05/10%标准。[独审报告](docs/CANONICAL_B01_REPRODUCTION_TERMINAL_REVIEW_20261007.md)核3200force/1600solver/800动作、799反馈连续及原始力→观测，和原E085动作/观测逐值一致。result SHA `f22047b62c8bdb50547122e61d3e523d0cb101d90b1ed98037e4524cb98c342a`。这是已打开b01的工程复现，不是新泛化证据。
 
