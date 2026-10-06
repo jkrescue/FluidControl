@@ -1,5 +1,31 @@
 # DECISIONS
 
+## 2026-10-06 — Investigate long controlled-state coverage without discarding successful feedback
+
+FC-E063 independently establishes a concrete remaining failure: controlled-branch
+true-initial-state H1 rear-Cl MAE0.186710 and total-Cd MAE0.048653 exceed their
+matched persistence values0.088235 and0.017126. This cannot be explained solely
+by long autoregressive accumulation. Its zero branch and fixed-action FC-E060
+have different populations; do not use their errors as a matched improvement.
+Existing P027 includes dynamic and prior direct-PPO training trajectories, so
+"no changing-action data" and "no AR exposure" are not supported explanations.
+
+Approve preparation, not scientific execution, of one data-coverage intervention:
+inventory the already-saved b00 projected-policy 80D/U CFD and determine the
+minimal official Curator/Reader conversion needed for a complete long controlled
+training trajectory. Retain current architecture, successful frozen controller,
+original physical criteria and all formal failures. Do not generate duplicate CFD.
+Before any training approval, specify a matched original-data training control,
+fixed optimizer budget, separate force/field evaluation and runtime memory budget.
+
+If b00 is reused for fitting, declare the entire trajectory training data and
+its already-opened eight-origin replay a development diagnostic, never a final
+test. b01/b03 have also been inspected and cannot become untouched tests.
+Any future b07 policy-CFD run must acknowledge that its fixed-action forecast
+data were already opened. Do not randomly split adjacent frames. New model
+weights require a newly compatible policy and real-CFD validation before replacing
+the accepted finite-case controller; no such replacement is authorized here.
+
 ## 2026-10-06 — Authorize one fixed b03 physical confirmation, not retuning
 
 Lead authorized and launchedFC-E061 at09:30:16UTC underapproval3ca5531815c48cff59fd1ca0d96e40e2305402435cb2e28d2adb26eeaf9328a6. Predeclaredb03/restart144 is not performance-selected. Preserve same frozen32768policy/projection and all800cycle/sixwindow/resource settings; originalprimary2%/1.05/10% criteria unchanged. No execution outcome is known at this entry. b03fixed-actionH5payloadwasalreadyopened; interpret a future result as an additional physical-policy confirmation, not an untouched finaltest or independent statistical replicate. Any failure remains evidence; do not tune or restart automatically.
