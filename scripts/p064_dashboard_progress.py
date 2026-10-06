@@ -300,6 +300,14 @@ def candidate_cfd_status(root,run=subprocess.check_output):
         info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
         info['status']='对称坐标策略：真实CFD闭环验证中' if info['running'] else '对称坐标CFD已停止，等待独立复核'
         info['note']='CPU策略＋真实CFD，800周期，不是训练、无在线FNO/MPC。训练已完成32768步，当前检验物理效果，尚无通过结论。旧seed减阻3.90%、第二seed增阻0.62%都保留；固定2%/1.05/10%标准不变，完整预测FAIL仍独立存在。'
+        result_path=root/'artifacts/p064_b_symmetry_canonical_ppo_long_cfd_20261007/result.json'
+        review=root/'docs/P064_B_SYMMETRY_CANONICAL_CFD_TERMINAL_REVIEW_20261007.md'
+        if not info['running'] and state.get('ExecMainStatus')=='0' and result_path.exists():
+            if hashlib.sha256(result_path.read_bytes()).hexdigest()!='165b78194f84676b5ea0091b1d160ccf25f913a9f49c74a9424a7d0f03cde7dc':raise ValueError('canonical CFD result SHA')
+            if hashlib.sha256(review.read_bytes()).hexdigest()!='cf7975dbd02da5dca41ddfafe409b86b3676c49e541dc2026988b02ca9f5408e':raise ValueError('canonical CFD review SHA')
+            result=json.loads(result_path.read_text());primary=result['windows']['primary_final_60']
+            info.update(status='对称坐标策略：真实CFD完成，主窗减阻3.96%',terminal_verified=True,physical_pass=True,cycles=800,primary=primary)
+            info['note']='独审800周期：主窗减阻3.9567%、升力波动降低18.3457%、均值偏置1.066%，原三项通过；早首6.2D/U偏置17.56%仍失败。同第二seed旧方式增阻0.62%的负结果保留；旧成功seed减阻3.90%，不宣称显著优越。当前无训练/CFD运行；完整预测精度FAIL未改变，非全目标完成。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 

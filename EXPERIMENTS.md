@@ -1,6 +1,10 @@
 # Experiment ledger
 
-## FC-E083 — actual canonical-coordinate paired CFD running; no outcome yet
+## FC-E083 — canonical-coordinate CFD terminal independently verified
+
+Same545ba2ae PID0/exit0,800cycles. Primary(168,228] drag reduction .039567229236259105/RMS ratio .8165429747440313/bias ratio .010659980224782794 passes original physical criteria; first6.2 bias .17556105512816697 fails unchanged10%. All3200raw hashes,1600solver logs,800canonical maps/sign restores/one-filter and complete zero arrays checked; six-window metrics max difference4.44e-16.1109.295s/minAvailable122369617920B/ownedcleanup/noOOM. [Review](docs/P064_B_SYMMETRY_CANONICAL_CFD_TERMINAL_REVIEW_20261007.md) SHA `cf7975dbd02da5dca41ddfafe409b86b3676c49e541dc2026988b02ca9f5408e`; result `165b78194f84676b5ea0091b1d160ccf25f913a9f49c74a9424a7d0f03cde7dc`. Same second-seed old protocol drag−.00617400716 retained; coordinate intervention not an isolated training-versus-deployment attribution. No meaningful-superiority claim versus old successful seed; surrogate full gate remains FAIL. Action-square proxies reported separately, not physical energy.
+
+### FC-E083 historical actual startup
 
 Actual545ba2aebfb6412aaf41ee3281ccc802, unit `fluid-control-p064-b-symmetry-canonical-ppo-long-cfd-20261007.service`, PID3311091 running. Approval `docs/P064_B_SYMMETRY_CANONICAL_CFD_APPROVAL_20261007.json` SHA `afb03b9e86931d1031d8e0ab1ce76dc180816ac76446d46823cf4aa350ee9f1e`; output `artifacts/p064_b_symmetry_canonical_ppo_long_cfd_20261007`. Finalpolicy5c056/Vec1d250; fixed148→228/800 paired intervals/six windows/physical thresholds/resources. New11096 deployment uses same canonical-coordinate mapping and one physical filter, not old two-call projection. CPUCFD, not training/onlineFNO/MPC. Raw terminal audit pending; no running scientificCSV metrics, no benefits claimed.
 
