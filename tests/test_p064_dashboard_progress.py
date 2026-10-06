@@ -52,3 +52,25 @@ def test_actual_small_reviewed_development_json():
     assert data['rows'][2]['h1_cl'] < data['rows'][1]['h1_cl']
     assert data['rows'][2]['h5_cd'] > data['rows'][0]['h5_cd']
     assert '尚未训练' in data['current_stage']
+def test_json_tail_ignores_partial_write(tmp_path):
+    from p064_dashboard_progress import last_json_row
+    p=tmp_path/'events.jsonl'
+    p.write_bytes(b'{"num_timesteps":4}\n{"num_timesteps":8')
+    assert last_json_row(p)=={'num_timesteps':4}
+
+
+def test_ppo_missing_approval_is_not_running(tmp_path):
+    from p064_dashboard_progress import candidate_ppo_status
+    row=candidate_ppo_status(tmp_path)
+    assert row['invocation'] is None and row['status']=='身份或状态未验证'
+def test_ppo_terminal_producer_not_independent_review():
+    import pytest
+    from p064_dashboard_progress import producer_terminal_counts
+    spec={'candidate_arm':'B','candidate_manifest_sha256':'b'*64}
+    result={**spec,'status':'P064_CANDIDATE_DIVERSE_H5_32768_PPO_TRAINING_COMPLETE_NOT_ADMISSION',
+        'timesteps':32768,'ppo_n_updates':256,'fno_tensors_unchanged':True,
+        'optimizer_steps':[{'optimizer_step':i} for i in range(1,513)]}
+    row=producer_terminal_counts(result,spec)
+    assert row['optimizer_steps']==512 and row['terminal_verified'] is False
+    result['optimizer_steps'].pop()
+    with pytest.raises(ValueError):producer_terminal_counts(result,spec)

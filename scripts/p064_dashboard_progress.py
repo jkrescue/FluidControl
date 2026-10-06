@@ -10,6 +10,68 @@ PROFILES={arm:{'unit':f'fluid-control-fcp064-aero-arm-{arm.lower()}-20261006.ser
 PROFILES['A']['unit']='fluid-control-fcp064-aero-arm-a-r2-20261006.service'
 LABELS={'A':'A 原数据对照','B':'B 加入真实闭环数据'}
 
+def last_json_row(path):
+    """Bounded tail of complete JSONL rows; incomplete current write is ignored."""
+    if not Path(path).exists():return None
+    with Path(path).open('rb') as f:
+        f.seek(0,2);size=f.tell();f.seek(max(0,size-65536));raw=f.read()
+    lines=raw.splitlines(keepends=True)
+    for line in reversed(lines):
+        if not line.endswith(b'\n'):continue
+        try:
+            value=json.loads(line)
+            if isinstance(value,dict):return value
+        except (ValueError,UnicodeDecodeError):continue
+    return None
+
+def candidate_ppo_status(root,run=subprocess.check_output):
+    root=Path(root);info={'status':'身份或状态未验证','timesteps':0,'target':32768,
+                         'reported_ppo_epochs':None,'optimizer_steps':None,'invocation':None}
+    unit='fluid-control-p064-b-ppo-32768-20261006.service'
+    invocation='f613395cbf1140549dc60e7b046e0f6b'
+    try:
+        approval=root/'docs/P064_B_PPO_APPROVAL_20261006.json'
+        digest='ae327fee310bad562aceef35029595d20c9a3421d5d5be3dc3b68bb82649e9fe'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!=digest:raise ValueError('PPO approval SHA')
+        spec=json.loads(approval.read_text())
+        output=root/'artifacts/p064_b_diverse_h5_32768_ppo_20261006/payload'
+        if Path(spec['output']).resolve()!=output.resolve():raise ValueError('PPO output identity')
+        raw=run(['systemctl','--user','show',unit,'-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!=invocation:raise ValueError('PPO invocation differs')
+        info['invocation']=invocation
+        if (output/'source_spec.json').exists() and json.loads((output/'source_spec.json').read_text())!=spec:raise ValueError('PPO executed spec differs')
+        row=last_json_row(output/'transitions.jsonl')
+        if row:
+            n=row['num_timesteps']
+            if type(n) is not int or not 0<=n<=32768:raise ValueError('PPO actual transition count')
+            info['timesteps']=n
+            info['last_event_file_utc']=datetime.datetime.fromtimestamp((output/'transitions.jsonl').stat().st_mtime,datetime.timezone.utc).isoformat()
+        log=last_json_row(output/'progress.json')
+        if log and 'train/n_updates' in log:info['reported_ppo_epochs']=log['train/n_updates']
+        if state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0:
+            info['status']='P064 B 候选代理上的 PPO 训练中'
+        elif state.get('MainPID')=='0':
+            info['status']='PPO程序退出0，等待独立终态审查' if state.get('ExecMainStatus')=='0' else 'PPO失败/停止（未自动重试）'
+            if state.get('ExecMainStatus')=='0' and (output/'result.json').exists():
+                info.update(producer_terminal_counts(json.loads((output/'result.json').read_text()),spec))
+        else:info['status']='PPO状态待确认'
+        info['note']='计数来自真实transition日志；训练步数不等于优化器更新，启动不代表更新成功。'
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
+    return info
+
+def producer_terminal_counts(result,spec):
+    """Producer telemetry only; independent-review status must remain separate."""
+    if (result.get('status')!='P064_CANDIDATE_DIVERSE_H5_32768_PPO_TRAINING_COMPLETE_NOT_ADMISSION'
+        or result.get('candidate_arm')!=spec['candidate_arm']
+        or result.get('candidate_manifest_sha256')!=spec['candidate_manifest_sha256']
+        or result.get('timesteps')!=32768 or result.get('ppo_n_updates')!=256
+        or result.get('fno_tensors_unchanged') is not True
+        or [row.get('optimizer_step') for row in result.get('optimizer_steps',[])]!=list(range(1,513))):
+        raise ValueError('PPO producer terminal contract differs')
+    return {'timesteps':32768,'reported_ppo_epochs':256,'optimizer_steps':512,
+            'counts_scope':'实际终态producer日志；仍待独立审查','terminal_verified':False}
+
 def development_summary(root):
     """Only small independently reviewed JSON; never load checkpoint/field arrays."""
     root=Path(root)
