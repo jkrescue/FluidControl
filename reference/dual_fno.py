@@ -66,25 +66,21 @@ P064_MANIFEST_STATUS = {
     "A": "FC_P064_ARM_A_DUAL_FNO_MANIFEST_VERIFIED",
     "B": "FC_P064_ARM_B_DUAL_FNO_MANIFEST_VERIFIED",
     "C": "FC_P064_ARM_C_DUAL_FNO_MANIFEST_VERIFIED",
-    "D": "FC_P064_ARM_D_DUAL_FNO_MANIFEST_VERIFIED",
 }
 P064_SYSTEM_KIND = {
     "A": "FC_P064_ARM_A_CONTROLLED_AERO_FORCE_FNO",
     "B": "FC_P064_ARM_B_CONTROLLED_AERO_FORCE_FNO",
     "C": "FC_P064_ARM_C_CONTROLLED_AERO_FORCE_FNO",
-    "D": "FC_P064_ARM_D_CONTROLLED_AERO_FORCE_FNO",
 }
 P064_AERO_KIND = {
     "A": "FC_P064_ARM_A_CONTROLLED_AERO_CHECKPOINT",
     "B": "FC_P064_ARM_B_CONTROLLED_AERO_CHECKPOINT",
     "C": "FC_P064_ARM_C_CONTROLLED_AERO_CHECKPOINT",
-    "D": "FC_P064_ARM_D_CONTROLLED_AERO_CHECKPOINT",
 }
 P064_SCHEDULE_SHA256 = {
     "A": "ec1db78eff3807dc3c3d451ba0bb4542ba531fcb4b7a1c15a39e2b1ac15e1b0c",
     "B": "2c7a129724fdaaf6d7dda16eb992d548e92c56ac392d95814dbb57e77320eb55",
     "C": "93537e23ce606732dfd48e78a3b92def987918c0cb71b1b8ca7e8126564081d1",
-    "D": "f3f32e70190b8864ca432dc88bacc7efd5c4317ab4a74a67ed6a22613edabfef",
 }
 FLOW_MODEL_SHA256 = "dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31"
 FLOW_STATE_SHA256 = "4998e534d4b82b17393c217357ed18220fb8e739166a88147483bb9cc5fb771e"
@@ -205,7 +201,7 @@ def _experiment_contract(kind: str) -> dict[str, Any]:
                 "training_protocol_file": "training_protocol.json",
             },
         }
-    for arm in ("A", "B", "C", "D"):
+    for arm in ("A", "B", "C"):
         if kind == P064_SYSTEM_KIND[arm]:
             return {
                 "status": P064_MANIFEST_STATUS[arm],
@@ -345,10 +341,10 @@ def _validate_p026_protocol(
                 if arm in ("B", "C")
                 else "not_applicable_no_b00_windows"
             ),
-            "b00_windows": {"A": 0, "B": 64, "C": 128, "D": 32}[arm],
-            "b00_weight": {"A": 0.0, "B": 0.25, "C": 0.5, "D": 0.125}[arm],
+            "b00_windows": {"A": 0, "B": 64, "C": 128}[arm],
+            "b00_weight": {"A": 0.0, "B": 0.25, "C": 0.5}[arm],
             "replacement_within_each_update": {
-                "A": [], "B": [0, 4], "C": [0, 2, 4, 6], "D": [0, 4]
+                "A": [], "B": [0, 4], "C": [0, 2, 4, 6]
             }[arm],
             "allocator_fraction": 0.06,
             "wall_seconds": 3600,
@@ -356,14 +352,6 @@ def _validate_p026_protocol(
             "frozen_test_accessed": False,
             "selection_performed": False,
         }
-        if arm == "D":
-            expected.update(
-                controlled_b00_action_semantics="actual_k1_projected_closed_loop_applied_endpoint_omega_samples",
-                b02_windows=32,
-                b02_weight=0.125,
-                controlled_b02_action_semantics="actual_symmetry_canonical_closed_loop_applied_endpoint_omega_samples",
-                controlled_source_profile="32_b00_k1_projected_plus_32_b02_canonical_policy",
-            )
         if (
             protocol != expected
             or payload.get("training_protocol_sha256") != protocol_sha
