@@ -395,7 +395,7 @@ function renderProjectedCFD(run,b01,b03){
  let card=$('projected-ppo-cfd');if(!card){card=document.createElement('div');card.id='projected-ppo-cfd';card.className='card';$('exploratory-diverse-32768-long-cfd').before(card);}
  const active=run?.verified===true,latest=run?.latest||{};
  const terminal=run?.reported_terminal;
- card.innerHTML=`<h3>FC-E058 · PPO策略＋镜像对称处理</h3><p><b>${terminal?'b00 800周期已完成并独立复核':active?(run.running?'真实CFD正在运行':'已停止，等待独立终态复核'):'尚未启动或运行证据尚未核实'}</b>${active?` · ${run.completed_cycles}/800 周期 · t=${num(latest.force_time,1)} / 228.0`:''}</p>${terminal?`<p>主窗(168,228]：减阻 <b>${(100*terminal.paired_drag_reduction).toFixed(3)}%</b>，后柱Cl′ RMS比 <b>${terminal.paired_rear_cl_fluctuation_rms_ratio.toFixed(3)}</b>，平均Cl偏置比 <b>${(100*terminal.absolute_mean_rear_cl_over_paired_zero_rms).toFixed(2)}%</b>；三项原标准均通过。</p><p class="small">早期first6.2偏置比 ${(100*terminal.early_mean_bias_ratio).toFixed(2)}%，未通过原10%；不能写成全部窗口通过。</p>`:active?`<p>当前/最低MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；当前实际转速 ${num(latest.omega,3)}。</p>`:''}<p class="small">复用同一32768步冻结策略，仅增加镜像对称处理；不是新训练或新模型。CPU策略推理与真实CFD配对执行；原10%均值偏置约束不变，20%仅敏感性参考。下方保留前次未处理策略的已完成结果，不能当作本次结果。</p>`;
+ card.innerHTML=`<h3>历史 FC-E058 · PPO策略＋镜像对称处理（旧projected，非当前canonical策略）</h3><p><b>${terminal?'b00 800周期已完成并独立复核':active?(run.running?'历史任务接口报告运行，非当前任务':'已停止，等待独立终态复核'):'历史运行证据尚未核实'}</b>${active?` · ${run.completed_cycles}/800 周期 · t=${num(latest.force_time,1)} / 228.0`:''}</p>${terminal?`<p>主窗(168,228]：减阻 <b>${(100*terminal.paired_drag_reduction).toFixed(3)}%</b>，后柱Cl′ RMS比 <b>${terminal.paired_rear_cl_fluctuation_rms_ratio.toFixed(3)}</b>，平均Cl偏置比 <b>${(100*terminal.absolute_mean_rear_cl_over_paired_zero_rms).toFixed(2)}%</b>；三项原标准均通过。</p><p class="small">早期first6.2偏置比 ${(100*terminal.early_mean_bias_ratio).toFixed(2)}%，未通过原10%；不能写成全部窗口通过。</p>`:active?`<p>记录时当前/最低MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；最后实际转速 ${num(latest.omega,3)}。</p>`:''}<p class="small">复用同一32768步冻结策略，仅增加镜像对称处理；不是新训练或新模型。CPU策略推理与真实CFD配对执行；原10%均值偏置约束不变，20%仅敏感性参考。下方保留前次未处理策略的已完成结果，不能当作本次结果。</p>`;
  if(run?.paired_field?.verified===true){let field=document.createElement('div');field.innerHTML=`<h4>FC-E058 终点 t=228 · 投影策略与配对zero真实CFD</h4><img src="/projected-ppo-paired-field.png?v=${run.paired_field.sha256}" alt="左FC-E058投影策略右配对zero；上速度下ROI去均值压力；同色标真实CFD" loading="lazy" style="width:100%;height:auto"><p class="small">左：FC-E058投影策略；右：配对zero。上：速度模长；下：各支 CFD pressure with own ROI mean removed（solver units），不是绝对压力比较。两支使用相同网格、掩膜和色标。仅一个终点时刻的真实OpenFOAM场，不是FNO预测，也不能单独证明平均减阻或约束通过。下方FC-E055场图仍是未投影策略的历史证据。</p>`;card.appendChild(field);}
  if(b01?.verified===true){let t=b01.reported_terminal,phase=document.createElement('div');phase.innerHTML=`<hr><h3>FC-E059 · b01固定相位复验</h3><p><b>${t?'800周期已完成并独立复核':b01.running?'真实CFD正在运行':'800周期已完成，等待独立原始数据复核'}</b> · ${b01.completed_cycles}/800 周期 · t=${num(b01.latest.force_time,1)} / 210.0</p>${t?`<p>主窗口 (150,210]：总阻力降低 <b>${pct(t.paired_drag_reduction)}</b>；后柱Cl′比 ${num(t.paired_rear_cl_fluctuation_rms_ratio,3)}；mean-Cl偏置比 ${num(t.absolute_mean_rear_cl_over_paired_zero_rms,3)}，三项原始标准均通过。</p><p class="small">首段6.2D/U偏置比 ${num(t.early_mean_bias_ratio,3)}，仍高于10%；b01是历史validation相位，不是新鲜统计独立泛化。报告SHA ${t.review_sha256.slice(0,12)}…</p>`:`<p>当前/最低MemAvailable ${num(b01.current_available_gib,2)} / ${num(b01.minimum_available_gib,2)} GiB；当前实际转速 ${num(b01.latest.omega,3)}。</p><p class="small">同一冻结策略、投影、过滤器和800周期，只把预声明初态改为历史validation相位b01/restart130。首次unit因漏传--execute在模型和CFD前失败；本卡绑定Root批准的r2实际运行。尚无跨相位成功或科学准入。</p>`}`;card.appendChild(phase);}
  if(b03?.verified===true){let t=b03.reported_terminal,phase=document.createElement('div');phase.id='projected-b03-live';phase.innerHTML=`<hr><h3>FC-E061 · b03固定相位物理确认</h3><p><b>${t?'800周期已完成并独立复核':b03.running?'真实CFD正在运行':b03.completed_cycles===800?'800周期已完成，等待独立原始数据复核':'运行已停止，尚无完整终态结论'}</b> · ${b03.completed_cycles}/800 周期 · t=${num(b03.latest.force_time,1)} / 224.0</p>${t?`<p>主窗(164,224]：减阻 <b>${(100*t.paired_drag_reduction).toFixed(5)}%</b>；后柱Cl′ RMS下降 <b>${(100*(1-t.paired_rear_cl_fluctuation_rms_ratio)).toFixed(5)}%</b>；平均Cl偏置比 <b>${(100*t.absolute_mean_rear_cl_over_paired_zero_rms).toFixed(5)}%</b>。原三项物理标准均通过。</p>`:`<p>当前/最低MemAvailable ${num(b03.current_available_gib,2)} / ${num(b03.minimum_available_gib,2)} GiB；实际转速 ${num(b03.latest.omega,3)}；当前周期PPO/zero总Cd ${num(b03.latest.ppo_total_cd,3)} / ${num(b03.latest.zero_total_cd,3)}。</p>`}<p class="small">CPU策略推理＋配对OpenFOAM，不是GPU训练。b03固定动作H5数据已打开，不是普遍未见或统计独立相位；保留K1 H100 FAIL。${t?'本次六个预声明窗口均通过，但不能据此改写b00/b01早期窗口失败。':'主窗尚待完整原始数据复核，不以进度或退出码宣布成功。'}</p>`;card.appendChild(phase);}
@@ -442,13 +442,29 @@ function renderShortHorizonConfirmation(run){
  card.innerHTML=`<h3>FNO预留工况预测评估（推理，非训练）</h3><p><b>${t?'已完成并独立复核':run.running?'GPU推理评估正在运行':'运行已停止，等待独立结果核验'}</b> · 10个预留工况 × H1–H5 × 每工况32个起点</p>${t?`<p>1600/1600端点，失败/非有限值 0/0。H1→H5：速度相对L2 ${pct(m.h1.velocity_relative_l2)} → ${pct(m.h5.velocity_relative_l2)}；ROI中心化压力相对L2 ${pct(m.h1.pressure_relative_l2)} → ${pct(m.h5.pressure_relative_l2)}。</p><p>总Cd MAE ${num(m.h1.total_drag_mae,6)} → ${num(m.h5.total_drag_mae,6)}；后柱Cl MAE ${num(m.h1.rear_cl_mae,6)} → ${num(m.h5.rear_cl_mae,6)}。</p><p class="small">定量支持预声明固定动作工况的短时预测；不证明任意策略动作分布、长递推或物理闭环成功，也不推翻旧K1 H100正式FAIL。未自造新的通过门槛。报告SHA ${t.review_sha256.slice(0,12)}…</p>`:`<p>当前/最低 MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；外层进程当前/峰值内存 ${num(run.unit_memory_current_gib,2)} / ${num(run.unit_memory_peak_gib,2)} GiB。</p><p class="small">这是固定FNO在预留工况上的预测推理：0个optimizer step，不学习、不运行CFD。当前产物没有逐case完成记录，因此不显示或估算百分比。旧K1 H100正式FAIL仍是独立结论，本卡不会覆盖它。</p>`}`;
 }
 function renderActiveExperiment(d){
+ // Historical evidence renders independently of the current-summary priority.
+ renderHistoricalClosedLoopEvidence(d);
  for(const [key,section,route] of [['canonical_seeds_real_cfd_t228','canonical-seeds-real-cfd-t228','/canonical-seeds-real-cfd-t228.png'],['real_cfd_t228_comparison','real-cfd-t228','/real-cfd-t228-comparison.png']]){const f=d[key];$(section).hidden=f?.verified!==true;if(f?.verified){const img=$(section+'-image'),url=route+'?v='+f.sha256;if(img.getAttribute('src')!==url)img.src=url;}}
+ const reproduction=d.canonical_b01_reproduction;
+ if(reproduction?.verified){
+  const x=reproduction;
+  $('lead-now').textContent=`Canonical b01 安全复现：${x.running?'实际CPU CFD运行中':'进程已停止，等待终态独立复核'}，${x.cycles}/800 周期，t=${x.current_time} / 210。冻结既有策略，无GPU训练或FNO推理。`;
+  $('lead-monitor').textContent=`实际 invocation ${x.invocation}；PID ${x.pid}；MemAvailable ${num(x.available_gib,2)} GiB，控制进程内存 ${num(x.memory_gib,2)} GiB（不含两个solver容器）。原2%/1.05/10%标准保持，当前进度不是物理收益。`;
+  let card=$('canonical-reproduction');if(!card){card=document.createElement('div');card.id='canonical-reproduction';card.className='card';$('projected-ppo-cfd').before(card);card.innerHTML='<h3>当前 canonical b01 · 真实反馈曲线（非旧projected策略）</h3><canvas width="1000" height="220" id="canonical-reproduction-action"></canvas><canvas width="1000" height="220" id="canonical-reproduction-drag"></canvas><canvas width="1000" height="220" id="canonical-reproduction-lift"></canvas>';}
+  drawActualSeries('canonical-reproduction-action',x.rows,[{key:'requested_omega',label:'物理请求ω',color:'#60c9fb'},{key:'omega',label:'实际ω',color:'#79d5a3'}],'单次物理限速后的动作');
+  drawActualSeries('canonical-reproduction-drag',x.rows,[{key:'ppo_total_cd',label:'canonical Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero Cd',color:'#f2c879'}],'真实CFD周期末总Cd（非窗口均值）');
+  drawActualSeries('canonical-reproduction-lift',x.rows,[{key:'ppo_rear_cl',label:'canonical Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero Cl',color:'#f69d97'}],'真实CFD周期末rear Cl');
+  return;
+ }
  if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
  if(d.p064_b02_conversion?.invocation){const x=d.p064_b02_conversion;$('lead-now').textContent=`${x.status}：${x.written_frames}/801 帧。${x.note||''}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；CPU转换，非GPU训练。采集E089已完成800周期、主窗减阻4.2628%，六窗原标准通过。`;return;}
  if(d.p064_b02_acquisition?.invocation){const x=d.p064_b02_acquisition;$('lead-now').textContent=`${x.status}：${x.cycles}/800 周期，CFD时刻 ${x.current_time??'尚无'}。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；原2%/1.05/10%标准不变。${x.terminal_verified?'终态与字段库存已独审，下一转换未执行。':'未完成独审前不预判收益。'}C50已评估退化且未采用。`;return;}
  if(d.p064_c50?.invocation){const x=d.p064_c50;$('lead-now').textContent=`${x.status}：已完成窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。原物理标准2%/1.05/10%不变；计算结束不代表预测通过。`;return;}
  const active=d.registered_experiment;
  renderCurrentTrialEvidence(active);
+ renderLegacyActiveSummary(d,active);
+}
+function renderHistoricalClosedLoopEvidence(d){
  renderExploratoryH5PPO(d.exploratory_h5_ppo_training);
  renderExploratoryDiverseH5PPO(d.exploratory_diverse_h5_ppo_training);
  renderExploratoryDiverse32768PPO(d.exploratory_diverse_h5_32768_ppo_training);
@@ -461,6 +477,8 @@ function renderActiveExperiment(d){
  const realField=d.real_cfd_t228_comparison;$('real-cfd-t228').hidden=realField?.verified!==true;
  if(realField?.verified){const img=$('real-cfd-t228-image'),url=`/real-cfd-t228-comparison.png?v=${realField.sha256}`;if(img.getAttribute('src')!==url)img.src=url;}
  renderFinalPPORealCFD(d.exploratory_final_ppo_real_cfd);
+}
+function renderLegacyActiveSummary(d,active){
  if(active?.mpc_trial===true&&active.verified===true){
   const causal=active.progress_kind==='exploratory_causal_history_h2_feedback';
   const causalH5=active.progress_kind==='exploratory_causal_history_h5_feedback';
@@ -5096,6 +5114,7 @@ class Handler(BaseHTTPRequestHandler):
             data['p064_c50'] = c50_training_status(self.root)
             from p064_dashboard_progress import coverage_d_training_status
             data['p064_coverage_d'] = coverage_d_training_status(self.root)
+            data['canonical_b01_reproduction'] = _canonical_b01_reproduction(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5391,6 +5410,43 @@ def _long_cfd_reported_terminal(root, run):
     if w["left_endpoint_included"] is not False or w["interval"] != [168, 228] or any(b["samples"] != 12000 for b in w["branches"].values()):
         return None
     return w
+
+
+def _canonical_b01_reproduction(root):
+    """Read only the explicitly approved live reproduction; never infer running from files."""
+    try:
+        approval = root / 'docs/CANONICAL_B01_REPRODUCTION_APPROVAL_20261007.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest() != 'f10547240d5a89430f2967bfb9859868fc00ee625447fcc56ce68b2b93b4152d':
+            return {'verified': False}
+        spec = json.loads(approval.read_text())
+        if spec.get('execution_authorized') is not True:
+            return {'verified': False}
+        unit = 'fluid-control-canonical-reproduce-b01-20261007.service'
+        raw = subprocess.check_output(['systemctl', '--user', 'show', unit, '-p', 'InvocationID', '-p', 'MainPID', '-p', 'ActiveState', '-p', 'SubState', '-p', 'MemoryCurrent'], text=True, timeout=3)
+        state = dict(line.split('=', 1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID') != 'f6c3fc3464074493b19ea5418ddfada5':
+            return {'verified': False}
+        progress = root / 'artifacts/canonical_b01_reproduction_20261007/progress.json'
+        data = json.loads(progress.read_text()) if progress.exists() else {'completed_cycles': 0, 'rows': []}
+        rows = data['rows']
+        if data['completed_cycles'] != len(rows) or not 0 <= len(rows) <= 800:
+            return {'verified': False}
+        compact = []
+        for i, row in enumerate(rows, 1):
+            if row['step'] != i or abs(row['end_time'] - (130 + i / 10)) > 1e-7:
+                return {'verified': False}
+            p, z = row['output_observation'], row['zero_observation']
+            compact.append({'time': row['end_time'], 'force_time': row['end_time'], 'requested_omega': row['requested_omega'], 'omega': row['applied_omega'], 'ppo_total_cd': p[64] + p[66], 'zero_total_cd': z[64] + z[66], 'ppo_rear_cl': p[67], 'zero_rear_cl': z[67]})
+        mem = dict(line.split(':', 1) for line in Path('/proc/meminfo').read_text().splitlines())
+        pid = int(state.get('MainPID', '0'))
+        memory = state.get('MemoryCurrent', '')
+        return {'verified': True, 'unit': unit, 'invocation': state['InvocationID'], 'pid': pid,
+                'running': pid > 0 and state.get('ActiveState') == 'active' and state.get('SubState') == 'running',
+                'cycles': len(rows), 'current_time': rows[-1]['end_time'] if rows else 130,
+                'rows': compact, 'available_gib': int(mem['MemAvailable'].split()[0]) / 1024**2,
+                'memory_gib': int(memory) / 1024**3 if memory.isdigit() else None}
+    except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
+        return {'verified': False}
 
 
 def main():
