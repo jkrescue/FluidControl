@@ -387,6 +387,11 @@ function renderExploratoryDiversePPORealCFD(run){
  drawActualSeries('exploratory-diverse-ppo-drag',rows,[{key:'ppo_total_cd',label:'PPO total Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero total Cd',color:'#f2c879'}],'新策略真实CFD总阻力 Cd（周期终点）');
  drawActualSeries('exploratory-diverse-ppo-lift',rows,[{key:'ppo_rear_cl',label:'PPO rear Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero rear Cl',color:'#f69d97'}],'新策略真实CFD后柱升力 Cl（周期终点）');
 }
+function renderProjectedCFD(run){
+ let card=$('projected-ppo-cfd');if(!card){card=document.createElement('div');card.id='projected-ppo-cfd';card.className='card';$('exploratory-diverse-32768-long-cfd').before(card);}
+ const active=run?.verified===true,latest=run?.latest||{};
+ card.innerHTML=`<h3>FC-E058 · PPO策略＋镜像对称处理</h3><p><b>${active?(run.running?'真实CFD正在运行':'已停止，等待独立终态复核'):'尚未启动或运行证据尚未核实'}</b>${active?` · ${run.completed_cycles}/800 周期 · t=${num(latest.force_time,1)} / 228.0`:''}</p>${active?`<p>当前/最低MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；当前实际转速 ${num(latest.omega,3)}。</p>`:''}<p class="small">复用同一32768步冻结策略，仅增加镜像对称处理；不是新训练或新模型。CPU策略推理与真实CFD配对执行；原10%均值偏置约束不变，20%仅敏感性参考。下方保留前次未处理策略的已完成结果，不能当作本次结果。</p>`;
+}
 function renderPolicyH5Comparison(run){
  let card=$('policy-h5-comparison');if(!card){card=document.createElement('div');card.id='policy-h5-comparison';card.className='card';$('exploratory-diverse-32768-long-cfd').after(card);}
  card.hidden=run?.verified!==true;if(card.hidden)return;
@@ -403,6 +408,7 @@ function renderExploratoryDiverse32768LongCFD(run){
  let field=$('long-ppo-paired-field');if(!field){field=document.createElement('div');field.id='long-ppo-paired-field';card.append(field);}
  field.hidden=run.paired_field?.verified!==true;
  if(!field.hidden){field.innerHTML=`<h4>本次800周期终点 · 真实CFD流场 t=228</h4><img src="/long-ppo-paired-field.png?v=${run.paired_field.sha256}" alt="左PPO控制右不旋转；上速度下压力；同色标实际CFD" loading="lazy" style="width:100%;height:auto"><p class="small">左：PPO控制；右：不旋转。上：速度模长；下：运动学压力，各减去各自显示区域均值，非绝对压力差。横轴x、纵轴y为求解器长度单位；速度为长度/时间，压力为长度²/时间²（原始OpenFOAM维度，未另作无量纲缩放）。两支使用相同网格、掩膜和色标。仅一个时刻的真实CFD，不是FNO预测，也不是平均减阻或约束通过的证据。</p>`;}
+ if(run.reported_terminal){$('exploratory-diverse-32768-long-cfd-summary').innerHTML=$('exploratory-diverse-32768-long-cfd-summary').innerHTML.replace('当前没有训练或CFD运行','本次运行已结束；新运行见独立卡片');}
 }
 function renderFinalPPORealCFD(run){
  const card=$('final-ppo-real-cfd');card.hidden=run?.verified!==true;if(card.hidden)return;
@@ -424,6 +430,7 @@ function renderActiveExperiment(d){
  renderExploratoryDiversePPORealCFD(d.exploratory_diverse_ppo_real_cfd);
  renderExploratoryDiverse32768LongCFD(d.exploratory_diverse_32768_long_cfd);
  renderPolicyH5Comparison(d.policy_h5_comparison);
+ renderProjectedCFD(d.projected_ppo_long_cfd);
  renderFinalPPORealCFD(d.exploratory_final_ppo_real_cfd);
  if(active?.mpc_trial===true&&active.verified===true){
   const causal=active.progress_kind==='exploratory_causal_history_h2_feedback';
@@ -2191,33 +2198,47 @@ def _exploratory_diverse_ppo_real_cfd(root: Path) -> dict:
                 "scientific_admission": False, "control_success_verified": False}
 
 
-def _exploratory_diverse_32768_long_cfd(root: Path) -> dict:
+def _exploratory_diverse_32768_long_cfd(root: Path, projected=False) -> dict:
     """Read the one actual 800-cycle CFD pair only after a completed cycle exists."""
     base = root / "artifacts/exploratory_diverse_32768_ppo_long_cfd_20261006"
     approval_path = root / "docs/EXPLORATORY_DIVERSE_32768_PPO_LONG_CFD_APPROVAL_20261006.json"
     driver_path = (root / "artifacts/exploratory_diverse_32768_ppo_long_cfd_source_20261006_immutable"
                    / "run_exploratory_diverse_32768_ppo_long_cfd.py")
+    approval_sha = _DIVERSE_32768_LONG_CFD_APPROVAL_SHA
+    driver_sha = _DIVERSE_32768_LONG_CFD_DRIVER_SHA
+    status = "EXPLORATORY_DIVERSE_32768_PPO_LONG_CFD_EXECUTION_APPROVED"
+    unit = "fluid-control-exploratory-diverse-32768-ppo-long-cfd-20261006.service"
+    invocation = "285bea88ff234cd5acfb9cb03c2b3cf3"
+    if projected:
+        base = root / "artifacts/exploratory_projected_32768_ppo_long_cfd_20261006"
+        approval_path = root / "docs/EXPLORATORY_PROJECTED_32768_PPO_LONG_CFD_APPROVAL_20261006.json"
+        driver_path = root / "artifacts/exploratory_projected_32768_ppo_long_cfd_source_20261006_immutable/run_exploratory_projected_32768_ppo_long_cfd.py"
+        approval_sha = "87944e807a68caab6ce7a46e01207e1d7ba432b86ccd639b6f47424de481c64c"
+        driver_sha = "5c3f40728cd383913a256a2f46b6bfaf0b02cc7d91586e198c354a007fcb9e76"
+        status = "EXPLORATORY_PROJECTED_32768_PPO_LONG_CFD_EXECUTION_APPROVED"
+        unit = "fluid-control-exploratory-projected-32768-ppo-long-cfd-20261006.service"
+        invocation = "afa5cde4daec474eb52b61c08f86746f"
     try:
         if (hashlib.sha256(approval_path.read_bytes()).hexdigest()
-                != _DIVERSE_32768_LONG_CFD_APPROVAL_SHA
+                != approval_sha
                 or hashlib.sha256(driver_path.read_bytes()).hexdigest()
-                != _DIVERSE_32768_LONG_CFD_DRIVER_SHA):
+                != driver_sha):
             raise ValueError("long CFD identity mismatch")
         approval = json.loads(approval_path.read_text())
         if (approval.get("status")
-                != "EXPLORATORY_DIVERSE_32768_PPO_LONG_CFD_EXECUTION_APPROVED"
+                != status
                 or approval.get("execution_authorized") is not True
                 or approval.get("steps") != 800 or approval.get("inference_device") != "cpu"
                 or approval.get("scientific_admission") is not False
-                or approval.get("driver_sha256") != _DIVERSE_32768_LONG_CFD_DRIVER_SHA):
+                or approval.get("driver_sha256") != driver_sha):
             raise ValueError("unexpected long CFD approval")
         fields = ("InvocationID", "MainPID", "ActiveState", "SubState", "Result",
                   "ExecMainCode", "ExecMainStatus")
         raw = subprocess.check_output(["systemctl", "--user", "show",
-            "fluid-control-exploratory-diverse-32768-ppo-long-cfd-20261006.service",
+            unit,
             *[arg for key in fields for arg in ("-p", key)]], text=True, timeout=5)
         state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
-        if state.get("InvocationID") != "285bea88ff234cd5acfb9cb03c2b3cf3":
+        if state.get("InvocationID") != invocation:
             raise ValueError("unexpected long CFD invocation")
         running = (state.get("MainPID", "0").isdigit() and int(state["MainPID"]) > 0
                    and state.get("ActiveState") == "active"
@@ -2261,7 +2282,7 @@ def _exploratory_diverse_32768_long_cfd(root: Path) -> dict:
                 "inference_device": "cpu", "primary_window": [168.0, 228.0],
                 "discarded_warmup_cycles": 200, "early_comparison_cycles": 124,
                 "scientific_admission": False, "control_success_verified": False,
-                "approval_sha256": _DIVERSE_32768_LONG_CFD_APPROVAL_SHA}
+                "approval_sha256": approval_sha}
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
             subprocess.SubprocessError):
         return {"verified": False, "running": False,
@@ -4770,6 +4791,7 @@ class Handler(BaseHTTPRequestHandler):
             data["exploratory_diverse_32768_long_cfd"]["reported_terminal"] = _long_cfd_reported_terminal(self.root, data["exploratory_diverse_32768_long_cfd"])
             data["exploratory_diverse_32768_long_cfd"]["paired_field"] = _long_ppo_field(self.root)
             data["policy_h5_comparison"] = _policy_h5_comparison(self.root)
+            data["projected_ppo_long_cfd"] = _exploratory_diverse_32768_long_cfd(self.root, projected=True)
             data["exploratory_final_ppo_real_cfd"] = _exploratory_final_ppo_real_cfd(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)

@@ -39,3 +39,9 @@ def test_terminal_never_replaces_live_and_windows_are_explicit(tmp_path):
     assert m._long_cfd_reported_terminal(tmp_path,{'verified':True,'running':True,'completed_cycles':800}) is None
     assert '(168,228]' in m.PAGE and '[168,228]' in m.PAGE
     assert '20%仅敏感性参考' in m.PAGE
+
+def test_projected_missing_evidence_never_claims_live(tmp_path):
+    r=m._exploratory_diverse_32768_long_cfd(tmp_path,projected=True)
+    assert not r['verified'] and not r['running']
+    assert 'PPO策略＋镜像对称处理' in m.PAGE
+    assert '不是新训练或新模型' in m.PAGE
