@@ -118,6 +118,23 @@ def test_g_initialization_uses_actual_journal_not_gpu():
         assert not fn(root)['terminal_verified']
 
 
+def test_g_exploratory_ppo_actual_identity_and_terminal_not_automatic():
+    import hashlib
+    from unittest.mock import patch
+    node=next(n for n in ast.parse(SOURCE.read_text()).body if isinstance(n,ast.FunctionDef) and n.name=='_g_exploratory_ppo')
+    scope=dict(hashlib=hashlib,json=json,subprocess=subprocess,Path=Path)
+    exec(compile(ast.Module(body=[node],type_ignores=[]),str(SOURCE),'exec'),scope)
+    fn=scope[node.name];root=SOURCE.parents[1]
+    state='InvocationID=6aa96fbfeeb34269b1f49e04380cd417\nMainPID=2067872\nSubState=running\n'
+    with patch.object(subprocess,'check_output',return_value=state):
+        r=fn(root);assert r['running'] and r['timesteps']>0
+        assert not r['selection_passed'] and not r['replaces_B'] and not r['cfd_authorized']
+    with patch.object(subprocess,'check_output',return_value=state.replace('2067872','0').replace('running','exited')):
+        r=fn(root);assert not r['running'] and not r['terminal_verified']
+    with patch.object(subprocess,'check_output',return_value=state.replace('6aa96fbfeeb34269b1f49e04380cd417','wrong')):
+        assert fn(root)=={'verified':False}
+
+
 def test_reproduction_uses_canvas_and_images_before_return():
     text = page().split('function renderActiveExperiment(d){', 1)[1]
     assert text.index('canonical_seeds_real_cfd_t228') < text.index('if(reproduction?.verified)')

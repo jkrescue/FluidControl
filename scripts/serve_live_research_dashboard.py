@@ -453,7 +453,8 @@ function renderActiveExperiment(d){
   if(d.response_aux_e?.verified){const e=d.response_aux_e;$('lead-monitor').textContent+=` 辅助监督候选E：${e.development_verified?'训练和固定评估已完成；两项H1误差与保留指标均略差，未采用，保留B':e.terminal_verified?'训练已完成并通过工程独审，预测改善待固定评估':e.running?(e.windows?'GPU气动力FNO分支训练':'进程运行/初始化，尚无已完成窗口'):'进程已停止，等待终态核验'}，窗口${e.windows}/256、参数更新${e.updates}/32；inv ${e.invocation}。不是PPO或新CFD，flow冻结。`;}
   if(d.h1_only_f?.verified){const f=d.h1_only_f;$('lead-monitor').textContent+=` 候选F：${f.development_verified?'训练及固定评估已完成；H1 Cl/Cd改善，但H5与AR保留性退化，未采用，保留B':f.terminal_verified?'训练已完成并通过工程独审；固定预测评估另列，尚无采用结论':f.running?(f.windows?'GPU气动力FNO分支训练（仅H1反传目标）':'进程运行/初始化，尚无已完成窗口'):'进程已停止，等待独立终态核验'}，真实窗口${f.windows}/256、参数更新${f.updates}/32；flow冻结，不是PPO或CFD。诊断total仍为H1/AR各半，不是训练目标；inv ${f.invocation}。`;if(f.development_verified&&f.next_step&&!d.bf_true_state?.verified)$('lead-monitor').textContent+=` 下一步：${f.next_step}。`;}
   if(d.bf_true_state?.verified){const q=d.bf_true_state;$('lead-monitor').textContent+=` B/F真状态受力对照：诊断已完成，160次气动力调用、0流场调用、0参数更新；${q.review_verified?'独立复算通过；换成真实状态并未普遍降低力误差，不能只归因流场累积误差，F仍未采用':'科学解释待独立复算'}。`;}
-  if(d.ar5_reset_g?.verified){const g=d.ar5_reset_g;$('lead-monitor').textContent+=` 当前候选G：${g.running?(g.windows?'GPU气动力FNO分支训练':'进程初始化，尚无已完成训练窗口'):(g.development_verified?'训练与预测评估均已完成，原保留性规则未通过，不自动替换B':g.terminal_verified?'训练已完成并通过工程独审，预测评估另行核验':'进程已停止，等待独立终态核验')}；真实窗口${g.windows}/256、参数更新${g.updates}/32。${g.development_verified?'H1两项力误差改善，但固定六窗连续AR100退化；基本800步真实闭环仍已验证。后续探索须单独明确批准，当前没有本任务训练在运行。':'训练AR每5步重置真状态，H1/AR权重各半；flow冻结，原六窗诊断仍连续100步。不是PPO或CFD，未作预测改善结论。'} inv ${g.invocation}。`;}
+  if(d.ar5_reset_g?.verified){const g=d.ar5_reset_g;$('lead-monitor').textContent+=` G代理候选：${g.running?(g.windows?'GPU气动力FNO分支训练':'进程初始化，尚无已完成训练窗口'):(g.development_verified?'训练与预测评估均已完成，原保留性规则未通过，不自动替换B':g.terminal_verified?'训练已完成并通过工程独审，预测评估另行核验':'进程已停止，等待独立终态核验')}；窗口${g.windows}/256、参数更新${g.updates}/32。${g.development_verified?'H1两项力误差改善，但固定六窗连续AR100退化；基本800步真实闭环仍已验证。后续探索须单独明确批准。':'训练AR每5步重置真状态，H1/AR权重各半；flow冻结，原六窗诊断仍连续100步。'} inv ${g.invocation}。`;}
+  if(d.g_exploratory_ppo?.verified){const p=d.g_exploratory_ppo;$('lead-monitor').textContent=` 当前单独批准的G-PPO探索：${p.running?(p.timesteps?'正在训练策略':'进程初始化，尚无完成步数'):'进程已结束，等待独立终态核验'}；真实步数${p.timesteps}/32768、PPO epochs ${p.ppo_epochs}/256。G原预测筛选仍FAIL，B保留；这不是FNO续训。后续CFD已作条件规划，尚未启动，须先完成训练独审与实际产物绑定。inv ${p.invocation}。`+$('lead-monitor').textContent;}
   let card=$('canonical-reproduction');if(!card){card=document.createElement('div');card.id='canonical-reproduction';card.className='card';$('projected-ppo-cfd').before(card);card.innerHTML='<h3>当前 canonical b01 · 真实反馈曲线（非旧projected策略）</h3><canvas width="1000" height="220" id="canonical-reproduction-action"></canvas><canvas width="1000" height="220" id="canonical-reproduction-drag"></canvas><canvas width="1000" height="220" id="canonical-reproduction-lift"></canvas>';}
   drawActualSeries('canonical-reproduction-action',x.rows,[{key:'requested_omega',label:'物理请求ω',color:'#60c9fb'},{key:'omega',label:'实际ω',color:'#79d5a3'}],'单次物理限速后的动作');
   drawActualSeries('canonical-reproduction-drag',x.rows,[{key:'ppo_total_cd',label:'canonical Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero Cd',color:'#f2c879'}],'真实CFD周期末总Cd（非窗口均值）');
@@ -5123,6 +5124,7 @@ class Handler(BaseHTTPRequestHandler):
             data['h1_only_f'] = _h1_only_f(self.root)
             data['bf_true_state'] = _bf_true_state(self.root)
             data['ar5_reset_g'] = _ar5_reset_g(self.root)
+            data['g_exploratory_ppo'] = _g_exploratory_ppo(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5586,6 +5588,29 @@ def _ar5_reset_g(root):
                 'windows':windows,'updates':updates,'terminal_verified':terminal,'promoted':False,
                 'development_verified':dev_verified,'selection':'FAIL_RETENTION' if dev_verified else None,
                 'development_result_sha256':'1da616b91019b3084c58e45a6e0e85010a6baecd48baa55dd91b03aa03ed180a' if dev_verified else None}
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError): return {'verified':False}
+
+
+def _g_exploratory_ppo(root):
+    try:
+        approval=root/'docs/P064_G_SYMMETRY_CANONICAL_PPO_APPROVAL_20261007.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='1c33f2551c4e98d777599a64b73453b6b607837331ccce85dc0d21274c0ccc7f': return {'verified':False}
+        inv='6aa96fbfeeb34269b1f49e04380cd417'
+        raw=subprocess.check_output(['systemctl','--user','show','fluid-control-p064-g-symmetry-canonical-ppo-20261007.service','-p','InvocationID','-p','MainPID','-p','SubState','-p','Result','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!=inv: return {'verified':False}
+        out=root/'artifacts/p064_g_symmetry_canonical_32768_ppo_20261007/payload'
+        steps=epochs=0
+        if (out/'progress.json').exists():
+            for line in (out/'progress.json').read_text().splitlines():
+                try: row=json.loads(line)
+                except ValueError: continue
+                steps=max(steps,int(row.get('time/total_timesteps',0)))
+                epochs=max(epochs,int(row.get('train/n_updates',0)))
+        return dict(verified=True,invocation=inv,running=int(state['MainPID'])>0 and state['SubState']=='running',
+                    timesteps=steps,expected_timesteps=32768,ppo_epochs=epochs,expected_ppo_epochs=256,
+                    terminal_verified=False,exploratory=True,selection_passed=False,replaces_B=False,
+                    cfd_authorized=False,cfd_conditionally_planned=True,cfd_started=False)
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError): return {'verified':False}
 
 
