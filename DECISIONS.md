@@ -1,5 +1,13 @@
 # DECISIONS
 
+## 2026-10-07 — Confirm canonical-coordinate control without weakening either acceptance standard
+
+Lead decision after FC-E083: keep the original primary physical criteria (drag reduction >=2%, rear lift fluctuation RMS ratio <=1.05, mean-bias ratio <=10%). The completed canonical-coordinate b00 run has independently verified primary results 3.9567229236% / 0.8165429747 / 1.0659980225%; the first6.2 D/U mean-bias ratio17.5561% still fails. [Terminal review](docs/P064_B_SYMMETRY_CANONICAL_CFD_TERMINAL_REVIEW_20261007.md), SHA `cf7975dbd02da5dca41ddfafe409b86b3676c49e541dc2026988b02ca9f5408e`. Both the old second-seed negative result and the first-seed successful control remain archived; this is not proof of statistically significant superiority or general robustness.
+
+The project surrogate prediction-admission FAIL is not a blocker for separately approved exploratory physical-feedback experiments. It remains FAIL, not a relaxed or renamed pass. This distinction preserves the overall high-accuracy-surrogate plus constrained-control goal, which is not complete. FNO is used for PPO training; deployed canonical-coordinate CPU policy feedback is not online FNO/MPC.
+
+The next scope is only the predefined canonical-coordinate cross-seed replication (seed20261006, unchanged B/32768/H5/24-reset/reward) and fixed-policy b01 confirmation. Both are preparation only at this decision, requiring their own final execution approval and actual process evidence before being displayed as running. No seed sweep, checkpoint selection, new architecture, threshold change or automatic retry is authorized. Any startup failure must be recorded separately from scientific outcomes; historical FAIL records are retained unchanged.
+
 ## 2026-10-06 — Matched initial-policy control supports a bounded learning-contribution claim
 
 The completed FC-E078 comparison changes policy weights only: exact seed20261006 initial tensors versus the trained B policy, with the same b00 restart148, 800 control intervals, reflection projection, single action filter and unchanged identity VecNormalize (normalization disabled). Independent raw review verifies all3200 force-file hashes,1600 solver segments and800 action decisions; six-window recomputation differs by at most4.44e-16. Both paired-zero force series match the trained-policy reference exactly across all16000 rows and columns. Evidence: [independent terminal review](docs/P064_INITIAL_POLICY_CFD_TERMINAL_REVIEW_20261006.md), SHA `8e66c497acfcc3483d760a77469330028bd12f9cd233ec36d445d15557c34d34`.

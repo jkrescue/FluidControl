@@ -1,5 +1,15 @@
 # Research roadmap and prioritized backlog
 
+## Current priority — fixed canonical-coordinate replication and b01 confirmation
+
+Updated 2026-10-07 after [FC-E083 independent real-CFD review](P064_B_SYMMETRY_CANONICAL_CFD_TERMINAL_REVIEW_20261007.md), SHA `cf7975dbd02da5dca41ddfafe409b86b3676c49e541dc2026988b02ca9f5408e`. All800 feedback cycles completed; primary drag reduction3.9567%, rear lift fluctuation RMS ratio0.816543 and mean bias1.0660% meet unchanged2%/1.05/10%. First6.2 D/U bias17.5561% still fails. Existing second-seed negative control and earlier successful first seed remain evidence, not overwritten history.
+
+1. Prepare the sole predefined canonical-coordinate seed20261006 replication with frozen B,32768/H5/24-reset/reward/resources unchanged; no seed sweep or reward-selected checkpoint.
+2. Prepare the same completed canonical policy's fixed b01 paired-CFD confirmation, keeping the original physical windows, action filter and thresholds.
+3. Execute either only after its explicit Lead approval, truthful source/input preflight and actual launch record; preparation is not a running task. Audit outcomes before proposing any additional experiment.
+
+The failed full surrogate prediction gate does not block these separately approved exploratory closed loops and is not changed by them. Full high-accuracy-model completion remains unmet; physical success is not surrogate admission. The FNO trains the PPO environment, whereas deployment uses CPU policy feedback without online FNO/MPC. Startup failures remain separate engineering records; no threshold relaxation or automatic retry. Earlier priorities below are historical and are superseded by this dated section, not erased.
+
 ## Current priority — deliver the existing reproducible real-CFD closed loop; H25 does not progress
 
 Updated 2026-10-06 after the actual bounded H25 R2 training and same-six H100 quick comparison. This priority supersedes pending-training language below, while retaining it as history. The new candidate completed training but worsened velocity and raw-pressure errors in all six matched cases and pooled rear-Cl/total-Cd MAE (.0623860/.0207225 → .0830123/.0467238). Local lift-RMS improvements are not a general improvement. Lead rejects progression of this candidate to fresh PPO/CFD; do not repeatedly tune or restart it. The parent result was reused, not recomputed. Exact result SHA: `1b7bd2a2e99f9d02398df4cbcefc2d7dc5a486a02866d9a64856d0db9e9dafe0` in `artifacts/p064_b_h25_quick_ar_20261006/result.json`.
