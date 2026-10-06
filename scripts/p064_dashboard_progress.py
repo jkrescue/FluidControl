@@ -110,13 +110,21 @@ def candidate_cfd_status(root,run=subprocess.check_output):
         report=root/'docs/P064_B_PROJECTED_PPO_LONG_CFD_TERMINAL_REVIEW_20261006.md'
         if hashlib.sha256(report.read_bytes()).hexdigest()!='7b453d9c529d9d5c52988608c89d61050204510d41549cbb2be620fcdcebbe04':raise ValueError('b00 review SHA')
         info['note']='b00已独审：减阻3.8953%、RMS降低18.44%、均值偏置1.1378%，原主窗口标准通过；属于训练内确认，非显著优于旧policy。当前b01与同起点zero配对，尚无结果；无GPU训练/FNO在线调用。'
+        if state.get('MainPID')=='0' and state.get('ExecMainStatus')=='0':
+            result=output/'result.json'
+            review=root/'docs/P064_B_PROJECTED_PPO_B01_LONG_CFD_TERMINAL_REVIEW_20261006.md'
+            if (hashlib.sha256(result.read_bytes()).hexdigest()!='0be19e0dfdf8df4d60e2f5040673f2a3ec25cbadb133548671ce31f061e75c88'
+                or hashlib.sha256(review.read_bytes()).hexdigest()!='de7a3f7fa89d50dad190272028f16ed0ea23214ac52cb23323f42c48df9945d3'):
+                raise ValueError('b01 independent terminal binding')
+            info.update(status='B策略b01配对800周期已独审完成',physical_pass=True,terminal_verified=True)
+            info['note']='b01主(150,210]：减阻3.9275%、升力波动RMS降低18.4272%、均值偏置2.7295%，原标准通过；早首6.2偏置12.7825%仍失败。b00主窗口也通过（3.8953%减阻）；两相位均非新留出测试，未证明显著优于旧policy。无训练/CFD运行，不等于代理准入。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['status']='身份或状态未验证';info['note']=str(exc)
     return info
 
 def formal_evaluation_status(root,run=subprocess.check_output):
     root=Path(root)
-    info={'status':'正式评估身份/状态未验证','invocation':None,'training':False,'scientific_pass':None}
+    info={'status':'完整预测精度评估身份/状态未验证','invocation':None,'training':False,'scientific_pass':None}
     try:
         approval=root/'docs/FC_P064_ARM_B_FORMAL_APPROVAL_20261006.json'
         if hashlib.sha256(approval.read_bytes()).hexdigest()!='cd58fd47e991ec6dac200bd82d414347f72b778ea78415377427e430dfd47478':raise ValueError('formal approval SHA')
@@ -126,10 +134,10 @@ def formal_evaluation_status(root,run=subprocess.check_output):
         if state.get('InvocationID')!='01806bdc150841f7b9efd04360a441f2':raise ValueError('formal invocation')
         info['invocation']=state['InvocationID']
         if state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0:
-            info['status']='原完整formal评估进程运行中（非训练，尚不代表GPU forward或通过）'
+            info['status']='完整预测精度评估进程运行中（非训练，尚无科学结论）'
         elif state.get('MainPID')=='0':
-            info['status']='formal进程退出，等待各科学门槛独审' if state.get('ExecMainStatus')=='0' else 'formal进程失败/停止，保留证据'
-        info['note']='R1路径错误保留；R2实际torch allocator为.15，外层.06仅启动核算，非强制上限。Lead批准同任务继续，72GiB/noSwap与Available22GiB保护不变。非训练；原H100失败与科学门槛保持，exit0不等于通过。'
+            info['status']='完整预测精度评估退出，等待各门槛独审' if state.get('ExecMainStatus')=='0' else '完整预测精度评估R2已失败：候选身份参数解析错误，修复准备中'
+        info['note']='validation10已完成，完整科学门槛尚未评估；保留R1/R2失败，当前不运行。实际torch allocator .15，外层.06仅启动核算；原H100失败与门槛不变，exit0不等于通过。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['note']=str(exc)
     return info
