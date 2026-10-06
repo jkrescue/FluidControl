@@ -1,14 +1,14 @@
 {
-  "experiment": "P030-train-horizon",
-  "label": "诊断完成：新模型长时预测仍需改善",
-  "description": "44/44轨迹完成且独立复算一致。新模型第1、10步速度场略好，但第25、50、100步在全部44条轨迹上更差；第100步速度误差5.08%→6.29%，后升力MAE0.0556→0.0665。正在设计更长窗口训练并准备当前CFD场接口；没有新PPO或闭环验收结果。首次失败保留，最低观测CUDA空闲21.34GiB。",
-  "unit": "fluid-control-fcp030-train-horizon-r2-20261006.service",
-  "invocation": "4b89d3cb85c540448eeebd8ef5c7c3b3",
-  "approval": "docs/FC_P030_RECOVERY_EXECUTION_APPROVAL_20261006.json",
-  "approval_sha256": "6c4edae1e955268dcae718c4eb2f6b24a216b8961189d56a09f4d4da7c091378",
-  "launcher": "artifacts/fcp030_train_horizon_source_20261006_v3_immutable/scripts/run_p030_train_horizon.py",
-  "launcher_sha256": "d0bb73b2e722d78bb6ac31b85b3e65891b2d0addc2f8eb4ad8f5e04dbb6d9c78",
-  "log": "artifacts/fcp030_train_horizon_diagnostic_20261006_r2/run.log",
-  "progress_kind": "diagnostic_origins",
-  "planned_updates": {"CFD": 44}
+  "experiment": "P031-H25-resource-probe",
+  "label": "25步训练资源检查：启动余量不足，正在恢复",
+  "description": "GPU保护检查发现CUDA空闲30.67GiB，低于当前配置要求31.30GiB，因此未执行25步计算、未更新模型。正在核查已完成任务的文件缓存，保持20GiB保护不变。并行准备真实CFD两步流场输入测试；已有单帧转换逐值一致，但完整在线闭环尚未完成。",
+  "unit": "fluid-control-fcp031-resource-probe-20261006.service",
+  "invocation": "42df9cff77e24312a23a431ef1c5870a",
+  "approval": "docs/FC_P031_RESOURCE_PROBE_APPROVAL_20261006.json",
+  "approval_sha256": "3177f364230fe4900c7f1d3062d0a80483c8771861fe0efdd92093d54a42acca",
+  "launcher": "scripts/run_p031_control_aware_flow.py",
+  "launcher_sha256": "928de1536ccff031633785ffd6eaff0367ee7057af5f0eafbf36e5be50065058",
+  "log": "artifacts/fcp031_h25_resource_probe_20261006/run.log",
+  "progress_kind": "optimizer_updates",
+  "planned_updates": {}
 }
