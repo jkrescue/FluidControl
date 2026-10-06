@@ -2,7 +2,9 @@
 
 ## 当前结论：两相位 primary 物理约束通过，短时预测已测量，H100 FAIL仍保留
 
-Lead已确认投影策略b00与b01两次固定80D/U配对复验的primary原物理约束均通过；b01独立终态报告/账本由评估负责人随后补齐。不能外推所有窗口、所有相位或Re。当前训练和这两次CFD都已完成，以下running标题保留为历史。
+Lead已确认投影策略b00与b01两次固定80D/U配对复验的primary原物理约束均通过；FC-E059 b01独立3200原始文件hash、六窗口重算、800动作投影/filter及容器清理已完成。Primary (150,210]减阻3.92363725%、rearCl centered RMS比0.815785507、均值偏置比0.027300222；早期first6.2偏置0.127807798仍未过10%。不能外推所有窗口、所有相位或Re；历史validation b01也不是新独立统计样本。当前训练和这两次CFD都已完成，以下running标题保留为历史。
+
+b01结果SHA `961e1bc3ccb7a9f9dae4b54e9f8233c906507c794cff9a497d806391e0fc5c37`；报告 `docs/EXPLORATORY_PROJECTED_32768_PPO_B01_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `1b59fdfdb9d698fd2c0622085c19bf4d59a670070ea7434cb469ac19c72a297b`。同一9ef43959e065431490bd4725fa8fb7fe已PID0/exit0，800周期1125.32秒（包含配对CFD/IO/清理，平均1.40665秒/周期）；是因果在线模拟闭环，不是已证物理实时控制。最低Available117067710464字节。原遗漏--execute的首个CLI失败保留；不放宽物理阈值，K1 H100 FAIL不变。
 
 FC-E060前瞻冻结测试H1–H5已完成：同一固定K1、b03/b07十条sealed轨迹、32起点/条，1600端点，无失败或非有限数。H1→H5 pooled速度relativeL2为0.22427%→0.95415%，ROI中心化压力0.64234%→2.68274%，rearCl MAE0.01918→0.02212，总Cd MAE0.00708→0.01063。官方Reader实际使用、post-load highest/noTF32明确记录；独立复算已通过。这是短时固定动作预测证据，不覆盖K1 H100正式FAIL，不是新的训练或准入阈值放宽。
 

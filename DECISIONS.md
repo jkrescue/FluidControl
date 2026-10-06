@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-06 — FC-E059 confirms the original physical criteria in a second observed phase
+
+Keep the unchanged projected32768 policy and original2%drag/1.05RMS/10%mean-bias definitions. b01 primary (150,210] independently measures3.92363725% reduction/RMS0.815785507/bias0.027300222, consistent with b00 primary benefit. Do not hide earlyfirst6.2 bias12.78%, equate historically usedb01 with fresh independent generalization, or overwrite K1 H100FAIL. No physical threshold relaxation is needed for these two primary windows. Further claims require their own evidence, not automatic retuning after the newly opened frozen short-horizon test. The actual online CFD feedback loop is complete; broad robustness and physical real-time deployment are not established.
+
 ## 2026-10-06 — Short-horizon confirmation is measured evidence, not permission to retune final-test performance
 
 FC-E060 completed fixedsealed10×32×H1–H5 with independent numerical confirmation. H5 velocityrelativeL2 .009541481 and centeredpressure .026827415 withrearClMAE .022116273 quantify useful short-time behavior; no retrospectively invented accuracythreshold orH100override. Preserve fixedcandidate/testopening provenance andallcase outputs. Actual projected b00/b01 primary constrainedclosedloop passes are distinct physicalevidence, not proof of arbitraryaction predictionorallphase robustness. No newtraining, thresholdrelaxation orcheckpointselection is authorized by this result.

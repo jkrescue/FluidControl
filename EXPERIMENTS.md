@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E059 — Fixed b01 projected-policy replication completed
+
+Actual R2 invocation `9ef43959e065431490bd4725fa8fb7fe` exited0 after800 paired cycles, restart130→210. All3200 force-file hashes, six predeclared windows,800 projection/filter equations and1600 clean solver segments independently verified; both owned containers absent/OOMfalse. Primary (150,210]12000points: drag reduction3.9236372469%, centered rearCl RMS ratio0.81578550745, mean-bias ratio0.02730022153. Original2%/1.05/10% criteria met, without relaxation. First6.2 secondary bias0.127807798 stillfails10%; allsixwindow evidence retained. Full80D/U:3.81531467%/0.825013365/0.007191961.
+
+ResultSHA `961e1bc3ccb7a9f9dae4b54e9f8233c906507c794cff9a497d806391e0fc5c37`; independent report `docs/EXPLORATORY_PROJECTED_32768_PPO_B01_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `1b59fdfdb9d698fd2c0622085c19bf4d59a670070ea7434cb469ac19c72a297b`. Same frozen policy/projection/physical protocol asb00; historically usedvalidation b01 is a second observed phase, not statistically independent generalization. FirstCLI failure omitted--execute and performednoCFD; separatelyapprovedR2 preservedit. Wall1125.320s/800, minimumAvailable117067710464B. No model retraining, MPC substitution, H100 admission or real-time latency claim.
+
 ## FC-E060 — Frozen H1–H5 prediction confirmation completed, no training
 
 Actual authorized7a887ed792ec4d60a429f4a7a3660b3a exited0 after1600 fixedendpoints (10b03/b07cases×32starts×5horizons), failed0/nonfinite0. H1/H5 pooledvelocityL2 .0022426952/.0095414810; pressureL2 .0064234466/.0268274147; totalCdMAE .0070819531/.0106288686;rearClMAE .0191755319/.0221162728. Independent reviewer reproduced savedJSON field/force/coverage andstart0pairedresponse calculations (FP32subtraction rounding≤1.3e-11). OfficialHDF5Readeractualexecution; highTF32checkpointidentity thenhighest/noTF32override;6GiBallocator/12GiBnoswap;minimumAvailable117072576512B.
