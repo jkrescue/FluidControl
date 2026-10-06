@@ -1,5 +1,35 @@
 # Research roadmap and prioritized backlog
 
+## Current — exploratory closed-loop development without erasing formal criteria
+
+The latest user prioritizes actual feedback over waiting for every long-rollout
+prediction threshold. FC-E046/E047 are completed real FNO-MPC/OpenFOAM trials,
+not shadow prediction: first short-window drag worsened0.23293%; second held
+zero throughout and produced no benefit. Independent scoring shows the10%
+mean-lift penalty inactive in all100 candidate stages. Relaxing it would not
+change this decision. Original formal surrogate failures remain recorded.
+
+Next approved preparation: H5 instead ofH2, all other model/cost/candidate/start
+and ten-cycle factors unchanged. Test whether the extended forecast changes
+actions and real paired effects; preserve negative outcomes. If no useful
+response, investigate the measured predicted-vs-real action response rather
+than automatically sweeping weights or increasing horizons indefinitely.
+
+GPU engineering probe actually succeeded under UMA-aware physical reserve:
+three fixed inferences, warm~0.14s, lowest sampledAvailable113.47GiB. Preserve
+>=20GiB physical reserve; device-cache-free reporting alone is not capacity.
+CPU/GPU numerical comparison and future bounded GPU integration are separate
+engineering checks, not a reason to delay the current CPU H5 contrast.
+
+After an informative short-feedback result, extend the real paired evaluation
+to a meaningful shedding-time window, then original long-window validation.
+Report total drag, lift mean/fluctuation, action effort and prediction errors.
+HydroGym/PPO integration remains required, with explicit candidate identity and
+real-CFD verification; the existing successful CFD-only PPO is preserved and
+must never be relabelled surrogate-assisted. Exploratory training, if separately
+approved, must not be mistaken for passing the old model admission tests.
+All earlier roadmap sections below are historical, not current execution state.
+
 ## Current — P030 diagnosis complete; prepare one longer-horizon intervention
 
 At04:26UTC P030r2 is terminalexit0 and independently recomputed. On the fixed

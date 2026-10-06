@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 最新工程事实：真实GPU推理完成，H5反馈实现中
+
+统一内存探针 `74f94b14bb81495daed3568042bed798` 正常结束。原官方K1在同一已有帧上完成3次五候选H2推理，首次1.150291秒、热运行0.139241/0.137661秒；最低采样MemAvailable113.4714GiB。CUDAfree约1.78GiB仅作观测，不能等同实际可分配余量。模型权重不变，没有训练/CFD动作；报告 `docs/K1_UMA_GPU_INFERENCE_REVIEW_20261006.md` 已同步GitLab6c27470。不外推长时资源安全或CPU/GPU数值等价。
+
+H5单因素真实反馈尚在实现和独立检查，未启动。看板已绑定FC-E047真实终态（10次零动作/零收益），不是运行中。后续仍需真实减阻验证及兼容HydroGym/PPO流程；短MPC和GPU工程成功不能替代整体目标。以下为历史。
+
 ## 最新：第二轮真实反馈完成；准备 H5 单因素对照
 
 FC-E047，同实例 `6f554f10e87e4b9f9d6b6ed8b555c548` 已exit0/PID0，10次动作全部为0；两分支各200个原始力样本相同，减阻收益0。结果 SHA `74a28d45dce9b84ec5044700fe470390cde899a2fcf40a0b893c1b28817d99ca`，独立报告 `docs/EXPLORATORY_CAUSAL_HISTORY_H2_TERMINAL_REVIEW_20261006.md` SHA `9ceb4d58a66b549faa86834d15d0444d57c8fdcc2f2635f18859440a679d2098`。没有新训练、PPO或正在运行的CFD计算。
