@@ -122,6 +122,26 @@ def candidate_cfd_status(root,run=subprocess.check_output):
         info['status']='身份或状态未验证';info['note']=str(exc)
     return info
 
+FORMAL_TERMINAL_BINDINGS={
+    'receipt':'30d3d0746580b8423a9f626a0ebe1b76c129acab7800158f74d7d8df3d8a1799',
+    'review':'62a6234ed0e08ab70532a5252f34e6c8b203a22c6c6abeea5a67ba2635fc8cd6'}
+
+def verified_formal_terminal(root):
+    root=Path(root)
+    receipt=root/'artifacts/fcp064_arm_b_formal_resume_r3_20261006/receipt.json'
+    review=root/'docs/P064_B_FORMAL_TERMINAL_REVIEW_20261006.md'
+    for key,path in [('receipt',receipt),('review',review)]:
+        if hashlib.sha256(path.read_bytes()).hexdigest()!=FORMAL_TERMINAL_BINDINGS[key]:
+            raise ValueError('formal terminal '+key+' SHA')
+    data=json.loads(receipt.read_text())
+    if data['scientific_admission'] is not False:raise ValueError('unexpected admission')
+    return {'terminal_verified':True,'scientific_pass':False,'running':False,
+            'receipt_sha256':FORMAL_TERMINAL_BINDINGS['receipt'],'review_sha256':FORMAL_TERMINAL_BINDINGS['review'],
+            'cached_comparison_result_sha256':'7158d4e7f977a4fa126c9293d85cad350ce1799b0685d691f02225834e550460',
+            'cached_comparison_review_sha256':'c7433e7b7bc364ded006d9ae17d1f1afea9465ce461385b57b926e60dc8ba1b7',
+            'status':'完整预测精度评估R3计算已完成／精度要求未全满足',
+            'note':'独审：力窗口2/6通过，4条旋转分支升力波动预测仍失败；原门槛不变。b00/b01真实CFD主窗约3.9%减阻已通过，不能代替模型精度验收。same6缓存H1/AR比较已完成，但缺少有符号H1序列且有batch/precision差异；signed H1 batch1诊断准备中、未运行。当前无GPU训练。实际资源见实时监控；.06仅启动核算，原评估实际allocator .15。'}
+
 def formal_evaluation_status(root,run=subprocess.check_output):
     root=Path(root)
     info={'status':'完整预测精度评估身份/状态未验证','invocation':None,'training':False,'scientific_pass':None}
@@ -138,6 +158,8 @@ def formal_evaluation_status(root,run=subprocess.check_output):
         elif state.get('MainPID')=='0':
             info['status']='完整预测精度评估R3退出，等待各门槛独审' if state.get('ExecMainStatus')=='0' else '完整预测精度评估R3失败/停止，证据保留'
         info['note']='精确复用R2 precision与validation10两阶段，仅运行其余6阶段；保留R1/R2失败与来源，未重算validation10。实际torch allocator .15，外层.06仅启动核算；原H100失败与科学门槛不变，exit0不等于通过。'
+        if state.get('MainPID')=='0' and state.get('ExecMainStatus')=='0':
+            info.update(verified_formal_terminal(root))
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['note']=str(exc)
     return info

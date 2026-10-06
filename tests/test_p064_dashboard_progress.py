@@ -97,3 +97,19 @@ def test_formal_missing_identity_does_not_claim_running(tmp_path):
     assert result['invocation'] is None
     assert result['training'] is False
     assert result['scientific_pass'] is None
+
+def test_verified_formal_terminal_is_scientific_failure(tmp_path,monkeypatch):
+    import hashlib,json
+    import p064_dashboard_progress as module
+    receipt=tmp_path/'artifacts/fcp064_arm_b_formal_resume_r3_20261006/receipt.json'
+    review=tmp_path/'docs/P064_B_FORMAL_TERMINAL_REVIEW_20261006.md'
+    receipt.parent.mkdir(parents=True);review.parent.mkdir(parents=True)
+    receipt.write_text(json.dumps({'scientific_admission':False}));review.write_text('independent review')
+    monkeypatch.setattr(module,'FORMAL_TERMINAL_BINDINGS',{'receipt':hashlib.sha256(receipt.read_bytes()).hexdigest(),'review':hashlib.sha256(review.read_bytes()).hexdigest()})
+    result=module.verified_formal_terminal(tmp_path)
+    assert result['terminal_verified'] and result['scientific_pass'] is False
+    assert result['running'] is False and '2/6' in result['note']
+    assert '未运行' in result['note']
+    review.write_text('changed')
+    import pytest
+    with pytest.raises(ValueError):module.verified_formal_terminal(tmp_path)
