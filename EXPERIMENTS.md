@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E066 — Actual start: fixed b01/b03 controlled development conversion
+
+Root launched `fluid-control-development-b01-b03-h5-conversion-20261006.service` at2026-10-06 10:27:34UTC, invocation `8ac389027a954b79bc1d766f89029a6b`, PID379249, independently observedrunning. This is CPU conversion of already saved U/p, not new CFD, model inference or training. Fixed starts0,100,…700 plus5followingframes at b01/base130 and b03/base144 select48controlledframes each; intended96frames/16six-frameHDF/80endpoints. These opened development phases cannot be relabelled independent finaltests.
+
+Approval SHA `c82e4a865d0d6e0927faee026baa84ebca2fcabb0707daa00f988174349dd5a3`; immutable driverSHA `cb7fdb83e620903be89c85f38286a0be0afbb4b95792adb7b7179065f85e8a9c`, selectorSHA `26c085d1da91c3452fc514cda9c06332afe75e600be7770f8d476c1029986cb0`. Eachphase selectedsourceinventory has108files, including96U/p plus12constant/system. Originalsources are read-only; R2 converter/helper source remainsunchanged. New two-file immutable closure avoids duplicate large source trees.9fixturetests independentlypassed beforelaunch; canonicalpromotion9PASS0.09s afterlaunch, exactproductionbytes retained. Tests prove engineering contracts only.
+
+Resources:12GiB/noSwap/CPU1,900s,Available50startup/22runtime/20reserve,serial4GiBfoamToVTK exporters; retainroot-ownedscratch. Output `artifacts/development_b01_b03_controlled_h5_conversion_20261006` is exclusive. No terminal metrics entered in CSV. A different reviewer will verify actualHDF/arrays/sourceposthash/cleanup atcompletion; this entry does not claim conversion success or scientific admission. b00 FC-E065 remains a separate running train-data conversion.
+
 ## FC-E065 — b00 controlled train trajectory conversion actually running
 
 Launched by Lead at10:17:37UTC, unit `fluid-control-b00-controlled-train-conversion-20261006.service`, invocation `f5ee31dd92624f0980a509084de9c756`. Independent same-handle observation: PID348063 active/running,59/801 written frames; official-reader terminal verification remains false. Approval SHA `4fa7192e13bf7ad3a141bffb483710e2400fd8ee243caa60a6e67ab695927686`; immutable executed adapter SHA `f96c882a90e7ecaf4a2f8a5fc327764909ab42b4e6bbb11cde8e99205488b075`. Output `artifacts/b00_controlled_train_conversion_20261006`; exact1602 U/p plus12 metadata files are SHA-bound, original source read-only.48 controlled cached frames are checked against old receipt-bound HDF arrays/actions/forces;753 remaining frames use unchanged official Curator sampler in16 batches, then one801-frame physical HDF is roundtripped through the official HDF5Reader.

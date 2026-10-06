@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E066 实际运行：b01/b03 固定96帧开发评估输入转换
+
+Root于2026-10-06 10:27:34UTC启动 `fluid-control-development-b01-b03-h5-conversion-20261006.service`，invocation `8ac389027a954b79bc1d766f89029a6b`，PID379249，归档时独立查询同handle active/running。固定b01/base130和b03/base144，各8个机械起点0,100,…700及后5帧，仅controlled48帧/phase，共96帧/16 mini-HDF/80未来端点。两相位均是已打开development，不是untouched test或统计独立泛化样本；不混入b00训练数据。
+
+批准 `docs/DEVELOPMENT_PHASE_H5_CONVERSION_APPROVAL_20261006.json` SHA `c82e4a865d0d6e0927faee026baa84ebca2fcabb0707daa00f988174349dd5a3`；执行driver `cb7fdb83e620903be89c85f38286a0be0afbb4b95792adb7b7179065f85e8a9c`，selector `26c085d1da91c3452fc514cda9c06332afe75e600be7770f8d476c1029986cb0`，输出 `artifacts/development_b01_b03_controlled_h5_conversion_20261006`。复用R2原样Curator/Reader/导出与cleanup，12GiB/noSwap/CPU1/900s、Available50启动22运行保留20；root-owned导出scratch保留，不改权限。归档时无终态结果，不把启动或CPU tests当成功；无模型/训练/CFD solver。9canonical CPUtests PASS0.09s，终态由非作者recovery独审后另记，CSV不填运行中指标。此前FC-E065 b00全轨迹转换是独立并行任务，不互相代替。
+
 ## FC-E065 当前实际任务：b00 整轨训练 HDF 转换中（不是训练或新 CFD）
 
 Root 于10:17:37UTC启动 `fluid-control-b00-controlled-train-conversion-20261006.service`，invocation `f5ee31dd92624f0980a509084de9c756`，独立观测同handle PID348063/active-running、59/801帧。进度来自已写入计数，不代表最终官方Reader验证完成。输入为已完成投影PPO b00真实CFD的801帧；仅整轨train，48已审控制帧复用、753新转换，不混zero轨迹，不重新拟合归一化。
