@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-P064 — A R1 启动失败、精确缓存建议完成、A R2 已越过首批更新
+
+Canonical P064 source/tests/plan/approval files are committed as `977a027d51c3ae03ade858deae0030d194a79eb8`. A R1 (`fluid-control-fcp064-aero-arm-a-20261006.service`, invocation `cfc40285f8ec49fdba9a99defe2960cc`) exited1 at the first CUDA transfer with **0 optimizer updates and 0 consumed windows**; no candidate was written. Its approval SHA is `c1872be6e816a2f058a111084594882ebfd9d3f0222e642ba58bfba71487ee1e`. This is an engineering startup failure, not a scientific A-arm outcome.
+
+The separately approved exact-53-file cache-advice unit (invocation `1364cefc6aa14d75a6574dd25931f154`) exited0 without modifying file bytes, permissions, sysctls or global cache policy. A same-source/same-argv R2 then started as `fluid-control-fcp064-aero-arm-a-r2-20261006.service`, invocation `50de1d8b43ce42ac923752fad76ca4d9`, approval SHA `773daa7329a46930b532586d884502d0c4170ea2c3a689ba73b2fb3d5da8b568`. The preserved milestone observation is at least 72/256 windows and 9/32 updates on the same live handle. This only establishes recovery past CUDA initialization and real optimizer progress; it does not establish cache causality, terminal success, improved precision, or any scientific metric. No scientific CSV row is added while R2 is running.
+
+Arm B pending SHA `d55a43ae5a68a23296508a555896bb2d8a0c980da558fff0ce13f1974e9f7cba` contains the complete Root-tested no-GPU argv, but remains preparation-only and unauthorized. B must start independently from the same K1 parent with fresh Adam, never from A, and requires a separate post-A approval. Fixed budgets remain 256 windows / 32 updates per arm; no early stopping or best-checkpoint selection.
+
 ## FC-E067 — Independent terminal baseline metrics retained without admission
 
 Actual K1 result `9ea3e0e781e76265bbc65ea52d6fec92ebe5b5cb7a93d91c3c9addb454f7c4de`, report `docs/P064_K1_DEVELOPMENT_TERMINAL_REVIEW_20261006.md` SHA `a15a6699cf20d0d3b76a8569357bd3580e1bb11fe232207164bff5cc08ab2fef`. Samea39f8106 PID0/exit0, supervisorerrornull. Independent reviewer rehashed16NPZ,378source/192runtime/5inputs and recomputed all80 field/force/persistence endpoints plus phase/pooled summaries. Largest field-sum reduction-order absolute difference2.614e-8, agreement relative1e-12/absolute1e-10; force metrics agree. Runtime12GiB/noSwap, minimumAvailable120994258944B; unchangedmodel/zerooptimizer source/runtime evidence, no independent model reload.

@@ -1,5 +1,11 @@
 # DECISIONS
 
+## 2026-10-06 — Preserve P064 A startup failure; continue only the approved same-source R2
+
+A R1 failed before any training update at its first CUDA transfer and is retained as an engineering failure, not hidden or interpreted as a data hypothesis result. One exact 53-file cache-advice operation was separately approved and completed without global cache clearing or data mutation. The same immutable A source/argv R2 subsequently crossed CUDA initialization and at least 9/32 updates. This temporal recovery is useful operational evidence but does not prove the cache state caused R1; do not change learning rate, schedule, architecture, data, or admission criteria while R2 is live.
+
+Arm B is only prepared: its complete CUDA-hidden dry-run passed, but execution remains unauthorized until A reaches a reviewed terminal state and Lead separately approves B. Both arms must restart from the identical K1 parent with fresh Adam and the same 32-update/256-window budget. Never initialize B from A, extend either arm post hoc, select a best intermediate checkpoint, or write running progress as scientific precision.
+
 ## 2026-10-06 — Investigate long controlled-state coverage without discarding successful feedback
 
 FC-E063 independently establishes a concrete remaining failure: controlled-branch

@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-P064 当前工程里程碑：A 臂 R1 在训练前失败，R2 同源恢复并持续运行
+
+已冻结并推送 P064 训练、显式 A/B 候选身份、官方 Reader/DataPipe 适配与 CPU 合同测试，代码提交 `977a027d51c3ae03ade858deae0030d194a79eb8`。A 臂首次 unit `fluid-control-fcp064-aero-arm-a-20261006.service` / invocation `cfc40285f8ec49fdba9a99defe2960cc` 在第一个 CUDA 迁移处退出1，完成 **0/32 optimizer updates、0/256 windows**，没有候选输出；批准 `docs/FC_P064_ARM_A_TRAINING_APPROVAL_20261006.json` SHA `c1872be6e816a2f058a111084594882ebfd9d3f0222e642ba58bfba71487ee1e`。这是启动失败，不是科学负结果。
+
+随后一次获批的精确 53 文件 `POSIX_FADV_DONTNEED` 建议任务 invocation `1364cefc6aa14d75a6574dd25931f154` 退出0；没有 `drop_caches`、sysctl、权限或数据修改。它之后的同源 R2 unit `fluid-control-fcp064-aero-arm-a-r2-20261006.service` / invocation `50de1d8b43ce42ac923752fad76ca4d9` 已通过 CUDA 初始化并实际完成至少 **9/32 updates、72/256 windows**；批准 SHA `773daa7329a46930b532586d884502d0c4170ea2c3a689ba73b2fb3d5da8b568`。R2 仍在同一 handle 运行，尚无终态候选、科学指标或 CSV；只能记录“精确建议后 R2 通过初始化并推进”，不能把缓存建议写成 R1 根因已证实。
+
+B 臂 pending `docs/FC_P064_ARM_B_TRAINING_PENDING_20261006.json` SHA `d55a43ae5a68a23296508a555896bb2d8a0c980da558fff0ce13f1974e9f7cba` 的完整 `CUDA_VISIBLE_DEVICES=` dry-run argv 已由 Root 实际通过，但 `execution_authorized=false`，未启动。A/B 都从同一个 K1 父本重新开始并使用 fresh Adam；B 不续训 A，只能在 A 实际终态检查后另行批准。
+
 ## FC-E067 最新终态独审：K1 在两开发相位的 H1 力预测均劣于持力基线
 
 同a39f8106任务已退出0且独立核验全部16NPZ/80端点、每起点/相位/pooled统计、378source/192runtime/5inputs。结果SHA `9ea3e0e781e76265bbc65ea52d6fec92ebe5b5cb7a93d91c3c9addb454f7c4de`；独审 `docs/P064_K1_DEVELOPMENT_TERMINAL_REVIEW_20261006.md` SHA `a15a6699cf20d0d3b76a8569357bd3580e1bb11fe232207164bff5cc08ab2fef`。最低Available120994258944B、零优化器/模型不变；独审只重算保存数组，没有再次加载模型。
