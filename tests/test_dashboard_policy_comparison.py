@@ -22,6 +22,27 @@ def test_missing_or_changed_field_fails_closed(tmp_path):
     assert not m._long_ppo_field(tmp_path)['verified']
     assert '非绝对压力差' in m.PAGE and '未另作无量纲缩放' in m.PAGE
 
+def test_projected_field_is_separate_sha_bound_actual_cfd(tmp_path,monkeypatch):
+    p=tmp_path/'artifacts/exploratory_projected_32768_long_field_preview_20261006';p.mkdir(parents=True)
+    result={'status':'PAIRED_PROJECTED_PPO_ACTUAL_CFD_PREVIEW_COMPLETE_NOT_ADMISSION',
+      'source_result_sha256':'199127979c6cb43e6304c60fc3373a2b1a8465476ffdd265d30c108dfffd0ca6',
+      'source_unchanged':True,'owned_containers_cleaned':True,'actual_cfd':True,
+      'model_prediction':False,'cfd_rerun':False,'scientific_admission':False,'time':228}
+    (p/'result.json').write_text(json.dumps(result));(p/'paired_actual_cfd_228.png').write_bytes(b'projected png')
+    hashes={(p/'result.json').read_bytes():'198aea20a908125ba33781873f6fd6f9b22f04db09c35f04aae87d14d698875a',
+            (p/'paired_actual_cfd_228.png').read_bytes():'cea4dc2d48ec1919a555704fc7654f08e958738fcd17408a57a7600eaf3c1acf'}
+    monkeypatch.setattr(m.hashlib,'sha256',lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
+    evidence=m._projected_long_ppo_field(tmp_path)
+    assert evidence['verified'] and evidence['actual_cfd'] and not evidence['model_prediction']
+    assert evidence['source_result_sha256']==result['source_result_sha256']
+    assert 'FC-E058 终点 t=228' in m.PAGE and 'FC-E055场图仍是未投影策略的历史证据' in m.PAGE
+
+def test_projected_field_missing_or_changed_fails_closed(tmp_path):
+    assert not m._projected_long_ppo_field(tmp_path)['verified']
+    p=tmp_path/'artifacts/exploratory_projected_32768_long_field_preview_20261006';p.mkdir(parents=True)
+    (p/'result.json').write_text('{}');(p/'paired_actual_cfd_228.png').write_bytes(b'wrong')
+    assert not m._projected_long_ppo_field(tmp_path)['verified']
+
 def test_equal_weight_comparison(tmp_path, monkeypatch):
     p = tmp_path/'artifacts/diverse_policy_h5_comparison_20261006/payload/result.json'
     p.parent.mkdir(parents=True)

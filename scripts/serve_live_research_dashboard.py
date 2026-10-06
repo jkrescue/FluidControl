@@ -392,6 +392,7 @@ function renderProjectedCFD(run,b01){
  const active=run?.verified===true,latest=run?.latest||{};
  const terminal=run?.reported_terminal;
  card.innerHTML=`<h3>FC-E058 · PPO策略＋镜像对称处理</h3><p><b>${terminal?'b00 800周期已完成并独立复核':active?(run.running?'真实CFD正在运行':'已停止，等待独立终态复核'):'尚未启动或运行证据尚未核实'}</b>${active?` · ${run.completed_cycles}/800 周期 · t=${num(latest.force_time,1)} / 228.0`:''}</p>${terminal?`<p>主窗(168,228]：减阻 <b>${(100*terminal.paired_drag_reduction).toFixed(3)}%</b>，后柱Cl′ RMS比 <b>${terminal.paired_rear_cl_fluctuation_rms_ratio.toFixed(3)}</b>，平均Cl偏置比 <b>${(100*terminal.absolute_mean_rear_cl_over_paired_zero_rms).toFixed(2)}%</b>；三项原标准均通过。</p><p class="small">早期first6.2偏置比 ${(100*terminal.early_mean_bias_ratio).toFixed(2)}%，未通过原10%；不能写成全部窗口通过。</p>`:active?`<p>当前/最低MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；当前实际转速 ${num(latest.omega,3)}。</p>`:''}<p class="small">复用同一32768步冻结策略，仅增加镜像对称处理；不是新训练或新模型。CPU策略推理与真实CFD配对执行；原10%均值偏置约束不变，20%仅敏感性参考。下方保留前次未处理策略的已完成结果，不能当作本次结果。</p>`;
+ if(run?.paired_field?.verified===true){let field=document.createElement('div');field.innerHTML=`<h4>FC-E058 终点 t=228 · 投影策略与配对zero真实CFD</h4><img src="/projected-ppo-paired-field.png?v=${run.paired_field.sha256}" alt="左FC-E058投影策略右配对zero；上速度下ROI去均值压力；同色标真实CFD" loading="lazy" style="width:100%;height:auto"><p class="small">左：FC-E058投影策略；右：配对zero。上：速度模长；下：各支 CFD pressure with own ROI mean removed（solver units），不是绝对压力比较。两支使用相同网格、掩膜和色标。仅一个终点时刻的真实OpenFOAM场，不是FNO预测，也不能单独证明平均减阻或约束通过。下方FC-E055场图仍是未投影策略的历史证据。</p>`;card.appendChild(field);}
  if(b01?.verified===true){let phase=document.createElement('div');phase.innerHTML=`<hr><h3>FC-E059 · b01固定相位复验</h3><p><b>${b01.running?'真实CFD正在运行':'运行已停止，等待独立终态复核'}</b> · ${b01.completed_cycles}/800 周期 · t=${num(b01.latest.force_time,1)} / 210.0</p><p>当前/最低MemAvailable ${num(b01.current_available_gib,2)} / ${num(b01.minimum_available_gib,2)} GiB；当前实际转速 ${num(b01.latest.omega,3)}。</p><p class="small">同一冻结策略、投影、过滤器和800周期，只把预声明初态改为历史validation相位b01/restart130。首次unit因漏传--execute在模型和CFD前失败；本卡绑定Root批准的r2实际运行。尚无跨相位成功或科学准入。</p>`;card.appendChild(phase);}
 }
 function renderPolicyH5Comparison(run){
@@ -4640,6 +4641,13 @@ class Handler(BaseHTTPRequestHandler):
                 if hashlib.sha256(payload).hexdigest() == evidence["sha256"]:
                     return self._send(payload, "image/png")
             return self._send(b"not found", "text/plain", 404)
+        if path == "/projected-ppo-paired-field.png":
+            evidence = _projected_long_ppo_field(self.root)
+            if evidence.get("verified") and parse_qs(parsed.query).get("v") == [evidence["sha256"]]:
+                payload = (self.root / "artifacts/exploratory_projected_32768_long_field_preview_20261006/paired_actual_cfd_228.png").read_bytes()
+                if hashlib.sha256(payload).hexdigest() == evidence["sha256"]:
+                    return self._send(payload, "image/png")
+            return self._send(b"not found", "text/plain", 404)
         if path == "/direct-cfd-pair.png":
             file = (
                 self.root
@@ -4844,6 +4852,8 @@ class Handler(BaseHTTPRequestHandler):
             data["projected_ppo_long_cfd"] = _exploratory_diverse_32768_long_cfd(self.root, projected=True)
             data["projected_ppo_long_cfd"]["reported_terminal"] = (
                 _projected_b00_reported_terminal(self.root, data["projected_ppo_long_cfd"]))
+            data["projected_ppo_long_cfd"]["paired_field"] = _projected_long_ppo_field(
+                self.root)
             data["projected_ppo_b01_long_cfd"] = _exploratory_diverse_32768_long_cfd(
                 self.root, projected_b01=True)
             data["exploratory_final_ppo_real_cfd"] = _exploratory_final_ppo_real_cfd(self.root)
@@ -4868,6 +4878,30 @@ def _long_ppo_field(root):
             return {"verified": False}
         return {"verified": True, "sha256": pins['paired_actual_cfd_228.png'], "actual_cfd": True, "model_prediction": False}
     except (OSError, ValueError, KeyError):
+        return {"verified": False}
+
+
+def _projected_long_ppo_field(root):
+    base = root / "artifacts/exploratory_projected_32768_long_field_preview_20261006"
+    pins = {"result.json": "198aea20a908125ba33781873f6fd6f9b22f04db09c35f04aae87d14d698875a",
+            "paired_actual_cfd_228.png": "cea4dc2d48ec1919a555704fc7654f08e958738fcd17408a57a7600eaf3c1acf"}
+    try:
+        if any(hashlib.sha256((base/name).read_bytes()).hexdigest() != digest
+               for name,digest in pins.items()):
+            return {"verified": False}
+        d = json.loads((base/'result.json').read_text())
+        if not (d['status'] == 'PAIRED_PROJECTED_PPO_ACTUAL_CFD_PREVIEW_COMPLETE_NOT_ADMISSION'
+                and d['source_result_sha256']
+                == '199127979c6cb43e6304c60fc3373a2b1a8465476ffdd265d30c108dfffd0ca6'
+                and d['source_unchanged'] is True and d['owned_containers_cleaned'] is True
+                and d['actual_cfd'] is True and d['model_prediction'] is False
+                and d['cfd_rerun'] is False and d['scientific_admission'] is False
+                and d['time'] == 228):
+            return {"verified": False}
+        return {"verified": True, "sha256": pins['paired_actual_cfd_228.png'],
+                "actual_cfd": True, "model_prediction": False,
+                "source_result_sha256": d['source_result_sha256']}
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
         return {"verified": False}
 
 
