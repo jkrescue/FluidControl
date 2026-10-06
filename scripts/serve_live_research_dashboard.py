@@ -367,8 +367,9 @@ function renderExploratoryH5PPO(ppo){
 }
 function renderFinalPPORealCFD(run){
  const card=$('final-ppo-real-cfd');card.hidden=run?.verified!==true;if(card.hidden)return;
- const rows=run.actual_timeseries||[],latest=run.latest||{};
- $('final-ppo-real-cfd-summary').innerHTML=`<p><b>${run.running?'真实 CFD 正在运行':'真实 CFD 已停止，等待终态复核'}</b> · ${run.completed_cycles}/${run.planned_cycles} 个配对周期 · CPU策略推理，无GPU训练</p><p>最近周期 t=${num(latest.force_time,1)}：实际动作 ${num(latest.omega,3)}；PPO/zero 总 Cd ${num(latest.ppo_total_cd,5)} / ${num(latest.zero_total_cd,5)}；PPO/zero 后柱 Cl ${num(latest.ppo_rear_cl,5)} / ${num(latest.zero_rear_cl,5)}。最低 MemAvailable ${num(run.minimum_available_gib,2)} GiB。</p><p class="small">策略训练已完成4096步，本卡是冻结最终策略直接驱动真实CFD的配对执行；没有在线FNO、没有MPC替代，也尚未证明物理收益。</p>`;
+ const rows=run.actual_timeseries||[],latest=run.latest||{},terminal=run.terminal_review,labels={full:'完整 12.4 D/U',first_6p2:'前 6.2 D/U',trailing_6p2:'后 6.2 D/U'};
+ const table=terminal?.verified?`<p><b>独立终态复核：没有同时满足物理约束，不能认定控制成功。</b> 124次策略请求均为 +0.75；实际动作经速率限制后117个终点饱和在+0.75。</p><table><thead><tr><th>窗口</th><th>PPO / zero平均总Cd</th><th>减阻率</th><th>后柱Cl′ RMS变化</th><th>PPO平均后柱Cl</th><th>|均值| / 配对zero RMS</th><th>10%原门槛 / 20%敏感性</th></tr></thead><tbody>${terminal.windows.map(r=>`<tr><td>${labels[r.name]}</td><td>${r.ppo_total_cd_mean.toFixed(5)} / ${r.zero_total_cd_mean.toFixed(5)}</td><td>${(r.drag_reduction_percent>=0?'+':'')+r.drag_reduction_percent.toFixed(3)}%</td><td>${(r.rear_cl_rms_change_percent>=0?'+':'')+r.rear_cl_rms_change_percent.toFixed(3)}%</td><td>${r.ppo_rear_cl_mean.toFixed(5)}</td><td>${r.mean_bias_percent.toFixed(2)}%</td><td>${r.passes_original_10_percent_mean_bias?'PASS':'FAIL'} / ${r.passes_sensitivity_20_percent_mean_bias?'PASS':'FAIL'}</td></tr>`).join('')}</tbody></table><p class="small">20%只作敏感性参考，不改变原10%均值偏置标准。以固定train-b00 zero RMS作分母时三窗也均失败。完整窗虽减阻0.412%，但Cl′ RMS增加10.586%、均值偏置52.731%，因此不是受约束物理成功。</p>`:'';
+ $('final-ppo-real-cfd-summary').innerHTML=`<p><b>${terminal?.verified?'真实 CFD 已完成并独立复核':run.running?'真实 CFD 正在运行':'真实 CFD 已停止，等待终态复核'}</b> · ${run.completed_cycles}/${run.planned_cycles} 个配对周期 · CPU策略推理，无GPU训练</p><p>最近周期 t=${num(latest.force_time,1)}：实际动作 ${num(latest.omega,3)}；PPO/zero 总 Cd ${num(latest.ppo_total_cd,5)} / ${num(latest.zero_total_cd,5)}；PPO/zero 后柱 Cl ${num(latest.ppo_rear_cl,5)} / ${num(latest.zero_rear_cl,5)}。最低 MemAvailable ${num(run.minimum_available_gib,2)} GiB。</p>${table}<p class="small">策略训练已完成4096步，本卡是冻结最终策略直接驱动真实CFD的配对执行；没有在线FNO、没有MPC替代，也没有科学准入。</p>`;
  drawActualSeries('final-ppo-real-cfd-actions',rows,[{key:'omega',label:'PPO实际转速',color:'#60c9fb'}],'最终PPO实际动作（周期终点）');
  drawActualSeries('final-ppo-real-cfd-drag',rows,[{key:'ppo_total_cd',label:'PPO total Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero total Cd',color:'#f2c879'}],'真实CFD总阻力 Cd（周期终点）');
  drawActualSeries('final-ppo-real-cfd-lift',rows,[{key:'ppo_rear_cl',label:'PPO rear Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero rear Cl',color:'#f69d97'}],'真实CFD后柱升力 Cl（周期终点）');
@@ -1701,6 +1702,8 @@ _H5_PPO_RESULT_SHA = "138a7b192eef1a6454cefa47cda7803c9b362937641a645c00889ac5a5
 _H5_PPO_SUPERVISOR_SHA = "87d9f0be7dfb49565c0ea335691ad598f644f411b22297e6cce7fac4e8ab384c"
 _FINAL_PPO_CFD_APPROVAL_SHA = "7ace192519a08795fe9217473fae33941fc5edbb1075daeeb3701e672c521cb3"
 _FINAL_PPO_CFD_DRIVER_SHA = "44b488a97a2882e1325da8871d3ac4905cdae2a6f2cbb17202ced91afc58b91a"
+_FINAL_PPO_CFD_RESULT_SHA = "4007493f22de5855cbd0574e0ec006ca715941b8396f4e48af6527dc11e03d47"
+_FINAL_PPO_CFD_REVIEW_SHA = "33c15b7ca14e9d65ef158cbec763dcbc0f16d162ac30f129d3b13ddb765eb301"
 
 
 def _long_h5_recovered_metrics(root: Path) -> dict | None:
@@ -1934,6 +1937,71 @@ def _exploratory_final_ppo_real_cfd(root: Path) -> dict:
         available = [row.get("MemAvailable") for row in resources]
         if not available or any(type(value) is not int or value <= 0 for value in available):
             raise ValueError("missing final PPO CFD resources")
+        terminal = None
+        result_path = base / "result.json"
+        review_path = root / "docs/EXPLORATORY_FINAL_PPO_CFD_TERMINAL_REVIEW_20261006.md"
+        if (completed == 124 and not running and result_path.is_file()
+                and review_path.is_file()
+                and hashlib.sha256(result_path.read_bytes()).hexdigest()
+                == _FINAL_PPO_CFD_RESULT_SHA
+                and hashlib.sha256(review_path.read_bytes()).hexdigest()
+                == _FINAL_PPO_CFD_REVIEW_SHA):
+            result = json.loads(result_path.read_text())
+            if (result.get("status") != "EXPLORATORY_FINAL_PPO_REAL_CFD_COMPLETE_NOT_ADMISSION"
+                    or result.get("cycles") != 124
+                    or result.get("scientific_admission") is not False
+                    or result.get("approval_sha256") != _FINAL_PPO_CFD_APPROVAL_SHA
+                    or result.get("source_restart_unchanged") is not True
+                    or result.get("owned_containers_cleaned") is not True
+                    or result.get("fno_inference") is not False
+                    or result.get("mpc_action_selection") is not False
+                    or len(result.get("rows", [])) != 124
+                    or any(row.get("requested_omega") != .75
+                           for row in result["rows"])
+                    or result.get("action_summary", {}).get("saturated_endpoints") != 117
+                    or result.get("action_summary", {}).get("rate_limited_endpoints") != 7):
+                raise ValueError("unexpected final PPO CFD terminal result")
+            expected_windows = {
+                "full": ([148.0, 160.4], 2480),
+                "first_6p2": ([148.0, 154.2], 1240),
+                "trailing_6p2": ([154.2, 160.4], 1240),
+            }
+            fixed_zero_rms = 1.1826535012844825
+            terminal_windows = []
+            for name, (interval, samples) in expected_windows.items():
+                window = result["windows"][name]
+                ppo = window["branches"]["ppo"]
+                zero = window["branches"]["zero"]
+                drag = window["paired_drag_reduction"]
+                rms_ratio = window["paired_rear_cl_fluctuation_rms_ratio"]
+                bias = window["absolute_mean_rear_cl_over_paired_zero_rms"]
+                values = [drag, rms_ratio, bias, ppo["total_cd_mean"],
+                          zero["total_cd_mean"], ppo["rear_cl_mean"],
+                          ppo["rear_cl_fluctuation_rms"],
+                          zero["rear_cl_fluctuation_rms"]]
+                if (window.get("interval_open_left_closed_right") != interval
+                        or ppo.get("samples") != samples or zero.get("samples") != samples
+                        or any(type(value) not in (int, float) or not math.isfinite(value)
+                               for value in values)):
+                    raise ValueError("invalid final PPO CFD terminal window")
+                terminal_windows.append({"name": name,
+                    "drag_reduction_percent": 100 * drag,
+                    "rear_cl_rms_change_percent": 100 * (rms_ratio - 1),
+                    "mean_bias_percent": 100 * bias,
+                    "fixed_reference_mean_bias_percent":
+                        100 * abs(ppo["rear_cl_mean"]) / fixed_zero_rms,
+                    "passes_original_10_percent_mean_bias": bias <= .1,
+                    "passes_sensitivity_20_percent_mean_bias": bias <= .2,
+                    "ppo_total_cd_mean": ppo["total_cd_mean"],
+                    "zero_total_cd_mean": zero["total_cd_mean"],
+                    "ppo_rear_cl_mean": ppo["rear_cl_mean"],
+                    "ppo_rear_cl_rms": ppo["rear_cl_fluctuation_rms"],
+                    "zero_rear_cl_rms": zero["rear_cl_fluctuation_rms"]})
+            terminal = {"verified": True, "result_sha256": _FINAL_PPO_CFD_RESULT_SHA,
+                        "review_sha256": _FINAL_PPO_CFD_REVIEW_SHA,
+                        "requested_positive_limit_count": 124,
+                        "saturated_endpoints": 117, "rate_limited_endpoints": 7,
+                        "physical_success": False, "windows": terminal_windows}
         return {"verified": True, "running": running,
                 "completed_cycles": completed, "planned_cycles": 124,
                 "latest": latest, "actual_timeseries": actual_timeseries,
@@ -1941,7 +2009,8 @@ def _exploratory_final_ppo_real_cfd(root: Path) -> dict:
                 "policy_training_complete": True, "inference_device": "cpu",
                 "gpu_training": False, "online_fno": False, "mpc": False,
                 "scientific_admission": False, "control_success_verified": False,
-                "approval_sha256": _FINAL_PPO_CFD_APPROVAL_SHA}
+                "approval_sha256": _FINAL_PPO_CFD_APPROVAL_SHA,
+                "terminal_review": terminal}
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
             subprocess.SubprocessError):
         return {"verified": False, "running": False,

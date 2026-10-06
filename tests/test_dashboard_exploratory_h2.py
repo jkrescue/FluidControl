@@ -345,6 +345,60 @@ def test_final_ppo_real_cfd_live_card_uses_authentic_force_channels_and_no_mpc_f
     assert '不使用上方旧 MPC 流场图' in m.PAGE
 
 
+def test_final_ppo_terminal_review_reports_all_windows_and_keeps_constraints(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    docs=tmp_path/'docs';docs.mkdir()
+    approval={'status':'EXPLORATORY_FINAL_PPO_REAL_CFD_EXECUTION_APPROVED',
+              'execution_authorized':True,'steps':124,'inference_device':'cpu',
+              'scientific_admission':False,'driver_sha256':m._FINAL_PPO_CFD_DRIVER_SHA}
+    approval_path=docs/'EXPLORATORY_FINAL_PPO_CFD_APPROVAL_20261006.json';approval_path.write_text(json.dumps(approval))
+    review=docs/'EXPLORATORY_FINAL_PPO_CFD_TERMINAL_REVIEW_20261006.md';review.write_text('review')
+    driver=tmp_path/'artifacts/exploratory_final_ppo_cfd_source_20261006_immutable/run_exploratory_ppo_real_cfd.py'
+    driver.parent.mkdir(parents=True);driver.write_text('driver')
+    base=tmp_path/'artifacts/exploratory_final_ppo_real_cfd_20261006';base.mkdir()
+    def obs(front,rear,cl,omega):
+        x=[0.0]*69;x[64]=front;x[66]=rear;x[67]=cl;x[68]=omega;return x
+    rows=[]
+    for step in range(1,125):
+        rows.append({'step':step,'start_time':148.+(step-1)*.1,'end_time':148.+step*.1,
+          'requested_omega':.75,'applied_omega':min(.75,step*.1),'applied_delta_omega':.1 if step<=7 else 0.,
+          'output_observation':obs(1.4,.9,-.62,min(.75,step*.1)),
+          'zero_observation':obs(1.4,.9,0.,0.),
+          'solver_health':{'ppo':{'steps':20,'solver_ended_cleanly':True},'zero':{'steps':20,'solver_ended_cleanly':True}}})
+    (base/'progress.json').write_text(json.dumps({'completed_cycles':124,'rows':rows}))
+    (base/'resources.jsonl').write_text(json.dumps({'MemAvailable':119*2**30})+'\n')
+    def window(interval,samples,drag,ratio,bias,mean):
+        return {'interval_open_left_closed_right':interval,
+          'branches':{'ppo':{'samples':samples,'total_cd_mean':2.29,'rear_cl_mean':mean,'rear_cl_fluctuation_rms':1.30},
+                      'zero':{'samples':samples,'total_cd_mean':2.30,'rear_cl_mean':0.,'rear_cl_fluctuation_rms':1.18}},
+          'paired_drag_reduction':drag,'paired_rear_cl_fluctuation_rms_ratio':ratio,
+          'absolute_mean_rear_cl_over_paired_zero_rms':bias}
+    result={'status':'EXPLORATORY_FINAL_PPO_REAL_CFD_COMPLETE_NOT_ADMISSION','cycles':124,
+      'scientific_admission':False,'approval_sha256':m._FINAL_PPO_CFD_APPROVAL_SHA,
+      'source_restart_unchanged':True,'owned_containers_cleaned':True,'fno_inference':False,'mpc_action_selection':False,
+      'rows':[{'requested_omega':.75} for _ in range(124)],
+      'action_summary':{'saturated_endpoints':117,'rate_limited_endpoints':7},
+      'windows':{'full':window([148.,160.4],2480,.004117553,1.1058626,.5273107,-.62114),
+                 'first_6p2':window([148.,154.2],1240,-.01635856,1.199832,.417266,-.49151),
+                 'trailing_6p2':window([154.2,160.4],1240,.02459428,.990986,.637353,-.75077)}}
+    result_path=base/'result.json';result_path.write_text(json.dumps(result))
+    hashes={approval_path.read_bytes():m._FINAL_PPO_CFD_APPROVAL_SHA,driver.read_bytes():m._FINAL_PPO_CFD_DRIVER_SHA,
+            result_path.read_bytes():m._FINAL_PPO_CFD_RESULT_SHA,review.read_bytes():m._FINAL_PPO_CFD_REVIEW_SHA}
+    monkeypatch.setattr(m.hashlib,'sha256',lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
+    unit='\n'.join(['InvocationID=fd6d92f7ea9946b49c91c07e21f1d74b','MainPID=0','ActiveState=active',
+                    'SubState=exited','Result=success','ExecMainCode=1','ExecMainStatus=0'])
+    monkeypatch.setattr(m.subprocess,'check_output',lambda *args,**kwargs:unit)
+    terminal=m._exploratory_final_ppo_real_cfd(tmp_path)['terminal_review']
+    assert terminal['verified'] and not terminal['physical_success']
+    assert terminal['requested_positive_limit_count']==124 and terminal['saturated_endpoints']==117
+    assert len(terminal['windows'])==3
+    assert all(not row['passes_original_10_percent_mean_bias'] for row in terminal['windows'])
+    assert all(not row['passes_sensitivity_20_percent_mean_bias'] for row in terminal['windows'])
+    assert terminal['windows'][0]['drag_reduction_percent']==pytest.approx(.4117553)
+    assert terminal['windows'][0]['rear_cl_rms_change_percent']==pytest.approx(10.58626)
+    assert '20%只作敏感性参考，不改变原10%均值偏置标准' in m.PAGE
+
+
 def test_causal_terminal_binding_is_distinct_and_nonadmitting(tmp_path, monkeypatch):
     from types import SimpleNamespace
     base=tmp_path/'artifacts/exploratory_causal_history_h2_real_cfd_20261006';base.mkdir(parents=True)
