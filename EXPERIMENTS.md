@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E042 — P029 matched H10: force improves, field trade-off remains
+
+The actual train-only 44-case, origin-51, H10 comparison completed under invocation `f7291c51f1f1423fa4093b08e71371fd`. The approved execution source is `docs/FC_P029_H10_COMPARISON_EXECUTION_APPROVAL_20261006.json` SHA `6a3aaa1aa22b02c24d470992017b28bc446e009211291e550a3ee81b1a49b771`; result SHA is `aed040eb22766f8f47b1f6093f50bc1aa753dd748cd90b8d68ac9db1095b329d`; independent report `docs/FC_P029_H10_TERMINAL_REVIEW_20261006.md` SHA is `824b17f9b615c9d086735a7a8f285902e1749ddc7f8b81a782fa43206c69f49e`. The current repository state at recording is `d57c1f0`, while the actual evaluated diagnostic/source closure derives from reviewed commit `ab1c0c5` and immutable 13-file manifest SHA `44edc4acd9a490402407319d9c0bf023b239e130f54ee3860dd7f4fe911fc44b`; the CSV therefore records `ab1c0c5` as the executed code identity rather than the later documentation state.
+
+Under identical 44 origins, recorded actions, normalization and horizon, K1/P028/P029 H10 AR mean-case field RMSE is `0.038909243208102205 / 0.033543899316679344 / 0.03793723525648767`; rear-Cl MAE is `0.03869321600319711 / 0.039507443905313265 / 0.03335770925861487`; total-Cd MAE is `0.01690930107777769 / 0.017283562435345214 / 0.0153860518200831`. Thus P029 improves all three metrics versus K1, and improves the two force metrics versus P028, but its field error remains 13.10% worse than P028. The unchanged K1/K4/persistence arrays reproduce exactly and all 44 P029-versus-parent H1 force-equality flags are true.
+
+The force improvement is not a uniform fluctuation repair. P029 rear-Cl RMS absolute error is better than K1 for train8/train16 but worse for base (`0.016772501092118808→0.01885180255257461`); by physical phase only b04 clearly improves, while b00/b02/b06 worsen slightly. This diagnostic is `COMPLETE_NOT_ADMISSION`: it used no optimizer, saved no model, accessed no validation/frozen data and authorizes neither formal admission nor PPO. The separately running original formal suite remains the decisive unchanged evaluation.
+
 ## FC-E041 — P028 original full formal complete: scientific FAIL
 
 Invocation `eb4e12507302498bb8944373e0717a25` completed normally;35 output hashes,411 source hashes and8 containers exit0/noOOM independently verified. Receipt SHA `63fd75d4e90176dd94998f2844f2f70cb5a7e357bd59d5362591019ed8655154`; report `docs/FC_P028_ORIGINAL_FORMAL_TERMINAL_REVIEW_20261006.md` SHA `ae98f3a63b195aca184ce348d2e1991f88ad2f416766105bb8bd5b788107ee44`. Minimum host free28.029789GiB. No PPO/frozen-test access.

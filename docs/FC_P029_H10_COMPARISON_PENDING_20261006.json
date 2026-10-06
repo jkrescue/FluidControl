@@ -1,0 +1,224 @@
+{
+  "baselines_file": {
+    "path": "/workspace/fluid_control/artifacts/matched_start_full40_extension/train20_physics_summary.json",
+    "sha256": "b5b7923f30600eba25c837f3b8d6781f37afbb6fcb1649e0c0d410f32a101ed7"
+  },
+  "candidates": {
+    "1": {
+      "manifest": "/workspace/fluid_control/artifacts/fcp026_history_training_k1_20261005/candidate/dual_model_manifest.json",
+      "manifest_sha256": "7adca21e3a75691b10f164c342ea91995cc38060e7416dd217b8bd8e5feeacc7"
+    },
+    "4": {
+      "manifest": "/workspace/fluid_control/artifacts/fcp026_history_training_k4_20261005/candidate/dual_model_manifest.json",
+      "manifest_sha256": "9d1fb9bd61e125451c5c8be802d447077928174e047364b1ef34ba64e2ae1b5e"
+    }
+  },
+  "comparison_contract": {
+    "families": [
+      "base",
+      "train8",
+      "train16"
+    ],
+    "formal_or_scientific_admission": false,
+    "horizon": 10,
+    "lead_must_review_and_authorize": true,
+    "new_arm": "P029_flow_plus_byte_identical_P026_K1_aerodynamic",
+    "origin": 51,
+    "original_p027_k1_k4_arms_preserved": true,
+    "origins": 44,
+    "recorded_actions": true
+  },
+  "comparison_profile": "p029",
+  "config": {
+    "path": "/workspace/fluid_control/artifacts/fcp027_diagnostic_source_20261006_immutable/training_config.yaml",
+    "sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
+  },
+  "data": {
+    "base": {
+      "manifest_sha256": "5213c7bb07c824c6e601636c3cfa974b80ec7c051633b0c8368a045cea41ddd2",
+      "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+      "root": "/workspace/fluid_control/data/curated/tandem_cylinders_matched_start_full40_dev30_v1",
+      "train_files": {
+        "matched_start_acquisition_train_b00_m0375.h5": "85e5b5a60c01c8f3521d580afc68f81f501e4bc94e092a8e873a582e11fd0d82",
+        "matched_start_acquisition_train_b00_m075.h5": "bd2622c0c6a1174bc0bc95033240bda410e7cd8fd50722b3de7324be854cdaad",
+        "matched_start_acquisition_train_b00_p0375.h5": "df422ad65e1bab16feb233c1ca1023087376fa0191666902bfb7211731821181",
+        "matched_start_acquisition_train_b00_p075.h5": "f7aa886ead70e7f2f8e185acc1b3034fcd54d31c9a6c5144e9c0f51a60674ada",
+        "matched_start_acquisition_train_b00_zero.h5": "243caa79ac320b421adc1bf0c2cc830a32482dc758c3c0f9ce71d26171a61a01",
+        "matched_start_acquisition_train_b02_m0375.h5": "8ebaaf7c763886fe992c266ede94dd01f74069f0739fca541003eef68d4969de",
+        "matched_start_acquisition_train_b02_m075.h5": "1fac26417fc1188c04be3c215a84f731446e94d16a924dd05ab393d4692f2704",
+        "matched_start_acquisition_train_b02_p0375.h5": "04b522d3946b53831e16422ed0c7377963e0a666ccde08e5837717ceb7195c81",
+        "matched_start_acquisition_train_b02_p075.h5": "61bb3f8a741354b407b962a313b7070ab718006f619df121cd5b98737d273b3f",
+        "matched_start_acquisition_train_b02_zero.h5": "54f95af21c382145a26a006bad4bc9e90f9cc6c1e6cfbf5c47ab85fc58f43c7e",
+        "matched_start_acquisition_train_b04_m0375.h5": "d09265b7c8670a9d3053be18358794c9a8a97ac1d200394fae72656514be2fee",
+        "matched_start_acquisition_train_b04_m075.h5": "9fd391090802f7f6a7189d1cbb2ccedf3e667fa4ee78b2f8f1c2c20c1dea0345",
+        "matched_start_acquisition_train_b04_p0375.h5": "985d3200548d2b3b587d6c5cd9a37887f37b73a3edc1e125a26c099b5be69be7",
+        "matched_start_acquisition_train_b04_p075.h5": "7af58ef6cc51882e6d508f6f75de10c03c049169c6843053c27f4fef8f0075b3",
+        "matched_start_acquisition_train_b04_zero.h5": "37c2abc9ef54496c1952239f9c7fba1815d2d1c6694efa3921d459256d27edf2",
+        "matched_start_acquisition_train_b06_m0375.h5": "c851e71466892cc9a3f850819a599ca9d9a2f998e4431b96b2c47210bedf9cfc",
+        "matched_start_acquisition_train_b06_m075.h5": "36a1aa9b1c53d756d842d47b92b9a2310c904fef6f499899d81e548e6f56f173",
+        "matched_start_acquisition_train_b06_p0375.h5": "849fb79ff18906e532ff490fe35e366aa03fc50436d7e7329d6ab804b61f7617",
+        "matched_start_acquisition_train_b06_p075.h5": "e5fb2e91369fbfbd06cc8952f41b91aa051fe91670f4a22c39aeb4548a8ff83d",
+        "matched_start_acquisition_train_b06_zero.h5": "0d5fc40449700d381eaec3a56eadb0159789065af18f11777fdf848a286b07e8"
+      }
+    },
+    "train16": {
+      "manifest_sha256": "7c62dab94e317442cecf7ea3be547cf6e03c594a2c7ec2a1a695caba2445cf5b",
+      "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+      "root": "/workspace/fluid_control/data/curated/tandem_cylinders_directppo_train16_v1",
+      "train_files": {
+        "direct_cfd_directppo2048_v1_env0_ep0002_b00.h5": "1830868b5907ac3d53a873e265263da8d462ba72bf85f378a28bdd567bdbafc6",
+        "direct_cfd_directppo2048_v1_env0_ep0003_b00.h5": "f63d9d91f5609358bf73c9e7911ae456410ace45b6c6facf0b0206ee251844f8",
+        "direct_cfd_directppo2048_v1_env0_ep0004_b00.h5": "60a3bec559711da8d01f875f4155b7c787fb1d53ba06704fd7c7bd5440e5c816",
+        "direct_cfd_directppo2048_v1_env0_ep0005_b00.h5": "00cffebb116505b577f69369ba67592f18b293e8ef679af2565924ca660389e6",
+        "direct_cfd_directppo2048_v1_env0_ep0006_b00.h5": "ec9f914eef1ef2114e59a24e68a9eb4263fabeef11bab66ad7bdfb45f16a817b",
+        "direct_cfd_directppo2048_v1_env0_ep0007_b00.h5": "792fbbbedeb1a263995b3b314a54f529d168c415a6256648368eda807aaa533a",
+        "direct_cfd_directppo2048_v1_env0_ep0008_b00.h5": "53492f685155b5ebb1822811d5f281c9f4685d8c2eabfc8a7adec370a3117ee6",
+        "direct_cfd_directppo2048_v1_env0_ep0009_b00.h5": "270c88a8cd9f58c5d6415e850697c92a1b078141c6f9bf3764b008965d6779a6",
+        "direct_cfd_directppo2048_v1_env1_ep0002_b02.h5": "c7da5e744f557a4b7272d446ed1673a6c576ef0cc7acbeac04b9166cd5e7485e",
+        "direct_cfd_directppo2048_v1_env1_ep0003_b02.h5": "3db81c9294685d0d7606f77ae14861bd5d096d3dea63856f002d1ef7d41e4af0",
+        "direct_cfd_directppo2048_v1_env1_ep0004_b02.h5": "cbdd80e888e8a901072094b552b6459bb4869ce99f2ae753f63d9baebd7e8344",
+        "direct_cfd_directppo2048_v1_env1_ep0005_b02.h5": "78eb2618af72744c2533348ecb09a71f94c11273093981894d08adbaa9713725",
+        "direct_cfd_directppo2048_v1_env1_ep0006_b02.h5": "cf261484b061b50cd4ef6ed28a518b9263362498ca4fd9f08dbf46647042f991",
+        "direct_cfd_directppo2048_v1_env1_ep0007_b02.h5": "30ff129169c519c94caaef2a67cc5d1baf579d5c77e17d446148753b6e3f720d",
+        "direct_cfd_directppo2048_v1_env1_ep0008_b02.h5": "5e5c1cefe57bdaed761b33eaee4bbfeda04c86b4017ffe98428fc441db20c2fb",
+        "direct_cfd_directppo2048_v1_env1_ep0009_b02.h5": "c59958b947c8aac477d8f5c11eb46a376f7bd71eb93885a6aca4b40b3a320a74"
+      }
+    },
+    "train8": {
+      "manifest_sha256": "a0bd0e3b79d4d43ace407292c31a595d552dbd6e1a5de1fd149b1ca446f53f35",
+      "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+      "root": "/workspace/fluid_control/data/curated/tandem_cylinders_dynamic_train8_v1",
+      "train_files": {
+        "dynamic_train8_b00_multisine.h5": "400b3b5f8ea381da59c7806aef19f7cd2b50da303f717ad93cebf505c5949e9f",
+        "dynamic_train8_b00_prbs.h5": "121e6ec85ae00af0871b51cd8d04cbd907e3cb8ffd24ebb0976b84f101f82768",
+        "dynamic_train8_b02_multisine.h5": "aa437c31ee951c44e0821fb3d0525d55df3252c0fc9f5fece8fa78294135f210",
+        "dynamic_train8_b02_prbs.h5": "463cb19bff9f3dd0384065e9d6393585b2ec645c55aa173537d3db5d635a964f",
+        "dynamic_train8_b04_multisine.h5": "d7bbfbf1d18f40cb613f2564fabf3eafb95afbf3ee7635e29f9c20ae27f6e48b",
+        "dynamic_train8_b04_prbs.h5": "012eea462332b06298cc2128a47e1705ec9d6ec4effc08569bd73cd51970df0d",
+        "dynamic_train8_b06_multisine.h5": "b795aeddd0b0fec5af2939ee682badfb81e18c982b85eb2e3c1a8876e8505c94",
+        "dynamic_train8_b06_prbs.h5": "a2cc12e605b6ab40f43b30cb881b9e0d1f7a92a0a0cb1167d3667fc499fa8732"
+      }
+    }
+  },
+  "execution_authorized": false,
+  "intended_authorized_status": "P029_MATCHED_H10_COMPARISON_EXECUTION_APPROVED",
+  "lead_execution_contract": {
+    "approved_by": "Root technical lead",
+    "budget": {
+      "aerodynamic_state_evaluations": 1760,
+      "allocator_fraction": 0.06,
+      "container_memory_gib": 12,
+      "deadline_seconds": 900,
+      "flow_steps": 440,
+      "gpu": 0,
+      "origins": 44
+    },
+    "data_byte_hash_checks": "Allow read-only verification of the 44 pinned train HDF files and candidate files as part of this single diagnostic; no cache maintenance or data changes",
+    "date_utc": "2026-10-06",
+    "decision_rule": "Report all case/lead errors and paired differences; mixed52truth+10prediction cannot confer admission. No PPO or retraining automatically follows. Independently review evidence before selecting the next repair.",
+    "diagnostic_cpu_review_sha256": "aa18595476b1c2e3fe7d5a19ecffa679964772f19f48508ee70ba9e3442bd98e",
+    "failure_rule": "Preserve failed outputs and exact container evidence; diagnose before recovery; do not relax scientific or memory requirements",
+    "hypothesis": "Separate true-field-conditioned force prediction error from additional H10 frozen-flow rollout error on existing train trajectories",
+    "launcher_cpu_review_sha256": "b5510ac1985aec5c2d435ba1044e4477498e00ff2c5be40b769c91781adc5746",
+    "launcher_sha256": "aa8e337dbeac04ef5a0a79009ef31f50679ec8eab5f5db2d663c2a1b45259d90",
+    "no_optimizer_or_new_candidate": true,
+    "official_image": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e",
+    "one_intended_comparison": "Fixed terminal K1/K4; same 44 origins at frame51; true-state H1 versus free-AR H10 plus persistence",
+    "output": "/workspace/fluid_control/artifacts/fcp027_short_horizon_diagnostic_20261006",
+    "preparation_spec_sha256": "82c63e444e49b53f60e02097cdccd0daed13e5e8a6bf8242f046cdb8a09d3fa2",
+    "resource_floors_gib": {
+      "cuda_free": 20,
+      "runtime_available": 20,
+      "runtime_free": 20,
+      "startup_available": 50,
+      "startup_free": 30
+    },
+    "source_manifest_sha256": "ffdd7e623f9c8da0b39ccb167ca0b74c9013313fdf9cddc37266e884df578c1d",
+    "validation_and_frozen_access_forbidden": true
+  },
+  "p029_candidate": {
+    "manifest": "/workspace/fluid_control/artifacts/fcp029_control_aware_flow_training_20261006/payload/dual_model_manifest.json",
+    "manifest_sha256": "72b52ff2b6c702c9d100cc5fbade0952875289d25e826bb6b88020cb042d9b16"
+  },
+  "p029_terminal_proof": {
+    "candidate_sha256": {
+      "candidate/aerodynamic/FNO.0.1.mdlus": "e2f67dbde0ab28ccd7aa46b34ee3904178c7549cd1539f4a3ae40e2bd17e67b5",
+      "candidate/aerodynamic/checkpoint.0.1.pt": "ab2fe103bca0a8c84156e2c9fd7ded5336f2d4236436b593fc414e564d7e92d3",
+      "candidate/dual_model_manifest.json": "72b52ff2b6c702c9d100cc5fbade0952875289d25e826bb6b88020cb042d9b16",
+      "candidate/flow/FNO.0.1.mdlus": "2f71e25532b3002955396e7e97a2714d2e8ff46a0bbaef4cc7606783312658aa",
+      "candidate/flow/checkpoint.0.1.pt": "f2ed2cf7b4bea2fced7e05ff8277a792c867a6c5b2e56621f41bda269031f2ef",
+      "candidate/result.json": "39b246d07ff673de5b3d5fdc2e65be5e46bcb466e1290f5549f2e75d5cb81336",
+      "candidate/training_protocol.json": "97af7429b48a51fb10d533ca2547150522a093780f8695ec651f2ab14cb29e48"
+    },
+    "path": "/workspace/fluid_control/artifacts/fcp029_control_aware_flow_training_20261006/candidate_audit.json",
+    "reviewed_by_lead": false,
+    "sha256": "ab5b62397c5101017d2302daa01824118c9687672051f6d51b459ba29fb2906b"
+  },
+  "preparation_notes": "PREPARATION ONLY; frozen source closure does not authorize execution. Launcher/guard approval remains separate.",
+  "source_files": [
+    {
+      "path": "/workspace/fluid_control/artifacts/fcp029_h10_source_20261006_immutable/scripts/diagnose_p028_short_horizon_comparison.py",
+      "sha256": "f42f74b58f89ca836ce15e7253869b967dbd70a81e09bab6d82ffb47ee5883d5"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/fcp029_h10_source_20261006_immutable/scripts/evaluate_tandem_fno.py",
+      "sha256": "daef4a3a6eb1b9190f5cde728581b0c1b4b9656f56e865cf61a53deb1f37de88"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/fcp029_h10_source_20261006_immutable/scripts/p026_history_inference.py",
+      "sha256": "fd568f6457b980046a0419be96562291e9f96736270d45f20dd2adb2ffc5878c"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/fcp029_h10_source_20261006_immutable/scripts/p026_state_history.py",
+      "sha256": "2b5b37dc79211bb5c4985a1d44d25262080f503011766206c536938f49a6b64c"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/fcp029_h10_source_20261006_immutable/scripts/prepare_p028_h10_comparison_spec.py",
+      "sha256": "ae77975795c44bb99bdad3cdb00cec6a84e0458546eb65f36a6f032466ee722f"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/fcp029_h10_source_20261006_immutable/scripts/run_p028_h10_comparison.py",
+      "sha256": "5eab8e681000d88437257c5253f1c56d941c0a8e7a7cb865012265b12b7b0153"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/fcp029_h10_source_20261006_immutable/scripts/train_tandem_fno.py",
+      "sha256": "9e5bbebd338af02b1d73530c9cb74fc2f840455f56b7bf34ed2bb517be19a22a"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/fcp029_h10_source_20261006_immutable/src/fluid_control/__init__.py",
+      "sha256": "fb12ae7ff289ab8cba77024b3589ec96b0201a59ceaf11880d9f527e9cb6253d"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/fcp029_h10_source_20261006_immutable/src/fluid_control/calibrated_checkpoint.py",
+      "sha256": "23f004aefb5ab4acf40523b188e1353d48a3cc04d6b2d886b6cdf435353c8a88"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/fcp029_h10_source_20261006_immutable/src/fluid_control/canonical_joint_v1.py",
+      "sha256": "138ab2b49ebddcbed2a24486c995b85a3a5ae226ee936ff2ed5de318496ee8bd"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/fcp029_h10_source_20261006_immutable/src/fluid_control/dual_fno.py",
+      "sha256": "d769f16d649dabd17712b611b463083ef35491f095b2138033480fb029c71dba"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/fcp029_h10_source_20261006_immutable/src/fluid_control/tandem_datapipe.py",
+      "sha256": "c939e4553dbef9e227b6a3a4d5f36242114a690b32ff907339b5be2a4ec693ae"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/fcp029_h10_source_20261006_immutable/training_config.yaml",
+      "sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
+    }
+  ],
+  "source_phase_mapping": {
+    "path": "/workspace/fluid_control/artifacts/fcp003c_full_train_source_phase_mapping_20261005/mapping.json",
+    "sha256": "57ed2a25eed41ff25f75aad529e4186f66d952053ddd7adcfff9517291693b92"
+  },
+  "status": "P029_MATCHED_H10_COMPARISON_PENDING_LEAD_APPROVAL",
+  "train16_predeclaration": {
+    "path": "/workspace/fluid_control/artifacts/tandem_cylinders/directppo_train16_predeclared_20261004.json",
+    "sha256": "7d9fc2a71ebe4bb0e817b1ce41f5e9a42310348bc5faf530bc1b3ad6a5229736"
+  },
+  "train_audit": {
+    "path": "/workspace/fluid_control/artifacts/fcp018_reduced_rate_training_20261005/candidate_audit.json"
+  }
+}

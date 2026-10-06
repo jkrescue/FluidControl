@@ -92,10 +92,10 @@ def test_identity_approval_and_stale_samples(formal):
         m._registered_formal_progress(root, reg, state, True)
 
 
-def p028_registration(root, reg, **overrides):
+def p028_registration(root, reg, arm="P028", **overrides):
     approval = json.loads((root / "approval.json").read_text())
     approval.pop("history_k")
-    approval.update(status="FC_P028_APPROVED_ORIGINAL_FORMAL_EVALUATION",
+    approval.update(status=f"FC_{arm}_APPROVED_ORIGINAL_FORMAL_EVALUATION",
                     reviewed_by_lead=True,
                     independent_terminal_audit={"reviewed_by_lead": True},
                     official_dual_reload={"reviewed_by_lead": True})
@@ -104,15 +104,16 @@ def p028_registration(root, reg, **overrides):
     (root / "approval.json").write_bytes(raw)
     (root / "output/evidence/formal_approval.json").write_bytes(raw)
     return {**reg, "approval_sha256": hashlib.sha256(raw).hexdigest(),
-            "planned_updates": {"P028": 7}}
+            "planned_updates": {arm: 7}}
 
 
-def test_p028_uses_explicit_profile_without_false_history_arm(formal):
+@pytest.mark.parametrize("arm", ["P028", "P029"])
+def test_p028_uses_explicit_profile_without_false_history_arm(formal, arm):
     root, reg, state, complete = formal
-    reg = p028_registration(root, reg)
+    reg = p028_registration(root, reg, arm=arm)
     complete("validation10")
     value = m._registered_formal_progress(root, reg, state, True)
-    assert value["running"] and value["updates"] == {"P028": 1}
+    assert value["running"] and value["updates"] == {arm: 1}
     assert value["admission"] is False
     with pytest.raises(ValueError, match="plan differs"):
         m._registered_formal_progress(root, {**reg, "planned_updates": {"K1": 7}}, state, True)
@@ -126,8 +127,9 @@ def test_p028_uses_explicit_profile_without_false_history_arm(formal):
     {"ppo_auto_launch": True},
     {"status": "UNKNOWN_FORMAL"},
 ])
-def test_p028_incomplete_approval_rejected(formal, override):
+@pytest.mark.parametrize("arm", ["P028", "P029"])
+def test_p028_incomplete_approval_rejected(formal, override, arm):
     root, reg, state, complete = formal
-    reg = p028_registration(root, reg, **override)
+    reg = p028_registration(root, reg, arm=arm, **override)
     with pytest.raises(ValueError, match="approved formal"):
         m._registered_formal_progress(root, reg, state, True)

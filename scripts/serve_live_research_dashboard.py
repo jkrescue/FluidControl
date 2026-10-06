@@ -1478,12 +1478,13 @@ def _registered_formal_progress(root: Path, registration: dict, state: dict, mat
         if type(approval.get("history_k")) is not int or approval["history_k"] not in (1, 4):
             raise ValueError("not an approved formal evaluation")
         arm = f"K{approval['history_k']}"
-    elif approval.get("status") == "FC_P028_APPROVED_ORIGINAL_FORMAL_EVALUATION":
+    elif approval.get("status") in ("FC_P028_APPROVED_ORIGINAL_FORMAL_EVALUATION", "FC_P029_APPROVED_ORIGINAL_FORMAL_EVALUATION"):
         if (approval.get("reviewed_by_lead") is not True
                 or approval.get("independent_terminal_audit", {}).get("reviewed_by_lead") is not True
                 or approval.get("official_dual_reload", {}).get("reviewed_by_lead") is not True):
             raise ValueError("not an approved formal evaluation")
-        arm = "P028"
+        arm = {"FC_P028_APPROVED_ORIGINAL_FORMAL_EVALUATION": "P028",
+               "FC_P029_APPROVED_ORIGINAL_FORMAL_EVALUATION": "P029"}[approval["status"]]
     else:
         raise ValueError("not an approved formal evaluation")
     if registration["planned_updates"] != {arm: len(FORMAL_STAGE_LABELS)}:

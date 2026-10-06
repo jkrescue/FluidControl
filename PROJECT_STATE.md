@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 当前：P029训练和H10对照完成，原完整验证运行中（2026-10-06）
+
+最终FNO辅助PPO/MPC真实CFD在线闭环目标未完成。P029恢复训练已正常完成171次更新/1368窗口、候选审计和官方独立CPU重载；实际训练结果SHA `39b246d07ff673de5b3d5fdc2e65be5e46bcb466e1290f5549f2e75d5cb81336`，重载 `2023daadf611e6b4fe30146f029d142b1c432c09b41e14fe1af6bc1e7f6d9f64`，恢复运行CUDA守卫最低20.9074GiB。首次资源失败完整保留，不能由恢复成功抹去。
+
+同44训练轨迹origin51/H10对照（FC-E042）已完成：P029相对原K1场mean-case RMSE下降2.50%，rear-Cl MAE下降13.79%，总Cd MAE下降9.01%。但场误差仍比P028高13.10%，升力波动改善并不跨所有数据族/相位一致。这是train-only诊断，不是独立验证或闭环成功。结果SHA `aed040eb22766f8f47b1f6093f50bc1aa753dd748cd90b8d68ac9db1095b329d`；报告 `docs/FC_P029_H10_TERMINAL_REVIEW_20261006.md`。
+
+**实际运行原完整正式验证**：user unit `fluid-control-fcp029-original-formal-20261006.service`，invocation `85ae29a422fc48739136418317de8ca5`，输出 `artifacts/fcp029_original_formal_20261006`，批准SHA `b339d1175ea17dfd110763c044b0d9a2a15ce088062b1834c3627969f279fec5`。7项数值步骤与标准保持不变，观测当前validation10。尚无完整验收结论，不批准新PPO。北京时间11:27前报告包括未完成事项的完整阶段结论；此前记录中的运行状态均为历史。
+
 ## 训练资源故障已处置；实际第二次运行（2026-10-06 02:51 UTC）
 
 第一次P029训练b343d13dffb6402fa91bec055cafad32在1次更新/10个窗口后因内部物理/CUDA内存守卫退出1，无候选。触发瞬间采样未持久化，不能用外层20.134GiB采样最低值声称全程保持20GiB。完整五个证据文件已移至 `artifacts/fcp029_control_aware_flow_training_20261006_failed_attempt1`，迁移前后SHA完全一致；未删除数据。
