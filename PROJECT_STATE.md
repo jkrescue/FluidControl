@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E061 实际运行：固定 b03 的第三次物理策略确认
+
+实际 unit `fluid-control-exploratory-projected-32768-ppo-b03-long-cfd-20261006.service`，invocation `47612677a9f64dfc968917fada5e9ba8`，PID4013554，于2026-10-06 09:30:16UTC启动，独立查询active/running。仅初相位改为预声明b03/restart144，800周期至224，primary(164,224]；同一冻结32768策略、反射投影、一次actionfilter和原2%/1.05/10%标准。当前没有终态物理结果，不得将启动或此前b00/b01成功写成本次成功。
+
+批准SHA `3ca5531815c48cff59fd1ca0d96e40e2305402435cb2e28d2adb26eeaf9328a6`；不可变driverSHA `6516456f07d765728055f58036bed97a5e37036f205c4d1ee2bf2456be8cc3b0`；输出 `artifacts/exploratory_projected_32768_ppo_b03_long_cfd_20261006`。b03固定动作H5 payload已经在FC-E060打开，故这是新的物理policy trial而非普遍未见相位；不声称统计独立。没有新训练/调参/MPC，H100 FAIL继续保留。8GiB controller、2×8GiB noSwap solver、Available50/22与3600/3750/120秒边界不变；不自动重试。
+
 ## 当前结论：两相位 primary 物理约束通过，短时预测已测量，H100 FAIL仍保留
 
 Lead已确认投影策略b00与b01两次固定80D/U配对复验的primary原物理约束均通过；FC-E059 b01独立3200原始文件hash、六窗口重算、800动作投影/filter及容器清理已完成。Primary (150,210]减阻3.92363725%、rearCl centered RMS比0.815785507、均值偏置比0.027300222；早期first6.2偏置0.127807798仍未过10%。不能外推所有窗口、所有相位或Re；历史validation b01也不是新独立统计样本。当前训练和这两次CFD都已完成，以下running标题保留为历史。

@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-06 — Authorize one fixed b03 physical confirmation, not retuning
+
+Lead authorized and launchedFC-E061 at09:30:16UTC underapproval3ca5531815c48cff59fd1ca0d96e40e2305402435cb2e28d2adb26eeaf9328a6. Predeclaredb03/restart144 is not performance-selected. Preserve same frozen32768policy/projection and all800cycle/sixwindow/resource settings; originalprimary2%/1.05/10% criteria unchanged. No execution outcome is known at this entry. b03fixed-actionH5payloadwasalreadyopened; interpret a future result as an additional physical-policy confirmation, not an untouched finaltest or independent statistical replicate. Any failure remains evidence; do not tune or restart automatically.
+
 ## 2026-10-06 — FC-E059 confirms the original physical criteria in a second observed phase
 
 Keep the unchanged projected32768 policy and original2%drag/1.05RMS/10%mean-bias definitions. b01 primary (150,210] independently measures3.92363725% reduction/RMS0.815785507/bias0.027300222, consistent with b00 primary benefit. Do not hide earlyfirst6.2 bias12.78%, equate historically usedb01 with fresh independent generalization, or overwrite K1 H100FAIL. No physical threshold relaxation is needed for these two primary windows. Further claims require their own evidence, not automatic retuning after the newly opened frozen short-horizon test. The actual online CFD feedback loop is complete; broad robustness and physical real-time deployment are not established.

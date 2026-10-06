@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E061 — Actual b03 projected-policy physical confirmation running
+
+Started2026-10-06 09:30:16UTC; sameunit `fluid-control-exploratory-projected-32768-ppo-b03-long-cfd-20261006.service` / invocation `47612677a9f64dfc968917fada5e9ba8`, PID4013554 observedrunning. Fixedrestart144→224,800cycles,primary(164,224]12000points plusfiveotherpredeclaredwindows. Uniquechange fromb01 is phase/restart metadata; same frozenpolicy/projection/onefilter/CFD/resources/originalcriteria. Source6516456f07d765728055f58036bed97a5e37036f205c4d1ee2bf2456be8cc3b0; approval3ca5531815c48cff59fd1ca0d96e40e2305402435cb2e28d2adb26eeaf9328a6.6CPUtests independentlypassed beforelaunch; these are engineering evidence, not physical outcomes.
+
+No scientific CSV metric is added while running. Output `artifacts/exploratory_projected_32768_ppo_b03_long_cfd_20261006`; allsix raw windows and cleanup require terminal independent review. b03H5fixed-actiondataalreadyopened; this trial is not universally unseen or statistically independent. No tuning from96frame replay/H5 results, no thresholdrelaxation, no automaticretry; existingK1H100FAIL remains.
+
 ## FC-E059 — Fixed b01 projected-policy replication completed
 
 Actual R2 invocation `9ef43959e065431490bd4725fa8fb7fe` exited0 after800 paired cycles, restart130→210. All3200 force-file hashes, six predeclared windows,800 projection/filter equations and1600 clean solver segments independently verified; both owned containers absent/OOMfalse. Primary (150,210]12000points: drag reduction3.9236372469%, centered rearCl RMS ratio0.81578550745, mean-bias ratio0.02730022153. Original2%/1.05/10% criteria met, without relaxation. First6.2 secondary bias0.127807798 stillfails10%; allsixwindow evidence retained. Full80D/U:3.81531467%/0.825013365/0.007191961.
