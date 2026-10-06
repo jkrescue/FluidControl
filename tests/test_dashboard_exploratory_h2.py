@@ -394,6 +394,41 @@ def test_diverse_ppo_terminal_card_is_separate_and_fno_frozen(tmp_path, monkeypa
     assert '这里没有执行真实CFD' in m.PAGE
 
 
+def test_32768_r2_card_requires_actual_progress_and_preserves_r1_failure(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    docs=tmp_path/'docs';docs.mkdir()
+    approval=docs/'EXPLORATORY_DIVERSE_H5_32768_PPO_R2_APPROVAL_20261006.json'
+    approval.write_text(json.dumps({'status':'EXPLORATORY_DIVERSE_H5_32768_PPO_EXECUTION_APPROVED',
+      'execution_authorized':True,'reviewed_by_lead':True,
+      'protocol':{'timesteps':32768,'reset_count':24,'device':'cuda:0',
+                  'cfd_execution':False,'scientific_admission':False}}))
+    driver=tmp_path/'artifacts/exploratory_diverse_h5_32768_source_20261006_immutable/train_exploratory_diverse_h5_32768_ppo.py'
+    driver.parent.mkdir(parents=True);driver.write_text('driver')
+    r1=tmp_path/'artifacts/exploratory_diverse_h5_32768_ppo_training_20261006/supervisor_result.json'
+    r1.parent.mkdir(parents=True);r1.write_text(json.dumps({'returncode':1,'result_sha256':None,
+      'scientific_admission':False,'error':'worker exited 1'}))
+    base=tmp_path/'artifacts/exploratory_diverse_h5_32768_ppo_training_20261006_r2'
+    payload=base/'payload';payload.mkdir(parents=True)
+    (payload/'progress.json').write_text(json.dumps({'time/total_timesteps':1024,
+      'train/n_updates':4,'rollout/ep_rew_mean':-3.61})+'\n')
+    (base/'memory.jsonl').write_text(json.dumps({'MemAvailable':110*2**30})+'\n')
+    hashes={approval.read_bytes():m._DIVERSE_32768_PPO_R2_APPROVAL_SHA,
+            driver.read_bytes():m._DIVERSE_32768_PPO_DRIVER_SHA,
+            r1.read_bytes():m._DIVERSE_32768_PPO_R1_FAILURE_SHA}
+    monkeypatch.setattr(m.hashlib,'sha256',
+        lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
+    unit='\n'.join(['InvocationID=a19900b2bfa64d8d8372b67bc0564139','MainPID=2560906',
+      'ActiveState=active','SubState=running','Result=success','ExecMainCode=0','ExecMainStatus=0'])
+    monkeypatch.setattr(m.subprocess,'check_output',lambda *args,**kwargs:unit)
+    card=m._exploratory_diverse_h5_32768_ppo_training(tmp_path)
+    assert card['verified'] and card['running'] and card['timesteps']==1024
+    assert card['target_timesteps']==32768 and card['ppo_updates']==4
+    assert card['gpu_policy_training'] and card['fno_tensors_frozen']
+    assert card['r1_pretraining_failure_preserved'] and not card['cfd_executed']
+    assert '当前阶段 · 24-reset PPO 延长训练' in m.PAGE
+    assert 'R1因审批JSON数值类型不一致' in m.PAGE
+
+
 def test_diverse_ppo_real_cfd_live_card_is_separate_from_old_result(tmp_path, monkeypatch):
     from types import SimpleNamespace
     docs=tmp_path/'docs';docs.mkdir()

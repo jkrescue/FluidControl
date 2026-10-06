@@ -223,6 +223,7 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 <div class="card" id="current-trial-evidence" hidden><h3>当前长程试验 · 真实 CFD 状态与实际受力</h3><div id="current-trial-recovered-metrics"></div><p id="current-trial-field-note" class="small"></p><img id="current-trial-field" alt="当前周期起点的真实CFD速度模长和ROI去均值压力" loading="lazy"><canvas class="actual-series" id="current-trial-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="current-trial-forces" width="1000" height="180"></canvas><canvas class="actual-series" id="current-trial-lift" width="1000" height="180"></canvas><p class="small">折线只来自已经完成的真实 OpenFOAM 周期：流场样本在周期起点 t，受力在终点 t+0.1；预测值没有混入这些折线。图像仅覆盖 x=8…25、y=4…11 的采样 ROI，不是完整求解域。</p></div>
 <div class="card" id="exploratory-h5-ppo-training" hidden><h3>探索性 H5 PPO · 训练证据</h3><div id="exploratory-h5-ppo-training-body"></div></div>
 <div class="card" id="exploratory-diverse-h5-ppo-training" hidden><h3>24 个固定真实重置态 · H5 PPO 训练</h3><div id="exploratory-diverse-h5-ppo-training-body"></div></div>
+<div class="card" id="exploratory-diverse-h5-32768-ppo" hidden><h3>当前阶段 · 24-reset PPO 延长训练</h3><div id="exploratory-diverse-h5-32768-ppo-body"></div></div>
 <div class="card" id="exploratory-diverse-ppo-real-cfd" hidden><h3>24-reset PPO · 新一轮真实 CFD 配对运行</h3><div id="exploratory-diverse-ppo-real-cfd-summary"></div><canvas class="actual-series" id="exploratory-diverse-ppo-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-ppo-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-ppo-lift" width="1000" height="180"></canvas><p class="small">这是新策略的实时真实 OpenFOAM 配对执行；与上方已完成且未达标的旧 PPO 结果分开。当前没有新场图，也不复用旧 PPO/MPC 场图；完成前不声明物理收益或科学准入。</p></div>
 <div class="card" id="final-ppo-real-cfd" hidden><h3>冻结最终 PPO · 真实 CFD 配对运行</h3><div id="final-ppo-real-cfd-summary"></div><div id="final-ppo-field-evidence" hidden><p id="final-ppo-field-note" class="small"></p><img id="final-ppo-field" alt="最终PPO实际CFD速度模长和ROI去均值压力" loading="lazy"></div><canvas class="actual-series" id="final-ppo-real-cfd-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-lift" width="1000" height="180"></canvas><p class="small">这些折线只来自本次 PPO/zero 两支真实 OpenFOAM 周期终点；不使用上方旧 MPC 流场图。这里若显示场图，只来自本次最终 PPO 分支在 t=160.4 的真实 CFD，也不包含模型预测。运行结束前不声明减阻或科学准入。</p></div>
 <section id="flow-current"><h2>历史流场预测 · 真实 CFD / FNO / 误差</h2>
@@ -371,6 +372,11 @@ function renderExploratoryDiverseH5PPO(ppo){
  const card=$('exploratory-diverse-h5-ppo-training');card.hidden=ppo?.verified!==true;if(card.hidden)return;
  $('exploratory-diverse-h5-ppo-training-body').innerHTML=`<p><b>训练已完成，等待新的真实 CFD 配对评价</b> · ${ppo.timesteps}/4096 transitions · ${ppo.reset_count} 个固定真实重置态</p><table><tbody><tr><th>PPO更新</th><td>${ppo.ppo_updates} epoch-updates；${ppo.optimizer_steps} optimizer steps</td><th>策略张量</th><td>${ppo.policy_changed?'已改变':'未改变'}</td></tr><tr><th>四相位使用次数</th><td>${ppo.phase_reset_counts.join(' / ')}</td><th>最低 MemAvailable</th><td>${num(ppo.minimum_available_gib,2)} GiB</td></tr><tr><th>episode reward均值</th><td>${num(ppo.episode_reward_mean,6)}</td><th>动作RMS</th><td>${num(ppo.applied_omega_rms,6)}</td></tr></tbody></table><p class="small">与旧四个zero起点训练分开显示：本次唯一训练分布变化是四相位×六种固定真实重置态。官方K1双FNO全程冻结且张量SHA不变；策略已改变。这里没有执行真实CFD，也没有证明减阻、泛化或科学准入。</p>`;
 }
+function renderExploratoryDiverse32768PPO(ppo){
+ const card=$('exploratory-diverse-h5-32768-ppo');card.hidden=ppo?.verified!==true;if(card.hidden)return;
+ const pctDone=100*ppo.timesteps/ppo.target_timesteps;
+ $('exploratory-diverse-h5-32768-ppo-body').innerHTML=`<p><b>${ppo.running?'实际GPU策略训练中':'训练已停止，等待终态核验'}</b> · ${ppo.timesteps}/${ppo.target_timesteps} transitions（${pctDone.toFixed(1)}%）· 24个固定真实重置态</p><table><tbody><tr><th>最近PPO更新</th><td>${ppo.ppo_updates} epoch-updates</td><th>运行设备</th><td>GPU 0（仅PPO策略）</td></tr><tr><th>当前 MemAvailable</th><td>${num(ppo.current_available_gib,2)} GiB</td><th>最低 MemAvailable</th><td>${num(ppo.minimum_available_gib,2)} GiB</td></tr><tr><th>episode reward均值</th><td>${num(ppo.episode_reward_mean,6)}</td><th>FNO</th><td>冻结，不更新权重</td></tr></tbody></table><p class="small">R1因审批JSON数值类型不一致在训练前失败，未产生GPU训练；本卡只显示已观察到实际transition的R2。训练进度不是物理收益。此前4096步训练及其真实CFD结果仍保留：完整窗仅减阻0.506%，未达到≥2%目标。</p>`;
+}
 function renderExploratoryDiversePPORealCFD(run){
  const card=$('exploratory-diverse-ppo-real-cfd');card.hidden=run?.verified!==true;if(card.hidden)return;
  const rows=run.actual_timeseries||[],latest=run.latest||{},terminal=run.terminal_result,labels={full:'完整 12.4 D/U',first_6p2:'前 6.2 D/U',trailing_6p2:'后 6.2 D/U'};
@@ -396,6 +402,7 @@ function renderActiveExperiment(d){
  renderCurrentTrialEvidence(active);
  renderExploratoryH5PPO(d.exploratory_h5_ppo_training);
  renderExploratoryDiverseH5PPO(d.exploratory_diverse_h5_ppo_training);
+ renderExploratoryDiverse32768PPO(d.exploratory_diverse_h5_32768_ppo_training);
  renderExploratoryDiversePPORealCFD(d.exploratory_diverse_ppo_real_cfd);
  renderFinalPPORealCFD(d.exploratory_final_ppo_real_cfd);
  if(active?.mpc_trial===true&&active.verified===true){
@@ -1725,6 +1732,9 @@ _DIVERSE_H5_PPO_APPROVAL_SHA = "760e1f9e81494bdd8c3742cd0ce77e168b0df2bf288bd045
 _DIVERSE_H5_PPO_RESULT_SHA = "cd5775e4647280b77803de9a5ced6abdf6378cded4f676f935bd9836350c3640"
 _DIVERSE_H5_PPO_SUPERVISOR_SHA = "0b3e2556a5f34136dee3f2749a5803dc9cffffe2852b25b2d7bd59b61182f1a1"
 _DIVERSE_H5_PPO_DRIVER_SHA = "aae8c9a4311112439251b695001c7601ffd3d7cd3010937f86bd9a0bfebf3040"
+_DIVERSE_32768_PPO_R2_APPROVAL_SHA = "1cd1d5182fd7e7a3eed11060e7a6ffe9fad840c776f021f239f059525a515132"
+_DIVERSE_32768_PPO_DRIVER_SHA = "4d681771736b63b628712d3b62fcdde831601e80221aef6f1fd78a4b6840ff01"
+_DIVERSE_32768_PPO_R1_FAILURE_SHA = "45a8fbb0f7e62962fed21b143ecab88b91cf5b33bd41a0fb5701a089cf1aab51"
 _DIVERSE_PPO_CFD_APPROVAL_SHA = "67fda1a404f844d89b986442a4a9000561b02757417d5a8d366fdf9f9e6033db"
 _DIVERSE_PPO_CFD_DRIVER_SHA = "89e0d8bea92440babd3d647eed31758db9cfc2a43e31ed6e9d9bdf5047b77b6e"
 _DIVERSE_PPO_CFD_RESULT_SHA = "8c909aa4bd0b73e3cf570dd55cb2a1abd7346a9c424695a5e0056b4e5e833bdc"
@@ -1968,6 +1978,75 @@ def _exploratory_diverse_h5_ppo_training(root: Path) -> dict:
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
             subprocess.SubprocessError):
         return {"verified": False, "running": False, "training_complete": False}
+
+
+def _exploratory_diverse_h5_32768_ppo_training(root: Path) -> dict:
+    """Expose R2 only after actual transitions; preserve R1 as pre-training failure."""
+    base = root / "artifacts/exploratory_diverse_h5_32768_ppo_training_20261006_r2"
+    approval_path = root / "docs/EXPLORATORY_DIVERSE_H5_32768_PPO_R2_APPROVAL_20261006.json"
+    driver_path = (root / "artifacts/exploratory_diverse_h5_32768_source_20261006_immutable"
+                   / "train_exploratory_diverse_h5_32768_ppo.py")
+    r1 = (root / "artifacts/exploratory_diverse_h5_32768_ppo_training_20261006"
+          / "supervisor_result.json")
+    try:
+        if (hashlib.sha256(approval_path.read_bytes()).hexdigest()
+                != _DIVERSE_32768_PPO_R2_APPROVAL_SHA
+                or hashlib.sha256(driver_path.read_bytes()).hexdigest()
+                != _DIVERSE_32768_PPO_DRIVER_SHA
+                or hashlib.sha256(r1.read_bytes()).hexdigest()
+                != _DIVERSE_32768_PPO_R1_FAILURE_SHA):
+            raise ValueError("32768 PPO identity mismatch")
+        approval = json.loads(approval_path.read_text())
+        r1_result = json.loads(r1.read_text())
+        protocol = approval.get("protocol", {})
+        if (approval.get("status") != "EXPLORATORY_DIVERSE_H5_32768_PPO_EXECUTION_APPROVED"
+                or approval.get("execution_authorized") is not True
+                or approval.get("reviewed_by_lead") is not True
+                or protocol.get("timesteps") != 32768 or protocol.get("reset_count") != 24
+                or protocol.get("device") != "cuda:0"
+                or protocol.get("cfd_execution") is not False
+                or protocol.get("scientific_admission") is not False
+                or r1_result.get("returncode") != 1 or r1_result.get("result_sha256") is not None
+                or r1_result.get("scientific_admission") is not False):
+            raise ValueError("unexpected 32768 PPO approval/failure evidence")
+        fields = ("InvocationID", "MainPID", "ActiveState", "SubState", "Result",
+                  "ExecMainCode", "ExecMainStatus")
+        raw = subprocess.check_output(["systemctl", "--user", "show",
+            "fluid-control-exploratory-diverse-h5-32768-ppo-r2-20261006.service",
+            *[arg for key in fields for arg in ("-p", key)]], text=True, timeout=5)
+        state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+        if state.get("InvocationID") != "a19900b2bfa64d8d8372b67bc0564139":
+            raise ValueError("unexpected 32768 PPO R2 invocation")
+        running = (state.get("MainPID", "0").isdigit() and int(state["MainPID"]) > 0
+                   and state.get("ActiveState") == "active"
+                   and state.get("SubState") in ("running", "start"))
+        progress = {}
+        rows = 0
+        for item in _complete_jsonl(base / "payload/progress.json"):
+            progress.update(item); rows += 1
+        timesteps = progress.get("time/total_timesteps")
+        if (rows < 1 or type(timesteps) is not int or not 0 < timesteps <= 32768
+                or timesteps % 512 != 0):
+            raise ValueError("no actual 32768 PPO R2 transitions observed")
+        memory = list(_complete_jsonl(base / "memory.jsonl"))
+        available = [row["MemAvailable"] for row in memory
+                     if type(row.get("MemAvailable")) in (int, float)
+                     and math.isfinite(row["MemAvailable"])]
+        if not available:
+            raise ValueError("missing 32768 PPO R2 resources")
+        return {"verified": True, "running": running, "timesteps": timesteps,
+                "target_timesteps": 32768,
+                "ppo_updates": int(progress.get("train/n_updates", 0)),
+                "episode_reward_mean": progress.get("rollout/ep_rew_mean"),
+                "current_available_gib": available[-1] / 2**30,
+                "minimum_available_gib": min(available) / 2**30,
+                "reset_count": 24, "fno_tensors_frozen": True,
+                "gpu_policy_training": True, "cfd_executed": False,
+                "scientific_admission": False, "r1_pretraining_failure_preserved": True,
+                "approval_sha256": _DIVERSE_32768_PPO_R2_APPROVAL_SHA}
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
+            subprocess.SubprocessError):
+        return {"verified": False, "running": False, "scientific_admission": False}
 
 
 def _exploratory_diverse_ppo_real_cfd(root: Path) -> dict:
@@ -4576,6 +4655,8 @@ class Handler(BaseHTTPRequestHandler):
             data["exploratory_h5_ppo_training"] = _exploratory_h5_ppo_training(self.root)
             data["exploratory_diverse_h5_ppo_training"] = (
                 _exploratory_diverse_h5_ppo_training(self.root))
+            data["exploratory_diverse_h5_32768_ppo_training"] = (
+                _exploratory_diverse_h5_32768_ppo_training(self.root))
             data["exploratory_diverse_ppo_real_cfd"] = (
                 _exploratory_diverse_ppo_real_cfd(self.root))
             data["exploratory_final_ppo_real_cfd"] = _exploratory_final_ppo_real_cfd(self.root)
