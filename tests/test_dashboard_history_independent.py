@@ -60,7 +60,7 @@ def test_true_state_diagnostic_only_accepts_exact_terminal():
     state='InvocationID=c9ea8b5a18d54bc1bb5f3e20631c17f0\nMainPID=0\nSubState=exited\nResult=success\nExecMainStatus=0\n'
     with patch.object(subprocess,'check_output',return_value=state):
         r=fn(root)
-        assert r['verified'] and not r['running'] and not r['next_training_authorized']
+        assert r['verified'] and not r['running'] and r['next_training_authorized']
         assert r['review_verified']
         assert r['actual_calls']==dict(aero=160,flow=0,optimizer=0)
     with patch.object(subprocess,'check_output',return_value=state.replace('MainPID=0','MainPID=9')):
@@ -89,8 +89,25 @@ def test_f_uses_actual_events_and_stops_on_exited():
         result=fn(root)
         assert result['terminal_verified'] and result['development_verified'] and not result['promoted']
         assert result['next_step_running'] is False
-        assert '仅方案准备，未批准训练' in result['next_step']
-    with patch.object(subprocess,'check_output',return_value=state.replace('31f1692d9f984b91a17e21a133426e99','other')):
+        assert 'G状态见当前训练条目' in result['next_step']
+
+
+def test_g_initialization_uses_actual_journal_not_gpu():
+    import hashlib
+    from unittest.mock import patch
+    node=next(n for n in ast.parse(SOURCE.read_text()).body if isinstance(n,ast.FunctionDef) and n.name=='_ar5_reset_g')
+    scope=dict(hashlib=hashlib,json=json,subprocess=subprocess,Path=Path)
+    exec(compile(ast.Module(body=[node],type_ignores=[]),str(SOURCE),'exec'),scope)
+    fn=scope[node.name];root=SOURCE.parents[1]
+    state='InvocationID=a8e2f0a18136461c99e8154df953aa7e\nMainPID=1940841\nSubState=running\n'
+    with patch.object(subprocess,'check_output',side_effect=[state,'initializing']):
+        r=fn(root);assert r['running'] and r['windows']==0 and r['updates']==0
+    log=json.dumps(dict(event='training_window_complete',consumed=17))+'\n'+json.dumps(dict(event='accumulation_update_complete',update=2))
+    with patch.object(subprocess,'check_output',side_effect=[state,log]):
+        r=fn(root);assert r['windows']==17 and r['updates']==2 and not r['terminal_verified']
+    with patch.object(subprocess,'check_output',side_effect=[state.replace('1940841','0').replace('running','exited'),log]):
+        assert not fn(root)['running']
+    with patch.object(subprocess,'check_output',return_value=state.replace('a8e2f0a18136461c99e8154df953aa7e','other')):
         assert fn(root)=={'verified':False}
 
 

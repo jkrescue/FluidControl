@@ -451,8 +451,9 @@ function renderActiveExperiment(d){
   $('lead-now').textContent=`Canonical b01 安全复现：${x.terminal_verified?'800次真实反馈已完成并独审；主窗减阻4.0091%，升力波动降低18.2810%，均值偏置3.6366%，六窗原标准通过':x.running?'实际CPU CFD运行中':'进程已停止，等待终态独立复核'}，${x.cycles}/800 周期，t=${x.current_time} / 210。冻结既有策略，无GPU训练或FNO推理。`;
   $('lead-monitor').textContent=`实际 invocation ${x.invocation}；PID ${x.pid}；MemAvailable ${num(x.available_gib,2)} GiB。${x.terminal_verified?'与原E085动作和观测逐值一致；工程复现不等于新泛化证据，整体代理预测精度仍未完成。':'原2%/1.05/10%标准保持，当前进度不是物理收益。'}`;
   if(d.response_aux_e?.verified){const e=d.response_aux_e;$('lead-monitor').textContent+=` 辅助监督候选E：${e.development_verified?'训练和固定评估已完成；两项H1误差与保留指标均略差，未采用，保留B':e.terminal_verified?'训练已完成并通过工程独审，预测改善待固定评估':e.running?(e.windows?'GPU气动力FNO分支训练':'进程运行/初始化，尚无已完成窗口'):'进程已停止，等待终态核验'}，窗口${e.windows}/256、参数更新${e.updates}/32；inv ${e.invocation}。不是PPO或新CFD，flow冻结。`;}
-  if(d.h1_only_f?.verified){const f=d.h1_only_f;$('lead-monitor').textContent+=` 候选F：${f.development_verified?'训练及固定评估已完成；H1 Cl/Cd改善，但H5与AR保留性退化，未采用，保留B；当前无GPU训练或CFD':f.terminal_verified?'训练已完成并通过工程独审；固定预测评估另列，尚无采用结论':f.running?(f.windows?'GPU气动力FNO分支训练（仅H1反传目标）':'进程运行/初始化，尚无已完成窗口'):'进程已停止，等待独立终态核验'}，真实窗口${f.windows}/256、参数更新${f.updates}/32；flow冻结，不是PPO或CFD。诊断total仍为H1/AR各半，不是训练目标；inv ${f.invocation}。`;if(f.development_verified&&f.next_step&&!d.bf_true_state?.verified)$('lead-monitor').textContent+=` 下一步：${f.next_step}。`;}
-  if(d.bf_true_state?.verified){const q=d.bf_true_state;$('lead-monitor').textContent+=` B/F真状态受力对照：诊断已完成，160次气动力调用、0流场调用、0参数更新；${q.review_verified?'独立复算通过；换成真实状态并未普遍降低力误差，不能只归因流场累积误差，F仍未采用':'科学解释待独立复算'}。下一H5状态分布匹配仅方案准备，未批准训练。`;}
+  if(d.h1_only_f?.verified){const f=d.h1_only_f;$('lead-monitor').textContent+=` 候选F：${f.development_verified?'训练及固定评估已完成；H1 Cl/Cd改善，但H5与AR保留性退化，未采用，保留B':f.terminal_verified?'训练已完成并通过工程独审；固定预测评估另列，尚无采用结论':f.running?(f.windows?'GPU气动力FNO分支训练（仅H1反传目标）':'进程运行/初始化，尚无已完成窗口'):'进程已停止，等待独立终态核验'}，真实窗口${f.windows}/256、参数更新${f.updates}/32；flow冻结，不是PPO或CFD。诊断total仍为H1/AR各半，不是训练目标；inv ${f.invocation}。`;if(f.development_verified&&f.next_step&&!d.bf_true_state?.verified)$('lead-monitor').textContent+=` 下一步：${f.next_step}。`;}
+  if(d.bf_true_state?.verified){const q=d.bf_true_state;$('lead-monitor').textContent+=` B/F真状态受力对照：诊断已完成，160次气动力调用、0流场调用、0参数更新；${q.review_verified?'独立复算通过；换成真实状态并未普遍降低力误差，不能只归因流场累积误差，F仍未采用':'科学解释待独立复算'}。`;}
+  if(d.ar5_reset_g?.verified){const g=d.ar5_reset_g;$('lead-monitor').textContent+=` 当前候选G：${g.running?(g.windows?'GPU气动力FNO分支训练':'进程初始化，尚无已完成训练窗口'):'进程已停止，等待独立终态核验'}；真实窗口${g.windows}/256、参数更新${g.updates}/32。训练AR每5步重置真状态，H1/AR权重各半；flow冻结，原六窗诊断仍连续100步。不是PPO或CFD，未作预测改善结论；inv ${g.invocation}。`;}
   let card=$('canonical-reproduction');if(!card){card=document.createElement('div');card.id='canonical-reproduction';card.className='card';$('projected-ppo-cfd').before(card);card.innerHTML='<h3>当前 canonical b01 · 真实反馈曲线（非旧projected策略）</h3><canvas width="1000" height="220" id="canonical-reproduction-action"></canvas><canvas width="1000" height="220" id="canonical-reproduction-drag"></canvas><canvas width="1000" height="220" id="canonical-reproduction-lift"></canvas>';}
   drawActualSeries('canonical-reproduction-action',x.rows,[{key:'requested_omega',label:'物理请求ω',color:'#60c9fb'},{key:'omega',label:'实际ω',color:'#79d5a3'}],'单次物理限速后的动作');
   drawActualSeries('canonical-reproduction-drag',x.rows,[{key:'ppo_total_cd',label:'canonical Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero Cd',color:'#f2c879'}],'真实CFD周期末总Cd（非窗口均值）');
@@ -5121,6 +5122,7 @@ class Handler(BaseHTTPRequestHandler):
             data['response_aux_e'] = _response_aux_e(self.root)
             data['h1_only_f'] = _h1_only_f(self.root)
             data['bf_true_state'] = _bf_true_state(self.root)
+            data['ar5_reset_g'] = _ar5_reset_g(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5528,7 +5530,7 @@ def _h1_only_f(root):
             and hashlib.sha256(dev_report.read_bytes()).hexdigest()=='42fc630661af69b8f6a11efc18581974061bf50b1689d59a290545a6447524f2')
         return {'verified':True,'invocation':inv,'running':int(state['MainPID'])>0 and state['SubState']=='running',
                 'windows':windows,'updates':updates,'terminal_verified':terminal,'development_verified':development,'promoted':False,
-                'next_step':'B/F固定16×5真状态受力对照已计算完成；独立复算另列。下一H5状态分布匹配仅方案准备，未批准训练',
+                'next_step':'B/F真状态诊断完成；后续G状态见当前训练条目',
                 'next_step_running':False}
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError): return {'verified':False}
 
@@ -5548,7 +5550,28 @@ def _bf_true_state(root):
         report=root/'docs/P064_BF_TRUE_STATE_SUBSTITUTION_TERMINAL_REVIEW_20261007.md'
         reviewed=report.exists() and hashlib.sha256(report.read_bytes()).hexdigest()=='0ada8d1d48a521bbcaf09f1ce5e8a3fb27b6534df671157bd952c12ce00ab4e0'
         return {'verified':True,'running':False,'invocation':inv,'actual_calls':payload['actual_calls'],
-                'review_verified':reviewed,'next_training_authorized':False}
+                'review_verified':reviewed,'next_training_authorized':True}
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError): return {'verified':False}
+
+
+def _ar5_reset_g(root):
+    try:
+        approval=root/'docs/P064_AR5_RESET_G_TRAINING_APPROVAL_20261007.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='0b01cc385142b188482fa33cf4c1185fb6048a237ddb39b748eb7f80a1514a9a': return {'verified':False}
+        inv='a8e2f0a18136461c99e8154df953aa7e'
+        raw=subprocess.check_output(['systemctl','--user','show','fluid-control-p064-ar5-reset-g-20261007.service','-p','InvocationID','-p','MainPID','-p','SubState','-p','Result','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!=inv: return {'verified':False}
+        log=subprocess.check_output(['journalctl','--user','_SYSTEMD_INVOCATION_ID='+inv,'-n','3000','--no-pager','-o','cat'],text=True,timeout=3)
+        windows,updates=0,0
+        for line in log.splitlines():
+            try: row=json.loads(line)
+            except ValueError: continue
+            if not isinstance(row,dict): continue
+            if row.get('event')=='training_window_complete': windows=max(windows,int(row['consumed']))
+            if row.get('event')=='accumulation_update_complete': updates=max(updates,int(row['update']))
+        return {'verified':True,'running':int(state['MainPID'])>0 and state['SubState']=='running','invocation':inv,
+                'windows':windows,'updates':updates,'terminal_verified':False,'promoted':False}
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError): return {'verified':False}
 
 
