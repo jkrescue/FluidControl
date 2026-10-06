@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E085 / FC-E086 当前：两项独立CPU真实闭环验证并行
+
+E085保持原E082策略固定b01，同inv3a678d/PID3770148，独查645/800。E086已实际启动 `fluid-control-p064-b-symmetry-canonical-seed20261006-ppo-long-cfd-20261007.service`，invocation `be48ee07057c42879d222548045233ef`，PID4112317 running，独查44/800；批准 `docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_CFD_APPROVAL_20261007.json` SHA `da5f4f7681174f24fc5315097de723cbe47e71679b7c202aee11a6277e6bbe52`；输出 `artifacts/p064_b_symmetry_canonical_seed20261006_ppo_long_cfd_20261007`。E086用刚完成E084的固定seed20261006最终policy，原b00 148→228/主(168,228]/六窗，与E083仅seed不同；同canonical映射/单filter/原2%/1.05/10%。两项均无当前物理结论，不复用E083 PASS；PPO训练已结束、无在线FNO/MPC，不是GPU训练。旧失败与预测FAIL完整保留。
+
 ## FC-E084 当前终态：固定seed20261006 PPO完成并独审
 
 同e236b09e PID0/exit0；32768真实步/256epochs/512参数更新，75source192runtime/全部6产物/24reset与记录canonical动作方向链通过，FNO保持b108冻结。initial6bc539与原同seed相同，final986bf改变；600.699s/minAvailable119469228032B/12GiBswap0。独审 [E084报告](docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_PPO_TERMINAL_REVIEW_20261007.md) SHA `d2bf82ce004e6d07213d50d930d0d58b4bafa009c44d87972ca0bdb8081aa707`；result `cb1a2f0931fcf70c68802287bdb5e5f894553c0eab271a030a54ff7f2f598336`。训练已结束，新策略物理效果须另批b00，不能移植E083通过；E085仍是前次策略固定b01验证。

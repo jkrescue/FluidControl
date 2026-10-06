@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## FC-E086 — actual canonical seed20261006 fixed b00 CFD startup
+
+Unit `fluid-control-p064-b-symmetry-canonical-seed20261006-ppo-long-cfd-20261007.service`, invocation `be48ee07057c42879d222548045233ef`, PID4112317 running, independently observed44/800 cycles. Approval `docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_CFD_APPROVAL_20261007.json` SHA `da5f4f7681174f24fc5315097de723cbe47e71679b7c202aee11a6277e6bbe52`; output `artifacts/p064_b_symmetry_canonical_seed20261006_ppo_long_cfd_20261007`. Driverfd51 identity-only adaptation, actual E084 policyedd616/Vec3035/resultcb1a/reviewd2bf; same E083 physics148→228/800/six windows/thresholds/resources. E085 remains concurrently live645/800 at b01 with prior E082 policy; outputs/identities never merged. No physical outcome or running scientific CSV; no GPU training/online FNO.
+
 ## FC-E084 — fixed-seed canonical PPO terminal independently accepted
 
 Samee236 PID0/exit0; actual32768/256epochs/512hooks,75source192runtime/six artifact hashes,24reset and recordedcanonical action/orientation chains verified. FNO b108 unchanged; initial6bc539/final986bf differs.600.699s/minAvailable119469228032B/12GiBswap0. [Review](docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_PPO_TERMINAL_REVIEW_20261007.md) SHA `d2bf82ce004e6d07213d50d930d0d58b4bafa009c44d87972ca0bdb8081aa707`; result `cb1a2f0931fcf70c68802287bdb5e5f894553c0eab271a030a54ff7f2f598336`. No model rerun, no scientific admission or physical success inferred; original-observation orientation recomputation limitation disclosed. Fixed b00 needs separate execution approval.

@@ -226,3 +226,9 @@ def test_seed_replication_is_actual_transition_not_startup_claim():
     assert 'e236b09e33564b0bb4e6aad5c46eff60' in source
     assert "active and info['timesteps']>0" in source
     assert "spec['protocol']['seed']!=20261006" in source
+
+def test_two_cfd_runs_remain_separate_when_unbound(tmp_path):
+    import p064_dashboard_progress as m
+    x=m.candidate_cfd_status(tmp_path)
+    assert x['physical_pass'] is None and x['secondary']['physical_pass'] is None
+    assert not x['running'] and not x['secondary']['running']

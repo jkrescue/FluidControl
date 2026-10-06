@@ -343,6 +343,22 @@ def canonical_b00_cfd_status(root,run=subprocess.check_output):
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
+def canonical_seed6_cfd_status(root,run=subprocess.check_output):
+    root=Path(root);info={'status':'seed20261006 b00尚未核验启动','cycles':0,'target':800,'running':False,'training':False,'physical_pass':None,'invocation':None}
+    try:
+        approval=root/'docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_CFD_APPROVAL_20261007.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='da5f4f7681174f24fc5315097de723cbe47e71679b7c202aee11a6277e6bbe52':raise ValueError('seed6 CFD approval SHA')
+        raw=run(['systemctl','--user','show','fluid-control-p064-b-symmetry-canonical-seed20261006-ppo-long-cfd-20261007.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!='be48ee07057c42879d222548045233ef':raise ValueError('seed6 CFD invocation')
+        info['invocation']=state['InvocationID']
+        path=root/'artifacts/p064_b_symmetry_canonical_seed20261006_ppo_long_cfd_20261007/progress.json'
+        if path.exists():info.update(cfd_progress_counts(json.loads(path.read_text()),start=148.))
+        info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['status']='新seed20261006策略：b00真实CFD验证中' if info['running'] else '新seed b00进程已停止，等待独立复核'
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
+    return info
+
 def candidate_cfd_status(root,run=subprocess.check_output):
     root=Path(root)
     info={'status':'canonical b01尚未核验启动','cycles':0,'target':800,'running':False,'training':False,'physical_pass':None,'terminal_verified':False,'invocation':None,'previous_canonical_b00':canonical_b00_cfd_status(root,run)}
@@ -359,6 +375,10 @@ def candidate_cfd_status(root,run=subprocess.check_output):
         info['status']='同一对称坐标策略：b01真实CFD验证中' if info['running'] else 'b01进程已停止，等待独立终态核验'
         info['note']='FC-E085：只变固定初相位，130→210/800次CPU策略＋真实CFD；无在线FNO/MPC，不是训练，当前无物理结论。已完成b00减阻3.9567%、升力波动降低18.3457%、bias1.066%；其早期17.56%失败保留。原2%/1.05/10%与预测FAIL不变。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
+    info['secondary']=canonical_seed6_cfd_status(root,run)
+    secondary=info['secondary']
+    if secondary.get('invocation'):
+        info['note']+=f" 并行FC-E086：{secondary['status']}，{secondary['cycles']}/800周期；同原b00起点，仅新seed最终策略，尚无物理结论。两项均为CPU反馈，不是GPU训练。"
     return info
 
 FORMAL_TERMINAL_BINDINGS={
