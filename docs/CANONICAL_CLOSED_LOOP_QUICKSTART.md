@@ -37,10 +37,14 @@ python3 scripts/reproduce_canonical_closed_loop.py --approval docs/NEW_APPROVAL.
 
 ## 3. 验收与显示
 
-launcher返回真实 InvocationID/MainPID；这只是启动，不是训练或物理成功。新输出的 `progress.json` 给800周期进度、真实观测/动作；`result.json` 与原始forces/solver日志才是终态证据。dashboard须绑定这次新unit/invocation/output，不能把旧卡冒充新运行。此三文件交付未修改dashboard，也未启动新运行。
+launcher返回真实 InvocationID/MainPID；这只是启动，不是训练或物理成功。新输出的 `progress.json` 给800周期进度、真实观测/动作；`result.json` 与原始forces/solver日志才是终态证据。dashboard须绑定这次新unit/invocation/output，不能把旧卡冒充新运行。
+
+随后完成的 **E095 实际复现**已经验证这条入口，而不再只是准备态：unit `fluid-control-canonical-reproduce-b01-20261007.service`、invocation `f6c3fc3464074493b19ea5418ddfada5` 正常 exit0；批准 SHA `f10547240d5a89430f2967bfb9859868fc00ee625447fcc56ce68b2b93b4152d`，result SHA `f22047b62c8bdb50547122e61d3e523d0cb101d90b1ed98037e4524cb98c342a`，独立终态报告 SHA `67f583b80fbe8f2bf4a68fe181eef70d7c1261cf865d3e959d89eca540a198d6`。800次真实反馈与 E085 的动作、观测逐值一致，原六窗全部通过；这仍是已打开 b01 的工程复现，不是新的独立泛化证据。
+
+看板通过 `http://127.0.0.1:8766/api/state` 的 `canonical_b01_reproduction` 字段读取 `artifacts/canonical_b01_reproduction_20261007/progress.json`，页面卡片“当前 canonical b01 · 真实反馈曲线”分别显示请求/施加ω、配对总Cd和后柱Cl。曲线来自真实 OpenFOAM 周期末数据，不是在线FNO预测。
 
 基本演示验收：入口预检通过、800次真实反馈完成、真实U/p图与请求/施加ω、配对Cd及后柱Cl曲线可追溯、资源/cleanup/原六窗统计核验。主物理阈值仍为减阻≥2%、升力波动RMS比≤1.05、均值偏置≤10%；早期窗口单列，不改为15%/20%。已有E085六窗通过；E083/E086两指定seed主窗通过但早期失败保留。
 
 整体研究目标仍未完成：完整代理预测精度FAIL、控制相关预测误差和有限泛化证据不能由基本演示替代。C50/D25/H25负结果及旧非canonical第二seed失败均保留。真实流场瞬时图不能计算平均减阻，也不能称FNO预测；未核验转矩功率换算，动作平方成本不是净节能。
 
-证据：[E085终态](P064_B_SYMMETRY_CANONICAL_B01_CFD_TERMINAL_REVIEW_20261007.md)、[E082训练](P064_B_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md)、[完整预测评估](P064_B_FORMAL_TERMINAL_REVIEW_20261006.md)、[历史分阶段指南](CURRENT_CLOSED_LOOP_REPRODUCTION_GUIDE_20261006.md)。
+证据：[E095实际复现](CANONICAL_B01_REPRODUCTION_TERMINAL_REVIEW_20261007.md)、[E085终态](P064_B_SYMMETRY_CANONICAL_B01_CFD_TERMINAL_REVIEW_20261007.md)、[E082训练](P064_B_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md)、[完整预测评估](P064_B_FORMAL_TERMINAL_REVIEW_20261006.md)、[历史分阶段指南](CURRENT_CLOSED_LOOP_REPRODUCTION_GUIDE_20261006.md)。
