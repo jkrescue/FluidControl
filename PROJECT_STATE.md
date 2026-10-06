@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-P027真实诊断执行准备完成（2026-10-06）
+
+诊断及资源启动程序已独立审查并集成，Root canonical联合32项CPU测试通过；只读414文件源码与来源配置完成独立核验。批准单 `docs/FC_P027_EXECUTION_APPROVAL_20261006.json` SHA `fe218527b6f85daf08999673b9525a2b93144e1722235f5769dc2ea055e567a5` 批准一次44训练轨迹、origin51、H10的只读误差分解，无优化器、无新模型、无validation/frozen/PPO。官方镜像b40，GPU0、allocator0.06、容器12GiB、900秒，启动free30/available50，运行双20与CUDA20GiB守卫。dry-run已通过但尚不能据此称为实际运行；实际unit/container观察后另记。K1/K4原正式FAIL保持有效。
+
 ## 最新终态：2026-10-06，K1/K4均未满足代理控制精度要求
 
 K4原协议完整评估已实际结束：unit `fluid-control-fcp026-k4-formal-20261006.service`，invocation `d5d2201c8e2c4bf2ab40201cca0dcb1e`，PID0、active/exited、ExecMainStatus0。receipt SHA `729f9ce1f307d5462307470af20491806f6cfe31b5c81fc74ec284a2461841d9`；development gate SHA `ce60621723ce364e4f8cdc165268a64ca5fd1a0185b7529bc21c1f91ac8aab9e`，状态 `DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL`。程序正常完成不等于模型合格。

@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## FC-P027 execution preparation — not a scientific result
+
+Root and independent reviews completed for diagnostic f398c86f and launcher aa8e337d. Canonical32 CPU tests passed0.64s. Frozen414 source manifest `ffdd7e623f9c8da0b39ccb167ca0b74c9013313fdf9cddc37266e884df578c1d`; independent source/metadata checks read no HDF/model payload. Approval `docs/FC_P027_EXECUTION_APPROVAL_20261006.json` SHA `fe218527b6f85daf08999673b9525a2b93144e1722235f5769dc2ea055e567a5` authorizes one bounded read-only44-origin/H10 diagnostic. Dry-run command preparation succeeded without Docker/GPU. No scientific CSV result until actual output and independent review; no policy training follows automatically.
+
 ## FC-P026 K4 original formal evaluation — terminal scientific failure
 
 Observed 2026-10-06: actual invocation `d5d2201c8e2c4bf2ab40201cca0dcb1e` exited0/PID0. Receipt SHA `729f9ce1f307d5462307470af20491806f6cfe31b5c81fc74ec284a2461841d9`; development SHA `ce60621723ce364e4f8cdc165268a64ca5fd1a0185b7529bc21c1f91ac8aab9e`. Original validation10/dynamic6 endpoint components passed, but six-window joint count is1/6, Cd5/6, rear-Cl fluctuation RMS2/6, rear-Cl mean4/6. Four rotating RMS errors are0.06823553510506697/0.12234179725403527/0.06830637102663029/0.08125565316417882. K4 does not repair the matched K1 admission failure; no PPO or frozen-test access. Minimum observed free/available memory20.770393/110.100964GiB. Independent terminal review is being completed before the final scientific CSV entry and milestone push.

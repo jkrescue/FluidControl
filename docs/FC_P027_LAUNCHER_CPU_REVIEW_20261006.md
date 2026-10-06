@@ -1,0 +1,19 @@
+# FC-P027 launcher independent CPU review — 2026-10-06
+
+Reviewed staged launcher SHA256 `f3c753601bf5394ab7f6f77fb91ab788ee20f079df004e29b5be0c435b76a302` and tests SHA256 `a196127b89e8ad569dbaa8dcb09b3deeaf111cc677118f330703d8e8e0403b98` under `/tmp/p027-launcher-sota`. Independent CUDA-hidden run: **10 mock CPU tests passed in 0.02 s**. No real Docker, HDF, model, GPU or evaluation operation was performed.
+
+## Verified scope
+
+The launcher requires a hash-bound approved spec and explicit execute flag. It constructs the pinned official-image command with GPU0, network none, read-only root, dropped capabilities, unprivileged UID/GID, 12 GiB memory/no additional swap, the pinned CUDA guard, allocator fraction .06 and inner 900-second timeout. Host startup requires MemFree30/MemAvailable50 GiB; the monitored execution checks both at20 GiB and a whole-job deadline. Data mounts are restricted to each train directory plus manifest/normalization, not validation/frozen siblings. The source-phase map and train16 predeclaration are now mounted. Actual created bind mapping, image, name, command and principal resource settings are compared with expected values before start.
+
+The revised creation path writes a cidfile and can recover an exact CID from that file/name after validating command/image/mount ownership. Cleanup attempts bounded stop/wait, evidence capture, forced removal and a post-removal check independently. A still-running cleanup snapshot is explicitly named nonterminal. SIGINT/SIGTERM handlers request normal unwinding; the mock lifecycle test invokes the actual registered SIGTERM callback and confirms execute reaches finally and attempts owned-CID removal. This is simulated signal handling, not a real OS-signal/container integration test. The creation-recovery test verifies identity rejection, not a real Docker daemon race.
+
+## Historical narrow finding and final resolution
+
+`cleanup_owned` interprets every nonzero `docker inspect` return code after removal as confirmed absence. A Docker daemon/socket error is also nonzero, so this is not a reliable absence confirmation. Requested minimal fix: use a successful bounded complete container-ID listing and exact absence comparison, or distinguish an explicit no-such-object response; inspection failure must retain cleanup failure evidence. This is a cleanup-evidence issue, not a numerical diagnostic change. It was sent to the implementation owner and Root before execution approval.
+
+Final revision reviewed: launcher SHA256 `aa8e337dbeac04ef5a0a79009ef31f50679ec8eab5f5db2d663c2a1b45259d90`, tests SHA256 `d82f741d3b5b933cf5247c418348e7002034711ed4a9cc463dc16e7d40f6e61e`. Independent final rerun: **10 mock CPU tests passed in 0.02 s**. The remaining absence-confirmation finding is resolved: a bounded checked `docker container ls -aq --no-trunc` must succeed and omit the exact owned CID; daemon/listing errors are recorded as cleanup failures. Create-timeout recovery now polls cidfile/name for five seconds and still requires exact ownership validation before cleanup.
+
+Bounded recovery cannot prove that an indefinitely unresponsive daemon will never later materialize a created object. Such a create has not been started by this launcher and is not evidence of running GPU computation; failure/recovery must not be relabelled successful execution. No broad cleanup authority is granted.
+
+Final verdict: no remaining concrete launcher blocker found in this bounded source/mock review; ready for Root's final freeze and separate execution approval preparation. Root must bind the final immutable dependency closure, exact approval, candidate/data identities and resource availability. Mock tests do not themselves approve actual execution or demonstrate real runtime/memory performance. No scientific acceptance or PPO permission follows.
