@@ -1,6 +1,10 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## FC-E084 当前实际：canonical固定seed20261006 PPO训练中
+## FC-E084 当前终态：固定seed20261006 PPO完成并独审
+
+同e236b09e PID0/exit0；32768真实步/256epochs/512参数更新，75source192runtime/全部6产物/24reset与记录canonical动作方向链通过，FNO保持b108冻结。initial6bc539与原同seed相同，final986bf改变；600.699s/minAvailable119469228032B/12GiBswap0。独审 [E084报告](docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_PPO_TERMINAL_REVIEW_20261007.md) SHA `d2bf82ce004e6d07213d50d930d0d58b4bafa009c44d87972ca0bdb8081aa707`；result `cb1a2f0931fcf70c68802287bdb5e5f894553c0eab271a030a54ff7f2f598336`。训练已结束，新策略物理效果须另批b00，不能移植E083通过；E085仍是前次策略固定b01验证。
+
+### FC-E084 历史实际启动（已完成）
 
 实际unit `fluid-control-p064-b-symmetry-canonical-seed20261006-ppo-20261007.service`，invocation `e236b09e33564b0bb4e6aad5c46eff60`，PID3857457 running；独查876/32768真实transition、MemoryMax12GiB/Swap0。批准 `docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_PPO_APPROVAL_20261007.json` SHA `d62cccbcf1d896ed812cca7cac27e8e5df9d1fd7623a84ae1b5478494cabdd39`；输出 `artifacts/p064_b_symmetry_canonical_seed20261006_h5_32768_ppo_20261007/payload`。相对E082仅seed变为20261006，B/映射/H5/24reset/奖励/32768/资源保持，不扫seed或选reward。环境步不是optimizer更新，更不是物理通过；终态须独审32768/256/512、方向动作映射及冻结FNO，新的策略CFD尚未授权。E085并行CPU b01采用之前已冻结的E082策略，两任务不混淆。
 

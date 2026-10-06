@@ -1,6 +1,10 @@
 # Experiment ledger
 
-## FC-E084 — actual fixed-seed canonical PPO replication startup
+## FC-E084 — fixed-seed canonical PPO terminal independently accepted
+
+Samee236 PID0/exit0; actual32768/256epochs/512hooks,75source192runtime/six artifact hashes,24reset and recordedcanonical action/orientation chains verified. FNO b108 unchanged; initial6bc539/final986bf differs.600.699s/minAvailable119469228032B/12GiBswap0. [Review](docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_PPO_TERMINAL_REVIEW_20261007.md) SHA `d2bf82ce004e6d07213d50d930d0d58b4bafa009c44d87972ca0bdb8081aa707`; result `cb1a2f0931fcf70c68802287bdb5e5f894553c0eab271a030a54ff7f2f598336`. No model rerun, no scientific admission or physical success inferred; original-observation orientation recomputation limitation disclosed. Fixed b00 needs separate execution approval.
+
+### FC-E084 historical startup
 
 Unit `fluid-control-p064-b-symmetry-canonical-seed20261006-ppo-20261007.service`, invocation `e236b09e33564b0bb4e6aad5c46eff60`, PID3857457 running; independently observed876 real environment transitions. Approval `docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_PPO_APPROVAL_20261007.json` SHA `d62cccbcf1d896ed812cca7cac27e8e5df9d1fd7623a84ae1b5478494cabdd39`; output `artifacts/p064_b_symmetry_canonical_seed20261006_h5_32768_ppo_20261007/payload`. Runner b75b3716 exact one-seed-line change from E082; same B/a55b/H5/24-reset/reward/32768/final-only policy.12GiB/noSwap/CPU1,physicalAvailable50/22/20,1950outer/1800inner. No running scientific CSV or physical outcome; future policy CFD needs separate approval after terminal audit. Concurrent E085 uses the already completed E082 policy, not this unfinished training.
 

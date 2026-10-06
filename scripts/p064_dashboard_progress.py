@@ -151,6 +151,12 @@ def candidate_ppo_status(root,run=subprocess.check_output):
         info['running']=active;info['training']=active and info['timesteps']>0
         info['status']=('固定seed20261006：对称坐标PPO实际训练中' if info['training'] else '训练程序启动中，尚未观测transition') if active else '训练进程已停止，等待独立终态核验'
         info['note']='FC-E084仅改既定seed，冻结B/对称坐标/H5/24起点/32768预算与奖励不变；不扫seed、不按reward选checkpoint。当前计数为真实环境步，不等于参数更新或物理成功。前次canonical b00主窗减阻3.96%，早期偏置失败保留；并行b01用前次已冻结策略。完整预测FAIL不变。'
+        if not active and state.get('MainPID')=='0' and state.get('ExecMainStatus')=='0' and (output/'result.json').exists():
+            review=root/'docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_PPO_TERMINAL_REVIEW_20261007.md'
+            if hashlib.sha256((output/'result.json').read_bytes()).hexdigest()!='cb1a2f0931fcf70c68802287bdb5e5f894553c0eab271a030a54ff7f2f598336' or hashlib.sha256(review.read_bytes()).hexdigest()!='d2bf82ce004e6d07213d50d930d0d58b4bafa009c44d87972ca0bdb8081aa707':raise ValueError('canonical replication terminal binding')
+            info.update(producer_terminal_counts(json.loads((output/'result.json').read_text()),spec,expected_status='P064_B_SYMMETRY_CANONICAL_H5_32768_PPO_TRAINING_COMPLETE_NOT_ADMISSION'))
+            info.update(status='固定seed20261006 PPO训练完成，独立工程核验通过',training=False,running=False,terminal_verified=True)
+            info['note']='实际32768步/256epochs/512参数更新；方向动作映射、冻结FNO与资源独审通过。新策略物理效果尚待另批固定b00验证；当前b01使用前次策略。不是预测精度PASS，不将训练退出成功当物理成功。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
