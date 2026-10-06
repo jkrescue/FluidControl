@@ -1,9 +1,11 @@
 {
-  "experiment": "two-segment-current-frame-R4",
-  "progress_kind": "two_segment_bridge",
-  "unit": "fluid-control-two-segment-frame-cpu-r4-20261006.service",
-  "invocation": "99e5c019c08240668241f7ac036320f3",
-  "label": "真实CFD两步接口已完成（非控制验收）",
-  "description": "两段零控制求解及当前场输入已完成；控制接口的软件集成与审查仍在进行，不表示机器正在计算。尚未启动探索性控制试验。",
-  "historical_p031": "两次H25资源探针失败保留，没有训练完成或模型准入。"
+  "experiment": "exploratory-paired-H2-real-CFD",
+  "progress_kind": "exploratory_h2_feedback",
+  "unit": "fluid-control-exploratory-short-h2-real-cfd-20261006.service",
+  "invocation": "e3b9eb7b58724a1c9ec4e64d63ac7bbe",
+  "approval": "docs/EXPLORATORY_PAIRED_H2_APPROVAL_20261006.json",
+  "approval_sha256": "1679f6bee293eae200c95bc078a20db5873e81afcd54d81b81bb06445015f8b2",
+  "launcher": "artifacts/exploratory_h2_source_20261006/run_exploratory_paired_h2_feedback.py",
+  "launcher_sha256": "c8260b21d742f54814bf04e81bb13eeff491a971df4d177f3a384c8f8c940e3f",
+  "history": "R4两步接口完成；P031资源失败保留；K1原正式未通过。"
 }

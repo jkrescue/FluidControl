@@ -336,6 +336,14 @@ function renderAdmission(d){
 }
 function renderActiveExperiment(d){
  const active=d.registered_experiment;
+ if(active?.mpc_trial===true&&active.verified===true){
+  const title=active.terminal_review_verified?'10/10真实闭环已跑通；短窗口阻力上升0.23%，不是减阻达标':'真实CFD短时控制试验 · '+(active.running?'正在计算':active.exited_success?'计算退出，结果和清理待独立复核':'已停止，需检查');
+  const detail=`已完成 ${active.completed_cycles}/10 个配对周期。CPU运行官方FNO选动作，真实OpenFOAM求解；不是GPU训练，也不是HydroGym求解器。`+(active.terminal_review_verified?' 独立复核：每支200点，升力波动短窗口下降约5.69%；仅1 D/U，不满足原80 D/U评价长度，没有新增PPO或长期达标结论。':'');
+  $('lead-now').textContent=title+'。'+detail;
+  const card=document.createElement('div');card.className='card';
+  for(const [tag,text] of [['h3',title],['p',detail],['p',active.latest?`最近周期 ${active.latest.step}：后圆柱转速 ${num(active.latest.omega,3)}；预测/实际总阻力系数 ${num(active.latest.predicted_cd,5)} / ${num(active.latest.actual_cd,5)}；预测/实际后升力系数 ${num(active.latest.predicted_cl,5)} / ${num(active.latest.actual_cl,5)}；配对零控制总阻力/后升力 ${num(active.latest.zero_cd,5)} / ${num(active.latest.zero_cl,5)}。`:'等待首个真实周期。'],['p','这是探索性短时反馈，不是长期稳定控制或模型准入。P031资源失败和K1原正式未通过结论保留；R4两步接口已完成。']]){const el=document.createElement(tag);el.textContent=text;card.appendChild(el);}
+  $('lead-models').prepend(card);$('train16-formal-progress').textContent=title;$('train16-formal-detail').textContent=detail;return;
+ }
  if(active?.bridge_completed===true&&active.verified===true){
   const title='真实CFD两步接口已完成（不是训练或控制完成）';
   const detail='两段零控制求解和当前流场输入已完成，148.0 → 148.1 → 148.2；没有加载模型或策略。机器计算：本任务已结束。当前工作：短时控制接口的软件集成与审查，尚未启动控制试验。';
@@ -1605,6 +1613,66 @@ def _two_segment_bridge(root: Path, registration: dict, state: dict) -> dict:
         return {"verified":False}
 
 
+def _exploratory_mpc_terminal_review(root: Path) -> bool:
+    """Bind the independent short-window review, never confer admission."""
+    base = root / "artifacts/exploratory_paired_h2_real_cfd_20261006"
+    files = {
+        root / "docs/EXPLORATORY_PAIRED_H2_TERMINAL_REVIEW_20261006.md": "8c600368d836e8c34c09e4ac3be1129ffcfb67fd3587e48e4e4feba33d711dcd",
+        base / "result.json": "45fcab568ed7456e521ed17c4469f44716d231ca4ec5c08820864803ae856fbb",
+        base / "container_terminal_257e7829da44.json": "d0036b3f7fd0fbc66b28ee8c7111a0951f25d045be41e842fb894e90e7f5fc52",
+        base / "container_terminal_e49a8a5a3542.json": "cfe5e053c8bd8fac787607844d18ded16d4b823b5ead3106a6197080fab64819",
+    }
+    try:
+        for path, expected in files.items():
+            if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+                return False
+        result=json.loads((base/"result.json").read_text())
+        return (result.get("status")=="EXPLORATORY_REAL_CFD_SHORT_H2_FEEDBACK_COMPLETE_NOT_ADMISSION"
+                and result.get("cycles")==10 and result.get("physical_duration_D_over_U")==1.0
+                and all(result.get(k) is False for k in ("scientific_admission","ppo_executed","hydrogym_solver_used","original_long_ar_gate_passed"))
+                and result.get("source_restart_unchanged") is True)
+    except (OSError,ValueError,TypeError):
+        return False
+
+
+def _exploratory_mpc_progress(root: Path, registration: dict, state: dict, matches: bool) -> dict:
+    try:
+        if (registration.get("unit") != "fluid-control-exploratory-short-h2-real-cfd-20261006.service"
+                or state.get("InvocationID") != "e3b9eb7b58724a1c9ec4e64d63ac7bbe"
+                or registration.get("invocation") != state.get("InvocationID")):
+            return {"verified":False}
+        running = state.get("ActiveState") in ("active","activating") and state.get("SubState") in ("running","start") and state.get("MainPID") != "0" and matches
+        if state.get("MainPID") != "0" and not matches:
+            return {"verified":False}
+        exited = all(state.get(k)==v for k,v in {"ActiveState":"active","SubState":"exited","MainPID":"0","Result":"success","ExecMainCode":"1","ExecMainStatus":"0"}.items())
+        base=root/"artifacts/exploratory_paired_h2_real_cfd_20261006"
+        path=base/"progress.json"
+        document=json.loads(path.read_text()) if path.exists() else {"rows":[],"completed_cycles":0}
+        rows=document.get("rows",[]); count=document.get("completed_cycles")
+        if type(count) is not int or not 0<=count<=10 or len(rows)!=count:
+            return {"verified":False}
+        if rows and (document.get("status") != "EXPLORATORY_REAL_CFD_SHORT_H2_FEEDBACK_RUNNING_NOT_ADMISSION"
+                     or document.get("identity",{}).get("k1_manifest_sha256") != "7adca21e3a75691b10f164c342ea91995cc38060e7416dd217b8bd8e5feeacc7"):
+            return {"verified":False}
+        latest=None
+        for step,row in enumerate(rows,1):
+            if row.get("step")!=step or abs(row.get("start_time",0)-(148+(step-1)*.1))>1e-8 or abs(row.get("end_time",0)-(148+step*.1))>1e-8:
+                return {"verified":False}
+            omega=row["selected_omega"]; previous=row["previous_omega"]
+            predicted=row["selected_predicted_next_forces"]; actual=row["actual_endpoint_forces"]["mpc"]; zero=row["actual_endpoint_forces"]["zero"]
+            values=[omega,previous,*predicted.values(),*actual.values(),*zero.values()]
+            if any(type(v) not in (int,float) or not math.isfinite(v) for v in values) or abs(omega)>.75+1e-12 or abs(omega-previous)>.1+1e-12:
+                return {"verified":False}
+            latest={"step":step,"omega":omega,"predicted_cd":predicted["front_cd"]+predicted["rear_cd"],"predicted_cl":predicted["rear_cl"],"actual_cd":actual["front_cd"]+actual["rear_cd"],"actual_cl":actual["rear_cl"],"zero_cd":zero["front_cd"]+zero["rear_cd"],"zero_cl":zero["rear_cl"]}
+        reviewed=exited and count==10 and _exploratory_mpc_terminal_review(root)
+        return {"verified":True,"mpc_trial":True,"running":running,"exited_success":exited,
+                "completed_cycles":count,"latest":latest,"scientific_admission":False,
+                "terminal_review_verified":reviewed,
+                "terminal_review_pending":exited and not reviewed,"control_success_verified":False}
+    except (OSError,ValueError,KeyError,TypeError):
+        return {"verified":False}
+
+
 def _registered_experiment_live(root: Path) -> dict:
     sampled = datetime.now(UTC).isoformat()
     try:
@@ -1633,6 +1701,8 @@ def _registered_experiment_live(root: Path) -> dict:
         state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
         pid = state.get("MainPID", "0")
         matches = pid.isdigit() and pid != "0" and str(launcher).encode() in Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
+        if registration.get("progress_kind") == "exploratory_h2_feedback":
+            return {**_exploratory_mpc_progress(root,registration,state,matches),"sampled_at_utc":sampled}
         if registration.get("progress_kind") == "formal_evaluation":
             progress = _registered_formal_progress(root, registration, state, matches)
         else:
