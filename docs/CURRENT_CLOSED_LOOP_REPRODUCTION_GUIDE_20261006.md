@@ -4,7 +4,7 @@
 
 下面的命令保留为原投影控制链的历史复现入口，**不是后来 canonical 坐标控制器的新启动命令**。最新实现与验收边界见 [当前交付证据补充](CURRENT_DELIVERY_COMPLETION_MATRIX_20261007.md)：[E082 canonical 训练](P064_B_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md)、[E083 b00 真 CFD](P064_B_SYMMETRY_CANONICAL_CFD_TERMINAL_REVIEW_20261007.md)、[E084 第二指定 seed 训练](P064_B_SYMMETRY_CANONICAL_SEED20261006_PPO_TERMINAL_REVIEW_20261007.md)、[E086 同协议 b00](P064_B_SYMMETRY_CANONICAL_SEED20261006_CFD_TERMINAL_REVIEW_20261007.md)，其报告绑定各自实际不可变源码和批准文件。两个指定 seed 主统计窗均通过原物理标准，但部分早期窗口失败；完整预测精度仍 FAIL，不能称全目标完成。
 
-术语澄清：P064 微调的是气动力 FNO 分支的 28 个参数张量（两 bias 冻结），不是仅末层 readout；独立 flow FNO 冻结。用户所需官方组件、RL 与真实 CFD 在线反馈的基本链已实现；部署在线 FNO/MPC 是可选后续方法，不是原基本闭环必须补做的步骤。E089 长 b02 采集已完成，E090 当前仅在执行 CPU 数据转换；后续训练需另行批准。以下历史命令未经改写，不冒充上述新实验的复现命令。
+术语澄清：P064 微调的是气动力 FNO 分支的 28 个参数张量（两 bias 冻结），不是仅末层 readout；独立 flow FNO 冻结。用户所需官方组件、RL 与真实 CFD 在线反馈的基本链已实现；部署在线 FNO/MPC 是可选后续方法，不是原基本闭环必须补做的步骤。E089 长 b02 采集、E090 CPU 转换及另批的 train-view 整理均已独审完成，后续训练仍需另批。以下历史命令未经改写，不冒充上述新实验的复现命令。
 
 ## 结论先行
 

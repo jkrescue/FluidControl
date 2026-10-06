@@ -54,6 +54,23 @@ def test_bad_event(field,value):
     row={'event':'training_window_complete','history_k':1,'consumed':8};row[field]=value
     with pytest.raises(ValueError):parse_journal(json.dumps({'MESSAGE':json.dumps(row)}))
 
+def test_b02_conversion_review_bound_terminal(tmp_path,monkeypatch):
+    import p064_dashboard_progress as m
+    docs=tmp_path/'docs';docs.mkdir()
+    (docs/'P064_B02_CONTROLLED_TRAIN_CONVERSION_APPROVAL_20261007.json').write_text('approval')
+    (docs/'P064_B02_CONTROLLED_TRAIN_CONVERSION_TERMINAL_REVIEW_20261007.md').write_text('review')
+    out=tmp_path/'artifacts/p064_b02_controlled_train_conversion_20261007';out.mkdir(parents=True)
+    payload=json.dumps({'frames':801,'official_reader_verified':True})
+    (out/'result.json').write_text(payload)
+    hashes={b'approval':'64e910fc20c7f5beeb0805ad159be3e0ff3e8d599f4560b7a0f42149aa53766a',b'review':'561624b0fd98a6db0fbff5722f950444b19d0de1aca3eea71f83ba445eb28b90',payload.encode():'3faf153b2a9857e880634be3347f6596834b3609a5235007f668b141d10b5ade'}
+    monkeypatch.setattr(m.hashlib,'sha256',lambda data:type('Digest',(),{'hexdigest':lambda self:hashes[data]})())
+    result=m.b02_conversion_status(tmp_path,lambda *a,**k:'InvocationID=f7a7550e035e4ee482205379eefa016a\nMainPID=0\nActiveState=active\nSubState=exited\nExecMainStatus=0')
+    assert result['terminal_verified'] and result['official_reader_verified']
+    assert not result['running'] and not result['training']
+    hashes[b'review']='wrong'
+    rejected=m.b02_conversion_status(tmp_path,lambda *a,**k:'InvocationID=f7a7550e035e4ee482205379eefa016a\nMainPID=0\nActiveState=active\nSubState=exited\nExecMainStatus=0')
+    assert rejected['official_reader_verified'] is False and 'error' in rejected
+
 def test_pending_never_queries(tmp_path):
     assert status(tmp_path,'A',run=lambda *a,**k:1/0)['status']=='尚未启动'
 

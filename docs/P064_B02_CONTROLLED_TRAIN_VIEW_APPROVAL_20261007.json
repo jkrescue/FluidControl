@@ -1,0 +1,20 @@
+{
+  "status": "P064_B02_CONTROLLED_TRAIN_VIEW_EXECUTION_APPROVED",
+  "execution_authorized": true,
+  "scope": "One CPU-only train-view build plus official first/last H100 verification; no model, inference, optimizer, training, CFD, validation, or frozen-test access.",
+  "driver": {"path": "artifacts/p064_b02_controlled_train_conversion_source_20261007_immutable/build_b02_train_view.py", "sha256": "7051ee42c2dde896f0cb7c8cfff490c10fd46f52c6ef62449a933d155a4f9863"},
+  "inputs": {
+    "conversion_result": {"path": "artifacts/p064_b02_controlled_train_conversion_20261007/result.json", "sha256": "3faf153b2a9857e880634be3347f6596834b3609a5235007f668b141d10b5ade"},
+    "hdf": {"path": "artifacts/p064_b02_controlled_train_conversion_20261007/b02_canonical_ppo_train.h5", "sha256": "96140954487b40f8e7a8dd37cdbb90221fce5656120dedb0301865a046f4377f"},
+    "normalization": {"path": "artifacts/b00_controlled_train_dataset_view_20261006/normalization.json", "sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"},
+    "conversion_terminal_review": {"path": "docs/P064_B02_CONTROLLED_TRAIN_CONVERSION_TERMINAL_REVIEW_20261007.md", "sha256": "561624b0fd98a6db0fbff5722f950444b19d0de1aca3eea71f83ba445eb28b90"},
+    "tandem_datapipe_source": {"path": "artifacts/p064_controlled_data_dose_c50_source_20261007_immutable/src/fluid_control/tandem_datapipe.py", "sha256": "c939e4553dbef9e227b6a3a4d5f36242114a690b32ff907339b5be2a4ec693ae"}
+  },
+  "runtime": {"python": ".venv-curator-py312/bin/python", "pythonpath": "artifacts/p064_controlled_data_dose_c50_source_20261007_immutable/src", "cuda_visible_devices": "", "torch": "2.14.1", "numpy": "2.5.3", "nvidia_physicsnemo": "2.2.2"},
+  "resources": {"memory_bytes": 8589934592, "swap_bytes": 0, "cpu_quota_percent": 100, "tasks_max": 64, "outer_seconds": 180, "stop_seconds": 20, "startup_mem_available_gib": 50, "physical_reserve_gib": 20},
+  "unit": "fluid-control-p064-b02-train-view-20261007.service",
+  "output": "artifacts/p064_b02_controlled_train_dataset_view_20261007",
+  "command": [".venv-curator-py312/bin/python", "-u", "artifacts/p064_b02_controlled_train_conversion_source_20261007_immutable/build_b02_train_view.py", "--conversion-result", "artifacts/p064_b02_controlled_train_conversion_20261007/result.json", "--hdf", "artifacts/p064_b02_controlled_train_conversion_20261007/b02_canonical_ppo_train.h5", "--normalization", "artifacts/b00_controlled_train_dataset_view_20261006/normalization.json", "--output", "artifacts/p064_b02_controlled_train_dataset_view_20261007", "--execute"],
+  "expected": {"status": "B02_TRAIN_VIEW_CPU_VERIFIED_NOT_TRAINING", "frames": 801, "windows": 701, "window_endpoints": [[0, 100], [700, 800]], "source_hdf_unchanged": true, "normalization_refit": false, "training_authorized": false},
+  "lead_statement": "Lead approved exactly one CPU-only b02 train-view build and official first/last H100 verification after independent acceptance of E090. This does not authorize GPU training, inference, PPO, or CFD."
+}

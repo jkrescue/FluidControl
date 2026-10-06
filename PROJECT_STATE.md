@@ -2,7 +2,13 @@
 
 术语澄清：P064 A/B/C执行的是**气动力FNO分支微调**，该分支除两项冻结bias外共28参数tensor参与优化，不是仅末层readout。独立flow FNO分支冻结，故本轮不会改善流场预测；此澄清不改变任何算法、预算、结果或失败记录。
 
-## 当前：E090 CPU数据转换实际运行；E089真实采集已独审完成
+## 当前：E090 CPU转换完成并独审；尚未启动新的模型训练
+
+随后单次 CPU train-view 整理亦已完成：同 `2ea9508cf6194847b6f8337a0c98ac74` exit0，实际官方DataPipe验证701个H100窗口及首0→100/末700→800。manifest `c8201847a7bbb77a0a3e7c2d1f121e9aef2cd294358fcc2d4f9d8d88037d0c4a`、verification `c5a24716fc285983fbd6042e5be8d7625b5630ccda26f39dc47b7fa645f62b80`；[独审](docs/P064_B02_TRAIN_VIEW_INDEPENDENT_REVIEW_20261007.md) SHA `aab1bacba13c6ed8a2611d59d2e46a7f132ae1178a5030398fc512d4e471cdc6`。只train、原norm/HDF同SHA，未训练。可供另批D25绑定；HDF硬链接保留原0664，后续只读并重核SHA，不称操作系统强制不可变。
+
+同 `f7a7550e035e4ee482205379eefa016a` 已 PID0/exit0、801/801。独审 [E090报告](docs/P064_B02_CONTROLLED_TRAIN_CONVERSION_TERMINAL_REVIEW_20261007.md) SHA `561624b0fd98a6db0fbff5722f950444b19d0de1aca3eea71f83ba445eb28b90`：1614原始文件SHA/大小不变，801动作/力标签及800原始端点一致，全部场有限、时间最大舍入误差6.1035e-6，17导出容器已退出清理；最低Available122282983424字节。HDF SHA `96140954487b40f8e7a8dd37cdbb90221fce5656120dedb0301865a046f4377f`，result `3faf153b2a9857e880634be3347f6596834b3609a5235007f668b141d10b5ade`。官方Reader生产roundtrip已执行，独审没有重新采样全部VTK。可供另批view构建，不等于训练已批准；C50拒绝、既有真实闭环收益与预测FAIL保持。以下启动内容为历史。
+
+## 历史启动：E090 CPU数据转换
 
 E090 unit `fluid-control-p064-b02-controlled-train-conversion-20261007.service`，invocation `f7a7550e035e4ee482205379eefa016a`，PID993601 running，已实查48/801写入帧。批准 `docs/P064_B02_CONTROLLED_TRAIN_CONVERSION_APPROVAL_20261007.json` SHA `64e910fc20c7f5beeb0805ad159be3e0ff3e8d599f4560b7a0f42149aa53766a`；输出 `artifacts/p064_b02_controlled_train_conversion_20261007`，不可变converter SHA `2aa5d3e6f52231cd3b5262663b6d33bdd67fcf872788124d42e1d13777098140`。只将已保存受控b02全801帧经既有官方Curator/Reader转train HDF；不混zero，不重新拟合归一化。host12GiB/noSwap+顺序4GiBexport、50/22/20GiB门、3600s。不是GPU/FNO/PPO训练或新CFD，计数未构成终态验收。后续覆盖候选训练仍需另批，C50拒绝/预测FAIL/旧失败保留。以下“尚未转换”属于历史记录。
 

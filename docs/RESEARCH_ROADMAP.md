@@ -1,5 +1,11 @@
 # Research roadmap and prioritized backlog
 
+## Current handoff — E090 conversion independently complete
+
+The separately approved thin train view has now also completed and passed [narrow independent review](P064_B02_TRAIN_VIEW_INDEPENDENT_REVIEW_20261007.md), SHAaab1bacba13c6ed8a2611d59d2e46a7f132ae1178a5030398fc512d4e471cdc6: 701 actualDataPipe windows, first0→100/last700→800, originalnorm/sourceHDF unchanged. D25 may bind this data for its separately reviewed preparation; no training execution follows automatically.
+
+E090 same f7a7550e has exited0; all801 controlled b02 frames, source inventory, action/force clocks, resource limits and17 exporter cleanup independently checked. [Terminal review](P064_B02_CONTROLLED_TRAIN_CONVERSION_TERMINAL_REVIEW_20261007.md) SHA561624b0fd98a6db0fbff5722f950444b19d0de1aca3eea71f83ba445eb28b90; result3faf153b…b5ade / HDF96140954…4377f. A thin train view is now technically ready for separate authorization; no subsequent training is running or authorized by this review. The proposed fixed-total25% b00/b02 coverage candidate remains a separate decision. Below live/pending entries are historical snapshots, not current busy status. Existing control successes, startup/seed failures and full prediction FAIL remain unchanged.
+
 ## Live stage — E090 CPU conversion, not new model training
 
 E089 acquisition is complete and independently verified. Lead approved E090 controlled b02 whole-trajectory801frame conversion; actual unit `fluid-control-p064-b02-controlled-train-conversion-20261007.service`, invocation `f7a7550e035e4ee482205379eefa016a`, now runs the pinned official sampler/reader pipeline. Approval64e910fc20c7f5beeb0805ad159be3e0ff3e8d599f4560b7a0f42149aa53766a. Wait for independent terminal data/clock/field identity checks; do not equate801 progress with acceptance. The later fixed-total25% b00/b02 coverage training candidate remains separately unapproved. Below pending-conversion wording is the earlier handoff state, not current execution status.

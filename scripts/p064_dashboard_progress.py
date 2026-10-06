@@ -364,6 +364,15 @@ def b02_conversion_status(root,run=subprocess.check_output):
         info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
         info['status']='CPU数据转换：b02受控801帧，非训练' if info['running'] else ('转换程序退出0，等待独立完整性核验' if state.get('ExecMainStatus')=='0' else '转换工程失败，未自动重试')
         info['note']='已保存真实CFD→官方Curator/Reader训练HDF；只受控branch，整轨train，原归一化不重拟合。没有FNO/PPO训练或新CFD求解；801计数不等于转换验收。E089六窗物理结果已独审，C50拒绝和预测FAIL保留。'
+        review=root/'docs/P064_B02_CONTROLLED_TRAIN_CONVERSION_TERMINAL_REVIEW_20261007.md'
+        result=root/'artifacts/p064_b02_controlled_train_conversion_20261007/result.json'
+        if not info['running'] and state.get('MainPID')=='0' and state.get('ExecMainStatus')=='0' and review.exists() and result.exists():
+            if hashlib.sha256(review.read_bytes()).hexdigest()!='561624b0fd98a6db0fbff5722f950444b19d0de1aca3eea71f83ba445eb28b90':raise ValueError('conversion review SHA')
+            if hashlib.sha256(result.read_bytes()).hexdigest()!='3faf153b2a9857e880634be3347f6596834b3609a5235007f668b141d10b5ade':raise ValueError('conversion result SHA')
+            r=json.loads(result.read_text())
+            if r['frames']!=801 or r['official_reader_verified'] is not True:raise ValueError('conversion terminal count')
+            info.update(status='b02数据转换已完成并独审：801帧',written_frames=801,official_reader_verified=True,terminal_verified=True)
+            info['note']='1614源文件、全部时间/动作/原始力端点、17导出容器清理已核；原归一化未改。可供另批训练视图整理，当前不是训练或CFD。原物理收益、早期失败及完整预测FAIL保持；没有自动启动新候选。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['error']=str(exc)
     return info
 
