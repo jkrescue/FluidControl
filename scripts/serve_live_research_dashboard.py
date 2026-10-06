@@ -228,6 +228,7 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 <div class="card" id="exploratory-diverse-ppo-real-cfd" hidden><h3>24-reset PPO · 新一轮真实 CFD 配对运行</h3><div id="exploratory-diverse-ppo-real-cfd-summary"></div><canvas class="actual-series" id="exploratory-diverse-ppo-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-ppo-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-ppo-lift" width="1000" height="180"></canvas><p class="small">这是新策略的实时真实 OpenFOAM 配对执行；与上方已完成且未达标的旧 PPO 结果分开。当前没有新场图，也不复用旧 PPO/MPC 场图；完成前不声明物理收益或科学准入。</p></div>
 <div class="card" id="exploratory-diverse-32768-long-cfd" hidden><h3>当前阶段 · 32768-step PPO 长窗口真实 CFD</h3><div id="exploratory-diverse-32768-long-cfd-summary"></div><canvas class="actual-series" id="exploratory-diverse-32768-long-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-32768-long-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-32768-long-lift" width="1000" height="180"></canvas><p class="small">唯一实际800周期配对运行，不重复另做124周期。主物理窗口预注册为 t=168→228（先丢弃20 D/U）；前124周期只用于与历史短窗作次级比较。CPU策略推理+真实CFD，GPU空闲是预期，不代表任务停滞。</p></div>
 <div class="card" id="final-ppo-real-cfd" hidden><h3>冻结最终 PPO · 真实 CFD 配对运行</h3><div id="final-ppo-real-cfd-summary"></div><div id="final-ppo-field-evidence" hidden><p id="final-ppo-field-note" class="small"></p><img id="final-ppo-field" alt="最终PPO实际CFD速度模长和ROI去均值压力" loading="lazy"></div><canvas class="actual-series" id="final-ppo-real-cfd-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-lift" width="1000" height="180"></canvas><p class="small">这些折线只来自本次 PPO/zero 两支真实 OpenFOAM 周期终点；不使用上方旧 MPC 流场图。这里若显示场图，只来自本次最终 PPO 分支在 t=160.4 的真实 CFD，也不包含模型预测。运行结束前不声明减阻或科学准入。</p></div>
+<section id="real-cfd-t228" hidden><h2>同一时刻的真实 CFD 流场</h2><img id="real-cfd-t228-image" alt="t228真实CFD：无控制、原策略、第二次训练；上速度下ROI去均值压力" loading="lazy" style="width:100%;height:auto"><p class="small">t=228 同时刻真实CFD；左无控制，中原策略（完整主窗平均减阻3.90%），右第二次训练（增阻0.62%）；上速度大小，下同ROI去均值压力。瞬时图不用于计算减阻，当前E083尚未包含。</p></section>
 <section id="flow-current"><h2>历史流场预测 · 真实 CFD / FNO / 误差</h2>
 <div class="card" id="projected-replay-fields" hidden><h3>投影策略轨迹 · 固定 H1 / H5 回顾性预测</h3><div id="projected-replay-summary"></div><div class="field-stack"><div class="field-card"><h3>固定起点 0000 · t=148.0</h3><img id="projected-replay-field-0000" alt="投影策略控制分支起点0000的H1/H5真实CFD、冻结K1预测和绝对误差" loading="lazy"></div><div class="field-card"><h3>固定起点 0700 · t=218.0</h3><img id="projected-replay-field-0700" alt="投影策略控制分支起点0700的H1/H5真实CFD、冻结K1预测和绝对误差" loading="lazy"></div></div><p class="small">固定显示机械预声明起点0与700，不按误差挑图。每图左列是真实CFD，中列是冻结K1 FNO回顾性预测，右列是绝对误差；上两行H1=0.1 D/U，下两行H5=0.5 D/U。速度图显示|U|，汇总velocity L2则按u/v矢量计算，二者不要混为同一量；压力为ROI去均值压力。预测使用真实轨迹中已经实现的未来动作，因此不是在线未知未来动作预测，也不是在线FNO/MPC控制。</p></div>
 <div class="card"><div class="row"><h3>历史 C 模型 · 第一轮训练预览</h3><select id="c-preview-step"><option value="001">1 步 / 0.1 D/U</option><option value="010">10 步 / 1 D/U</option><option value="050">50 步 / 5 D/U</option><option value="100" selected>100 步 / 10 D/U</option></select></div><p id="c-preview-status">等待预测图及数据校验完成。</p><img id="c-preview-image" alt="第一轮模型：真实 CFD、连续预测及绝对误差" style="width:100%" hidden><p class="small">历史模型可视化：仅一条 b01 动态转速验证轨迹，从 tU/D=130 的真实流场出发，之后连续预测；不是当前长程试验的流场，不是完整验证集的精度，也不是最终模型或闭环控制结果。左列：真实 CFD；中列：模型预测；右列：绝对误差。</p></div>
@@ -451,6 +452,8 @@ function renderActiveExperiment(d){
  renderProjectedCFD(d.projected_ppo_long_cfd,d.projected_ppo_b01_long_cfd,d.projected_ppo_b03_long_cfd);
  renderShortHorizonConfirmation(d.short_horizon_frozen_confirmation);
  renderProjectedReplay(d.projected_policy_h1_h5_inference);
+ const realField=d.real_cfd_t228_comparison;$('real-cfd-t228').hidden=realField?.verified!==true;
+ if(realField?.verified){const img=$('real-cfd-t228-image'),url=`/real-cfd-t228-comparison.png?v=${realField.sha256}`;if(img.getAttribute('src')!==url)img.src=url;}
  renderFinalPPORealCFD(d.exploratory_final_ppo_real_cfd);
  if(active?.mpc_trial===true&&active.verified===true){
   const causal=active.progress_kind==='exploratory_causal_history_h2_feedback';
@@ -4888,6 +4891,13 @@ class Handler(BaseHTTPRequestHandler):
                 if hashlib.sha256(payload).hexdigest() == evidence["sha256"]:
                     return self._send(payload, "image/png")
             return self._send(b"not found", "text/plain", 404)
+        if path == "/real-cfd-t228-comparison.png":
+            evidence = _real_cfd_t228_comparison(self.root)
+            if evidence.get("verified") and parse_qs(parsed.query).get("v") == [evidence["sha256"]]:
+                payload = (self.root / "artifacts/p064_real_cfd_t228_comparison_20261007/real_cfd_t228_comparison.png").read_bytes()
+                if hashlib.sha256(payload).hexdigest() == evidence["sha256"]:
+                    return self._send(payload, "image/png")
+            return self._send(b"not found", "text/plain", 404)
         if path == "/projected-ppo-paired-field.png":
             evidence = _projected_long_ppo_field(self.root)
             if evidence.get("verified") and parse_qs(parsed.query).get("v") == [evidence["sha256"]]:
@@ -5110,6 +5120,7 @@ class Handler(BaseHTTPRequestHandler):
             data["exploratory_diverse_32768_long_cfd"]["reported_terminal"] = _long_cfd_reported_terminal(self.root, data["exploratory_diverse_32768_long_cfd"])
             data["exploratory_diverse_32768_long_cfd"]["paired_field"] = _long_ppo_field(self.root)
             data["policy_h5_comparison"] = _policy_h5_comparison(self.root)
+            data["real_cfd_t228_comparison"] = _real_cfd_t228_comparison(self.root)
             data["projected_ppo_long_cfd"] = _exploratory_diverse_32768_long_cfd(self.root, projected=True)
             data["projected_ppo_long_cfd"]["reported_terminal"] = (
                 _projected_b00_reported_terminal(self.root, data["projected_ppo_long_cfd"]))
@@ -5141,6 +5152,28 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_message(self, fmt, *args):
         print("dashboard:", fmt % args, flush=True)
+
+
+def _real_cfd_t228_comparison(root):
+    base = root / "artifacts/p064_real_cfd_t228_comparison_20261007"
+    png_sha = "124c012d473752383315eea5255846a8713bd7acb32e1a969db2985eff0b7af3"
+    manifest_sha = "afaf55e0dfa719f77138e1dc2088334582bdb697b25fcd22146632bd5062c55b"
+    try:
+        raw = (base / "figure_manifest.json").read_bytes()
+        if hashlib.sha256(raw).hexdigest() != manifest_sha:
+            return {"verified": False}
+        d = json.loads(raw)
+        if not (d["status"] == "REAL_SAVED_CFD_FIELD_VISUALIZATION_COMPLETE"
+                and d["time"] == 228 and d["model_inference"] is False
+                and d["new_cfd_steps"] == 0 and d["source_unchanged"] is True
+                and d["png_sha256"] == png_sha
+                and hashlib.sha256((base / "real_cfd_t228_comparison.png").read_bytes()).hexdigest() == png_sha):
+            return {"verified": False}
+        return {"verified": True, "sha256": png_sha, "manifest_sha256": manifest_sha,
+                "actual_cfd": True, "model_prediction": False, "time": 228,
+                "includes_e083": False}
+    except (OSError, ValueError, KeyError, TypeError):
+        return {"verified": False}
 
 
 def _long_ppo_field(root):
