@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## P028 actual resource check R3 — engineering milestone only
+
+Actual official-container H10 forward/backward completed, exit0/noOOM, on original train window816. Result SHA `e808095f9c4de77f838c7132615427ba76985f78d3c0c7803b1d8528008a40f1`; independent review `docs/FC_P028_RESOURCE_TERMINAL_REVIEW_20261006.md`. Thirty finite/nonzero gradient norms; zero optimizer steps, unchanged flow/aero tensors, no saved candidate. Minimum host/CUDA free20.9028/20.9051GiB. Adam moments alone add0.35184GiB: full-training capacity is not established by this no-update measurement. R1 missing helper dependencies and R2 wrong read-only mount destinations are retained operational failures, not scientific results. R3 used the corrected421-file source and exact data aliases. No scientific CSV improvement row is warranted. Next: sufficient safe memory headroom, finalized unchanged formal evaluation support, then the predeclared171-update flow-only comparison.
+
 ## P028 engineering preparation — no new scientific result
 
 Canonical runner/updated-flow loader and legacy suites90PASS; official-model objective10PASS; old/new resource-launcher mocks24PASS. Source-only418-file preparation completed; no HDF/model/GPU access. See `docs/FC_P028_RUNNER_LOADER_CPU_REVIEW_20261006.md`. Next actual task is one no-update H10 resource check after memory clearance and bound approval, then fixed171-update experiment only after actual capacity and evaluation compatibility are established. This does not change E039 or admit K1/K4.

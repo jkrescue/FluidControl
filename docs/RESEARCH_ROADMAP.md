@@ -1,5 +1,9 @@
 # Research roadmap and prioritized backlog
 
+## Latest — P028 actual resource check complete; training preparation continues
+
+Official GPU H10 forward/backward succeeded without optimizer updates or model changes. Minimum free20.9028GiB is above the user floor but leaves narrow room for Adam state and temporaries. Next: establish extra headroom using only validated completed-project file cache hints if needed; finish original formal caller identity compatibility; execute fixed1368-window/171-update flow training with continuous20GiB guards; official reload and unchanged full evaluation; only an accepted candidate proceeds to compatible HydroGym/PPO and paired real-CFD feedback control. See `FC_P028_RESOURCE_TERMINAL_REVIEW_20261006.md`. No new surrogate has been admitted. Older preparation entries below are historical.
+
 ## Current — P028 CPU integration complete; real resource probe next
 
 Runner/loader canonical90 CPU tests pass. The418-file resource snapshot is prepared, not executed. Next: bounded verified-project cache advice if necessary → bound no-update H10 GPU resource check → assess actual memory plus optimizer overhead → finish unchanged full-formal caller identity support → fixed171-update flow-only training → original formal acceptance → compatible HydroGym/PPO → paired real-CFD closed loop. No stage is inferred complete from a synthetic test. See `FC_P028_RUNNER_LOADER_CPU_REVIEW_20261006.md` and original P028 plan.
