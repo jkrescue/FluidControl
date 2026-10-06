@@ -39,7 +39,7 @@ def test_actual_b03_binding_and_no_premature_success(tmp_path,monkeypatch):
     assert r['primary_window']==[164.,224.] and r['phase']=='b03_already_opened_fixed_action'
     assert not r['gpu_training'] and not r['control_success_verified'] and not r['scientific_admission']
     assert 'FC-E061 · b03固定相位物理确认' in m.PAGE
-    assert '96帧回放另属准备工作' in m.PAGE
+    assert '主窗尚待完整原始数据复核' in m.PAGE
 
 
 def test_wrong_invocation_rejected(tmp_path,monkeypatch):
@@ -54,3 +54,26 @@ def test_old_phase_time_rejected(tmp_path,monkeypatch):
 
 def test_missing_evidence_no_fake_job(tmp_path):
     assert not m._exploratory_diverse_32768_long_cfd(tmp_path,projected_b03=True)['running']
+
+
+def test_b03_terminal_requires_exact_result_and_review(tmp_path, monkeypatch):
+    result_path = tmp_path/'artifacts/exploratory_projected_32768_ppo_b03_long_cfd_20261006/result.json'
+    result_path.parent.mkdir(parents=True)
+    primary = {'interval':[164.,224.], 'left_endpoint_included':False,
+        'branches':{'ppo':{'samples':12000}, 'zero':{'samples':12000}},
+        'paired_drag_reduction':.0389714021,
+        'paired_rear_cl_fluctuation_rms_ratio':.814858779,
+        'absolute_mean_rear_cl_over_paired_zero_rms':.0168885808}
+    result_path.write_text(json.dumps({'status':'EXPLORATORY_PROJECTED_32768_PPO_B03_LONG_CFD_COMPLETE_NOT_ADMISSION',
+        'cycles':800,'scientific_admission':False,'owned_containers_cleaned':True,
+        'source_restart_unchanged':True,'windows':{'primary_final_60':primary}}))
+    review = tmp_path/'docs/EXPLORATORY_PROJECTED_32768_PPO_B03_LONG_CFD_TERMINAL_REVIEW_20261006.md'
+    review.parent.mkdir();review.write_text('review')
+    hashes={result_path.read_bytes():'d4d755faf913d393ca1466ee74614c0fb11f33b8f662a76a1cb7e4de3dd17a2f',
+            review.read_bytes():'0d48a7e914ec82ad682d374e6531f2aab6a305aa81dad2dde6cd5c23dca48a0f'}
+    monkeypatch.setattr(m.hashlib,'sha256',lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
+    terminal=m._projected_b03_reported_terminal(tmp_path,{'verified':True,'running':False})
+    assert terminal['paired_drag_reduction']==primary['paired_drag_reduction']
+    assert terminal['review_sha256'].startswith('0d48a7e')
+    result_path.write_text('{}')
+    assert m._projected_b03_reported_terminal(tmp_path,{'verified':True,'running':False}) is None

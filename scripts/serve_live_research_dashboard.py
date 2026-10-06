@@ -228,6 +228,7 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 <div class="card" id="exploratory-diverse-32768-long-cfd" hidden><h3>当前阶段 · 32768-step PPO 长窗口真实 CFD</h3><div id="exploratory-diverse-32768-long-cfd-summary"></div><canvas class="actual-series" id="exploratory-diverse-32768-long-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-32768-long-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-32768-long-lift" width="1000" height="180"></canvas><p class="small">唯一实际800周期配对运行，不重复另做124周期。主物理窗口预注册为 t=168→228（先丢弃20 D/U）；前124周期只用于与历史短窗作次级比较。CPU策略推理+真实CFD，GPU空闲是预期，不代表任务停滞。</p></div>
 <div class="card" id="final-ppo-real-cfd" hidden><h3>冻结最终 PPO · 真实 CFD 配对运行</h3><div id="final-ppo-real-cfd-summary"></div><div id="final-ppo-field-evidence" hidden><p id="final-ppo-field-note" class="small"></p><img id="final-ppo-field" alt="最终PPO实际CFD速度模长和ROI去均值压力" loading="lazy"></div><canvas class="actual-series" id="final-ppo-real-cfd-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-lift" width="1000" height="180"></canvas><p class="small">这些折线只来自本次 PPO/zero 两支真实 OpenFOAM 周期终点；不使用上方旧 MPC 流场图。这里若显示场图，只来自本次最终 PPO 分支在 t=160.4 的真实 CFD，也不包含模型预测。运行结束前不声明减阻或科学准入。</p></div>
 <section id="flow-current"><h2>历史流场预测 · 真实 CFD / FNO / 误差</h2>
+<div class="card" id="projected-replay-fields" hidden><h3>投影策略轨迹 · 固定 H1 / H5 回顾性预测</h3><div id="projected-replay-summary"></div><div class="field-stack"><div class="field-card"><h3>固定起点 0000 · t=148.0</h3><img id="projected-replay-field-0000" alt="投影策略控制分支起点0000的H1/H5真实CFD、冻结K1预测和绝对误差" loading="lazy"></div><div class="field-card"><h3>固定起点 0700 · t=218.0</h3><img id="projected-replay-field-0700" alt="投影策略控制分支起点0700的H1/H5真实CFD、冻结K1预测和绝对误差" loading="lazy"></div></div><p class="small">固定显示机械预声明起点0与700，不按误差挑图。每图左列是真实CFD，中列是冻结K1 FNO回顾性预测，右列是绝对误差；上两行H1=0.1 D/U，下两行H5=0.5 D/U。速度图显示|U|，汇总velocity L2则按u/v矢量计算，二者不要混为同一量；压力为ROI去均值压力。预测使用真实轨迹中已经实现的未来动作，因此不是在线未知未来动作预测，也不是在线FNO/MPC控制。</p></div>
 <div class="card"><div class="row"><h3>历史 C 模型 · 第一轮训练预览</h3><select id="c-preview-step"><option value="001">1 步 / 0.1 D/U</option><option value="010">10 步 / 1 D/U</option><option value="050">50 步 / 5 D/U</option><option value="100" selected>100 步 / 10 D/U</option></select></div><p id="c-preview-status">等待预测图及数据校验完成。</p><img id="c-preview-image" alt="第一轮模型：真实 CFD、连续预测及绝对误差" style="width:100%" hidden><p class="small">历史模型可视化：仅一条 b01 动态转速验证轨迹，从 tU/D=130 的真实流场出发，之后连续预测；不是当前长程试验的流场，不是完整验证集的精度，也不是最终模型或闭环控制结果。左列：真实 CFD；中列：模型预测；右列：绝对误差。</p></div>
 <p><label for="c-preview-profile">当前候选图的动作轨迹：</label><select id="c-preview-profile" disabled><option value="plus" selected>正向起始旋转</option><option value="zero">无旋转</option><option value="minus">负向起始旋转</option></select></p>
 <details><summary>历史模型流场与完整验证结果（不是当前 C 模型）</summary><section>
@@ -394,7 +395,13 @@ function renderProjectedCFD(run,b01,b03){
  card.innerHTML=`<h3>FC-E058 · PPO策略＋镜像对称处理</h3><p><b>${terminal?'b00 800周期已完成并独立复核':active?(run.running?'真实CFD正在运行':'已停止，等待独立终态复核'):'尚未启动或运行证据尚未核实'}</b>${active?` · ${run.completed_cycles}/800 周期 · t=${num(latest.force_time,1)} / 228.0`:''}</p>${terminal?`<p>主窗(168,228]：减阻 <b>${(100*terminal.paired_drag_reduction).toFixed(3)}%</b>，后柱Cl′ RMS比 <b>${terminal.paired_rear_cl_fluctuation_rms_ratio.toFixed(3)}</b>，平均Cl偏置比 <b>${(100*terminal.absolute_mean_rear_cl_over_paired_zero_rms).toFixed(2)}%</b>；三项原标准均通过。</p><p class="small">早期first6.2偏置比 ${(100*terminal.early_mean_bias_ratio).toFixed(2)}%，未通过原10%；不能写成全部窗口通过。</p>`:active?`<p>当前/最低MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；当前实际转速 ${num(latest.omega,3)}。</p>`:''}<p class="small">复用同一32768步冻结策略，仅增加镜像对称处理；不是新训练或新模型。CPU策略推理与真实CFD配对执行；原10%均值偏置约束不变，20%仅敏感性参考。下方保留前次未处理策略的已完成结果，不能当作本次结果。</p>`;
  if(run?.paired_field?.verified===true){let field=document.createElement('div');field.innerHTML=`<h4>FC-E058 终点 t=228 · 投影策略与配对zero真实CFD</h4><img src="/projected-ppo-paired-field.png?v=${run.paired_field.sha256}" alt="左FC-E058投影策略右配对zero；上速度下ROI去均值压力；同色标真实CFD" loading="lazy" style="width:100%;height:auto"><p class="small">左：FC-E058投影策略；右：配对zero。上：速度模长；下：各支 CFD pressure with own ROI mean removed（solver units），不是绝对压力比较。两支使用相同网格、掩膜和色标。仅一个终点时刻的真实OpenFOAM场，不是FNO预测，也不能单独证明平均减阻或约束通过。下方FC-E055场图仍是未投影策略的历史证据。</p>`;card.appendChild(field);}
  if(b01?.verified===true){let t=b01.reported_terminal,phase=document.createElement('div');phase.innerHTML=`<hr><h3>FC-E059 · b01固定相位复验</h3><p><b>${t?'800周期已完成并独立复核':b01.running?'真实CFD正在运行':'800周期已完成，等待独立原始数据复核'}</b> · ${b01.completed_cycles}/800 周期 · t=${num(b01.latest.force_time,1)} / 210.0</p>${t?`<p>主窗口 (150,210]：总阻力降低 <b>${pct(t.paired_drag_reduction)}</b>；后柱Cl′比 ${num(t.paired_rear_cl_fluctuation_rms_ratio,3)}；mean-Cl偏置比 ${num(t.absolute_mean_rear_cl_over_paired_zero_rms,3)}，三项原始标准均通过。</p><p class="small">首段6.2D/U偏置比 ${num(t.early_mean_bias_ratio,3)}，仍高于10%；b01是历史validation相位，不是新鲜统计独立泛化。报告SHA ${t.review_sha256.slice(0,12)}…</p>`:`<p>当前/最低MemAvailable ${num(b01.current_available_gib,2)} / ${num(b01.minimum_available_gib,2)} GiB；当前实际转速 ${num(b01.latest.omega,3)}。</p><p class="small">同一冻结策略、投影、过滤器和800周期，只把预声明初态改为历史validation相位b01/restart130。首次unit因漏传--execute在模型和CFD前失败；本卡绑定Root批准的r2实际运行。尚无跨相位成功或科学准入。</p>`}`;card.appendChild(phase);}
- if(b03?.verified===true){let phase=document.createElement('div');phase.id='projected-b03-live';phase.innerHTML=`<hr><h3>FC-E061 · b03固定相位物理确认</h3><p><b>${b03.running?'真实CFD正在运行':b03.completed_cycles===800?'800周期已完成，等待独立原始数据复核':'运行已停止，尚无完整终态结论'}</b> · ${b03.completed_cycles}/800 周期 · t=${num(b03.latest.force_time,1)} / 224.0</p><p>当前/最低MemAvailable ${num(b03.current_available_gib,2)} / ${num(b03.minimum_available_gib,2)} GiB；实际转速 ${num(b03.latest.omega,3)}；当前周期PPO/zero总Cd ${num(b03.latest.ppo_total_cd,3)} / ${num(b03.latest.zero_total_cd,3)}。</p><p class="small">CPU策略推理＋配对OpenFOAM，不是GPU训练。主窗(164,224]尚待完整原始数据复核，不以进度或退出码宣布成功。b03固定动作H5数据已打开，不是普遍未见或统计独立相位。96帧回放另属准备工作，不是正在训练；保留b00/b01/H5已核证据。</p>`;card.appendChild(phase);}
+ if(b03?.verified===true){let t=b03.reported_terminal,phase=document.createElement('div');phase.id='projected-b03-live';phase.innerHTML=`<hr><h3>FC-E061 · b03固定相位物理确认</h3><p><b>${t?'800周期已完成并独立复核':b03.running?'真实CFD正在运行':b03.completed_cycles===800?'800周期已完成，等待独立原始数据复核':'运行已停止，尚无完整终态结论'}</b> · ${b03.completed_cycles}/800 周期 · t=${num(b03.latest.force_time,1)} / 224.0</p>${t?`<p>主窗(164,224]：减阻 <b>${(100*t.paired_drag_reduction).toFixed(5)}%</b>；后柱Cl′ RMS下降 <b>${(100*(1-t.paired_rear_cl_fluctuation_rms_ratio)).toFixed(5)}%</b>；平均Cl偏置比 <b>${(100*t.absolute_mean_rear_cl_over_paired_zero_rms).toFixed(5)}%</b>。原三项物理标准均通过。</p>`:`<p>当前/最低MemAvailable ${num(b03.current_available_gib,2)} / ${num(b03.minimum_available_gib,2)} GiB；实际转速 ${num(b03.latest.omega,3)}；当前周期PPO/zero总Cd ${num(b03.latest.ppo_total_cd,3)} / ${num(b03.latest.zero_total_cd,3)}。</p>`}<p class="small">CPU策略推理＋配对OpenFOAM，不是GPU训练。b03固定动作H5数据已打开，不是普遍未见或统计独立相位；保留K1 H100 FAIL。${t?'本次六个预声明窗口均通过，但不能据此改写b00/b01早期窗口失败。':'主窗尚待完整原始数据复核，不以进度或退出码宣布成功。'}</p>`;card.appendChild(phase);}
+}
+function renderProjectedReplay(run){
+ const card=$('projected-replay-fields');card.hidden=run?.verified!==true;if(card.hidden)return;
+ const c=run.controlled_h5,z=run.zero_h5;
+ $('projected-replay-summary').innerHTML=`<p><b>冻结K1回顾性推理已完成并独立复核，但受控轨迹精度不足。</b> 8个固定起点 × 2个分支、80个H1–H5端点；0个optimizer step，没有模型更新或新CFD。</p><table><thead><tr><th>H5分支</th><th>速度relative L2</th><th>ROI去均值压力relative L2</th><th>rear-Cl MAE</th></tr></thead><tbody><tr><td>投影策略真实轨迹</td><td>${pct(c.velocity_relative_l2)}</td><td>${pct(c.pressure_relative_l2)}</td><td>${num(c.rear_cl_mae,6)}</td></tr><tr><td>配对zero轨迹</td><td>${pct(z.velocity_relative_l2)}</td><td>${pct(z.pressure_relative_l2)}</td><td>${num(z.rear_cl_mae,6)}</td></tr></tbody></table><p class="small">两种动作分布分开展示，不用合并值掩盖受控分支误差。该结果不设新通过门槛、不推翻K1 H100正式FAIL，也不把回放称为在线FNO/MPC。报告SHA ${run.review_sha256.slice(0,12)}…</p>`;
+ for(const start of ['0000','0700']){const image=$(`projected-replay-field-${start}`),item=run.images[start],url=`/projected-replay-field-${start}.png?v=${item.sha256}`;if(image.getAttribute('src')!==url)image.src=url;}
 }
 function renderPolicyH5Comparison(run){
  let card=$('policy-h5-comparison');if(!card){card=document.createElement('div');card.id='policy-h5-comparison';card.className='card';$('exploratory-diverse-32768-long-cfd').after(card);}
@@ -442,6 +449,7 @@ function renderActiveExperiment(d){
  renderPolicyH5Comparison(d.policy_h5_comparison);
  renderProjectedCFD(d.projected_ppo_long_cfd,d.projected_ppo_b01_long_cfd,d.projected_ppo_b03_long_cfd);
  renderShortHorizonConfirmation(d.short_horizon_frozen_confirmation);
+ renderProjectedReplay(d.projected_policy_h1_h5_inference);
  renderFinalPPORealCFD(d.exploratory_final_ppo_real_cfd);
  if(active?.mpc_trial===true&&active.verified===true){
   const causal=active.progress_kind==='exploratory_causal_history_h2_feedback';
@@ -2390,6 +2398,110 @@ def _projected_b01_reported_terminal(root: Path, run: dict):
                 "result_sha256": result_sha, "review_sha256": review_sha}
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
         return None
+
+
+def _projected_b03_reported_terminal(root: Path, run: dict):
+    """Expose only the independently verified b03 primary result."""
+    if run.get("verified") is not True or run.get("running") is True:
+        return None
+    result_path = root / "artifacts/exploratory_projected_32768_ppo_b03_long_cfd_20261006/result.json"
+    review_path = root / "docs/EXPLORATORY_PROJECTED_32768_PPO_B03_LONG_CFD_TERMINAL_REVIEW_20261006.md"
+    result_sha = "d4d755faf913d393ca1466ee74614c0fb11f33b8f662a76a1cb7e4de3dd17a2f"
+    review_sha = "0d48a7e914ec82ad682d374e6531f2aab6a305aa81dad2dde6cd5c23dca48a0f"
+    try:
+        if (hashlib.sha256(result_path.read_bytes()).hexdigest() != result_sha
+                or hashlib.sha256(review_path.read_bytes()).hexdigest() != review_sha):
+            raise ValueError("projected b03 terminal evidence differs")
+        result = json.loads(result_path.read_text())
+        primary = result["windows"]["primary_final_60"]
+        if (result.get("status")
+                != "EXPLORATORY_PROJECTED_32768_PPO_B03_LONG_CFD_COMPLETE_NOT_ADMISSION"
+                or result.get("cycles") != 800 or result.get("scientific_admission") is not False
+                or result.get("owned_containers_cleaned") is not True
+                or result.get("source_restart_unchanged") is not True
+                or primary.get("interval") != [164.0, 224.0]
+                or primary.get("left_endpoint_included") is not False
+                or primary["branches"]["ppo"].get("samples") != 12000
+                or primary["branches"]["zero"].get("samples") != 12000):
+            raise ValueError("projected b03 terminal contract differs")
+        return {"paired_drag_reduction": primary["paired_drag_reduction"],
+                "paired_rear_cl_fluctuation_rms_ratio":
+                    primary["paired_rear_cl_fluctuation_rms_ratio"],
+                "absolute_mean_rear_cl_over_paired_zero_rms":
+                    primary["absolute_mean_rear_cl_over_paired_zero_rms"],
+                "result_sha256": result_sha, "review_sha256": review_sha}
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+        return None
+
+
+def _projected_policy_h1_h5_inference(root: Path) -> dict:
+    """Expose the reviewed retrospective replay without calling it online control."""
+    base = root / "artifacts/projected_policy_h1_h5_inference_20261006"
+    result_path = base / "result.json"
+    review_path = root / "docs/PROJECTED_POLICY_H1_H5_INFERENCE_TERMINAL_REVIEW_20261006.md"
+    result_sha = "247af0405d9e622f0b3b3b5dbc64e46c20890439fcd5216682b8d973957fd00d"
+    review_sha = "197b385617420e5f0e9cb7c8dfb25d957e98f85ea93f280bb2d6c0effc898faa"
+    try:
+        if (hashlib.sha256(result_path.read_bytes()).hexdigest() != result_sha
+                or hashlib.sha256(review_path.read_bytes()).hexdigest() != review_sha):
+            raise ValueError("replay evidence identity differs")
+        result = json.loads(result_path.read_text())
+        if (result.get("status") != "PROJECTED_POLICY_H1_H5_REPLAY_COMPLETE_NOT_ADMISSION"
+                or result.get("endpoints") != 80 or len(result.get("records", [])) != 16
+                or result.get("optimizer_steps") != 0
+                or result.get("model_tensors_unchanged") is not True
+                or result.get("scientific_admission") is not False):
+            raise ValueError("unexpected replay terminal contract")
+        fields = ("InvocationID", "MainPID", "ActiveState", "SubState", "Result",
+                  "ExecMainStatus")
+        raw = subprocess.check_output(["systemctl", "--user", "show",
+            "fluid-control-projected-policy-h1-h5-inference-20261006.service",
+            *[arg for key in fields for arg in ("-p", key)]], text=True, timeout=5)
+        state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+        if (state.get("InvocationID") != "627cb6b8b59a40aca3bb9159fb617eb3"
+                or state.get("MainPID") != "0" or state.get("ActiveState") != "active"
+                or state.get("SubState") != "exited" or state.get("Result") != "success"
+                or state.get("ExecMainStatus") != "0"):
+            raise ValueError("replay unit is not the reviewed terminal")
+        controlled = result["branches"]["mpc"]["5"]
+        zero = result["branches"]["zero"]["5"]
+        def metrics(item):
+            values = [item["velocity_relative_l2"], item["field_relative_l2_u_v_p"][2],
+                      item["force_channel_mae"][3]]
+            if any(type(value) not in (int, float) or not math.isfinite(value) for value in values):
+                raise ValueError("nonfinite replay metric")
+            return {"velocity_relative_l2": values[0], "pressure_relative_l2": values[1],
+                    "rear_cl_mae": values[2]}
+        return {"verified": True, "reviewed": True, "online_control": False,
+                "model_training": False, "optimizer_steps": 0, "origins": 16,
+                "endpoints": 80, "controlled_h5": metrics(controlled),
+                "zero_h5": metrics(zero), "result_sha256": result_sha,
+                "review_sha256": review_sha, "scientific_admission": False,
+                "images": _projected_policy_h1_h5_field_previews(root)}
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
+            subprocess.SubprocessError):
+        return {"verified": False, "reviewed": False, "online_control": False,
+                "model_training": False, "scientific_admission": False}
+
+
+def _projected_policy_h1_h5_field_previews(root: Path) -> dict:
+    base = root / "artifacts/projected_policy_h1_h5_field_preview_20261006_v3"
+    pins = {"result.json": "e2a08c418ceeeb7b0eca648c9e8e2945faf7db4e8146e42e4d9cebaa8fcb8258",
+            "mpc_start_0000_h1_h5.png": "41a02dd81a9850705acbd4e1f8c11c6cb1cf9f5aee7ec5885ea39b2fcfbf5eb9",
+            "mpc_start_0700_h1_h5.png": "0bc6530b425732454c1b8f0056137d7fe308bf9a42d71ff806eacff7c2b9bb40"}
+    if any(hashlib.sha256((base / name).read_bytes()).hexdigest() != digest
+           for name, digest in pins.items()):
+        raise ValueError("replay preview identity differs")
+    document = json.loads((base / "result.json").read_text())
+    if (document.get("source_inference_result_sha256")
+            != "247af0405d9e622f0b3b3b5dbc64e46c20890439fcd5216682b8d973957fd00d"
+            or document.get("saved_predictions_only") is not True
+            or document.get("model_rerun") is not False
+            or document.get("cfd_rerun") is not False
+            or document.get("scientific_admission") is not False):
+        raise ValueError("unexpected replay preview contract")
+    return {"0000": {"sha256": pins["mpc_start_0000_h1_h5.png"]},
+            "0700": {"sha256": pins["mpc_start_0700_h1_h5.png"]}}
 def _exploratory_final_ppo_real_cfd(root: Path) -> dict:
     """Read the fixed final-policy/zero real-CFD pair without borrowing MPC fields."""
     base = root / "artifacts/exploratory_final_ppo_real_cfd_20261006"
@@ -4684,6 +4796,23 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(payload, "image/png")
             except (ValueError, KeyError, TypeError):
                 return self._send(b"not found", "text/plain", 404)
+        if path in ("/projected-replay-field-0000.png",
+                    "/projected-replay-field-0700.png"):
+            start = path.removeprefix("/projected-replay-field-").removesuffix(".png")
+            try:
+                evidence = _projected_policy_h1_h5_field_previews(self.root)
+                versions = parse_qs(parsed.query, strict_parsing=True).get("v", [])
+                if versions != [evidence[start]["sha256"]]:
+                    raise ValueError("bound replay field SHA required")
+                image_path = (self.root
+                    / "artifacts/projected_policy_h1_h5_field_preview_20261006_v3"
+                    / f"mpc_start_{start}_h1_h5.png")
+                payload = image_path.read_bytes()
+                if hashlib.sha256(payload).hexdigest() != evidence[start]["sha256"]:
+                    raise ValueError("replay field changed")
+                return self._send(payload, "image/png")
+            except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+                return self._send(b"not found", "text/plain", 404)
         if path == "/long-ppo-paired-field.png":
             evidence = _long_ppo_field(self.root)
             if evidence.get("verified") and parse_qs(parsed.query).get("v") == [evidence["sha256"]]:
@@ -4913,6 +5042,13 @@ class Handler(BaseHTTPRequestHandler):
                 data["projected_ppo_b01_long_cfd"]["reported_terminal"] is not None)
             data["projected_ppo_b03_long_cfd"] = _exploratory_diverse_32768_long_cfd(
                 self.root, projected_b03=True)
+            data["projected_ppo_b03_long_cfd"]["reported_terminal"] = (
+                _projected_b03_reported_terminal(
+                    self.root, data["projected_ppo_b03_long_cfd"]))
+            data["projected_ppo_b03_long_cfd"]["primary_physical_criteria_verified"] = (
+                data["projected_ppo_b03_long_cfd"]["reported_terminal"] is not None)
+            data["projected_policy_h1_h5_inference"] = (
+                _projected_policy_h1_h5_inference(self.root))
             data["short_horizon_frozen_confirmation"] = _short_horizon_frozen_confirmation(
                 self.root)
             data["exploratory_final_ppo_real_cfd"] = _exploratory_final_ppo_real_cfd(self.root)
