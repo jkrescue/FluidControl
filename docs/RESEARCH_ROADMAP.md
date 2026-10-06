@@ -1,5 +1,11 @@
 # Research roadmap and prioritized backlog
 
+## Current priority — E089 complete; prepare approved-data conversion, not another uncontrolled sweep
+
+E089 fixedE082policy b02 acquisition actually completed and independently passed six original physical windows; primary4.2628%drag/0.822972RMSratio/4.4528%bias. [Terminal and801frame inventory](P064_B_SYMMETRY_CANONICAL_B02_TRAIN_CFD_TERMINAL_REVIEW_20261007.md), SHA `283c12c310a779e7c946c162ec1f9f07d4722e49b323157ca6206281c5361064`, binds both801-frame branches and original files. Next controlled-only whole-trajectory train conversion is prepared for separate approval, not running. A later25%-total-controlled b00/b02 coverage candidate still needs its own fixed protocol and training approval; do not imply C50 promotion or automatically extend32updates.
+
+The basic user-required official components+RL+realCFD online-feedback chain exists. OnlineFNO/MPC is optional, not an extra mandatory acceptance criterion. Remaining overall-goal gaps are control-relevant prediction quality and limited-condition verification, while earlier startup/seed failures and complete surrogateFAIL remain. b02's older short exploratory training coverage is acknowledged; new80D/U collection is not an independent unseen test. Below priorities describe historical decisions, not current running jobs or current approval state.
+
 ## Current status — C50 completed and rejected; retain the demonstrated B closed loop
 
 FC-E087/E088 are complete, not running. [Independent C50 development review](P064_CONTROLLED_DATA_DOSE_C_DEVELOPMENT_REVIEW_20261007.md), SHA `e26d6e49186616f3818c33f438055d707e3c66b881640696006e280a6bc4e091`, confirms pooledH1 rearCl/Cd and eachphase H1–H5 regress versus B. Frozen flow is exactly unchanged. The equal-budget data-dose hypothesis was not supported; do not proceed to C PPO/CFD or automatically scan other ratios.

@@ -1,6 +1,12 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## FC-E089 当前：固定E082策略 b02 长期训练数据采集已实际运行
+## 当前：E089 b02采集已完成并独审；尚未执行新转换或训练
+
+同330e已PID0/exit0，800/800、主窗减阻4.2628%/后升力RMS降低17.7028%/均值偏置4.4528%，六窗全部通过原2%/1.05/10%。独审3200raw/1600solver/800canonical映射与单filter/原20restart不变/cleanup；两branch各801时刻U/p齐全，共3204文件已SHA库存。报告 [E089终态](docs/P064_B_SYMMETRY_CANONICAL_B02_TRAIN_CFD_TERMINAL_REVIEW_20261007.md) SHA `283c12c310a779e7c946c162ec1f9f07d4722e49b323157ca6206281c5361064`；result `6883ceda495a443bc0edf95047f61bdbfc585cea9217112a92cb21e78299b9eb`；库存 `artifacts/p064_b02_terminal_audit_20261007/audit.jsonstream` SHA `2aa79a8dc18455a2280832ec6c10f8a82993d30fc138f67cc824b38ff42a051b`。可供另批controlled-only whole-trajectory train转换，不代表转换或候选训练已执行。
+
+官方PhysicsNeMo/Curator/Reader+HydroGym/SB3 RL+真实CFD在线反馈的基本链已实现；部署不调用FNO/MPC不构成缺失必需项，这两者是可选后续。全目标仍未完成，原因是控制相关预测质量与限定条件验证不足。C50拒绝、H25拒绝、完整预测FAIL和旧早期/seed失败保留；无证据断言32更新不足，不自动延长训练。本次b02已有短探索train数据，新增长期固定策略覆盖非新独立测试。以下均为历史快照，旧“运行/未批准”只描述当时状态。
+
+## 历史启动快照 — FC-E089固定E082策略 b02长期采集
 
 Unit `fluid-control-p064-b-symmetry-canonical-ppo-b02-train-acquisition-20261007.service`，invocation `330e850af9e040eaaf10897443807173`，PID541755 running，独查30/800真实周期。批准 `docs/P064_B_SYMMETRY_CANONICAL_B02_TRAIN_CFD_APPROVAL_20261007.json` SHA `4c0276eec8e4c2e871bf0fc93cd1ac780a5e3c7263096a87ef9a047a5998a966`；输出 `artifacts/p064_b_symmetry_canonical_ppo_b02_train_acquisition_20261007`。固定E082 policy5c056/Vec1d250/canonical映射，train相位106→186、主(126,186]、六窗/原物理标准/资源不变；目标保存两branch801端点及800动作，终态独审后转换另批。
 
@@ -12,7 +18,7 @@ E087 R2同d80f已PID0/exit0，256窗口/32更新、128受控窗、28 Adam状态s
 
 Lead拒绝C晋级PPO/CFD，保留B及两指定canonical seed主窗收益；不自动扫数据比例/seed/相位。当前无新训练或CFD。原2%/1.05/10%物理标准、早期偏置失败、完整FNO预测FAIL与全目标未完成保持。[训练独审](docs/P064_CONTROLLED_DATA_DOSE_C_TERMINAL_REVIEW_20261007.md) SHA `0c5835666eee004a6acc91e789d40adce0ece3e22b55fc24b43062ac79ea483e`；[开发独审](docs/P064_CONTROLLED_DATA_DOSE_C_DEVELOPMENT_REVIEW_20261007.md) SHA `e26d6e49186616f3818c33f438055d707e3c66b881640696006e280a6bc4e091`。下文运行状态均为历史。
 
-## FC-E087 当前：C50 FNO气动力训练 R2 已实际开始
+## 历史启动快照 — FC-E087 C50 FNO气动力训练R2
 
 R2 unit `fluid-control-p064-controlled-dose-c50-r2-20261007.service`，invocation `d80f61c62da64497bf378b6c7fd9c917`，PID480866 running，journal已有真实 `training_window_complete`。本轮固定256窗口/32参数更新，受控数据占比25%→50%，同K1父本/预算，流场冻结；不是PPO训练，无新CFD。批准 `docs/P064_CONTROLLED_DATA_DOSE_C_TRAINING_R2_APPROVAL_20261007.json` SHA `6d0d0f8dbdbae17a89d3b7dcc1717145b8e5a44464e928b5cb1a4e6debf2800f`，输出 `artifacts/fcp064_controlled_aero_arm_c50_20261007_r2`。尚无训练终态或预测改善结论，固定开发评估另批。
 

@@ -360,6 +360,12 @@ def b02_acquisition_status(root,run=subprocess.check_output):
         if path.exists():info.update(cfd_progress_counts(json.loads(path.read_text()),start=106.))
         info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
         info['status']=('训练数据采集：固定策略b02真实闭环' if info['cycles']>0 else 'b02采集进程初始化中') if info['running'] else ('b02采集进程已退出，等待独立终态复核' if state.get('ExecMainStatus')=='0' else 'b02采集工程失败，未自动重试')
+        review=root/'docs/P064_B_SYMMETRY_CANONICAL_B02_TRAIN_CFD_TERMINAL_REVIEW_20261007.md'
+        result=root/'artifacts/p064_b_symmetry_canonical_ppo_b02_train_acquisition_20261007/result.json'
+        if not info['running'] and state.get('ExecMainStatus')=='0' and review.is_file() and result.is_file():
+            if hashlib.sha256(review.read_bytes()).hexdigest()!='283c12c310a779e7c946c162ec1f9f07d4722e49b323157ca6206281c5361064' or hashlib.sha256(result.read_bytes()).hexdigest()!='6883ceda495a443bc0edf95047f61bdbfc585cea9217112a92cb21e78299b9eb':raise ValueError('b02 terminal binding')
+            info.update(status='b02真实闭环采集完成：主窗减阻4.26%，六窗通过',terminal_verified=True,physical_pass=True)
+            info['note']='主窗减阻4.2628%、后升力波动降低17.7028%、均值偏置4.4528%；六窗原标准通过，两分支各801组U/p已独审。可转换但尚未转换/训练，需另批。固定E082策略，不是C50晋级；旧早期失败和完整预测FAIL保留。基本官方RL→真实CFD在线反馈链已实现，在线FNO/MPC是可选后续，整体预测质量和验证范围仍不足。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['error']=str(exc)
     return info
 
