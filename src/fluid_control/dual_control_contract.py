@@ -12,6 +12,7 @@ from pathlib import Path
 from .dual_fno import (
     P015_SYSTEM_KIND, P018_SYSTEM_KIND, P018_PROTOCOL_SHA256, P018_LEARNING_RATE,
     P026_K1_SYSTEM_KIND, P026_K4_SYSTEM_KIND,
+    P064_SYSTEM_KIND,
     P026_HISTORY_STATE_SHA256, P026_HISTORY_INFERENCE_SHA256,
     SYSTEM_KIND, sha256, validate_dual_fno_manifest,
     validate_dual_runtime_files,
@@ -34,6 +35,8 @@ def p026_runtime_binding(identity) -> dict | None:
     profiles = {
         P026_K1_SYSTEM_KIND: ("p026_k1", 1),
         P026_K4_SYSTEM_KIND: ("p026_k4", 4),
+        P064_SYSTEM_KIND["A"]: ("p026_k1", 1),
+        P064_SYSTEM_KIND["B"]: ("p026_k1", 1),
     }
     kind = identity.payload.get("kind")
     if kind not in profiles:

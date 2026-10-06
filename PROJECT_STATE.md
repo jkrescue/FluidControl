@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-P064 实际探索链：B 候选 fresh PPO 正在运行
+
+Lead 已在独立审查通过后启动 B 候选的全新 32768-step PPO：unit `fluid-control-p064-b-ppo-32768-20261006.service`，invocation `f613395cbf1140549dc60e7b046e0f6b`，输出 `artifacts/p064_b_diverse_h5_32768_ppo_20261006/payload`。批准 `docs/P064_B_PPO_APPROVAL_20261006.json` SHA `ae327fee310bad562aceef35029595d20c9a3421d5d5be3dc3b68bb82649e9fe`。运行使用冻结的完整 P064 runtime/import 闭包和实际 B manifest/result/独审 receipt；启动不等于终态成功或 CFD 收益。
+
+该 PPO 保持旧成功链的 32768 steps、24 fixed resets、H5、69D observation、62-step reward、seed 和 fresh initialization；只是显式换入 P064-B FNO 候选。旧三相位成功 policy 保持不变，不被覆盖。后续投影 paired800 CFD 仍是 preparation-only，必须等本次 PPO 终态 policy/VecNormalize/result 的实际 SHA 和独立复核后另行批准；不得预填哈希。P064-B 尚未 formal admit，旧 H100/full-formal 失败和训练诊断 retention 代价继续保留。
+
 ## FC-P064 最新终态：B局部开发支持，有retention代价；原成功policy不变
 
 A/B均已完成32updates/256windows并通过独立CPU工程检查。A/B同协议开发评估也已终态独审：各16NPZ/80端点，所有起点/相位/pooled统计重算一致。B pooled H1 rearCl MAE .138998317、totalCd MAE .038065374，相对A .156116880/.039952166严格降低10.9652%/4.72263%，支持预声明的局部开发比较；不是正式模型接受。H1仍差于持力，B H5 Cd比K1差.7884%，b01 H5 Cd比A差.6848%。K1/A/B所有预测流场数组逐值完全相同，flow冻结没有改善速度/压力。

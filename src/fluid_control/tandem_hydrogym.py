@@ -241,16 +241,24 @@ class TandemSurrogateFlow(PDEBase):
             raise TypeError("history runtime identity must be a mapping")
         profile = value.get("profile")
         expected = {
-            "p026_k1": (1, "FC_P026_K1_HISTORY_FORCE_FNO"),
-            "p026_k4": (4, "FC_P026_K4_HISTORY_FORCE_FNO"),
+            "p026_k1": (
+                1,
+                {
+                    "FC_P026_K1_HISTORY_FORCE_FNO",
+                    "FC_P064_ARM_A_CONTROLLED_AERO_FORCE_FNO",
+                    "FC_P064_ARM_B_CONTROLLED_AERO_FORCE_FNO",
+                },
+            ),
+            "p026_k4": (4, {"FC_P026_K4_HISTORY_FORCE_FNO"}),
         }
         if profile not in expected:
             raise ValueError("unsupported FNO history runtime profile")
-        k, kind = expected[profile]
+        k, allowed_kinds = expected[profile]
+        if value.get("manifest_kind") not in allowed_kinds:
+            raise ValueError("unsupported FNO history runtime manifest kind")
         required = {
             "profile": profile,
             "history_length": k,
-            "manifest_kind": kind,
             "flow_input_channels": 6,
             "aerodynamic_input_channels": 6 if k == 1 else 18,
             "left_padding": "trajectory_frame0",

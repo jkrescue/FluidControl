@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-P064 — Actual B-candidate fresh PPO launch; CFD remains unbound
+
+After independent source/import/proof review, Lead launched `fluid-control-p064-b-ppo-32768-20261006.service`, invocation `f613395cbf1140549dc60e7b046e0f6b`, with output `artifacts/p064_b_diverse_h5_32768_ppo_20261006/payload`. Approval `docs/P064_B_PPO_APPROVAL_20261006.json` SHA `ae327fee310bad562aceef35029595d20c9a3421d5d5be3dc3b68bb82649e9fe` binds the actual B manifest `92766915cb11ca75d313608a5f75e61a218371dcc789f5b44725f0a8260e7891`, training result `9167e8d811f64cf001cc87bfd45d9ed2d48f5c588a19b951f7be2c826637b980`, and independent engineering receipt `d78f87d041fd907c50ad6b2ca8880498bf8f5ad80e5b6916270ec585105b2915`.
+
+The run retains the previously successful 32768-step/24-reset/H5/69-observation/62-reward/seed PPO protocol but starts a fresh policy against the explicit P064-B runtime candidate. It does not replace the preserved successful policy. Launch is not terminal training success, CFD benefit, or formal admission. The paired800 CFD file remains preparation-only with null future policy/result hashes; it requires actual PPO terminal artifacts, independent review, and a separate execution approval. No scientific CSV row is added while PPO is running.
+
 ## FC-P064 / FC-E068 — A/B terminal development comparison and retention tradeoff
 
 Both32-update/256-window arms completed independently verified engineering checks. B actualunit450ef57c25c14ec38e722cbd597ffb50 normalexit0; CPUreview f28d193f5a1a40ddb0f616cab8903679 under8GiB/noSwap/CPU1/CUDAhidden passed434sources, exactB64replacement schedule0..700,32×8records and28finiteAdamstates allstep32, frozenbias2 and copiedflow bytes. Receipt SHA `d78f87d041fd907c50ad6b2ca8880498bf8f5ad80e5b6916270ec585105b2915`, trainingresult `9167e8d811f64cf001cc87bfd45d9ed2d48f5c588a19b951f7be2c826637b980`; training sampledAvailable106.103218GiB/peak3521921024B. Officialreload is producer per-role proof, independent tensor inspection is not model construction.
