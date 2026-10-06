@@ -1,5 +1,19 @@
 # Experiment ledger
 
+## FC-E052 — Training terminal observed; direct-policy physical outcome still pending
+
+Same `3a34c4d621244e4bbacdf1816b5b1374` exited0. Actualresult `cd5775e4647280b77803de9a5ced6abdf6378cded4f676f935bd9836350c3640` records4096steps/32epochs/64optimizersteps and eachphase resetcounts `[35,34,34,34,34,34]`. Finalpolicy `8dc8cabf2104654345f270e3fb86edca7752cf4c883112c0a4cbd3a181acea9b`; VecNormalize `6988d4d161bc69c8bbd89d477e9320ad9ef264d35c9dee0bbf63954d4cdfce70`; wall83.807s. No final-policy selection or FNO update. Independent terminal resource/artifact review is assigned separately; training completion is not CFD benefit.
+
+The new directCFD consumer accepts actual training JSON and unchangedprotocol/packetproof, with7independent CPUtests passing. Its paired124 solverloop/numericalhelpers remain byte/AST-identical toFC-E051 apart from new producer identity. Actual CFD execution still requires Lead authorization and terminal proof. The running entry below is historical.
+
+## FC-E052 — Actual running: fixed24 diverse-real-reset exploratory PPO
+
+Verified user unit `fluid-control-exploratory-diverse-h5-ppo-20261006`, invocation `3a34c4d621244e4bbacdf1816b5b1374`, started2026-10-06 07:30:12UTC, active/running PID2463028. Approval `760e1f9e81494bdd8c3742cd0ce77e168b0df2bf288bd04546412096721f41e2`, exact immutable trainer `aae8c9a4311112439251b695001c7601ffd3d7cd3010937f86bd9a0bfebf3040`; new4file manifest `2f9a1e5de2c99fa153cd8316fd2ecdbf96c70a735c0c7fc6a4a07621f8ec21ca` with old39source dependencies unchanged. Canonical source capture occurs afterlaunch, not represented as launchHEAD.
+
+Only reset distribution differs fromFC-E050: phase00/02/04/06 each cycle originalzero0 then m075/m0375/zero/p0375/p075 frame62. Actual CPU24packet receipt `f85f84a4b82e0c21eaf011281e0b98b570bfaa083805c604e1fbe04aaa14583b`; source-bound realfield/action/rawcausal62force/grid identities must reproduce beforeenvironment use. Same frozenK1/H5/69obs/canonicalcost/actions/seed/PPO4096,64expected optimizersteps,final-only policy. Independent13trainer tests and10adapter tests plus2actualHydroGym/SB3 synthetic lifecycle tests passed. No GPUdata probe or policyselection added.
+
+Output `artifacts/exploratory_diverse_h5_ppo_training_20261006`;12GiB/noSwap1CPU/.06allocator, physicalAvailable50startup22runtime reserve20,1800inner1950outer. This running entry provides no new scientific CSV outcome. Resetcoverage is a hypothesis, not proven solecause ofFC-E051 saturation; history-dependent reward and surrogate/short-return biases remain. Subsequent directPPO realCFD requires actualsuccessful terminalpolicy and separateapproval.
+
 ## FC-E051 — Actual direct final PPO / paired CFD completed; not physical admission
 
 Same invocation `fd6d92f7ea9946b49c91c07e21f1d74b` completed07:10:18UTC, exit0,124cycles from148 to160.4. ResultSHA `4007493f22de5855cbd0574e0ec006ca715941b8396f4e48af6527dc11e03d47`; approval `7ace192519a08795fe9217473fae33941fc5edbb1075daeeb3701e672c521cb3`; immutabledriver `44b488a97a2882e1325da8871d3ac4905cdae2a6f2cbb17202ced91afc58b91a` (later source capture `f473abe`, not launchHEAD). Finalpolicy `3af2b2863f7fffa3579832c10dd2e7053caf80fc2719ed72ad842858f3da9fe1` acts directly, without onlineFNO/MPC substitution.

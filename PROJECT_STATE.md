@@ -1,5 +1,17 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E052已结束：24真实reset的4096步PPO训练完成，待真实CFD验证
+
+同一 `3a34c4d621244e4bbacdf1816b5b1374` 已exit0/PID0；实际结果SHA `cd5775e4647280b77803de9a5ced6abdf6378cded4f676f935bd9836350c3640`。4096转移/32PPO epoch/64优化器step，四相位reset次数各 `[35,34,34,34,34,34]`，没有选取表现好的起点或策略。唯一终态策略 `8dc8cabf2104654345f270e3fb86edca7752cf4c883112c0a4cbd3a181acea9b`，identity VecNormalize `6988d4d161bc69c8bbd89d477e9320ad9ef264d35c9dee0bbf63954d4cdfce70`，训练83.807秒。官方FNO冻结不变；独立终态资源/日志审计由非训练实现者完成后归档。
+
+新直接策略CFD适配器只替换真实训练身份，原124周期/69观察/动作限幅变化率/配对零参照/全部窗口统计保持，7CPU测试及实际训练JSON消费检查通过；尚不代表已执行CFD或取得收益。以下running条目保留为已核历史。
+
+## FC-E052已实际启动：仅改变真实reset分布的4096步探索PPO
+
+2026-10-06 07:30:12UTC，user unit `fluid-control-exploratory-diverse-h5-ppo-20261006` / invocation `3a34c4d621244e4bbacdf1816b5b1374` 已核active/running、PID2463028。固定四相位各六个起点：原zero frame0，加五种控制train轨迹frame62，共24真实状态/当前omega/原始62点受力历史。仅reset分布改变；K1/H5、69观察、canonical奖励、seed、PPO超参数与4096预算均不变，仍只保存唯一终态策略。未有此次训练或CFD收益结论。
+
+实际24包CPU收据 `f85f84a4b82e0c21eaf011281e0b98b570bfaa083805c604e1fbe04aaa14583b`；批准 `docs/EXPLORATORY_DIVERSE_H5_PPO_APPROVAL_20261006.json` SHA `760e1f9e81494bdd8c3742cd0ce77e168b0df2bf288bd04546412096721f41e2`。新四文件不可变manifest `2f9a1e5de2c99fa153cd8316fd2ecdbf96c70a735c0c7fc6a4a07621f8ec21ca`，复用旧39依赖，43source/192runtime逐哈希核验。12GiB无swap/1CPU，Available启动50/运行22GiB保护20，GPU allocator .06；不修改正在执行源、不自动重启。FC-E051负面lift/bias结果及隐藏奖励历史风险保持，当前无CFD运行。
+
 ## FC-E051终态：真实PPO闭环已跑通，受约束物理目标未完成
 
 同一 `fd6d92f7ea9946b49c91c07e21f1d74b` 于07:10:18UTC正常结束，124周期/12.4D/U，最终策略直接驱动真实配对CFD，无MPC代选。独立重哈希496份生成受力文件并复算全部窗口：全/前/后窗减阻 **+0.411755% / −1.635856% / +2.459428%**；rearCl波动RMS比 **1.105863 / 1.199832 / 0.990986**；同窗zero归一化平均升力偏置 **52.7311% / 41.7266% / 63.7353%**。三个窗口均不满足10%或20%敏感性参考；原长期train-b00参考下也全部失败。不是阈值放宽可解决的问题，不是80D/U正式成功。
