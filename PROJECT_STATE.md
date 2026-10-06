@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E059 正在执行：固定 b01 相位的同策略、同投影复验
+
+FC-E058 的 b00 primary 三约束经独立原始数据复核通过后，Lead 批准固定 b01 validation 相位复验；这不是按表现挑选相位，也不是新的独立最终测试。实际 r2 unit `fluid-control-exploratory-projected-32768-ppo-b01-long-cfd-r2-20261006.service`，invocation `9ef43959e065431490bd4725fa8fb7fe`，初始 PID `3509955`，已核 active/running。输出 `artifacts/exploratory_projected_32768_ppo_b01_long_cfd_20261006`。
+
+冻结策略、反射投影、单次 action filter、800 周期和六个相对窗口不变；唯一预声明差异是实际 b01 restart 130，推进至 210，primary `(150,210]`。批准 SHA `790bb12fae2f5df729efda98ef59e5d99f75521d220cb9b39e8caf04808e4c59`；不可变 driver SHA `8b653f43bd1ffc69b6285dd10523199898d88d74aebe4279f65a66fb4807c741`。首次 unit invocation `dfa8ba1412e34522a1ed1385e28b2df7` 因启动命令漏传 `--execute` 在执行体、模型和 CFD 前 exit1；无输出生成。Root 核验后只批准以新 r2 unit 增加该必需参数的工程重试，失败日志保留。
+
+当前只有运行证据，没有 b01 终态物理结论、跨相位成功或科学准入。FC-E058 b00 已核 primary 数值仍为减阻 3.89197994%、rearCl centered RMS 比 0.815695748、偏置比 0.011385207；其早期 first6.2 偏置 0.135462 仍未通过 10%，不得写成全部窗口通过。
+
 ## FC-E058 已核验：b00主窗物理三约束通过，跨相位仍待验证
 
 同一afa5cde4daec474eb52b61c08f86746f已PID0/exit0，800配对周期完成。唯一控制变化为冻结32768策略的反射投影 `.5*(pi(o)-pi(Ro))` 后一次原actionfilter。Primary (168,228]12000点减阻 **3.89197994%**、rearCl centeredRMS比 **0.815695748**、平均升力偏置比 **0.011385207**，满足原2%/1.05/10%标准，无阈值变更。全80D/U为3.75168096%/0.824355527/0.013698861；早期first6.2偏置0.135462仍未过10%，不能隐去。

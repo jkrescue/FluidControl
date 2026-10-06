@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E059 — Fixed b01 projected-policy replication running
+
+After independent raw verification of FC-E058, Lead approved one fixed b01 replication with the same frozen32768 policy, reflection projection, one existing action filter,800 cycles,six relative windows and resources. The only preregistered physical difference is validation phase b01 at restart130 through210, with primary `(150,210]`; this is not favorable phase selection or an independent final test.
+
+Actual r2 unit `fluid-control-exploratory-projected-32768-ppo-b01-long-cfd-r2-20261006.service`, invocation `9ef43959e065431490bd4725fa8fb7fe`, initial PID3509955, is active/running. Approval `790bb12fae2f5df729efda98ef59e5d99f75521d220cb9b39e8caf04808e4c59`; immutable driver `8b653f43bd1ffc69b6285dd10523199898d88d74aebe4279f65a66fb4807c741`; output `artifacts/exploratory_projected_32768_ppo_b01_long_cfd_20261006`.
+
+The first invocation `dfa8ba1412e34522a1ed1385e28b2df7` exited1 before the execute body, model loading, output creation or CFD because the systemd command omitted required `--execute`. Root verified the operational cause and approved only a fresh r2 unit with that flag added; source, spec, policy, numerics and resources are unchanged, and the failed journal is preserved. No b01 terminal outcome, cross-phase success or admission is inferred while running.
+
 ## FC-E058 — Reflection projection meets unchanged b00 primary physical criteria
 
 Actualafa5cde4daec474eb52b61c08f86746f completed800cycles,1097.174830s,PID0/exit0. Sameunique32768policy/pairedrestart148/80D-U/resources asFC-E055; onlyrequestedaction=.5(pi(o)-pi(Ro)) beforeoneexistingfilter. Approval87944e807a68caab6ce7a46e01207e1d7ba432b86ccd639b6f47424de481c64c;driver5c3f40728cd383913a256a2f46b6bfaf0b02cc7d91586e198c354a007fcb9e76.
