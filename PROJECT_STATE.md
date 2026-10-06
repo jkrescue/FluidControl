@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E050实际终态：真正FNO→HydroGym→SB3 PPO训练已完成，尚无该策略CFD收益
+
+同一user unit `fluid-control-exploratory-h5-ppo-20261006.service` / invocation `21cb82da66214924b38f120eb30723e5` 于06:53:11UTC正常结束，PID0/exit0。四个真实train-zero起点、H5回合完成4096条转移、32个PPO epoch更新、64次实际优化器step；policy tensor SHA确实改变，官方K1双FNO冻结且权重不变。816个完成回合均为5步，真实HydroGym/SB3截断自举已由CPU生命周期验证。不是MPC替代PPO，也不是原100步formal准入。
+
+结果SHA `138a7b192eef1a6454cefa47cda7803c9b362937641a645c00889ac5a5d7a0c4`；唯一终态策略SHA `3af2b2863f7fffa3579832c10dd2e7053caf80fc2719ed72ad842858f3da9fe1`，identity VecNormalize SHA `54a08a438501aac0663e50da931f41aabb63cdeb8255aa80051e7af1b4eaaba2`。运行80.902秒、最低采样MemAvailable119542509568字节，无守卫失败。详见 `docs/EXPLORATORY_H5_PPO_TERMINAL_REVIEW_20261006.md`。
+
+短回合仍有62点成本中预测贡献稀释、价值自举外推和模型偏差风险；93.04%训练动作被变化率限制，训练损失不证明减阻。当前这次训练已停止；下一步仅准备经单独批准的终态PPO直接控制真实配对CFD，不用MPC代选动作。K1原长AR失败与以下MPC负收益全部保留。
+
 ## FC-E049实际终态：124周期CFD完成，汇总失败后离线恢复，整体减阻为负
 
 同一invocation `a601eec2da7649b4af6f9354a4deb470` 于06:40:19UTC以exit1结束：124周期全部到160.4，但旧inclusive受力reader令trailing窗口1241点触发汇总计数错误。原failed unit与缺失result.json保留；未重跑CFD。经Lead读审批准，独立离线按原定 `(begin,end]` 完整/前6.2/末6.2D/U恢复2480/1240/1240点。

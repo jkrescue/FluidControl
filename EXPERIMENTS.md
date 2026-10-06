@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E050 — Actual exploratory frozen-FNO / HydroGym / SB3 PPO training completed
+
+Same invocation `21cb82da66214924b38f120eb30723e5`,06:51:48–06:53:11UTC, exit0/PID0. Explicit exploratory approval `8aa44f5f177d6c7d831a1efc55abf9d8db4b700d640cb640c5fcbb709cc44569` permits H5 while leaving canonical100-step admission unchanged. Read-only39-source manifest `730c9f315234a59c381fefa176d46a124eb310d41886176547496bce8b998856` and trainer `8806682ec66d0a1b8dde30b0f361bb77e115f9add85f207651d9d01d1d8d4100` identify actual execution; baseHEAD76f13dc did not yet contain these new scripts. Later Git capture is not execution HEAD.
+
+Exactly4096 transitions (1024 per fixed train-zero b00/b02/b04/b06 start),816 completedH5 episodes,32 epoch updates/64 actual optimizer steps. Policy tensor digest changed; official K1 tensors stayed frozen/no-grad and outside the PPO optimizer. Only one final policy saved, no reward selection. Result `artifacts/exploratory_h5_ppo_training_20261006/payload/result.json` SHA `138a7b192eef1a6454cefa47cda7803c9b362937641a645c00889ac5a5d7a0c4`; final policy SHA `3af2b2863f7fffa3579832c10dd2e7053caf80fc2719ed72ad842858f3da9fe1`. Independent artifact/counter review is `docs/EXPLORATORY_H5_PPO_TERMINAL_REVIEW_20261006.md`.
+
+Final value loss0.0210340086/approxKL0.0106169721 are finite; all episode lengths5, no divergence,93.04% actions rate-limited. Worker80.902s; minimum sampledMemAvailable119542509568bytes. This proves actual surrogate policy training, not CFD benefit or repair of K1 formalFAIL. Four-start short resets, diluted62-sample reward and timeout bootstrap can hide long-return/model bias. Next step is separately approved direct-policy pairedCFD, not MPC substitution; no reward/physical threshold changes based on training metrics.
+
 ## FC-E049 — Accelerated fixed H5 real CFD124 cycles; failed summary, offline recovered negative drag result
 
 Execution is identified by immutable driver `4cca28757f44e80f693d2d4a33c15cea0ea5bc74368eda669aead292b37464bf`, approval `03e2bac8f55c4bbd09e377b60bfef849515b53a6d418d490ec682b2cde95bc75`. Source capture commit `aae121a` was created after launch, not HEAD at launch; CSV code_commit identifies that reproducible capture. Actual unit invocation `a601eec2da7649b4af6f9354a4deb470` ran06:28:56–06:40:19UTC, completed124 CFD cycles but exited1 at trailing-window summary: legacy inclusive-left reader returned1241 instead of1240. Original failed state and absent result.json preserved.
