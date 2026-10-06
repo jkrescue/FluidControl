@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E066 最新实际终态：b01/b03 开发数据96帧转换已独立验证
+
+unit `fluid-control-development-b01-b03-h5-conversion-20261006.service` / invocation `8ac389027a954b79bc1d766f89029a6b` PID0/exit0；结果SHA `1da29262fa8cbfa7c41687439ad34cc1967ce8c7d9faa35c435668705ca9351f`。216原源文件、16 HDF、96帧state/mask/time/grid及实际动作/四力端点独立核对通过，两个export容器已清理，最低Available121511297024B。官方Reader真实复读完成；时间保留VTK float32误差≤6.104e-6，不声称十进制精确。
+
+独审 `docs/DEVELOPMENT_PHASE_H5_CONVERSION_TERMINAL_REVIEW_20261006.md` SHA `aa1417d9d6d05d282e2b00606985c31b9070bdb31b45378d6dba8dcc746e1c94`。旧progress16/16仍标转换中不是终态权威，actualunit+result已确认完成。仅已打开开发数据转换，无新CFD/推理/训练或科学准入。b00全801帧另项转换仍由同f5ee31任务执行，后续P064等预算A/B及开发评估需单独审批；三相位物理成功与H100失败均保留。
+
 ## FC-E066 实际运行：b01/b03 固定96帧开发评估输入转换
 
 Root于2026-10-06 10:27:34UTC启动 `fluid-control-development-b01-b03-h5-conversion-20261006.service`，invocation `8ac389027a954b79bc1d766f89029a6b`，PID379249，归档时独立查询同handle active/running。固定b01/base130和b03/base144，各8个机械起点0,100,…700及后5帧，仅controlled48帧/phase，共96帧/16 mini-HDF/80未来端点。两相位均是已打开development，不是untouched test或统计独立泛化样本；不混入b00训练数据。

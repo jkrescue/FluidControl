@@ -2,7 +2,7 @@
 
 ## Current — verified constrained CFD feedback, prediction replay and delivery review
 
-Updated 2026-10-06 after FC-E061 independent raw-data review. This section
+Updated 2026-10-06 after FC-E063/064 reviews and FC-E066 data conversion. This section
 supersedes the execution priorities below, which remain historical records.
 The physical scope remains Re100, L/D5, fixed upstream cylinder and rotating
 downstream cylinder. Do not restart previously completed experiments because
@@ -24,19 +24,26 @@ universal robustness, physical real-time deployment or net energy savings.
 
 Current ordered work:
 
-1. Independently recompute the completed fixed-policy H1–H5 replay from all
-   16 saved field arrays / 80 endpoints, separating controlled and zero
-   branches and comparing state persistence. Execution returned zero, but
-   numerical review is still pending. Recorded future actions make this
-   retrospective conditional replay, not an online future-action forecast.
-2. Publish fixed-start CFD / FNO / error images and verified three-phase
-   control results in the existing dashboard. Show terminal jobs as completed,
-   not running, and distinguish absent metrics from zero values.
-3. Audit the finite-case delivery against source, model and policy identities,
-   official-library calls, independent physical results, reproducibility,
-   resource receipts and browser presentation. Record genuinely missing
-   evidence before approving another scientific experiment.
-4. Keep K1 H100 formal failure explicit. Neither a passing physical trial nor
+1. Completed: independent recomputation of all16 fixed-policy replay arrays /
+   80 endpoints, controlled/zero separation and persistence. Controlled H1
+   force errors remain worse than persistence; this is not merely long-AR
+   accumulation. Recorded future actions make it retrospective conditional
+   replay, not an online forecast. Fixed CFD/FNO/error images and verified
+   physical results are published; completion audit is recorded.
+2. Current: finish same-invocation b00 full801-frame controlled train conversion
+   (FC-E065), then independently verify its final HDF/provenance. b01/b03 fixed
+   development96-frame conversion (FC-E066) is already independently complete.
+   Whole b00 is train, opened replay origins are development, not fresh tests.
+3. Prepare P064 equal-budget A/B: same official FNO, initialization, training
+   protocol and optimizer budget; change only addition of controlled b00 data.
+   Evaluate both candidates under the same predeclared H1/H5 development
+   protocol, with true-input force readout and retention on old train44.
+   No automatic training or tuning authorization follows from data conversion.
+4. If evidence supports adopting a candidate, verify its loader/PPO interface
+   compatibility and then execute separately approved genuine trained-policy
+   real CFD feedback confirmation. Do not substitute surrogate improvement
+   for physical control evidence or shrink the overall goal to data preparation.
+5. Keep K1 H100 formal failure explicit. Neither a passing physical trial nor
    good H5 prediction silently admits the model under the old H100 protocol.
    Any additional training must address a measured failure with a fixed
    comparison; do not extend budgets merely to raise GPU utilization.

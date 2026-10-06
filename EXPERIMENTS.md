@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E066 — Independent development conversion terminal, no scientific metrics
+
+Actual invocation `8ac389027a954b79bc1d766f89029a6b` completed PID0/exit0. Approval `c82e4a865d0d6e0927faee026baa84ebca2fcabb0707daa00f988174349dd5a3`; result `1da29262fa8cbfa7c41687439ad34cc1967ce8c7d9faa35c435668705ca9351f`; independent report `docs/DEVELOPMENT_PHASE_H5_CONVERSION_TERMINAL_REVIEW_20261006.md` SHA `aa1417d9d6d05d282e2b00606985c31b9070bdb31b45378d6dba8dcc746e1c94`. Independently rehashed6source/approval/selection,216originalfiles,16HDF and compared96 sampled arrays plus actual force/action endpoints. Max nominal-time difference6.103515630684342e-6, preserved VTK FP32 rounding. Two exporter containers exited0/noOOM and exact CIDs are absent; runtime resource span154.883s, minimumAvailable121511297024B; systemd12GiB/swap0/CPU1/15min verified.
+
+Scope is already-opened b01/b03 development,8 fixed starts each,6frames/start,80 next-step endpoints. No new CFD/model/optimizer, no accuracy measurements or CSV scientific rows. Root-owned export scratch retained intentionally. Progress16/16 retained its old CONVERTING label; actualunit/finalreceipt establish terminal status. Original physical criteria and H100 rejection are unchanged; these inputs enable later separately approved same-protocol development evaluation, not checkpoint selection on an untouched test.
+
 ## FC-E066 — Actual start: fixed b01/b03 controlled development conversion
 
 Root launched `fluid-control-development-b01-b03-h5-conversion-20261006.service` at2026-10-06 10:27:34UTC, invocation `8ac389027a954b79bc1d766f89029a6b`, PID379249, independently observedrunning. This is CPU conversion of already saved U/p, not new CFD, model inference or training. Fixed starts0,100,…700 plus5followingframes at b01/base130 and b03/base144 select48controlledframes each; intended96frames/16six-frameHDF/80endpoints. These opened development phases cannot be relabelled independent finaltests.
