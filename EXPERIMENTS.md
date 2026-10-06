@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## FC-E089 — actual fixed E082 policy b02 long training-data acquisition
+
+Actual invocation330e850af9e040eaaf10897443807173/PID541755 running, observed30/800cycles; unitfluid-control-p064-b-symmetry-canonical-ppo-b02-train-acquisition-20261007.service. Approval4c0276eec8e4c2e871bf0fc93cd1ac780a5e3c7263096a87ef9a047a5998a966; driverb924397f648e3623f5d44145f695b13bfe59df1f9023897e59f707330c24d5d8. Output artifacts/p064_b_symmetry_canonical_ppo_b02_train_acquisition_20261007. Same E082policy/normalization/canonical action law, trainrestart106→186 and original six-window protocol; CPU CFD, no new policy/model training. Existing b02 short exploratory training trajectories acknowledged. Running record only: no scientific CSV metrics or predicted PASS. Terminal801 U/p and raw/action review required before separately approved conversion/training.
+
 ## FC-E087 / FC-E088 — C50 training complete; fixed development regresses and promotion rejected
 
 E087 actual d80f exit0: independent439source/256journal/128controlled/32records/28Adamstep32/frozenflow+bias checks pass; official fresh reload is producer evidence, no independent forward. Result b130f2a6a92247ee70eff10a4c35ce3670514faee9f50bb76122d34e97098e0a, manifest b4a150370101b4214b5085c8884516fbf44aa1560f11f527f85fc1811bf65529. R1 import failure remains engineering-only.

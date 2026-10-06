@@ -441,6 +441,7 @@ function renderShortHorizonConfirmation(run){
  card.innerHTML=`<h3>FNO预留工况预测评估（推理，非训练）</h3><p><b>${t?'已完成并独立复核':run.running?'GPU推理评估正在运行':'运行已停止，等待独立结果核验'}</b> · 10个预留工况 × H1–H5 × 每工况32个起点</p>${t?`<p>1600/1600端点，失败/非有限值 0/0。H1→H5：速度相对L2 ${pct(m.h1.velocity_relative_l2)} → ${pct(m.h5.velocity_relative_l2)}；ROI中心化压力相对L2 ${pct(m.h1.pressure_relative_l2)} → ${pct(m.h5.pressure_relative_l2)}。</p><p>总Cd MAE ${num(m.h1.total_drag_mae,6)} → ${num(m.h5.total_drag_mae,6)}；后柱Cl MAE ${num(m.h1.rear_cl_mae,6)} → ${num(m.h5.rear_cl_mae,6)}。</p><p class="small">定量支持预声明固定动作工况的短时预测；不证明任意策略动作分布、长递推或物理闭环成功，也不推翻旧K1 H100正式FAIL。未自造新的通过门槛。报告SHA ${t.review_sha256.slice(0,12)}…</p>`:`<p>当前/最低 MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；外层进程当前/峰值内存 ${num(run.unit_memory_current_gib,2)} / ${num(run.unit_memory_peak_gib,2)} GiB。</p><p class="small">这是固定FNO在预留工况上的预测推理：0个optimizer step，不学习、不运行CFD。当前产物没有逐case完成记录，因此不显示或估算百分比。旧K1 H100正式FAIL仍是独立结论，本卡不会覆盖它。</p>`}`;
 }
 function renderActiveExperiment(d){
+ if(d.p064_b02_acquisition?.invocation){const x=d.p064_b02_acquisition;$('lead-now').textContent=`${x.status}：${x.cycles}/800 周期，CFD时刻 ${x.current_time??'尚无'}。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；原2%/1.05/10%标准不变，采集运行中不预判收益。C50已评估退化且未采用。`;return;}
  if(d.p064_c50?.invocation){const x=d.p064_c50;$('lead-now').textContent=`${x.status}：已完成窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。原物理标准2%/1.05/10%不变；计算结束不代表预测通过。`;return;}
  const active=d.registered_experiment;
  renderCurrentTrialEvidence(active);
@@ -5082,6 +5083,8 @@ class Handler(BaseHTTPRequestHandler):
             data['p064_training'] = _p064_training_progress(self.root)
             from p064_dashboard_progress import c50_training_status
             data['p064_c50'] = c50_training_status(self.root)
+            from p064_dashboard_progress import b02_acquisition_status
+            data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import development_summary
             data['p064_development'] = development_summary(self.root)
             from p064_dashboard_progress import candidate_ppo_status

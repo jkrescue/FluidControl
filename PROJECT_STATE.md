@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E089 当前：固定E082策略 b02 长期训练数据采集已实际运行
+
+Unit `fluid-control-p064-b-symmetry-canonical-ppo-b02-train-acquisition-20261007.service`，invocation `330e850af9e040eaaf10897443807173`，PID541755 running，独查30/800真实周期。批准 `docs/P064_B_SYMMETRY_CANONICAL_B02_TRAIN_CFD_APPROVAL_20261007.json` SHA `4c0276eec8e4c2e871bf0fc93cd1ac780a5e3c7263096a87ef9a047a5998a966`；输出 `artifacts/p064_b_symmetry_canonical_ppo_b02_train_acquisition_20261007`。固定E082 policy5c056/Vec1d250/canonical映射，train相位106→186、主(126,186]、六窗/原物理标准/资源不变；目标保存两branch801端点及800动作，终态独审后转换另批。
+
+这是CPU真实CFD训练数据采集，不是C50晋级、PPO/FNO训练或在线FNO/MPC。b02已有八条12.8D/U探索轨迹用于train16，本次补固定当前策略80D/U覆盖；不称全新独立测试。C50已拒绝，既有两指定seed主窗收益/早期失败/完整预测FAIL保留；本次尚无终态收益。下文为历史。
+
 ## FC-E087 / FC-E088 已完成：C50训练成功但开发预测退化，不采用
 
 E087 R2同d80f已PID0/exit0，256窗口/32更新、128受控窗、28 Adam状态step32、冻结flow/bias及生产官方reload独审通过；R1 import失败0训练保留。E088同d7a29已PID0/exit0，固定16起点80端点独立复算通过，**B→C pooled H1 rearCl MAE .138998317→.139148227、totalCd .038065374→.042953398，均变差**；H1–H5每phase两项均变差。全部流场预测逐值相同（flow冻结），不构成场精度改善。已有训练内六窗口保留性指标亦未优于B，未执行新的完整formal C评估。

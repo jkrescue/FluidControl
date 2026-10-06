@@ -347,6 +347,22 @@ def canonical_b00_cfd_status(root,run=subprocess.check_output):
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
+def b02_acquisition_status(root,run=subprocess.check_output):
+    root=Path(root);info={'status':'b02采集尚未核验启动','cycles':0,'target':800,'running':False,'training':False,'physical_pass':None,'invocation':None,'note':'固定E082已训练策略，CPU真实CFD反馈；不是C50模型/PPO训练，无在线FNO/MPC。补充长期受控train数据，已有b02短探索数据并非空白。转换及后续训练另批；旧物理收益和预测FAIL不变。'}
+    try:
+        approval=root/'docs/P064_B_SYMMETRY_CANONICAL_B02_TRAIN_CFD_APPROVAL_20261007.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='4c0276eec8e4c2e871bf0fc93cd1ac780a5e3c7263096a87ef9a047a5998a966':raise ValueError('b02 approval SHA')
+        raw=run(['systemctl','--user','show','fluid-control-p064-b-symmetry-canonical-ppo-b02-train-acquisition-20261007.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!='330e850af9e040eaaf10897443807173':raise ValueError('b02 invocation')
+        info['invocation']=state['InvocationID']
+        path=root/'artifacts/p064_b_symmetry_canonical_ppo_b02_train_acquisition_20261007/progress.json'
+        if path.exists():info.update(cfd_progress_counts(json.loads(path.read_text()),start=106.))
+        info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['status']=('训练数据采集：固定策略b02真实闭环' if info['cycles']>0 else 'b02采集进程初始化中') if info['running'] else ('b02采集进程已退出，等待独立终态复核' if state.get('ExecMainStatus')=='0' else 'b02采集工程失败，未自动重试')
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['error']=str(exc)
+    return info
+
 def canonical_seed6_cfd_status(root,run=subprocess.check_output):
     root=Path(root);info={'status':'seed20261006 b00尚未核验启动','cycles':0,'target':800,'running':False,'training':False,'physical_pass':None,'invocation':None}
     try:
@@ -612,7 +628,7 @@ def c50_training_status(root,run=subprocess.check_output):
         result=root/'artifacts/p064_arm_c50_development_h1_h5_20261007/result.json'
         if not info['running'] and review.is_file() and result.is_file() and hashlib.sha256(review.read_bytes()).hexdigest()=='e26d6e49186616f3818c33f438055d707e3c66b881640696006e280a6bc4e091' and hashlib.sha256(result.read_bytes()).hexdigest()=='9fa7c88759bf83fdca87d79ff305c0f3d4654368c7ec3059d7f9ba3f96c48c1a':
             info.update(status='C50训练和开发评估已完成，预测未改善，不采用',terminal_verified=True,scientific_pass=False)
-            info['note']='真实256窗口/32更新已独审；同面板H1后Cl MAE B0.13900→C0.13915、总Cd0.03807→0.04295，H1–H5各phase均退化。流场冻结、预测完全相同。Lead拒绝C晋级PPO/CFD，不自动再扫比例。保留B及两指定seed闭环主窗收益、早期失败和完整预测FAIL。当前无新训练/CFD；R1导入工程失败仍保留。'
+            info['note']='真实256窗口/32更新已独审；同面板H1后Cl MAE B0.13900→C0.13915、总Cd0.03807→0.04295，H1–H5各phase均退化。流场冻结、预测完全相同。Lead拒绝C晋级PPO/CFD，不自动再扫比例。保留B及两指定seed闭环主窗收益、早期失败和完整预测FAIL。C50任务已结束，其他当前工作见主卡；R1导入工程失败仍保留。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['error']=str(exc)
     return info

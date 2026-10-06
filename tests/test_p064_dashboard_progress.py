@@ -30,6 +30,15 @@ def test_c50_live_requires_actual_windows(tmp_path,monkeypatch,sub,pid,journal,t
     assert result['scientific_pass'] is None
     assert result['updates']==(1 if journal else 0)
 
+@pytest.mark.parametrize('sub,pid,running',[('running','12',True),('exited','0',False)])
+def test_b02_acquisition_is_not_training(tmp_path,monkeypatch,sub,pid,running):
+    import p064_dashboard_progress as m
+    p=tmp_path/'docs/P064_B_SYMMETRY_CANONICAL_B02_TRAIN_CFD_APPROVAL_20261007.json';p.parent.mkdir();p.write_text('{}')
+    monkeypatch.setattr(m.hashlib,'sha256',lambda data:type('Digest',(),{'hexdigest':lambda self:'4c0276eec8e4c2e871bf0fc93cd1ac780a5e3c7263096a87ef9a047a5998a966'})())
+    result=m.b02_acquisition_status(tmp_path,lambda *a,**k:f'InvocationID=330e850af9e040eaaf10897443807173\nMainPID={pid}\nActiveState=active\nSubState={sub}\nExecMainStatus=0')
+    assert result['running'] is running and result['training'] is False
+    assert result['physical_pass'] is None
+
 @pytest.mark.parametrize('field,value',[('history_k',True),('consumed',257),('consumed',False)])
 def test_bad_event(field,value):
     row={'event':'training_window_complete','history_k':1,'consumed':8};row[field]=value
