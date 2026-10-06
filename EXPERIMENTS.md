@@ -8,7 +8,13 @@ R2 exited0 and independently verified96 packets,16 six-frame official-reader HDF
 
 This is an engineering conversion milestone only: model-loaded/optimizer/CFD/scientific-admission flags are all false. The planned replay conditions on future recorded applied actions unavailable to an online forecast. It neither measures K1 accuracy nor reverses H100 failure; separate frozen-source approval and actual inference remain required.
 
-## FC-E061 — Actual b03 projected-policy physical confirmation running
+## FC-E061 — Verified b03 projected-policy physical confirmation complete
+
+Actual invocation `47612677a9f64dfc968917fada5e9ba8` completed 800 paired CFD intervals, PID0 / exit0. Independent review rehashed all 3200 coefficient files and recomputed all six windows from four exact 16000-sample streams; maximum metric discrepancy 8.88e-16. Primary (164,224], 12000 samples per branch: drag reduction **3.8971402137%**, centered rear-Cl RMS ratio **0.8148587790**, mean-bias ratio **0.01688858081**. All original physical criteria pass without relaxation; all six windows pass for this trial. Historical inclusive [164,224] remains a separately labelled 12001-point companion. Original H100 FAIL and prior unsuccessful controllers are unchanged.
+
+Result SHA `d4d755faf913d393ca1466ee74614c0fb11f33b8f662a76a1cb7e4de3dd17a2f`; independent report SHA `0d48a7e914ec82ad682d374e6531f2aab6a305aa81dad2dde6cd5c23dca48a0f`. All 800 projection/filter decisions checked; all 1600 solver logs clean, max Courant0.245351545. Source restart and bound code unchanged; owned containers absent. Their idle-process exit137 reflects intended cleanup, not failed CFD. Minimum MemAvailable121825087488 bytes; runtime1099.822s. This is actual frozen-policy online CFD feedback, not a new training run or a real-time guarantee. b00/b01/b03 are three observed phases of the same physical configuration, not statistically independent generalization; b03 fixed-action H5 exposure is disclosed. Original10% remains the criterion and20% only sensitivity.
+
+### Preserved launch record
 
 Started2026-10-06 09:30:16UTC; sameunit `fluid-control-exploratory-projected-32768-ppo-b03-long-cfd-20261006.service` / invocation `47612677a9f64dfc968917fada5e9ba8`, PID4013554 observedrunning. Fixedrestart144→224,800cycles,primary(164,224]12000points plusfiveotherpredeclaredwindows. Uniquechange fromb01 is phase/restart metadata; same frozenpolicy/projection/onefilter/CFD/resources/originalcriteria. Source6516456f07d765728055f58036bed97a5e37036f205c4d1ee2bf2456be8cc3b0; approval3ca5531815c48cff59fd1ca0d96e40e2305402435cb2e28d2adb26eeaf9328a6.6CPUtests independentlypassed beforelaunch; these are engineering evidence, not physical outcomes.
 

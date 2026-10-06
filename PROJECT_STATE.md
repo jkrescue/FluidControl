@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 当前：真实策略闭环已完成，b00 / b01 / b03 三个观测相位 primary 均通过原标准
+
+FC-E061 b03 已终态，不再运行训练或该 CFD：同一 invocation `47612677a9f64dfc968917fada5e9ba8`，PID0 / exit0，完成 800 个真实策略反馈周期。独立复核 3200 个原始受力文件哈希、全部六窗口、800 次投影与单次动作限幅、1600 个干净求解段及容器清理。Primary **(164,224]** 的 12000 点结果为减阻 **3.89714021%**、rear-Cl centered RMS 降低 **18.51412210%**、均值偏置/配对零旋转 RMS **1.68885808%**；原 ≥2% / ≤1.05 / ≤10% 三项均通过，无阈值放宽。本次六窗口均通过，不能据此改写 b00/b01 的早期窗口失败。
+
+结果 SHA `d4d755faf913d393ca1466ee74614c0fb11f33b8f662a76a1cb7e4de3dd17a2f`；报告 `docs/EXPLORATORY_PROJECTED_32768_PPO_B03_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `0d48a7e914ec82ad682d374e6531f2aab6a305aa81dad2dde6cd5c23dca48a0f`。这是冻结 FNO 环境训练出的 PPO 经同一镜像对称处理后，在真实 OpenFOAM 反馈中取得的结果，不是训练更新次数或离线模型预测替代闭环。三个相位来自同一配置/极限环，不是统计独立样本，不外推其他 Re、几何或所有相位；b03 固定动作 H5 数据此前已打开。K1 H100 FAIL 和早期失败继续保留。
+
+FC-E062 下述转换记录保持原状；后续独立批准的 80 端点回顾性推理 invocation `627cb6b8b59a40aca3bb9159fb617eb3` 已 exit0，数值独立审查另行记录，不能将进程成功当作精度结论。以下“运行中/尚未执行”描述为对应阶段的历史记录。
+
 ## FC-E062 工程终态：固定 96 帧已转换，尚未执行 FNO 推理
 
 只读回放输入转换已完成并经独立复核，但这不是模型精度或物理控制结果。首次 unit `fluid-control-project-policy-h1-h5-conversion-20261006.service` / invocation `45e422939f5a477a85f359cd60c5047e` 在第一个采样视图因 Linux `protected_hardlinks=1` 拒绝对 root:root 0644 VTU 建 hardlink 而 exit1；未产生成功 packet、未加载模型、未运行 CFD，失败输出和 journal 保留。R2 只把 `os.link` 换为 `shutil.copy2`，并在采样前后核对字节 SHA，无 chmod/chown/sysctl 或数值协议变化。
@@ -8,13 +16,13 @@ R2 unit `fluid-control-project-policy-h1-h5-conversion-r2-20261006.service` / in
 
 两个导出容器 exit0/OOMfalse 后均已删除；1192 条资源记录最低 MemAvailable `122120433664` 字节。结果明确 `model_loaded=false`、`optimizer_steps=0`、`cfd_executed=false`、`scientific_admission=false`。下一步只能在独立批准下用冻结 K1 做“给定已实现未来动作”的回顾性 H1–H5 推理；在线起点并不知道未来策略动作，转换成功不改变 K1 H100 FAIL，也不构成新的闭环收益。
 
-## FC-E061 实际运行：固定 b03 的第三次物理策略确认
+## FC-E061 启动记录（已被上方终态结论更新）：固定 b03 的第三次物理策略确认
 
 实际 unit `fluid-control-exploratory-projected-32768-ppo-b03-long-cfd-20261006.service`，invocation `47612677a9f64dfc968917fada5e9ba8`，PID4013554，于2026-10-06 09:30:16UTC启动，独立查询active/running。仅初相位改为预声明b03/restart144，800周期至224，primary(164,224]；同一冻结32768策略、反射投影、一次actionfilter和原2%/1.05/10%标准。当前没有终态物理结果，不得将启动或此前b00/b01成功写成本次成功。
 
 批准SHA `3ca5531815c48cff59fd1ca0d96e40e2305402435cb2e28d2adb26eeaf9328a6`；不可变driverSHA `6516456f07d765728055f58036bed97a5e37036f205c4d1ee2bf2456be8cc3b0`；输出 `artifacts/exploratory_projected_32768_ppo_b03_long_cfd_20261006`。b03固定动作H5 payload已经在FC-E060打开，故这是新的物理policy trial而非普遍未见相位；不声称统计独立。没有新训练/调参/MPC，H100 FAIL继续保留。8GiB controller、2×8GiB noSwap solver、Available50/22与3600/3750/120秒边界不变；不自动重试。
 
-## 当前结论：两相位 primary 物理约束通过，短时预测已测量，H100 FAIL仍保留
+## 前阶段结论：两相位 primary 物理约束通过，短时预测已测量，H100 FAIL仍保留
 
 Lead已确认投影策略b00与b01两次固定80D/U配对复验的primary原物理约束均通过；FC-E059 b01独立3200原始文件hash、六窗口重算、800动作投影/filter及容器清理已完成。Primary (150,210]减阻3.92363725%、rearCl centered RMS比0.815785507、均值偏置比0.027300222；早期first6.2偏置0.127807798仍未过10%。不能外推所有窗口、所有相位或Re；历史validation b01也不是新独立统计样本。当前训练和这两次CFD都已完成，以下running标题保留为历史。
 
