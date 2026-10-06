@@ -22,6 +22,7 @@ P026_KINDS = ("FC_P026_K1_HISTORY_FORCE_FNO", "FC_P026_K4_HISTORY_FORCE_FNO")
 P028_KIND = "FC_P028_FLOW_ROLLOUT_REPAIR"
 P029_KIND = "FC_P029_CONTROL_AWARE_FLOW_REPAIR"
 P064_KIND = "FC_P064_ARM_B_CONTROLLED_AERO_FORCE_FNO"
+P064_H25_KIND = "FC_P064_B_H25_BOUNDED_CONTROL_AWARE_FLOW_REPAIR"
 ACTIONS = {"m075": -0.75, "m0375": -0.375, "zero": 0.0, "p0375": 0.375, "p075": 0.75}
 CASE = re.compile(
     r"matched_start_acquisition_validation_b(01|05)_"
@@ -130,7 +131,7 @@ def validate_report_contract(
 ) -> None:
     checkpoint_alias = "/workspace/checkpoint"
     if candidate_kind in (P013_KIND, P015_KIND, P018_KIND, *P026_KINDS,
-                           P028_KIND, P029_KIND, P064_KIND):
+                           P028_KIND, P029_KIND, P064_KIND, P064_H25_KIND):
         if checkpoint_dir is None:
             raise ValueError("P013 diagnostic requires the actual dual checkpoint")
         from fluid_control.dual_fno import validate_dual_fno_manifest
@@ -142,10 +143,10 @@ def validate_report_contract(
                          P018_KIND: "FC_P018_REDUCED_RATE_FORCE_FNO",
                          **{kind: kind for kind in P026_KINDS},
                          P028_KIND: P028_KIND, P029_KIND: P029_KIND,
-                         P064_KIND: P064_KIND}[candidate_kind]
+                         P064_KIND: P064_KIND, P064_H25_KIND: P064_H25_KIND}[candidate_kind]
         if identity.payload.get("kind") != expected_kind:
             raise ValueError("diagnostic kind differs from actual dual experiment")
-        if candidate_kind in (*P026_KINDS, P028_KIND, P029_KIND, P064_KIND):
+        if candidate_kind in (*P026_KINDS, P028_KIND, P029_KIND, P064_KIND, P064_H25_KIND):
             profile = (
                 "p026_k4" if candidate_kind == P026_KINDS[1] else "p026_k1"
             )
@@ -460,6 +461,7 @@ def main() -> None:
             P028_KIND,
             P029_KIND,
             P064_KIND,
+            P064_H25_KIND,
         ),
         required=True,
     )
