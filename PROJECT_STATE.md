@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 当前优先：两段真实CFD场桥接已完成，下一步配对10周期MPC试验（2026-10-06 05:21 UTC）
+
+R4同invocation `99e5c019c08240668241f7ac036320f3` 已实际exit0/PID0：固定零动作148→148.1→148.2，各20个dt=.005求解步，两个新端点均由原Curator采样并经canonical适配器得到[1,6,128,256]当前场输入。原restart/source哈希独立核对不变，owned容器已清理；结果SHA `be3c57e00003d7092b116058604a47d2ea2b2c1f033551adb39188f1c91f7584`，报告 `docs/TWO_SEGMENT_CURRENT_FRAME_R4_TERMINAL_REVIEW_20261006.md`。
+
+这是无模型、无策略、无控制收益声明的真实工程桥接，不是正式准入。CPU-only已单独批准按MemAvailable启动50GiB/运行22GiB保护，77次记录最低114.195GiB；MemFree仅记录，GPU20GiB要求未改。先前启动余量失败及R2环境PATH失败完整保留。依用户探索性闭环优先级，下一优先任务是单独批准的配对10周期MPC真实试验，预测与下个CFD端点对照包含在试验内，不另设shadow-only前置任务；不等待长预测全部通过，也不把旧科学FAIL改成PASS。以下运行/等待状态均为历史。
+
 ## P031第二次资源测试因内存余量退出（2026-10-06 04:50 UTC）
 
 同48a1f83e实例已terminalfailed/exit1：启动CUDA33.6905GiB通过，但进入H25循环后内部guard退出；外部记录 `ppo_gpu_floor_violation` CUDA19.816570GiB。确有低于用户20GiB要求的观测，不能声称保护始终满足。没有完整反向结果、optimizer更新或候选模型；不是已证明的OOM，也不是科学精度失败。数据哈希/导入期间物理空闲从34.08降至约25.05GiB，随后计算时进一步下降；各组成的精确贡献尚未实测。
