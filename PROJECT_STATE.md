@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 当前实际：同 B policy 的 b01 配对800周期验证已启动
+
+2026-10-06 12:37:56 UTC，unit `fluid-control-p064-b-projected-ppo-b01-long-cfd-20261006.service`，invocation `432c12de32b0444d9a6f6626e12616d1` 已实际 running，首查14/800周期。固定130→210，主窗口(150,210]，同B policy、镜像投影及单次动作限制，原物理标准不变。批准 `docs/P064_B_PROJECTED_PPO_B01_LONG_CFD_APPROVAL_20261006.json` SHA `3a19e326ebfd37df24060b8b5717b5af08b405ed63165e4034974aeb7b0abcb6`；immutable driver `4b8fa43f8ac020521ae8cde1047b6ec2f80d35ec0512bc7606d1050835010619`。CPU真实CFD反馈，无新训练、无在线FNO，尚无物理结论。b01是已打开开发相位，不是全新独立测试；不能继承旧policy结果。此前b00已独审通过原主窗口标准，H100失败仍保留。
+
 ## FC-E069 最新终态：B新policy在b00保持物理收益，非显著提升或独立泛化
 
 同inv `3a078c62ed9e4f7b8876f0f166bdb510` 已exit0，800周期真实paired CFD完成。独立复算3200原始文件SHA、1600solver段、全部动作及六窗口：主(168,228]减阻3.8952838833%、rearCl centered RMS ratio .815623043405、mean-bias ratio .011378146878，原2%/1.05/.10标准通过。早首6.2窗口bias .135464513仍未通过10%；full80峰值1.679784159高于zero1.647306236，不能宣称全时域峰值改善。结果SHA `8b31091d5e69edfbfd5ea78ba99dd7709623e6eeb0bd4f13c54e984b7fc28907`；独审 `docs/P064_B_PROJECTED_PPO_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `7b453d9c529d9d5c52988608c89d61050204510d41549cbb2be620fcdcebbe04`。

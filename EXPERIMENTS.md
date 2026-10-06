@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## P064-B fixed b01 replication — actual start, no outcome yet
+
+One approved CPU paired800 run started 2026-10-06 12:37:56 UTC: unit `fluid-control-p064-b-projected-ppo-b01-long-cfd-20261006.service`, invocation `432c12de32b0444d9a6f6626e12616d1`, initial observed14/800 cycles. Same actual B policy and identity VecNormalize as FC-E069; fixed historical b01 restart130 through210, primary(150,210], inclusive companion[150,210], unchanged six windows/physical thresholds/projection/single slew filter. Source SHA `4b8fa43f8ac020521ae8cde1047b6ec2f80d35ec0512bc7606d1050835010619`; approval SHA `3a19e326ebfd37df24060b8b5717b5af08b405ed63165e4034974aeb7b0abcb6`. All20 restart/source metadata file identities and final serialized consumer preflight passed;6 synthetic CPU tests independently passed. Controller8GiB/noSwap4CPU, two solver8GiB/noSwap2CPU, Available50/22GiB,3600s inner3750s outer,120s stop. No new model training, no online FNO, no automatic retry or scientific admission. No scientific CSV row before terminal independent review.
+
 ## FC-E069 — P064-B fresh-policy projected b00 paired800 terminal
 
 Actual unit `fluid-control-p064-b-projected-ppo-long-cfd-20261006.service`, invocation `3a078c62ed9e4f7b8876f0f166bdb510`, completed800 cycles with exit0. Approval `5fc8ab36e69e7e6ea27ed7c4d60ae207bc67be3c9513e89800cedccf46970a99`; executed driver83e08d66; result `8b31091d5e69edfbfd5ea78ba99dd7709623e6eeb0bd4f13c54e984b7fc28907`. Independent report `docs/P064_B_PROJECTED_PPO_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `7b453d9c529d9d5c52988608c89d61050204510d41549cbb2be620fcdcebbe04` verifies3200 raw hashes,1600 clean solver logs,800 projection/filter steps, all six fixed windows and cleanup.

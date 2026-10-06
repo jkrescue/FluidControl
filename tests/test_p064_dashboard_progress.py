@@ -86,3 +86,7 @@ def test_cfd_unbound_not_running(tmp_path):
     from p064_dashboard_progress import candidate_cfd_status
     row=candidate_cfd_status(tmp_path)
     assert row['invocation'] is None and row['physical_pass'] is None
+def test_b01_clock_is_explicit():
+    from p064_dashboard_progress import cfd_progress_counts
+    row={'completed_cycles':1,'rows':[{'step':1,'end_time':130.1,'applied_omega':.1}]}
+    assert cfd_progress_counts(row,start=130.)['current_time']==130.1
