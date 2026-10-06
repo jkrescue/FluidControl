@@ -46,7 +46,25 @@ def test_terminal_and_aux_are_separate():
     assert '尚无已完成窗口' in html
     assert '两项H1误差与保留指标均略差，未采用' in html
     assert 'H1 Cl/Cd改善，但H5与AR保留性退化，未采用，保留B' in html
-    assert 'f.development_verified&&f.next_step' in html
+    assert 'f.development_verified&&f.next_step&&!d.bf_true_state?.verified' in html
+
+
+def test_true_state_diagnostic_only_accepts_exact_terminal():
+    import hashlib
+    from unittest.mock import patch
+    tree=ast.parse(SOURCE.read_text())
+    node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='_bf_true_state')
+    scope=dict(hashlib=hashlib,json=json,subprocess=subprocess,Path=Path)
+    exec(compile(ast.Module(body=[node],type_ignores=[]),str(SOURCE),'exec'),scope)
+    fn=scope[node.name];root=SOURCE.parents[1]
+    state='InvocationID=c9ea8b5a18d54bc1bb5f3e20631c17f0\nMainPID=0\nSubState=exited\nResult=success\nExecMainStatus=0\n'
+    with patch.object(subprocess,'check_output',return_value=state):
+        r=fn(root)
+        assert r['verified'] and not r['running'] and not r['next_training_authorized']
+        assert r['review_verified']
+        assert r['actual_calls']==dict(aero=160,flow=0,optimizer=0)
+    with patch.object(subprocess,'check_output',return_value=state.replace('MainPID=0','MainPID=9')):
+        assert fn(root)=={'verified':False}
 
 
 def test_f_uses_actual_events_and_stops_on_exited():
@@ -71,7 +89,7 @@ def test_f_uses_actual_events_and_stops_on_exited():
         result=fn(root)
         assert result['terminal_verified'] and result['development_verified'] and not result['promoted']
         assert result['next_step_running'] is False
-        assert '源准备与独立审查中，尚未科学运行' in result['next_step']
+        assert '仅方案准备，未批准训练' in result['next_step']
     with patch.object(subprocess,'check_output',return_value=state.replace('31f1692d9f984b91a17e21a133426e99','other')):
         assert fn(root)=={'verified':False}
 
