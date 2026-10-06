@@ -400,6 +400,9 @@ function renderExploratoryDiverse32768LongCFD(run){
  drawActualSeries('exploratory-diverse-32768-long-actions',rows,[{key:'requested_omega',label:'请求转速',color:'#60c9fb'},{key:'omega',label:'实际转速',color:'#79d5a3'}],'32768-step PPO实际动作（周期终点）');
  drawActualSeries('exploratory-diverse-32768-long-drag',rows,[{key:'ppo_total_cd',label:'PPO total Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero total Cd',color:'#f2c879'}],'长窗口真实CFD总阻力 Cd（周期终点）');
  drawActualSeries('exploratory-diverse-32768-long-lift',rows,[{key:'ppo_rear_cl',label:'PPO rear Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero rear Cl',color:'#f69d97'}],'长窗口真实CFD后柱升力 Cl（周期终点）');
+ let field=$('long-ppo-paired-field');if(!field){field=document.createElement('div');field.id='long-ppo-paired-field';card.append(field);}
+ field.hidden=run.paired_field?.verified!==true;
+ if(!field.hidden){field.innerHTML=`<h4>本次800周期终点 · 真实CFD流场 t=228</h4><img src="/long-ppo-paired-field.png?v=${run.paired_field.sha256}" alt="左PPO控制右不旋转；上速度下压力；同色标实际CFD" loading="lazy" style="width:100%;height:auto"><p class="small">左：PPO控制；右：不旋转。上：速度模长；下：运动学压力，各减去各自显示区域均值，非绝对压力差。横轴x、纵轴y为求解器长度单位；速度为长度/时间，压力为长度²/时间²（原始OpenFOAM维度，未另作无量纲缩放）。两支使用相同网格、掩膜和色标。仅一个时刻的真实CFD，不是FNO预测，也不是平均减阻或约束通过的证据。</p>`;}
 }
 function renderFinalPPORealCFD(run){
  const card=$('final-ppo-real-cfd');card.hidden=run?.verified!==true;if(card.hidden)return;
@@ -4559,6 +4562,13 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(payload, "image/png")
             except (ValueError, KeyError, TypeError):
                 return self._send(b"not found", "text/plain", 404)
+        if path == "/long-ppo-paired-field.png":
+            evidence = _long_ppo_field(self.root)
+            if evidence.get("verified") and parse_qs(parsed.query).get("v") == [evidence["sha256"]]:
+                payload = (self.root / "artifacts/exploratory_diverse_32768_long_field_preview_20261006/paired_actual_cfd_228.png").read_bytes()
+                if hashlib.sha256(payload).hexdigest() == evidence["sha256"]:
+                    return self._send(payload, "image/png")
+            return self._send(b"not found", "text/plain", 404)
         if path == "/direct-cfd-pair.png":
             file = (
                 self.root
@@ -4758,6 +4768,7 @@ class Handler(BaseHTTPRequestHandler):
             data["exploratory_diverse_32768_long_cfd"] = (
                 _exploratory_diverse_32768_long_cfd(self.root))
             data["exploratory_diverse_32768_long_cfd"]["reported_terminal"] = _long_cfd_reported_terminal(self.root, data["exploratory_diverse_32768_long_cfd"])
+            data["exploratory_diverse_32768_long_cfd"]["paired_field"] = _long_ppo_field(self.root)
             data["policy_h5_comparison"] = _policy_h5_comparison(self.root)
             data["exploratory_final_ppo_real_cfd"] = _exploratory_final_ppo_real_cfd(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
@@ -4767,6 +4778,21 @@ class Handler(BaseHTTPRequestHandler):
 
     def log_message(self, fmt, *args):
         print("dashboard:", fmt % args, flush=True)
+
+
+def _long_ppo_field(root):
+    base = root / "artifacts/exploratory_diverse_32768_long_field_preview_20261006"
+    pins = {"result.json": "ae1bb4da101aa7bc10812d48d6a66ae579a0bf8448c2546a83c96b0f12864fc8",
+            "paired_actual_cfd_228.png": "d3229e8764fcf1d85cb4a20365bb16c00b7a582915ee7253305b3e19105b8104"}
+    try:
+        if any(hashlib.sha256((base/name).read_bytes()).hexdigest() != digest for name,digest in pins.items()):
+            return {"verified": False}
+        d = json.loads((base/'result.json').read_text())
+        if not (d['source_unchanged'] is True and d['owned_containers_cleaned'] is True and d['model_prediction'] is False and d['cfd_rerun'] is False and d['time'] == 228):
+            return {"verified": False}
+        return {"verified": True, "sha256": pins['paired_actual_cfd_228.png'], "actual_cfd": True, "model_prediction": False}
+    except (OSError, ValueError, KeyError):
+        return {"verified": False}
 
 
 def _policy_h5_comparison(root):

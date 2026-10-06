@@ -13,6 +13,15 @@ spec.loader.exec_module(m)
 def test_missing_diagnostic_fails_closed(tmp_path):
     assert not m._policy_h5_comparison(tmp_path)['verified']
 
+def test_missing_or_changed_field_fails_closed(tmp_path):
+    assert not m._long_ppo_field(tmp_path)['verified']
+    p=tmp_path/'artifacts/exploratory_diverse_32768_long_field_preview_20261006'
+    p.mkdir(parents=True)
+    (p/'result.json').write_text('{}')
+    (p/'paired_actual_cfd_228.png').write_bytes(b'not a verified image')
+    assert not m._long_ppo_field(tmp_path)['verified']
+    assert '非绝对压力差' in m.PAGE and '未另作无量纲缩放' in m.PAGE
+
 def test_equal_weight_comparison(tmp_path, monkeypatch):
     p = tmp_path/'artifacts/diverse_policy_h5_comparison_20261006/payload/result.json'
     p.parent.mkdir(parents=True)
