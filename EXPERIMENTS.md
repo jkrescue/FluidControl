@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-P064 — B PPO terminal verified; actual projected paired800 CFD running
+
+The fresh B-candidate PPO completed on unit/invocation `fluid-control-p064-b-ppo-32768-20261006.service` / `f613395cbf1140549dc60e7b046e0f6b`, PID0/exit0. Independent review verified32768 timesteps,256 PPO updates,512 optimizer records, exact24-reset/H5/69-observation/62-reward protocol,74source/192runtime closure and unchanged FNO tensors. Result/policy/Vec SHA are `3c70e21327baae98f682fc0982ca3c3910cf6d1902f3d62175f980fd685817b3`, `f764463983355779efff8d1b1994cfaf560ab7274d54b014d34a1f084b4b307e`, and `8c07ef15bd41a8981f2ec0d241c85092b643ca740fea9f44866eecceac1197ad`. Review `docs/P064_B_PPO_TERMINAL_REVIEW_20261006.md` SHA `0cc1494286f85b930b43b1a11713ae6ac3719d8ff599cfa0780a8d9fe71b0d65`; terminal training is not CFD benefit or formal admission.
+
+Lead then launched the separately approved paired800 physical trial as `fluid-control-p064-b-projected-ppo-long-cfd-20261006.service`, invocation `3a078c62ed9e4f7b8876f0f166bdb510`, output `artifacts/p064_b_projected_ppo_long_cfd_20261006`. Approval SHA is `5fc8ab36e69e7e6ea27ed7c4d60ae207bc67be3c9513e89800cedccf46970a99`. At this record point the same handle is active/running; no terminal drag/lift metric or CSV row is claimed. A preceding CLI probe omitted `--execute` and was rejected before the execution body, so it launched no CFD and is not a scientific attempt. The preserved prior successful policy is not overwritten.
+
 ## FC-P064 — Actual B-candidate fresh PPO launch; CFD remains unbound
 
 After independent source/import/proof review, Lead launched `fluid-control-p064-b-ppo-32768-20261006.service`, invocation `f613395cbf1140549dc60e7b046e0f6b`, with output `artifacts/p064_b_diverse_h5_32768_ppo_20261006/payload`. Approval `docs/P064_B_PPO_APPROVAL_20261006.json` SHA `ae327fee310bad562aceef35029595d20c9a3421d5d5be3dc3b68bb82649e9fe` binds the actual B manifest `92766915cb11ca75d313608a5f75e61a218371dcc789f5b44725f0a8260e7891`, training result `9167e8d811f64cf001cc87bfd45d9ed2d48f5c588a19b951f7be2c826637b980`, and independent engineering receipt `d78f87d041fd907c50ad6b2ca8880498bf8f5ad80e5b6916270ec585105b2915`.

@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-P064 当前实际执行：B fresh PPO 已独审终态，paired800 CFD 已启动
+
+B fresh PPO 同 unit `fluid-control-p064-b-ppo-32768-20261006.service` / invocation `f613395cbf1140549dc60e7b046e0f6b` 已 PID0、normal exit0。完成 32768 timesteps、256 PPO updates、512 optimizer records；FNO tensor 字节不变。结果/policy/Vec SHA 分别为 `3c70e21327baae98f682fc0982ca3c3910cf6d1902f3d62175f980fd685817b3` / `f764463983355779efff8d1b1994cfaf560ab7274d54b014d34a1f084b4b307e` / `8c07ef15bd41a8981f2ec0d241c85092b643ca740fea9f44866eecceac1197ad`。独审 `docs/P064_B_PPO_TERMINAL_REVIEW_20261006.md` SHA `0cc1494286f85b930b43b1a11713ae6ac3719d8ff599cfa0780a8d9fe71b0d65`；这是工程训练完成，不是 CFD 成功或正式准入。
+
+Lead 随后实际启动唯一一次 B-policy 投影 paired800 CFD：unit `fluid-control-p064-b-projected-ppo-long-cfd-20261006.service`，invocation `3a078c62ed9e4f7b8876f0f166bdb510`，输出 `artifacts/p064_b_projected_ppo_long_cfd_20261006`；批准 `docs/P064_B_PROJECTED_PPO_LONG_CFD_APPROVAL_20261006.json` SHA `5fc8ab36e69e7e6ea27ed7c4d60ae207bc67be3c9513e89800cedccf46970a99`。归档时同 handle active/running，尚无物理终态结论。此前一次缺少 `--execute` 的 CLI probe 在进入执行体前按预期拒绝，没有启动 CFD；只有上述 invocation 是实际执行。旧成功 policy 与三相位结果保持不变。
+
 ## FC-P064 实际探索链：B 候选 fresh PPO 正在运行
 
 Lead 已在独立审查通过后启动 B 候选的全新 32768-step PPO：unit `fluid-control-p064-b-ppo-32768-20261006.service`，invocation `f613395cbf1140549dc60e7b046e0f6b`，输出 `artifacts/p064_b_diverse_h5_32768_ppo_20261006/payload`。批准 `docs/P064_B_PPO_APPROVAL_20261006.json` SHA `ae327fee310bad562aceef35029595d20c9a3421d5d5be3dc3b68bb82649e9fe`。运行使用冻结的完整 P064 runtime/import 闭包和实际 B manifest/result/独审 receipt；启动不等于终态成功或 CFD 收益。
