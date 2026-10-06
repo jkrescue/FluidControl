@@ -1,0 +1,2638 @@
+{
+  "base": {
+    "path": "scripts/probe_k1_uma_no_tf32.py",
+    "sha256": "7f8567b0f41474294a45a864d4024cf0d64508b7e8351e19feb8e8aee9219b73"
+  },
+  "candidate_label": "B",
+  "driver": {
+    "path": "artifacts/p064_candidate_development_source_20261006_immutable/evaluate_p064_candidate_development_h1_h5.py",
+    "sha256": "0d6f1ac8981d85d092c0e970dcbf1597fa2074d749a75b56f3b82d0cb3bf5af0"
+  },
+  "evaluation_protocol": {
+    "allocator_bytes": 6442450944,
+    "branches": [
+      "b01",
+      "b03"
+    ],
+    "deadline_seconds": 600,
+    "endpoints": 80,
+    "horizon": 5,
+    "optimizer_steps": 0,
+    "starts": [
+      0,
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700
+    ]
+  },
+  "execution_authorized": false,
+  "import_bindings": {
+    "dual": "fluid_control.dual_fno",
+    "history": "p026_state_history",
+    "selector": "fluid_control.exploratory_short_mpc",
+    "trainer": "train_tandem_fno"
+  },
+  "inputs": {
+    "config": {
+      "path": "artifacts/fcp027_diagnostic_source_20261006_immutable/training_config.yaml",
+      "sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
+    },
+    "conversion_result": {
+      "path": "artifacts/development_b01_b03_controlled_h5_conversion_20261006/result.json",
+      "sha256": "1da29262fa8cbfa7c41687439ad34cc1967ce8c7d9faa35c435668705ca9351f"
+    },
+    "manifest": {
+      "path": "artifacts/fcp064_controlled_aero_arm_b_20261006/dual_model_manifest.json",
+      "sha256": "92766915cb11ca75d313608a5f75e61a218371dcc789f5b44725f0a8260e7891"
+    },
+    "normalization": {
+      "path": "data/curated/tandem_cylinders_matched_start_full40_dev30_v1/normalization.json",
+      "sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+    },
+    "selection": {
+      "path": "artifacts/development_b01_b03_controlled_h5_conversion_20261006/selection.json",
+      "sha256": "bf97efb00f829779961d488547324f9b0e75b506436a06d4314a103ea85340e5"
+    },
+    "training_approval": {
+      "path": "docs/FC_P064_ARM_B_TRAINING_APPROVAL_20261006.json",
+      "sha256": "a1e79d108f5067027742f08f3e04b2d73cb059286e2bd433e53f4e0d51247b29"
+    },
+    "training_result": {
+      "path": "artifacts/fcp064_controlled_aero_arm_b_20261006/result.json",
+      "sha256": "9167e8d811f64cf001cc87bfd45d9ed2d48f5c588a19b951f7be2c826637b980"
+    },
+    "training_source_manifest": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/source_manifest.json",
+      "sha256": "05c00539ad03cc9059dc101cf9c9cab47d523a8b5bdae29b4af1cea88c66a9c0"
+    }
+  },
+  "output": "artifacts/p064_arm_b_development_h1_h5_20261006",
+  "pythonpath": [
+    "/workspace/fluid_control/artifacts/fcp064_training_source_20261006_immutable/scripts",
+    "/workspace/fluid_control/artifacts/fcp064_training_source_20261006_immutable/src"
+  ],
+  "resources": {
+    "cpu_quota_percent": 100,
+    "gpu_visible": "0",
+    "memory_bytes": 12884901888,
+    "outer_seconds": 630,
+    "runtime_available_gib": 22,
+    "startup_available_gib": 50,
+    "stop_seconds": 20,
+    "supervisor_seconds": 600,
+    "swap_bytes": 0,
+    "tasks_max": 64
+  },
+  "runtime_sources": {
+    "0": {
+      "path": ".runtime/exploratory-h5-ppo-py312/Farama_Notifications-0.0.4.dist-info/METADATA",
+      "sha256": "bb07fdce31f3c0ebb716a97cec663d2d7b1c3918a415ff5120299b354a5babe9"
+    },
+    "1": {
+      "path": ".runtime/exploratory-h5-ppo-py312/farama_notifications/__init__.py",
+      "sha256": "0a8f9364fee3dccede9b522ba12cf7623ee5fa17d70f2453ca9f2ab04bcc0d7b"
+    },
+    "10": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/box2d/lunar_lander.py",
+      "sha256": "af2a7f8910b4ffc30cfe1ab0aa441092e374d5085918d0f1b99e0c0dffec2869"
+    },
+    "100": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/jax_to_numpy.py",
+      "sha256": "74a9ca59ef07d0ac7f08e35a764f2694ac60ea5907b6f45b06468ae8ace3fc05"
+    },
+    "101": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/jax_to_torch.py",
+      "sha256": "d617a5f8023c1021aff04176b77c2788ca9a2d40a6fdbdcf991d9dcc69d82340"
+    },
+    "102": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/numpy_to_torch.py",
+      "sha256": "f3cd96caa89d318b174211ad67ae0f9801c5b5c2aaceb9030f4411d9a2d26197"
+    },
+    "103": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/rendering.py",
+      "sha256": "6f797225a7f80db04c554357ccac44d16b8347bff36f8537e06e7f014d0debb8"
+    },
+    "104": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/stateful_action.py",
+      "sha256": "5bdd188961e9a6013fbec20f5b08a0ed6142e7be478784f1c5c678c4ad46347e"
+    },
+    "105": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/stateful_observation.py",
+      "sha256": "7fd46c116ea5aaf97b72ad6abf59258d58d570ea8861a9dd91d6e363eabc1b17"
+    },
+    "106": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/stateful_reward.py",
+      "sha256": "d6d461349d9b0c17b3d868823f79194aad08ea7777f557494dedc41b31d7f809"
+    },
+    "107": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/transform_action.py",
+      "sha256": "441bd43171ebdce02f9aafc48c45616fa125668accb184998e107b1bf4f92c57"
+    },
+    "108": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/transform_observation.py",
+      "sha256": "3cdab7236ff422c6ca0304e035f2caf7d405b7018f3c70be5992af033bc8f935"
+    },
+    "109": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/transform_reward.py",
+      "sha256": "7ec1a538f26f196d7eb341f68a850ac0532504958f32f00b3596f0f67fbfd2a6"
+    },
+    "11": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/classic_control/__init__.py",
+      "sha256": "6a23ea5190661684832dbedbdf313684985cd06602f7f04eaa2f569c2d09622a"
+    },
+    "110": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/utils.py",
+      "sha256": "d859d64e105b53b7dd6210ccca3db4e1504247ed914867ff8ab87bbcaad58c7d"
+    },
+    "111": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/__init__.py",
+      "sha256": "815d3207e46a094d9b208e029acb9e0f6ba237e171732f8001af730904227364"
+    },
+    "112": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/array_conversion.py",
+      "sha256": "f16e2d6ff1a679302b1fd77824ee5d47e750c011386a80c382e9cccaf7d5929e"
+    },
+    "113": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/common.py",
+      "sha256": "3d688b68baaa6524fee26cac5a84a7e9add1ad9ed2597f1af5177271a82cf580"
+    },
+    "114": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/dict_info_to_list.py",
+      "sha256": "9bde184572443b186bdcb718083fa49c58fc81b11da31c39c1855f63dc14bfca"
+    },
+    "115": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/jax_to_numpy.py",
+      "sha256": "4209f6706a7696f0bdf58f54a58c2a1d1867a73a9a8a4da74a23afaaea185ecd"
+    },
+    "116": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/jax_to_torch.py",
+      "sha256": "4bcfd140af7e4680f3b6d1f0bdf1d0ba05dfbecaeb0837a212f44d0682a1d23d"
+    },
+    "117": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/numpy_to_torch.py",
+      "sha256": "28e09431fffa82de15725f3e5cab60cf4f6822222b1bed572fe9d24e7af602cd"
+    },
+    "118": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/rendering.py",
+      "sha256": "8e79f76abdf49309200a626cd82843afa8ca1963f5c1034d1f36391f58ee766b"
+    },
+    "119": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/stateful_observation.py",
+      "sha256": "530fee2b2aa926b0878be72ae0a0e7a924efe442b8125f0894b5205a9dace2c2"
+    },
+    "12": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/classic_control/acrobot.py",
+      "sha256": "89bd2cee2e115e95c72bda97ce5cf8b315638be8b83aa37941b8e84b21ee3b9d"
+    },
+    "120": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/stateful_reward.py",
+      "sha256": "dc0bcb9a46bc5e62fad688444cb9372c76245c900f284c144819f0a693cff49c"
+    },
+    "121": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/vectorize_action.py",
+      "sha256": "4116fa1031e39ec2f574dd9a2116277a0a12d92fbaa6e8ba8083f19d9dbbc13a"
+    },
+    "122": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/vectorize_observation.py",
+      "sha256": "cd3c0dc38af6bfa20cb82ba32ac6c690a1649ea719f2a06e9b3e0ef99313a3b9"
+    },
+    "123": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/vector/vectorize_reward.py",
+      "sha256": "5d32dad9ec270953f1666d0368ad38a7bd77b289a787a6dc7aa6053a63c704be"
+    },
+    "124": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3-2.7.1.dist-info/METADATA",
+      "sha256": "6952912c5ba48aeb0e1b05d5044ddbdf291086f60cfa7e5e7b175aa16587ff32"
+    },
+    "125": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/__init__.py",
+      "sha256": "a8d5d1b88605932e9d03c6acc37eadc54319bb1b563faf00cd173fbfdf059cf6"
+    },
+    "126": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/a2c/__init__.py",
+      "sha256": "7460d0bedd470910de7e98474e1f41cef76b46c8f1b213e116e9c117e7620c7b"
+    },
+    "127": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/a2c/a2c.py",
+      "sha256": "974e0591f846c9c33171c82cd77fea08e302667fd5a08c028929746cb7ee4449"
+    },
+    "128": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/a2c/policies.py",
+      "sha256": "ad8cd1b486fb1b9b7d4e962d8ed7ade01c58229e60c61f7c6fc0fbce55a41864"
+    },
+    "129": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "13": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/classic_control/cartpole.py",
+      "sha256": "b758e3286711a2c44b0817265412c9fab1dce8b1b385e2126bc710ceedd47378"
+    },
+    "130": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/atari_wrappers.py",
+      "sha256": "4e1a42ae65a568ad8d403d066aea7eccdfbac67cb15b1f8de2bf9c2f54e8b14c"
+    },
+    "131": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/base_class.py",
+      "sha256": "7a118cb9fb49c15548f1793ab4883653ac83e379ca354de79d8b1b309238688d"
+    },
+    "132": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/buffers.py",
+      "sha256": "eadb4950eff1722663cbe98e025b6b505f85a7d67a2382db8cb21c36f8cb028a"
+    },
+    "133": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/callbacks.py",
+      "sha256": "1659f783e53c00ee0f50d0666135f1e0d8febe23deb958dffb4dd9fe5f3bd32c"
+    },
+    "134": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/distributions.py",
+      "sha256": "18b1101b5f0687f2a7e12983315c0ab0c89a195afe664283b453351cd000cfa8"
+    },
+    "135": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/env_checker.py",
+      "sha256": "903091b976b9f90f0f6077a9f464a408c620fe573a7717758a14d57c1dbb32f3"
+    },
+    "136": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/env_util.py",
+      "sha256": "5b5c7fa9f06f2dd4ae65e2e5ed164c0df0b7b5f65a9a249ed56d57c2a1cc2e60"
+    },
+    "137": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/envs/__init__.py",
+      "sha256": "2a167d3e4775a647367e385a25ebee4603b59b7f4a88170915a071f0e4076580"
+    },
+    "138": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/envs/bit_flipping_env.py",
+      "sha256": "f13043bcc9c2925946c360bbb44b3c23c31aa6aac3174dbb2376620d308635ae"
+    },
+    "139": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/envs/identity_env.py",
+      "sha256": "5a133282e1c279bf998af1e7b6e1d1aa6dcbc7147b85b5170cc4a8abde394e09"
+    },
+    "14": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/classic_control/continuous_mountain_car.py",
+      "sha256": "ba9d0a5795afaf30bb32e0131bfe42a9b90141d99fab6509f647f56e221369e9"
+    },
+    "140": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/envs/multi_input_envs.py",
+      "sha256": "4014b731942a3a5e435d12acea21a62c1bf63f004cccca83745fdd07a1a6e334"
+    },
+    "141": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/evaluation.py",
+      "sha256": "018eeea91dc1d8693aa6adec25b5d9a99c33b4b991c8770bd64dc816e1f349ba"
+    },
+    "142": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/logger.py",
+      "sha256": "5abae0f7cf00a55945a5fac16d0d3b9e5de654ae29b499df9b946b4b2b558bbf"
+    },
+    "143": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/monitor.py",
+      "sha256": "e2267b522427acfc5ceb2bb50dddfd9aca265b6496e3864e4cc8f3963307252b"
+    },
+    "144": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/noise.py",
+      "sha256": "e0b228c64756ec24a440c35271715649c985e234db265de9a87896b4308675cb"
+    },
+    "145": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/off_policy_algorithm.py",
+      "sha256": "6d295168a5f9607b7784470c24b3fff77a5b43dc10f507dabb88fb63b0a8f285"
+    },
+    "146": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/on_policy_algorithm.py",
+      "sha256": "d5a03557d25a33edbf8ef1328085433623e13f1a2cb01d3167ac306ddbf744bf"
+    },
+    "147": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/policies.py",
+      "sha256": "28a7b69ef3c3d7ebb5a3dad17980165c77ee7f0b6d30b9371d58b1499d670751"
+    },
+    "148": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/preprocessing.py",
+      "sha256": "cbd260d0164be15e6f1f691c1f13877b9141550bebd94da9c3fd74f1ee59153f"
+    },
+    "149": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/results_plotter.py",
+      "sha256": "ed4d31e899d0a1649c9bcbdc5802240dd9c031213d82cb791888fe9e37065a3b"
+    },
+    "15": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/classic_control/mountain_car.py",
+      "sha256": "f97a9b162f329b6c8a1234b25d3df620fd45186fa333b7a789c1568265866309"
+    },
+    "150": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/running_mean_std.py",
+      "sha256": "39f3ac4243d10fd7375deb9c43db1b94e6f878bf53bc5e633b6dcf12917c21d1"
+    },
+    "151": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/save_util.py",
+      "sha256": "53feda59c5a35ccc9d8980613a60aecd4fc9a458cfaeb95fb470ded083b6d1e6"
+    },
+    "152": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/sb2_compat/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "153": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/sb2_compat/rmsprop_tf_like.py",
+      "sha256": "eadb8d4b5b4faafcd24e38366755715ecde3811894680b46ccb307837714a9d5"
+    },
+    "154": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/torch_layers.py",
+      "sha256": "b5a9fdf013ea55e0119715932cc7f82f5d3f20850199d2e0114062777126dce9"
+    },
+    "155": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/type_aliases.py",
+      "sha256": "f7cf3c3ec77ab5da4f49c5aee941ecfa08f95ccaa1e5f75a42db913809f6bfc7"
+    },
+    "156": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/utils.py",
+      "sha256": "092289daf310c114b55a1bc59d9be53cf8bdd685396d398220556946d55c1c7d"
+    },
+    "157": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/__init__.py",
+      "sha256": "efa59c18b9bfecfe4124cf26061ebed62486c6b5eadf61d9306840bc4974aec7"
+    },
+    "158": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/base_vec_env.py",
+      "sha256": "3af7d0b55d4de0ba1bed29649e9a5d588fb4cff6e74cad70e1e989368879533f"
+    },
+    "159": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/dummy_vec_env.py",
+      "sha256": "391ac9e447e9b9b2823b2edc3be2cfbfd54239036494ea2f0ff4e8e5585407b8"
+    },
+    "16": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/classic_control/pendulum.py",
+      "sha256": "ff7149cbcd2e1d196bced43f664b1dde0ea3580c8144ed0393bda3dcc0d554b9"
+    },
+    "160": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/patch_gym.py",
+      "sha256": "8669d9c71cb5894903a8e87ed86855b8e4207c73b82635e8996a06061bb8fe11"
+    },
+    "161": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/stacked_observations.py",
+      "sha256": "172fb2d79fbb64a92a521a8b2d319c843310bf55b592b98d8452899923035c36"
+    },
+    "162": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/subproc_vec_env.py",
+      "sha256": "e3acbeb465d5ca1288a7b9fa812eeacb9b03e3c52e757a1130b5d57a04baf942"
+    },
+    "163": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/util.py",
+      "sha256": "494267f8dbb1e25d181ab6a2af05e4633b9e75fe91365ec40cc0f85733f4ae7e"
+    },
+    "164": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/vec_check_nan.py",
+      "sha256": "d5484253a50c2bb3fea2376fa7d3d075b3ef038ea7db834f03e0a8e605ca4456"
+    },
+    "165": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/vec_extract_dict_obs.py",
+      "sha256": "951d2418b83d48ff5fabc78cf7a7a0e0dc1085bfec754593a0763fa9b504e253"
+    },
+    "166": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/vec_frame_stack.py",
+      "sha256": "d235046ebfa6371347b3db99e243e81dbe97e4b0e563c3ddb97eef17b5400d03"
+    },
+    "167": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/vec_monitor.py",
+      "sha256": "e1eab6c2235d7e4a818f8d87cd9f855e5fca370da92492bd37183694e5dda2ef"
+    },
+    "168": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/vec_normalize.py",
+      "sha256": "ed8815fd44bd2e913b4f5ac820a16c9fd498727645ba4b0e957feb843ed1348b"
+    },
+    "169": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/vec_transpose.py",
+      "sha256": "48d6a1391ad10e840fb23d3e018725d96d07d4c391282d4acd3c2ee03bf65f6e"
+    },
+    "17": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/classic_control/utils.py",
+      "sha256": "5077e47a6ef0e49a9f65eced4032567be21a837270898f6066b08067d3aec962"
+    },
+    "170": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/common/vec_env/vec_video_recorder.py",
+      "sha256": "f0245fb855c225ebb36213c9528c476711753baa9dfdbac1767a4c6a2cf6bbbc"
+    },
+    "171": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/ddpg/__init__.py",
+      "sha256": "57e45661eec3f611c62a8e611c0da01dd3cf387cd97cf6695e4f7dc8d5df82ac"
+    },
+    "172": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/ddpg/ddpg.py",
+      "sha256": "709689eb95026840d1b586cd02525bdcc5114946984a271e1e2a1f4277f77786"
+    },
+    "173": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/ddpg/policies.py",
+      "sha256": "4645b42a6194a324b5e2f947a447dae5e98f5426bf30d06ae7143e257db360e5"
+    },
+    "174": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/dqn/__init__.py",
+      "sha256": "cfd2589e94384d46957425565fedd1af6e78ce1cb127218754a25b4a85b80b37"
+    },
+    "175": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/dqn/dqn.py",
+      "sha256": "ae5e4106f317ee0937fefa0d4707dd967d0fb231b089ee1f217872f9b5623db9"
+    },
+    "176": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/dqn/policies.py",
+      "sha256": "6e5c2cf544b9088c3cd270356eb0ab8a457f4561405afa2de9ff085ab54fcd5a"
+    },
+    "177": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/her/__init__.py",
+      "sha256": "22d38de4cbc7c52b8b518b51efe6e16e8a5a02ec0cfc617d2cc373aa58c4d218"
+    },
+    "178": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/her/goal_selection_strategy.py",
+      "sha256": "c747b071a5d85410c5cc508ffe4f0eb43d6d009afa2ce60e22015a8c7542baab"
+    },
+    "179": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/her/her_replay_buffer.py",
+      "sha256": "6bd06c0b68b4d74b3aa22594607b980459996a87e62ad6621ba2581f5fb1d2e6"
+    },
+    "18": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/functional_jax_env.py",
+      "sha256": "fec1c0e56e1aa5833445f597a35bd8d4578ccd3e1d9acc83887c182307e8f75c"
+    },
+    "180": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/ppo/__init__.py",
+      "sha256": "1c3be462460c36578c74cd724325e9606a0bcce139bd66d4ebfdbc12b1212b9f"
+    },
+    "181": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/ppo/policies.py",
+      "sha256": "1dbfff512b3d669c16d933dce377286f2ec7559efcd5f5ddaeab46493f092abf"
+    },
+    "182": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/ppo/ppo.py",
+      "sha256": "9f8860ceeb9d81952178daf3fc9da8c685eee4a7b0337fb72a16f736587df3b4"
+    },
+    "183": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/sac/__init__.py",
+      "sha256": "d916666b183a8e1bb8b853c96a83ef336c4fb1264adf15033d67cf8dc6ca9a37"
+    },
+    "184": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/sac/policies.py",
+      "sha256": "6381c5d4b1a6d962bebdfafb884c485c2f9dda906d7b1d8cc1295553cb08e876"
+    },
+    "185": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/sac/sac.py",
+      "sha256": "a8606c1c55404f3aa16a4346b2bf0b69321d59818f0018cc73426710de19e236"
+    },
+    "186": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/td3/__init__.py",
+      "sha256": "fbccd748b1dee1ae45376d665822db374ca7bc1edd7bb07abdf2d471d95dad1a"
+    },
+    "187": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/td3/policies.py",
+      "sha256": "c7ffc1148acc615c7799fd0c6d6d47e0c85b011ddf0903c212035c2c1f646e6d"
+    },
+    "188": {
+      "path": ".runtime/exploratory-h5-ppo-py312/stable_baselines3/td3/td3.py",
+      "sha256": "4a63ea4ee5b46c6cccbbacaae9a03dfa74beb4ea0b611b2202f230a55fad0465"
+    },
+    "189": {
+      "path": ".venv-curator-py312/lib/python3.12/site-packages/physicsnemo/datapipes/readers/hdf5.py",
+      "sha256": "cafa65d615555e1e4b1d6cb58895983682aae826957765c105142b71e934caa0"
+    },
+    "19": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/__init__.py",
+      "sha256": "d359b24a0ad29564bb855a8217c1b0a1faf277e60116fc5c5d59a9c7c74b4d53"
+    },
+    "190": {
+      "path": ".venv-curator-py312/lib/python3.12/site-packages/physicsnemo/models/fno/fno.py",
+      "sha256": "e64eb9bef031bfdae5d84f0ed35a1ebb27915f18aed4a333b2dd985a083c71a9"
+    },
+    "191": {
+      "path": ".venv-curator-py312/lib/python3.12/site-packages/physicsnemo/utils/checkpoint.py",
+      "sha256": "0d26a62251c3724a1ceebfa1daa1bb5ba9dcdc5e73a0ded3ccb955355af2f78e"
+    },
+    "2": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium-1.2.3.dist-info/METADATA",
+      "sha256": "e1435ba6c78bc0f32b7f70e6c6c163669fa95f0a702ab97ffb00e9e597767139"
+    },
+    "20": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/ant_v4.py",
+      "sha256": "97b98c60dcff664b850dff0635cc4443a0217fece1e0af1f4808c236e5b7f6a0"
+    },
+    "21": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/ant_v5.py",
+      "sha256": "df1d38643b3b7702d8497726cc0cea98e5bc2ebf5f47235f136839ff3f6f7fa0"
+    },
+    "22": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/half_cheetah_v4.py",
+      "sha256": "00028e87059de4bbfe8973d30c014d5989b445f474c0c3f3230f63a17ba95485"
+    },
+    "23": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/half_cheetah_v5.py",
+      "sha256": "393b47f45514d064cd17c5da995adb6a95f8b8ed015e4ffbf73a9217e5384724"
+    },
+    "24": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/hopper_v4.py",
+      "sha256": "a9015aff4f5d3a4add78992282264b62151286b46558d7c8cd1d6d4426c003ff"
+    },
+    "25": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/hopper_v5.py",
+      "sha256": "7a899dd748041a04d92d84c8702f67a92c5c62f4989a2dd31a24e8510114ce97"
+    },
+    "26": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/humanoid_v4.py",
+      "sha256": "372fa91ce66b81ce9c4df5c8eb970637f28277fe40a5349a2c93b6099a7a38dc"
+    },
+    "27": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/humanoid_v5.py",
+      "sha256": "a7d40f8380c22f6fcb73fc7afd6bdc1c10d7f1e337f84f68544d2b86e5327275"
+    },
+    "28": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/humanoidstandup_v4.py",
+      "sha256": "2e5e8bf8c0e3c69337177f183a59bcd186565df9b93a5451f31a34a9904e79c8"
+    },
+    "29": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/humanoidstandup_v5.py",
+      "sha256": "061015e2318f5315e0f30bfce1b8ec7ef9929ae3dbe8d6e3eb85d43670beca9a"
+    },
+    "3": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/__init__.py",
+      "sha256": "3f4e4cdb2180d6259ae55a9449d725d5af774546d2e30b69996f040161f46894"
+    },
+    "30": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/inverted_double_pendulum_v4.py",
+      "sha256": "06ff692152e829109a21757e36a56804754ce15978575835dbd20da7d96bd37f"
+    },
+    "31": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/inverted_double_pendulum_v5.py",
+      "sha256": "023220b85b4343699a87c5c83bbb53ab8ab5f24fa782997f08cf2fbb59a66e60"
+    },
+    "32": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/inverted_pendulum_v4.py",
+      "sha256": "a55fe3349b418ee5ac333d1c3d2ba237dc4e329f98629a5a05aabf253f47d0cd"
+    },
+    "33": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/inverted_pendulum_v5.py",
+      "sha256": "a78ce1013890fcbd6cdfd9ac249738bf003ccde2a4a66633e3fddaee99551f2a"
+    },
+    "34": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/mujoco_env.py",
+      "sha256": "879f6dad1197797dd7fa9e0cddfe8ac6d31562beb2d301f928c969087405d743"
+    },
+    "35": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/mujoco_py_env.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "36": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/mujoco_rendering.py",
+      "sha256": "e1ba5d5ac3f00b4b64dd93bce00caf8038bb05bd228db960ce10478e4786385b"
+    },
+    "37": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/pusher_v4.py",
+      "sha256": "50f3a8db7e54a0334ceacf6411dab0b78cd3035d6edc026e0c69a3b8a2cfe66b"
+    },
+    "38": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/pusher_v5.py",
+      "sha256": "f6f163b058f4f48a436b26d389173ffcd1548f885c20afd51aeda811f996d953"
+    },
+    "39": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/reacher_v4.py",
+      "sha256": "39d5d6df4d543c12c9889e13cbea41915e4d7346363ec9fe4fdca6821d7f4b7f"
+    },
+    "4": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/core.py",
+      "sha256": "92226890db5bec675bce52b6b9ceba350baef86d86e6f279d02e96f1a39c2258"
+    },
+    "40": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/reacher_v5.py",
+      "sha256": "5e9ae83479730e875d5192e74c53a878d766ffb56607e677a4d7f0cd81b7abd7"
+    },
+    "41": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/swimmer_v4.py",
+      "sha256": "b8698696c7ec5ac799320310746e5d2336f81e1ca065353501178497e820302c"
+    },
+    "42": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/swimmer_v5.py",
+      "sha256": "150db34346718cff1a09991e24c60998e7ccd11a5d8e4936edf841e4f3c6857e"
+    },
+    "43": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/utils.py",
+      "sha256": "2e4ff6b345c2e905159622a575dde80c0caf252e1c7e50d8352e82dbd24b596b"
+    },
+    "44": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/walker2d_v4.py",
+      "sha256": "019e3062055f85006a43fc66640f55019f79bdd34154f4c225134aacf0327a53"
+    },
+    "45": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/mujoco/walker2d_v5.py",
+      "sha256": "19d1b72f0deda2fd51b31984c08ca97081f5fe35021dedb41d487eb96041176d"
+    },
+    "46": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/phys2d/__init__.py",
+      "sha256": "7d38f2e5533844b9f1cdff46f430773f4d71d312db89b67acc597fbd727f6e7c"
+    },
+    "47": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/phys2d/cartpole.py",
+      "sha256": "8cabd5a8524d0ef2ac95b10ba82fdbacbe012c2cef8fd0e1d5efc0a7a2b88d0e"
+    },
+    "48": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/phys2d/pendulum.py",
+      "sha256": "6855295c43c79b07bd8ca31de424a6d7f2f1507ff05a9c40d1d38dba52a38785"
+    },
+    "49": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/registration.py",
+      "sha256": "3053db8b8d4716a2eaa56dc7a5b5d65e80085a091a21dd9fb63e060d524f6d01"
+    },
+    "5": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/__init__.py",
+      "sha256": "107470023c9b82cab9b57a6efdc36c3b18358d73aca0940a4bdf011f46ae6e3b"
+    },
+    "50": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/tabular/__init__.py",
+      "sha256": "20f6833bab400821a6434a3b9a6a6d92560dfb76ff9358db683ccf6524852a1b"
+    },
+    "51": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/tabular/blackjack.py",
+      "sha256": "e77cd5dfcad8ab816d50c3f70104d657516f5893358922c62e5342960d949609"
+    },
+    "52": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/tabular/cliffwalking.py",
+      "sha256": "02e1ba97ef4dc605c6894cd600bad171c3660c081eac1ec30abfb87aec34b9d1"
+    },
+    "53": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/toy_text/__init__.py",
+      "sha256": "cbb33af955903c26c764c73ed2911884592e49eb6cf25929394f7ae42f41cfd2"
+    },
+    "54": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/toy_text/blackjack.py",
+      "sha256": "e29415ed45feb49a9a0eb733e7c48cf7d61baf63528b80abdab479f619880b90"
+    },
+    "55": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/toy_text/cliffwalking.py",
+      "sha256": "b7c142b924c2d18fa08ae1aa8a2dc495a884d295af3e8b89d62e7c62f35b83fe"
+    },
+    "56": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/toy_text/frozen_lake.py",
+      "sha256": "994cb58dffeeb55cf07d97d673fa69ff03d1a52e2b5120decc287dfa9b58e294"
+    },
+    "57": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/toy_text/taxi.py",
+      "sha256": "158cfeb253c008139b86e83eaaf90a40ab30552bf29e8f02cd795aefe28838cf"
+    },
+    "58": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/toy_text/utils.py",
+      "sha256": "3739667fe0ded69624599a9e6b8d3305de70a8f3675e47c6a5a8b8bc1aafcf22"
+    },
+    "59": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/error.py",
+      "sha256": "44f44e8666b5bd41a15d9a58fb88b3fced3fb054be0e197acebf893ed310c53c"
+    },
+    "6": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/box2d/__init__.py",
+      "sha256": "ed2327da31b45048f330f15fc1a5807627403c96bdc615182cf614ae70e8b68a"
+    },
+    "60": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/experimental/__init__.py",
+      "sha256": "b852b64cecf40b44e9b793a26e12afcb169a55a24d7ddfa1ff9674dd09249ab4"
+    },
+    "61": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/experimental/functional.py",
+      "sha256": "330149fb3941e527580f4db929e35e0a581c95d33b5451bda5546b1ce2bd03fc"
+    },
+    "62": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/logger.py",
+      "sha256": "ff729eaa331e16090dd0b68a48d18460d453b5459c405ffe7a039a0226e9443c"
+    },
+    "63": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/__init__.py",
+      "sha256": "e1c24f7bb0de4dc0f76be390d0cf7663eadc8aaf99897f6d5bd75b94b90b0337"
+    },
+    "64": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/box.py",
+      "sha256": "b5ad274e40f84f197c84ea9ebf05b108d2ae5da1ccdee6e090adce417bcd3231"
+    },
+    "65": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/dict.py",
+      "sha256": "7101051852bc9b2ac6dfacbcea444b0fe5c07b3b4f4f9e78387060dd5c17486a"
+    },
+    "66": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/discrete.py",
+      "sha256": "540cbe070e14129292630dd023a8f899e939da61873a3e1e974dacfa0e32ce0a"
+    },
+    "67": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/graph.py",
+      "sha256": "17c0d3afe98b6a42f06021ef267a29daaf11a533bd073776f8455ad761776b5a"
+    },
+    "68": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/multi_binary.py",
+      "sha256": "00b73452be419261c1164277353a9567473df15270e87859761b438f449be6b4"
+    },
+    "69": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/multi_discrete.py",
+      "sha256": "6efe86f07df51fff818ed6751a0a182266f8893b855422619bca35115913ecf3"
+    },
+    "7": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/box2d/bipedal_walker.py",
+      "sha256": "e96db6df5e74b1d1da011fee69d2c95d81f37f577ee653a55e53edd5a88cbb7e"
+    },
+    "70": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/oneof.py",
+      "sha256": "144f7f8f3877d2dbea40db0ce3943cf9fcb548eb6dd673c0742724758650e3cc"
+    },
+    "71": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/sequence.py",
+      "sha256": "3c50ed6068fbf2765cef2f935f1b54b7c8eb959a4ab1c4c33022aeb50aa1cbc0"
+    },
+    "72": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/space.py",
+      "sha256": "e9f12f9bc7bd26e686a2cf557ccfa23d7d0c5e6472fc11bf743eb88049c16108"
+    },
+    "73": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/text.py",
+      "sha256": "3eb20b2d3b2c2f519aa4c96462d4fd0bc32a0921999103764b782520e866fc25"
+    },
+    "74": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/tuple.py",
+      "sha256": "a873ea508c189d430384cad0813572a51c9f79c636905e421d99543518ba8acf"
+    },
+    "75": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/spaces/utils.py",
+      "sha256": "7b19fb1d79a0a5dbeca4b87e0d80d0e3df0bdab8b4b7f2a5d847724057c5e7e8"
+    },
+    "76": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/__init__.py",
+      "sha256": "e52f5e3c886c7489d36a52c7ea9a05006edcdd4fca5ba163e65a9c46aecb6312"
+    },
+    "77": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/colorize.py",
+      "sha256": "5a84ebf93548d49b051799812e50995f11dc243bc85b9b11b07c7dc252031b1c"
+    },
+    "78": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/env_checker.py",
+      "sha256": "2d7fbfc54665e4dff7321ba24305c64ef542f44cb12a92f6f1c8f41253d367f9"
+    },
+    "79": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/env_match.py",
+      "sha256": "f5a06e5bba422a2f9f6d5dfb3f54e9f63420faccf9599c851fc7b80671ef69dc"
+    },
+    "8": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/box2d/car_dynamics.py",
+      "sha256": "1d47cc6405871a3ff268b79f0f1b44a2b796873c1a05b8036cd44220cd8de703"
+    },
+    "80": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/ezpickle.py",
+      "sha256": "a2a1f863d1bb180b49c66874cb609fb26974e6cd10a8c138de5da8e9a8b9b4e0"
+    },
+    "81": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/passive_env_checker.py",
+      "sha256": "e8b4a41363bde3352343bc5034ac4f623e6db2347d2eb6a8a70597224d62da39"
+    },
+    "82": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/performance.py",
+      "sha256": "37cc5672beba3d0e23d3a3416455697fe9ded4c042ae08ee04cc561f1dff9883"
+    },
+    "83": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/play.py",
+      "sha256": "1eb89dc134d9ff163a234d1254c0f7d461c2d0a6db2252a3c9d7747be92200cb"
+    },
+    "84": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/record_constructor.py",
+      "sha256": "6cc738e70aac81fd18d10c16e72e8a91f11177b369c13ba555e5c8ffb3cf04bf"
+    },
+    "85": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/save_video.py",
+      "sha256": "e8c05279f1a9d23c2b4584feff681780f570c01f35e2ed54b6c55572be61a6f6"
+    },
+    "86": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/seeding.py",
+      "sha256": "eb2a223b92604b7d1df2a859338e4a175c60f3fb11b87f8f316f306f1b97de53"
+    },
+    "87": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/utils/step_api_compatibility.py",
+      "sha256": "4742fc05ae5b06403eb6fe9f67262826e7c80f84613183005aae6ea02fca4744"
+    },
+    "88": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/__init__.py",
+      "sha256": "ccb2729736d370c13a2bc257291ba06f15ca3576725cf540c835c16d8dc6c240"
+    },
+    "89": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/async_vector_env.py",
+      "sha256": "b1535350adc38b403cf5fdc731c9f9713ba37db1c097e7fe3b6757cd854af985"
+    },
+    "9": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/envs/box2d/car_racing.py",
+      "sha256": "d0d8c61ba32101d480b46c416b6a0854614efd6f7180aba1276ac0ec4e7f3662"
+    },
+    "90": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/sync_vector_env.py",
+      "sha256": "b4875b19b5043eda052d151ed967dc20d2f0d948174b472047943cbb744a4b2f"
+    },
+    "91": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/utils/__init__.py",
+      "sha256": "598f2352721e3655a6077dc9b061ef139d279d9368a790ecfb8f2d21540f8a80"
+    },
+    "92": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/utils/misc.py",
+      "sha256": "650ea425ff478f2a863a49a6b34cb8e1043d5a86b00fb7e6533c2093feac2700"
+    },
+    "93": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/utils/shared_memory.py",
+      "sha256": "0300dbc0652f9dd556406e866ab3a22c914fbac737158d541bd5b74c2445ff5c"
+    },
+    "94": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/utils/space_utils.py",
+      "sha256": "c8fb5b3e04e7c00e437b91b7f1cd6021c6e81b6846392da24f23d757e584329f"
+    },
+    "95": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/vector/vector_env.py",
+      "sha256": "488f8bc2117ced7e8fa7b2547c477923120aa704fe07bb58e56747c652b540ee"
+    },
+    "96": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/__init__.py",
+      "sha256": "6f8395392be63c0a4d3fb7a5057aaa39c5600d487453fee85223c26e5e090659"
+    },
+    "97": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/array_conversion.py",
+      "sha256": "7a5fa9b2f04437f00afe239ebe565a412dafdb8a979e94f5d8895f611b3bf7b9"
+    },
+    "98": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/atari_preprocessing.py",
+      "sha256": "23ab5a578ee04df9e4a05d1e24f3f2a3eeaf1fb37c5b110dcf5550a75569f16d"
+    },
+    "99": {
+      "path": ".runtime/exploratory-h5-ppo-py312/gymnasium/wrappers/common.py",
+      "sha256": "bc0ebcd8d1cb65286fc2d610c43bd262accfef2f06869460861a9ec0b1d86824"
+    }
+  },
+  "runtime_versions": {
+    "numpy": "2.5.3",
+    "nvidia-physicsnemo": "2.2.2",
+    "torch": "2.14.1"
+  },
+  "sources": {
+    "core": {
+      "path": "artifacts/projected_policy_h1_h5_conversion_source_20261006_immutable/scripts/diagnose_projected_policy_h1_h5_replay.py",
+      "sha256": "3dcfa6d028e49df845b5dbf0fb7e72c04a03c0662244b57a40f6637a386c5681"
+    },
+    "dual": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/dual_fno.py",
+      "sha256": "83ac4e4169bc8179cba00d450742f3c4c37a4a3c291ced323ba6c717424b3d7b"
+    },
+    "history": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/p026_state_history.py",
+      "sha256": "2b5b37dc79211bb5c4985a1d44d25262080f503011766206c536938f49a6b64c"
+    },
+    "reader": {
+      "path": "artifacts/projected_policy_h1_h5_conversion_source_20261006_immutable/scripts/official_evaluation_input.py",
+      "sha256": "68870966e09ff0ed0beab9ca2021becae5f4ef92e16289e613974a325b4dbab1"
+    },
+    "selector": {
+      "path": "artifacts/short_horizon_confirmation_source_20261006_r3_immutable/src/fluid_control/exploratory_short_mpc.py",
+      "sha256": "ec22561f60c183dc7fa9dfe68b32477de60faff9a41a5e051dccdad48d74f587"
+    },
+    "trainer": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_tandem_fno.py",
+      "sha256": "9e5bbebd338af02b1d73530c9cb74fc2f840455f56b7bf34ed2bb517be19a22a"
+    },
+    "training_source:cfd/tandem_cylinders/CASE_SPEC.md": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/CASE_SPEC.md",
+      "sha256": "218f201ca417a68a8f9a0dfa3e7706cd77a52b29cfe5c28f867676237e39c2d6"
+    },
+    "training_source:cfd/tandem_cylinders/analyze_baseline.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/analyze_baseline.py",
+      "sha256": "fb2fb651ab498c41ea632581a255cb3e7e4f76d87ccb1daf712ffb03cb0bf7cb"
+    },
+    "training_source:cfd/tandem_cylinders/analyze_control_landscape_long_panel.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/analyze_control_landscape_long_panel.py",
+      "sha256": "49e6e69a9f3deeab1414841d1666a7c00087a0ac6cab9cf8456759d843fcf6c1"
+    },
+    "training_source:cfd/tandem_cylinders/analyze_control_landscape_panel.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/analyze_control_landscape_panel.py",
+      "sha256": "3022aca73cdc6005f17a10d2f70b49ac0471cf39002d8af5e46ceb0aa52f9522"
+    },
+    "training_source:cfd/tandem_cylinders/analyze_control_onset_replication.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/analyze_control_onset_replication.py",
+      "sha256": "54a232e977ed2f8f9b861273f328610fa999069bf213aeaac9c99de4e0247ed8"
+    },
+    "training_source:cfd/tandem_cylinders/analyze_high_rotation_pilots.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/analyze_high_rotation_pilots.py",
+      "sha256": "2c6d4d88f42ff1ecdc3162ee787f35fa6d3553fc1286c2665a830b406d997486"
+    },
+    "training_source:cfd/tandem_cylinders/analyze_mpc_replay.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/analyze_mpc_replay.py",
+      "sha256": "d5095cc4bfb92b30f50b17778d156f1c29dcaaaab6f1e9dd6275a23b1abf468b"
+    },
+    "training_source:cfd/tandem_cylinders/analyze_periodic_rotation_benchmark.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/analyze_periodic_rotation_benchmark.py",
+      "sha256": "dc3529ea54274f7b4f40895cd1d1095afa699e3b19e4a0056c17b9c063323ff2"
+    },
+    "training_source:cfd/tandem_cylinders/audit_dynamic_train8_panel.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/audit_dynamic_train8_panel.py",
+      "sha256": "85fc24373800d62dc02b291f9ac158e7ec04157fc5bd7159f27abd99de51f9a5"
+    },
+    "training_source:cfd/tandem_cylinders/audit_existing_open_loop_acceptance.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/audit_existing_open_loop_acceptance.py",
+      "sha256": "2990492e8118950ba767d5256e47c476ea52cada5471739ba7ffe71adcaf8db5"
+    },
+    "training_source:cfd/tandem_cylinders/audit_full40_dynamic6_fno.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/audit_full40_dynamic6_fno.py",
+      "sha256": "4e78d8473d1d0f93b25031a3bf9dcc0582f43604f7b1f67c65e6754f032af100"
+    },
+    "training_source:cfd/tandem_cylinders/audit_full40_dynamic6_fno_fc_p003_immutable.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/audit_full40_dynamic6_fno_fc_p003_immutable.py",
+      "sha256": "4e78d8473d1d0f93b25031a3bf9dcc0582f43604f7b1f67c65e6754f032af100"
+    },
+    "training_source:cfd/tandem_cylinders/audit_lift_rms_definitions.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/audit_lift_rms_definitions.py",
+      "sha256": "54c14609081a5d7f92f0c301d4d05a12aae975f1193994d06dbb66ebff46b478"
+    },
+    "training_source:cfd/tandem_cylinders/check_matched_start_solver_log.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/check_matched_start_solver_log.py",
+      "sha256": "e4ab47ae9a30ccf6c87f1d0d43ca79ad7e99489665c6582140b5e6263a20db40"
+    },
+    "training_source:cfd/tandem_cylinders/compare_convergence.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/compare_convergence.py",
+      "sha256": "178874c7d74c48cbde67e58a49c57f5c96a91d010d92190273f67963bbd86999"
+    },
+    "training_source:cfd/tandem_cylinders/compare_high_rotation_pilots.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/compare_high_rotation_pilots.py",
+      "sha256": "ec87fdbc3b2bd4350149c187caaaf02d743af86debb9a9ce85ea8346ab03d11f"
+    },
+    "training_source:cfd/tandem_cylinders/curate_directppo_train16.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/curate_directppo_train16.py",
+      "sha256": "ad1a01f9e216e6a06a2ddc60ddfa63a339b66052887f87a43feb134667396fae"
+    },
+    "training_source:cfd/tandem_cylinders/curate_dynamic_train8.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/curate_dynamic_train8.py",
+      "sha256": "dd644af7ab981622ae4896a0c0470ee05b3f689a3e8542dc16a71e149c690611"
+    },
+    "training_source:cfd/tandem_cylinders/curate_full40_dynamic_validation.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/curate_full40_dynamic_validation.py",
+      "sha256": "faea2103018c7ef75239c66cb669536c598264c2f693151a89e04afcfeec5cc8"
+    },
+    "training_source:cfd/tandem_cylinders/extend_high_rotation_pilot.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/extend_high_rotation_pilot.sh",
+      "sha256": "c1be83cfb8e59d560373e0d6dd7768dcf0c5576ff6752b427f05ac46985f58e4"
+    },
+    "training_source:cfd/tandem_cylinders/generate_low_action_phase94_validation.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/generate_low_action_phase94_validation.py",
+      "sha256": "b3430825090cb8ac775f4c2591ccf42fd589f392590af885ae6a55a6ae5f2088"
+    },
+    "training_source:cfd/tandem_cylinders/make_baselines.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_baselines.py",
+      "sha256": "419a5d66715d239d5d7cc9f4877a8cb748972fcc74f60a7f6009feba14069e5e"
+    },
+    "training_source:cfd/tandem_cylinders/make_control_landscape_long_panel.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_control_landscape_long_panel.py",
+      "sha256": "f957d13633f07bdca8b1b7a8593415279b3b9388c800039936e4ec656a0d07c0"
+    },
+    "training_source:cfd/tandem_cylinders/make_control_landscape_panel.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_control_landscape_panel.py",
+      "sha256": "3bedfb0024d77b06716f76c0c9c822ec4540f54179053774c2e39b850f66311f"
+    },
+    "training_source:cfd/tandem_cylinders/make_control_onset_replication.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_control_onset_replication.py",
+      "sha256": "c71179b8edfae86985a473e02f0e2b195ec7cb47d42cba29d630c059b63b59ef"
+    },
+    "training_source:cfd/tandem_cylinders/make_crossphase_ranking_panel.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_crossphase_ranking_panel.py",
+      "sha256": "4df5dfda86b213e12bcbb1304ba4a8a934ae7e706d4067cefcd152aa5f19f451"
+    },
+    "training_source:cfd/tandem_cylinders/make_dynamic_control_dataset.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_dynamic_control_dataset.py",
+      "sha256": "6f73cb8d3101794907db019b473451a071e9f7784ac75ae27863158cd17c25ab"
+    },
+    "training_source:cfd/tandem_cylinders/make_dynamic_train8_panel.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_dynamic_train8_panel.py",
+      "sha256": "daa828a0da85310d664f790987d08a81814b88f387a48def336e513959c52bd6"
+    },
+    "training_source:cfd/tandem_cylinders/make_expanded_control_dataset.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_expanded_control_dataset.py",
+      "sha256": "1c48ee0e5761ac90d5f04b4cb4dfeb6580b3f0ed2a9863c2dc7f860792020ec2"
+    },
+    "training_source:cfd/tandem_cylinders/make_expanded_edge_replacements.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_expanded_edge_replacements.py",
+      "sha256": "1f0c2818ddd895c429d435f4d34a451becddf27f72fe4e49ab8e2377644131cc"
+    },
+    "training_source:cfd/tandem_cylinders/make_full40_dynamic_validation_panel.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_full40_dynamic_validation_panel.py",
+      "sha256": "4b217ad753271dfe4194026e206bc84256f27d9f309610963dc4923623c7967b"
+    },
+    "training_source:cfd/tandem_cylinders/make_gate_b_augmentation.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_gate_b_augmentation.py",
+      "sha256": "1663b058a2e50e3b783ed74c4d3f6c443ed03ca19f0cf5ddd34e218957686259"
+    },
+    "training_source:cfd/tandem_cylinders/make_high_rotation_pilots.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_high_rotation_pilots.py",
+      "sha256": "3f0b11aa1ecbf8e2cad5994366e4f8570778ebd66c319c8f46452c3e69c85735"
+    },
+    "training_source:cfd/tandem_cylinders/make_long_dwell075_panel.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_long_dwell075_panel.py",
+      "sha256": "7696e6152b1d20db2f5c16a76b4b5b12b2d1cd01f6f7c10571fee57d9cfe5107"
+    },
+    "training_source:cfd/tandem_cylinders/make_matched_start_acquisition_commissioning.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_matched_start_acquisition_commissioning.py",
+      "sha256": "c6683a37d370f27dd9cd196ba8942043e370847660e77722d5a24a5f30bc6579"
+    },
+    "training_source:cfd/tandem_cylinders/make_matched_start_full40.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_matched_start_full40.py",
+      "sha256": "f894fd3417cb0a3524d2217d6b504a7811153d5ad847c409579585f4836977ce"
+    },
+    "training_source:cfd/tandem_cylinders/make_mpc_replay_case.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_mpc_replay_case.py",
+      "sha256": "b60b0f6bd6ec6ab060073c59a449304c030a9bc0532e49bc272d751b0b13d0cf"
+    },
+    "training_source:cfd/tandem_cylinders/make_periodic_rotation_benchmark.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_periodic_rotation_benchmark.py",
+      "sha256": "883cf6c0b4b0073dfa77b17f475a0383eb7a6e45d516864330e4dad7f2469f59"
+    },
+    "training_source:cfd/tandem_cylinders/make_phase90_long_signed_panel.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_phase90_long_signed_panel.py",
+      "sha256": "c9fb215de3607f99b7cd9c4613e64f40ee0ba6e5affb09765bea8f15fc60fc12"
+    },
+    "training_source:cfd/tandem_cylinders/make_phase_diverse_control_dataset.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_phase_diverse_control_dataset.py",
+      "sha256": "cfe13bd21b07bb3fff90a76ddb7499e9515b4f7d2d1b096fa54f19a869129e14"
+    },
+    "training_source:cfd/tandem_cylinders/make_probe_feedback_case.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_probe_feedback_case.py",
+      "sha256": "9960e38cbfc9afc6ec2a56ae01ce3da3974167b101a3274e33faa770728ebbbd"
+    },
+    "training_source:cfd/tandem_cylinders/make_rotation_grid_check.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_rotation_grid_check.py",
+      "sha256": "3c8350378e975eeef44c9bf2582228cc17622ea1421c86d1eaef455c63c39820"
+    },
+    "training_source:cfd/tandem_cylinders/make_signed_pulse_training_pair.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_signed_pulse_training_pair.py",
+      "sha256": "7ff2e772683b61e415207581a5a527155459f30e4bc50336490b3c7add8c92a5"
+    },
+    "training_source:cfd/tandem_cylinders/make_small_control_dataset.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_small_control_dataset.py",
+      "sha256": "ca92d191a2e01a22b4d1c2ceb47aeef75cd6eb7a403e3f5afc4eb0a02cdf24e0"
+    },
+    "training_source:cfd/tandem_cylinders/make_two_phase_alternating_panel.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/make_two_phase_alternating_panel.py",
+      "sha256": "796db0c41cfcbfc0e4aa3686008d06ff87c1391d48b5d12f99d9063ebb7bbf70"
+    },
+    "training_source:cfd/tandem_cylinders/matched_start_case_lock.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/matched_start_case_lock.py",
+      "sha256": "2dabae9af1631e35f72d991861152b52fb9b55fd4d4df480a54cd92925159e80"
+    },
+    "training_source:cfd/tandem_cylinders/plot_flow_snapshot.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/plot_flow_snapshot.py",
+      "sha256": "558c5a3858370b685c76c33cb06fd17eac9a908f31b0cbad987cb924e00d1b28"
+    },
+    "training_source:cfd/tandem_cylinders/predeclare_directppo_train16.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/predeclare_directppo_train16.py",
+      "sha256": "d88554071d2f2533e929934620f2844afd7ef82debf1f264bc6fb70a152f8a61"
+    },
+    "training_source:cfd/tandem_cylinders/prepare_matched_start_full40_extension_authorization.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/prepare_matched_start_full40_extension_authorization.py",
+      "sha256": "c38d29bf3bace8a383df832d3ee83abc20a0429ae96e78b74bd5e70cdaefa10e"
+    },
+    "training_source:cfd/tandem_cylinders/run_baseline.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_baseline.sh",
+      "sha256": "57c5082982a10f9644241bcf3a4343241225419977b13ed8f89d2badc6827fe3"
+    },
+    "training_source:cfd/tandem_cylinders/run_constant_rotation_grid_pair_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_constant_rotation_grid_pair_spark.sh",
+      "sha256": "943073393ed3501d942ada8fa5b347abed574e5610ca316e6f885ebc1303f97f"
+    },
+    "training_source:cfd/tandem_cylinders/run_control_case.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_control_case.sh",
+      "sha256": "054915c7a44ef9de5faaa27b693c328e637f32edbc0952ea4ad4f236b0bbae60"
+    },
+    "training_source:cfd/tandem_cylinders/run_control_landscape_case.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_control_landscape_case.sh",
+      "sha256": "8cb5d39c4bdfa044a4bee5c18a41a6b3ffc3e7a92b0a94dfa1dd3b3ddd7eac55"
+    },
+    "training_source:cfd/tandem_cylinders/run_directppo_train16_vtk_case.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_directppo_train16_vtk_case.sh",
+      "sha256": "4d708ef23105635c3662c627be114c96e73d9798fdcdb8e6bde8df962018a535"
+    },
+    "training_source:cfd/tandem_cylinders/run_dynamic_case.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_dynamic_case.sh",
+      "sha256": "ba38f1b385c74185ca6e5e998209ae0b250ef8adfedec708315d104f0d138e3c"
+    },
+    "training_source:cfd/tandem_cylinders/run_dynamic_train8_case.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_dynamic_train8_case.sh",
+      "sha256": "f167efd77cfa5cd4cec0e2a215a1392c444aac23bf516a1614a2d5e537598f0e"
+    },
+    "training_source:cfd/tandem_cylinders/run_dynamic_train8_vtk_case.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_dynamic_train8_vtk_case.sh",
+      "sha256": "ab7ef3af748c48e8bfb56646688a9ae0750ac74173397c331054e2fafcf160e2"
+    },
+    "training_source:cfd/tandem_cylinders/run_expanded_cfd_chunk.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_expanded_cfd_chunk.sh",
+      "sha256": "f9b540daa9d35cedffbbc1595ee496bfc5e1ccb9bbaf29c9dc40159b7e056a64"
+    },
+    "training_source:cfd/tandem_cylinders/run_expanded_dataset.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_expanded_dataset.sh",
+      "sha256": "490f93e819b5dc57882d0143113ab2de245fe5640f99ee52cbe6819c3fa682f0"
+    },
+    "training_source:cfd/tandem_cylinders/run_expanded_dynamic_case.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_expanded_dynamic_case.sh",
+      "sha256": "9b6c5a45b6df2e0e7df4819a0f11277d8ef301f9c9da983980bd56f9355df424"
+    },
+    "training_source:cfd/tandem_cylinders/run_expanded_on_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_expanded_on_spark.sh",
+      "sha256": "2ac0983b6c9656c7613cfb6ec3cb5212bfada6695c09b4dd5093435ee41497b5"
+    },
+    "training_source:cfd/tandem_cylinders/run_full40_dynamic6_fno_h50_e1_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_full40_dynamic6_fno_h50_e1_spark.sh",
+      "sha256": "bdf621d6c49804fcd1234992b3b4a59a7ac7c78879bcec2acc551f97a37a8980"
+    },
+    "training_source:cfd/tandem_cylinders/run_full40_dynamic6_fno_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_full40_dynamic6_fno_spark.sh",
+      "sha256": "a8ea645f13df55785cea1206ce284b722399fd7553d4783d794d2b01d663d519"
+    },
+    "training_source:cfd/tandem_cylinders/run_full40_dynamic_validation_case.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_full40_dynamic_validation_case.sh",
+      "sha256": "d8ab4ef25ae5f5c224d45bea4b47ec62aba0e13a7266f2c85a2f04e8c6c98739"
+    },
+    "training_source:cfd/tandem_cylinders/run_high_rotation_pilot.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_high_rotation_pilot.sh",
+      "sha256": "630e04bfb3f81cd49fea4055987f8dec42f4ea2e8515e8535e4fbf6de082cfef"
+    },
+    "training_source:cfd/tandem_cylinders/run_low_action_phase94_validation_case.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_low_action_phase94_validation_case.sh",
+      "sha256": "a9ed6545b9df8750ca1da338a2be8d9ea05b0628f08c590f7cfd55e3878182ad"
+    },
+    "training_source:cfd/tandem_cylinders/run_matched_start_acquisition_case.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_matched_start_acquisition_case.sh",
+      "sha256": "9ee88d9d828aac3888fa983578ec9c35e75919d06a58b0dbb5d700085a860364"
+    },
+    "training_source:cfd/tandem_cylinders/run_matched_start_full40_case.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_matched_start_full40_case.sh",
+      "sha256": "45096977dafddbb0445f49ccd609fb0e4fb79b3210046447c259b08a884ebdba"
+    },
+    "training_source:cfd/tandem_cylinders/run_mpc_replay_case.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_mpc_replay_case.sh",
+      "sha256": "861cfbb154071a7cec55784215d02024296d2b7b9962d6a27a2216d7c4cecdd5"
+    },
+    "training_source:cfd/tandem_cylinders/run_openfoam.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_openfoam.sh",
+      "sha256": "ee15b3fb9efe6079b5c88bbce698281907184ad760403622a4e7708dcb3d9976"
+    },
+    "training_source:cfd/tandem_cylinders/run_phase_diverse_case.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_phase_diverse_case.sh",
+      "sha256": "a830bc13ffdedb109e70185bc70de42a360c1bdcd733711ac4154f9841a97c32"
+    },
+    "training_source:cfd/tandem_cylinders/run_rotation_grid_check.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_rotation_grid_check.sh",
+      "sha256": "924bc084567f0a4d279ed98b3c7814f3affc17a7a979d4f5df9a7c7dafdd669d"
+    },
+    "training_source:cfd/tandem_cylinders/run_signed_pulse_training_case.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/run_signed_pulse_training_case.sh",
+      "sha256": "8fd5c2ec67474f6ff07c99fe25d660ed6f0b77eafbbc0e274ca4a7308da56701"
+    },
+    "training_source:cfd/tandem_cylinders/tandem_baseline_flow_t160.png": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/tandem_baseline_flow_t160.png",
+      "sha256": "1ce377ca5873b55f85d9b3bff159050fca5589d0aa7cfd8017257bd80844976d"
+    },
+    "training_source:cfd/tandem_cylinders/templates/matched_start_full40_extension_authorization.template.json": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/templates/matched_start_full40_extension_authorization.template.json",
+      "sha256": "1d9fcad09310ebef2bbb08808b9c42260b56e09690c136b37d2b333ea99f3029"
+    },
+    "training_source:cfd/tandem_cylinders/validate_constant_rotation_grid_pair.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/validate_constant_rotation_grid_pair.py",
+      "sha256": "a84a2a8a424c3db39135013b1cafccabfa24a0d50bdabe572bf1f1f6839b44c6"
+    },
+    "training_source:cfd/tandem_cylinders/validate_dynamic_dataset.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/validate_dynamic_dataset.py",
+      "sha256": "b2cf650c2c3773130f9c1f426485dda2a92e7994faa1577ffbfdb8d1c958d8d4"
+    },
+    "training_source:cfd/tandem_cylinders/validate_expanded_control_dataset.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/validate_expanded_control_dataset.py",
+      "sha256": "3ec19a8a278d53a4858598cd0be536cb75547fa5fe1914d9fcd9db4c6cd3b2fb"
+    },
+    "training_source:cfd/tandem_cylinders/validate_phase_diverse_cfd.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/validate_phase_diverse_cfd.py",
+      "sha256": "e652943935caf7968455d37a277ea98b476cafc150831bd38450681d3e0c8a34"
+    },
+    "training_source:cfd/tandem_cylinders/validate_signed_pulse_training_pair.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/validate_signed_pulse_training_pair.py",
+      "sha256": "33a533cb0e408f9ab0775e2e073a167670f1c513c3f441e33ced9120cb92a8c3"
+    },
+    "training_source:cfd/tandem_cylinders/validate_small_dataset.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/cfd/tandem_cylinders/validate_small_dataset.py",
+      "sha256": "e837b9547b2415b637b37f41e6216838be4dc86d315da063e0116aba797168d6"
+    },
+    "training_source:conf/matched_start_curator_contract.json": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/matched_start_curator_contract.json",
+      "sha256": "2357d301a50297c4d4ba50f1e36825cb7fa278cc5c7aebe1c25e00a26fa4542a"
+    },
+    "training_source:conf/matched_start_curator_contract.template.json": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/matched_start_curator_contract.template.json",
+      "sha256": "b282f528e618e099b6949c4d40f49c491b97e6935d149185bfa279fdbad46a12"
+    },
+    "training_source:conf/tandem_cem_stage_c.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_cem_stage_c.yaml",
+      "sha256": "b5e6760b9bca29ab03db81ddd31b302512991acbe4e843f8c27806940cd5bfd0"
+    },
+    "training_source:conf/tandem_fno.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno.yaml",
+      "sha256": "ba951dd03e6848f8a68edd064a143ed0274b8ac553fc32b343dc902d07206dd6"
+    },
+    "training_source:conf/tandem_fno_control_train16_h100.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_control_train16_h100.yaml",
+      "sha256": "1ea6e162f1cf4994f1dd628b1ee9b06bded99c382e346839697df3a74b7ccfbb"
+    },
+    "training_source:conf/tandem_fno_control_train16_h100_lift_balanced.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_control_train16_h100_lift_balanced.yaml",
+      "sha256": "5d93a5acadd532bb5828746660dc09f3a8b7d91111083724aa2ebc04d0904239"
+    },
+    "training_source:conf/tandem_fno_dynamic_paired_interleaved_h100.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_dynamic_paired_interleaved_h100.yaml",
+      "sha256": "a8e4033240af24ec6ee0c537059244bda765800c239c292b6b18085a42c9ffc9"
+    },
+    "training_source:conf/tandem_fno_dynamic_paired_true_state_step_h100.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_dynamic_paired_true_state_step_h100.yaml",
+      "sha256": "17f15f6cb4b4b92a118ea6b4604c5b3b9ce44cb1f50660b8970bad0d7b51c459"
+    },
+    "training_source:conf/tandem_fno_dynamic_train8_h100.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_dynamic_train8_h100.yaml",
+      "sha256": "e9944f70cc2f5e0ec93d30d1b5b9119f0a358dfecd251314afe90b319cabf8ae"
+    },
+    "training_source:conf/tandem_fno_dynamic_train8_h20.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_dynamic_train8_h20.yaml",
+      "sha256": "62c117b467c9cee2792cd2e0a1c7d9a869b00a33838e1da2e31ecda44b023f8c"
+    },
+    "training_source:conf/tandem_fno_dynamic_train8_h50.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_dynamic_train8_h50.yaml",
+      "sha256": "1375f8e36247c253c35e98f09cd71b9517ce2c8626fa7d07d679cabf328167f1"
+    },
+    "training_source:conf/tandem_fno_expanded.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_expanded.yaml",
+      "sha256": "2e3a7e396673d28abb639836f21aac136018e63ae4e469d8b1f895e8ec0c4bc3"
+    },
+    "training_source:conf/tandem_fno_full40_free_ar_h20.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_full40_free_ar_h20.yaml",
+      "sha256": "439756e268dbb17b49ef17ac35e254b662dd51c15be87b1a4e462b7aec0ac4a0"
+    },
+    "training_source:conf/tandem_fno_full40_free_ar_h50.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_full40_free_ar_h50.yaml",
+      "sha256": "d2cb4512763f42b13e56a1b96cd2eaeba2fa3fa718e3e255f124df4238f545d4"
+    },
+    "training_source:conf/tandem_fno_full40_h20.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_full40_h20.yaml",
+      "sha256": "933d3c8036528dc4a52b8ee7031f66aa808f05e9d08f662eefd4dc61c86b1748"
+    },
+    "training_source:conf/tandem_fno_full40_onestep.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_full40_onestep.yaml",
+      "sha256": "867b6e5b3eea73172635bd180625ae702133c076da7327dab935f0a0e74c3dd0"
+    },
+    "training_source:conf/tandem_fno_full40_quickscreen_h20.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_full40_quickscreen_h20.yaml",
+      "sha256": "a51ee8aa49b9a075ac8d1622e0432461fbf6857ef24073b8d512f23811380f0a"
+    },
+    "training_source:conf/tandem_fno_full40_quickscreen_onestep.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_full40_quickscreen_onestep.yaml",
+      "sha256": "26de0d67e15328e186dd514d883fedb2527892c733b9580ff3975904c110561a"
+    },
+    "training_source:conf/tandem_fno_paired_stats_h100.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_paired_stats_h100.yaml",
+      "sha256": "cec8941fbe47ef1830b99e38fb2f2ca16b41dcd9405d58248763c66ece55fd55"
+    },
+    "training_source:conf/tandem_fno_paired_stats_interleaved_h100.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_paired_stats_interleaved_h100.yaml",
+      "sha256": "32a1b7905f5e22892340c8bf8ad69467eac493da77207a42e7e7123cf00e3f22"
+    },
+    "training_source:conf/tandem_fno_rollout.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_rollout.yaml",
+      "sha256": "31bd379a6a7b04ce40c138b492655ecbe4632de637acd9279d6b8c43f101845c"
+    },
+    "training_source:conf/tandem_fno_rollout_expanded.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_rollout_expanded.yaml",
+      "sha256": "235931ae9ec7ad3e8d74c420e5ca4aaab5cba27a76d9f4a3a915e21023688cd0"
+    },
+    "training_source:conf/tandem_fno_rollout_no_tf.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_rollout_no_tf.yaml",
+      "sha256": "06fc9d4ec44ff636c6817d40690529882222da977a31ec23947d8acc9b123846"
+    },
+    "training_source:conf/tandem_fno_total_drag.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_total_drag.yaml",
+      "sha256": "6da0ae6d0ef8992ff7a9c0be99bb17224947eddaf08eef8b416ec54efec8592f"
+    },
+    "training_source:conf/tandem_fno_total_drag_rollout.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_total_drag_rollout.yaml",
+      "sha256": "c1dfe57787f009e04d85b0a30461b21194a200b8099be369d64f5a5126781f0f"
+    },
+    "training_source:conf/tandem_fno_total_drag_rollout_dense_ckpt.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_total_drag_rollout_dense_ckpt.yaml",
+      "sha256": "3968ae2fa6d8b939f2a06c59cea69d8ec20d079694f35acefef62532f21e8457"
+    },
+    "training_source:conf/tandem_fno_total_drag_rollout_h20_rear_drag.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_total_drag_rollout_h20_rear_drag.yaml",
+      "sha256": "54bec41fe96fac2b2dd2c38a131b9c1601618e9e8a8f980cad3191990c5ba0d2"
+    },
+    "training_source:conf/tandem_fno_total_drag_rollout_rear_drag.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_fno_total_drag_rollout_rear_drag.yaml",
+      "sha256": "d624da9e70b6c8ecc43a17702333c089e037daf16b3516558bd13554eacde842"
+    },
+    "training_source:conf/tandem_mpc.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/conf/tandem_mpc.yaml",
+      "sha256": "de91ba5b4d303ab009e2798ec951523eda47e7d6aba25558f0cda35fc9e3290e"
+    },
+    "training_source:parent_order.json": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/parent_order.json",
+      "sha256": "339f7fe5dc09d8a8e379da639f386649217f2f3500b0a62619d8449cf6bbc122"
+    },
+    "training_source:probe_spec.pending.json": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/probe_spec.pending.json",
+      "sha256": "5b9fba32862e8cf9154beb1d5f11ff3be9319f7cc69b02e53619ac1b277e85f4"
+    },
+    "training_source:scripts/adapt_candidate_ppo_openfoam_readiness.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/adapt_candidate_ppo_openfoam_readiness.py",
+      "sha256": "48be5b6b114a1ed1f68a057b9cd2645917b7de61385262fd7d3f76a8f30cc7ca"
+    },
+    "training_source:scripts/add_all_force_normalization.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/add_all_force_normalization.py",
+      "sha256": "0e4e110b34afe062718c4f41c0d5df025a7a5785d6cb2ea2f63b79de73fa04b3"
+    },
+    "training_source:scripts/advance_after_gate_b_aug_v3.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/advance_after_gate_b_aug_v3.sh",
+      "sha256": "7f3cc58eddf5fc2fa57ff1c6660527f7b01d7bdd927b36e8f704c6aaf20b717e"
+    },
+    "training_source:scripts/advance_after_gate_b_aug_v3_eval.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/advance_after_gate_b_aug_v3_eval.sh",
+      "sha256": "338a2e2cb1bf03c21b586a4dce1bfdae7656f72241e77e2f0836570aeedc9b14"
+    },
+    "training_source:scripts/advance_after_multistep_gate_b.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/advance_after_multistep_gate_b.sh",
+      "sha256": "6b395f02e642f85c307855d286566be6e4482a8b3c3e356864aca323ad1d6a56"
+    },
+    "training_source:scripts/advance_gate_b_aug_v3_primary_rollout.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/advance_gate_b_aug_v3_primary_rollout.sh",
+      "sha256": "98e37f2bacfd576c5256478507a9e34c80320fa97cb8550560e7ca449bf15e42"
+    },
+    "training_source:scripts/advance_gate_b_aug_v3_worker_seed20261005.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/advance_gate_b_aug_v3_worker_seed20261005.sh",
+      "sha256": "545e730984cfe0525248c0d150d5095f400360ba82bc376e5c440b8e3753b274"
+    },
+    "training_source:scripts/assess_tandem_control_readiness.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/assess_tandem_control_readiness.py",
+      "sha256": "95b7dd903ce9981164b40d35fad66e323192f7e9c4f617edb8ccc61667916247"
+    },
+    "training_source:scripts/audit_candidate_ppo_readiness.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_candidate_ppo_readiness.py",
+      "sha256": "2d693a095bf392b8d50c7092699a9114ffc9c96f8820d2afaebd5b9091462f75"
+    },
+    "training_source:scripts/audit_control_gap_v4_action_coverage.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_control_gap_v4_action_coverage.py",
+      "sha256": "f5715229706b75d897acfb678cf2b6ab4e6d2929db9742efc92d168cd60989f6"
+    },
+    "training_source:scripts/audit_control_gap_v4_validation.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_control_gap_v4_validation.py",
+      "sha256": "9a19e2cc44d68a56408f2fbd9d8ec5711dfa9e7ee89856edfbbac8a91686234c"
+    },
+    "training_source:scripts/audit_crossphase_ranking.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_crossphase_ranking.py",
+      "sha256": "eff5b17f48b72ee69ef3e1add87a6ba09b4a1f6115ebf87aa6f394f5134ed833"
+    },
+    "training_source:scripts/audit_curated_control_response.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_curated_control_response.py",
+      "sha256": "13554f6d7844155a1daff3cb91816957bfcef8f8f96752b93a125f575967dab7"
+    },
+    "training_source:scripts/audit_dev30_validation_diagnostic.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_dev30_validation_diagnostic.py",
+      "sha256": "b44407ab3e828d65f99fd079b8b0a0701706849c4f211da021a36b25d682a94b"
+    },
+    "training_source:scripts/audit_dynamic6_time_alignment.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_dynamic6_time_alignment.py",
+      "sha256": "f0ce11747358cce91136efe8e31135fd2330d7cbe96ea9010435108d25b387fb"
+    },
+    "training_source:scripts/audit_dynamic_fno_candidate_lineage.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_dynamic_fno_candidate_lineage.py",
+      "sha256": "176a35a1e9e17b7650f60f6fc9d8a6c59b10b91ffa2947ac3c2b898dd6d27930"
+    },
+    "training_source:scripts/audit_dynamic_fno_development_gates.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_dynamic_fno_development_gates.py",
+      "sha256": "ca6da0afdce5859be1c060eb48ba2cdd1ccc5ee3aeb2570d9c9b53067d5bc412"
+    },
+    "training_source:scripts/audit_dynamic_fno_formal_handoff.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_dynamic_fno_formal_handoff.py",
+      "sha256": "0c0a3a60da4749e9129fd5ebd2abbb60f25cb53362e1fe9d27dc4ea6af9ca543"
+    },
+    "training_source:scripts/audit_fc_p002_action_coverage.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_fc_p002_action_coverage.py",
+      "sha256": "fc04aaa00142c56cc462533bbfc941fa76e94bd7dcf17cea098e65553549b2be"
+    },
+    "training_source:scripts/audit_fc_p003_candidate_lineage.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_fc_p003_candidate_lineage.py",
+      "sha256": "9f3a98e7af957863a62cd9c82814c15272aa5bb0091dde3611416fa2d57b95cf"
+    },
+    "training_source:scripts/audit_fc_p003_candidate_lineage_immutable.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_fc_p003_candidate_lineage_immutable.py",
+      "sha256": "9f3a98e7af957863a62cd9c82814c15272aa5bb0091dde3611416fa2d57b95cf"
+    },
+    "training_source:scripts/audit_fc_p003_dataloader_order.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_fc_p003_dataloader_order.py",
+      "sha256": "764f8a17ba829239b42d93e74537f7fbd796bf077dd611e97be5a01820ebe097"
+    },
+    "training_source:scripts/audit_fc_p003b_real_sampling_contract.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_fc_p003b_real_sampling_contract.py",
+      "sha256": "f33dcb4cfc2bb172e2aba0e873c119673bc06b021d0fa7290d8e459ff71fd4ca"
+    },
+    "training_source:scripts/audit_fcp003b_candidate_lineage.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_fcp003b_candidate_lineage.py",
+      "sha256": "0730690dfce369d3c9b6a84725aa7ed1720d3692a1094ccd2521f3dd515ef99d"
+    },
+    "training_source:scripts/audit_fcp003c_candidate.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_fcp003c_candidate.py",
+      "sha256": "68579eccb081106b0cc6dcd09455bf25ca294d4ce3e565f3bfa98d6e8afd1478"
+    },
+    "training_source:scripts/audit_full40_dynamic_validation_panel.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_full40_dynamic_validation_panel.py",
+      "sha256": "7332c53307601911986eae307f473914c16aad5b000fa6d1ff53ff8d965b207f"
+    },
+    "training_source:scripts/audit_full40_validation_gate.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_full40_validation_gate.py",
+      "sha256": "54ea35b3692143caedffd4a954dc789e36a2a3b157545d19a88b6058870f2809"
+    },
+    "training_source:scripts/audit_full40_validation_gate_fc_p003_immutable.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_full40_validation_gate_fc_p003_immutable.py",
+      "sha256": "eedc114549eacd787951ef8d8531db6a1ef40c088ce8bff6fcf10d351fa09269"
+    },
+    "training_source:scripts/audit_gate_b_metric_integrity.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_gate_b_metric_integrity.py",
+      "sha256": "da41c3d965328adf02b9a64c3495a2951311c5beb5510d336ce6129311dfb8e8"
+    },
+    "training_source:scripts/audit_long_dwell075_panel.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_long_dwell075_panel.py",
+      "sha256": "bd8417975d6217e253a76add48a15dc3aebd47817cd77f29518878a1a72b5a0d"
+    },
+    "training_source:scripts/audit_low_action_pairwise_fno.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_low_action_pairwise_fno.py",
+      "sha256": "d1e382022bce977eadd0ea750da4a22d4d84438ba337dfd92843aabac293ed07"
+    },
+    "training_source:scripts/audit_low_action_phase94_physics.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_low_action_phase94_physics.py",
+      "sha256": "9367eb3acd782691884c75b32320092d85090297e37e4b5f95b0641393d2baf2"
+    },
+    "training_source:scripts/audit_low_action_rollout_segments.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_low_action_rollout_segments.py",
+      "sha256": "a0ca620a0f7def954a1cbef8fdb3f1f8d6f31ba529b9bd85fcef354d3d54e224"
+    },
+    "training_source:scripts/audit_matched_start_acquisition_commissioning.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_matched_start_acquisition_commissioning.py",
+      "sha256": "1d23b3a26b4ac6147306b1b177b4e79ac48d50f8e7e02772bd34b288e90d4e33"
+    },
+    "training_source:scripts/audit_matched_start_full40_extension.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_matched_start_full40_extension.py",
+      "sha256": "d021951aafd1021f1bf4e3b96409f07e360003dd51e5d741565b11e97351879c"
+    },
+    "training_source:scripts/audit_matched_start_phase_restarts.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_matched_start_phase_restarts.py",
+      "sha256": "ba4192da0f9825b18fa40ef540e5071320785852f6795a94bf23278c356f03cc"
+    },
+    "training_source:scripts/audit_paired_fno_candidate_lineage.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_paired_fno_candidate_lineage.py",
+      "sha256": "a61e9767dae72c556cb50febd42f9b883c87528c808aa8509ea110dc8cd6fba6"
+    },
+    "training_source:scripts/audit_phase90_long_signed_robustness.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_phase90_long_signed_robustness.py",
+      "sha256": "2673816e30c01918e2f97f24529222aab72a2f1e479c613c55b582ea2281509d"
+    },
+    "training_source:scripts/audit_raw_cfd_control_response.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_raw_cfd_control_response.py",
+      "sha256": "7d7d770bee0233da41c09138b8cc863215fb950337dc5e8b5920841ed9553ca8"
+    },
+    "training_source:scripts/audit_same_endpoint_force_error.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_same_endpoint_force_error.py",
+      "sha256": "956ec784acc2043d6fdbe0ccabaf3554c276aebb05b1a635d5ce94ff2e129934"
+    },
+    "training_source:scripts/audit_tandem_actions.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_tandem_actions.py",
+      "sha256": "f78faf019eb0b956b0b7fe4f0cede9a5005cdf5601d5dadc5d4f18ec012170a5"
+    },
+    "training_source:scripts/audit_tandem_control_objective.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_tandem_control_objective.py",
+      "sha256": "40bce88d0d15d9aed49db462831f7fe97713dc625ffcc3cd87b1ae6c1408fa8c"
+    },
+    "training_source:scripts/audit_tandem_frame0_force_alignment.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_tandem_frame0_force_alignment.py",
+      "sha256": "53e1321f68cead582cf708f8446364b8cc48f7742b093df875956ae82582dab8"
+    },
+    "training_source:scripts/audit_tandem_gate_b.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_tandem_gate_b.py",
+      "sha256": "780a450867ecf67295c2a4f64492db4d5ff649c1f4e9f3a11266b62cfc918c0d"
+    },
+    "training_source:scripts/audit_tandem_phase_feedback_torque.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_tandem_phase_feedback_torque.py",
+      "sha256": "b43eedcea0fea38654af09a257c900e2f871e2f654c28eb2819c198e682952c2"
+    },
+    "training_source:scripts/audit_tandem_ppo_checkpoint.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_tandem_ppo_checkpoint.py",
+      "sha256": "8d57152a829b834be9a111e12de2e4623519510544184da5cb0fd07fcde44d39"
+    },
+    "training_source:scripts/audit_tandem_split_integrity.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_tandem_split_integrity.py",
+      "sha256": "640559fa66b4353d98b508e90ea0ceab5bba890f2ab51ebb8c09e9b68efc33ff"
+    },
+    "training_source:scripts/audit_tandem_state_support.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_tandem_state_support.py",
+      "sha256": "4cfa58b35983aa1f17e834895e8b886875a92b578707f1dbaa8c34640791dd00"
+    },
+    "training_source:scripts/audit_tandem_validation_action_ranking.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_tandem_validation_action_ranking.py",
+      "sha256": "ae667537923774d92f99c69e3208532c5daeff42cd0945c25babe8e748b27e63"
+    },
+    "training_source:scripts/audit_two_phase_alternating_panel.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/audit_two_phase_alternating_panel.py",
+      "sha256": "0f6b3d9ee507a2ab0512ddcee8eb1eae3ac1f2d4a3e932b02c1c70cf667e1dfa"
+    },
+    "training_source:scripts/benchmark_tandem_fno_h20_resource.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/benchmark_tandem_fno_h20_resource.py",
+      "sha256": "c4214bb9da21978bc3d115eaac15d02766c210ec27ddb92f7a68a63cd047b250"
+    },
+    "training_source:scripts/benchmark_tandem_fno_inference.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/benchmark_tandem_fno_inference.py",
+      "sha256": "5752103918f05d2c0e00428cd62d1a1df805075791247dd6b385a999c2a13366"
+    },
+    "training_source:scripts/build_control_gap_v4_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/build_control_gap_v4_spark.sh",
+      "sha256": "819e8df60324e6e85fb08db7877788a6bbda78aba5fe455fe5d98a79fdb5b623"
+    },
+    "training_source:scripts/build_fc_p003_dynamic8_pair_candidate.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/build_fc_p003_dynamic8_pair_candidate.py",
+      "sha256": "032f2929b01d1a0a6806f6703669995426e554a3568128f1e48edfaba6b1f44a"
+    },
+    "training_source:scripts/build_fcp008_force_readout_candidate.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/build_fcp008_force_readout_candidate.py",
+      "sha256": "649864f9d3efae2cd8f5efcc6cf93be54b1f64fefa942f5f4ce2f038a31bf585"
+    },
+    "training_source:scripts/build_gate_b_aug_v3_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/build_gate_b_aug_v3_spark.sh",
+      "sha256": "e6b8e2d9f95dd023f7fc6daced681da25749982bb08f112f4a611884180c67ab"
+    },
+    "training_source:scripts/build_independent_expanded_v2_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/build_independent_expanded_v2_spark.sh",
+      "sha256": "4429d2f641a742550f79bd9e21e71ed1566d8270c721ae31f7993ea67f891528"
+    },
+    "training_source:scripts/build_low_action_phase94_decision.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/build_low_action_phase94_decision.py",
+      "sha256": "8b3d51c653203212d575aa52e36d54269aa6b43a4d4ff9d8c6fadacec5113137"
+    },
+    "training_source:scripts/build_stage_c_phase_baselines.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/build_stage_c_phase_baselines.py",
+      "sha256": "d31da60ab8017dd608532914aa7bc77604e39e4d9ba1c9286e1dd5629d96eb44"
+    },
+    "training_source:scripts/build_tandem_visual_report.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/build_tandem_visual_report.py",
+      "sha256": "5da655800f8dc8dab8d9909582b165fbe48dbf428b3825b8705466928bd4ea65"
+    },
+    "training_source:scripts/build_train20_paired_datapipe_manifest.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/build_train20_paired_datapipe_manifest.py",
+      "sha256": "9fbd35a72d7bb43db1b331767fcdc43507347902971205ebdde3394844a7da1b"
+    },
+    "training_source:scripts/calibrate_tandem_surrogate_uncertainty.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/calibrate_tandem_surrogate_uncertainty.py",
+      "sha256": "0a2d8ae798b1116a567678dc41f0ee6829ab6dc663b92af7bb1bfbfcda6d0941"
+    },
+    "training_source:scripts/check_dynamic6_qs1_coexistence.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/check_dynamic6_qs1_coexistence.py",
+      "sha256": "ac0816168d7a10533fe252d2759edbaccf37212508e5e614a4c203d256971060"
+    },
+    "training_source:scripts/compact_wsl_vhd.ps1": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/compact_wsl_vhd.ps1",
+      "sha256": "f539a91a91ea5ca2df1818284a1a7606e77bed91e0b1804565f0613e230e949d"
+    },
+    "training_source:scripts/compare_force_sources.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/compare_force_sources.py",
+      "sha256": "65b49cad5c8362f9bd46ace372be46a21a0a89507dbe0b15cc297f9319076eba"
+    },
+    "training_source:scripts/compare_rollout_evaluations.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/compare_rollout_evaluations.py",
+      "sha256": "5be8283ae11d0131a8b1ff4e843c315d57aae50c7bc1fcc5db018dc4596c4f58"
+    },
+    "training_source:scripts/control_tandem_cfd_feedback.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/control_tandem_cfd_feedback.py",
+      "sha256": "7ed5fe9defe2a0f127fdfa54edba4a8b862f47b6a6c2666074d52198f94c3c8b"
+    },
+    "training_source:scripts/control_tandem_mpc.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/control_tandem_mpc.py",
+      "sha256": "d8640be743dcb32113f508e81b0eabc3db92123989cd99b8809be99867e42d1d"
+    },
+    "training_source:scripts/curate_expanded_on_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/curate_expanded_on_spark.sh",
+      "sha256": "7ea0280318dff3afe8038e52502b9c3d4826d95d3ba0652e07fa2dee46a97b08"
+    },
+    "training_source:scripts/curate_low_action_phase94_validation.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/curate_low_action_phase94_validation.py",
+      "sha256": "39aeb6b3f1dd2ef22afbbc368c552b645308549072e2e49266ee3e7b3bb5140b"
+    },
+    "training_source:scripts/curate_matched_start_full40_remainder.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/curate_matched_start_full40_remainder.py",
+      "sha256": "31fdbf391b1465563e57bbf60c199272439203b5b4bcf8ff76cf5a0f385822c1"
+    },
+    "training_source:scripts/curate_phase_diverse_on_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/curate_phase_diverse_on_spark.sh",
+      "sha256": "bd81b76bf1d83185dc840d68a91c6fcb3096d7408dd5525262e57dbdcaa8e444"
+    },
+    "training_source:scripts/curate_tandem_cfd.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/curate_tandem_cfd.py",
+      "sha256": "d182c5c8093ca6a303aca34d3b4c0b4d40c55ed598f18b2d97d356f057a0926e"
+    },
+    "training_source:scripts/derive_d012_fcp003c_step_receipts.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/derive_d012_fcp003c_step_receipts.py",
+      "sha256": "2fd4dd1953d458c922ecf23a8c106c30fc4b9160fdbb47abd4b3944272ba3238"
+    },
+    "training_source:scripts/derive_d012_p003b_step_receipts.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/derive_d012_p003b_step_receipts.py",
+      "sha256": "2c202b15cbf6afaee23f2e43042e0ce700ff5bee39277d2ebec0a05b01699dd5"
+    },
+    "training_source:scripts/diagnose_fcp003c_fixed_feature_force_readout.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/diagnose_fcp003c_fixed_feature_force_readout.py",
+      "sha256": "d9bcc3e77eeb4da432a2341c7b2aab5413049dd813434d400f40a380a43a9426"
+    },
+    "training_source:scripts/diagnose_fcp003c_gradient_balance.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/diagnose_fcp003c_gradient_balance.py",
+      "sha256": "ec10b754dbf83e7cddbed36047a4d2042507d14e309e2c13a48f21e3bd983457"
+    },
+    "training_source:scripts/diagnose_fcp003c_phase_blocked_ridge.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/diagnose_fcp003c_phase_blocked_ridge.py",
+      "sha256": "fefd0657ee535e9ae3d36b47801898890ee7f2ccf4cb8ed3c6cc3560627075a3"
+    },
+    "training_source:scripts/diagnose_fcp003c_train_vs_validation_true_state_h1.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/diagnose_fcp003c_train_vs_validation_true_state_h1.py",
+      "sha256": "530bdf99a13454e7ee050d73ad55bd3c79a9417ece19c8f77496fe424c76f405"
+    },
+    "training_source:scripts/diagnose_fcp014_train_objective.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/diagnose_fcp014_train_objective.py",
+      "sha256": "849570afd814faeaa92af99b1cc26cf71182439aa5c4c42f76b9e3b90bb1c30d"
+    },
+    "training_source:scripts/diagnose_fno_force_window.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/diagnose_fno_force_window.py",
+      "sha256": "eee1f59fa269a22556048f3fde8fc7ecbc31bb913571e49075dead92618a8576"
+    },
+    "training_source:scripts/diagnose_p027_short_horizon_errors.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/diagnose_p027_short_horizon_errors.py",
+      "sha256": "f398c86f66cb2f30df9b1832b3081d851bac8fd0f9dad3a3d150cc9d25ce99d2"
+    },
+    "training_source:scripts/diagnose_tandem_gpus.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/diagnose_tandem_gpus.py",
+      "sha256": "e7698f051a9dfb5b83fc59ad61f0b4a73958e464f3008a3abdcfbd3bcd13a99a"
+    },
+    "training_source:scripts/diagnose_tandem_hydrogym_rollout.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/diagnose_tandem_hydrogym_rollout.py",
+      "sha256": "50cbb627964a2cdcfe91248612ee2113cf8264933cbeb479e16bae06721ee90c"
+    },
+    "training_source:scripts/diagnose_tandem_nccl.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/diagnose_tandem_nccl.py",
+      "sha256": "9f0bde24d7194e109782038b90045179c48fb74553ea5f4ad2a40c8b38417149"
+    },
+    "training_source:scripts/direct_cfd_openfoam_worker.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/direct_cfd_openfoam_worker.py",
+      "sha256": "0e4549bbc83a96a942c5f2543501b88a8aa20b8fac00d25b2ec52499f58b99a2"
+    },
+    "training_source:scripts/evaluate_control.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/evaluate_control.py",
+      "sha256": "6db7c7dc09984e605adf15f0775e05d0e78f51db18910f0b32d408ec186fc755"
+    },
+    "training_source:scripts/evaluate_direct_cfd_ppo_pair.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/evaluate_direct_cfd_ppo_pair.py",
+      "sha256": "394cf141431bf9429f1d6502ad9ec7c68c61f77fc4698195053b1ffaa6492f6f"
+    },
+    "training_source:scripts/evaluate_gate_b_aug_v3_onestep_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/evaluate_gate_b_aug_v3_onestep_spark.sh",
+      "sha256": "d7d6efbf702e747701f658cb56eb3bd1bf0d3751c79f36aaf8e2ff015b48e72f"
+    },
+    "training_source:scripts/evaluate_hydrogym_rotary_policies.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/evaluate_hydrogym_rotary_policies.py",
+      "sha256": "078de3fc8b405310e8511dd43f8f2b868e4134de89c6834038c8567c77984eed"
+    },
+    "training_source:scripts/evaluate_tandem_checkpoints_at_start.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/evaluate_tandem_checkpoints_at_start.py",
+      "sha256": "d1657b2fa14d4013e22e9d6817a172023d60f16d0ea847541888de3b040ddf14"
+    },
+    "training_source:scripts/evaluate_tandem_fno.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/evaluate_tandem_fno.py",
+      "sha256": "daef4a3a6eb1b9190f5cde728581b0c1b4b9656f56e865cf61a53deb1f37de88"
+    },
+    "training_source:scripts/evaluate_tandem_window_mean_cd.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/evaluate_tandem_window_mean_cd.py",
+      "sha256": "42c7450770c38ceeea6984e65aa1f628ea920433c6a71f791676d5cbc495cc13"
+    },
+    "training_source:scripts/export_expanded_tandem_vtk.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/export_expanded_tandem_vtk.sh",
+      "sha256": "a4c0fe7cd210424785f6fc6404402d5cf4e29e8bf0b5801ca0b3367236ea509d"
+    },
+    "training_source:scripts/export_tandem_prediction_vtk.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/export_tandem_prediction_vtk.py",
+      "sha256": "dd43372a9b0428c08378b293b7d95d0c8886daf9f1ed9e8aaede10192004e9cd"
+    },
+    "training_source:scripts/export_tandem_vtk.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/export_tandem_vtk.sh",
+      "sha256": "ffc30df38bfa0a68318af5f3e0fe8cc49c9c12052c2f15f2ee55497694fb224a"
+    },
+    "training_source:scripts/finalize_gate_b_aug_v3_worker_seed20261005.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/finalize_gate_b_aug_v3_worker_seed20261005.sh",
+      "sha256": "53d4fd74e160d098b6e4ee2de531e1576befa286a5928e9be331a98ea00d69ef"
+    },
+    "training_source:scripts/finalize_low_action_phase94_curated.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/finalize_low_action_phase94_curated.py",
+      "sha256": "45c8973c050680a8d1c33547274da7ef4bceb758467eb72c036f62883de162eb"
+    },
+    "training_source:scripts/finalize_matched_start_commissioning.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/finalize_matched_start_commissioning.py",
+      "sha256": "0bb88634474ab2cbf0c09a1733bc7c076e025003824452aadd5799701bcf7056"
+    },
+    "training_source:scripts/finalize_matched_start_full40.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/finalize_matched_start_full40.py",
+      "sha256": "42e7551426246772e358089e673468fdfab743945bc5fa87e2cf320542dd3504"
+    },
+    "training_source:scripts/finalize_matched_start_full40_dev30.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/finalize_matched_start_full40_dev30.py",
+      "sha256": "29510666e57d3838cf41930dac87032c14546636590a10cdec5a8cb37bc16143"
+    },
+    "training_source:scripts/finalize_tandem_multistep_worker.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/finalize_tandem_multistep_worker.sh",
+      "sha256": "d68a1acb0260bce2981c2360d765669ea2b41bccb720717cd51580d7c3efb872"
+    },
+    "training_source:scripts/finalize_tandem_rear_drag_primary.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/finalize_tandem_rear_drag_primary.sh",
+      "sha256": "670d7d51b46702ce764ff5539ef4eca7728b3920197827d06d45750940a1f826"
+    },
+    "training_source:scripts/fno_spatial_diagnostics.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/fno_spatial_diagnostics.py",
+      "sha256": "e8e0dbf7ba449d576554ce669a9ab298d84c616efdb722975d6a01475083d67f"
+    },
+    "training_source:scripts/generate_dataset.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/generate_dataset.py",
+      "sha256": "cf27ca69e11993b25a4ebf5e55ea9bde4b216e77663b12f8431e37caaf01b933"
+    },
+    "training_source:scripts/infer_full40_canonical_ppo_action.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/infer_full40_canonical_ppo_action.py",
+      "sha256": "ecb18fb7c7bd8954dc6127401a3466ab87f509e9829c35df48fa03931634c970"
+    },
+    "training_source:scripts/infer_tandem_ppo_action.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/infer_tandem_ppo_action.py",
+      "sha256": "37518bc5dfff31ae8c28059e3c93c4b075f1e1289d3476c0d97b3838b0b84aee"
+    },
+    "training_source:scripts/inspect_fcp003b_checkpoint_metadata.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/inspect_fcp003b_checkpoint_metadata.py",
+      "sha256": "6eb31b7da9112330a8f42e95ff1cf16c90d8adb0401ccc37a2df4d1ed7cbdb62"
+    },
+    "training_source:scripts/inspect_public_data.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/inspect_public_data.py",
+      "sha256": "376bb4bbdecbbba94645732666615b06d5d763b416bba50f6fe288acbebe2bc8"
+    },
+    "training_source:scripts/inspect_tandem_model.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/inspect_tandem_model.py",
+      "sha256": "824a99fecc8acebca84254d3e321c4f620c755a589c1df455cc713721cc8ade5"
+    },
+    "training_source:scripts/monitor_research_window.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/monitor_research_window.py",
+      "sha256": "eef74b419f8a66125447260002f0766a038ded9ce8c6b87832d40b6beb986e7f"
+    },
+    "training_source:scripts/orchestrate_matched_start_curator.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/orchestrate_matched_start_curator.py",
+      "sha256": "bf300447b28642526582a51624776e4f0908bd8a5cb2ce857d7fdb51e9ee1faf"
+    },
+    "training_source:scripts/p026_history_inference.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/p026_history_inference.py",
+      "sha256": "fd568f6457b980046a0419be96562291e9f96736270d45f20dd2adb2ffc5878c"
+    },
+    "training_source:scripts/p026_history_objective.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/p026_history_objective.py",
+      "sha256": "4d27fb53e05df73ba94d84bf42ba8205d78ebe6f91de832a68659870ea7d77c0"
+    },
+    "training_source:scripts/p026_state_history.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/p026_state_history.py",
+      "sha256": "2b5b37dc79211bb5c4985a1d44d25262080f503011766206c536938f49a6b64c"
+    },
+    "training_source:scripts/p028_flow_h10_objective.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/p028_flow_h10_objective.py",
+      "sha256": "28a9a462f72a7ed5965fc97d22de47ef7fd12740edd66c3f505e822eb1ffd41a"
+    },
+    "training_source:scripts/p029_control_aware_flow_objective.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/p029_control_aware_flow_objective.py",
+      "sha256": "e34721dbf4e6d921394800edcc2df451884a43ce9f3d2d36bc5ec3ded7851b23"
+    },
+    "training_source:scripts/package_tandem_cfd_vtk.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/package_tandem_cfd_vtk.py",
+      "sha256": "1cdd77bd4ceada16158063b9cd1c20ddb81848a45b2ae5d5436a2360cfab01ff"
+    },
+    "training_source:scripts/plan_full40_dev30_fno_retrain.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/plan_full40_dev30_fno_retrain.py",
+      "sha256": "6b67de517b91afbd0a6d79508dde3e32fae2c1f843ba6a3bd1fdf2ffebdab2e4"
+    },
+    "training_source:scripts/plan_full40_fno_retrain.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/plan_full40_fno_retrain.py",
+      "sha256": "324b92ee289b1242b4d27b7bf99c320b34f92594490bf575a1695b789c42ddf6"
+    },
+    "training_source:scripts/plan_matched_start_full40_curator.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/plan_matched_start_full40_curator.py",
+      "sha256": "bf1c43026f13356f95241befe2d0f0d879b0b09ab82b4c855f2ea465c83fb05f"
+    },
+    "training_source:scripts/plot_direct_cfd_ppo_pair.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/plot_direct_cfd_ppo_pair.py",
+      "sha256": "76f481b303407956e01269d20da3216449caa6516b0ca727262396fc0def56d9"
+    },
+    "training_source:scripts/plot_public_piv.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/plot_public_piv.py",
+      "sha256": "16a7d38c71f59473c211fa8b6850a6e9a29b8e38e0cc33f7f07ab567f794cd9a"
+    },
+    "training_source:scripts/plot_tandem_training_history.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/plot_tandem_training_history.py",
+      "sha256": "5a13d27d8a6292c68c66612e070a7e7eb899b7257d0fce2c823af887335974e3"
+    },
+    "training_source:scripts/preflight_fcp003c_train_fit_calibration.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/preflight_fcp003c_train_fit_calibration.py",
+      "sha256": "e45b68810382d56b3126193d8ff159f4cca613649ab40a47a8b1e3a1708f753e"
+    },
+    "training_source:scripts/prepare_matched_start_full40_vtk.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/prepare_matched_start_full40_vtk.py",
+      "sha256": "a2f5718b0ca15106ebecd8eeabcca9d2334a9c39a0fe2c029698aefa1a3bd8bb"
+    },
+    "training_source:scripts/prepare_piv.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/prepare_piv.py",
+      "sha256": "112a746ddc33ac70efbefc9f0fee76b8ea2668faebe23f2cfe911622870f0462"
+    },
+    "training_source:scripts/probe_directppo_train16_datapipe.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/probe_directppo_train16_datapipe.py",
+      "sha256": "125d63b60296965a5fdfba09482509c55e29d105aeecaa0546104ec1b6596a6c"
+    },
+    "training_source:scripts/probe_fc_p003_dynamic_pair_datapipe.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/probe_fc_p003_dynamic_pair_datapipe.py",
+      "sha256": "58437db07ea8a6527286e2bc5c47d9a0cc185c81606e0f6c09f604a80ebffa5f"
+    },
+    "training_source:scripts/probe_fcp003c_mixed_loss.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/probe_fcp003c_mixed_loss.py",
+      "sha256": "887b3610b17ff77bfae7045d1b649923678dfdbaa3ae4f54aa2ad73dd1b5b4e2"
+    },
+    "training_source:scripts/probe_fcp019_gradient_alignment.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/probe_fcp019_gradient_alignment.py",
+      "sha256": "03e0ba375bf131bcc30bbe0d96c8b44bcc5c18ef1ed99de5d9e563e1b6525a64"
+    },
+    "training_source:scripts/probe_fcp020_symmetric_statistics.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/probe_fcp020_symmetric_statistics.py",
+      "sha256": "139dee2c3dcd4ee97de78a7a0e343ca9ab9d9708a1cafab447f0d9e4988b5d8c"
+    },
+    "training_source:scripts/probe_fcp026_history_resource.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/probe_fcp026_history_resource.py",
+      "sha256": "b806ded8258c787807e67ccb42b5166dbd06e36fc40eba5025d9bda0769eedc6"
+    },
+    "training_source:scripts/probe_paired_stat_parent.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/probe_paired_stat_parent.py",
+      "sha256": "e77764def4b33610d3d816cc8bf26bbbc945a13cfa9ee32e02bab772631ad61c"
+    },
+    "training_source:scripts/probe_train20_paired_datapipe.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/probe_train20_paired_datapipe.py",
+      "sha256": "ba37529154f7b810eabfefe6aa945d41322ff5ba3f5c9b24ba35dc88b5172391"
+    },
+    "training_source:scripts/probe_true_state_paired_force_backward.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/probe_true_state_paired_force_backward.py",
+      "sha256": "d9552f7f96b3c4d73109fcf81c9557c7aaf23492c863f2fbcc9e89b4e2f28331"
+    },
+    "training_source:scripts/process_expanded_chunk.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/process_expanded_chunk.sh",
+      "sha256": "597cbb8c3f63976364164c9297e3ce43400da97f37dac3ac6c4e40092be12305"
+    },
+    "training_source:scripts/produce_canonical_surrogate_compatibility_gates.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/produce_canonical_surrogate_compatibility_gates.py",
+      "sha256": "133252718a9a53def359cde299d01f9f5c2bdd92cb8afdcc8d439c9a0eabb912"
+    },
+    "training_source:scripts/reclaim_completed_cfd_cache.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/reclaim_completed_cfd_cache.py",
+      "sha256": "b23e247b0939320d15b1454b37aaca03ab22b3f262a2df6eab381d221263b21b"
+    },
+    "training_source:scripts/reconcile_training_evaluation_state.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/reconcile_training_evaluation_state.py",
+      "sha256": "e2e781373d70b29f53c0f94c3d1e7963907795162b9a1e127751c09faf29e0c2"
+    },
+    "training_source:scripts/record_environment.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/record_environment.py",
+      "sha256": "3758de22c7eb7d5332907780ff086c9d50432925f744fe06a2dfbb2441f1905c"
+    },
+    "training_source:scripts/resume_dynamic_train8_h50_posteval.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/resume_dynamic_train8_h50_posteval.sh",
+      "sha256": "f676d9cbe6506c6a392ffc371c1ab50c4b00be9717bf56da9436ca418c7fd446"
+    },
+    "training_source:scripts/run_b00_actions_b01_openloop.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_b00_actions_b01_openloop.py",
+      "sha256": "c71e82f0d4ae3765b6339bbe4de56de86d96c4a2eea483f9d9f52dc2f6852360"
+    },
+    "training_source:scripts/run_candidate_full40_canonical_ppo.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_candidate_full40_canonical_ppo.py",
+      "sha256": "0b06661b2e8a0082bfb5088da12cffebc7ed756d20621a842a54339518e45f57"
+    },
+    "training_source:scripts/run_candidate_full40_canonical_ppo_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_candidate_full40_canonical_ppo_spark.sh",
+      "sha256": "fc2e71bd0c5fe5a5a6cf45567656a99120c65a5af8ceabdf9aa474cb71dbd879"
+    },
+    "training_source:scripts/run_control_gap_v4_h20_development_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_control_gap_v4_h20_development_spark.sh",
+      "sha256": "a0fcf87638a2209bee60858a53fec86c1d2a7532e5e76d4636c04b8773e54544"
+    },
+    "training_source:scripts/run_control_gap_v4_validation_only_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_control_gap_v4_validation_only_spark.sh",
+      "sha256": "67301426b366f7c03c2b3f41d6ef07b7a76b307c88062094e3d0a77954be799a"
+    },
+    "training_source:scripts/run_control_train16_posteval_queue_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_control_train16_posteval_queue_spark.sh",
+      "sha256": "a80aabb74b783e791cbbe33ea02146643b6395574e3817e8a8be842afcddecea"
+    },
+    "training_source:scripts/run_control_train16_posteval_resume_78d827f_immutable.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_control_train16_posteval_resume_78d827f_immutable.sh",
+      "sha256": "e371a3bdaad13b2cd787e6911eca387705113ba36f51ef6ef1d316c282300993"
+    },
+    "training_source:scripts/run_curated_validation_stage.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_curated_validation_stage.sh",
+      "sha256": "a91f48e4a376e87d779bb046ef50cbd1c28aa68bf8765f1dcd7acd1f3d4f2b15"
+    },
+    "training_source:scripts/run_direct_cfd_ppo.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_direct_cfd_ppo.py",
+      "sha256": "89dd26a94f32dc35ed8c5465074dfdff8e0c611a8607bd59d2b8d8905e8feeda"
+    },
+    "training_source:scripts/run_direct_cfd_ppo_evaluation.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_direct_cfd_ppo_evaluation.py",
+      "sha256": "b396d6a01d5adbda6894f512de95ca85609d589718490131b0b57bbc52b43102"
+    },
+    "training_source:scripts/run_dynamic_fno_formal_validation_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_dynamic_fno_formal_validation_spark.sh",
+      "sha256": "d0a330fe833641784c44a8b9c0003e963bf237f8f645439431877ae811794703"
+    },
+    "training_source:scripts/run_dynamic_train8_fno_finetune_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_dynamic_train8_fno_finetune_spark.sh",
+      "sha256": "21f7ceb5b5e784140a9431c9570dfa3f2565519e2e6843b530588b04dc85128e"
+    },
+    "training_source:scripts/run_expanded_curator.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_expanded_curator.sh",
+      "sha256": "f89ac8ea783ad3b739237ee4e067744f8b8d5c3f06daa23e3a0bd41c17b3dde5"
+    },
+    "training_source:scripts/run_expanded_remaining.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_expanded_remaining.sh",
+      "sha256": "5b794a294a1e00dad6d7812f60fd5371a584594b48bcc4eb2b891cc960a0a1a9"
+    },
+    "training_source:scripts/run_expanded_training_pipeline.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_expanded_training_pipeline.sh",
+      "sha256": "877d6f50897d4354dfe328498d8de781a4c7ecdeb6cc601baff69ed18bf10252"
+    },
+    "training_source:scripts/run_fcp003b_dynamic_pairs_worker.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp003b_dynamic_pairs_worker.sh",
+      "sha256": "daa1c5dd0aaf72ead2f887a26582ad013fc6dbf15a05a273b706679ee475c445"
+    },
+    "training_source:scripts/run_fcp003b_posteval_resume_v1.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp003b_posteval_resume_v1.sh",
+      "sha256": "ffa5fbaad8877736f6076df09910d489e90ab35b842b056403a8a35c379a1978"
+    },
+    "training_source:scripts/run_fcp003b_posteval_worker_a34d843_immutable.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp003b_posteval_worker_a34d843_immutable.sh",
+      "sha256": "0bb8baf011ad4b955bdb2e46d7aafaefee14d5764b78aba84119fbc8e92fd856"
+    },
+    "training_source:scripts/run_fcp003c_first_position_debug_worker_20261005.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp003c_first_position_debug_worker_20261005.sh",
+      "sha256": "d5cffd381c9c54d0fa3fe2f0ee57ef795c9ad24c1ca30af863e5bd6d418f0b55"
+    },
+    "training_source:scripts/run_fcp003c_fixed_feature_force_readout_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp003c_fixed_feature_force_readout_spark.sh",
+      "sha256": "56d4c5ba4f2aec193c677384fd0dd340486358d3925fd7eb1a669e4517211bd3"
+    },
+    "training_source:scripts/run_fcp003c_fixed_feature_force_readout_v2_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp003c_fixed_feature_force_readout_v2_spark.sh",
+      "sha256": "df6d6a42b021480ba311aea8f0ab90c96830c5d7fee64e9ffb6195a3110c541b"
+    },
+    "training_source:scripts/run_fcp003c_gradient_diagnostic_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp003c_gradient_diagnostic_spark.sh",
+      "sha256": "8c63072e526f0e4072bdc3cc06caaac813b23b26b4956f60c303344ac87617c3"
+    },
+    "training_source:scripts/run_fcp003c_gradient_diagnostic_worker_20261005.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp003c_gradient_diagnostic_worker_20261005.sh",
+      "sha256": "8c63072e526f0e4072bdc3cc06caaac813b23b26b4956f60c303344ac87617c3"
+    },
+    "training_source:scripts/run_fcp003c_mixed_loss_probe_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp003c_mixed_loss_probe_spark.sh",
+      "sha256": "767ae9061b012d7e65c04e9d2c804753dc0779f62762ccd6093505598ce84f5e"
+    },
+    "training_source:scripts/run_fcp003c_posteval_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp003c_posteval_spark.sh",
+      "sha256": "da89c2b2b980e77f8b73b9af28920e7184a8eb44d611f84b25b6d65fcf543915"
+    },
+    "training_source:scripts/run_fcp003c_train_fit_absolute_calibration_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp003c_train_fit_absolute_calibration_spark.sh",
+      "sha256": "a2bd69d367eef8bfc97ff5feba54531aa2f8b9e35d137c70fd85a0a7bbe40523"
+    },
+    "training_source:scripts/run_fcp003c_train_fit_calibration.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp003c_train_fit_calibration.py",
+      "sha256": "069ce14157d2bee9b7b3adc9f47125c47247fe0bcd280ef51cf3167da4b3b421"
+    },
+    "training_source:scripts/run_fcp003c_train_fit_calibration_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp003c_train_fit_calibration_spark.sh",
+      "sha256": "fc81504d55b60d7ff6a73ec1e1d7d22a5bb25119212863af34d180104e843bf9"
+    },
+    "training_source:scripts/run_fcp003c_training_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp003c_training_spark.sh",
+      "sha256": "bb3792b4f5ef6b53b8b0721e8d802280ec7eb0e16e07894fd57802142ce59453"
+    },
+    "training_source:scripts/run_fcp008_force_readout_candidate_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fcp008_force_readout_candidate_spark.sh",
+      "sha256": "2964491398be23c9f4b28ba32515a952f4661d35a2d09f806400bb3dde80ba15"
+    },
+    "training_source:scripts/run_fno_control_train16_lift_balanced_worker.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fno_control_train16_lift_balanced_worker.sh",
+      "sha256": "ce2b9a071c4b969cd8fb8a630971b523f48827603dc8c27db04605b18b69793f"
+    },
+    "training_source:scripts/run_fno_control_train16_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fno_control_train16_spark.sh",
+      "sha256": "25ad38b870fbfc1256081bedf4a6d25ffa20e9496b15a371f734d2f3405c79b6"
+    },
+    "training_source:scripts/run_fno_force_window_after_training.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fno_force_window_after_training.sh",
+      "sha256": "609b827293eb903d80bac0039bc9a0d6f10c966060e5ec40b4f05b98504a260c"
+    },
+    "training_source:scripts/run_fno_interleaved_posteval_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fno_interleaved_posteval_spark.sh",
+      "sha256": "e5878a76120fd11a56e9b234878562ae64652cce54f8a827b346a4b27414aa6e"
+    },
+    "training_source:scripts/run_fno_interleaved_posteval_spark_v2_immutable.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fno_interleaved_posteval_spark_v2_immutable.sh",
+      "sha256": "a63a993515a714fc84abc60954847fb8139e7f9b8d0a89e1ae7606d1003237dc"
+    },
+    "training_source:scripts/run_fno_interleaved_posteval_spark_v3_immutable.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fno_interleaved_posteval_spark_v3_immutable.sh",
+      "sha256": "e5878a76120fd11a56e9b234878562ae64652cce54f8a827b346a4b27414aa6e"
+    },
+    "training_source:scripts/run_fno_paired_stats_controlled.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fno_paired_stats_controlled.sh",
+      "sha256": "284d3cebb262d62faa6562642df8388c9bb574bdbe7ab9fed7f96ceb70fbb150"
+    },
+    "training_source:scripts/run_fno_paired_stats_interleaved.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_fno_paired_stats_interleaved.sh",
+      "sha256": "cb03e14a4aa15a9dcdd3f5dcfb78abcc709d446aad51741f21c023b8e5b958c9"
+    },
+    "training_source:scripts/run_full40_canonical_ppo_openfoam_feedback.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_full40_canonical_ppo_openfoam_feedback.py",
+      "sha256": "b21bda951c0b6918d9073c3fe5784e296126af3d60f96d518db2026c6df338da"
+    },
+    "training_source:scripts/run_full40_canonical_ppo_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_full40_canonical_ppo_spark.sh",
+      "sha256": "106c135ae0e3d71f14ce840f36e404f8ebe9925b2b972cb7431b43c9b35fe76c"
+    },
+    "training_source:scripts/run_full40_curator_batch_spark.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_full40_curator_batch_spark.py",
+      "sha256": "121c864b1377d74f5d421e118a8d9cebf4230f939704e418868c9d4fd362b17a"
+    },
+    "training_source:scripts/run_full40_dev30_fno_retrain_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_full40_dev30_fno_retrain_spark.sh",
+      "sha256": "e4ee793117bfeebb9382bff4a37ec86b0db8e5a180c7b0c00c23460dc7a823ed"
+    },
+    "training_source:scripts/run_full40_dev30_quickscreen_pipeline_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_full40_dev30_quickscreen_pipeline_spark.sh",
+      "sha256": "fb1275fb46c99cd1c85aa3f4348a0959e3933e3af2acfaa734b2c5e676a8cdaa"
+    },
+    "training_source:scripts/run_full40_dev30_quickscreen_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_full40_dev30_quickscreen_spark.sh",
+      "sha256": "612d0addd7f9a36118ae4d49eaa501dcd059b50398e7fbb80101561b71ab17a1"
+    },
+    "training_source:scripts/run_full40_dev30_validation_diagnostic_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_full40_dev30_validation_diagnostic_spark.sh",
+      "sha256": "60915621522e68192a37cc2f29f9881e609a6f7c05c027333409d4de05bb28e4"
+    },
+    "training_source:scripts/run_full40_dynamic6_serial_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_full40_dynamic6_serial_spark.sh",
+      "sha256": "12c5aa78b90e3ec039c834c59502d56813646c88595968dc11fa9c072b22d2a0"
+    },
+    "training_source:scripts/run_full40_fno_retrain_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_full40_fno_retrain_spark.sh",
+      "sha256": "8c71212e4de446e5df88d52961a5a897730d0afef48aeba28c1ccc70e6a38a62"
+    },
+    "training_source:scripts/run_full40_free_ar.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_full40_free_ar.sh",
+      "sha256": "97ca11843d74aa784ca9e814f5e15bffb1fb5b06d1dda1b992fb7976ad9c58fd"
+    },
+    "training_source:scripts/run_full40_validation_only_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_full40_validation_only_spark.sh",
+      "sha256": "599c4ff4dc0fb431aaa9fd4af2d36caea8112c70d70b536ebfa4ba8bbb61ca53"
+    },
+    "training_source:scripts/run_gate_b_aug_v3_onestep_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_gate_b_aug_v3_onestep_spark.sh",
+      "sha256": "82fc105e06e329cd5d4e837c0607ff9d157a94306a2bcd30019f98d65a0e9b33"
+    },
+    "training_source:scripts/run_hydrogym_rotary_policy_audit.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_hydrogym_rotary_policy_audit.sh",
+      "sha256": "be70224c9c677ff855066eca28dd72e45871beb005ec96a4b3a468a3383d3c16"
+    },
+    "training_source:scripts/run_hydrogym_rotary_ppo_smoke.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_hydrogym_rotary_ppo_smoke.sh",
+      "sha256": "90c7eb3ef005608f570d86040d573e9a0857eb777e4b4edd7a4a0e4f65248c56"
+    },
+    "training_source:scripts/run_hydrogym_rotary_smoke.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_hydrogym_rotary_smoke.sh",
+      "sha256": "d5201278983c8f2efbe0fbdd11d6b226bef7804825526109d7c94f454c362a71"
+    },
+    "training_source:scripts/run_hydrogym_rotary_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_hydrogym_rotary_spark.sh",
+      "sha256": "65b751cc7a73b7a428fbd93ec0573766616004471dce34091cf00718a7cc7b01"
+    },
+    "training_source:scripts/run_low_action_phase94_validation_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_low_action_phase94_validation_spark.sh",
+      "sha256": "c451151afd020b046078d5597a087968389b323fb36b5341ea01e7612dc88821"
+    },
+    "training_source:scripts/run_no_tf_ablation_pipeline.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_no_tf_ablation_pipeline.sh",
+      "sha256": "ccebd04d7616ee073ac22ef07f4d9ea8440a8fa800687a142757a225739f0d60"
+    },
+    "training_source:scripts/run_paired_fno_posteval_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_paired_fno_posteval_spark.sh",
+      "sha256": "23d5234aae7438e8c235b395b282429c54c5e9ba6de0ecee910e9bf61bd3e196"
+    },
+    "training_source:scripts/run_tandem_action_error_bins.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_action_error_bins.sh",
+      "sha256": "61ab2dad6e43c9738ebf77526853ebe95c2a16d3387f26288818b6ad868d60bf"
+    },
+    "training_source:scripts/run_tandem_action_sensitivity.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_action_sensitivity.sh",
+      "sha256": "906d54a98ea23a4574f44673fa590c3f7f5b4549880c48d45e847b76e88cead4"
+    },
+    "training_source:scripts/run_tandem_cem_stage_c_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_cem_stage_c_spark.sh",
+      "sha256": "0ac7835d4b7feda842c6718b1a5ad856681484bb58ebfdeeebd6144306cf2216"
+    },
+    "training_source:scripts/run_tandem_cfd_feedback.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_cfd_feedback.sh",
+      "sha256": "eb78c3cc0cbafc9d8a3a1bb31e393fc55df9edcd9976c48c5e7d1fddbd5c71af"
+    },
+    "training_source:scripts/run_tandem_fno_20epoch_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_fno_20epoch_spark.sh",
+      "sha256": "e381d5213d87ff5f25624226bc4967c22201c9217f5cc1d31b31508b6c00984f"
+    },
+    "training_source:scripts/run_tandem_fno_eval_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_fno_eval_spark.sh",
+      "sha256": "8242683d578aa56ebcfee2b0c37a095eaab3a2abd1afb3a2d9df459ca4793d34"
+    },
+    "training_source:scripts/run_tandem_fno_expanded.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_fno_expanded.sh",
+      "sha256": "8a522c7c8e0ad905861de7941d93895ab4566f08c3e49a02853c7f3698286fe9"
+    },
+    "training_source:scripts/run_tandem_fno_h20_resource_benchmark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_fno_h20_resource_benchmark.sh",
+      "sha256": "0cf74892c09be314c56c29545e090497db249e7d2ccdf56adcec9aa99273e236"
+    },
+    "training_source:scripts/run_tandem_fno_inference_benchmark_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_fno_inference_benchmark_spark.sh",
+      "sha256": "aff1f06e030608891d793fda8ee39353cc4bae1428cf616b849688ac461a5890"
+    },
+    "training_source:scripts/run_tandem_fno_pipeline_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_fno_pipeline_spark.sh",
+      "sha256": "adce34f627b638d7bb6051cd61eccfdf3ee49222c08a2535a6cf9e9e138fdbda"
+    },
+    "training_source:scripts/run_tandem_fno_rollout.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_fno_rollout.sh",
+      "sha256": "885a047b3401a638a491493167e140cf8e796b5baaa2bcc055393a8de6ce5cae"
+    },
+    "training_source:scripts/run_tandem_fno_rollout_expanded.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_fno_rollout_expanded.sh",
+      "sha256": "9b17059bcfb1f7a18f49cdb618833705317d6eb3fa2ecde5643cf8e87789a234"
+    },
+    "training_source:scripts/run_tandem_fno_smoke.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_fno_smoke.sh",
+      "sha256": "2f7156acb8477112e11fff5aaa95b2c4b49bac0d54f72d297f3d4f5acf674ee3"
+    },
+    "training_source:scripts/run_tandem_fno_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_fno_spark.sh",
+      "sha256": "9b6da6814a9259199582c7b8eed2bb69b48f29c3420270491d8dafa634872bb9"
+    },
+    "training_source:scripts/run_tandem_fno_total_drag_eval_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_fno_total_drag_eval_spark.sh",
+      "sha256": "011dda1d2b8405c854ec6805b5ae7568222b76067e516aed2eb87f254b049b3e"
+    },
+    "training_source:scripts/run_tandem_fno_total_drag_rollout_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_fno_total_drag_rollout_spark.sh",
+      "sha256": "b1057b6973bb3ec0947d3ec7d1aed9d456c22199ce1d3d101f2949e706e155b9"
+    },
+    "training_source:scripts/run_tandem_fno_total_drag_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_fno_total_drag_spark.sh",
+      "sha256": "285a4dc99ed95bcfe2c1ce4b2164fbb0f4c636932e40d352edd1c1a78321976a"
+    },
+    "training_source:scripts/run_tandem_fno_train.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_fno_train.sh",
+      "sha256": "ff78d0fdfba9fd8ebddaf56e8eda4a01e3abf0563740295ff1c2d787dd99d8b6"
+    },
+    "training_source:scripts/run_tandem_hydrogym_parity_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_hydrogym_parity_spark.sh",
+      "sha256": "946875210b48cd5e882dd45087d1fe69a5dd79684ba74a8ba84bc9c4f78f772e"
+    },
+    "training_source:scripts/run_tandem_hydrogym_ppo_pilot_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_hydrogym_ppo_pilot_spark.sh",
+      "sha256": "0d61ea5344699a869682d837be3d58d644e412bd45de25d95bfd8d456fb8eb6b"
+    },
+    "training_source:scripts/run_tandem_hydrogym_ppo_smoke_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_hydrogym_ppo_smoke_spark.sh",
+      "sha256": "50a41b7172211fef6c0e08c5aac738982539db2f43066d8342b1a6b47bc009fa"
+    },
+    "training_source:scripts/run_tandem_hydrogym_ppo_t80_targeted_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_hydrogym_ppo_t80_targeted_spark.sh",
+      "sha256": "481ccd49b862161c6f5f985b1f2797bee68ea11fdc33ac0f282e68fc9c5dedd7"
+    },
+    "training_source:scripts/run_tandem_mpc.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_mpc.sh",
+      "sha256": "05eb863af1534ef550cd5f4aecdf9bfd627e80c4d7a3ce25df42b1cca2b4e4fc"
+    },
+    "training_source:scripts/run_tandem_phase_feedback_pair.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_phase_feedback_pair.py",
+      "sha256": "866b4dce33c7401eb447e897641d734828e04b10b38ccde8a0b724e8b5e65d3d"
+    },
+    "training_source:scripts/run_tandem_postfno_pilot_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_postfno_pilot_spark.sh",
+      "sha256": "ce312b90a9cf01d20fd663d87f18306d7dc78710fb722048dbadd1f0fe0180f5"
+    },
+    "training_source:scripts/run_tandem_ppo_cfd_feedback.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_ppo_cfd_feedback.py",
+      "sha256": "b70ef69e9ad3959b397c53481a4caf9040a13abb4de0cb16e3b7a877262cc481"
+    },
+    "training_source:scripts/run_tandem_probe_feedback_schedule.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_probe_feedback_schedule.py",
+      "sha256": "a039775a0c38594cff04816841009502d8ce7b20f111f06ed6bf5dfe8f720456"
+    },
+    "training_source:scripts/run_tandem_probe_feedback_zero.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_probe_feedback_zero.py",
+      "sha256": "e58bdbc30e88f11e5f0a8ecda37b6bca56f4c95b3370a2573a7f38a4e7b60976"
+    },
+    "training_source:scripts/run_tandem_uncertainty_calibration.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_uncertainty_calibration.sh",
+      "sha256": "42baafa25d24b5ff2bce04a44b6a86f4726b472bdb5fe5644b0bbb76db25b00e"
+    },
+    "training_source:scripts/run_tandem_window_mean_cd_v4_validation_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_tandem_window_mean_cd_v4_validation_spark.sh",
+      "sha256": "1bc3f6fd763dbfc20672515e083e3b774c3dcf26a083bdd39adc4f167db57153"
+    },
+    "training_source:scripts/run_true_state_paired_force_backward_probe_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/run_true_state_paired_force_backward_probe_spark.sh",
+      "sha256": "d38029a2b08f7a5dec77036a7c15dd78a9bcde1124ecdbac6e8fc8a10df3d264"
+    },
+    "training_source:scripts/sample_tandem_vtk_frame.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/sample_tandem_vtk_frame.py",
+      "sha256": "bbd04828a4de3c9f54b1c2deb8227c4e8616173ee945d905fed41d905af9cfa6"
+    },
+    "training_source:scripts/schedule_matched_start_full40_extension.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/schedule_matched_start_full40_extension.py",
+      "sha256": "4ad48b2ff21627d1ac58e0c84b6893e924be2a0a91cac9ca0ceee74481f7825c"
+    },
+    "training_source:scripts/schedule_matched_start_worker.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/schedule_matched_start_worker.py",
+      "sha256": "9ea92d726c12eae3ec9e296c763ad1f98587f33fafed617c7361f421fe1ee033"
+    },
+    "training_source:scripts/screen_tandem_cem_mpc.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/screen_tandem_cem_mpc.py",
+      "sha256": "3af0b0c4d6f3eea906b287b2e942b3a1623dcc8b3082fe68c7bf098baf49e494"
+    },
+    "training_source:scripts/serve_live_research_dashboard.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/serve_live_research_dashboard.py",
+      "sha256": "88efbf9b7c4c068b928406919c7018e59abef55ab155ac53c6175356f1ce3263"
+    },
+    "training_source:scripts/serve_tandem_training_dashboard.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/serve_tandem_training_dashboard.py",
+      "sha256": "bd2e2b977d6fe09f26bf2faf224696debd869a23f361ea30e74b94dbc2d8f4e8"
+    },
+    "training_source:scripts/setup_hydrogym_firedrake.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/setup_hydrogym_firedrake.sh",
+      "sha256": "ec5d2f110b2573afa657d64319bc8ce9643fa4fe53b09c2c01737f57ce52a2a6"
+    },
+    "training_source:scripts/setup_physicsnemo_hydrogym_spark.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/setup_physicsnemo_hydrogym_spark.sh",
+      "sha256": "489a7f61575173e2305712c59082f0110f1f1880967e7669ccc9fa06c7e89fa1"
+    },
+    "training_source:scripts/spark_gpu_guard.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/spark_gpu_guard.py",
+      "sha256": "75d14e5fd926f797f3c3ee8b913d07e9d22c7c365344b6de722edb3b40d39195"
+    },
+    "training_source:scripts/spark_ppo_gpu_guard.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/spark_ppo_gpu_guard.py",
+      "sha256": "3da61590dedb4ea95c02f83b15d79a935d20ad98a24453e47e1514c38868abec"
+    },
+    "training_source:scripts/start_wsl_docker.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/start_wsl_docker.sh",
+      "sha256": "db0212ad428ac9a636824dddbb84c0c095bfc78422d57e3ebd0ebffa9359b883"
+    },
+    "training_source:scripts/summarize_fc_p002_phase_action_horizon.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/summarize_fc_p002_phase_action_horizon.py",
+      "sha256": "8f97b97c727a5da6d7e4c9ee063e59aa8bd54a4f82d7b5b53ce2128ef783e7bb"
+    },
+    "training_source:scripts/summarize_full40_train20_physics.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/summarize_full40_train20_physics.py",
+      "sha256": "f504488f9ae21bc8cde1c1ced46aee4de532fda201fbddc334152a7dd38d99bf"
+    },
+    "training_source:scripts/summarize_full40_train_increment_physics.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/summarize_full40_train_increment_physics.py",
+      "sha256": "a50fc1435ff9be2384e5aa3260644cfa155066ca4a373945a6a73e411215afb9"
+    },
+    "training_source:scripts/summarize_matched_start_commissioning_physics.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/summarize_matched_start_commissioning_physics.py",
+      "sha256": "05a438d91c0e46e28613985d26681ca54f1da6819656ad779263e22c02524f5b"
+    },
+    "training_source:scripts/summarize_tandem_action_error_bins.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/summarize_tandem_action_error_bins.py",
+      "sha256": "3c89cbbc5706d1b5d0861ffbec5260296252e68d738ee3d27a52a7d80a3302e1"
+    },
+    "training_source:scripts/summarize_tandem_action_sensitivity.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/summarize_tandem_action_sensitivity.py",
+      "sha256": "4fd65dd1993b7db46b5bf27270a6252ced5f71cdd98d8864a502120bb34119f3"
+    },
+    "training_source:scripts/train_direct_cfd_ppo.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_direct_cfd_ppo.py",
+      "sha256": "dbc1ba1b5e730b1fad1247cd9cd047f03e8d837fc3f3eb24ad6e58acf48b7fb8"
+    },
+    "training_source:scripts/train_fcp011_decoder_scope.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_fcp011_decoder_scope.py",
+      "sha256": "9c761cfcb3d4f18dbe35aed1b3defe0614b29db867006055dae63d9fa94485a5"
+    },
+    "training_source:scripts/train_fcp013_independent_force_fno.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_fcp013_independent_force_fno.py",
+      "sha256": "f3cf4b9a745cc0cbee39db9385cbfc398e4834e25bc487d8fb2d6eca07b483d7"
+    },
+    "training_source:scripts/train_fcp015_window_accumulation.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_fcp015_window_accumulation.py",
+      "sha256": "2f5de1a946b040c42c21f8164da41a5afc642fd6174e7bb35372bb7ba98eb996"
+    },
+    "training_source:scripts/train_fcp026_history.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_fcp026_history.py",
+      "sha256": "562d268545ba5cd2559374f4bd8bd34bf59a2e49f2e886e4e286bb12aac5d49e"
+    },
+    "training_source:scripts/train_fcp064_controlled_aero_ab.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_fcp064_controlled_aero_ab.py",
+      "sha256": "8066f4a1e092c566e1b84f706ba56737afa06e13998446fee2f79dc2590920dd"
+    },
+    "training_source:scripts/train_full40_hydrogym_ppo_canonical.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_full40_hydrogym_ppo_canonical.py",
+      "sha256": "5c27e4202b7d6dc15b4864eda7fd6c84b6102c52b9f4f0ee061f45c9cb8686fe"
+    },
+    "training_source:scripts/train_hydrogym_rotary_spark.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_hydrogym_rotary_spark.py",
+      "sha256": "700d321acd644bc1fb1eb2c07115c1dfb88d5a8a503cea8fe9268034ccb42138"
+    },
+    "training_source:scripts/train_p028_flow_rollout.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_p028_flow_rollout.py",
+      "sha256": "4ad0dfa41fcfeb93481e313d2f0ca24685ea3ea183a074a7b017284f8c5ee057"
+    },
+    "training_source:scripts/train_p029_control_aware_flow.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_p029_control_aware_flow.py",
+      "sha256": "e7dd8b9a261b4a47dbfcec6ce4be792dce0294454460b9924e81c37fb87c4aa0"
+    },
+    "training_source:scripts/train_p031_control_aware_flow_h25.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_p031_control_aware_flow_h25.py",
+      "sha256": "1b799ffba3b318b503bdaa0258183fcc26c24fd0d12959c64ceee825b13e7641"
+    },
+    "training_source:scripts/train_piv_dynamics.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_piv_dynamics.py",
+      "sha256": "5ff6f10b13273ad2a81be4c49b16b9af3e331d2acd1a5f659a13e3ab2d169d23"
+    },
+    "training_source:scripts/train_piv_force_observer.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_piv_force_observer.py",
+      "sha256": "4edcf61d122b404f9740a818ed02425e944506f05a99c1326e6f1c29ad8374a8"
+    },
+    "training_source:scripts/train_public_piv.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_public_piv.py",
+      "sha256": "bad821ac35a82c0e8d30fc02c0f655ef0fba4f8c7980b666bf5dee8df499e68c"
+    },
+    "training_source:scripts/train_surrogate.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_surrogate.py",
+      "sha256": "8cb13080ed2775ecdececee5faf3df7f949bee2d0c8ffe78d1816aedc54ac7fc"
+    },
+    "training_source:scripts/train_tandem_fno.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_tandem_fno.py",
+      "sha256": "9e5bbebd338af02b1d73530c9cb74fc2f840455f56b7bf34ed2bb517be19a22a"
+    },
+    "training_source:scripts/train_tandem_fno_paired_stats.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_tandem_fno_paired_stats.py",
+      "sha256": "3c58a8c4d59c41723dcdff7227f766d3cf00b30aad0e5fabfbc7479c53f19d88"
+    },
+    "training_source:scripts/train_tandem_fno_rollout.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_tandem_fno_rollout.py",
+      "sha256": "e54428596bfd858f10f8a6205060023ea5a444d4726b26fe1e3fd7b0748382a9"
+    },
+    "training_source:scripts/train_tandem_hydrogym_ppo_pilot.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_tandem_hydrogym_ppo_pilot.py",
+      "sha256": "08810a8228565d1c8547722fbb565a6c12b1f727b4f2729543764e0b87c4cbf2"
+    },
+    "training_source:scripts/train_tandem_hydrogym_ppo_smoke.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/train_tandem_hydrogym_ppo_smoke.py",
+      "sha256": "8f993c44d602bbda2c35d221ada71a3a15851df614a16f883754ca7edcd6c9ba"
+    },
+    "training_source:scripts/validate_control_train16_posteval_step.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_control_train16_posteval_step.py",
+      "sha256": "9e3ef79d43fef37ff6a2f41b6d1729f69f82f2bddd9e50e5ecac86e54be389e9"
+    },
+    "training_source:scripts/validate_control_train16_posteval_step_78d827f_immutable.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_control_train16_posteval_step_78d827f_immutable.py",
+      "sha256": "9e3ef79d43fef37ff6a2f41b6d1729f69f82f2bddd9e50e5ecac86e54be389e9"
+    },
+    "training_source:scripts/validate_control_train16_posteval_step_fc_p003_immutable.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_control_train16_posteval_step_fc_p003_immutable.py",
+      "sha256": "9e3ef79d43fef37ff6a2f41b6d1729f69f82f2bddd9e50e5ecac86e54be389e9"
+    },
+    "training_source:scripts/validate_expanded_curated_cases.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_expanded_curated_cases.py",
+      "sha256": "52aa8077f77c3c9e2844bcc2b8944602c371a814399a89dd697cc6f5f236ba40"
+    },
+    "training_source:scripts/validate_fc_p003_posteval_step.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_fc_p003_posteval_step.py",
+      "sha256": "f0a0c01e92097e04bb267c6c0d2312ad39c6129536e98a7dcf9a0a15589bffef"
+    },
+    "training_source:scripts/validate_fc_p003_posteval_step_immutable.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_fc_p003_posteval_step_immutable.py",
+      "sha256": "f0a0c01e92097e04bb267c6c0d2312ad39c6129536e98a7dcf9a0a15589bffef"
+    },
+    "training_source:scripts/validate_fcp003b_worker_output.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_fcp003b_worker_output.py",
+      "sha256": "11885f2a54e9e82cf75c82855137b13005b43adf74a554b26e2e699c7aa3f468"
+    },
+    "training_source:scripts/validate_fcp003c_gradient_diagnostic.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_fcp003c_gradient_diagnostic.py",
+      "sha256": "aa42815f2978392aa07b91382e1c9b312a834e61cacc22e54a4b59bdadf20d06"
+    },
+    "training_source:scripts/validate_fcp003c_mixed_probe_output.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_fcp003c_mixed_probe_output.py",
+      "sha256": "80dfa0240712daabeb3d76a780b218683a9caf52283e7a16ced9de3fc592579c"
+    },
+    "training_source:scripts/validate_fcp003c_posteval.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_fcp003c_posteval.py",
+      "sha256": "204bab20571e319006d1d58ba4967e88ab45d035590065a9b547f87c372b81c3"
+    },
+    "training_source:scripts/validate_paired_posteval_step.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_paired_posteval_step.py",
+      "sha256": "7fcc8c2650afc660f53242fd092790af7b4f4b5abc698dc6764acc1ecbd48c3d"
+    },
+    "training_source:scripts/validate_processed_piv.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_processed_piv.py",
+      "sha256": "f1c3795adb796babcfa0db3e683b258eac7153833257bc5e288db09a1c2fe17f"
+    },
+    "training_source:scripts/validate_tandem_69d_observation_parity.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_tandem_69d_observation_parity.py",
+      "sha256": "a4dffdcde6dcc488664697ec0a7b20fa2b3844bbea2b88d3d2f0e4333a1bd444"
+    },
+    "training_source:scripts/validate_tandem_action_schedule.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_tandem_action_schedule.py",
+      "sha256": "13a30d96afe7aaa094847c0d605a9c0e8f5d8ba1aceef575dc2279c352f6cb17"
+    },
+    "training_source:scripts/validate_tandem_curated.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_tandem_curated.py",
+      "sha256": "a30dc171faae3bab235aa3aa5a4caf643e4dbebbee30afec170658da4aa474a6"
+    },
+    "training_source:scripts/validate_tandem_datapipe.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_tandem_datapipe.py",
+      "sha256": "89568c55b3dcebd2f43c464516435dd2e88d072bad5a79dd300e7f0c2c207542"
+    },
+    "training_source:scripts/validate_tandem_fno_real_frame_spark.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_tandem_fno_real_frame_spark.py",
+      "sha256": "72b6a9e669ce5a194778eace50d6e44283a2017383821bf8f2500b1282c5c537"
+    },
+    "training_source:scripts/validate_tandem_fno_stage.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_tandem_fno_stage.py",
+      "sha256": "51e63ca5d975c9d61ed511af31eed448f754ef1c14fee1dfd51b81fc6853c5ad"
+    },
+    "training_source:scripts/validate_tandem_hydrogym_adapter.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_tandem_hydrogym_adapter.py",
+      "sha256": "d6ece09f6feb3d12c0c8f0f7a142f0af2815075e616f890fce701ff5a3594711"
+    },
+    "training_source:scripts/validate_tandem_observation_parity.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_tandem_observation_parity.py",
+      "sha256": "ef5e20dc1eba431666e6b6cbf1d58d18c4b217c07184ec3d410daf529627886f"
+    },
+    "training_source:scripts/validate_tandem_probe_mapping.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_tandem_probe_mapping.py",
+      "sha256": "63fbf3c3841d3d5eb28068ff6b11c3cef354a4a521267deb9b948d4e9a5b38c0"
+    },
+    "training_source:scripts/validate_tandem_segmented_zero_reference.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_tandem_segmented_zero_reference.py",
+      "sha256": "69e19dc84ed5971be378084f9fdb127b1e47066acacf640d17d52d2385357edc"
+    },
+    "training_source:scripts/validate_tandem_vtk_export.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/validate_tandem_vtk_export.py",
+      "sha256": "6f2a4b59c1981e3859a004de1ab705d135b66b7e300491677081b40b70d6c3e1"
+    },
+    "training_source:scripts/verify_cfd.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/verify_cfd.py",
+      "sha256": "8df211f22dc8e4293556a19d418941972bfb2da41608fee254e2be07c0d3d93a"
+    },
+    "training_source:scripts/verify_dev30_full40_promotion.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/verify_dev30_full40_promotion.py",
+      "sha256": "59d06fa6b4b4e14e869b74e3c1ea3cbdc0fbca6b79829d921fb92f6d9d2f0b1e"
+    },
+    "training_source:scripts/verify_source.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/verify_source.py",
+      "sha256": "b44fcaa5d72b4afeede363d1bf41335efec985c8c740d2dec812c968d2bc659a"
+    },
+    "training_source:scripts/watch_dual_node_utilization.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/watch_dual_node_utilization.py",
+      "sha256": "6afbc66f058124bb3c6b08e7fa5767a7826897eef021cae3cd8a6bcd762d77a3"
+    },
+    "training_source:scripts/watch_expanded_cfd.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/watch_expanded_cfd.sh",
+      "sha256": "22eb49276f2a25f9f82f8d470778e10b30b852b107f016681695774a0affc75f"
+    },
+    "training_source:scripts/watch_remote_tandem_training.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/watch_remote_tandem_training.sh",
+      "sha256": "a7f77f7d8e8f88c6da0d08c0ea35f67864eac7f6f71f77f13bec3415de7658bd"
+    },
+    "training_source:scripts/watch_tandem_training.sh": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/watch_tandem_training.sh",
+      "sha256": "bf9572227c69cc7f9846d4e327f48cf2a5ffe20670538e73ec8a4ea2922344b4"
+    },
+    "training_source:scripts/watch_training_evaluation_state.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/scripts/watch_training_evaluation_state.py",
+      "sha256": "88ac908ce2083654af78ce8115606f8e43af932dd6eaecc389eff74870a66435"
+    },
+    "training_source:src/fluid_control/__init__.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/__init__.py",
+      "sha256": "fb12ae7ff289ab8cba77024b3589ec96b0201a59ceaf11880d9f527e9cb6253d"
+    },
+    "training_source:src/fluid_control/augmented_datapipe.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/augmented_datapipe.py",
+      "sha256": "d407476e281be6deff46a87fd3f76b4125e8c584e0496b80ef5849ad1267e148"
+    },
+    "training_source:src/fluid_control/calibrated_checkpoint.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/calibrated_checkpoint.py",
+      "sha256": "23f004aefb5ab4acf40523b188e1353d48a3cc04d6b2d886b6cdf435353c8a88"
+    },
+    "training_source:src/fluid_control/canonical_joint_v1.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/canonical_joint_v1.py",
+      "sha256": "138ab2b49ebddcbed2a24486c995b85a3a5ae226ee936ff2ed5de318496ee8bd"
+    },
+    "training_source:src/fluid_control/cem_mpc.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/cem_mpc.py",
+      "sha256": "b610deec9c40d0f21868dbac95a58a10922fa9696846227bb83482408d1158b2"
+    },
+    "training_source:src/fluid_control/cfd.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/cfd.py",
+      "sha256": "02cb88c294bbd06bb7f596b732542471bd55a82656206deff0e895f283bbec6b"
+    },
+    "training_source:src/fluid_control/direct_cfd_hydrogym.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/direct_cfd_hydrogym.py",
+      "sha256": "b48fc0fa471c8e042377ed7885d793ff92fc2eb5cb33c001738f74a9a2c6b5d0"
+    },
+    "training_source:src/fluid_control/dual_fno.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/dual_fno.py",
+      "sha256": "83ac4e4169bc8179cba00d450742f3c4c37a4a3c291ced323ba6c717424b3d7b"
+    },
+    "training_source:src/fluid_control/dynamic_pair_stat_datapipe.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/dynamic_pair_stat_datapipe.py",
+      "sha256": "2414b0a2b2635f87e0842ed12d36ad7a3eb6b1b8759cacdb5b8c8fa9fed5af31"
+    },
+    "training_source:src/fluid_control/full40_canonical_hydrogym.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/full40_canonical_hydrogym.py",
+      "sha256": "4571cdb4abf48f7de634fa822a63517bb779e5ec324eb8098d5d2379ced61b93"
+    },
+    "training_source:src/fluid_control/openfoam_observation.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/openfoam_observation.py",
+      "sha256": "799d569c3f986a5e0e5cda95a3f07cd3b3993814ff0867763166549ef312293e"
+    },
+    "training_source:src/fluid_control/p064_controlled_aero_ab.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/p064_controlled_aero_ab.py",
+      "sha256": "8fb617f58721c79b3f2d793246cc63df3020564941a6a6b907378d4b846180fb"
+    },
+    "training_source:src/fluid_control/paired_force_statistics.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/paired_force_statistics.py",
+      "sha256": "2245f599a013eee51f39fb0864d4200589306e81bcd24733bf094f09750f2a2c"
+    },
+    "training_source:src/fluid_control/paired_stat_datapipe.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/paired_stat_datapipe.py",
+      "sha256": "0507b99eb68ae16a473b344bbd4e3f75db320d94b31b9b706a9312471a336232"
+    },
+    "training_source:src/fluid_control/paired_step_force.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/paired_step_force.py",
+      "sha256": "e9d1d0b9145508c06b4df9d887624b3a1d0d224fcf469b216e367c95f6b66045"
+    },
+    "training_source:src/fluid_control/paired_step_training.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/paired_step_training.py",
+      "sha256": "5612f3b238b4d52858c20562f65d670e00cf8473516c48c5fd7cb325e2139996"
+    },
+    "training_source:src/fluid_control/paired_training.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/paired_training.py",
+      "sha256": "5d96142f815df0206451f066a47a2170b1e5b197c5a76ec3e7bc6a7044f32ad5"
+    },
+    "training_source:src/fluid_control/stage_c_objective.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/stage_c_objective.py",
+      "sha256": "218a83300af54208f2daf893b093b6913ecf992dd749fc77e1997f709efb8b8f"
+    },
+    "training_source:src/fluid_control/tandem_datapipe.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/tandem_datapipe.py",
+      "sha256": "c939e4553dbef9e227b6a3a4d5f36242114a690b32ff907339b5be2a4ec693ae"
+    },
+    "training_source:src/fluid_control/tandem_hydrogym.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/src/fluid_control/tandem_hydrogym.py",
+      "sha256": "eaa1585dca80da3eb01d8f2d76eee2427088c87d0a641e3130cf2d3bf716c77a"
+    },
+    "training_source:tests/test_p027_short_horizon_errors.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/tests/test_p027_short_horizon_errors.py",
+      "sha256": "6d0788842371d1f786a1ce9ee8ca7f03c50c8a619f72750ca42b562db713979c"
+    },
+    "training_source:tests/test_p028_flow_h10_objective.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/tests/test_p028_flow_h10_objective.py",
+      "sha256": "9b9eaff2803c2525efe7685636679c7485babf45206e213f0eb8608ebdd12907"
+    },
+    "training_source:tests/test_train_p028_flow_rollout.py": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/tests/test_train_p028_flow_rollout.py",
+      "sha256": "ba971fd45c311b872ef6517fec9a5562dbadd65cc79cdf52f0d25a7be39bc35b"
+    },
+    "training_source:training_config.yaml": {
+      "path": "artifacts/fcp064_training_source_20261006_immutable/training_config.yaml",
+      "sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
+    }
+  },
+  "status": "P064_DEVELOPMENT_H1_H5_PENDING_NOT_AUTHORIZED",
+  "training_terminal_observation": {
+    "ActiveState": "active",
+    "ExecMainStatus": "0",
+    "InvocationID": "450ef57c25c14ec38e722cbd597ffb50",
+    "MainPID": "0",
+    "Result": "success",
+    "SubState": "exited",
+    "unit": "fluid-control-fcp064-aero-arm-b-20261006.service"
+  },
+  "unit": "fluid-control-p064-arm-b-development-h1-h5-20261006.service"
+}

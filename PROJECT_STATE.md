@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-P064 最新终态：B局部开发支持，有retention代价；原成功policy不变
+
+A/B均已完成32updates/256windows并通过独立CPU工程检查。A/B同协议开发评估也已终态独审：各16NPZ/80端点，所有起点/相位/pooled统计重算一致。B pooled H1 rearCl MAE .138998317、totalCd MAE .038065374，相对A .156116880/.039952166严格降低10.9652%/4.72263%，支持预声明的局部开发比较；不是正式模型接受。H1仍差于持力，B H5 Cd比K1差.7884%，b01 H5 Cd比A差.6848%。K1/A/B所有预测流场数组逐值完全相同，flow冻结没有改善速度/压力。
+
+B原6训练窗H1/AR目标由.00348834/.00880538升至.00397686/.00894620；真state尾RMS误差改善但AR尾RMS误差恶化。它们是保存的训练诊断，不是新test，不加事后门槛。比较报告 `docs/P064_AB_DEVELOPMENT_COMPARISON_REVIEW_20261006.md` SHA `2fa7e5d71e4b163bfff2261ec2b38ef43c1c5aa75acc7cea7d47c1f3296c225a`；A结果 `c8b0242658a101120603514e6d2e5076c827c518965c92470810fe9693840fe6`，B `47e7d4c6931fadc62730790500bb9a8a07f44792d1bef82c900d10c36f9a8665`。
+
+B训练450ef57c…已正常exit0，独审receipt `d78f87d041fd907c50ad6b2ca8880498bf8f5ad80e5b6916270ec585105b2915`，28Adam全step32、64b00固定窗及冻结bias/flow一致。B开发6613b11d…正常exit0，最低Available121369776128B。下一阶段仅准备并另批B fresh32768 PPO→投影paired800真实CFD探索，以检验是否转移为物理收益；尚未执行这条新policy链、不替换旧成功policy。原三相位物理成果、10%约束及K1 H100 FAIL保持，B尚未正式准入。下方运行描述均为保留历史。
+
 ## FC-P064 最新：A 工程终态已独审，B 已实际启动；尚无候选精度结论
 
 A R2 同 invocation `50de1d8b43ce42ac923752fad76ca4d9` 已 PID0 / normal exit0。独立检查434冻结源码、256条实际采样日志、32×8窗口记录、目标均值与clip、来源/归一化/候选文件；CPU weights-only 检查28个Adam状态均step32且有限，两个冻结bias逐值等于K1，flow文件保持原字节。结果SHA `03951fee3c1ba66ae48d451fe35aeb7735f092e40ef0b76deff90738c9f8e6a1`；独审receipt SHA `2d51c4f84b53fa9b29748c77200cac279ab5a3a4b8ebb5aa6309b4ae9a45f52a`。训练观察最低Available106.844551GiB，cgroup峰值9884188672B。官方fresh reload为producer逐role实际CPU重载；独审未新建模型/forward，不冒称新dual-loader整链实际重载。报告 `docs/FC_P064_ARM_A_TERMINAL_ENGINEERING_REVIEW_20261006.md`。

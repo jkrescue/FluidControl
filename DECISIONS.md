@@ -1,5 +1,15 @@
 # DECISIONS
 
+## 2026-10-06 — P064 supports a bounded new-policy CFD experiment, not formal surrogate acceptance
+
+Both A/B completed the fixed 256-window / 32-update budget and independent terminal checks. Independent saved-array review of the same opened b01/b03 development panel verified A result `c8b0242658a101120603514e6d2e5076c827c518965c92470810fe9693840fe6` and B result `47e7d4c6931fadc62730790500bb9a8a07f44792d1bef82c900d10c36f9a8665`. The predeclared descriptive B-versus-A H1 comparison is supported: rear-Cl MAE 0.1561168802 to 0.1389983166 and total-Cd MAE 0.0399521664 to 0.0380653739. H1 remains worse than persistence. H5 Cd improvement versus A is only about 0.096%, and B is worse than K1 on that metric. All velocity/pressure prediction arrays remain identical because flow weights were frozen.
+
+Retained original six-window training diagnostics show a tradeoff, not uniform improvement: B H1 objective rises from 0.003488336884 to 0.003976855262 and AR objective from 0.008805384403 to 0.008946200483. Its true-state rear-lift tail-RMS error improves while AR tail-RMS error worsens. These are saved training diagnostics, not independent tests. Do not hide them or invent a post-hoc pass threshold.
+
+Lead decision: proceed to prepare and separately approve one exploratory B-based fresh-initialized PPO run under the retained 32768-step / H5 / 24-reset / 69-observation / 62-sample reward protocol, then one paired 800-interval real OpenFOAM feedback validation using the same reflection projection and action filter. This directly tests whether the measured local force-prediction change yields control benefit; it does not assume that it will. Bind actual B model and resulting new policy identities before execution. Keep the previous successful K1-trained projected policy unchanged. A new execution still requires a complete, checked source/runtime/input bundle and the 20 GiB UMA reserve.
+
+This is exploratory control evaluation, not formal scientific acceptance of B. The unchanged original formal requirements, historical H100 failure, original physical thresholds, and full goal remain in force. Neither better development error nor a single CFD result may be relabelled robust generalization, net energy savings, physical real-time control, or a completed project.
+
 ## 2026-10-06 — Preserve P064 A startup failure; continue only the approved same-source R2
 
 A R1 failed before any training update at its first CUDA transfer and is retained as an engineering failure, not hidden or interpreted as a data hypothesis result. One exact 53-file cache-advice operation was separately approved and completed without global cache clearing or data mutation. The same immutable A source/argv R2 subsequently crossed CUDA initialization and at least 9/32 updates. This temporal recovery is useful operational evidence but does not prove the cache state caused R1; do not change learning rate, schedule, architecture, data, or admission criteria while R2 is live.
