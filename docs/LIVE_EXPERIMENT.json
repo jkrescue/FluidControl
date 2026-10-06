@@ -1,11 +1,11 @@
 {
-  "experiment": "exploratory-paired-H2-real-CFD",
-  "progress_kind": "exploratory_h2_feedback",
-  "unit": "fluid-control-exploratory-short-h2-real-cfd-20261006.service",
-  "invocation": "e3b9eb7b58724a1c9ec4e64d63ac7bbe",
-  "approval": "docs/EXPLORATORY_PAIRED_H2_APPROVAL_20261006.json",
-  "approval_sha256": "1679f6bee293eae200c95bc078a20db5873e81afcd54d81b81bb06445015f8b2",
-  "launcher": "artifacts/exploratory_h2_source_20261006/run_exploratory_paired_h2_feedback.py",
-  "launcher_sha256": "c8260b21d742f54814bf04e81bb13eeff491a971df4d177f3a384c8f8c940e3f",
-  "history": "R4两步接口完成；P031资源失败保留；K1原正式未通过。"
+  "experiment": "exploratory-paired-canonical-history-H2-real-CFD",
+  "progress_kind": "exploratory_causal_history_h2_feedback",
+  "unit": "fluid-control-exploratory-causal-h2-real-cfd-20261006.service",
+  "invocation": "6f554f10e87e4b9f9d6b6ed8b555c548",
+  "approval": "docs/EXPLORATORY_CAUSAL_HISTORY_H2_APPROVAL_20261006.json",
+  "approval_sha256": "b273716de8edb19b8517126d3d8232cc50cc5b2ab5a7af04cb16f96aeae1e5a1",
+  "launcher": "artifacts/exploratory_causal_h2_source_20261006/run_exploratory_causal_history_h2_feedback.py",
+  "launcher_sha256": "ace9871ac27e2b92de0d90010aa1db3f4cd037cdcf3e49ce5f3f87deb32f06cc",
+  "history": "首轮即时H2真实CFD试验已完成并保留；62点真实因果历史H2试验也已完成，10次均HOLD、配对物理收益为零，独立终审已绑定。两者均非准入，K1原正式仍未通过。"
 }
