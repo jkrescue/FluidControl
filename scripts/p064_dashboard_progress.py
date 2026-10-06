@@ -672,6 +672,11 @@ def coverage_d_training_status(root,run=subprocess.check_output):
             if hashlib.sha256(devresult.read_bytes()).hexdigest()!='a9c9d2088217b599b6491ed5950e3baab024c8126033548b62d3e27843f0e51b':raise ValueError('D development result SHA')
             info.update(status='D25训练与评估完成：主指标未同时改善，不采用',development_verified=True,scientific_pass=False)
             info['note']='同面板H1后Cl MAE B0.138998→D0.139430变差，总Cd0.038065→0.037825略好；H5及训练内保留性略好但不能替代预定双H1条件。flow冻结、场预测完全相同。保留B与已验真实闭环，不续训/扫比例/新PPO或CFD；当前只整理既有诊断证据，整体目标未完成。'
+            lagreport=root/'docs/P064_FIXED_LAG_JSON_INDEPENDENT_REVIEW_20261007.md'
+            lagresult=root/'artifacts/p064_b_fixed_lag_saved_json_diagnostic_20261007/result.json'
+            if lagreport.exists() and lagresult.exists() and hashlib.sha256(lagreport.read_bytes()).hexdigest()=='9b3238275b78677f9a63e8961189c081062476d36466b25e744d20bb5e5d19f3' and hashlib.sha256(lagresult.read_bytes()).hexdigest()=='7738b963c474b6d62aa42037095a11100e71c9154e0b9cc5274fff731421ead3':
+                info['saved_lag_diagnostic_verified']=True
+                info['note']+=' 已完成小JSON诊断：六例零滞后均优于前后整一步，部分首步动作响应反号；仅dynamic6/high-TF32，不能外推控制开发。配对精度检查仍仅准备，不是训练。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['error']=str(exc)
     return info
 

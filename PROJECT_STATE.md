@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 最新诊断：E093小JSON分析已独审，无新模型计算
+
+同 `a730e633fec4417b9386a532fdb1e46d` exit0，固定6case×98points/lag＝588，H1/AR各−1/0/+1全部保留。独立NumPy复算2220统计量及四action-minus-zero/首步数组，最大差6.66e-16；[独审](docs/P064_FIXED_LAG_JSON_INDEPENDENT_REVIEW_20261007.md) SHA `9b3238275b78677f9a63e8961189c081062476d36466b25e744d20bb5e5d19f3`，result `7738b963c474b6d62aa42037095a11100e71c9154e0b9cc5274fff731421ead3`。六case rearCl零lag均优于相邻lag，不支持简单整一步错位解释；部分同初始状态首步动作响应反号提示局部响应疑虑，不等于全球符号错误或因果分解。限定dynamic6/highTF32，不外推控制dev/highest-noTF32。E094配对precision检查仍是准备，未在此执行；无新训练。D拒绝、B物理收益、预测FAIL和整体未完成保持。
+
 ## 当前：E091/E092均完成，D不晋级，保留已验证B控制器
 
 固定dev同 `6538db4425e14b009bacdb93baf03916` 实际exit0，16NPZ/80端点独立复算完成。pooled H1 rearCl MAE B `.13899831660091877`→D `.13943017413839698` 变差，总Cd `.03806537389755249`→`.03782491013407707` 略好，未满足预定两主指标同时改善。H5两项及固定六训练窗H1/AR保留性略改善，均如实保留，不能替代H1失败；flow冻结导致预测场逐值相同。报告 [E092](docs/P064_B00_B02_COVERAGE_D_DEVELOPMENT_REVIEW_20261007.md) SHA `ee4258a9733074a8f25912298ab58d5814ef8b8176671a9526bd25d10fc37c58`；result `a9c9d2088217b599b6491ed5950e3baab024c8126033548b62d3e27843f0e51b`。Lead拒绝D晋级，不续训/扫比例/新PPO或CFD，保留B。下一项仅检查既有teacher-forced/saved-array证据以区分瞬时力映射、相位滞后及动作响应；未批准新科学计算。项目未完成、目标未缩小，原物理收益/早期失败/完整预测FAIL均保持。下方为此前交接和历史。

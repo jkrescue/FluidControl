@@ -1,0 +1,11 @@
+# E093 fixed-lag saved-JSON diagnostic — prospective protocol
+
+Lead authorized one CPU analysis, no model/HDF/CFD/training. Question: do errors show a consistent one-sample temporal displacement, residual amplitude/bias, or mismatched action-minus-zero response? These alternatives are descriptive, not causal identification.
+
+Inputs: E073 `artifacts/p064_teacher_forced_h1_signed_force_20261006/result.json` SHA 1eacc9219f2f608c54e6ef48d4856624af64b8ad00eb477bbd5772eff8ad61ef; parent B AR `artifacts/fcp064_arm_b_formal_resume_r3_20261006/force_window/result.json` SHA 6195b21e6fc820382d580ae8339b47af3d4fb92598135d0d97c6c732e9516173. Existing independent reports establish batch1/high/TF32, identical B/norm/HDF/action clocks and initially matched phase fields. The script additionally checks saved model/source identities and 600 exact time/action/truth matches, not a new runtime precision audit.
+
+All six dynamic b01/b05 minus/zero/plus cases; prediction target indices 2..99 inclusive, fixed lags -1/0/+1 meaning prediction[t] against truth[t+lag]. Equal 98 samples/case/lag. H1 and AR reported separately. Four forces and signed-sum totalCd: MAE, RMSE, signed bias, predicted/truth centered RMS and their difference, per case and pooled. All four within-phase action-minus-zero contrasts retain signed sequences and metrics. Target1 contrasts separately retained; only initial-state matching supports a matched-state interpretation there. Later paired trajectories have different states.
+
+No optimal-lag selection, shifted admission metric, new threshold, recalibration, checkpoint selection or automatic followup. Results cannot establish that lag causes errors; non-improving shifted errors weaken a simple single-step-delay explanation. A beneficial shift alone is not proof of a clock bug. Dynamic6/highTF32 evidence must not be generalized to controlled b01/b03 highest/noTF32 development replay.
+
+Exclusive output `artifacts/p064_b_fixed_lag_saved_json_diagnostic_20261007`. CPU1, MemoryMax1GiB, swap0, CUDA hidden, 60s outer limit, startup MemAvailable>=50GiB. Two small completed JSON inputs only; source/input hashes recorded. Independent source/fixture review precedes this single execution. Root owns scientific interpretation; shared state is not modified by this task.
