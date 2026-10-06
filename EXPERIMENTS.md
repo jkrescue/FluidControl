@@ -1,5 +1,21 @@
 # Experiment ledger
 
+## FC-E054 R2 — Actual retry running after persisted approval preflight
+
+Root launched `fluid-control-exploratory-diverse-h5-32768-ppo-r2-20261006`, invocation `a19900b2bfa64d8d8372b67bc0564139`, initialPID2560906. Final persisted1cd1d518 approval passed actual frozen validate_spec and exact protocol types beforelaunch. New exclusive_r2 output; failedc406 evidence unchanged. Mandatory future practice: validate final serialized approval using its actual frozen consumer, not just draft JSON. No training result inferred from a live handle.
+
+## FC-E054 — Initial launch failed before training; exact JSON compatibility correction
+
+Root launched `fluid-control-exploratory-diverse-h5-32768-ppo-20261006`, invocation `c406bd4af9a84219840027961119e6ab`, under approval5f6485493aa51db0b14b15d37bdf530684864a919bc78878fd0b266be988bb21. It failed before model/training because approval generation converted ent_coef0.0 to integer0, rejected by strict JSON protocol comparison. Original failure/output/approval preserved. R2approval1cd1d5182fd7e7a3eed11060e7a6ffe9fad840c776f021f239f059525a515132 fixes only that literal and exclusive_r2 output. Actual frozen validate_spec on persistedR2 JSON and all protocol value types passed. No scientific thresholds or numeric algorithm changed.
+
+Immutable trainer4d681771736b63b628712d3b62fcdde831601e80221aef6f1fd78a4b6840ff01 and supervisor8363986dc675cc8efe09285b60c25557f1307c7ffcf49a54e0e4388ce3ff9a47 unchanged. Six independent CPUtests verify exact source delta/accounting. Same24 packets/K1/H5/reward/seed/hyperparameters, fresh policy/optimizer; expected256epochs/512steps, final-only policy. Same12GiB/noSwap1CPU/Available50,22/1800inner1950outer. No scientific CSV outcome for failed startup. Different reset-distribution losses cannot establish convergence by direct comparison.
+
+## FC-E053 — Matched final diverse-policy CFD complete, not admission
+
+Actual464de68ee1114eea8e8ae214d18dc045 completed07:33:58–07:36:26UTC exit0. Result8c909aa4bd0b73e3cf570dd55cb2a1abd7346a9c424695a5e0056b4e5e833bdc; independent report31a338bfc81e4ece0adeee943c074686e7065e57048d5783697d062856aa4e53. All496 raw hashes verified and complete zero arrays exactly matchFC-E051. Full/first/trailing drag+0.5057597%/+0.6872659%/+0.3242481%; rearCl RMS ratios.9737074/.9605220/.9864395; bias ratios.1237210/.1071973/.1402443. No saturation;124 distinct requested actions, maxmagnitude.20272. Improved bias/full fluctuation and removal of prior constant+.75 behavior do not imply dominance: trailing drag benefit decreased. All drag benefits<2%; original10%bias fails,20%sensitivity passes biasonly; not80D/U admission.
+
+620resource rows minimumAvailable122083807232bytes, bothownedcontainers absent/noOOM; all248solversegments completed. Original model formalFAIL and earlier CFD-only success stay separate. Next singlefactor is optimization budget, not posthoc threshold/weight changes. Prior running entries below remain historical.
+
 ## FC-E053 — Actual diverse-final-policy paired CFD running
 
 Root launched `fluid-control-exploratory-diverse-ppo-cfd-20261006`, invocation `464de68ee1114eea8e8ae214d18dc045`, initialPID2474346. Approval `67fda1a404f844d89b986442a4a9000561b02757417d5a8d366fdf9f9e6033db`; executed immutable driver `89e0d8bea92440babd3d647eed31758db9cfc2a43e31ed6e9d9bdf5047b77b6e`, captured in Git after launch. Final diverse policy `8dc8cabf2104654345f270e3fb86edca7752cf4c883112c0a4cbd3a181acea9b` alone supplies deterministic CPU actions; no MPC or onlineFNO. Same paired148→160.4/124cycles, physical69 observation, constraints, full/halves open-left metrics and10% physical reference. Outer8GiB/noSwap/4CPU, two8GiB/noSwap solvers, Available50/22,1950s/stop120. No scientific CSV outcome while running; not80D/U admission.

@@ -1,5 +1,21 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E054 R2已实际运行
+
+Root在最终落盘审批上执行冻结validate_spec及全部protocol类型比较通过后，启动 `fluid-control-exploratory-diverse-h5-32768-ppo-r2-20261006`，invocation `a19900b2bfa64d8d8372b67bc0564139`，初始PID2560906。输出独占 `artifacts/exploratory_diverse_h5_32768_ppo_training_20261006_r2`；同一算法/source/资源限制，未自动覆盖或重启首个失败unit。此后所有执行审批必须在最终序列化落盘文件上运行真实consumer校验，而非只检查draft。
+
+## FC-E054首次启动失败：审批JSON类型错误，未开始训练
+
+Root首次启动 `fluid-control-exploratory-diverse-h5-32768-ppo-20261006`，invocation `c406bd4af9a84219840027961119e6ab`。审批5f648549…将ent_coef的JSON浮点0.0序列化为整数0，触发严格protocol比较；在模型/训练前失败，原失败unit/output/approval保留。新R2审批 `1cd1d5182fd7e7a3eed11060e7a6ffe9fad840c776f021f239f059525a515132` 仅修复0.0及独占_r2输出，实际冻结trainer.validate_spec及所有protocol类型复核通过，不修改算法或资源门槛。
+
+不可变trainer `4d681771736b63b628712d3b62fcdde831601e80221aef6f1fd78a4b6840ff01`。预定唯一变化4096→32768，从同seed全新初始化；K1/24reset/H5/奖励/所有PPO超参数不变，最终唯一策略，预期256epoch/512steps及每相位1639reset。12GiB/noSwap/1CPU、Available50/22、1800inner/1950outer保持；尚无本预算科学结果。
+
+## FC-E053真实CFD终态：改善行为但物理目标仍未完成
+
+同一464de68e…已exit0完成124周期。独立审查496份raw哈希，配对zero全部原始数组与FC-E051完全相同。全/前/后窗减阻+0.505760%/+0.687266%/+0.324248%，RMS比0.973707/0.960522/0.986439，平均升力偏置比0.123721/0.107197/0.140244。无饱和，最大|omega|0.202720；较旧策略更平衡，但减阻均低于2%，10%偏置参考失败；20%仅敏感性通过，不改变标准。12.4D/U不是80D/U正式准入。
+
+结果 `8c909aa4bd0b73e3cf570dd55cb2a1abd7346a9c424695a5e0056b4e5e833bdc`，报告 `docs/EXPLORATORY_DIVERSE_PPO_CFD_TERMINAL_REVIEW_20261006.md` SHA `31a338bfc81e4ece0adeee943c074686e7065e57048d5783697d062856aa4e53`。资源最低Available122083807232字节、两owned容器均清理。下面running条目保留为历史。
+
 ## FC-E053实际运行：多真实起点训练的唯一PPO策略直接验证CFD
 
 Root已启动 `fluid-control-exploratory-diverse-ppo-cfd-20261006`，invocation `464de68ee1114eea8e8ae214d18dc045`，初始PID2474346。批准SHA `67fda1a404f844d89b986442a4a9000561b02757417d5a8d366fdf9f9e6033db`；不可变driver `89e0d8bea92440babd3d647eed31758db9cfc2a43e31ed6e9d9bdf5047b77b6e`。固定148→160.4、124周期配对zero，CPU策略推理，无在线FNO/MPC；原69观察、单次动作变化率限制、全/前/后窗统计与10%物理参考不变。尚无终态物理结论，不是80D/U准入；先前FC-E051负结果保留。
