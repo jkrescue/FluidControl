@@ -1,5 +1,23 @@
 # FC-P027 — short-horizon force-error decomposition
 
+## Lead scope update — 2026-10-06
+
+K4 independent terminal review has completed (FC-E038; Git52b9d69).
+Root has approved isolated CPU implementation and synthetic engineering unit
+tests only. The design-only wording below describes the original draft; actual
+HDF/model access, GPU execution and scientific runs remain unapproved.
+
+Historical recorded actions must remain unchanged. If their actual omega or
+delta-omega violates the existing canonical cost contract, keep that case in
+all force-error and physical-statistic summaries, report `cost_available=false`
+with the precise reason and actual action values, and do not fabricate zero
+cost or clip actions. Aggregate costs only over explicitly counted valid cases;
+report unavailable counts separately without changing the44-case force
+denominator. Mixed-history physical gate booleans are not admission evidence:
+report diagnostic statistics/costs without presenting those booleans as a
+physical pass or a P027 success label. These clarifications change no physics,
+stored data, prediction threshold or control-admission standard.
+
 Status: **DESIGN ONLY**. No implementation, data scan, model inference, GPU run,
 optimization, formal evaluation, PPO, MPC or CFD execution is authorized.
 Root review and a separate execution approval are required. K4 formal FAIL has
