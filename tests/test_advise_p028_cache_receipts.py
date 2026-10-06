@@ -12,10 +12,11 @@ wrapper = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(wrapper)
 
 
-def test_default_r1_and_only_r2_option():
+def test_default_r1_and_only_r2_r3_options():
     assert wrapper.arguments([]).receipt_name == wrapper.RECEIPT_NAMES[0]
     assert wrapper.arguments(['--receipt-name', wrapper.RECEIPT_NAMES[1]]).receipt_name == wrapper.RECEIPT_NAMES[1]
-    for bad in ('cache_advice_20261006_r3.jsonl', '../cache_advice_20261006_r2.jsonl'):
+    assert wrapper.arguments(['--receipt-name', wrapper.RECEIPT_NAMES[2]]).receipt_name == wrapper.RECEIPT_NAMES[2]
+    for bad in ('cache_advice_20261006_r4.jsonl', '../cache_advice_20261006_r2.jsonl'):
         with pytest.raises(SystemExit):
             wrapper.arguments(['--receipt-name', bad])
 
@@ -36,6 +37,12 @@ def test_r1_original_exclusive_directory_r2_existing_directory(tmp_path, monkeyp
     with pytest.raises(FileExistsError):
         wrapper.prepare_receipt(wrapper.RECEIPT_NAMES[1])
     assert output.read_text() == 'historical-r1'
+    r3 = wrapper.prepare_receipt(wrapper.RECEIPT_NAMES[2])
+    with r3.open('x') as stream:
+        stream.write('synthetic-r3')
+    with pytest.raises(FileExistsError):
+        wrapper.prepare_receipt(wrapper.RECEIPT_NAMES[2])
+    assert r2.read_text() == 'synthetic-r2'
 
 
 def test_symlink_directory_rejected(tmp_path, monkeypatch):

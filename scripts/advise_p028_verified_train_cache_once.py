@@ -1,4 +1,4 @@
-"""Route one separately approved P028 cache pass to exclusive r1 or r2 evidence."""
+"""Route one separately approved P028 cache pass to exclusive r1/r2/r3 evidence."""
 import argparse
 import hashlib
 import importlib.util
@@ -9,7 +9,7 @@ ROOT = Path('/workspace/fluid_control')
 HELPER = ROOT / 'scripts/advise_p026_verified_train_cache_once.py'
 HELPER_SHA = '98efe4a3c7fd08268d82cac9be97b79f3eadfe69217d7f1943b250f28f43ae2c'
 OUTPUT = ROOT / 'artifacts/fcp028_cache_advice_20261006/cache_advice_20261006_r1.jsonl'
-RECEIPT_NAMES = ('cache_advice_20261006_r1.jsonl', 'cache_advice_20261006_r2.jsonl')
+RECEIPT_NAMES = ('cache_advice_20261006_r1.jsonl', 'cache_advice_20261006_r2.jsonl', 'cache_advice_20261006_r3.jsonl')
 
 
 def arguments(argv=None):
@@ -21,7 +21,7 @@ def arguments(argv=None):
 
 def prepare_receipt(receipt_name):
     if receipt_name not in RECEIPT_NAMES:
-        raise ValueError('fixed r1/r2 receipt only')
+        raise ValueError('fixed r1/r2/r3 receipt only')
     destination = OUTPUT.with_name(receipt_name)
     for component in (destination, *destination.parents):
         if component.is_symlink():
@@ -31,7 +31,7 @@ def prepare_receipt(receipt_name):
     if receipt_name == RECEIPT_NAMES[0]:
         destination.parent.mkdir(exist_ok=False)
     elif not destination.parent.is_dir():
-        raise ValueError('r2 requires the existing nonsymlink P028 receipt directory')
+        raise ValueError('r2/r3 requires the existing nonsymlink P028 receipt directory')
     # Actual receipt remains exclusively opened with x by the unchanged helper.
     return destination
 

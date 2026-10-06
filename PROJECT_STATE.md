@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 最新完成：P028训练及官方独立CPU重载（2026-10-06）
+
+同一训练实例c46c60f3c2634802b2646bb094f9d201已正常结束：1368窗、171次更新，官方容器exit0/noOOM。结果SHA `74bc0d491d82da8c3b897a330e1397ac7db2e92465221801ae1868a57114840d`，实际候选审计SHA `dd3390d0ac09f8f8e4673ed8eb48d2fbe47293a1dd1689a7abae29972ddddaea`。主机采样最低物理空闲20.8349GiB，CUDA守卫最低21.2368GiB。首尾训练窗口不同，不能据其损失变化宣称精度提升。
+
+独立官方CPU重载unit `fluid-control-fcp028-official-cpu-reload-20261006.service`、invocation `5edc5a00bd14492c9203a4b7d4d676b3` 已exit0/noOOM、无GPU请求。重载收据SHA `685d55a9a2116d1554f14c26e54ce2d2913a4f9c47553c70407f3c4e25d3aecd`，双模型张量与训练终态一致。报告 `docs/FC_P028_TRAINING_TERMINAL_REVIEW_20261006.md`；尚无科学准入或新闭环结果。
+
+下一步：原44轨迹origin51/H10的训练前后对照，然后原完整正式评估。正式审批SHA `c061e50dc1d868e80d1c858ea79b03e8fe5560a204bbb30d2ef9236373838d55` 已通过真实候选/审计/重载绑定的dry-run（7项数值阶段），尚未执行GPU正式评估。不晚于北京时间11:27给出完整阶段结论，目标未完成则明确说明。以下运行中记录为历史。
+
 ## 当前实际运行：P028流场多步训练（2026-10-06 01:30 UTC观测）
 
 实际unit `fluid-control-fcp028-flow-train-20261006.service`、invocation `c46c60f3c2634802b2646bb094f9d201` 为activating/start且PID1371882；日志已完成37/171次更新、302/1368个窗口。该数字是一次观测，不是实时常量；看板已按同一真实实例显示更新与窗口数。训练配置SHA `655f4d924036ef1e23857c4bc1892b8f0bbce40af1a1b22f8bd4657eca097837`；官方FNO流场模型H10训练，K1受力模型冻结，目标和数据不变。仍未产生终态候选或科学准入。

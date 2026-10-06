@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## P028 training and official independent CPU reload complete
+
+Actual result `74bc0d491d82da8c3b897a330e1397ac7db2e92465221801ae1868a57114840d` verifies1368windows/171updates; source/protocol/role metadata and actual terminal container independently checked. Actual candidate audit `dd3390d0ac09f8f8e4673ed8eb48d2fbe47293a1dd1689a7abae29972ddddaea`; official CPU reload `685d55a9a2116d1554f14c26e54ce2d2913a4f9c47553c70407f3c4e25d3aecd` verifies saved flow tensorfac5f298...5406 and unchanged aero b0ec7405...80eb. No matching-evaluation improvement claim yet; complete report `docs/FC_P028_TRAINING_TERMINAL_REVIEW_20261006.md`. Next matchedP027 H10 and unchanged full formal. Formal preflight passed without numerical execution; no PPO admission.
+
 ## P028 fixed flow-rollout training — actual running, not terminal
 
 Unit `fluid-control-fcp028-flow-train-20261006.service`, invocation `c46c60f3c2634802b2646bb094f9d201`, is actively computing under approved spec `655f4d924036ef1e23857c4bc1892b8f0bbce40af1a1b22f8bd4657eca097837`. Observed37/171updates and302/1368windows. No accuracy result or terminal model yet. Inputs/source/protocol exactly match the actual R3 probe; only training mode enables the predeclared optimizer. Review deadline03:26:54UTC. Formal source receipt `fb5fd1ef87a09188d78453d0c5f93e49cf1a795dc7fa9fcee5fd77bf14cc910d`; no held-out execution yet. Scientific results.csv remains unchanged until measured same-protocol results exist.
