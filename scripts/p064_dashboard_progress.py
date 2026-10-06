@@ -285,7 +285,7 @@ def second_seed_cfd_status(root,run=subprocess.check_output):
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
-def candidate_cfd_status(root,run=subprocess.check_output):
+def canonical_b00_cfd_status(root,run=subprocess.check_output):
     root=Path(root)
     info={'status':'对称坐标CFD状态未核验','cycles':0,'target':800,'running':False,'training':False,'physical_pass':None,'terminal_verified':False,'invocation':None,'previous_seed':second_seed_cfd_status(root,run)}
     try:
@@ -308,6 +308,24 @@ def candidate_cfd_status(root,run=subprocess.check_output):
             result=json.loads(result_path.read_text());primary=result['windows']['primary_final_60']
             info.update(status='对称坐标策略：真实CFD完成，主窗减阻3.96%',terminal_verified=True,physical_pass=True,cycles=800,primary=primary)
             info['note']='独审800周期：主窗减阻3.9567%、升力波动降低18.3457%、均值偏置1.066%，原三项通过；早首6.2D/U偏置17.56%仍失败。同第二seed旧方式增阻0.62%的负结果保留；旧成功seed减阻3.90%，不宣称显著优越。当前无训练/CFD运行；完整预测精度FAIL未改变，非全目标完成。'
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
+    return info
+
+def candidate_cfd_status(root,run=subprocess.check_output):
+    root=Path(root)
+    info={'status':'canonical b01尚未核验启动','cycles':0,'target':800,'running':False,'training':False,'physical_pass':None,'terminal_verified':False,'invocation':None,'previous_canonical_b00':canonical_b00_cfd_status(root,run)}
+    try:
+        approval=root/'docs/P064_B_SYMMETRY_CANONICAL_B01_CFD_APPROVAL_20261007.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='ee010bbe1932e0b48b2f2e90a1b9dd77d463f86dad6367e0c0dd49a46f0b45f1':raise ValueError('canonical b01 approval SHA')
+        raw=run(['systemctl','--user','show','fluid-control-p064-b-symmetry-canonical-ppo-b01-long-cfd-20261007.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!='3a678d0c1d604f0eb821255c2848fdd4':raise ValueError('canonical b01 invocation')
+        info['invocation']=state['InvocationID']
+        path=root/'artifacts/p064_b_symmetry_canonical_ppo_b01_long_cfd_20261007/progress.json'
+        if path.exists():info.update(cfd_progress_counts(json.loads(path.read_text()),start=130.))
+        info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['status']='同一对称坐标策略：b01真实CFD验证中' if info['running'] else 'b01进程已停止，等待独立终态核验'
+        info['note']='FC-E085：只变固定初相位，130→210/800次CPU策略＋真实CFD；无在线FNO/MPC，不是训练，当前无物理结论。已完成b00减阻3.9567%、升力波动降低18.3457%、bias1.066%；其早期17.56%失败保留。原2%/1.05/10%与预测FAIL不变。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 

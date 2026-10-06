@@ -211,11 +211,11 @@ def test_unbound_canonical_cfd_not_running(tmp_path):
     from p064_dashboard_progress import candidate_cfd_status
     x=candidate_cfd_status(tmp_path)
     assert not x['running'] and not x['training'] and x['physical_pass'] is None
-    assert x['invocation'] is None and 'previous_seed' in x
+    assert x['invocation'] is None and 'previous_canonical_b00' in x
 
 def test_canonical_terminal_binding_keeps_early_failure():
     import inspect,p064_dashboard_progress as m
-    source=inspect.getsource(m.candidate_cfd_status)
+    source=inspect.getsource(m.canonical_b00_cfd_status)
     assert '165b78194f84676b5ea0091b1d160ccf25f913a9f49c74a9424a7d0f03cde7dc' in source
     assert 'cf7975dbd02da5dca41ddfafe409b86b3676c49e541dc2026988b02ca9f5408e' in source
     assert '17.56%仍失败' in source and '完整预测精度FAIL未改变' in source

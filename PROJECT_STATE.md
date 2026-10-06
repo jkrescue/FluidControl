@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E085 当前实际：固定同一canonical策略的b01真实CFD运行中
+
+实际unit `fluid-control-p064-b-symmetry-canonical-ppo-b01-long-cfd-20261007.service`，invocation `3a678d0c1d604f0eb821255c2848fdd4`，PID3770148 running；独查29/800周期（启动时点快照，实时页面继续更新）。批准 `docs/P064_B_SYMMETRY_CANONICAL_B01_CFD_APPROVAL_20261007.json` SHA `ee010bbe1932e0b48b2f2e90a1b9dd77d463f86dad6367e0c0dd49a46f0b45f1`，输出 `artifacts/p064_b_symmetry_canonical_ppo_b01_long_cfd_20261007`。只变相位，130→210/主(150,210]，E082policy/Vec/canonical映射/单filter和原物理门槛不变。CPU真实反馈不是训练、无在线FNO/MPC；未有本次物理结论，不填运行中科学指标。FC-E084固定seed20261006训练已批准但此时尚未独查实际启动，不显示running。
+
 ## FC-E083 当前终态：真实闭环主窗通过，早期偏置失败保留
 
 同545ba2ae已PID0/exit0，800次真实CFD反馈完成并独审。主窗(168,228]减阻 **3.9567%**、后升力波动降低 **18.3457%**、均值偏置 **1.0660%**，原2%/1.05/10%通过；首6.2D/U偏置17.5561%仍失败，不能称六窗全过。3200raw SHA、1600solver、全部canonical69/方向/符号还原/单filter、配对zero全列与旧B一致均通过。报告 [E083独审](docs/P064_B_SYMMETRY_CANONICAL_CFD_TERMINAL_REVIEW_20261007.md) SHA `cf7975dbd02da5dca41ddfafe409b86b3676c49e541dc2026988b02ca9f5408e`；result `165b78194f84676b5ea0091b1d160ccf25f913a9f49c74a9424a7d0f03cde7dc`。
