@@ -1,5 +1,13 @@
 # DECISIONS
 
+## 2026-10-07 — Stop adding seed/phase trials; prepare one controlled-data-dose comparison
+
+FC-E083 and FC-E086 independently confirm original primary physical criteria for the two predeclared canonical-coordinate seeds: seed20261007 drag reduction3.9567%/RMS ratio0.816543/bias1.0660%, seed20261006 3.7440%/0.773790/3.6741%. Fixed same-policy b01 FC-E085 also passes all six windows. Evidence: [E086 terminal review](docs/P064_B_SYMMETRY_CANONICAL_SEED20261006_CFD_TERMINAL_REVIEW_20261007.md), SHA `24e9a5ad02b0b36b34910ebe32e72de4c8cc5692f6090e4efa0dcad8439ac7fc`. This supports these two specified seeds, not arbitrary-seed robustness. E086 early12.4 and first6.2 mean-bias11.2623%/21.1797% fail10%; first6.2 also exceeds20% sensitivity. E083 early failure and older negative results remain unchanged.
+
+Lead decision: do not add seeds or phases now. Startup/transient behavior remains a later control-research issue, not silently accepted. Preserve original primary2%/1.05/10% and the complete FNO prediction FAIL. Current next work is preparation and review of ONE C50 controlled-data-mix comparison: same K1 parent, fresh optimizer,32updates/256windows/objective/resources, change controlled b00 dose25%→50% under the fixed sampling rule. C128 evenly spaced starts are not a strict superset of B64. No architecture change, new dataset, PPO training or CFD is implied.
+
+C50 is not running or authorized by this document; final source/consumer/config preflight and separate execution approval remain required. Historical “no automatic next experiment” means no unapproved automatic continuation, not cessation of the project. Whole-goal completion is not declared; improving prediction remains required and physical success does not replace it.
+
 ## 2026-10-07 — Confirm canonical-coordinate control without weakening either acceptance standard
 
 Lead decision after FC-E083: keep the original primary physical criteria (drag reduction >=2%, rear lift fluctuation RMS ratio <=1.05, mean-bias ratio <=10%). The completed canonical-coordinate b00 run has independently verified primary results 3.9567229236% / 0.8165429747 / 1.0659980225%; the first6.2 D/U mean-bias ratio17.5561% still fails. [Terminal review](docs/P064_B_SYMMETRY_CANONICAL_CFD_TERMINAL_REVIEW_20261007.md), SHA `cf7975dbd02da5dca41ddfafe409b86b3676c49e541dc2026988b02ca9f5408e`. Both the old second-seed negative result and the first-seed successful control remain archived; this is not proof of statistically significant superiority or general robustness.

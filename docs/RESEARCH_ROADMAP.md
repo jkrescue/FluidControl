@@ -1,5 +1,15 @@
 # Research roadmap and prioritized backlog
 
+## Current priority — one C50 prediction-improvement preparation after fixed replication
+
+Updated2026-10-07 after [E086 independent terminal review](P064_B_SYMMETRY_CANONICAL_SEED20261006_CFD_TERMINAL_REVIEW_20261007.md), SHA `24e9a5ad02b0b36b34910ebe32e72de4c8cc5692f6090e4efa0dcad8439ac7fc`. Both specified canonical seeds meet original primary physical criteria (drag3.9567% and3.7440%); fixed b01 also passes. These finite confirmations do not establish arbitrary-seed robustness. E086 early bias11.2623%/21.1797%, E083 early failure, old negative trials and complete FNO prediction FAIL remain visible.
+
+1. Do not add seed or phase evaluations now. Keep the reproducible CPU real-feedback evidence; transient/startup control differences remain later research, not a revised pass.
+2. Prepare and independently review ONE C50 same-budget aerodynamic training comparison from the same K1 parent: controlled-data dose25%→50%,32updates/256windows, original objective and normalization. Sampling remains mechanically even but128 starts are not the original64's strict superset.
+3. Resolve the thin C consumer identity/config bindings, then seek separate execution approval. Currently this is preparation, not running training. Evaluate the final candidate on the already fixed development protocol, preserving failures and no checkpoint selection; no PPO/CFD advancement is automatic.
+
+Original primary2%/1.05/10% and project prediction standards remain unchanged. No blanket stop is implied by prior no-automatic-continuation statements; the next approved bounded test advances the same goal without hiding unmet accuracy. No full-goal completion claim. Older priority sections below are retained as dated history.
+
 ## Current priority — fixed canonical-coordinate replication and b01 confirmation
 
 Updated 2026-10-07 after [FC-E083 independent real-CFD review](P064_B_SYMMETRY_CANONICAL_CFD_TERMINAL_REVIEW_20261007.md), SHA `cf7975dbd02da5dca41ddfafe409b86b3676c49e541dc2026988b02ca9f5408e`. All800 feedback cycles completed; primary drag reduction3.9567%, rear lift fluctuation RMS ratio0.816543 and mean bias1.0660% meet unchanged2%/1.05/10%. First6.2 D/U bias17.5561% still fails. Existing second-seed negative control and earlier successful first seed remain evidence, not overwritten history.
