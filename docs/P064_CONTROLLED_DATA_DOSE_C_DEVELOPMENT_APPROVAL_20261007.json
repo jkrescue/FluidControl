@@ -29,7 +29,7 @@
       700
     ]
   },
-  "execution_authorized": false,
+  "execution_authorized": true,
   "import_bindings": {
     "dual": "fluid_control.dual_fno",
     "history": "p026_state_history",
@@ -2628,7 +2628,7 @@
       "sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
     }
   },
-  "status": "P064_C50_DEVELOPMENT_H1_H5_FUTURE_BINDINGS_PENDING_NOT_AUTHORIZED",
+  "status": "P064_DEVELOPMENT_H1_H5_EVALUATION_EXECUTION_APPROVED",
   "future_bindings_complete": true,
   "training_terminal_observation": {
     "ActiveState": "active",
