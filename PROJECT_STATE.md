@@ -1,14 +1,22 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 最新诊断：E093小JSON分析已独审，无新模型计算
+## 当前唯一摘要 — E094终态独审；优先安全复现已有canonical闭环
+
+E094同 `22bc9a45344a4969bae30c33f4d85c04` PID0/exited/exit0，六个同B/同q0首步在high/TF32下逐值复现E073，再做highest/noTF32；12双FNO调用、模型tensor不变、无训练/CFD。Sota独立复算通过，[终态报告](docs/P064_FIRST_STEP_PRECISION_TERMINAL_REVIEW_20261007.md)，result `7de34f709d3993ed3e1fc2cd28d4dbd3b3a72a1f3ac1e867b18bda03a5a00eab`。关TF32仍保留b01±总Cd和b05±rearCl的局部响应反号；不能归因单纯TF32，也不能从六小响应推广为全球因果。18.00s、最低Available112.711GiB，已清理容器。
+
+D未满足预定两H1指标同时改善，不晋级/不续训；C50/H25拒绝、完整预测FAIL、早期与旧seed失败保持。已有官方组件→FNO训练→HydroGym/SB3 PPO→真实CFD反馈链和限定canonical物理收益是真实成果，但整体高精度代理目标仍未完成。下一优先是可安全复现的既有canonical案例，不是继续自动扫比例、架构或新增精度probe；局部控制相关力响应仍需改善。在线FNO/MPC是可选方法，不额外设为原目标硬条件。当前E094已结束；任何新科学任务须另批。
+
+## 历史快照索引（下文状态仅属于记录时点，不代表当前运行）
+
+## 历史快照 — 最新诊断：E093小JSON分析已独审，无新模型计算
 
 同 `a730e633fec4417b9386a532fdb1e46d` exit0，固定6case×98points/lag＝588，H1/AR各−1/0/+1全部保留。独立NumPy复算2220统计量及四action-minus-zero/首步数组，最大差6.66e-16；[独审](docs/P064_FIXED_LAG_JSON_INDEPENDENT_REVIEW_20261007.md) SHA `9b3238275b78677f9a63e8961189c081062476d36466b25e744d20bb5e5d19f3`，result `7738b963c474b6d62aa42037095a11100e71c9154e0b9cc5274fff731421ead3`。六case rearCl零lag均优于相邻lag，不支持简单整一步错位解释；部分同初始状态首步动作响应反号提示局部响应疑虑，不等于全球符号错误或因果分解。限定dynamic6/highTF32，不外推控制dev/highest-noTF32。E094配对precision检查仍是准备，未在此执行；无新训练。D拒绝、B物理收益、预测FAIL和整体未完成保持。
 
-## 当前：E091/E092均完成，D不晋级，保留已验证B控制器
+## 历史快照 — 当前：E091/E092均完成，D不晋级，保留已验证B控制器
 
 固定dev同 `6538db4425e14b009bacdb93baf03916` 实际exit0，16NPZ/80端点独立复算完成。pooled H1 rearCl MAE B `.13899831660091877`→D `.13943017413839698` 变差，总Cd `.03806537389755249`→`.03782491013407707` 略好，未满足预定两主指标同时改善。H5两项及固定六训练窗H1/AR保留性略改善，均如实保留，不能替代H1失败；flow冻结导致预测场逐值相同。报告 [E092](docs/P064_B00_B02_COVERAGE_D_DEVELOPMENT_REVIEW_20261007.md) SHA `ee4258a9733074a8f25912298ab58d5814ef8b8176671a9526bd25d10fc37c58`；result `a9c9d2088217b599b6491ed5950e3baab024c8126033548b62d3e27843f0e51b`。Lead拒绝D晋级，不续训/扫比例/新PPO或CFD，保留B。下一项仅检查既有teacher-forced/saved-array证据以区分瞬时力映射、相位滞后及动作响应；未批准新科学计算。项目未完成、目标未缩小，原物理收益/早期失败/完整预测FAIL均保持。下方为此前交接和历史。
 
-## 当前：E091 D25训练已独审完成，候选精度尚未评估
+## 历史快照 — 当前：E091 D25训练已独审完成，候选精度尚未评估
 
 同 `171686b7ec154a0194348d26fd736cec` 已PID0/正常exit0，实际256窗口/32参数更新。独审441source SHA、192original/32b00/32b02精确计划、逐组loss均值/clip、28Adam step32有限、两bias逐tensor及flow保存字节不变；生产官方freshreload成功。报告 [E091独审](docs/P064_B00_B02_COVERAGE_D_TERMINAL_REVIEW_20261007.md) SHA `82a5c50ba114c3aaa96bc33bdb756f950935bdac6d49542a7d0bb5d7a3d8c235`；result `2c01c3b24a11b30371d40ee9ef799c7fd01090d284778498919080e6323b8733`、manifest `93d579b910d5a03385a31fb44c0050fa0b8d498fb6c621289a8d1038b5c1741a`。独审不重跑模型forward；CPU审计前两schema兼容失败保留，R3通过，训练无重试。固定dev需另批；没有精度改善/PPO/CFD晋级结论。以下为实际启动历史。
 
@@ -18,7 +26,7 @@ Unit `fluid-control-p064-controlled-coverage-d-20261007.service`，invocation `1
 
 术语澄清：P064 A/B/C执行的是**气动力FNO分支微调**，该分支除两项冻结bias外共28参数tensor参与优化，不是仅末层readout。独立flow FNO分支冻结，故本轮不会改善流场预测；此澄清不改变任何算法、预算、结果或失败记录。
 
-## 当前：E090 CPU转换完成并独审；尚未启动新的模型训练
+## 历史快照 — 当前：E090 CPU转换完成并独审；尚未启动新的模型训练
 
 随后单次 CPU train-view 整理亦已完成：同 `2ea9508cf6194847b6f8337a0c98ac74` exit0，实际官方DataPipe验证701个H100窗口及首0→100/末700→800。manifest `c8201847a7bbb77a0a3e7c2d1f121e9aef2cd294358fcc2d4f9d8d88037d0c4a`、verification `c5a24716fc285983fbd6042e5be8d7625b5630ccda26f39dc47b7fa645f62b80`；[独审](docs/P064_B02_TRAIN_VIEW_INDEPENDENT_REVIEW_20261007.md) SHA `aab1bacba13c6ed8a2611d59d2e46a7f132ae1178a5030398fc512d4e471cdc6`。只train、原norm/HDF同SHA，未训练。可供另批D25绑定；HDF硬链接保留原0664，后续只读并重核SHA，不称操作系统强制不可变。
 
@@ -134,7 +142,7 @@ actual unit `fluid-control-p064-b-symmetry-canonical-ppo-long-cfd-20261007.servi
 
 **尚无该对照的物理结论**，不凭近零动作预判。已有b00/b01/b07收益属于已训练B策略，H25候选退化未采用、原B完整预测FAIL均保持。本实验只检验该seed/相位/同变换下学习权重的贡献，不是RL独占因果证明或优于所有简单控制器。CPU策略反馈，无在线FNO/MPC、无PPO优化；独立终态将核raw force、零对照和旧trained B匹配，不自动重试。
 
-## 当前摘要：真实闭环已验证；H25训练完成但预测退化，未采用
+## 历史快照 — 当前摘要：真实闭环已验证；H25训练完成但预测退化，未采用
 
 FC-E077实际同六案例H100评估已完成（inv `b34a1af84199467bad07b61758b92b49`，24.01秒，非训练/CFD），独审600端点及父B逐条同真值/动作匹配。rearCl MAE .062386→.083012，totalCd MAE .020723→.046724，四对动作差误差 .015652→.020167；六案例velocity/pressure均值及H100终点全部退化。Lead决定H25不晋级PPO，保留旧B成功控制策略；没有新训练或CFD正在由本次结果触发。详见 [独审报告](docs/P064_B_H25_QUICK_AR_TERMINAL_REVIEW_20261006.md)，result SHA `1b7bd2a2e99f9d02398df4cbcefc2d7dc5a486a02866d9a64856d0db9e9dafe0`。
 
@@ -176,7 +184,7 @@ R3 同 invocation `3bded2dcb4a24f808879987962a9ef8b` 已独立确认 PID0 / exit
 
 真实闭环并非未开展：B兼容PPO已经在b00/b01完成实际CFD反馈且主物理标准通过，但这些已观察开发相位及物理收益不代表预测模型全部验收。保持旧成功控制器、H100失败和R1/R2工程失败记录。same-six缓存诊断已完成并归档ed638be，保留batch/precision差异；下一项仅准备signed H1 600端点batch1诊断，尚未执行，不自动重训或改变目标。下文此前running/pending标题均为历史记录。
 
-## 当前实际：完整预测精度评估 R3 同协议恢复运行
+## 历史快照 — 当前实际：完整预测精度评估 R3 同协议恢复运行
 
 Unit `fluid-control-p064-b-formal-r3-20261006.service`，invocation `3bded2dcb4a24f808879987962a9ef8b`，实际PID1582344 active/running，当前资源日志step=dynamic6。批准 `docs/FC_P064_ARM_B_FORMAL_RESUME_R3_APPROVAL_20261006.json` SHA `19be2d6aad903ffc94b807803bd5fd0902c7ec5b7a0f0b4212423744db89cb56`；新独占输出 `artifacts/fcp064_arm_b_formal_resume_r3_20261006`。只修复P064候选CLI身份路由，复用R2 precision/validation10的9个SHA核验文件，仅执行余下6阶段；R1/R2失败及原输出保留，新receipt区分来源。runner `3bb215f93f5d6d468f8b22267b5f1fb485516f865c45d32723fe33b3fe56ec84`，独立5CPUtests通过。没有重训或重算validation10，尚无完整科学判定；b00/b01物理主窗口已独审通过与预测模型门槛保持区分。实际allocator .15、Available50/22保护不变。
 
@@ -186,7 +194,7 @@ Unit `fluid-control-p064-b-formal-r3-20261006.service`，invocation `3bded2dcb4a
 
 同一新B-policy现于b00/b01两个已观察初相位主窗通过；b00是训练轨迹，b01已用于开发且历史暴露，不能称新holdout/独立泛化。新旧b01 zero全部原始forces逐值相同，新减阻比旧K1-policy仅+.00387868305百分点，不显著优势。全窗lift峰值1.704317136仍高于zero1.647302403，保留transient代价。旧成功policy不替换，formal/H100结论仍须独立终态，不从物理成功推断模型准入。下文live记录为历史。
 
-## 当前纠正：P064-B 完整评估 R2 工程失败，validation10已完成；没有完整科学判定
+## 历史快照 — 当前纠正：P064-B 完整评估 R2 工程失败，validation10已完成；没有完整科学判定
 
 同invocation `01806bdc150841f7b9efd04360a441f2` 已在12:53:10 UTC退出1/PID0：后续validation_diagnostic的CLI未接受P064-B kind。不是仍在运行，也不是完整科学gate FAIL。已完成validation10的1240端点独立复算通过：B H1 rearCl/Cd MAE .0377850/.00878357，对照K1 .0202176/.00766464；H100 .0431183/.0112626，对照.0401863/.0109280。场误差统计逐值不变。H100真正pooled Cd NRMSE为K1 .00609718→B .00626447；summary的mean-case为.00580968→.00603306，两种聚合不可混比。后续force-window/fullgate尚未完成，无准入结论。新独审 `docs/P064_B_FORMAL_R2_PARTIAL_TERMINAL_REVIEW_20261006.md` SHA `2ead80d6ecbca6485bab8bca20183a3aa05a71e568af39565d11086d677638ad`。R2证据保留；身份CLI最小修复与新输出续跑另行审查，不重训或重算已完成validation10，不修改科学门槛。下方此前running段落仅为历史。
 
@@ -204,7 +212,7 @@ B 的 flow 权重冻结，不能据此宣称流场预测改善；aero 权重有�
 
 2026-10-06 12:41:45 UTC，unit `fluid-control-p064-b-formal-r2-20261006.service`，invocation `01806bdc150841f7b9efd04360a441f2`，实际 active/running。批准 `docs/FC_P064_ARM_B_FORMAL_APPROVAL_20261006.json` SHA `cd58fd47e991ec6dac200bd82d414347f72b778ea78415377427e430dfd47478`；输出 `artifacts/fcp064_arm_b_formal_20261006`。这是原完整科学协议评估，不是训练；precision阶段已结束，validation10进入CUDA/PhysicsNeMo初始化，尚无完整数值结果，不凭进程或GPU利用率声称forward/通过。R1 invocation `6d7cea57ea7740c991223448dfc45e0a` 因错误cwd相对路径在打开执行源码/容器/GPU前exit2，保留失败；R2同批准仅改正确cwd与绝对路径。b01 CPU真实CFD同432c12继续运行，原H100失败历史未被覆盖。实际launch报告 `docs/FC_P064_ARM_B_FORMAL_LAUNCH_20261006.md` SHA `ac3dc4b3262a943128277b4acf3f53e014dfd3d2a604f99968d3a3ce36c85cda`。
 
-## 当前实际：同 B policy 的 b01 配对800周期验证已启动
+## 历史快照 — 当前实际：同 B policy 的 b01 配对800周期验证已启动
 
 2026-10-06 12:37:56 UTC，unit `fluid-control-p064-b-projected-ppo-b01-long-cfd-20261006.service`，invocation `432c12de32b0444d9a6f6626e12616d1` 已实际 running，首查14/800周期。固定130→210，主窗口(150,210]，同B policy、镜像投影及单次动作限制，原物理标准不变。批准 `docs/P064_B_PROJECTED_PPO_B01_LONG_CFD_APPROVAL_20261006.json` SHA `3a19e326ebfd37df24060b8b5717b5af08b405ed63165e4034974aeb7b0abcb6`；immutable driver `4b8fa43f8ac020521ae8cde1047b6ec2f80d35ec0512bc7606d1050835010619`。CPU真实CFD反馈，无新训练、无在线FNO，尚无物理结论。b01是已打开开发相位，不是全新独立测试；不能继承旧policy结果。此前b00已独审通过原主窗口标准，H100失败仍保留。
 
@@ -300,7 +308,7 @@ Root 于10:17:37UTC启动 `fluid-control-b00-controlled-train-conversion-2026100
 
 结果 SHA `247af0405d9e622f0b3b3b5dbc64e46c20890439fcd5216682b8d973957fd00d`；独审 `docs/PROJECTED_POLICY_H1_H5_INFERENCE_TERMINAL_REVIEW_20261006.md` SHA `197b385617420e5f0e9cb7c8dfb25d957e98f85ea93f280bb2d6c0effc898faa`。378 源文件、192 runtime、5 输入身份通过，最低 sampled MemAvailable 121518190592B；模型不变、无优化器/新 CFD。源码按已执行字节归档，canonical 7 CPU tests PASS，仅工程覆盖。此为给定真实已实现未来命令的离线回放，不是在线 FNO/MPC，不改变三个相位的真实物理闭环结果，也不覆盖 H100 FAIL。下一项仅建议另审 train-only 状态/动作历程诊断，未自动批准训练或调参；FC-E062 的首轮转换失败与历史记录全部保留。
 
-## 当前：真实策略闭环已完成，b00 / b01 / b03 三个观测相位 primary 均通过原标准
+## 历史快照 — 当前：真实策略闭环已完成，b00 / b01 / b03 三个观测相位 primary 均通过原标准
 
 FC-E061 b03 已终态，不再运行训练或该 CFD：同一 invocation `47612677a9f64dfc968917fada5e9ba8`，PID0 / exit0，完成 800 个真实策略反馈周期。独立复核 3200 个原始受力文件哈希、全部六窗口、800 次投影与单次动作限幅、1600 个干净求解段及容器清理。Primary **(164,224]** 的 12000 点结果为减阻 **3.89714021%**、rear-Cl centered RMS 降低 **18.51412210%**、均值偏置/配对零旋转 RMS **1.68885808%**；原 ≥2% / ≤1.05 / ≤10% 三项均通过，无阈值放宽。本次六窗口均通过，不能据此改写 b00/b01 的早期窗口失败。
 
@@ -448,7 +456,7 @@ FC-E052训练独立终态审查已完成：4096转移、32epoch/64optimizersteps
 
 离线恢复 `artifacts/exploratory_accelerated_long_h5_real_cfd_20261006/recovered_metrics.json` SHA `1605604dc27f106acd05e6a721f26c4ba24527ac53996d6e65fbc70c601fa2b1`；详见 `docs/EXPLORATORY_ACCELERATED_LONG_H5_TERMINAL_REVIEW_20261006.md`。原restart完整重验不变，两容器已清理；第一10周期动作及4路200点原始受力与先前CPU H5完全一致。以下running状态只作历史。下一步保持探索路线，但不得自动重跑、扫阈值或以lift降低替代减阻目标；另行评审后决定干预。
 
-## 当前实际运行：加速H5真实配对反馈124周期（2026-10-06）
+## 历史快照 — 当前实际运行：加速H5真实配对反馈124周期（2026-10-06）
 
 实际user unit `fluid-control-accelerated-long-h5-20261006.service`，invocation `a601eec2da7649b4af6f9354a4deb470` 已核active/running、PID2131269，阶段观测5/124。输出 `artifacts/exploratory_accelerated_long_h5_real_cfd_20261006`；批准SHA `03e2bac8f55c4bbd09e377b60bfef849515b53a6d418d490ec682b2cde95bc75`，不可变driver `4cca28757f44e80f693d2d4a33c15cea0ea5bc74368eda669aead292b37464bf`。没有终态控制收益结论，也没有正在进行模型/PPO训练。
 
@@ -456,7 +464,7 @@ FC-E052训练独立终态审查已完成：4096转移、32epoch/64optimizersteps
 
 新窗口12.4D/U分别报告完整、前6.2和末6.2；仍短于原80D/U。MemAvailable启动50/运行22GiB，CUDA空闲仅观察；控制器12GiB无swap、两求解器各8GiB，内部1800秒/外部1950秒。K1原formal FAIL保留；以下旧准备/运行条目仅为历史。
 
-## 当前实际终态：FC-E048 H5反馈完成，尚无减阻收益（2026-10-06）
+## 历史快照 — 当前实际终态：FC-E048 H5反馈完成，尚无减阻收益（2026-10-06）
 
 同一 invocation `6adc59fae65344d2b49b57cbe5b30f70` 已于06:12:13UTC结束，PID0/exit0；以下旧running条目仅保留历史。10个真实反馈周期、每分支200个原始CFD受力样本独立复算：总Cd均值MPC `2.4137825099145`、zero `2.413592168615`，paired drag reduction `−0.0000788622460641264`（阻力差0.0078862%更差）；后圆柱Cl波动RMS比 `0.9836105589246837`。H5产生非零动作而非H2全HOLD，但仅1D/U，不能判定长时物理目标完成。250个候选阶段成本复算一致，mean-bias惩罚全零，原10%不是这次动作选择的阻断。
 
@@ -472,13 +480,13 @@ FC-E052训练独立终态审查已完成：4096转移、32epoch/64optimizersteps
 
 并行完成no-TF32 GPU工程对照：同一帧后Cl相对CPU最大差由.013054降至1.87755e-6，热推理约.14秒；最低采样Available120607776768bytes。仅单帧证据，报告 `docs/K1_UMA_GPU_NO_TF32_TERMINAL_REVIEW_20261006.md`，不自动改变当前H5设备或宣称全局等价。以下为历史。
 
-## 最新工程事实：真实GPU推理完成，H5反馈实现中
+## 历史快照 — 最新工程事实：真实GPU推理完成，H5反馈实现中
 
 统一内存探针 `74f94b14bb81495daed3568042bed798` 正常结束。原官方K1在同一已有帧上完成3次五候选H2推理，首次1.150291秒、热运行0.139241/0.137661秒；最低采样MemAvailable113.4714GiB。CUDAfree约1.78GiB仅作观测，不能等同实际可分配余量。模型权重不变，没有训练/CFD动作；报告 `docs/K1_UMA_GPU_INFERENCE_REVIEW_20261006.md` 已同步GitLab6c27470。不外推长时资源安全或CPU/GPU数值等价。
 
 H5单因素真实反馈尚在实现和独立检查，未启动。看板已绑定FC-E047真实终态（10次零动作/零收益），不是运行中。后续仍需真实减阻验证及兼容HydroGym/PPO流程；短MPC和GPU工程成功不能替代整体目标。以下为历史。
 
-## 最新：第二轮真实反馈完成；准备 H5 单因素对照
+## 历史快照 — 最新：第二轮真实反馈完成；准备 H5 单因素对照
 
 FC-E047，同实例 `6f554f10e87e4b9f9d6b6ed8b555c548` 已exit0/PID0，10次动作全部为0；两分支各200个原始力样本相同，减阻收益0。结果 SHA `74a28d45dce9b84ec5044700fe470390cde899a2fcf40a0b893c1b28817d99ca`，独立报告 `docs/EXPLORATORY_CAUSAL_HISTORY_H2_TERMINAL_REVIEW_20261006.md` SHA `9ceb4d58a66b549faa86834d15d0444d57c8fdcc2f2635f18859440a679d2098`。没有新训练、PPO或正在运行的CFD计算。
 
@@ -486,7 +494,7 @@ FC-E047，同实例 `6f554f10e87e4b9f9d6b6ed8b555c548` 已exit0/PID0，10次动�
 
 并行准备隔离有上限的GPU推理探针：官方说明Spark CUDAfree不包含可回收缓存，不能单独判断实际可用容量。统一物理MemAvailable至少20GiB仍是要求，尚未修改旧守卫或执行新GPU任务。以下为历史。
 
-## 最新：实际FNO-MPC→CFD短反馈完成，阻力目标未达（2026-10-06 05:37 UTC）
+## 历史快照 — 最新：实际FNO-MPC→CFD短反馈完成，阻力目标未达（2026-10-06 05:37 UTC）
 
 FC-E046：同实例 `e3b9eb7b58724a1c9ec4e64d63ac7bbe` 正常终态，10次实际当前场重观测/官方K1双FNO H2选动作/两分支真实OpenFOAM推进完成；不是shadow-only，也不是新HydroGym/PPO任务。200个真实力样本/分支的全指标独立重算与结果完全一致。MPC总Cd均值2.4192140666805，配对零控制2.413592168615，阻力增加0.23293%；后Cl波动RMS降低5.6891%，是短时取舍而非总体目标成功。
 
@@ -494,7 +502,7 @@ FC-E046：同实例 `e3b9eb7b58724a1c9ec4e64d63ac7bbe` 正常终态，10次实�
 
 Lead已批准准备单一代价改动：复用canonical62点实际过去力历史，再分别加入H2预测并平均各阶段代价；实现/测试准备中，尚未批准或执行新试验。先确认因果时序和目标含义，不改变物理门槛，不把该短窗收益外推长期。以下记录按时间作为历史保留。
 
-## 当前优先：两段真实CFD场桥接已完成，下一步配对10周期MPC试验（2026-10-06 05:21 UTC）
+## 历史快照 — 当前优先：两段真实CFD场桥接已完成，下一步配对10周期MPC试验（2026-10-06 05:21 UTC）
 
 R4同invocation `99e5c019c08240668241f7ac036320f3` 已实际exit0/PID0：固定零动作148→148.1→148.2，各20个dt=.005求解步，两个新端点均由原Curator采样并经canonical适配器得到[1,6,128,256]当前场输入。原restart/source哈希独立核对不变，owned容器已清理；结果SHA `be3c57e00003d7092b116058604a47d2ea2b2c1f033551adb39188f1c91f7584`，报告 `docs/TWO_SEGMENT_CURRENT_FRAME_R4_TERMINAL_REVIEW_20261006.md`。
 
@@ -512,13 +520,13 @@ R4同invocation `99e5c019c08240668241f7ac036320f3` 已实际exit0/PID0：固定�
 
 实际恢复unit `fluid-control-fcp031-resource-probe-r2-20261006.service`，invocation `48a1f83e007a4bb59f1ea025af2e7dd7`，输出 `artifacts/fcp031_h25_resource_probe_20261006_r2`。原424项固定源码manifest495e4f54及批准3177f364保持；实际CUDA预检33.6905GiB通过。仅单窗口H25前向/反向，无optimizer或模型保存；内存保护、900秒限制不变，尚无终态资源结论。完整训练仍须资源结果与候选加载/验证兼容审查。以下状态按记录时间解读。
 
-## 最新工程进展：真实单帧输入一致，H25资源检查准备中（2026-10-06 04:47 UTC）
+## 历史快照 — 最新工程进展：真实单帧输入一致，H25资源检查准备中（2026-10-06 04:47 UTC）
 
 现有b00_zero、t=148.0的单帧VTU经原官方Curator采样器处理，与官方HDF5Reader读取的既有frame0逐值一致：97020个有效物理/归一化数值和196608个模型输入数值的最大绝对差及RMSE均为0，mask/grid/time一致。CPU隔离单次任务正常完成，未加载模型、未训练、未运行CFD求解器、未执行控制动作；该结果只是一个已有帧的接口一致性证据，不代表在线闭环完成。输出 `artifacts/online_current_frame_cpu_20261006`，独立复核进行中。
 
 P031拟将同一官方FNO的训练预测长度从10步增至25步，其他数据、父模型、损失尺度及验收不变。最小资源探针/训练入口已完成源码与合成CPU测试，正在独立审查和绑定执行来源；尚未运行H25 GPU探针或训练。当前GPU空闲，不能标记为训练中。计划及当前场适配器已同步GitLab `cc04220`。整体目标仍未完成。
 
-## 最新结论：连续推演误差在训练轨迹内也恶化（2026-10-06 04:26 UTC）
+## 历史快照 — 最新结论：连续推演误差在训练轨迹内也恶化（2026-10-06 04:26 UTC）
 
 P030 r2正常结束（同4b89d3cb实例、MainPID0、exit0/noOOM），44条起点相同轨迹的两模型100步预测及全部原始记录已保存。独立重算全汇总一致；额外NumPy重算最大差4.86e-17。结果SHA `b1042b94fde60aed135c60d348431aa1c6177b1b9b12b1ae8ba56bc9fab6ee7f`，报告 `docs/FC_P030_RECOVERY_TERMINAL_REVIEW_20261006.md` SHA `4e21fc05f543b5c90a74e318e9e7ae999b27b8350d7573817b49c4c6670dc5b4`。最低观测CUDA空闲21.3438GiB。
 
@@ -526,29 +534,29 @@ P030 r2正常结束（同4b89d3cb实例、MainPID0、exit0/noOOM），44条起�
 
 下一步正在设计单一更长预测训练窗口的对照（P031，未批准训练），保持官方FNO、原数据及验收不变；并行准备复用现有官方Curator单帧采样器的当前场适配接口，仅CPU工程测试。总体模型准入、兼容策略及真实CFD在线闭环仍未完成。以下“运行中”均为历史。
 
-## 最新：P030修复后实际重跑（2026-10-06 04:23 UTC）
+## 历史快照 — 最新：P030修复后实际重跑（2026-10-06 04:23 UTC）
 
 重跑unit `fluid-control-fcp030-train-horizon-r2-20261006.service`，invocation `4b89d3cb85c540448eeebd8ef5c7c3b3`，初始MainPID1771775；输出 `artifacts/fcp030_train_horizon_diagnostic_20261006_r2`。批准SHA `6c4edae1e955268dcae718c4eb2f6b24a216b8961189d56a09f4d4da7c091378`，v3源码manifest `73ac42127e0ace741c675cb7a5a53a6339171565462d0771c11665124d0f08e6`，恢复独立审查 `docs/FC_P030_RECOVERY_REVIEW_20261006.md` SHA `a0d7865fdde4c10cd754fb2c975b995aaa8bd655b3b0eeb1ec0281b1b043b8df`。
 
 仅修复元数据rows传参、汇总前保存raw_records.json及其SHA；原数值核心/模型/数据/资源保护不变。25项集成测试与15项核心测试通过，新增实际核心44对记录汇总与生产调用AST回归。首次失败和v2全部保留。一次只读精确44文件缓存提示完成，收据SHA `fecbbdb461f3d94e9b7cf15310c562905802cfc95aae7a8fe5770bc38994065a`，未写入HDF/模型，物理空闲恢复约32.1GiB。已观测origin_complete1至3及实际看板登记；尚无最终诊断结论，更不是训练或闭环完成。
 
-## 最新：P030首次运行汇总接口失败（2026-10-06 04:19 UTC）
+## 历史快照 — 最新：P030首次运行汇总接口失败（2026-10-06 04:19 UTC）
 
 同一实例d7739a9bf4fe42f68a584e8ec5edc684已终止，MainPID0/exit1。44项origin_complete存在，但driver把tuple键的dict传给要求metadata行列表的grouped_and_paired，触发TypeError。没有result.json，也没有保存rawrecords，不能报告科学指标或成功；必须修复并重跑。观测CUDA最低21.538467GiB、MemAvailable最低111.160320GiB，属于软件汇总接口故障而非内存故障。已授权小范围修复：直接传原始rows、用实际core执行44记录汇总的CPU回归测试，并在汇总前保存原始预测记录。原失败输出和v2源码保留不变，新版本需独立检查及单独重跑批准。下方运行中均为历史。
 
-## 最新：真实模型H100诊断已启动（2026-10-06 04:16 UTC）
+## 历史快照 — 最新：真实模型H100诊断已启动（2026-10-06 04:16 UTC）
 
 P030固定44条真实训练轨迹、start0、K1/P029连续100步对照已实际启动。user unit `fluid-control-fcp030-train-horizon-20261006.service`，invocation `d7739a9bf4fe42f68a584e8ec5edc684`，启动观测MainPID1756637。批准 `docs/FC_P030_EXECUTION_APPROVAL_20261006.json` SHA `2f80dab06ca1916495272dac0adf155745969534ce3d5b1626e7a4295eadc98f`；v2源码17项manifest SHA `a14bd2c00ff5c905ccd6193843736a6ccc2806cd2c2d7a51827635cb09fdb6e3`。23项集成CPU测试与15项核心CPU测试通过，独立审查 `docs/FC_P030_INTEGRATION_REVIEW_20261006.md` SHA `fa72abdd5686feff177a45ba615744c10c8098a2b7f1b0f51a92ea3843f36e7f`。v1固定源码保留。
 
 该任务不更新参数、不保存新模型、不授予策略训练或闭环准入。输出 `artifacts/fcp030_train_horizon_diagnostic_20261006`，先记录selection.json，再对照各预测时长的流场与气动力误差。900秒上限、原20GiB物理/CUDA守卫保持。实际CUDA预检31.7396GiB通过；启动后资源监控仍在持续。看板已经登记本次真实实例与44轨迹进度。整体闭环目标尚未完成；下方GPU空闲或准备中状态均为此前记录。
 
-## 最新：P029完整计算已结束，科学判定未通过（2026-10-06 03:47 UTC）
+## 历史快照 — 最新：P029完整计算已结束，科学判定未通过（2026-10-06 03:47 UTC）
 
 同一正式实例 `85ae29a422fc48739136418317de8ca5` 已结束（MainPID0、exit0），不是资源故障。原始development gate为FAIL：六个窗口joint2/6、总Cd6/6、后Cl波动2/6、后Cl均值4/6。通过的是b01-minus及b05-plus；两个zero分支的波动预测现在均失败，不能只报旋转分支改善。原始收据SHA `96e207af491ef4abe0c9e9c85983672111d86d70fe88b2d88551b29d0739a334`，gate SHA `aa7dd557bc516e898339655517eba8bf16cf27b4579751c6b9f75a4de9153c53`。独立复核已完成：35项输出、411项源码哈希一致，8个容器exit0/noOOM；原审计器所有离散判断一致，浮点重算最大差4.44e-16；最低物理空闲21.200443GiB。报告 `docs/FC_P029_ORIGINAL_FORMAL_TERMINAL_REVIEW_20261006.md` SHA `020042bb6846e9be14ccb10e36035bba7c5d3fa4d6e164c81ee5d027f9a62527`。未授予PPO准入。
 
 P029独立复核与FC-E043台账已同步GitLab（ae99908）。P030固定44条训练轨迹start0/H100诊断的CPU核心获独立审查通过，15项工程测试通过；审查SHA `cc4f3e969850890f0a0b7384c25c5202885ea2a2b031f1e6571d0a5fd1b12596`。03:56 UTC已批准执行入口、来源清单和隔离容器启动器的准备，文件 `docs/FC_P030_INTEGRATION_PREPARATION_APPROVAL_20261006.md`。尚无真实模型/数据诊断或新GPU训练，当前GPU空闲用于等待数值程序集成完成，不能称为训练中。下一步完成集成检查、绑定实际来源并单独批准诊断运行。看板如实显示评估结束、目标未完成。下方“正在运行”均为较早观测。
 
-## 当前：P029训练和H10对照完成，原完整验证运行中（2026-10-06）
+## 历史快照 — 当前：P029训练和H10对照完成，原完整验证运行中（2026-10-06）
 
 最终FNO辅助PPO/MPC真实CFD在线闭环目标未完成。P029恢复训练已正常完成171次更新/1368窗口、候选审计和官方独立CPU重载；实际训练结果SHA `39b246d07ff673de5b3d5fdc2e65be5e46bcb466e1290f5549f2e75d5cb81336`，重载 `2023daadf611e6b4fe30146f029d142b1c432c09b41e14fe1af6bc1e7f6d9f64`，恢复运行CUDA守卫最低20.9074GiB。首次资源失败完整保留，不能由恢复成功抹去。
 
@@ -578,7 +586,7 @@ P029原完整评估仍在同一实例运行，尚无最终判定。P030设计与
 
 原P028完整正式评估失败结论保留。新训练结束后须独立重载、同协议H10对照和原完整评估；11:27前报告实测结论，无论目标是否达成。
 
-## 最新结论（2026-10-06 02:33 UTC）
+## 历史快照 — 最新结论（2026-10-06 02:33 UTC）
 
 P028原完整正式评估已正常结束，但科学验收失败：六个长时窗口仅1/6同时达标，阻力、升力波动、平均升力预测各2/6；原K1为1/6、5/6、2/6、4/6。短期流场改善没有转化成长期气动力精度，不能据此进入新PPO。完整收据SHA `63fd75d4e90176dd94998f2844f2f70cb5a7e357bd59d5362591019ed8655154`，独立复核 `docs/FC_P028_ORIGINAL_FORMAL_TERMINAL_REVIEW_20261006.md`。35输出与411源码全部匹配，8个容器exit0/noOOM；最低物理空闲28.029GiB。
 
@@ -586,7 +594,7 @@ P028原完整正式评估已正常结束，但科学验收失败：六个长时�
 
 以下时间较早的运行状态为历史记录。
 
-## 当前结论与运行状态（2026-10-06 01:57 UTC）
+## 历史快照 — 当前结论与运行状态（2026-10-06 01:57 UTC）
 
 工程更新（02:15UTC）：P028仍在同一实例运行dynamic6。P029已完成独立CPU准备，现有官方FNO增加固定50/50流场/气动力训练损失；423项训练源码只读副本已核验，尚无P029 GPU执行。canonical新增68项CPU测试通过，旧兼容133通过/1跳过；一项需PhysicsNeMo的额外测试不能在无该包的host环境收集，未改环境。详见 `docs/FC_P029_CPU_PREPARATION_REVIEW_20261006.md`。只有原完整评估结束、实际尺度和新反向图资源检查之后才可批准下一训练。
 
@@ -598,7 +606,7 @@ P028原完整正式评估已正常结束，但科学验收失败：六个长时�
 
 证据：`docs/FC_P028_H10_TERMINAL_REVIEW_20261006.md`；H10结果SHA `6146ea9276570981cc72c949e3e6fac46737c43aa83c561a37eaa0e54a4ab793`。下方记录均为此前里程碑，不能用历史“运行中”代替上方最新状态。
 
-## 最新完成：P028训练及官方独立CPU重载（2026-10-06）
+## 历史快照 — 最新完成：P028训练及官方独立CPU重载（2026-10-06）
 
 同一训练实例c46c60f3c2634802b2646bb094f9d201已正常结束：1368窗、171次更新，官方容器exit0/noOOM。结果SHA `74bc0d491d82da8c3b897a330e1397ac7db2e92465221801ae1868a57114840d`，实际候选审计SHA `dd3390d0ac09f8f8e4673ed8eb48d2fbe47293a1dd1689a7abae29972ddddaea`。主机采样最低物理空闲20.8349GiB，CUDA守卫最低21.2368GiB。首尾训练窗口不同，不能据其损失变化宣称精度提升。
 
@@ -606,7 +614,7 @@ P028原完整正式评估已正常结束，但科学验收失败：六个长时�
 
 下一步：原44轨迹origin51/H10的训练前后对照，然后原完整正式评估。正式审批SHA `c061e50dc1d868e80d1c858ea79b03e8fe5560a204bbb30d2ef9236373838d55` 已通过真实候选/审计/重载绑定的dry-run（7项数值阶段），尚未执行GPU正式评估。不晚于北京时间11:27给出完整阶段结论，目标未完成则明确说明。以下运行中记录为历史。
 
-## 当前实际运行：P028流场多步训练（2026-10-06 01:30 UTC观测）
+## 历史快照 — 当前实际运行：P028流场多步训练（2026-10-06 01:30 UTC观测）
 
 实际unit `fluid-control-fcp028-flow-train-20261006.service`、invocation `c46c60f3c2634802b2646bb094f9d201` 为activating/start且PID1371882；日志已完成37/171次更新、302/1368个窗口。该数字是一次观测，不是实时常量；看板已按同一真实实例显示更新与窗口数。训练配置SHA `655f4d924036ef1e23857c4bc1892b8f0bbce40af1a1b22f8bd4657eca097837`；官方FNO流场模型H10训练，K1受力模型冻结，目标和数据不变。仍未产生终态候选或科学准入。
 
@@ -614,19 +622,19 @@ P028原完整正式评估已正常结束，但科学验收失败：六个长时�
 
 正式评估源码已实际固定：`artifacts/fcp028_formal_source_20261006_immutable`，411个数值源码、独立外部执行器、9个CPU重载依赖，receipt SHA `fb5fd1ef87a09188d78453d0c5f93e49cf1a795dc7fa9fcee5fd77bf14cc910d`，独立核验进行中。用户要求两小时结论：不晚于2026-10-06 03:26:54UTC/北京时间11:26:54，详见 `docs/TWO_HOUR_REVIEW_20261006.md`；报告实测进度和未达目标，不保证按时制造成功。
 
-## 最新实测：P028十步前向/反向资源检查完成，尚未训练（2026-10-06）
+## 历史快照 — 最新实测：P028十步前向/反向资源检查完成，尚未训练（2026-10-06）
 
 R3实际unit `fluid-control-fcp028-resource-r3-20261006.service` 已exit0、PID0，官方容器退出0且无OOM。结果 `artifacts/fcp028_flow_resource_probe_r3_20261006/payload/result.json` SHA `e808095f9c4de77f838c7132615427ba76985f78d3c0c7803b1d8528008a40f1`；独立报告 `docs/FC_P028_RESOURCE_TERMINAL_REVIEW_20261006.md`。原窗口816实际完成H10完整反向，30项梯度有限且非零，模型前后张量完全相同；零优化器更新、无新候选。这不是模型精度改善或闭环成功。
 
 最低物理空闲20.9028GiB、CUDA空闲20.9051GiB、可用110.3150GiB。Adam两份动量至少另需0.35184GiB，尚不含临时量，故不能由资源检查直接证明完整训练容量。下一步对明确已结束且无写入的项目CFD文件评估定向缓存回收，保留20GiB连续守卫；完成原正式评估调用兼容后执行既定1368窗口/171更新流场训练。此前两次工程失败及原始证据保留，R3修复只涉及三项源码依赖和只读数据挂载路径。以下准备状态均为历史，最新科学结论仍为P027诊断与K1/K4正式失败。
 
-## 当前工程进展：P028多步流场训练准备（2026-10-06）
+## 历史快照 — 当前工程进展：P028多步流场训练准备（2026-10-06）
 
 目标函数、无更新资源启动程序、训练执行程序及显式P028模型加载支持已完成代码集成。Root canonical runner/loader与旧模型回归共90项CPU测试通过；目标函数10项、资源启动P027/P028回归24项也已通过。真实GPU资源检查尚未执行，当前无新的训练或科学准入。详情 `docs/FC_P028_RUNNER_LOADER_CPU_REVIEW_20261006.md`。
 
 418文件资源检查源码副本已创建且只读；它保留原P026加载器以读取K1父模型，不能与后续训练/评估的新加载器混淆。下一步在保持20GiB余量下准备一次真实H10前向/反向资源检查；目前物理空闲约26GiB低于额外30GiB启动要求，必要时仅对经SHA核验的44个项目训练文件作一次可回收缓存建议，不修改数据。尚未签发此缓存维护或GPU执行批准。完整训练仍需实际容量证据，原完整formal及真实CFD闭环目标不变。以下P027完成情况仍为最新科学结果。
 
-## 当前：P027真实误差诊断完成，尚无新的代理准入（2026-10-06）
+## 历史快照 — 当前：P027真实误差诊断完成，尚无新的代理准入（2026-10-06）
 
 实际unit `fluid-control-fcp027-diagnostic-20261006.service` 已active/exited、exit0；官方b40容器退出0且无OOM。44条训练轨迹各10步，共440次流场推进及1760个受力状态评估（由完整案例和已审循环核对）。结果 `artifacts/fcp027_short_horizon_diagnostic_20261006/result.json` SHA `7785ebb92ca932b4fb572175b4bd66497fc3b7495f6ecdb534f3b587a0096366`，独立复核报告 `docs/FC_P027_TERMINAL_REVIEW_20261006.md`。
 
@@ -638,7 +646,7 @@ R3实际unit `fluid-control-fcp028-resource-r3-20261006.service` 已exit0、PID0
 
 诊断及资源启动程序已独立审查并集成，Root canonical联合32项CPU测试通过；只读414文件源码与来源配置完成独立核验。批准单 `docs/FC_P027_EXECUTION_APPROVAL_20261006.json` SHA `fe218527b6f85daf08999673b9525a2b93144e1722235f5769dc2ea055e567a5` 批准一次44训练轨迹、origin51、H10的只读误差分解，无优化器、无新模型、无validation/frozen/PPO。官方镜像b40，GPU0、allocator0.06、容器12GiB、900秒，启动free30/available50，运行双20与CUDA20GiB守卫。dry-run已通过但尚不能据此称为实际运行；实际unit/container观察后另记。K1/K4原正式FAIL保持有效。
 
-## 最新终态：2026-10-06，K1/K4均未满足代理控制精度要求
+## 历史快照 — 最新终态：2026-10-06，K1/K4均未满足代理控制精度要求
 
 K4原协议完整评估已实际结束：unit `fluid-control-fcp026-k4-formal-20261006.service`，invocation `d5d2201c8e2c4bf2ab40201cca0dcb1e`，PID0、active/exited、ExecMainStatus0。receipt SHA `729f9ce1f307d5462307470af20491806f6cfe31b5c81fc74ec284a2461841d9`；development gate SHA `ce60621723ce364e4f8cdc165268a64ca5fd1a0185b7529bc21c1f91ac8aab9e`，状态 `DYNAMIC_FNO_DEVELOPMENT_ADMISSION_FAIL`。程序正常完成不等于模型合格。
 

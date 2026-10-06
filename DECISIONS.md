@@ -1,5 +1,11 @@
 # DECISIONS
 
+## 2026-10-07 — E094 closes the narrow precision question; prioritize safe canonical reproduction
+
+The independently verified [paired precision diagnostic](docs/P064_FIRST_STEP_PRECISION_TERMINAL_REVIEW_20261007.md) exactly reproduced E073 high/TF32 first-step outputs, then found the selected local response reversals also under highest/noTF32. Do not explain them away as TF32 alone, extrapolate six cases into global causality, or launch another precision probe automatically.
+
+Keep the successful bounded canonical real-CFD results and original failure records. D failed its prospective joint-H1 choice rule and is not promoted; C50/H25 rejections and full FNO precision FAIL remain. The immediate priority is a safe, reproducible existing canonical case, not indefinite model experimentation. Control-related force response and the original prediction-accuracy objective remain unresolved. No thresholds are relaxed and overall completion is not claimed; online FNO/MPC is optional rather than an invented prerequisite. Historical decisions below remain evidence of their own dates.
+
 ## 2026-10-07 — D25 not promoted after its predeclared fixed-development comparison
 
 Lead rejects D promotion, retaining B and the demonstrated canonical controllers. [E092 independent review](docs/P064_B00_B02_COVERAGE_D_DEVELOPMENT_REVIEW_20261007.md), SHAee4258a9733074a8f25912298ab58d5814ef8b8176671a9526bd25d10fc37c58: pooled H1 rearCl MAE .1389983166→.1394301741 worsens while totalCd .03806537390→.03782491013 improves slightly. Both must improve; the joint condition fails. H5 and fixed-six H1/AR retention improve slightly and remain reported, not hidden or substituted for the main criterion. Frozen-flow field predictions are identical, not improved. D changes phase, behavior-policy/state-action coverage and start spacing; it is not a phase-only causal test.

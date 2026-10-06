@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E094 — completed paired first-step precision diagnostic
+
+Actual unit `fluid-control-p064-first-step-precision-20261007.service`, invocation `22bc9a45344a4969bae30c33f4d85c04`, exited 0. Six fixed B-model/q0 cases reproduced all four E073 high/TF32 forces exactly, then repeated with highest/noTF32: 12 dual calls, unchanged model tensors, no optimizer or CFD. Result SHA `7de34f709d3993ed3e1fc2cd28d4dbd3b3a72a1f3ac1e867b18bda03a5a00eab`; [terminal review](docs/P064_FIRST_STEP_PRECISION_TERMINAL_REVIEW_20261007.md). Sota independently verified all paired rows and response differences. Elapsed 18.00 s; minimum physical Available 112.711 GiB; owned container removed.
+
+Highest/noTF32 retains the b01 total-Cd and b05 rear-Cl local response reversals. Precision affects individual outputs but does not explain these discrepancies alone. This is six fixed first steps, not a global sign/causal claim or scientific admission. D remains unpromoted, full prediction requirements incomplete; next priority is safe reproduction of the established canonical closed loop. Earlier entries below retain their historical status.
+
 ## FC-E093 — completed fixed-lag saved-JSON descriptive diagnostic
 
 Unit fluid-control-p064-fixed-lag-json-20261007.service / inva730e633fec4417b9386a532fdb1e46d exit0,1GiB/noSwap/CPU1/60s/CUDAhidden. Existing H1result1eacc9 andAR6195 only, no model/HDF/CFD/training. Result7738b963c474b6d62aa42037095a11100e71c9154e0b9cc5274fff731421ead3; authorreport608f02b951edaeb613cd639693cabfee91275073e5ce89d7a0a2fc00f5f24c3c; [Independent review](docs/P064_FIXED_LAG_JSON_INDEPENDENT_REVIEW_20261007.md) SHA9b3238275b78677f9a63e8961189c081062476d36466b25e744d20bb5e5d19f3. All2220statistics/6cases/588points perlag/threefixedlags/fourcontrasts exact within6.66e-16. RearCl lag0 best for allsix cases inbothstreams; selected first-step sign reversals verified, H1/AR firstpredictions equal. Localresponse concern only, laterstates diverge; no delay-causality/admission/control-dev extrapolation. E094 preparation not execution. D not promoted; no automaticnewscientificrun.

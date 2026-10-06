@@ -1,6 +1,16 @@
 # Research roadmap and prioritized backlog
 
-## Current priority — D25 rejected; diagnose existing evidence before another experiment
+## Current priority — safely reproduce the established canonical closed loop
+
+[E094](P064_FIRST_STEP_PRECISION_TERMINAL_REVIEW_20261007.md) is complete and independently reviewed: six high/TF32 first steps reproduce E073 exactly; highest/noTF32 still retains selected local action-response reversals. No further precision run is proposed. This does not remove the original prediction-accuracy requirement or establish global force-response failure.
+
+1. Deliver the guarded, reproducible existing canonical real-CFD case, retaining all physical windows and startup failures.
+2. Preserve D/C50/H25 rejection, historical seed failures and full FNO precision FAIL; do not replace them with a physical-success claim.
+3. Keep control-related local force response as an unresolved research item. Any new diagnostic or training requires a separately approved, falsifiable plan; online FNO/MPC is not an added completion requirement.
+
+The original objective remains incomplete. Entries below are historical plans and approvals, not current running tasks.
+
+## Historical priority — D25 rejected; diagnose existing evidence before another experiment
 
 E091 equal-budget D training and E092 fixed development are complete and independently reviewed. [E092 report](P064_B00_B02_COVERAGE_D_DEVELOPMENT_REVIEW_20261007.md) SHAee4258a9733074a8f25912298ab58d5814ef8b8176671a9526bd25d10fc37c58 records H1 lift-error regression alongside small drag/H5/retention improvements. The predeclared jointH1 condition fails; retain B, no D PPO/CFD promotion, no continuation or ratio sweep. Current work is read-only assessment of existing teacher-forced/saved-array evidence separating instantaneous force readout, phase lag and action response—not a newly approved model or CFD run. Overall goal remains active and incomplete, original thresholds and historical failures unchanged. Below approvals/live descriptions are historical snapshots.
 
