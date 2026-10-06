@@ -1,0 +1,25 @@
+# FC-P031 independent design review
+
+Initial reviewed plan SHA `a3c3b523c6d2cb43ce9447d5cdfe7797b9a9fa191e1feb0607aed4780e6a9bc6`; final revised plan SHA `c106b324e0fff67882067237bcd32386b2cd5f63a2cb23a1ad5291e6719515a3` was subsequently read completely. Verdict: **ACCEPT, design only**. The three requested documentation closures below are addressed in the final revision. This review authorizes no code, data/model reading, GPU probe or training.
+
+## Reproducible single intervention
+
+The proposed comparison correctly restarts from the same P009 flow and frozen terminal P026 K1 aerodynamic bytes as P029, not from P029 terminal. Original 44 train trajectories, 1368 ordered windows, 171 eight-window averaged updates, AdamW settings, clipping, precision, mask, normalization and terminal-only checkpoint remain fixed. Reusing the actual P029 parent denominators preserves the declared control; no scale or coefficient scan is needed. Extending the complete recurrent objective from 10 to 25 steps changes exposure, gradient direction and the fraction of force terms with a flow-gradient path together. It cannot isolate exposure as the unique cause.
+
+Timing is correct: aerodynamic prediction on qhat_t and actions t/t+1 supervises force t+1 before flow advance. Initial force has no flow gradient; later 24 force terms do; qhat25 has field-only supervision. No detach or future state/force inputs are allowed.
+
+## Addressed plan closures and Lead decision
+
+1. Replace the stale pending-P030-review statement with the verified actual report `docs/FC_P030_RECOVERY_TERMINAL_REVIEW_20261006.md`, SHA `4e21fc05f543b5c90a74e318e9e7ae999b27b8350d7573817b49c4c6670dc5b4`; result `b1042b94fde60aed135c60d348431aa1c6177b1b9b12b1ae8ba56bc9fab6ee7f`.
+2. The four training-file items alone are insufficient for a usable candidate. Explicitly include minimal P031 identity/protocol compatibility in the role-aware dual loader, candidate terminal auditor, official CPU reload verifier, unchanged formal orchestration/dev30 identity handling, and fixed train-diagnostic candidate routing. Preserve P026/P028/P029 branches and numerical evaluators; bind P031 trained-flow/frozen-K1-aero roles, exact parents, effective protocol/scales receipt and source identities. Engineering fixture status must not substitute for a candidate. Full training approval requires producer/consumer compatibility review; the no-save resource probe need not await unrelated policy work.
+3. Lead's final decision overrides the draft's “worthwhile”/withhold-validation wording: **every operationally valid terminal receives the fixed P030 diagnostic and unchanged complete formal suite, each under separate execution review, regardless of train-panel ranking**. The panel never selects checkpoints or gates formal execution. A reproducible descriptive label may use all nine late-lead metrics (25/50/100 × pooled velocity relative L2/rear-Cl MAE/total-Cd MAE) strictly improving versus P029 as support; all worsening as not supported; mixed/equal as inconclusive. Always report K1 and family/phase/action groups. These labels are not admission thresholds, significance claims or authorization to sweep horizons.
+
+## Resource sufficiency and most dangerous assumption
+
+One full H25 no-update forward/backward on the fixed original window816 is necessary; H10 measurements cannot establish H25 capacity. Retain sequential eight-window accumulation, no checkpointing, the pinned container/allocator, continuous 20 GiB floors and fail-closed finite/identity checks. The probe omits Adam/transient allocations: the observed P029 reserved-peak difference of about 0.65 GiB is a disclosure, not a worst-case bound. Startup30/50 is not itself sufficient training proof—P029 previously hit its floor—so actual probe margin and separately reviewed training headroom remain necessary. No automatic fallback or restart changes the protocol.
+
+The single most dangerous assumption is that longer optimization improves physical rollout rather than steering predicted fields into regions where the frozen aerodynamic readout has convenient errors. Joint field/force reports and unchanged full formal testing expose observable regressions, but do not prove that exploitation is absent or that H25 is causally sufficient. P030 already shows train H10 force deterioration despite small field gains, so failure remains plausible. A formal FAIL rejects the candidate; even formal PASS is not PPO or real-CFD success.
+
+Implementation-scope note: the final plan additionally mentions one finite official CPU forward at reload. Identity closure itself can reuse existing tensor/metadata reload checks without a forward; any such forward should remain separately bounded and approved, not an implicit expensive prerequisite. This does not alter the scientific design verdict.
+
+Review performed read-only from both plan versions, existing verified P030 evidence and known producer/consumer interfaces. No additional scientific computation or implementation was performed.
