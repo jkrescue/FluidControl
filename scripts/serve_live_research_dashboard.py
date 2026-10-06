@@ -222,6 +222,8 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 <p class="small">λ=0：不加配对统计损失；λ=10：加入配对统计损失，比较同一初态下不同动作的阻力与升力变化。两者使用同一评估协议。100 步表示连续预测 10 D/U，并非 100 轮训练。最终还需动态动作和时间窗口内的受力统计检验。</p>
 <div class="card" id="current-trial-evidence" hidden><h3>当前长程试验 · 真实 CFD 状态与实际受力</h3><div id="current-trial-recovered-metrics"></div><p id="current-trial-field-note" class="small"></p><img id="current-trial-field" alt="当前周期起点的真实CFD速度模长和ROI去均值压力" loading="lazy"><canvas class="actual-series" id="current-trial-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="current-trial-forces" width="1000" height="180"></canvas><canvas class="actual-series" id="current-trial-lift" width="1000" height="180"></canvas><p class="small">折线只来自已经完成的真实 OpenFOAM 周期：流场样本在周期起点 t，受力在终点 t+0.1；预测值没有混入这些折线。图像仅覆盖 x=8…25、y=4…11 的采样 ROI，不是完整求解域。</p></div>
 <div class="card" id="exploratory-h5-ppo-training" hidden><h3>探索性 H5 PPO · 训练证据</h3><div id="exploratory-h5-ppo-training-body"></div></div>
+<div class="card" id="exploratory-diverse-h5-ppo-training" hidden><h3>24 个固定真实重置态 · H5 PPO 训练</h3><div id="exploratory-diverse-h5-ppo-training-body"></div></div>
+<div class="card" id="exploratory-diverse-ppo-real-cfd" hidden><h3>24-reset PPO · 新一轮真实 CFD 配对运行</h3><div id="exploratory-diverse-ppo-real-cfd-summary"></div><canvas class="actual-series" id="exploratory-diverse-ppo-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-ppo-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="exploratory-diverse-ppo-lift" width="1000" height="180"></canvas><p class="small">这是新策略的实时真实 OpenFOAM 配对执行；与上方已完成且未达标的旧 PPO 结果分开。当前没有新场图，也不复用旧 PPO/MPC 场图；完成前不声明物理收益或科学准入。</p></div>
 <div class="card" id="final-ppo-real-cfd" hidden><h3>冻结最终 PPO · 真实 CFD 配对运行</h3><div id="final-ppo-real-cfd-summary"></div><div id="final-ppo-field-evidence" hidden><p id="final-ppo-field-note" class="small"></p><img id="final-ppo-field" alt="最终PPO实际CFD速度模长和ROI去均值压力" loading="lazy"></div><canvas class="actual-series" id="final-ppo-real-cfd-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-lift" width="1000" height="180"></canvas><p class="small">这些折线只来自本次 PPO/zero 两支真实 OpenFOAM 周期终点；不使用上方旧 MPC 流场图。这里若显示场图，只来自本次最终 PPO 分支在 t=160.4 的真实 CFD，也不包含模型预测。运行结束前不声明减阻或科学准入。</p></div>
 <section id="flow-current"><h2>历史流场预测 · 真实 CFD / FNO / 误差</h2>
 <div class="card"><div class="row"><h3>历史 C 模型 · 第一轮训练预览</h3><select id="c-preview-step"><option value="001">1 步 / 0.1 D/U</option><option value="010">10 步 / 1 D/U</option><option value="050">50 步 / 5 D/U</option><option value="100" selected>100 步 / 10 D/U</option></select></div><p id="c-preview-status">等待预测图及数据校验完成。</p><img id="c-preview-image" alt="第一轮模型：真实 CFD、连续预测及绝对误差" style="width:100%" hidden><p class="small">历史模型可视化：仅一条 b01 动态转速验证轨迹，从 tU/D=130 的真实流场出发，之后连续预测；不是当前长程试验的流场，不是完整验证集的精度，也不是最终模型或闭环控制结果。左列：真实 CFD；中列：模型预测；右列：绝对误差。</p></div>
@@ -365,6 +367,18 @@ function renderExploratoryH5PPO(ppo){
  const state=ppo.training_complete?'训练完成，等待真实 CFD 配对验证':ppo.running?'训练中':'训练证据不完整';
  $('exploratory-h5-ppo-training-body').innerHTML=`<p><b>${state}</b> · ${ppo.timesteps}/${ppo.target_timesteps} transitions · ${ppo.environments} 个训练环境</p><table><tbody><tr><th>PPO更新</th><td>${ppo.ppo_updates} epoch-updates；${ppo.optimizer_steps} optimizer steps</td><th>策略张量</th><td>${ppo.policy_changed?'已改变':'未改变'}</td></tr><tr><th>末次 value loss</th><td>${num(ppo.value_loss,6)}</td><th>末次 approx KL</th><td>${num(ppo.approx_kl,6)}</td></tr><tr><th>episode reward均值</th><td>${num(ppo.episode_reward_mean,6)}</td><th>最低 MemAvailable</th><td>${num(ppo.minimum_available_gib,2)} GiB</td></tr></tbody></table><p class="small">官方 K1 双FNO仅作为冻结训练环境：权重SHA前后不变；策略已更新。这里没有执行真实CFD，也没有证明减阻、PPO物理收益或科学准入。下一步必须使用冻结策略做真实CFD配对评价。</p>`;
 }
+function renderExploratoryDiverseH5PPO(ppo){
+ const card=$('exploratory-diverse-h5-ppo-training');card.hidden=ppo?.verified!==true;if(card.hidden)return;
+ $('exploratory-diverse-h5-ppo-training-body').innerHTML=`<p><b>训练已完成，等待新的真实 CFD 配对评价</b> · ${ppo.timesteps}/4096 transitions · ${ppo.reset_count} 个固定真实重置态</p><table><tbody><tr><th>PPO更新</th><td>${ppo.ppo_updates} epoch-updates；${ppo.optimizer_steps} optimizer steps</td><th>策略张量</th><td>${ppo.policy_changed?'已改变':'未改变'}</td></tr><tr><th>四相位使用次数</th><td>${ppo.phase_reset_counts.join(' / ')}</td><th>最低 MemAvailable</th><td>${num(ppo.minimum_available_gib,2)} GiB</td></tr><tr><th>episode reward均值</th><td>${num(ppo.episode_reward_mean,6)}</td><th>动作RMS</th><td>${num(ppo.applied_omega_rms,6)}</td></tr></tbody></table><p class="small">与旧四个zero起点训练分开显示：本次唯一训练分布变化是四相位×六种固定真实重置态。官方K1双FNO全程冻结且张量SHA不变；策略已改变。这里没有执行真实CFD，也没有证明减阻、泛化或科学准入。</p>`;
+}
+function renderExploratoryDiversePPORealCFD(run){
+ const card=$('exploratory-diverse-ppo-real-cfd');card.hidden=run?.verified!==true;if(card.hidden)return;
+ const rows=run.actual_timeseries||[],latest=run.latest||{};
+ $('exploratory-diverse-ppo-real-cfd-summary').innerHTML=`<p><b>${run.running?'真实 CFD 正在运行':'真实 CFD 已停止，等待终态复核'}</b> · ${run.completed_cycles}/124 个配对周期 · CPU策略推理，无GPU训练</p><p>最近周期 t=${num(latest.force_time,1)}：请求/实际动作 ${num(latest.requested_omega,3)} / ${num(latest.omega,3)}；PPO/zero 总 Cd ${num(latest.ppo_total_cd,5)} / ${num(latest.zero_total_cd,5)}；PPO/zero 后柱 Cl ${num(latest.ppo_rear_cl,5)} / ${num(latest.zero_rear_cl,5)}。最低 MemAvailable ${num(run.minimum_available_gib,2)} GiB。</p><p class="small">策略来自24个固定真实重置态的4096步训练；FNO训练权重保持冻结。本卡只报告正在产生的真实CFD，不沿用旧策略的负面终态结论，也不预判新策略成败。</p>`;
+ drawActualSeries('exploratory-diverse-ppo-actions',rows,[{key:'requested_omega',label:'请求转速',color:'#60c9fb'},{key:'omega',label:'实际转速',color:'#79d5a3'}],'24-reset PPO动作（周期终点）');
+ drawActualSeries('exploratory-diverse-ppo-drag',rows,[{key:'ppo_total_cd',label:'PPO total Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero total Cd',color:'#f2c879'}],'新策略真实CFD总阻力 Cd（周期终点）');
+ drawActualSeries('exploratory-diverse-ppo-lift',rows,[{key:'ppo_rear_cl',label:'PPO rear Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero rear Cl',color:'#f69d97'}],'新策略真实CFD后柱升力 Cl（周期终点）');
+}
 function renderFinalPPORealCFD(run){
  const card=$('final-ppo-real-cfd');card.hidden=run?.verified!==true;if(card.hidden)return;
  const rows=run.actual_timeseries||[],latest=run.latest||{},terminal=run.terminal_review,labels={full:'完整 12.4 D/U',first_6p2:'前 6.2 D/U',trailing_6p2:'后 6.2 D/U'};
@@ -380,6 +394,8 @@ function renderActiveExperiment(d){
  const active=d.registered_experiment;
  renderCurrentTrialEvidence(active);
  renderExploratoryH5PPO(d.exploratory_h5_ppo_training);
+ renderExploratoryDiverseH5PPO(d.exploratory_diverse_h5_ppo_training);
+ renderExploratoryDiversePPORealCFD(d.exploratory_diverse_ppo_real_cfd);
  renderFinalPPORealCFD(d.exploratory_final_ppo_real_cfd);
  if(active?.mpc_trial===true&&active.verified===true){
   const causal=active.progress_kind==='exploratory_causal_history_h2_feedback';
@@ -1704,6 +1720,12 @@ _LONG_H5_REVIEW_SHA = "aa343c826b683eff840826d3bbcd1db02e2bdbfa1321a33522a965dde
 _H5_PPO_APPROVAL_SHA = "8aa44f5f177d6c7d831a1efc55abf9d8db4b700d640cb640c5fcbb709cc44569"
 _H5_PPO_RESULT_SHA = "138a7b192eef1a6454cefa47cda7803c9b362937641a645c00889ac5a5d7a0c4"
 _H5_PPO_SUPERVISOR_SHA = "87d9f0be7dfb49565c0ea335691ad598f644f411b22297e6cce7fac4e8ab384c"
+_DIVERSE_H5_PPO_APPROVAL_SHA = "760e1f9e81494bdd8c3742cd0ce77e168b0df2bf288bd04546412096721f41e2"
+_DIVERSE_H5_PPO_RESULT_SHA = "cd5775e4647280b77803de9a5ced6abdf6378cded4f676f935bd9836350c3640"
+_DIVERSE_H5_PPO_SUPERVISOR_SHA = "0b3e2556a5f34136dee3f2749a5803dc9cffffe2852b25b2d7bd59b61182f1a1"
+_DIVERSE_H5_PPO_DRIVER_SHA = "aae8c9a4311112439251b695001c7601ffd3d7cd3010937f86bd9a0bfebf3040"
+_DIVERSE_PPO_CFD_APPROVAL_SHA = "67fda1a404f844d89b986442a4a9000561b02757417d5a8d366fdf9f9e6033db"
+_DIVERSE_PPO_CFD_DRIVER_SHA = "89e0d8bea92440babd3d647eed31758db9cfc2a43e31ed6e9d9bdf5047b77b6e"
 _FINAL_PPO_CFD_APPROVAL_SHA = "7ace192519a08795fe9217473fae33941fc5edbb1075daeeb3701e672c521cb3"
 _FINAL_PPO_CFD_DRIVER_SHA = "44b488a97a2882e1325da8871d3ac4905cdae2a6f2cbb17202ced91afc58b91a"
 _FINAL_PPO_CFD_RESULT_SHA = "4007493f22de5855cbd0574e0ec006ca715941b8396f4e48af6527dc11e03d47"
@@ -1868,6 +1890,156 @@ def _exploratory_h5_ppo_training(root: Path) -> dict:
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
             subprocess.SubprocessError):
         return {"verified": False, "running": False, "training_complete": False}
+
+
+def _exploratory_diverse_h5_ppo_training(root: Path) -> dict:
+    """Bind the terminal 24-reset PPO training without implying CFD benefit."""
+    base = root / "artifacts/exploratory_diverse_h5_ppo_training_20261006"
+    payload = base / "payload"
+    approval = root / "docs/EXPLORATORY_DIVERSE_H5_PPO_APPROVAL_20261006.json"
+    result_path = payload / "result.json"
+    supervisor_path = base / "supervisor_result.json"
+    driver = (root / "artifacts/exploratory_diverse_h5_ppo_source_20261006_immutable"
+              / "scripts/train_exploratory_diverse_h5_ppo.py")
+    try:
+        if (hashlib.sha256(approval.read_bytes()).hexdigest()
+                != _DIVERSE_H5_PPO_APPROVAL_SHA
+                or hashlib.sha256(result_path.read_bytes()).hexdigest()
+                != _DIVERSE_H5_PPO_RESULT_SHA
+                or hashlib.sha256(supervisor_path.read_bytes()).hexdigest()
+                != _DIVERSE_H5_PPO_SUPERVISOR_SHA
+                or hashlib.sha256(driver.read_bytes()).hexdigest()
+                != _DIVERSE_H5_PPO_DRIVER_SHA):
+            raise ValueError("diverse PPO receipt identity mismatch")
+        approval_payload = json.loads(approval.read_text())
+        result = json.loads(result_path.read_text())
+        supervisor = json.loads(supervisor_path.read_text())
+        artifacts = result["artifacts"]
+        for name, expected_sha in artifacts.items():
+            if hashlib.sha256((payload / name).read_bytes()).hexdigest() != expected_sha:
+                raise ValueError("diverse PPO artifact identity mismatch")
+        counts = result["reset_counts_by_phase"]
+        expected_counts = [35, 34, 34, 34, 34, 34]
+        if (approval_payload.get("status") != "EXPLORATORY_DIVERSE_H5_PPO_EXECUTION_APPROVED"
+                or approval_payload.get("execution_authorized") is not True
+                or result.get("status")
+                != "EXPLORATORY_DIVERSE_H5_PPO_TRAINING_COMPLETE_NOT_ADMISSION"
+                or result.get("timesteps") != 4096
+                or result.get("protocol", {}).get("reset_count") != 24
+                or result.get("protocol", {}).get("cfd_execution") is not False
+                or result.get("scientific_admission") is not False
+                or result.get("fno_tensors_unchanged") is not True
+                or result.get("policy_tensor_sha256_before")
+                == result.get("policy_tensor_sha256_after")
+                or result.get("ppo_n_updates") != 32
+                or len(result.get("optimizer_steps", [])) != 64
+                or set(counts) != {"00", "02", "04", "06"}
+                or any(counts[phase] != expected_counts for phase in counts)
+                or supervisor.get("returncode") != 0
+                or supervisor.get("result_sha256") != _DIVERSE_H5_PPO_RESULT_SHA
+                or supervisor.get("scientific_admission") is not False):
+            raise ValueError("unexpected diverse PPO terminal contract")
+        fields = ("InvocationID", "MainPID", "ActiveState", "SubState", "Result",
+                  "ExecMainCode", "ExecMainStatus")
+        raw = subprocess.check_output(["systemctl", "--user", "show",
+            "fluid-control-exploratory-diverse-h5-ppo-20261006.service",
+            *[arg for key in fields for arg in ("-p", key)]], text=True, timeout=5)
+        state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+        if (state.get("InvocationID") != "3a34c4d621244e4bbacdf1816b5b1374"
+                or state.get("MainPID") != "0" or state.get("ActiveState") != "active"
+                or state.get("SubState") != "exited" or state.get("Result") != "success"
+                or state.get("ExecMainCode") != "1" or state.get("ExecMainStatus") != "0"):
+            raise ValueError("diverse PPO unit is not the reviewed terminal execution")
+        diagnostics = result["diagnostics"]
+        return {"verified": True, "running": False, "training_complete": True,
+                "timesteps": 4096, "reset_count": 24,
+                "phase_reset_counts": [sum(counts[p]) for p in ("00", "02", "04", "06")],
+                "ppo_updates": 32, "optimizer_steps": 64,
+                "episode_reward_mean": diagnostics["episode_return"]["mean"],
+                "applied_omega_rms": diagnostics["applied_omega"]["rms"],
+                "minimum_available_gib": supervisor["minimum_available_bytes"] / 2**30,
+                "policy_changed": True, "fno_tensors_unchanged": True,
+                "cfd_executed": False, "scientific_admission": False,
+                "approval_sha256": _DIVERSE_H5_PPO_APPROVAL_SHA,
+                "result_sha256": _DIVERSE_H5_PPO_RESULT_SHA}
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
+            subprocess.SubprocessError):
+        return {"verified": False, "running": False, "training_complete": False}
+
+
+def _exploratory_diverse_ppo_real_cfd(root: Path) -> dict:
+    """Read the live new-policy/zero CFD pair without borrowing old field evidence."""
+    base = root / "artifacts/exploratory_diverse_ppo_real_cfd_20261006"
+    approval_path = root / "docs/EXPLORATORY_DIVERSE_PPO_CFD_APPROVAL_20261006.json"
+    driver_path = (root / "artifacts/exploratory_diverse_ppo_cfd_source_20261006_immutable"
+                   / "run_exploratory_diverse_ppo_real_cfd.py")
+    try:
+        if (hashlib.sha256(approval_path.read_bytes()).hexdigest()
+                != _DIVERSE_PPO_CFD_APPROVAL_SHA
+                or hashlib.sha256(driver_path.read_bytes()).hexdigest()
+                != _DIVERSE_PPO_CFD_DRIVER_SHA):
+            raise ValueError("diverse PPO CFD identity mismatch")
+        approval = json.loads(approval_path.read_text())
+        if (approval.get("status") != "EXPLORATORY_DIVERSE_PPO_REAL_CFD_EXECUTION_APPROVED"
+                or approval.get("execution_authorized") is not True
+                or approval.get("steps") != 124 or approval.get("inference_device") != "cpu"
+                or approval.get("scientific_admission") is not False
+                or approval.get("driver_sha256") != _DIVERSE_PPO_CFD_DRIVER_SHA):
+            raise ValueError("unexpected diverse PPO CFD approval")
+        fields = ("InvocationID", "MainPID", "ActiveState", "SubState", "Result",
+                  "ExecMainCode", "ExecMainStatus")
+        raw = subprocess.check_output(["systemctl", "--user", "show",
+            "fluid-control-exploratory-diverse-ppo-cfd-20261006.service",
+            *[arg for key in fields for arg in ("-p", key)]], text=True, timeout=5)
+        state = dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
+        if state.get("InvocationID") != "464de68ee1114eea8e8ae214d18dc045":
+            raise ValueError("unexpected diverse PPO CFD invocation")
+        running = (state.get("MainPID", "0").isdigit() and int(state["MainPID"]) > 0
+                   and state.get("ActiveState") == "active"
+                   and state.get("SubState") in ("running", "start"))
+        document = json.loads((base / "progress.json").read_text())
+        rows = document.get("rows", []); completed = document.get("completed_cycles")
+        if (type(completed) is not int or completed != len(rows) or not 0 < completed <= 124):
+            raise ValueError("invalid diverse PPO CFD progress count")
+        series = []
+        for index, row in enumerate(rows, 1):
+            ppo, zero = row["output_observation"], row["zero_observation"]
+            values = [row["start_time"], row["end_time"], row["requested_omega"],
+                      row["applied_omega"], ppo[64], ppo[66], ppo[67],
+                      zero[64], zero[66], zero[67]]
+            if (row.get("step") != index or len(ppo) != 69 or len(zero) != 69
+                    or any(type(value) not in (int, float) or not math.isfinite(value)
+                           for value in values)
+                    or abs(row["end_time"] - row["start_time"] - .1) > 1e-8
+                    or row.get("solver_health", {}).get("ppo", {}).get("steps") != 20
+                    or row.get("solver_health", {}).get("zero", {}).get("steps") != 20
+                    or row["solver_health"]["ppo"].get("solver_ended_cleanly") is not True
+                    or row["solver_health"]["zero"].get("solver_ended_cleanly") is not True):
+                raise ValueError("invalid diverse PPO CFD row")
+            series.append({"force_time": row["end_time"],
+                           "requested_omega": row["requested_omega"],
+                           "omega": row["applied_omega"],
+                           "ppo_total_cd": ppo[64] + ppo[66],
+                           "zero_total_cd": zero[64] + zero[66],
+                           "ppo_rear_cl": ppo[67], "zero_rear_cl": zero[67]})
+        available = []
+        for resource in _complete_jsonl(base / "resources.jsonl"):
+            value = resource.get("MemAvailable")
+            if type(value) in (int, float) and math.isfinite(value):
+                available.append(value)
+        if not available:
+            raise ValueError("missing diverse PPO CFD resources")
+        return {"verified": True, "running": running, "completed_cycles": completed,
+                "planned_cycles": 124, "actual_timeseries": series,
+                "latest": series[-1], "minimum_available_gib": min(available) / 2**30,
+                "policy_training_complete": True, "fno_training": False,
+                "inference_device": "cpu", "scientific_admission": False,
+                "control_success_verified": False,
+                "approval_sha256": _DIVERSE_PPO_CFD_APPROVAL_SHA}
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
+            subprocess.SubprocessError):
+        return {"verified": False, "running": False,
+                "scientific_admission": False, "control_success_verified": False}
 
 
 def _exploratory_final_ppo_real_cfd(root: Path) -> dict:
@@ -2232,15 +2404,16 @@ def _final_ppo_field_png(root: Path, requested_sha256: str) -> bytes | None:
             canvas = FigureCanvasAgg(figure)
             for axis, values, title, cmap in (
                     (figure.add_subplot(1, 2, 1), speed,
-                     "Final PPO actual CFD speed |U| (solver units)", "viridis"),
+                     "PPO CFD: speed |U|", "viridis"),
                     (figure.add_subplot(1, 2, 2), pressure,
-                     "Final PPO actual CFD pressure, ROI mean removed (solver units)",
+                     "PPO CFD: pressure (ROI mean removed)",
                      "coolwarm")):
                 image = axis.imshow(values, origin="lower", aspect="equal",
                                     extent=(x[0], x[-1], y[0], y[-1]), cmap=cmap)
                 axis.set(xlabel="x (solver coordinates)", ylabel="y (solver coordinates)",
                          title=title)
-                figure.colorbar(image, ax=axis, shrink=.82)
+                colorbar = figure.colorbar(image, ax=axis, shrink=.82)
+                colorbar.set_label("solver units")
             figure.suptitle(
                 "Actual OpenFOAM sampled ROI for final PPO branch at t=160.4; "
                 f"not a model prediction | sha256:{requested_sha256[:12]}…", fontsize=10)
@@ -4353,6 +4526,10 @@ class Handler(BaseHTTPRequestHandler):
             data["p024_live"] = _fcp024_live(self.root)
             data["registered_experiment"] = _registered_experiment_live(self.root)
             data["exploratory_h5_ppo_training"] = _exploratory_h5_ppo_training(self.root)
+            data["exploratory_diverse_h5_ppo_training"] = (
+                _exploratory_diverse_h5_ppo_training(self.root))
+            data["exploratory_diverse_ppo_real_cfd"] = (
+                _exploratory_diverse_ppo_real_cfd(self.root))
             data["exploratory_final_ppo_real_cfd"] = _exploratory_final_ppo_real_cfd(self.root)
             data["p015_formal_result"] = _fcp015_formal_result(self.root)
             data["low_action_fno_h100"] = _low_action_fno_summary(self.root)

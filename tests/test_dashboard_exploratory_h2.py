@@ -345,6 +345,91 @@ def test_final_ppo_real_cfd_live_card_uses_authentic_force_channels_and_no_mpc_f
     assert '不使用上方旧 MPC 流场图' in m.PAGE
 
 
+def test_diverse_ppo_terminal_card_is_separate_and_fno_frozen(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    docs = tmp_path / 'docs'; docs.mkdir()
+    approval = docs / 'EXPLORATORY_DIVERSE_H5_PPO_APPROVAL_20261006.json'
+    approval.write_text(json.dumps({'status': 'EXPLORATORY_DIVERSE_H5_PPO_EXECUTION_APPROVED',
+                                    'execution_authorized': True}))
+    source = (tmp_path/'artifacts/exploratory_diverse_h5_ppo_source_20261006_immutable'
+              /'scripts/train_exploratory_diverse_h5_ppo.py')
+    source.parent.mkdir(parents=True); source.write_text('driver')
+    base = tmp_path/'artifacts/exploratory_diverse_h5_ppo_training_20261006'
+    payload = base/'payload'; payload.mkdir(parents=True)
+    artifact_names = ('ppo_final.zip','vecnormalize.pkl','transitions.jsonl',
+                      'source_spec.json','progress.json','reset_packets.json')
+    artifact_shas = {}
+    hashes = {approval.read_bytes(): m._DIVERSE_H5_PPO_APPROVAL_SHA,
+              source.read_bytes(): m._DIVERSE_H5_PPO_DRIVER_SHA}
+    for i, name in enumerate(artifact_names):
+        path = payload/name; path.write_bytes(f'artifact-{i}'.encode())
+        artifact_shas[name] = f'sha-{i}'; hashes[path.read_bytes()] = f'sha-{i}'
+    result = {'status':'EXPLORATORY_DIVERSE_H5_PPO_TRAINING_COMPLETE_NOT_ADMISSION',
+      'timesteps':4096,'protocol':{'reset_count':24,'cfd_execution':False},
+      'scientific_admission':False,'fno_tensors_unchanged':True,
+      'policy_tensor_sha256_before':'before','policy_tensor_sha256_after':'after',
+      'ppo_n_updates':32,'optimizer_steps':[{}]*64,
+      'reset_counts_by_phase':{p:[35,34,34,34,34,34] for p in ('00','02','04','06')},
+      'diagnostics':{'episode_return':{'mean':-3.693961018382353},
+                     'applied_omega':{'rms':.3977217033938288}},
+      'artifacts':artifact_shas}
+    result_path=payload/'result.json';result_path.write_text(json.dumps(result))
+    supervisor={'returncode':0,'result_sha256':m._DIVERSE_H5_PPO_RESULT_SHA,
+                'scientific_admission':False,'minimum_available_bytes':119470489600}
+    supervisor_path=base/'supervisor_result.json';supervisor_path.write_text(json.dumps(supervisor))
+    hashes[result_path.read_bytes()]=m._DIVERSE_H5_PPO_RESULT_SHA
+    hashes[supervisor_path.read_bytes()]=m._DIVERSE_H5_PPO_SUPERVISOR_SHA
+    monkeypatch.setattr(m.hashlib,'sha256',
+        lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
+    unit='\n'.join(['InvocationID=3a34c4d621244e4bbacdf1816b5b1374','MainPID=0',
+        'ActiveState=active','SubState=exited','Result=success','ExecMainCode=1','ExecMainStatus=0'])
+    monkeypatch.setattr(m.subprocess,'check_output',lambda *args,**kwargs:unit)
+    card=m._exploratory_diverse_h5_ppo_training(tmp_path)
+    assert card['verified'] and card['training_complete'] and not card['running']
+    assert card['reset_count']==24 and card['phase_reset_counts']==[205]*4
+    assert card['optimizer_steps']==64 and card['ppo_updates']==32
+    assert card['policy_changed'] and card['fno_tensors_unchanged']
+    assert not card['cfd_executed'] and not card['scientific_admission']
+    assert '24 个固定真实重置态 · H5 PPO 训练' in m.PAGE
+    assert '这里没有执行真实CFD' in m.PAGE
+
+
+def test_diverse_ppo_real_cfd_live_card_is_separate_from_old_result(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    docs=tmp_path/'docs';docs.mkdir()
+    approval=docs/'EXPLORATORY_DIVERSE_PPO_CFD_APPROVAL_20261006.json'
+    approval.write_text(json.dumps({'status':'EXPLORATORY_DIVERSE_PPO_REAL_CFD_EXECUTION_APPROVED',
+      'execution_authorized':True,'steps':124,'inference_device':'cpu',
+      'scientific_admission':False,'driver_sha256':m._DIVERSE_PPO_CFD_DRIVER_SHA}))
+    driver=tmp_path/'artifacts/exploratory_diverse_ppo_cfd_source_20261006_immutable/run_exploratory_diverse_ppo_real_cfd.py'
+    driver.parent.mkdir(parents=True);driver.write_text('driver')
+    base=tmp_path/'artifacts/exploratory_diverse_ppo_real_cfd_20261006';base.mkdir()
+    def obs(front,rear,cl,omega):
+        x=[0.0]*69;x[64]=front;x[66]=rear;x[67]=cl;x[68]=omega;return x
+    row={'step':1,'start_time':148.,'end_time':148.1,'requested_omega':-.12,
+         'applied_omega':-.1,'output_observation':obs(1.3,1.0,.4,-.1),
+         'zero_observation':obs(1.31,1.01,.42,0.),
+         'solver_health':{'ppo':{'steps':20,'solver_ended_cleanly':True},
+                          'zero':{'steps':20,'solver_ended_cleanly':True}}}
+    (base/'progress.json').write_text(json.dumps({'completed_cycles':1,'rows':[row]}))
+    (base/'resources.jsonl').write_text(json.dumps({'MemAvailable':110*2**30})+'\n')
+    hashes={approval.read_bytes():m._DIVERSE_PPO_CFD_APPROVAL_SHA,
+            driver.read_bytes():m._DIVERSE_PPO_CFD_DRIVER_SHA}
+    monkeypatch.setattr(m.hashlib,'sha256',
+        lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
+    unit='\n'.join(['InvocationID=464de68ee1114eea8e8ae214d18dc045','MainPID=2474346',
+      'ActiveState=active','SubState=running','Result=success','ExecMainCode=0','ExecMainStatus=0'])
+    monkeypatch.setattr(m.subprocess,'check_output',lambda *args,**kwargs:unit)
+    run=m._exploratory_diverse_ppo_real_cfd(tmp_path)
+    assert run['verified'] and run['running'] and run['completed_cycles']==1
+    assert run['latest']['requested_omega']==pytest.approx(-.12)
+    assert run['latest']['ppo_total_cd']==pytest.approx(2.3)
+    assert run['latest']['zero_total_cd']==pytest.approx(2.32)
+    assert not run['fno_training'] and not run['scientific_admission']
+    assert '24-reset PPO · 新一轮真实 CFD 配对运行' in m.PAGE
+    assert '不复用旧 PPO/MPC 场图' in m.PAGE
+
+
 def test_final_ppo_terminal_review_reports_all_windows_and_keeps_constraints(tmp_path,monkeypatch):
     from types import SimpleNamespace
     docs=tmp_path/'docs';docs.mkdir()
