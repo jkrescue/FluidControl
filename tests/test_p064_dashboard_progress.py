@@ -113,3 +113,16 @@ def test_verified_formal_terminal_is_scientific_failure(tmp_path,monkeypatch):
     review.write_text('changed')
     import pytest
     with pytest.raises(ValueError):module.verified_formal_terminal(tmp_path)
+
+def test_b07_exact_progress_clock():
+    import pytest
+    from p064_dashboard_progress import cfd_progress_counts
+    p={'completed_cycles':1,'rows':[{'step':1,'end_time':110.1,'applied_omega':.01}]}
+    assert cfd_progress_counts(p,start=110.)['cycles']==1
+    with pytest.raises(ValueError):cfd_progress_counts(p,start=130.)
+
+def test_signed_h1_unbound_not_busy_or_training(tmp_path):
+    from p064_dashboard_progress import signed_h1_status
+    x=signed_h1_status(tmp_path)
+    assert not x['running'] and not x['training']
+    assert x['invocation'] is None and x['completed_endpoints'] is None

@@ -83,7 +83,7 @@ def cfd_progress_counts(progress,start=148.):
     return {'cycles':n,'target':800,'current_time':start if not rows else rows[-1]['end_time'],
             'applied_omega':None if not rows else rows[-1]['applied_omega']}
 
-def candidate_cfd_status(root,run=subprocess.check_output):
+def previous_candidate_cfd_status(root,run=subprocess.check_output):
     root=Path(root);info={'status':'身份或状态未验证','cycles':0,'target':800,'invocation':None,
                          'scientific_admission':False,'physical_pass':None}
     unit='fluid-control-p064-b-projected-ppo-b01-long-cfd-20261006.service'
@@ -122,6 +122,35 @@ def candidate_cfd_status(root,run=subprocess.check_output):
         info['status']='身份或状态未验证';info['note']=str(exc)
     return info
 
+def candidate_cfd_status(root,run=subprocess.check_output):
+    root=Path(root)
+    previous=previous_candidate_cfd_status(root,run)
+    info={'status':'b07尚未核验启动','cycles':0,'target':800,'invocation':None,
+          'scientific_admission':False,'physical_pass':None,'terminal_verified':False,'running':False}
+    try:
+        approval=root/'docs/P064_B_PROJECTED_PPO_B07_LONG_CFD_APPROVAL_20261006.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='df4d7881226f8ebf53da3aa47ac29f32ba2f0c94d59e431dae3a84dced4b7f56':raise ValueError('b07 approval SHA')
+        spec=json.loads(approval.read_text())
+        output=root/'artifacts/p064_b_projected_ppo_b07_long_cfd_20261006'
+        if (root/spec['output']).resolve()!=output.resolve() or spec['candidate_arm']!='B':raise ValueError('b07 output/arm')
+        unit='fluid-control-p064-b-projected-ppo-b07-long-cfd-20261006.service'
+        raw=run(['systemctl','--user','show',unit,'-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!='c45add13aeff41fe9526e835e384a52d':raise ValueError('b07 invocation')
+        info['invocation']=state['InvocationID']
+        progress=output/'progress.json'
+        if progress.exists():
+            if progress.stat().st_size>8*2**20:raise ValueError('b07 progress size')
+            info.update(cfd_progress_counts(json.loads(progress.read_text()),start=110.))
+        info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['status']='同B策略＋镜像对称处理：b07 CPU真实CFD运行中' if info['running'] else 'b07进程已停止，等待独立终态复核'
+        info['note']='当前b07与同起点zero配对，CPU策略推理＋CFD，无GPU训练、无在线FNO；计数不代表物理通过。'
+        if previous.get('terminal_verified'):
+            info['note']+='历史b00/b01已独审主窗通过，减阻分别3.8953%/3.9275%；早期偏置失败仍保留，旧结果不能授予b07通过。'
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
+        info['note']=str(exc)
+    return info
+
 FORMAL_TERMINAL_BINDINGS={
     'receipt':'30d3d0746580b8423a9f626a0ebe1b76c129acab7800158f74d7d8df3d8a1799',
     'review':'62a6234ed0e08ab70532a5252f34e6c8b203a22c6c6abeea5a67ba2635fc8cd6'}
@@ -142,6 +171,22 @@ def verified_formal_terminal(root):
             'status':'完整预测精度评估R3计算已完成／精度要求未全满足',
             'note':'独审：力窗口2/6通过，4条旋转分支升力波动预测仍失败；原门槛不变。b00/b01真实CFD主窗约3.9%减阻已通过，不能代替模型精度验收。same6缓存H1/AR比较已完成，但缺少有符号H1序列且有batch/precision差异；signed H1 batch1诊断准备中、未运行。当前无GPU训练。实际资源见实时监控；.06仅启动核算，原评估实际allocator .15。'}
 
+def signed_h1_status(root,run=subprocess.check_output):
+    info={'running':False,'training':False,'invocation':None,'completed_endpoints':None,
+          'status':'signed H1 batch1诊断准备中，尚未核验启动'}
+    try:
+        approval=Path(root)/'docs/P064_TEACHER_FORCED_H1_APPROVAL_20261006.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='482628b32be9fcd3879404356e3deeb186c38a96bf59635b76893e8d10d3e0c8':raise ValueError('H1 approval SHA')
+        raw=run(['systemctl','--user','show','fluid-control-p064-b-teacher-forced-h1-20261006.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!='76d21e62134b44c0a97d65b6ad991669':raise ValueError('H1 invocation')
+        info['invocation']=state['InvocationID']
+        info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['status']='signed H1 batch1 GPU预测诊断进程运行中（非训练，无逐步进度）' if info['running'] else 'signed H1诊断进程已停止，等待独立终态复核'
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
+        info['verification_note']=str(exc)
+    return info
+
 def formal_evaluation_status(root,run=subprocess.check_output):
     root=Path(root)
     info={'status':'完整预测精度评估身份/状态未验证','invocation':None,'training':False,'scientific_pass':None}
@@ -160,6 +205,9 @@ def formal_evaluation_status(root,run=subprocess.check_output):
         info['note']='精确复用R2 precision与validation10两阶段，仅运行其余6阶段；保留R1/R2失败与来源，未重算validation10。实际torch allocator .15，外层.06仅启动核算；原H100失败与科学门槛不变，exit0不等于通过。'
         if state.get('MainPID')=='0' and state.get('ExecMainStatus')=='0':
             info.update(verified_formal_terminal(root))
+            diagnostic=signed_h1_status(root,run)
+            info['signed_h1']=diagnostic
+            info['note']=info['note'].replace('signed H1 batch1诊断准备中、未运行。',diagnostic['status']+'。')
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['note']=str(exc)
     return info
