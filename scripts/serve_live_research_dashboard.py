@@ -387,13 +387,14 @@ function renderExploratoryDiversePPORealCFD(run){
  drawActualSeries('exploratory-diverse-ppo-drag',rows,[{key:'ppo_total_cd',label:'PPO total Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero total Cd',color:'#f2c879'}],'新策略真实CFD总阻力 Cd（周期终点）');
  drawActualSeries('exploratory-diverse-ppo-lift',rows,[{key:'ppo_rear_cl',label:'PPO rear Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero rear Cl',color:'#f69d97'}],'新策略真实CFD后柱升力 Cl（周期终点）');
 }
-function renderProjectedCFD(run,b01){
+function renderProjectedCFD(run,b01,b03){
  let card=$('projected-ppo-cfd');if(!card){card=document.createElement('div');card.id='projected-ppo-cfd';card.className='card';$('exploratory-diverse-32768-long-cfd').before(card);}
  const active=run?.verified===true,latest=run?.latest||{};
  const terminal=run?.reported_terminal;
  card.innerHTML=`<h3>FC-E058 · PPO策略＋镜像对称处理</h3><p><b>${terminal?'b00 800周期已完成并独立复核':active?(run.running?'真实CFD正在运行':'已停止，等待独立终态复核'):'尚未启动或运行证据尚未核实'}</b>${active?` · ${run.completed_cycles}/800 周期 · t=${num(latest.force_time,1)} / 228.0`:''}</p>${terminal?`<p>主窗(168,228]：减阻 <b>${(100*terminal.paired_drag_reduction).toFixed(3)}%</b>，后柱Cl′ RMS比 <b>${terminal.paired_rear_cl_fluctuation_rms_ratio.toFixed(3)}</b>，平均Cl偏置比 <b>${(100*terminal.absolute_mean_rear_cl_over_paired_zero_rms).toFixed(2)}%</b>；三项原标准均通过。</p><p class="small">早期first6.2偏置比 ${(100*terminal.early_mean_bias_ratio).toFixed(2)}%，未通过原10%；不能写成全部窗口通过。</p>`:active?`<p>当前/最低MemAvailable ${num(run.current_available_gib,2)} / ${num(run.minimum_available_gib,2)} GiB；当前实际转速 ${num(latest.omega,3)}。</p>`:''}<p class="small">复用同一32768步冻结策略，仅增加镜像对称处理；不是新训练或新模型。CPU策略推理与真实CFD配对执行；原10%均值偏置约束不变，20%仅敏感性参考。下方保留前次未处理策略的已完成结果，不能当作本次结果。</p>`;
  if(run?.paired_field?.verified===true){let field=document.createElement('div');field.innerHTML=`<h4>FC-E058 终点 t=228 · 投影策略与配对zero真实CFD</h4><img src="/projected-ppo-paired-field.png?v=${run.paired_field.sha256}" alt="左FC-E058投影策略右配对zero；上速度下ROI去均值压力；同色标真实CFD" loading="lazy" style="width:100%;height:auto"><p class="small">左：FC-E058投影策略；右：配对zero。上：速度模长；下：各支 CFD pressure with own ROI mean removed（solver units），不是绝对压力比较。两支使用相同网格、掩膜和色标。仅一个终点时刻的真实OpenFOAM场，不是FNO预测，也不能单独证明平均减阻或约束通过。下方FC-E055场图仍是未投影策略的历史证据。</p>`;card.appendChild(field);}
  if(b01?.verified===true){let t=b01.reported_terminal,phase=document.createElement('div');phase.innerHTML=`<hr><h3>FC-E059 · b01固定相位复验</h3><p><b>${t?'800周期已完成并独立复核':b01.running?'真实CFD正在运行':'800周期已完成，等待独立原始数据复核'}</b> · ${b01.completed_cycles}/800 周期 · t=${num(b01.latest.force_time,1)} / 210.0</p>${t?`<p>主窗口 (150,210]：总阻力降低 <b>${pct(t.paired_drag_reduction)}</b>；后柱Cl′比 ${num(t.paired_rear_cl_fluctuation_rms_ratio,3)}；mean-Cl偏置比 ${num(t.absolute_mean_rear_cl_over_paired_zero_rms,3)}，三项原始标准均通过。</p><p class="small">首段6.2D/U偏置比 ${num(t.early_mean_bias_ratio,3)}，仍高于10%；b01是历史validation相位，不是新鲜统计独立泛化。报告SHA ${t.review_sha256.slice(0,12)}…</p>`:`<p>当前/最低MemAvailable ${num(b01.current_available_gib,2)} / ${num(b01.minimum_available_gib,2)} GiB；当前实际转速 ${num(b01.latest.omega,3)}。</p><p class="small">同一冻结策略、投影、过滤器和800周期，只把预声明初态改为历史validation相位b01/restart130。首次unit因漏传--execute在模型和CFD前失败；本卡绑定Root批准的r2实际运行。尚无跨相位成功或科学准入。</p>`}`;card.appendChild(phase);}
+ if(b03?.verified===true){let phase=document.createElement('div');phase.id='projected-b03-live';phase.innerHTML=`<hr><h3>FC-E061 · b03固定相位物理确认</h3><p><b>${b03.running?'真实CFD正在运行':b03.completed_cycles===800?'800周期已完成，等待独立原始数据复核':'运行已停止，尚无完整终态结论'}</b> · ${b03.completed_cycles}/800 周期 · t=${num(b03.latest.force_time,1)} / 224.0</p><p>当前/最低MemAvailable ${num(b03.current_available_gib,2)} / ${num(b03.minimum_available_gib,2)} GiB；实际转速 ${num(b03.latest.omega,3)}；当前周期PPO/zero总Cd ${num(b03.latest.ppo_total_cd,3)} / ${num(b03.latest.zero_total_cd,3)}。</p><p class="small">CPU策略推理＋配对OpenFOAM，不是GPU训练。主窗(164,224]尚待完整原始数据复核，不以进度或退出码宣布成功。b03固定动作H5数据已打开，不是普遍未见或统计独立相位。96帧回放另属准备工作，不是正在训练；保留b00/b01/H5已核证据。</p>`;card.appendChild(phase);}
 }
 function renderPolicyH5Comparison(run){
  let card=$('policy-h5-comparison');if(!card){card=document.createElement('div');card.id='policy-h5-comparison';card.className='card';$('exploratory-diverse-32768-long-cfd').after(card);}
@@ -439,7 +440,7 @@ function renderActiveExperiment(d){
  renderExploratoryDiversePPORealCFD(d.exploratory_diverse_ppo_real_cfd);
  renderExploratoryDiverse32768LongCFD(d.exploratory_diverse_32768_long_cfd);
  renderPolicyH5Comparison(d.policy_h5_comparison);
- renderProjectedCFD(d.projected_ppo_long_cfd,d.projected_ppo_b01_long_cfd);
+ renderProjectedCFD(d.projected_ppo_long_cfd,d.projected_ppo_b01_long_cfd,d.projected_ppo_b03_long_cfd);
  renderShortHorizonConfirmation(d.short_horizon_frozen_confirmation);
  renderFinalPPORealCFD(d.exploratory_final_ppo_real_cfd);
  if(active?.mpc_trial===true&&active.verified===true){
@@ -2209,7 +2210,7 @@ def _exploratory_diverse_ppo_real_cfd(root: Path) -> dict:
 
 
 def _exploratory_diverse_32768_long_cfd(root: Path, projected=False,
-                                        projected_b01=False) -> dict:
+                                        projected_b01=False, projected_b03=False) -> dict:
     """Read the one actual 800-cycle CFD pair only after a completed cycle exists."""
     base = root / "artifacts/exploratory_diverse_32768_ppo_long_cfd_20261006"
     approval_path = root / "docs/EXPLORATORY_DIVERSE_32768_PPO_LONG_CFD_APPROVAL_20261006.json"
@@ -2240,6 +2241,16 @@ def _exploratory_diverse_32768_long_cfd(root: Path, projected=False,
         unit = "fluid-control-exploratory-projected-32768-ppo-b01-long-cfd-r2-20261006.service"
         invocation = "9ef43959e065431490bd4725fa8fb7fe"
         start, end, primary = 130.0, 210.0, [150.0, 210.0]
+    if projected_b03:
+        base = root / "artifacts/exploratory_projected_32768_ppo_b03_long_cfd_20261006"
+        approval_path = root / "docs/EXPLORATORY_PROJECTED_32768_PPO_B03_LONG_CFD_APPROVAL_20261006.json"
+        driver_path = root / "artifacts/exploratory_projected_32768_ppo_b03_long_cfd_source_20261006_immutable/run_exploratory_projected_32768_ppo_b03_long_cfd.py"
+        approval_sha = "3ca5531815c48cff59fd1ca0d96e40e2305402435cb2e28d2adb26eeaf9328a6"
+        driver_sha = "6516456f07d765728055f58036bed97a5e37036f205c4d1ee2bf2456be8cc3b0"
+        status = "EXPLORATORY_PROJECTED_32768_PPO_B03_LONG_CFD_EXECUTION_APPROVED"
+        unit = "fluid-control-exploratory-projected-32768-ppo-b03-long-cfd-20261006.service"
+        invocation = "47612677a9f64dfc968917fada5e9ba8"
+        start, end, primary = 144.0, 224.0, [164.0, 224.0]
     try:
         if (hashlib.sha256(approval_path.read_bytes()).hexdigest()
                 != approval_sha
@@ -2303,7 +2314,7 @@ def _exploratory_diverse_32768_long_cfd(root: Path, projected=False,
                 "policy_training_complete": True, "gpu_training": False,
                 "inference_device": "cpu", "primary_window": primary,
                 "discarded_warmup_cycles": 200, "early_comparison_cycles": 124,
-                "phase": "b01_validation" if projected_b01 else "b00_train",
+                "phase": "b03_already_opened_fixed_action" if projected_b03 else "b01_validation" if projected_b01 else "b00_train",
                 "scientific_admission": False, "control_success_verified": False,
                 "approval_sha256": approval_sha}
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
@@ -4900,6 +4911,8 @@ class Handler(BaseHTTPRequestHandler):
                     self.root, data["projected_ppo_b01_long_cfd"]))
             data["projected_ppo_b01_long_cfd"]["primary_physical_criteria_verified"] = (
                 data["projected_ppo_b01_long_cfd"]["reported_terminal"] is not None)
+            data["projected_ppo_b03_long_cfd"] = _exploratory_diverse_32768_long_cfd(
+                self.root, projected_b03=True)
             data["short_horizon_frozen_confirmation"] = _short_horizon_frozen_confirmation(
                 self.root)
             data["exploratory_final_ppo_real_cfd"] = _exploratory_final_ppo_real_cfd(self.root)
