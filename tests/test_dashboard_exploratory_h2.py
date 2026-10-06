@@ -298,6 +298,53 @@ def test_exploratory_h5_ppo_terminal_card_binds_complete_jsonl_and_frozen_fno(
     assert '没有执行真实CFD' in m.PAGE
 
 
+def test_final_ppo_real_cfd_live_card_uses_authentic_force_channels_and_no_mpc_field(
+        tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    docs=tmp_path/'docs';docs.mkdir()
+    approval={'status':'EXPLORATORY_FINAL_PPO_REAL_CFD_EXECUTION_APPROVED',
+              'execution_authorized':True,'steps':124,'inference_device':'cpu',
+              'scientific_admission':False,'driver_sha256':m._FINAL_PPO_CFD_DRIVER_SHA}
+    approval_path=docs/'EXPLORATORY_FINAL_PPO_CFD_APPROVAL_20261006.json'
+    approval_path.write_text(json.dumps(approval))
+    driver=tmp_path/'artifacts/exploratory_final_ppo_cfd_source_20261006_immutable/run_exploratory_ppo_real_cfd.py'
+    driver.parent.mkdir(parents=True);driver.write_text('driver')
+    base=tmp_path/'artifacts/exploratory_final_ppo_real_cfd_20261006';base.mkdir()
+    def obs(front_cd,rear_cd,rear_cl,omega):
+        row=[0.0]*69;row[64]=front_cd;row[65]=.2;row[66]=rear_cd;row[67]=rear_cl;row[68]=omega
+        return row
+    rows=[]
+    for step in (1,2):
+        rows.append({'step':step,'start_time':148.+(step-1)*.1,
+                     'end_time':148.+step*.1,'requested_omega':.75,
+                     'applied_omega':step*.1,'applied_delta_omega':.1,
+                     'output_observation':obs(1.4,1.0,.3,step*.1),
+                     'zero_observation':obs(1.41,1.01,.31,0.),
+                     'solver_health':{'ppo':{'steps':20,'solver_ended_cleanly':True},
+                                      'zero':{'steps':20,'solver_ended_cleanly':True}}})
+    (base/'progress.json').write_text(json.dumps({'completed_cycles':2,'rows':rows}))
+    (base/'resources.jsonl').write_text(json.dumps({'MemAvailable':120*2**30})+'\n'+json.dumps({'MemAvailable':119*2**30})+'\n')
+    hashes={approval_path.read_bytes():m._FINAL_PPO_CFD_APPROVAL_SHA,
+            driver.read_bytes():m._FINAL_PPO_CFD_DRIVER_SHA}
+    monkeypatch.setattr(m.hashlib,'sha256',
+        lambda raw:SimpleNamespace(hexdigest=lambda:hashes.get(raw,'bad')))
+    unit='\n'.join(['InvocationID=fd6d92f7ea9946b49c91c07e21f1d74b',
+                    'MainPID=2346139','ActiveState=active','SubState=running',
+                    'Result=success','ExecMainCode=0','ExecMainStatus=0'])
+    monkeypatch.setattr(m.subprocess,'check_output',lambda *args,**kwargs:unit)
+    run=m._exploratory_final_ppo_real_cfd(tmp_path)
+    assert run['verified'] and run['running'] and run['completed_cycles']==2
+    assert run['latest']['ppo_total_cd']==pytest.approx(2.4)
+    assert run['latest']['zero_total_cd']==pytest.approx(2.42)
+    assert run['latest']['ppo_rear_cl']==pytest.approx(.3)
+    assert run['minimum_available_gib']==pytest.approx(119.)
+    assert run['policy_training_complete'] and not run['gpu_training']
+    assert not run['online_fno'] and not run['mpc']
+    assert not run['scientific_admission'] and not run['control_success_verified']
+    assert '冻结最终 PPO · 真实 CFD 配对运行' in m.PAGE
+    assert '不使用上方旧 MPC 流场图' in m.PAGE
+
+
 def test_causal_terminal_binding_is_distinct_and_nonadmitting(tmp_path, monkeypatch):
     from types import SimpleNamespace
     base=tmp_path/'artifacts/exploratory_causal_history_h2_real_cfd_20261006';base.mkdir(parents=True)
