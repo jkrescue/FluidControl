@@ -451,7 +451,7 @@ function renderActiveExperiment(d){
   $('lead-now').textContent=`Canonical b01 安全复现：${x.terminal_verified?'800次真实反馈已完成并独审；主窗减阻4.0091%，升力波动降低18.2810%，均值偏置3.6366%，六窗原标准通过':x.running?'实际CPU CFD运行中':'进程已停止，等待终态独立复核'}，${x.cycles}/800 周期，t=${x.current_time} / 210。冻结既有策略，无GPU训练或FNO推理。`;
   $('lead-monitor').textContent=`实际 invocation ${x.invocation}；PID ${x.pid}；MemAvailable ${num(x.available_gib,2)} GiB。${x.terminal_verified?'与原E085动作和观测逐值一致；工程复现不等于新泛化证据，整体代理预测精度仍未完成。':'原2%/1.05/10%标准保持，当前进度不是物理收益。'}`;
   if(d.response_aux_e?.verified){const e=d.response_aux_e;$('lead-monitor').textContent+=` 辅助监督候选E：${e.development_verified?'训练和固定评估已完成；两项H1误差与保留指标均略差，未采用，保留B':e.terminal_verified?'训练已完成并通过工程独审，预测改善待固定评估':e.running?(e.windows?'GPU气动力FNO分支训练':'进程运行/初始化，尚无已完成窗口'):'进程已停止，等待终态核验'}，窗口${e.windows}/256、参数更新${e.updates}/32；inv ${e.invocation}。不是PPO或新CFD，flow冻结。`;}
-  if(d.h1_only_f?.verified){const f=d.h1_only_f;$('lead-monitor').textContent+=` 当前候选F：${f.running?(f.windows?'GPU气动力FNO分支训练（仅H1反传目标）':'进程运行/初始化，尚无已完成窗口'):'进程已停止，等待独立终态核验'}，真实窗口${f.windows}/256、参数更新${f.updates}/32；flow冻结，不是PPO或CFD。诊断total仍为H1/AR各半，不是训练目标；inv ${f.invocation}。`;}
+  if(d.h1_only_f?.verified){const f=d.h1_only_f;$('lead-monitor').textContent+=` 当前候选F：${f.terminal_verified?'训练已完成并通过工程独审；固定预测评估另列，尚无采用结论':f.running?(f.windows?'GPU气动力FNO分支训练（仅H1反传目标）':'进程运行/初始化，尚无已完成窗口'):'进程已停止，等待独立终态核验'}，真实窗口${f.windows}/256、参数更新${f.updates}/32；flow冻结，不是PPO或CFD。诊断total仍为H1/AR各半，不是训练目标；inv ${f.invocation}。`;}
   let card=$('canonical-reproduction');if(!card){card=document.createElement('div');card.id='canonical-reproduction';card.className='card';$('projected-ppo-cfd').before(card);card.innerHTML='<h3>当前 canonical b01 · 真实反馈曲线（非旧projected策略）</h3><canvas width="1000" height="220" id="canonical-reproduction-action"></canvas><canvas width="1000" height="220" id="canonical-reproduction-drag"></canvas><canvas width="1000" height="220" id="canonical-reproduction-lift"></canvas>';}
   drawActualSeries('canonical-reproduction-action',x.rows,[{key:'requested_omega',label:'物理请求ω',color:'#60c9fb'},{key:'omega',label:'实际ω',color:'#79d5a3'}],'单次物理限速后的动作');
   drawActualSeries('canonical-reproduction-drag',x.rows,[{key:'ppo_total_cd',label:'canonical Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero Cd',color:'#f2c879'}],'真实CFD周期末总Cd（非窗口均值）');
@@ -5513,8 +5513,14 @@ def _h1_only_f(root):
             if not isinstance(row, dict): continue
             if row.get('event') == 'training_window_complete': windows=max(windows,int(row['consumed']))
             if row.get('event') == 'accumulation_update_complete': updates=max(updates,int(row['update']))
+        result=root/'artifacts/p064_h1_only_candidate_f_20261007/result.json'
+        report=root/'docs/P064_H1_ONLY_F_TERMINAL_REVIEW_20261007.md'
+        terminal=(state['MainPID']=='0' and state.get('Result')=='success' and state.get('ExecMainStatus')=='0'
+            and result.exists() and report.exists()
+            and hashlib.sha256(result.read_bytes()).hexdigest()=='9e00f1d54a422385782eb955c7217086bf0a59e6b64dcb5f20191f480a4422de'
+            and hashlib.sha256(report.read_bytes()).hexdigest()=='e40fc80981b5af2457f5e9e1091d62e317219daf5d9f0a02a4121f5b0a6a1413')
         return {'verified':True,'invocation':inv,'running':int(state['MainPID'])>0 and state['SubState']=='running',
-                'windows':windows,'updates':updates,'terminal_verified':False,'promoted':False}
+                'windows':windows,'updates':updates,'terminal_verified':terminal,'promoted':False}
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError): return {'verified':False}
 
 

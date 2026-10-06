@@ -1,8 +1,8 @@
 # Experiment ledger
 
-## FC-E098 — F H1-only training actually started; no outcome yet
+## FC-E098 — F H1-only training engineering-complete; not admission
 
-Unit `fluid-control-p064-h1-only-f-20261007.service`, invocation `31f1692d9f984b91a17e21a133426e99`, PID1781483 observed active/running with actual `training_window_complete` events. Approval `docs/P064_H1_ONLY_F_TRAINING_APPROVAL_20261007.json`, SHA `d157e311d70261511144c9fc22a27a468730b4ea2b5ea37705c773b43aea8ef2`; output `artifacts/p064_h1_only_candidate_f_20261007`. Fixed original B order/256 windows/32 updates, fresh K1/Adam, frozen flow and two aerodynamic biases; H1-only backward replaces equal H1/AR backward, while diagnostic total retains the original equal mixture. No E auxiliary term. Actual 12GiB/noSwap unit; scientific outcome not yet available, no running scientific CSV metrics. Not PPO, CFD, admission or policy replacement. Terminal CPU audit and separately authorized fixed development assessment are required; prior negative results remain.
+Unit `fluid-control-p064-h1-only-f-20261007.service`, invocation `31f1692d9f984b91a17e21a133426e99`, reached PID0/exited/exit0. Approval `d157e311d70261511144c9fc22a27a468730b4ea2b5ea37705c773b43aea8ef2`; output `artifacts/p064_h1_only_candidate_f_20261007`; result `9e00f1d54a422385782eb955c7217086bf0a59e6b64dcb5f20191f480a4422de`. [Independent review](docs/P064_H1_ONLY_F_TERMINAL_REVIEW_20261007.md), SHA `e40fc80981b5af2457f5e9e1091d62e317219daf5d9f0a02a4121f5b0a6a1413`: original B order/256 windows/32 updates,28 Adam states step32,two frozenbias tensors/flow bytes,434+3 source hashes and producer official reload verified. Actual CPU audit `e09d300822d9441ea1b8de3d1e0cd7c2` exit0,8GiB/noSwap/CPU1/120s; noforward. H1-only saved training objective differs from retained equal H1/AR diagnostic total; no E auxiliary term or independent loss replay. Training minimumAvailable106.178646GiB,12GiB/noSwap. Fixed development evaluation separately conditionally authorized; no prediction admission or policy replacement.
 
 ## FC-E097 — E fixed development complete; joint improvement and retention not met
 
