@@ -455,7 +455,7 @@ function renderActiveExperiment(d){
   if(d.bf_true_state?.verified){const q=d.bf_true_state;$('lead-monitor').textContent+=` B/F真状态受力对照：诊断已完成，160次气动力调用、0流场调用、0参数更新；${q.review_verified?'独立复算通过；换成真实状态并未普遍降低力误差，不能只归因流场累积误差，F仍未采用':'科学解释待独立复算'}。`;}
   if(d.ar5_reset_g?.verified){const g=d.ar5_reset_g;$('lead-monitor').textContent+=` G代理候选：${g.running?(g.windows?'GPU气动力FNO分支训练':'进程初始化，尚无已完成训练窗口'):(g.development_verified?'训练与预测评估均已完成，原保留性规则未通过，不自动替换B':g.terminal_verified?'训练已完成并通过工程独审，预测评估另行核验':'进程已停止，等待独立终态核验')}；窗口${g.windows}/256、参数更新${g.updates}/32。${g.development_verified?'H1两项力误差改善，但固定六窗连续AR100退化；基本800步真实闭环仍已验证。后续探索须单独明确批准。':'训练AR每5步重置真状态，H1/AR权重各半；flow冻结，原六窗诊断仍连续100步。'} inv ${g.invocation}。`;}
   if(d.g_exploratory_ppo?.verified){const p=d.g_exploratory_ppo;$('lead-monitor').textContent=` G-PPO单独探索：${p.running?(p.timesteps?'正在训练策略':'进程初始化，尚无完成步数'):(p.terminal_verified?'训练已完成并通过独立工程核验':'进程已结束，等待独立终态核验')}；真实步数${p.timesteps}/32768、PPO epochs ${p.ppo_epochs}/256。G原预测筛选仍FAIL，B保留；这不是FNO续训。后续CFD已作条件规划，实际启动状态另行显示。inv ${p.invocation}。`+$('lead-monitor').textContent;}
-  if(d.g_exploratory_cfd?.verified){const c=d.g_exploratory_cfd;$('lead-monitor').textContent=` 当前G策略b01真实闭环探索：${c.running?'CPU配对OpenFOAM反馈运行中':'进程已结束，等待独立六窗核验'}，${c.cycles}/800周期；不是GPU训练或在线FNO/MPC，物理结论尚未形成。原2%减阻/1.05波动比/10%均值偏置标准不变，保留B对照与G预测FAIL。inv ${c.invocation}。`+$('lead-monitor').textContent;}
+  if(d.g_exploratory_cfd?.verified){const c=d.g_exploratory_cfd;$('lead-monitor').textContent=` G策略b01真实闭环探索：${c.running?'CPU配对OpenFOAM反馈运行中':c.terminal_verified?'已完成并独审六窗全部通过':'进程已结束，等待独立六窗核验'}，${c.cycles}/800周期；${c.terminal_verified?'主窗减阻3.9513%、后升力波动降低18.3622%、均值偏置3.0717%；减阻略低于原B的4.0091%，不称更优。当前本作业无训练/CFD运行。':'不是GPU训练或在线FNO/MPC，物理结论尚未形成。'}原2%/1.05/10%标准不变，保留B默认与G预测FAIL；这是实时接收CFD反馈，不是已证明物理实时速度。inv ${c.invocation}。`+$('lead-monitor').textContent;}
   let card=$('canonical-reproduction');if(!card){card=document.createElement('div');card.id='canonical-reproduction';card.className='card';$('projected-ppo-cfd').before(card);card.innerHTML='<h3>当前 canonical b01 · 真实反馈曲线（非旧projected策略）</h3><canvas width="1000" height="220" id="canonical-reproduction-action"></canvas><canvas width="1000" height="220" id="canonical-reproduction-drag"></canvas><canvas width="1000" height="220" id="canonical-reproduction-lift"></canvas>';}
   drawActualSeries('canonical-reproduction-action',x.rows,[{key:'requested_omega',label:'物理请求ω',color:'#60c9fb'},{key:'omega',label:'实际ω',color:'#79d5a3'}],'单次物理限速后的动作');
   drawActualSeries('canonical-reproduction-drag',x.rows,[{key:'ppo_total_cd',label:'canonical Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero Cd',color:'#f2c879'}],'真实CFD周期末总Cd（非窗口均值）');
@@ -5634,10 +5634,20 @@ def _g_exploratory_cfd(root):
         progress=json.loads((out/'progress.json').read_text()) if (out/'progress.json').exists() else {}
         cycles=int(progress.get('completed_cycles',0));rows=progress.get('rows',[])
         if len(rows)!=cycles or not 0<=cycles<=800: return {'verified':False}
-        return dict(verified=True,invocation=inv,running=int(state['MainPID'])>0 and state['SubState']=='running',
+        running=int(state['MainPID'])>0 and state['SubState']=='running'
+        report=root/'docs/P064_G_SYMMETRY_CANONICAL_B01_CFD_TERMINAL_REVIEW_20261007.md'
+        terminal=(not running and state.get('Result')=='success' and state.get('ExecMainStatus')=='0'
+                  and (out/'result.json').exists() and report.exists()
+                  and hashlib.sha256((out/'result.json').read_bytes()).hexdigest()=='f6319771a93541275f4fe7183d49fba9d607100fcdb7d9bf31b9fc92946594a4'
+                  and hashlib.sha256(report.read_bytes()).hexdigest()=='1d7979cace631eb02ed5fe2f76f5f00b4ed6eaa3eeee6bb235d3fb4f6b132022')
+        primary=json.loads((out/'result.json').read_text())['windows']['primary_final_60'] if terminal else None
+        return dict(verified=True,invocation=inv,running=running,
                     cycles=cycles,expected_cycles=800,rows=rows,
-                    latest_end_time=rows[-1].get('end_time') if rows else None,terminal_verified=False,
-                    scientific_pass=None,backend='CPU paired real OpenFOAM feedback',training=False,
+                    latest_end_time=rows[-1].get('end_time') if rows else None,terminal_verified=terminal,
+                    scientific_pass=True if terminal else None,physical_windows_passed=6 if terminal else None,
+                    primary=primary,result_sha256='f6319771a93541275f4fe7183d49fba9d607100fcdb7d9bf31b9fc92946594a4' if terminal else None,
+                    review_sha256='1d7979cace631eb02ed5fe2f76f5f00b4ed6eaa3eeee6bb235d3fb4f6b132022' if terminal else None,
+                    backend='CPU paired real OpenFOAM feedback',training=False,
                     surrogate_selection_passed=False,replaces_B=False)
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError): return {'verified':False}
 

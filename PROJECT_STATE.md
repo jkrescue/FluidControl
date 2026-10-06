@@ -1,6 +1,10 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前唯一摘要 — G策略b01真实CFD运行；PPO已完成，预测FAIL保留
+## 当前唯一摘要 — G探索闭环800步完成、六窗原物理标准通过；B默认与预测FAIL保留
+
+FC-E104同 `c14a66a1464a4919a3904c1f4d2efb2d` 已PID0/exited/exit0。[完整独审](docs/P064_G_SYMMETRY_CANONICAL_B01_CFD_TERMINAL_REVIEW_20261007.md) SHA `1d7979cace631eb02ed5fe2f76f5f00b4ed6eaa3eeee6bb235d3fb4f6b132022`，result `f6319771a93541275f4fe7183d49fba9d607100fcdb7d9bf31b9fc92946594a4`。3200force/1600solver/800canonical单filter/799反馈连续/端点力→obs全核，zero全列与B一致；六窗原2%/1.05/10%全PASS，包括first6.2偏置8.0054%。主窗减阻3.9513458%、升力波动降低18.3622480%、均值偏置3.0716936%；减阻略低原B4.0090689%，不称优越，不改G预测保留性FAIL或B默认。wall1108.8643秒/800＝1.38608秒每反馈周期（含总开销），D/U不是现实秒、不证明物理实时控制。ω²仅动作成本proxy，未核功率换算。此训练及CFD均已结束；整体代理精度目标仍未完成，新作业必须明确批准。
+
+### 本次历史启动（已被上述终态替代）
 
 FC-E104已满足条件授权并实际启动：unit `fluid-control-p064-g-symmetry-canonical-b01-cfd-20261007.service`，invocation `c14a66a1464a4919a3904c1f4d2efb2d`，PID2110235 running；首独查32/800真实反馈周期。批准 `docs/P064_G_SYMMETRY_CANONICAL_B01_CFD_APPROVAL_20261007.json` SHA `f72cace2befb6aef72ed6878ec83d675cc92b4992ec0b9e6e45cd38be97bbb48`，output `artifacts/p064_g_symmetry_canonical_b01_cfd_20261007`。这是同固定b01/800周期/配对zero的CPU真实OpenFOAM反馈，不是GPU训练、在线FNO或MPC；未产生终态物理结论。六窗口/原2%减阻、1.05波动比、10%均值偏置标准不变，B保留，G原预测selection FAIL不改写。
 

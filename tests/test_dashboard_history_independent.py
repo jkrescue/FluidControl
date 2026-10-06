@@ -150,6 +150,9 @@ def test_g_exploratory_cfd_is_actual_cpu_not_training():
         assert r['scientific_pass'] is None and not r['surrogate_selection_passed']
     with patch.object(subprocess,'check_output',return_value=state.replace('2110235','0').replace('running','exited')):
         r=fn(root);assert not r['running'] and not r['terminal_verified']
+    with patch.object(subprocess,'check_output',return_value=state.replace('2110235','0').replace('running','exited')+'Result=success\nExecMainStatus=0\n'):
+        r=fn(root);assert r['terminal_verified'] and r['physical_windows_passed']==6
+        assert r['scientific_pass'] and not r['surrogate_selection_passed'] and not r['replaces_B']
     with patch.object(subprocess,'check_output',return_value=state.replace('c14a66a1464a4919a3904c1f4d2efb2d','wrong')):
         assert fn(root)=={'verified':False}
 
