@@ -46,7 +46,7 @@
       "sha256": "1da29262fa8cbfa7c41687439ad34cc1967ce8c7d9faa35c435668705ca9351f"
     },
     "manifest": {
-      "path": "artifacts/fcp064_controlled_aero_arm_c50_20261007/dual_model_manifest.json",
+      "path": "artifacts/fcp064_controlled_aero_arm_c50_20261007_r2/dual_model_manifest.json",
       "sha256": null
     },
     "normalization": {
@@ -58,11 +58,11 @@
       "sha256": "bf97efb00f829779961d488547324f9b0e75b506436a06d4314a103ea85340e5"
     },
     "training_approval": {
-      "path": "docs/P064_CONTROLLED_DATA_DOSE_C_TRAINING_APPROVAL_20261007.json",
+      "path": "docs/P064_CONTROLLED_DATA_DOSE_C_TRAINING_R2_APPROVAL_20261007.json",
       "sha256": null
     },
     "training_result": {
-      "path": "artifacts/fcp064_controlled_aero_arm_c50_20261007/result.json",
+      "path": "artifacts/fcp064_controlled_aero_arm_c50_20261007_r2/result.json",
       "sha256": null
     },
     "training_source_manifest": {
