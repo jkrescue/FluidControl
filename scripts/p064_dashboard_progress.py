@@ -129,7 +129,7 @@ def formal_evaluation_status(root,run=subprocess.check_output):
             info['status']='原完整formal评估进程运行中（非训练，尚不代表GPU forward或通过）'
         elif state.get('MainPID')=='0':
             info['status']='formal进程退出，等待各科学门槛独审' if state.get('ExecMainStatus')=='0' else 'formal进程失败/停止，保留证据'
-        info['note']='R1工作目录错误在打开源码/GPU前退出2；R2同批准改用正确cwd和绝对路径。原H100失败历史与所有门槛保持，不能以exit0判通过。'
+        info['note']='R1路径错误保留；R2实际torch allocator为.15，外层.06仅启动核算，非强制上限。Lead批准同任务继续，72GiB/noSwap与Available22GiB保护不变。非训练；原H100失败与科学门槛保持，exit0不等于通过。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['note']=str(exc)
     return info

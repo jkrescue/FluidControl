@@ -2,6 +2,8 @@
 
 ## 并行实际：P064-B 原完整formal评估 R2 已启动，尚无验收结果
 
+资源补充：实际 evaluator/forcewindow 的 torch allocator fraction 为 .15（约18.25GiB），外层 `.06` 只是启动余量核算、不是强制GPU分配上限。Lead在核源码及实际Available109.23GiB后明确批准同R2继续，保留72GiB/noSwap与运行22GiB Available保护；不改源码、不重启、不改科学门槛。
+
 2026-10-06 12:41:45 UTC，unit `fluid-control-p064-b-formal-r2-20261006.service`，invocation `01806bdc150841f7b9efd04360a441f2`，实际 active/running。批准 `docs/FC_P064_ARM_B_FORMAL_APPROVAL_20261006.json` SHA `cd58fd47e991ec6dac200bd82d414347f72b778ea78415377427e430dfd47478`；输出 `artifacts/fcp064_arm_b_formal_20261006`。这是原完整科学协议评估，不是训练；precision阶段已结束，validation10进入CUDA/PhysicsNeMo初始化，尚无完整数值结果，不凭进程或GPU利用率声称forward/通过。R1 invocation `6d7cea57ea7740c991223448dfc45e0a` 因错误cwd相对路径在打开执行源码/容器/GPU前exit2，保留失败；R2同批准仅改正确cwd与绝对路径。b01 CPU真实CFD同432c12继续运行，原H100失败历史未被覆盖。实际launch报告 `docs/FC_P064_ARM_B_FORMAL_LAUNCH_20261006.md` SHA `ac3dc4b3262a943128277b4acf3f53e014dfd3d2a604f99968d3a3ce36c85cda`。
 
 ## 当前实际：同 B policy 的 b01 配对800周期验证已启动
