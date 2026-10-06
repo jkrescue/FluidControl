@@ -13,7 +13,7 @@
 | 已验证核心链 | 真实 OpenFOAM CFD → 官方 Curator/DataPipe/FNO → HydroGym 接口 + SB3 PPO → 冻结 CPU PPO 的真实 OpenFOAM 反馈；模型、策略、数据、运行源和批准均有 SHA 绑定 | 尚未在全新输出上按复现指南重放后三阶段；原始 CFD 获取、Curator 转换和 K1 parent 训练没有单一总入口 |
 | B 策略真实 CFD 闭环 | 同一冻结 B-32768 PPO 在 b00/b01/b07 各完成 800 个 paired 控制周期；主 60 D/U 总减阻分别约 3.895% / 3.928% / 3.903%，后柱升力 RMS ratio 均约 0.815，平均偏置主窗满足原标准 | 已观察相位不构成统计独立泛化；b00/b01 早期偏置失败仍保留；不宣称净能耗或硬件实时性 |
 | PhysicsNeMo FNO 状态 | P064-B 作为冻结 surrogate 完成对应 fresh PPO 训练；真实闭环收益已独立复核 | B 完整预测 formal gate 仍 FAIL；H25 后续候选在同六工况快速评估中恶化并被拒绝，不进入新 PPO/CFD |
-| 学习贡献归因 | 既有 trained B-policy 物理结果保持；exact initial-weight matched b00 对照已按同投影、filter、restart 和 paired-zero 协议启动 | 对照仍在进行，尚无独立终态结论；不得把“缺少结论”解释为 PPO 没有学习贡献 |
+| 学习贡献归因 | 同 seed、b00 restart、投影/滤波及 identity VecNormalize 的初始权重对照已独审：主窗减阻 −0.007557%，训练后 B 为 +3.895284%；RMS ratio 1.000882→0.815623，平均偏置 1.650279%→1.137815%；paired-zero 全 16000 行逐值相同 | 初始策略两项升力标准通过、仅减阻失败；结果支持本次训练权重有实际贡献，不证明胜过所有简单控制器、去掉投影仍达标或跨 seed 泛化 |
 
 当前 B-policy 是在冻结 PhysicsNeMo FNO surrogate 环境中训练的 SB3 PPO，因此不再沿用“只有 CFD-only PPO 有收益”的旧摘要。实际部署阶段仍是 **CPU PPO 策略 + 真实 OpenFOAM 观测/动作反馈**：不调用 online FNO，也不是 MPC。HydroGym 提供环境接口，OpenFOAM 才是真实数值求解器；“在线反馈”不是硬件实验。
 
@@ -23,6 +23,7 @@
 - [B-policy b00 真实 CFD 独审](docs/P064_B_PROJECTED_PPO_LONG_CFD_TERMINAL_REVIEW_20261006.md)
 - [B-policy b01 真实 CFD 独审](docs/P064_B_PROJECTED_PPO_B01_LONG_CFD_TERMINAL_REVIEW_20261006.md)
 - [B-policy b07 真实 CFD 独审](docs/P064_B_PROJECTED_PPO_B07_LONG_CFD_TERMINAL_REVIEW_20261006.md)
+- [相同投影/滤波下初始权重与训练后 B 的匹配 CFD 对照](docs/P064_INITIAL_POLICY_CFD_TERMINAL_REVIEW_20261006.md)
 - [B surrogate 完整 formal 评估](docs/P064_B_FORMAL_TERMINAL_REVIEW_20261006.md)
 - [当前权威状态](PROJECT_STATE.md)、[实验账本](EXPERIMENTS.md)与[结构化结果](experiments/results.csv)
 
