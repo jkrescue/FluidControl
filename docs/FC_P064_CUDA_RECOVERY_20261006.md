@@ -1,0 +1,7 @@
+# P064 first-launch failure and bounded CUDA recovery
+
+The A training unit invocation `cfc40285f8ec49fdba9a99defe2960cc` exited 1 before any optimizer update or candidate output. CUDA reported out-of-memory from `cuDevicePrimaryCtxRetain` at the first flow-model transfer. MemAvailable was about 115 GiB while MemFree was below 3 GiB. Both this unit and the successful K1 inference had the same 12 GiB/no-swap limits and LimitMEMLOCK 16332976128 bytes. These observations do not establish the cause; no Linux OOM kill was reported.
+
+Lead approves one exact-file cache advice operation using `advise_p064_exact_cache_once.py`, SHA `a929eb7e02811891400b27d8433ff8b811825fd11c2270b8f6bc5f5e90bd7b71`. It verifies SHA and file identity before advising POSIX_FADV_DONTNEED on exactly 53 bound project files (8,309,054,625 bytes): original 44 training HDF files, one controlled HDF, four parent checkpoints and four identified engineering checkpoint copies. This is clean file-cache advice, not data deletion or global cache clearing. No sysctl, drop_caches, permission change, model change, or automatic training restart is authorized by this action.
+
+Use CPU only, 1 GiB/no swap, one CPU, 320-second outer limit. Preserve per-file identity and before/after memory observations in `artifacts/fcp064_cache_advice_20261006/exact_files_r1.jsonl`. A subsequent separately recorded retry must retain the numerical protocol and source; improvement in physical free memory alone is not proof that CUDA or training succeeds.

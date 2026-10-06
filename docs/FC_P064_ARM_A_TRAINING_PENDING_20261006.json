@@ -1,0 +1,79 @@
+{
+  "status": "FC_P064_ARM_A_TRAINING_PREPARATION_ONLY_NOT_APPROVED",
+  "execution_authorized": false,
+  "arm": "A",
+  "scope": "fixed 256-window, 32-update original-data control; no validation, frozen test, PPO, or CFD",
+  "image": "sha256:b40d5888b59975a56bb536437c6e27dc94d9af5a182a55bb3a83803d41f8a22e",
+  "source_root": "/workspace/fluid_control/artifacts/fcp064_training_source_20261006_immutable",
+  "source_manifest_sha256": "05c00539ad03cc9059dc101cf9c9cab47d523a8b5bdae29b4af1cea88c66a9c0",
+  "runner_sha256": "8066f4a1e092c566e1b84f706ba56737afa06e13998446fee2f79dc2590920dd",
+  "loader_sha256": "83ac4e4169bc8179cba00d450742f3c4c37a4a3c291ced323ba6c717424b3d7b",
+  "schedule_adapter_sha256": "8fb617f58721c79b3f2d793246cc63df3020564941a6a6b907378d4b846180fb",
+  "parent_order_file_sha256": "339f7fe5dc09d8a8e379da639f386649217f2f3500b0a62619d8449cf6bbc122",
+  "parent_order_canonical_sha256": "177ebd9523cde918eb0c1fb8026286dac7e95f3d228ae0e349757a2a9a288f9f",
+  "parent_manifest": {
+    "path": "/workspace/fluid_control/artifacts/fcp026_history_training_k1_20261005/candidate/dual_model_manifest.json",
+    "sha256": "7adca21e3a75691b10f164c342ea91995cc38060e7416dd217b8bd8e5feeacc7"
+  },
+  "b00_view": {
+    "root": "/workspace/fluid_control/artifacts/b00_controlled_train_dataset_view_20261006",
+    "manifest_sha256": "97a82e2a157b87ecf9b9ea626ad079852a8d29ba89628ca5034ef99545929a5f",
+    "conversion_receipt_sha256": "f24f2fbc8b283c0781b2a01189d291b43da0203e9ede28208ec575173bbe0bd9",
+    "hdf_sha256": "45041e79e70043838763e5dd8da0fe9c02dba4cfe6df01356f8dcd1389e32d8f"
+  },
+  "training_views": {
+    "receipt_sha256": "94b17facda90b87e8d23c68349513846c3c1d8d00ef3aa2782f2fd3a512a8523",
+    "base": {
+      "root": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base",
+      "manifest_sha256": "5213c7bb07c824c6e601636c3cfa974b80ec7c051633b0c8368a045cea41ddd2",
+      "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+    },
+    "train8": {
+      "root": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train8",
+      "manifest_sha256": "a0bd0e3b79d4d43ace407292c31a595d552dbd6e1a5de1fd149b1ca446f53f35",
+      "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+    },
+    "train16": {
+      "root": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16",
+      "manifest_sha256": "7c62dab94e317442cecf7ea3be547cf6e03c594a2c7ec2a1a695caba2445cf5b",
+      "normalization_sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+    }
+  },
+  "candidate_audit": {
+    "path": "/workspace/fluid_control/artifacts/fcp018_reduced_rate_training_20261005/candidate_audit.json",
+    "sha256": "03153fa51e94db01c7abacfb80037d99bb6757ac7aacdc87f1c7266a002323b9"
+  },
+  "protocol": {
+    "training_windows": 256,
+    "optimizer_steps": 32,
+    "accumulation_windows": 8,
+    "learning_rate": 1.5625e-7,
+    "fresh_adamw": true,
+    "controlled_b00_windows": 0,
+    "validation_accessed": false,
+    "frozen_test_accessed": false,
+    "selection_performed": false
+  },
+  "resources": {
+    "gpu": "device=0",
+    "allocator_fraction": 0.06,
+    "container_memory": "12g",
+    "container_memory_swap": "12g",
+    "container_cpus": 8,
+    "container_pids": 2048,
+    "startup_mem_available_gib": 50,
+    "runtime_mem_available_gib": 22,
+    "physical_reserve_gib": 20,
+    "inner_deadline_seconds": 3600,
+    "outer_deadline_seconds": 3660
+  },
+  "planned_unit": "fluid-control-fcp064-aero-arm-a-20261006.service",
+  "planned_output": "/workspace/fluid_control/artifacts/fcp064_controlled_aero_arm_a_20261006",
+  "preflight": {
+    "actual_official_multidataset_cpu": "PASS",
+    "actual_b00_view_receipt": "PASS",
+    "actual_official_checkpoint_roundtrip_engineering_only": "PASS",
+    "full_runner_preparation_only": "PASS",
+    "scientific_training_performed": false
+  }
+}

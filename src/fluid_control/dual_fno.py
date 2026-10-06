@@ -55,6 +55,22 @@ P028_LEARNING_RATE = 1e-5
 P029_MANIFEST_STATUS = "FC_P029_DUAL_FNO_MANIFEST_VERIFIED"
 P029_SYSTEM_KIND = "FC_P029_CONTROL_AWARE_FLOW_REPAIR"
 P029_FLOW_KIND = "FC_P029_CONTROL_AWARE_FLOW_CHECKPOINT"
+P064_MANIFEST_STATUS = {
+    "A": "FC_P064_ARM_A_DUAL_FNO_MANIFEST_VERIFIED",
+    "B": "FC_P064_ARM_B_DUAL_FNO_MANIFEST_VERIFIED",
+}
+P064_SYSTEM_KIND = {
+    "A": "FC_P064_ARM_A_CONTROLLED_AERO_FORCE_FNO",
+    "B": "FC_P064_ARM_B_CONTROLLED_AERO_FORCE_FNO",
+}
+P064_AERO_KIND = {
+    "A": "FC_P064_ARM_A_CONTROLLED_AERO_CHECKPOINT",
+    "B": "FC_P064_ARM_B_CONTROLLED_AERO_CHECKPOINT",
+}
+P064_SCHEDULE_SHA256 = {
+    "A": "ec1db78eff3807dc3c3d451ba0bb4542ba531fcb4b7a1c15a39e2b1ac15e1b0c",
+    "B": "2c7a129724fdaaf6d7dda16eb992d548e92c56ac392d95814dbb57e77320eb55",
+}
 FLOW_MODEL_SHA256 = "dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31"
 FLOW_STATE_SHA256 = "4998e534d4b82b17393c217357ed18220fb8e739166a88147483bb9cc5fb771e"
 CONFIG_SHA256 = "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
@@ -174,6 +190,29 @@ def _experiment_contract(kind: str) -> dict[str, Any]:
                 "training_protocol_file": "training_protocol.json",
             },
         }
+    for arm in ("A", "B"):
+        if kind == P064_SYSTEM_KIND[arm]:
+            return {
+                "status": P064_MANIFEST_STATUS[arm],
+                "aero_kind": P064_AERO_KIND[arm],
+                "flow_kind": FLOW_KIND,
+                "flow_epoch": 0,
+                "flow_frozen": True,
+                "aero_epoch": 1,
+                "aero_frozen": False,
+                "optimizer_steps": 32,
+                "p026_history_k": 1,
+                "p064_arm": arm,
+                "extra": {
+                    "training_experiment": "FC-P064",
+                    "arm": arm,
+                    "accumulation_windows": 8,
+                    "training_windows": 256,
+                    "optimizer_steps": 32,
+                    "actual_learning_rate": P026_LEARNING_RATE,
+                    "training_protocol_file": "training_protocol.json",
+                },
+            }
     if kind in (P028_SYSTEM_KIND, P029_SYSTEM_KIND):
         p029 = kind == P029_SYSTEM_KIND
         return {
@@ -234,6 +273,66 @@ def _validate_p026_protocol(
     history_input = _p026_history_input(history_k)
     aero_architecture = dict(ARCHITECTURE)
     aero_architecture["in_channels"] = 6 if history_k == 1 else 18
+    if contract.get("p064_arm"):
+        arm = contract["p064_arm"]
+        exact = {
+            "history_input": history_input,
+            "parent_history_inventory": _p026_inventory(),
+            "history_state_module_sha256": P026_HISTORY_STATE_SHA256,
+            "history_inference_module_sha256": P026_HISTORY_INFERENCE_SHA256,
+            "flow_architecture": ARCHITECTURE,
+            "aerodynamic_architecture": aero_architecture,
+        }
+        if any(payload.get(key) != value for key, value in exact.items()):
+            raise ValueError("P064 history, parent inventory, or role architecture differs")
+        protocol_path = _confined_file(root, payload.get("training_protocol_file"))
+        protocol = _read_object(protocol_path)
+        protocol_sha = sha256(protocol_path)
+        expected = {
+            "training_experiment": "FC-P064",
+            "arm": arm,
+            "parent_experiment": "FC-P026-K1",
+            "history_input": history_input,
+            "training_windows": 256,
+            "accumulation_windows": 8,
+            "optimizer_steps": 32,
+            "learning_rate": P026_LEARNING_RATE,
+            "betas": [0.9, 0.999],
+            "eps": 1e-8,
+            "weight_decay": 1e-4,
+            "gradient_clip_norm": 1.0,
+            "seed": 20261003,
+            "chunk_size": 10,
+            "rollout_steps": 100,
+            "parent_sampler_order_sha256": P026_ORDER_SHA256,
+            "schedule_sha256": P064_SCHEDULE_SHA256[arm],
+            "diagnostic_counts": [0, 256],
+            "objective": "equal_H1_AR_half_equal_four_half_rearCl_normalized_MSE",
+            "history_state_module_sha256": P026_HISTORY_STATE_SHA256,
+            "history_objective_sha256": P026_HISTORY_OBJECTIVE_SHA256,
+            "history_inference_module_sha256": P026_HISTORY_INFERENCE_SHA256,
+            "action_semantics": "stored_prescribed_action_samples_not_exact_nominal_time_commands",
+            "controlled_b00_action_semantics": (
+                "actual_closed_loop_applied_endpoint_omega_samples"
+                if arm == "B"
+                else "not_applicable_no_b00_windows"
+            ),
+            "b00_windows": 0 if arm == "A" else 64,
+            "b00_weight": 0.0 if arm == "A" else 0.25,
+            "replacement_within_each_update": [] if arm == "A" else [0, 4],
+            "allocator_fraction": 0.06,
+            "wall_seconds": 3600,
+            "validation_accessed": False,
+            "frozen_test_accessed": False,
+            "selection_performed": False,
+        }
+        if (
+            protocol != expected
+            or payload.get("training_protocol_sha256") != protocol_sha
+            or payload.get("training_semantics") != protocol
+        ):
+            raise ValueError("P064 training protocol bytes or values differ")
+        return
     exact = {
         "history_input": history_input,
         "history_inventory": _p026_inventory(),
@@ -416,7 +515,10 @@ def _checkpoint_identity(
 
 
 def validate_dual_fno_manifest(
-    manifest_path: Path, *, expected_sha256: str | None = None
+    manifest_path: Path,
+    *,
+    expected_sha256: str | None = None,
+    allow_engineering_fixture: bool = False,
 ) -> DualFNOIdentity:
     """Validate an explicitly supported checkpoint pair before constructing models."""
     manifest_path = manifest_path.resolve()
@@ -426,6 +528,8 @@ def validate_dual_fno_manifest(
     if expected_sha256 is not None and manifest_sha != expected_sha256:
         raise ValueError("dual FNO manifest SHA differs")
     payload = _read_object(manifest_path)
+    if payload.get("engineering_fixture_not_candidate") is True and not allow_engineering_fixture:
+        raise ValueError("engineering fixture is not a scientific candidate")
     required = {
         "schema_version",
         "status",
@@ -452,12 +556,16 @@ def validate_dual_fno_manifest(
         "flow_parent_model_sha256": FLOW_MODEL_SHA256,
         "flow_parent_state_sha256": FLOW_STATE_SHA256,
         "aerodynamic_initial_model_sha256": (
-            P026_AERO_INITIAL_MODEL_SHA256
+            P028_AERO_PARENT_MODEL_SHA256
+            if contract.get("p064_arm")
+            else P026_AERO_INITIAL_MODEL_SHA256
             if contract.get("p026_history_k") is not None
             else FLOW_MODEL_SHA256
         ),
         "aerodynamic_initial_state_sha256": (
-            P026_AERO_INITIAL_STATE_SHA256
+            P028_AERO_PARENT_STATE_SHA256
+            if contract.get("p064_arm")
+            else P026_AERO_INITIAL_STATE_SHA256
             if contract.get("p026_history_k") is not None
             else FLOW_STATE_SHA256
         ),
@@ -635,10 +743,13 @@ def load_dual_fno(
     build_model: Callable,
     load_checkpoint: Callable | None = None,
     expected_manifest_sha256: str | None = None,
+    allow_engineering_fixture: bool = False,
 ):
     """Build and officially load both models, returning a raw-output adapter."""
     identity = validate_dual_fno_manifest(
-        manifest_path, expected_sha256=expected_manifest_sha256
+        manifest_path,
+        expected_sha256=expected_manifest_sha256,
+        allow_engineering_fixture=allow_engineering_fixture,
     )
     validate_runtime_precision()
     cfg_architecture = _runtime_architecture(cfg)
@@ -735,7 +846,37 @@ def load_dual_fno(
         "frozen_test_accessed": False,
         "ppo_executed": False,
     }
-    if history_k is not None and not contract.get("flow_repair"):
+    if contract.get("p064_arm"):
+        arm = contract["p064_arm"]
+        required_aero_metadata = {
+            "status": P064_AERO_KIND[arm],
+            "checkpoint_epoch": 1,
+            "training_experiment": "FC-P064",
+            "arm": arm,
+            "history_profile": "p026_k1",
+            "history_k": 1,
+            "model_in_channels": 6,
+            "training_protocol_sha256": identity.payload["training_protocol_sha256"],
+            "training_protocol_file": "training_protocol.json",
+            "history_state_module_sha256": P026_HISTORY_STATE_SHA256,
+            "history_inference_module_sha256": P026_HISTORY_INFERENCE_SHA256,
+            "training_windows": 256,
+            "optimizer_steps": 32,
+            "accumulation_windows": 8,
+            "actual_learning_rate": P026_LEARNING_RATE,
+            "parent_sampler_order_sha256": P026_ORDER_SHA256,
+            "schedule_sha256": P064_SCHEDULE_SHA256[arm],
+            "parent_history_inventory": _p026_inventory(),
+            "flow_parent_model_sha256": FLOW_MODEL_SHA256,
+            "flow_parent_state_sha256": FLOW_STATE_SHA256,
+            "aerodynamic_parent_model_sha256": P028_AERO_PARENT_MODEL_SHA256,
+            "aerodynamic_parent_state_sha256": P028_AERO_PARENT_STATE_SHA256,
+            "selection_performed": False,
+            "validation_accessed": False,
+            "frozen_test_accessed": False,
+            "ppo_executed": False,
+        }
+    elif history_k is not None and not contract.get("flow_repair"):
         required_aero_metadata.update(
             {
                 "history_profile": f"p026_k{history_k}",
