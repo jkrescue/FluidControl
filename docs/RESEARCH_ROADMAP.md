@@ -1,5 +1,13 @@
 # Research roadmap and prioritized backlog
 
+## Current priority — deliver the existing reproducible real-CFD closed loop; H25 does not progress
+
+Updated 2026-10-06 after the actual bounded H25 R2 training and same-six H100 quick comparison. This priority supersedes pending-training language below, while retaining it as history. The new candidate completed training but worsened velocity and raw-pressure errors in all six matched cases and pooled rear-Cl/total-Cd MAE (.0623860/.0207225 → .0830123/.0467238). Local lift-RMS improvements are not a general improvement. Lead rejects progression of this candidate to fresh PPO/CFD; do not repeatedly tune or restart it. The parent result was reused, not recomputed. Exact result SHA: `1b7bd2a2e99f9d02398df4cbcefc2d7dc5a486a02866d9a64856d0db9e9dafe0` in `artifacts/p064_b_h25_quick_ar_20261006/result.json`.
+
+Next deliverable is an end-to-end reproducible demonstration and evidence map for the existing frozen B-policy chain at Re100, L/D5: real CFD acquisition and normalization, official FNO surrogate, actual HydroGym/SB3 PPO training, then real OpenFOAM observation/action feedback with the fixed reflection projection. Preserve b00/b01/b07 raw physical results, policy/model/source identities, approved commands, cleanup/resource evidence and failures. No extra scientific run is implied by preparing the reproduction guide. Direct deployed PPO control must not be relabeled online FNO/MPC.
+
+The successful physical primary windows and the failed full surrogate-prediction gate are separate outcomes. Original physical criteria remain unchanged; early b00/b01 10% bias failures remain visible. Already observed development phases do not establish unseen-state robustness or statistical independence. The overall high-accuracy model-and-control goal is not declared complete. Any future scientific proposal needs a specific evidence-backed hypothesis and separate Lead approval, not automatic continuation of architecture debugging.
+
 ## Current — verified constrained CFD feedback, prediction replay and delivery review
 
 Updated 2026-10-06 after both B-policy b00/b01 CFD reviews and the complete B surrogate evaluation. This section
