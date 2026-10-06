@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 当前纠正：P064-B 完整评估 R2 工程失败，validation10已完成；没有完整科学判定
+
+同invocation `01806bdc150841f7b9efd04360a441f2` 已在12:53:10 UTC退出1/PID0：后续validation_diagnostic的CLI未接受P064-B kind。不是仍在运行，也不是完整科学gate FAIL。已完成validation10的1240端点独立复算通过：B H1 rearCl/Cd MAE .0377850/.00878357，对照K1 .0202176/.00766464；H100 .0431183/.0112626，对照.0401863/.0109280。场误差统计逐值不变。H100真正pooled Cd NRMSE为K1 .00609718→B .00626447；summary的mean-case为.00580968→.00603306，两种聚合不可混比。后续force-window/fullgate尚未完成，无准入结论。新独审 `docs/P064_B_FORMAL_R2_PARTIAL_TERMINAL_REVIEW_20261006.md` SHA `2ead80d6ecbca6485bab8bca20183a3aa05a71e568af39565d11086d677638ad`。R2证据保留；身份CLI最小修复与新输出续跑另行审查，不重训或重算已完成validation10，不修改科学门槛。下方此前running段落仅为历史。
+
 ## 2026-10-06 — 区分预测精度要求与实际控制要求
 
 源码与历史终态报告复核后，当前所称的 K1“长时域评估失败”应明确为 **H100 尾部62个采样点的气动力统计预测要求未满足**，不能笼统写成速度/压力流场阈值失败。K1 validation10 的 H100 Cd NRMSE .00609718、动作差分 Cd MAE .0191297 均通过对应要求；速度 relative L2 .0435911 是报告指标。六条力窗口仅1条联合通过，旋转分支的升力波动 RMS 预测误差约 .068–.122。证据：`docs/FC_P026_K1_FORMAL_TERMINAL_REVIEW_20261006.md`。
