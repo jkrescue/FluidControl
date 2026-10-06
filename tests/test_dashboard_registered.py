@@ -10,6 +10,36 @@ def log(steps,arm='STAT'):return '\n'.join(json.dumps(dict(event='arm_update_com
 def test_running():
     r=m._parse_registered_progress(state(),log([1,2]),True,REG)
     assert r['running'] and r['updates']=={'STAT':2} and not r['admission']
+
+def test_p027_counts_cases_not_optimizer_steps():
+    reg={**REG,'progress_kind':'diagnostic_origins','planned_updates':{'CFD':44}}
+    rows=[dict(event='origin_complete',count=n,case=f'case{n}') for n in range(1,45)]
+    s=state();s.update(MainPID='0',SubState='exited',ExecMainCode='1')
+    actual=m._parse_registered_progress(s,'\n'.join(map(json.dumps,rows)),False,reg)
+    assert actual['exited_success'] and actual['updates']=={'CFD':44}
+    assert actual['progress_unit']=='个诊断工况（无参数更新）' and not actual['admission']
+    for bad in (rows[1:],rows+[rows[-1]],rows[:-1]+[{**rows[-1],'case':'case1'}]):
+        assert not m._parse_registered_progress(s,'\n'.join(map(json.dumps,bad)),False,reg)['verified']
+
+def test_p027_bound_review_never_admits(tmp_path):
+    import hashlib
+    report=tmp_path/'review.md';report.write_text('independent review')
+    result=tmp_path/'result.json'
+    payload=dict(status='P027_OFFLINE_DIAGNOSTIC_COMPLETE_NOT_ADMISSION',
+                 rows=[{'case':str(n)} for n in range(44)],flow_transitions=440,
+                 aerodynamic_state_evaluations=1760,scientific_admission=False,
+                 optimizer_created=False,model_saved=False,validation_accessed=False,
+                 frozen_test_accessed=False)
+    review=dict(kind='p027_diagnostic',report='review.md',result='result.json',
+                report_sha256=hashlib.sha256(report.read_bytes()).hexdigest(),
+                summary='diagnostic',next_action='CPU implementation')
+    progress=dict(verified=True,exited_success=True,updates={'CFD':44},planned_updates={'CFD':44})
+    for changed in ({},{'model_saved':True},{'rows':payload['rows'][:-1]},{'scientific_admission':True}):
+        result.write_text(json.dumps({**payload,**changed}))
+        review['result_sha256']=hashlib.sha256(result.read_bytes()).hexdigest()
+        value=m._registered_terminal_review(tmp_path,{'review':review},progress)
+        assert value['verified'] is (not changed)
+        if not changed: assert value['diagnostic_completed'] and not value['admission']
 def test_identity():
     s=state();s['InvocationID']='old'
     assert not m._parse_registered_progress(s,'',True,REG)['verified']

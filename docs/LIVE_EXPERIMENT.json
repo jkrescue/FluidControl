@@ -1,14 +1,23 @@
 {
-  "experiment": "P026-K4-formal",
-  "label": "四帧历史组：模型精度评估",
-  "description": "已完成1368个训练片段、171次参数更新，并通过模型完整性与官方重载检查。正在按与单帧组相同的协议，评估10个验证工况和6个动态控制工况的1、10、50、100步预测，以及整体阻力、平均升力和升力波动误差。评估完成不等于精度达标；尚未启动新PPO或代理辅助CFD闭环。",
-  "unit": "fluid-control-fcp026-k4-formal-20261006.service",
-  "invocation": "d5d2201c8e2c4bf2ab40201cca0dcb1e",
-  "approval": "docs/FC_P026_K4_FORMAL_EXECUTION_APPROVAL_20261006.json",
-  "approval_sha256": "03f6880893a730307a6a6acf0ed19276ca8dc958fc3266ebf14e8e2a1323cbb8",
-  "launcher": "scripts/run_fcp026_posteval.py",
-  "launcher_sha256": "03c5862e34a648a1254284d1709bd74c3b995d3a91ae06c4a6f92a945029c0f3",
-  "log": "artifacts/fcp026_history_training_k4_20261005/posteval_fc_p026_k4/memory.jsonl",
-  "progress_kind": "formal_evaluation",
-  "planned_updates": {"K4": 7}
+  "experiment": "P027-diagnostic",
+  "label": "真实流场与连续预测：受力误差诊断",
+  "description": "44条真实CFD训练轨迹，每条连续预测10步。仅诊断，不更新模型，不是控制收益验收。",
+  "unit": "fluid-control-fcp027-diagnostic-20261006.service",
+  "invocation": "af09e82d407c413caff707c60535db9a",
+  "approval": "docs/FC_P027_EXECUTION_APPROVAL_20261006.json",
+  "approval_sha256": "fe218527b6f85daf08999673b9525a2b93144e1722235f5769dc2ea055e567a5",
+  "launcher": "artifacts/fcp027_launcher_runtime_20261006/run_p027_short_horizon_diagnostic.py",
+  "launcher_sha256": "aa8e337dbeac04ef5a0a79009ef31f50679ec8eab5f5db2d663c2a1b45259d90",
+  "log": "artifacts/fcp027_short_horizon_diagnostic_20261006/run.log",
+  "progress_kind": "diagnostic_origins",
+  "planned_updates": {"CFD": 44},
+  "review": {
+    "kind": "p027_diagnostic",
+    "report": "docs/FC_P027_TERMINAL_REVIEW_20261006.md",
+    "report_sha256": "e07c4e83d02d6ffab26184b9edfefbd049325d55ceca6f3764f134601ce26378",
+    "result": "artifacts/fcp027_short_horizon_diagnostic_20261006/result.json",
+    "result_sha256": "7785ebb92ca932b4fb572175b4bd66497fc3b7495f6ecdb534f3b587a0096366",
+    "summary": "单帧模型的后圆柱升力平均绝对误差：真实流场输入0.02655，连续预测输入0.03869，增加约46%。四帧历史模型仅改善约0.27%。原完整精度评估仍未通过，尚无新的代理辅助闭环结果。",
+    "next_action": "下一阶段：固定受力模型，改进官方FNO的10步流场预测。当前为CPU代码实现与测试，尚未启动新GPU训练；随后按原完整标准评估，再决定是否进入HydroGym/PPO。"
+  }
 }

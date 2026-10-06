@@ -340,7 +340,7 @@ function renderActiveExperiment(d){
   const age=Date.now()-Date.parse(active.sampled_at_utc||'');
   const fresh=active.verified===true&&Number.isFinite(age)&&age>=0&&age<60000;
   const reviewed=fresh&&active.exited_success&&active.review?.verified===true;
-  const title=!fresh?'当前任务状态暂未核实':active.label+(active.running?' · 正在运行':reviewed?(active.review.engineering_pass?' · 工程复核通过，非精度验收':' · 已复核，未满足全部预测要求'):active.exited_success?' · 计算结束，结果待复核':' · 已停止，正在检查原因');
+  const title=!fresh?'当前任务状态暂未核实':active.label+(active.running?' · 正在运行':reviewed?(active.review.diagnostic_completed?' · 诊断完成，已独立复核':active.review.engineering_pass?' · 工程复核通过，非精度验收':' · 已复核，未满足全部预测要求'):active.exited_success?' · 计算结束，结果待复核':' · 已停止，正在检查原因');
   const progress=fresh?Object.entries(active.planned_updates).map(([arm,total])=>arm+' 已完成 '+active.updates[arm]+'/'+total+' '+(active.progress_unit||'次更新')+(active.windows?'；训练窗口 '+active.windows[arm]+'/'+(total*8):'')).join('；')+(active.progress_detail?'。'+active.progress_detail:''):'不使用历史任务代替未知状态。';
   $('lead-now').textContent=title+'。'+progress;
   const card=document.createElement('div');card.className='card';
@@ -1292,8 +1292,11 @@ def _parse_registered_progress(state: dict, log: str, matches: bool, registratio
         return {"verified": False}
     counts = {key: set() for key in plan}
     kind = registration.get("progress_kind", "optimizer_updates")
-    if kind not in ("optimizer_updates", "resource_arms", "history_training"):
+    if kind not in ("optimizer_updates", "resource_arms", "history_training", "diagnostic_origins"):
         return {"verified": False}
+    if kind == "diagnostic_origins" and plan != {"CFD": 44}:
+        return {"verified": False}
+    cases = set()
     windows = {key: set() for key in plan}
     for line in log.splitlines():
         try:
@@ -1307,10 +1310,16 @@ def _parse_registered_progress(state: dict, log: str, matches: bool, registratio
                 return {"verified": False}
             windows[arm].add(consumed)
             continue
-        event = {"resource_arms": "arm_complete", "history_training": "accumulation_update_complete"}.get(kind, "arm_update_complete")
+        event = {"resource_arms": "arm_complete", "history_training": "accumulation_update_complete", "diagnostic_origins": "origin_complete"}.get(kind, "arm_update_complete")
         if not isinstance(row, dict) or row.get("event") != event:
             continue
-        if kind == "resource_arms":
+        if kind == "diagnostic_origins":
+            case = row.get("case")
+            if not isinstance(case, str) or not case or case in cases:
+                return {"verified": False}
+            cases.add(case)
+            arm, step = "CFD", row.get("count")
+        elif kind == "resource_arms":
             if type(row.get("k")) is not int or row["k"] not in (1, 4):
                 return {"verified": False}
             arm, step = "K" + str(row["k"]), 1
@@ -1334,7 +1343,7 @@ def _parse_registered_progress(state: dict, log: str, matches: bool, registratio
             "updates": {k: len(v) for k, v in counts.items()}, "planned_updates": plan,
             "label": registration["label"], "description": registration["description"],
             **({"windows": {k: len(v) for k, v in windows.items()}} if kind == "history_training" else {}),
-            "progress_unit": "项无更新计算" if kind == "resource_arms" else "次更新", "admission": False}
+            "progress_unit": "个诊断工况（无参数更新）" if kind == "diagnostic_origins" else "项无更新计算" if kind == "resource_arms" else "次更新", "admission": False}
 
 
 def _registered_terminal_review(root: Path, registration: dict, progress: dict) -> dict:
@@ -1356,6 +1365,18 @@ def _registered_terminal_review(root: Path, registration: dict, progress: dict) 
                 return {"verified": False}
             payloads[key] = raw
         result = json.loads(payloads["result"])
+        if review.get("kind") == "p027_diagnostic":
+            rows = result.get("rows", [])
+            if (result.get("status") != "P027_OFFLINE_DIAGNOSTIC_COMPLETE_NOT_ADMISSION"
+                    or len(rows) != 44 or len({r["case"] for r in rows}) != 44
+                    or result.get("flow_transitions") != 440
+                    or result.get("aerodynamic_state_evaluations") != 1760
+                    or any(result.get(k) is not False for k in (
+                        "scientific_admission", "optimizer_created", "model_saved",
+                        "validation_accessed", "frozen_test_accessed"))):
+                return {"verified": False}
+            return {"verified": True, "diagnostic_completed": True, "admission": False,
+                    "summary": review["summary"], "next_action": review["next_action"]}
         if review.get("kind") == "history_resource":
             if (result.get("status") != "FC_P026_HISTORY_RESOURCE_COMPLETE_NOT_ADMISSION"
                     or result.get("optimizer_steps") != 0
