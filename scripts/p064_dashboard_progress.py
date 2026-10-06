@@ -147,6 +147,12 @@ def candidate_cfd_status(root,run=subprocess.check_output):
         info['note']='当前b07与同起点zero配对，CPU策略推理＋CFD，无GPU训练、无在线FNO；计数不代表物理通过。'
         if previous.get('terminal_verified'):
             info['note']+='历史b00/b01已独审主窗通过，减阻分别3.8953%/3.9275%；早期偏置失败仍保留，旧结果不能授予b07通过。'
+        if state.get('MainPID')=='0' and state.get('ExecMainStatus')=='0':
+            if (hashlib.sha256((output/'result.json').read_bytes()).hexdigest()!='dd579e7443c6693daef4173ed53ea2cb6836878fafff365bc12c1db8fe4ab7fc'
+                or hashlib.sha256((root/'docs/P064_B_PROJECTED_PPO_B07_LONG_CFD_TERMINAL_REVIEW_20261006.md').read_bytes()).hexdigest()!='6a76bbb74673dfdfdba57746471a836ce741f4855206efb5605677934133e953'):
+                raise ValueError('b07 independent terminal binding')
+            info.update(status='同B策略b07真实CFD已独审完成',physical_pass=True,terminal_verified=True)
+            info['note']='b07主(130,190]减阻3.9027%、升力RMS降低18.5005%、均值偏置1.2921%；六个固定窗口均过原标准，早6.2偏置8.3039%也低于10%。b00/b01历史主窗约3.9%通过、早期失败仍保留。b07不是全新holdout；三相位非统计独立，完整代理精度仍FAIL。无当前训练/CFD运行。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['note']=str(exc)
     return info

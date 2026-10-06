@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E072 — B-policy b07 paired80D/U independently completed
+
+Same unit invocation `c45add13aeff41fe9526e835e384a52d` exited0 after800 actual CPU PPO/OpenFOAM intervals110→190. Approvaldf4d7881; immutable driverc3d63d9d; unchanged policyf7644639/Vec8c07ef15/Bmanifest92766915. Result SHA `dd579e7443c6693daef4173ed53ea2cb6836878fafff365bc12c1db8fe4ab7fc`; independent report `docs/P064_B_PROJECTED_PPO_B07_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `6a76bbb74673dfdfdba57746471a836ce741f4855206efb5605677934133e953` verifies3200raw hashes/all six windows/1600solver logs/800projected single-filter actions/source preservation/owned cleanup. Maximum numerical discrepancy4.44e-16; minimumAvailable120378871808B, wall1097.565s. No independent model or CFD rerun.
+
+Primary(130,190]12000 samples: drag reduction3.9026772898%, rear centered RMS ratio.814994542203, mean-bias ratio.012920799096; all six predeclared windows meet original2%/1.05/10%. Early first6.2 bias.083038892388 also passes without15% relaxation. Append18 physical metrics, preserve all previous rows and b00/b01 transient failures. This is another observed fixed-Re phase with prior fixed-action H5 exposure, not a universally unseen test/statistical independence or surrogate admission. No old-policy b07 comparison exists here. The B complete prediction FAIL and signed H1 limitations remain; no automatic retraining or goal-complete declaration.
+
 ## FC-E073 — Signed teacher-forced H1 diagnostic completed, not training or admission
 
 Actual unit `fluid-control-p064-b-teacher-forced-h1-20261006.service`, invocation `76d21e62134b44c0a97d65b6ad991669`, independently PID0/exit0. Approval SHA `482628b32be9fcd3879404356e3deeb186c38a96bf59635b76893e8d10d3e0c8`; result `1eacc9219f2f608c54e6ef48d4856624af64b8ad00eb477bbd5772eff8ad61ef`; supervisor receipt `951967332df858729e310d9342c26f7b63d37c6d904629760a3dce78a4964b9d`. Report `docs/P064_TEACHER_FORCED_H1_TERMINAL_REVIEW_20261006.md` SHA `2141cc0f060e79acf57ad68c530038e1814fb228ba45be2fa4a8ac01da956b36` independently verifies411 sources/nine inputs and all600 signed four-force rows, time/action/target matching and per-case/pooled statistics. No HDF/model reload or GPU rerun for review.

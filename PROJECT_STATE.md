@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E072 当前终态：同B策略b07真实闭环六窗口通过原标准
+
+同inv `c45add13aeff41fe9526e835e384a52d` 已800/800、PID0/exit0，110→190真实CPU PPO/OpenFOAM反馈完成，无在线FNO。独审3200rawSHA/16000点严格网格、1600solver段、800投影单filter、全部六窗及源/资源/清理通过，统计最大差4.44e-16。主(130,190]12000点减阻3.9026772898%、rearCl RMS ratio .814994542203、mean-bias ratio .012920799096；六窗均过原2%/1.05/10%，早首6.2偏置.083038892388。结果SHA `dd579e7443c6693daef4173ed53ea2cb6836878fafff365bc12c1db8fe4ab7fc`；独审 `docs/P064_B_PROJECTED_PPO_B07_LONG_CFD_TERMINAL_REVIEW_20261006.md` SHA `6a76bbb74673dfdfdba57746471a836ce741f4855206efb5605677934133e953`。
+
+同B策略现于b00/b01/b07三相位主窗真实受益；保留b00/b01早期10%失败。b07固定动作H5已打开，不是全新holdout，三相位非统计独立；不声称优于未运行的旧policy b07。完整代理精度FAIL与signed H1真实输入误差仍在，无全目标完成/新训练批准。minAvailable120378871808B、1097.565s、owned容器已清，资源没有被伪造为忙碌。下文running为历史。
+
 ## FC-E073 当前诊断已完成：真实输入力误差与自由递推影响均存在
 
 signed H1 batch1同inv `76d21e62134b44c0a97d65b6ad991669` 已独审exit0：6×100真实当前场条件预测，无优化/新训练。result SHA `1eacc9219f2f608c54e6ef48d4856624af64b8ad00eb477bbd5772eff8ad61ef`；报告 `docs/P064_TEACHER_FORCED_H1_TERMINAL_REVIEW_20261006.md` SHA `2141cc0f060e79acf57ad68c530038e1814fb228ba45be2fa4a8ac01da956b36`。600行四力、时钟/动作/真值及411源码独审通过；batch1首步与原AR完全一致。pooled rear-Cl signed bias +.000880643686、MAE .045200950125，pred/truth centered RMS1.173602006843/1.198123401320；跨相位抵消不能冒充每分支偏置通过。
