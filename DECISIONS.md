@@ -1,5 +1,11 @@
 # DECISIONS
 
+## 2026-10-06 — FC-E051 operational RL loop complete, physical objective incomplete
+
+唯一终态PPO真实配对CFD124周期已完成并独立重算：全窗减阻+0.4118%，rearCl波动RMS增加10.59%，均值偏置为同窗zero RMS的52.7%。前/后窗同时保留，10%改20%仍全部不满足，故不调整物理标准、不据短窗宣布成功。原80D/U CFD-only成功与K1完整formal失败保持独立；结果SHA `4007493f22de5855cbd0574e0ec006ca715941b8396f4e48af6527dc11e03d47`。
+
+124次请求均+.75，117个实际端点饱和；不将它仅归因于零起点覆盖。69观察缺少完整62点受力奖励历史，短回合自举、奖励稀释、代理偏差及训练/部署探针差异也可能贡献。Lead仅批准新隔离适配器及CPU验证：24固定真实train起点（4原零起点+20base-train frame62），相位环境轮换6起点；同K1/H5/奖励/PPO4096。检验reset分布这一单项干预，不扫权重、不根据结果选阈值，不修改既有正式100步wrapper。真实GPU训练和下一次CFD仍需单独批准。
+
 ## 2026-10-06 — 保留长H5汇总失败，批准仅离线恢复全部固定窗口
 
 FC-E049实际124周期完成而末窗汇总失败，原因是legacy reader包含154.2左端点；不重跑CFD、不覆盖失败unit或伪造原result。Lead完整读审恢复源码及7项CPU测试后批准一次离线计算，明确采用预定 `(begin,end]`、无插值/其他删点，原force_metrics不变。新recovered_metrics SHA `1605604dc27f106acd05e6a721f26c4ba24527ac53996d6e65fbc70c601fa2b1`。

@@ -1,5 +1,15 @@
 # Experiment ledger
 
+## FC-E051 — Actual direct final PPO / paired CFD completed; not physical admission
+
+Same invocation `fd6d92f7ea9946b49c91c07e21f1d74b` completed07:10:18UTC, exit0,124cycles from148 to160.4. ResultSHA `4007493f22de5855cbd0574e0ec006ca715941b8396f4e48af6527dc11e03d47`; approval `7ace192519a08795fe9217473fae33941fc5edbb1075daeeb3701e672c521cb3`; immutabledriver `44b488a97a2882e1325da8871d3ac4905cdae2a6f2cbb17202ced91afc58b91a` (later source capture `f473abe`, not launchHEAD). Finalpolicy `3af2b2863f7fffa3579832c10dd2e7053caf80fc2719ed72ad842858f3da9fe1` acts directly, without onlineFNO/MPC substitution.
+
+Independent496raw-file hashes and force recomputation agree with result to1e-14. Full/first/trailing counts2480/1240/1240, open-left fixed windows. Drag reductions +0.004117553020020259 / −0.01635856133306368 / +0.02459427885158949; rearCl fluctuationRMS ratios1.1058626225931032 /1.1998320940691536 /.9909864238426835; pairedzero mean-bias ratios .5273107117128877 /.4172662478614581 /.6373532395708328. All10%/20% bias sensitivity checks fail, also using original fixed train-b00 reference. No threshold change or favorable-window selection.
+
+Every requested action+.75;117/124 applied endpoints saturated. Full RMS worsens10.59% despite small drag benefit. Operational FNO-trained PPO→CFD loop is complete, constrained physical control is not;12.4D/U is not original80D/U. MinimumAvailable122930147328bytes; both exact containers absent/noOOM. Independent report `docs/EXPLORATORY_FINAL_PPO_CFD_TERMINAL_REVIEW_20261006.md` records scope and raw proof.
+
+Next preparation only: fixed24real-start reset panel, four original train-zero frame0 plus20base-train frame62, sameK1/H5/reward/PPO4096. Reset coverage is a falsifiable hypothesis, not established cause:69observations omit full62rewardhistory, and short-return/model bias remain. No new GPU launch authorized here. Prior running entry retained below as history.
+
 ## FC-E051 — Running: final surrogate-trained PPO directly controls paired real CFD
 
 Actual user unit `fluid-control-exploratory-final-ppo-cfd-20261006.service`, invocation `fd6d92f7ea9946b49c91c07e21f1d74b`, started2026-10-06 07:07:51UTC and independently observed active/running withPID2346139. This is a real launch, not a terminal outcome. ApprovalSHA `7ace192519a08795fe9217473fae33941fc5edbb1075daeeb3701e672c521cb3`; executed immutable driverSHA `44b488a97a2882e1325da8871d3ac4905cdae2a6f2cbb17202ced91afc58b91a`. Git source capture follows launch and is not represented as launchHEAD.
