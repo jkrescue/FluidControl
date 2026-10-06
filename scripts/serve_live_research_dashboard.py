@@ -222,7 +222,7 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 <p class="small">λ=0：不加配对统计损失；λ=10：加入配对统计损失，比较同一初态下不同动作的阻力与升力变化。两者使用同一评估协议。100 步表示连续预测 10 D/U，并非 100 轮训练。最终还需动态动作和时间窗口内的受力统计检验。</p>
 <div class="card" id="current-trial-evidence" hidden><h3>当前长程试验 · 真实 CFD 状态与实际受力</h3><div id="current-trial-recovered-metrics"></div><p id="current-trial-field-note" class="small"></p><img id="current-trial-field" alt="当前周期起点的真实CFD速度模长和ROI去均值压力" loading="lazy"><canvas class="actual-series" id="current-trial-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="current-trial-forces" width="1000" height="180"></canvas><canvas class="actual-series" id="current-trial-lift" width="1000" height="180"></canvas><p class="small">折线只来自已经完成的真实 OpenFOAM 周期：流场样本在周期起点 t，受力在终点 t+0.1；预测值没有混入这些折线。图像仅覆盖 x=8…25、y=4…11 的采样 ROI，不是完整求解域。</p></div>
 <div class="card" id="exploratory-h5-ppo-training" hidden><h3>探索性 H5 PPO · 训练证据</h3><div id="exploratory-h5-ppo-training-body"></div></div>
-<div class="card" id="final-ppo-real-cfd" hidden><h3>冻结最终 PPO · 真实 CFD 配对运行</h3><div id="final-ppo-real-cfd-summary"></div><canvas class="actual-series" id="final-ppo-real-cfd-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-lift" width="1000" height="180"></canvas><p class="small">这些折线只来自本次 PPO/zero 两支真实 OpenFOAM 周期终点；不使用上方旧 MPC 流场图，也不包含预测受力。运行结束前不声明减阻或科学准入。</p></div>
+<div class="card" id="final-ppo-real-cfd" hidden><h3>冻结最终 PPO · 真实 CFD 配对运行</h3><div id="final-ppo-real-cfd-summary"></div><div id="final-ppo-field-evidence" hidden><p id="final-ppo-field-note" class="small"></p><img id="final-ppo-field" alt="最终PPO实际CFD速度模长和ROI去均值压力" loading="lazy"></div><canvas class="actual-series" id="final-ppo-real-cfd-actions" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-drag" width="1000" height="180"></canvas><canvas class="actual-series" id="final-ppo-real-cfd-lift" width="1000" height="180"></canvas><p class="small">这些折线只来自本次 PPO/zero 两支真实 OpenFOAM 周期终点；不使用上方旧 MPC 流场图。这里若显示场图，只来自本次最终 PPO 分支在 t=160.4 的真实 CFD，也不包含模型预测。运行结束前不声明减阻或科学准入。</p></div>
 <section id="flow-current"><h2>历史流场预测 · 真实 CFD / FNO / 误差</h2>
 <div class="card"><div class="row"><h3>历史 C 模型 · 第一轮训练预览</h3><select id="c-preview-step"><option value="001">1 步 / 0.1 D/U</option><option value="010">10 步 / 1 D/U</option><option value="050">50 步 / 5 D/U</option><option value="100" selected>100 步 / 10 D/U</option></select></div><p id="c-preview-status">等待预测图及数据校验完成。</p><img id="c-preview-image" alt="第一轮模型：真实 CFD、连续预测及绝对误差" style="width:100%" hidden><p class="small">历史模型可视化：仅一条 b01 动态转速验证轨迹，从 tU/D=130 的真实流场出发，之后连续预测；不是当前长程试验的流场，不是完整验证集的精度，也不是最终模型或闭环控制结果。左列：真实 CFD；中列：模型预测；右列：绝对误差。</p></div>
 <p><label for="c-preview-profile">当前候选图的动作轨迹：</label><select id="c-preview-profile" disabled><option value="plus" selected>正向起始旋转</option><option value="zero">无旋转</option><option value="minus">负向起始旋转</option></select></p>
@@ -370,6 +370,8 @@ function renderFinalPPORealCFD(run){
  const rows=run.actual_timeseries||[],latest=run.latest||{},terminal=run.terminal_review,labels={full:'完整 12.4 D/U',first_6p2:'前 6.2 D/U',trailing_6p2:'后 6.2 D/U'};
  const table=terminal?.verified?`<p><b>独立终态复核：没有同时满足物理约束，不能认定控制成功。</b> 124次策略请求均为 +0.75；实际动作经速率限制后117个终点饱和在+0.75。</p><table><thead><tr><th>窗口</th><th>PPO / zero平均总Cd</th><th>减阻率</th><th>后柱Cl′ RMS变化</th><th>PPO平均后柱Cl</th><th>|均值| / 配对zero RMS</th><th>10%原门槛 / 20%敏感性</th></tr></thead><tbody>${terminal.windows.map(r=>`<tr><td>${labels[r.name]}</td><td>${r.ppo_total_cd_mean.toFixed(5)} / ${r.zero_total_cd_mean.toFixed(5)}</td><td>${(r.drag_reduction_percent>=0?'+':'')+r.drag_reduction_percent.toFixed(3)}%</td><td>${(r.rear_cl_rms_change_percent>=0?'+':'')+r.rear_cl_rms_change_percent.toFixed(3)}%</td><td>${r.ppo_rear_cl_mean.toFixed(5)}</td><td>${r.mean_bias_percent.toFixed(2)}%</td><td>${r.passes_original_10_percent_mean_bias?'PASS':'FAIL'} / ${r.passes_sensitivity_20_percent_mean_bias?'PASS':'FAIL'}</td></tr>`).join('')}</tbody></table><p class="small">20%只作敏感性参考，不改变原10%均值偏置标准。以固定train-b00 zero RMS作分母时三窗也均失败。完整窗虽减阻0.412%，但Cl′ RMS增加10.586%、均值偏置52.731%，因此不是受约束物理成功。</p>`:'';
  $('final-ppo-real-cfd-summary').innerHTML=`<p><b>${terminal?.verified?'真实 CFD 已完成并独立复核':run.running?'真实 CFD 正在运行':'真实 CFD 已停止，等待终态复核'}</b> · ${run.completed_cycles}/${run.planned_cycles} 个配对周期 · CPU策略推理，无GPU训练</p><p>最近周期 t=${num(latest.force_time,1)}：实际动作 ${num(latest.omega,3)}；PPO/zero 总 Cd ${num(latest.ppo_total_cd,5)} / ${num(latest.zero_total_cd,5)}；PPO/zero 后柱 Cl ${num(latest.ppo_rear_cl,5)} / ${num(latest.zero_rear_cl,5)}。最低 MemAvailable ${num(run.minimum_available_gib,2)} GiB。</p>${table}<p class="small">策略训练已完成4096步，本卡是冻结最终策略直接驱动真实CFD的配对执行；没有在线FNO、没有MPC替代，也没有科学准入。</p>`;
+ const field=run.actual_cfd_field,fieldBox=$('final-ppo-field-evidence');fieldBox.hidden=field?.verified!==true;
+ if(!fieldBox.hidden){const image=$('final-ppo-field'),url=`/final-ppo-field.png?v=${field.sha256}`;if(image.getAttribute('src')!==url)image.src=url;$('final-ppo-field-note').textContent=`最终 PPO 分支实际 CFD t=${field.intended_time.toFixed(1)}（NPZ记录 ${field.stored_sample_time.toFixed(8)}；float32时间容差 ${field.time_tolerance.toExponential(2)}）。速度为求解器单位；压力为 CFD pressure with ROI mean removed（solver units），不是绝对Pa，也不是模型预测场。证据SHA ${field.sha256.slice(0,12)}…`;}
  drawActualSeries('final-ppo-real-cfd-actions',rows,[{key:'omega',label:'PPO实际转速',color:'#60c9fb'}],'最终PPO实际动作（周期终点）');
  drawActualSeries('final-ppo-real-cfd-drag',rows,[{key:'ppo_total_cd',label:'PPO total Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero total Cd',color:'#f2c879'}],'真实CFD总阻力 Cd（周期终点）');
  drawActualSeries('final-ppo-real-cfd-lift',rows,[{key:'ppo_rear_cl',label:'PPO rear Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero rear Cl',color:'#f69d97'}],'真实CFD后柱升力 Cl（周期终点）');
@@ -1695,6 +1697,8 @@ _EXPLORATORY_MPC_PROFILES = {
 
 _CURRENT_FIELD_CACHE = {"sha256": None, "png": None}
 _CURRENT_FIELD_LOCK = threading.Lock()
+_FINAL_PPO_FIELD_CACHE = {"sha256": None, "png": None}
+_FINAL_PPO_FIELD_LOCK = threading.Lock()
 _LONG_H5_RECOVERED_SHA = "1605604dc27f106acd05e6a721f26c4ba24527ac53996d6e65fbc70c601fa2b1"
 _LONG_H5_REVIEW_SHA = "aa343c826b683eff840826d3bbcd1db02e2bdbfa1321a33522a965dde5d1f687"
 _H5_PPO_APPROVAL_SHA = "8aa44f5f177d6c7d831a1efc55abf9d8db4b700d640cb640c5fcbb709cc44569"
@@ -1704,6 +1708,10 @@ _FINAL_PPO_CFD_APPROVAL_SHA = "7ace192519a08795fe9217473fae33941fc5edbb1075daeeb
 _FINAL_PPO_CFD_DRIVER_SHA = "44b488a97a2882e1325da8871d3ac4905cdae2a6f2cbb17202ced91afc58b91a"
 _FINAL_PPO_CFD_RESULT_SHA = "4007493f22de5855cbd0574e0ec006ca715941b8396f4e48af6527dc11e03d47"
 _FINAL_PPO_CFD_REVIEW_SHA = "33c15b7ca14e9d65ef158cbec763dcbc0f16d162ac30f129d3b13ddb765eb301"
+_FINAL_PPO_FIELD_RESULT_SHA = "7b8930ef7b928799e8982bd9c4d7507c1e11d34cc6f1f466820358ff13124d69"
+_FINAL_PPO_FIELD_NPZ_SHA = "967fdb76efc5124630e2cc5b738b06521a036fe348fe9d550908c31e1b0cc448"
+_FINAL_PPO_FIELD_UNIT_EVIDENCE_SHA = "e1f5fa599b35b3e4603800608e892ee605e619d6ac9029691705ce314d2b709b"
+_FINAL_PPO_FIELD_MANIFEST_SHA = "f6328c753d2db54556d502c0101f4a13b41a3113bdf659af49b00d40f2c255b8"
 
 
 def _long_h5_recovered_metrics(root: Path) -> dict | None:
@@ -2002,6 +2010,7 @@ def _exploratory_final_ppo_real_cfd(root: Path) -> dict:
                         "requested_positive_limit_count": 124,
                         "saturated_endpoints": 117, "rate_limited_endpoints": 7,
                         "physical_success": False, "windows": terminal_windows}
+        field = _final_ppo_field_evidence(root) if terminal is not None else None
         return {"verified": True, "running": running,
                 "completed_cycles": completed, "planned_cycles": 124,
                 "latest": latest, "actual_timeseries": actual_timeseries,
@@ -2010,6 +2019,7 @@ def _exploratory_final_ppo_real_cfd(root: Path) -> dict:
                 "gpu_training": False, "online_fno": False, "mpc": False,
                 "scientific_admission": False, "control_success_verified": False,
                 "approval_sha256": _FINAL_PPO_CFD_APPROVAL_SHA,
+                "actual_cfd_field": field,
                 "terminal_review": terminal}
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
             subprocess.SubprocessError):
@@ -2114,6 +2124,128 @@ def _current_trial_field_png(root: Path, profile: dict, rows: list[dict],
                 fontsize=10)
             stream = io.BytesIO(); canvas.print_png(stream); payload = stream.getvalue()
             _CURRENT_FIELD_CACHE.update(sha256=evidence["sha256"], png=payload)
+            return payload
+        except (OSError, ValueError, KeyError, TypeError, ImportError):
+            return None
+
+
+def _final_ppo_field_evidence(root: Path) -> dict | None:
+    """Validate the one fixed final-PPO actual-CFD field; never accept a path."""
+    base = root / "artifacts/exploratory_final_ppo_field_preview_20261006"
+    result_path = base / "result.json"
+    npz_path = base / "final_ppo_actual_cfd_160.4.npz"
+    unit_path = base / "unit_evidence.json"
+    manifest_path = base / "manifest.sha256.json"
+    try:
+        if (hashlib.sha256(result_path.read_bytes()).hexdigest()
+                != _FINAL_PPO_FIELD_RESULT_SHA
+                or hashlib.sha256(npz_path.read_bytes()).hexdigest()
+                != _FINAL_PPO_FIELD_NPZ_SHA
+                or hashlib.sha256(unit_path.read_bytes()).hexdigest()
+                != _FINAL_PPO_FIELD_UNIT_EVIDENCE_SHA
+                or hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+                != _FINAL_PPO_FIELD_MANIFEST_SHA):
+            return None
+        result = json.loads(result_path.read_text())
+        unit = json.loads(unit_path.read_text())
+        if (result.get("status") != "FINAL_PPO_ACTUAL_CFD_FIELD_PREVIEW_COMPLETE_NOT_ADMISSION"
+                or result.get("actual_cfd") is not True
+                or result.get("model_prediction") is not False
+                or result.get("cfd_rerun") is not False
+                or result.get("scientific_admission") is not False
+                or result.get("npz_sha256") != _FINAL_PPO_FIELD_NPZ_SHA
+                or result.get("result_sha256") != _FINAL_PPO_CFD_RESULT_SHA
+                or result.get("review_sha256") != _FINAL_PPO_CFD_REVIEW_SHA
+                or unit.get("owned_container_ids_after_cleanup") != []):
+            return None
+        for name in ("export_unit", "curator_unit"):
+            state = unit[name]
+            if (state.get("MainPID") != "0" or state.get("ActiveState") != "active"
+                    or state.get("SubState") != "exited" or state.get("Result") != "success"
+                    or state.get("ExecMainCode") != "1" or state.get("ExecMainStatus") != "0"
+                    or state.get("MemoryMax") != "4294967296"
+                    or state.get("MemorySwapMax") != "0"):
+                return None
+        import numpy as np
+        with np.load(npz_path, allow_pickle=False) as packet:
+            if set(packet.files) != {"state", "mask", "time", "x", "y"}:
+                return None
+            state, mask = packet["state"], packet["mask"]
+            sample_time, x, y = packet["time"], packet["x"], packet["y"]
+            evidence = result["evidence"]
+            intended = float(evidence["intended_time"])
+            tolerance = float(evidence["time_tolerance"])
+            if (state.shape != (3, 128, 256) or state.dtype != np.float32
+                    or mask.shape != (1, 128, 256) or mask.dtype != np.uint8
+                    or sample_time.shape != (1,) or x.shape != (256,) or y.shape != (128,)
+                    or x.dtype != np.float32 or y.dtype != np.float32
+                    or not np.isfinite(state).all() or not np.isfinite(sample_time).all()
+                    or not np.isfinite(x).all() or not np.isfinite(y).all()
+                    or not np.all((mask == 0) | (mask == 1))
+                    or not np.all(np.diff(x) > 0) or not np.all(np.diff(y) > 0)
+                    or intended != 160.4 or tolerance != 3.0517578125e-05
+                    or abs(float(sample_time[0]) - intended) > tolerance
+                    or float(sample_time[0]) != float(evidence["stored_time"])
+                    or list(state.shape) != evidence["state_shape"]
+                    or abs(float(mask.mean()) - float(evidence["valid_fraction"])) > 1e-12):
+                return None
+        return {"verified": True, "sha256": _FINAL_PPO_FIELD_NPZ_SHA,
+                "result_sha256": _FINAL_PPO_FIELD_RESULT_SHA,
+                "unit_evidence_sha256": _FINAL_PPO_FIELD_UNIT_EVIDENCE_SHA,
+                "manifest_sha256": _FINAL_PPO_FIELD_MANIFEST_SHA,
+                "intended_time": intended, "stored_sample_time": float(sample_time[0]),
+                "time_tolerance": tolerance, "actual_cfd": True,
+                "model_prediction": False, "cfd_rerun": False,
+                "roi": {"x": [float(x[0]), float(x[-1])],
+                        "y": [float(y[0]), float(y[-1])]},
+                "quantity_semantics": {
+                    "speed": "CFD solver units",
+                    "pressure": "CFD pressure with ROI mean removed (solver units)",
+                }}
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError, ImportError):
+        return None
+
+
+def _final_ppo_field_png(root: Path, requested_sha256: str) -> bytes | None:
+    """Render the exact SHA-bound final-PPO actual CFD field, never an MPC field."""
+    if requested_sha256 != _FINAL_PPO_FIELD_NPZ_SHA:
+        return None
+    evidence = _final_ppo_field_evidence(root)
+    if evidence is None:
+        return None
+    with _FINAL_PPO_FIELD_LOCK:
+        if _FINAL_PPO_FIELD_CACHE["sha256"] == requested_sha256:
+            return _FINAL_PPO_FIELD_CACHE["png"]
+        try:
+            import io
+            import numpy as np
+            from matplotlib.backends.backend_agg import FigureCanvasAgg
+            from matplotlib.figure import Figure
+            path = (root / "artifacts/exploratory_final_ppo_field_preview_20261006"
+                    / "final_ppo_actual_cfd_160.4.npz")
+            with np.load(path, allow_pickle=False) as packet:
+                state, valid = packet["state"], packet["mask"][0].astype(bool)
+                x, y = packet["x"], packet["y"]
+            speed = np.where(valid, np.sqrt(state[0] ** 2 + state[1] ** 2), np.nan)
+            pressure = np.where(valid, state[2], np.nan)
+            figure = Figure(figsize=(11, 3.8), dpi=120, layout="constrained")
+            canvas = FigureCanvasAgg(figure)
+            for axis, values, title, cmap in (
+                    (figure.add_subplot(1, 2, 1), speed,
+                     "Final PPO actual CFD speed |U| (solver units)", "viridis"),
+                    (figure.add_subplot(1, 2, 2), pressure,
+                     "Final PPO actual CFD pressure, ROI mean removed (solver units)",
+                     "coolwarm")):
+                image = axis.imshow(values, origin="lower", aspect="equal",
+                                    extent=(x[0], x[-1], y[0], y[-1]), cmap=cmap)
+                axis.set(xlabel="x (solver coordinates)", ylabel="y (solver coordinates)",
+                         title=title)
+                figure.colorbar(image, ax=axis, shrink=.82)
+            figure.suptitle(
+                "Actual OpenFOAM sampled ROI for final PPO branch at t=160.4; "
+                f"not a model prediction | sha256:{requested_sha256[:12]}…", fontsize=10)
+            stream = io.BytesIO(); canvas.print_png(stream); payload = stream.getvalue()
+            _FINAL_PPO_FIELD_CACHE.update(sha256=requested_sha256, png=payload)
             return payload
         except (OSError, ValueError, KeyError, TypeError, ImportError):
             return None
@@ -4017,6 +4149,17 @@ class Handler(BaseHTTPRequestHandler):
                 payload = _current_trial_field_png(self.root, profile, rows, versions[0])
                 if payload is None:
                     raise ValueError("current field evidence unavailable")
+                return self._send(payload, "image/png")
+            except (ValueError, KeyError, TypeError):
+                return self._send(b"not found", "text/plain", 404)
+        if path == "/final-ppo-field.png":
+            try:
+                versions = parse_qs(parsed.query, strict_parsing=True).get("v", [])
+                if len(versions) != 1:
+                    raise ValueError("one bound SHA is required")
+                payload = _final_ppo_field_png(self.root, versions[0])
+                if payload is None:
+                    raise ValueError("final PPO field evidence unavailable")
                 return self._send(payload, "image/png")
             except (ValueError, KeyError, TypeError):
                 return self._send(b"not found", "text/plain", 404)

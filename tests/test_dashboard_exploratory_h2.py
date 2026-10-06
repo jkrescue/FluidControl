@@ -399,6 +399,55 @@ def test_final_ppo_terminal_review_reports_all_windows_and_keeps_constraints(tmp
     assert '20%只作敏感性参考，不改变原10%均值偏置标准' in m.PAGE
 
 
+def test_final_ppo_actual_cfd_field_is_sha_bound_and_not_old_mpc(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    import numpy as np
+    base = tmp_path / 'artifacts/exploratory_final_ppo_field_preview_20261006'
+    base.mkdir(parents=True)
+    npz = base / 'final_ppo_actual_cfd_160.4.npz'
+    x = np.linspace(8., 25., 256, dtype=np.float32)
+    y = np.linspace(4., 11., 128, dtype=np.float32)
+    state = np.zeros((3, 128, 256), dtype=np.float32)
+    state[0] = 1.; state[2] = np.linspace(-1., 1., 256, dtype=np.float32)
+    mask = np.ones((1, 128, 256), dtype=np.uint8)
+    np.savez(npz, state=state, mask=mask,
+             time=np.array([160.39999389648438], dtype=np.float64), x=x, y=y)
+    result = {'status': 'FINAL_PPO_ACTUAL_CFD_FIELD_PREVIEW_COMPLETE_NOT_ADMISSION',
+              'actual_cfd': True, 'model_prediction': False, 'cfd_rerun': False,
+              'scientific_admission': False, 'npz_sha256': m._FINAL_PPO_FIELD_NPZ_SHA,
+              'result_sha256': m._FINAL_PPO_CFD_RESULT_SHA,
+              'review_sha256': m._FINAL_PPO_CFD_REVIEW_SHA,
+              'evidence': {'intended_time': 160.4,
+                           'stored_time': 160.39999389648438,
+                           'time_tolerance': 3.0517578125e-05,
+                           'valid_fraction': 1.0, 'state_shape': [3, 128, 256]}}
+    unit_state = {'MainPID': '0', 'ActiveState': 'active', 'SubState': 'exited',
+                  'Result': 'success', 'ExecMainCode': '1', 'ExecMainStatus': '0',
+                  'MemoryMax': '4294967296', 'MemorySwapMax': '0'}
+    unit = {'export_unit': unit_state, 'curator_unit': unit_state,
+            'owned_container_ids_after_cleanup': []}
+    files = {'result.json': result, 'unit_evidence.json': unit,
+             'manifest.sha256.json': {'status': 'FINAL_PPO_FIELD_PREVIEW_EVIDENCE'}}
+    for name, payload in files.items():
+        (base / name).write_text(json.dumps(payload))
+    expected = {result and (base/'result.json').read_bytes(): m._FINAL_PPO_FIELD_RESULT_SHA,
+                npz.read_bytes(): m._FINAL_PPO_FIELD_NPZ_SHA,
+                (base/'unit_evidence.json').read_bytes(): m._FINAL_PPO_FIELD_UNIT_EVIDENCE_SHA,
+                (base/'manifest.sha256.json').read_bytes(): m._FINAL_PPO_FIELD_MANIFEST_SHA}
+    monkeypatch.setattr(m.hashlib, 'sha256',
+        lambda raw: SimpleNamespace(hexdigest=lambda: expected.get(raw, 'wrong')))
+    evidence = m._final_ppo_field_evidence(tmp_path)
+    assert evidence['verified'] and evidence['actual_cfd']
+    assert not evidence['model_prediction'] and not evidence['cfd_rerun']
+    assert evidence['intended_time'] == 160.4
+    assert m._final_ppo_field_png(tmp_path, '0' * 64) is None
+    png = m._final_ppo_field_png(tmp_path, m._FINAL_PPO_FIELD_NPZ_SHA)
+    assert png.startswith(b'\x89PNG\r\n\x1a\n')
+    assert '/final-ppo-field.png?v=${field.sha256}' in m.PAGE
+    assert '不使用上方旧 MPC 流场图' in m.PAGE
+    assert '/current-trial-field.png?v=${field.sha256}' in m.PAGE
+
+
 def test_causal_terminal_binding_is_distinct_and_nonadmitting(tmp_path, monkeypatch):
     from types import SimpleNamespace
     base=tmp_path/'artifacts/exploratory_causal_history_h2_real_cfd_20261006';base.mkdir(parents=True)
