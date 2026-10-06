@@ -114,12 +114,14 @@ def test_result_requires_exact_selection_manifest_binding(tmp_path):
     value = approved(tmp_path)
     output = tmp_path / "output"; output.mkdir()
     selection = output / "selection.json"; selection.write_text("{}")
+    raw = output / "raw_records.json"; raw.write_text("{}")
     result = {"status": MOD.COMPLETE, "source_spec": value,
               "scientific_admission": False, "optimizer_created": False,
               "model_saved": False, "validation_accessed": False,
               "frozen_test_accessed": False,
               "selection_manifest": {"path": str(selection.resolve()),
-                                     "sha256": digest(selection)}}
+                                     "sha256": digest(selection)},
+              "raw_records": {"path": str(raw.resolve()), "sha256": digest(raw)}}
     MOD.validate_result(result, value, output)
     result["selection_manifest"]["sha256"] = "0" * 64
     with pytest.raises(RuntimeError, match="selection"):

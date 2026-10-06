@@ -207,6 +207,15 @@ def persist_selection(output: Path, rows: list[dict], selection: dict,
     return {"path": str(path.resolve()), "sha256": sha256(path)}
 
 
+def persist_raw_records(output: Path, records: dict, rows: list[dict],
+                        selection_manifest: dict, source_spec_sha256: str) -> dict:
+    path = output.parent / "raw_records.json"
+    atomic_json(path, {"records": records, "rows": rows,
+                       "selection_manifest": selection_manifest,
+                       "source_spec_sha256": source_spec_sha256})
+    return {"path": str(path.resolve()), "sha256": sha256(path)}
+
+
 def validated_runtime_dependencies(spec: dict):
     """Verify the complete small source/proof closure before importing it."""
     for item in spec["source_files"]:
@@ -314,16 +323,16 @@ def execute(spec: dict, output: Path, source_spec_sha256: str) -> dict:
             h1_force_identity.append(k1_h1)
             print(json.dumps({"event": "origin_complete", "case": row["case"],
                               "count": count}), flush=True)
-        groups = {(row["case"], 0, row["dataset_index"]): {
-            "family": row["family"], "canonical_phase": row["canonical_phase"],
-            "action_profile": row["action_profile"]} for row in rows}
-        summary = grouped_and_paired(records["k1"], records["p029"], groups,
+        raw_records = persist_raw_records(
+            output, records, rows, selection_manifest, source_spec_sha256)
+        summary = grouped_and_paired(records["k1"], records["p029"], rows,
                                      relative_field_metrics_fn=relative_field_metrics)
         require(all(value._version == version for value, version in snapshots),
                 "model parameter/buffer version changed")
         result = {
             "status": COMPLETE, "source_spec": spec, "selection": selection,
             "selection_manifest": selection_manifest,
+            "raw_records": raw_records,
             "records": records, "summary": summary,
             "h1_force_identity_exact": True, "h1_force_identity": h1_force_identity,
             "flow_transition_counts": {"k1": 4400, "p029": 4400},

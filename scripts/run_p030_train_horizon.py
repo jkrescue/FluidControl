@@ -160,6 +160,10 @@ def validate_result(result: dict, spec: dict, output: Path) -> None:
     require(binding == {"path": str(selection_path.resolve()),
                         "sha256": sha256(selection_path)},
             "P030 pre-forward selection manifest binding differs")
+    raw_binding = result.get("raw_records", {})
+    raw_path = output / "raw_records.json"
+    require(raw_binding == {"path": str(raw_path.resolve()), "sha256": sha256(raw_path)},
+            "P030 raw-record evidence binding differs")
 
 
 def host_memory() -> dict[str, int]:

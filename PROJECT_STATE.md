@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 最新：P030修复后实际重跑（2026-10-06 04:23 UTC）
+
+重跑unit `fluid-control-fcp030-train-horizon-r2-20261006.service`，invocation `4b89d3cb85c540448eeebd8ef5c7c3b3`，初始MainPID1771775；输出 `artifacts/fcp030_train_horizon_diagnostic_20261006_r2`。批准SHA `6c4edae1e955268dcae718c4eb2f6b24a216b8961189d56a09f4d4da7c091378`，v3源码manifest `73ac42127e0ace741c675cb7a5a53a6339171565462d0771c11665124d0f08e6`，恢复独立审查 `docs/FC_P030_RECOVERY_REVIEW_20261006.md` SHA `a0d7865fdde4c10cd754fb2c975b995aaa8bd655b3b0eeb1ec0281b1b043b8df`。
+
+仅修复元数据rows传参、汇总前保存raw_records.json及其SHA；原数值核心/模型/数据/资源保护不变。25项集成测试与15项核心测试通过，新增实际核心44对记录汇总与生产调用AST回归。首次失败和v2全部保留。一次只读精确44文件缓存提示完成，收据SHA `fecbbdb461f3d94e9b7cf15310c562905802cfc95aae7a8fe5770bc38994065a`，未写入HDF/模型，物理空闲恢复约32.1GiB。已观测origin_complete1至3及实际看板登记；尚无最终诊断结论，更不是训练或闭环完成。
+
 ## 最新：P030首次运行汇总接口失败（2026-10-06 04:19 UTC）
 
 同一实例d7739a9bf4fe42f68a584e8ec5edc684已终止，MainPID0/exit1。44项origin_complete存在，但driver把tuple键的dict传给要求metadata行列表的grouped_and_paired，触发TypeError。没有result.json，也没有保存rawrecords，不能报告科学指标或成功；必须修复并重跑。观测CUDA最低21.538467GiB、MemAvailable最低111.160320GiB，属于软件汇总接口故障而非内存故障。已授权小范围修复：直接传原始rows、用实际core执行44记录汇总的CPU回归测试，并在汇总前保存原始预测记录。原失败输出和v2源码保留不变，新版本需独立检查及单独重跑批准。下方运行中均为历史。

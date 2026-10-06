@@ -1,14 +1,14 @@
 {
   "experiment": "P030-train-horizon",
-  "label": "诊断汇总失败，正在修复接口",
-  "description": "44条轨迹预测完成后，分组汇总的参数类型错误导致退出，最终结果未保存，不能作为成功实验。最低观测CUDA空闲21.54GiB，不是内存故障。正在修复接口、补真实汇总函数的CPU测试，并保留本次失败证据；没有新训练或闭环验收结果。",
-  "unit": "fluid-control-fcp030-train-horizon-20261006.service",
-  "invocation": "d7739a9bf4fe42f68a584e8ec5edc684",
-  "approval": "docs/FC_P030_EXECUTION_APPROVAL_20261006.json",
-  "approval_sha256": "2f80dab06ca1916495272dac0adf155745969534ce3d5b1626e7a4295eadc98f",
-  "launcher": "artifacts/fcp030_train_horizon_source_20261006_v2_immutable/scripts/run_p030_train_horizon.py",
-  "launcher_sha256": "b5e07d162267f709950e58adf02b9e0eb8a68433fc31203319bfa5bc6ded5a3b",
-  "log": "artifacts/fcp030_train_horizon_diagnostic_20261006/run.log",
+  "label": "连续预测诊断重跑：汇总接口已修复",
+  "description": "同一44条真实CFD训练轨迹，旧模型与新模型连续预测100步，无参数更新。首次汇总接口失败已保留；25项回归测试通过，本次在汇总前保存原始预测。尚无新训练或闭环验收结果，20GiB内存守卫不变。",
+  "unit": "fluid-control-fcp030-train-horizon-r2-20261006.service",
+  "invocation": "4b89d3cb85c540448eeebd8ef5c7c3b3",
+  "approval": "docs/FC_P030_RECOVERY_EXECUTION_APPROVAL_20261006.json",
+  "approval_sha256": "6c4edae1e955268dcae718c4eb2f6b24a216b8961189d56a09f4d4da7c091378",
+  "launcher": "artifacts/fcp030_train_horizon_source_20261006_v3_immutable/scripts/run_p030_train_horizon.py",
+  "launcher_sha256": "d0bb73b2e722d78bb6ac31b85b3e65891b2d0addc2f8eb4ad8f5e04dbb6d9c78",
+  "log": "artifacts/fcp030_train_horizon_diagnostic_20261006_r2/run.log",
   "progress_kind": "diagnostic_origins",
   "planned_updates": {"CFD": 44}
 }

@@ -1,6 +1,8 @@
 import hashlib
 import importlib.util
+import ast
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -11,6 +13,14 @@ SCRIPT = Path(__file__).parents[1] / "scripts" / "diagnose_p030_train_horizon.py
 SPEC = importlib.util.spec_from_file_location("p030_driver_test", SCRIPT)
 MOD = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MOD)
+
+CORE_PATH = Path(os.environ.get(
+    "P030_CORE_SOURCE",
+    Path(__file__).resolve().parents[1] / "scripts" / "p030_train_horizon_core.py",
+))
+CORE_SPEC = importlib.util.spec_from_file_location("p030_real_core_test", CORE_PATH)
+CORE = importlib.util.module_from_spec(CORE_SPEC)
+CORE_SPEC.loader.exec_module(CORE)
 
 
 def digest(path):
@@ -159,3 +169,60 @@ def test_existing_dashboard_progress_event_schema_is_emitted():
     source = SCRIPT.read_text()
     assert '"event": "origin_complete"' in source
     assert '"count": count' in source
+
+
+def test_actual_core_groups_all_44_rows_and_raw_records_survive(tmp_path):
+    rows, left, right = [], [], []
+    for index in range(44):
+        dataset_index = 0 if index < 20 else 1 if index < 28 else 2
+        identity = {"case": f"case{index:02d}", "start": 0,
+                    "dataset_index": dataset_index}
+        rows.append({**identity, "family": "base" if index < 20 else
+                     "train8" if index < 28 else "train16",
+                     "canonical_phase": ("b00", "b02", "b04", "b06")[index % 4],
+                     "action_profile": "fixed"})
+        record = {
+            "identity": identity, "rollout_steps": 100,
+            "field_sums_by_lead": [[[1.0, 2.0, 3.0], [10.0, 20.0, 30.0]]
+                                     for _ in range(100)],
+            "predicted_force_physical_by_lead": [[1.0, 0.0, 2.0, 0.1]
+                                                   for _ in range(100)],
+            "target_force_physical_by_lead": [[1.0, 0.0, 2.0, 0.0]
+                                                for _ in range(100)],
+        }
+        left.append(record)
+        right.append(json.loads(json.dumps(record)))
+    selection = tmp_path / "selection.json"; selection.write_text("{}")
+    raw = MOD.persist_raw_records(
+        tmp_path / "result.json", {"k1": left, "p029": right}, rows,
+        {"path": str(selection), "sha256": digest(selection)}, "a" * 64)
+    assert raw["sha256"] == digest(tmp_path / "raw_records.json")
+
+    def relative(sums):
+        error, reference = sums
+        ratios = [(e / r) ** .5 if r > 0 else None for e, r in zip(error, reference)]
+        return {"field_squared_error_sums_u_v_p": error.tolist(),
+                "field_reference_squared_sums_u_v_p": reference.tolist(),
+                "field_relative_l2_u_v_p": ratios,
+                "velocity_relative_l2": ((error[:2].sum() / reference[:2].sum()) ** .5)}
+
+    summary = CORE.grouped_and_paired(left, right, rows,
+                                      relative_field_metrics_fn=relative)
+    assert summary["all"]["k1"]["at_lead"]["100"]["count"] == 44
+    assert summary["paired_at_lead"]["100"]["summary"]["rear_cl_absolute_error"] == {
+        "count": 44, "negative": 0, "zero": 44, "positive": 0, "mean_delta": 0.0}
+
+
+def test_production_execute_persists_raw_then_passes_rows_to_core():
+    tree = ast.parse(SCRIPT.read_text())
+    execute = next(node for node in tree.body
+                   if isinstance(node, ast.FunctionDef) and node.name == "execute")
+    calls = [node for node in ast.walk(execute) if isinstance(node, ast.Call)]
+    persisted = [node for node in calls
+                 if isinstance(node.func, ast.Name) and node.func.id == "persist_raw_records"]
+    grouped = [node for node in calls
+               if isinstance(node.func, ast.Name) and node.func.id == "grouped_and_paired"]
+    assert len(persisted) == len(grouped) == 1
+    assert persisted[0].lineno < grouped[0].lineno
+    assert len(grouped[0].args) >= 3
+    assert isinstance(grouped[0].args[2], ast.Name) and grouped[0].args[2].id == "rows"
