@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## P028 engineering preparation — no new scientific result
+
+Canonical runner/updated-flow loader and legacy suites90PASS; official-model objective10PASS; old/new resource-launcher mocks24PASS. Source-only418-file preparation completed; no HDF/model/GPU access. See `docs/FC_P028_RUNNER_LOADER_CPU_REVIEW_20261006.md`. Next actual task is one no-update H10 resource check after memory clearance and bound approval, then fixed171-update experiment only after actual capacity and evaluation compatibility are established. This does not change E039 or admit K1/K4.
+
 ## FC-E039 / P027 — actual short-horizon diagnostic complete
 
 Result SHA `7785ebb92ca932b4fb572175b4bd66497fc3b7495f6ecdb534f3b587a0096366`; actual official-b40 container exited0/noOOM. Independent review reproduced rear-Cl MAE directly from44 unique case prediction/target arrays. K1 true-field/free-AR MAE0.026546/0.038693; K4 0.026586/0.038588; persistence0.633210. Corresponding pooled rear-Cl RMSE: K1 0.038826406092363715/0.05423998282426294; K4 0.03881085177318823/0.054197059487591556. Each model worsens under AR on29/44 cases. Train8 K4 MAE rises0.026061→0.061876. First-lead H1/AR outputs match exactly for both models/all cases.

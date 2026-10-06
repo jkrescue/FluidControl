@@ -43,6 +43,14 @@ P026_HISTORY_INFERENCE_SHA256 = "fd568f6457b980046a0419be96562291e9f96736270d45f
 P026_HISTORY_OBJECTIVE_SHA256 = "4d27fb53e05df73ba94d84bf42ba8205d78ebe6f91de832a68659870ea7d77c0"
 P026_ORDER_SHA256 = "177ebd9523cde918eb0c1fb8026286dac7e95f3d228ae0e349757a2a9a288f9f"
 P026_LEARNING_RATE = 1.5625e-7
+P028_MANIFEST_STATUS = "FC_P028_DUAL_FNO_MANIFEST_VERIFIED"
+P028_SYSTEM_KIND = "FC_P028_FLOW_ROLLOUT_REPAIR"
+P028_FLOW_KIND = "FC_P028_FLOW_ROLLOUT_CHECKPOINT"
+P028_PARENT_MANIFEST_SHA256 = "7adca21e3a75691b10f164c342ea91995cc38060e7416dd217b8bd8e5feeacc7"
+P028_AERO_PARENT_MODEL_SHA256 = "e2f67dbde0ab28ccd7aa46b34ee3904178c7549cd1539f4a3ae40e2bd17e67b5"
+P028_AERO_PARENT_STATE_SHA256 = "ab2fe103bca0a8c84156e2c9fd7ded5336f2d4236436b593fc414e564d7e92d3"
+P028_AERO_PROTOCOL_SHA256 = "daf22b2464744509260f1eb9e0b20d3b80da484c8985f3a22887293bbb40cb30"
+P028_LEARNING_RATE = 1e-5
 FLOW_MODEL_SHA256 = "dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31"
 FLOW_STATE_SHA256 = "4998e534d4b82b17393c217357ed18220fb8e739166a88147483bb9cc5fb771e"
 CONFIG_SHA256 = "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
@@ -117,14 +125,20 @@ def _experiment_contract(kind: str) -> dict[str, Any]:
     """Explicit project experiment identities; never infer steps from filenames."""
     if kind == SYSTEM_KIND:
         return {"status": MANIFEST_STATUS, "aero_kind": AERO_KIND,
+                "flow_kind": FLOW_KIND, "flow_epoch": 0, "flow_frozen": True,
+                "aero_epoch": 1, "aero_frozen": False,
                 "optimizer_steps": 1368, "extra": {}}
     if kind == P015_SYSTEM_KIND:
         return {"status": P015_MANIFEST_STATUS, "aero_kind": P015_AERO_KIND,
+                "flow_kind": FLOW_KIND, "flow_epoch": 0, "flow_frozen": True,
+                "aero_epoch": 1, "aero_frozen": False,
                 "optimizer_steps": 171,
                 "extra": {"training_experiment": "FC-P015", "accumulation_windows": 8,
                           "training_windows": 1368, "optimizer_steps": 171}}
     if kind == P018_SYSTEM_KIND:
         return {"status": P018_MANIFEST_STATUS, "aero_kind": P018_AERO_KIND,
+                "flow_kind": FLOW_KIND, "flow_epoch": 0, "flow_frozen": True,
+                "aero_epoch": 1, "aero_frozen": False,
                 "optimizer_steps": 171,
                 "extra": {"training_experiment": "FC-P018", "accumulation_windows": 8,
                           "training_windows": 1368, "optimizer_steps": 171,
@@ -140,6 +154,11 @@ def _experiment_contract(kind: str) -> dict[str, Any]:
         return {
             "status": status,
             "aero_kind": aero_kind,
+            "flow_kind": FLOW_KIND,
+            "flow_epoch": 0,
+            "flow_frozen": True,
+            "aero_epoch": 1,
+            "aero_frozen": False,
             "optimizer_steps": 171,
             "p026_history_k": history_k,
             "extra": {
@@ -149,6 +168,28 @@ def _experiment_contract(kind: str) -> dict[str, Any]:
                 "optimizer_steps": 171,
                 "actual_learning_rate": P026_LEARNING_RATE,
                 "training_protocol_file": "training_protocol.json",
+            },
+        }
+    if kind == P028_SYSTEM_KIND:
+        return {
+            "status": P028_MANIFEST_STATUS,
+            "aero_kind": P026_K1_AERO_KIND,
+            "flow_kind": P028_FLOW_KIND,
+            "flow_epoch": 1,
+            "flow_frozen": False,
+            "aero_epoch": 1,
+            "aero_frozen": True,
+            "optimizer_steps": 171,
+            "p026_history_k": 1,
+            "p028": True,
+            "extra": {
+                "training_experiment": "FC-P028",
+                "accumulation_windows": 8,
+                "training_windows": 1368,
+                "optimizer_steps": 171,
+                "actual_learning_rate": P028_LEARNING_RATE,
+                "training_protocol_file": "training_protocol.json",
+                "parent_manifest_sha256": P028_PARENT_MANIFEST_SHA256,
             },
         }
     raise ValueError("dual FNO experiment kind is not supported")
@@ -205,6 +246,31 @@ def _validate_p026_protocol(
         or payload.get("training_semantics") != protocol
     ):
         raise ValueError("P026 training protocol bytes or semantics differ")
+    if contract.get("p028"):
+        protocol_exact = {
+            "experiment": "FC-P028",
+            "optimized_role": "flow",
+            "fixed_role": "aerodynamic",
+            "horizon": 10,
+            "original_window_horizon": 100,
+            "training_windows": 1368,
+            "optimizer_steps": 171,
+            "accumulation_windows": 8,
+            "seed": 20261003,
+            "learning_rate": P028_LEARNING_RATE,
+            "betas": [0.9, 0.999],
+            "eps": 1e-8,
+            "weight_decay": 1e-4,
+            "gradient_clip_norm": 1.0,
+            "objective": "ten_equal_masked_normalized_state_MSE",
+            "sampler_order_sha256": P026_ORDER_SHA256,
+            "force_loss": False,
+            "terminal_selection": False,
+            "future_truth_inputs": False,
+        }
+        if protocol != protocol_exact:
+            raise ValueError("P028 training protocol values differ")
+        return
     protocol_exact = {
         "training_experiment": "FC-P026",
         "history_input": history_input,
@@ -256,8 +322,10 @@ def _validate_p018_protocol(root: Path, payload: dict[str, Any]) -> None:
         raise ValueError("P018 effective learning rate or protocol differs")
 
 
-def _checkpoint_identity(root: Path, payload: object, *, role: str,
-                         aerodynamic_kind: str = AERO_KIND) -> CheckpointIdentity:
+def _checkpoint_identity(
+    root: Path, payload: object, *, role: str, expected_kind: str,
+    expected_epoch: int, expected_frozen: bool,
+) -> CheckpointIdentity:
     if not isinstance(payload, dict):
         raise TypeError(f"dual manifest {role} identity must be an object")
     required = {
@@ -273,13 +341,11 @@ def _checkpoint_identity(root: Path, payload: object, *, role: str,
     }
     if not required.issubset(payload):
         raise ValueError(f"dual manifest {role} identity is incomplete")
-    if payload["role"] != role or payload["frozen"] is not (role == "flow"):
+    if payload["role"] != role or payload["frozen"] is not expected_frozen:
         raise ValueError(f"dual manifest {role} role/frozen contract differs")
     epoch = payload["checkpoint_epoch"]
     if not isinstance(epoch, int) or isinstance(epoch, bool):
         raise ValueError(f"dual manifest {role} epoch is invalid")
-    expected_epoch = 0 if role == "flow" else 1
-    expected_kind = FLOW_KIND if role == "flow" else aerodynamic_kind
     if epoch != expected_epoch or payload["metadata_kind"] != expected_kind:
         raise ValueError(f"dual manifest {role} epoch/kind differs")
     directory_value = payload["checkpoint_relative_directory"]
@@ -373,6 +439,11 @@ def validate_dual_fno_manifest(
     }
     if any(payload.get(key) != value for key, value in exact.items()):
         raise ValueError("dual FNO manifest fixed identity differs")
+    if contract.get("p028") and (
+        payload.get("aerodynamic_parent_model_sha256") != P028_AERO_PARENT_MODEL_SHA256
+        or payload.get("aerodynamic_parent_state_sha256") != P028_AERO_PARENT_STATE_SHA256
+    ):
+        raise ValueError("P028 aerodynamic parent identity differs")
     _validate_p018_protocol(manifest_path.parent, payload)
     _validate_p026_protocol(manifest_path.parent, payload, contract)
     architecture = payload["architecture"]
@@ -381,13 +452,25 @@ def validate_dual_fno_manifest(
     precision = payload["precision_protocol"]
     if precision != PRECISION_PROTOCOL:
         raise ValueError("dual FNO precision protocol differs")
-    flow = _checkpoint_identity(manifest_path.parent, payload["flow"], role="flow")
+    flow = _checkpoint_identity(
+        manifest_path.parent, payload["flow"], role="flow",
+        expected_kind=contract["flow_kind"], expected_epoch=contract["flow_epoch"],
+        expected_frozen=contract["flow_frozen"],
+    )
     aerodynamic = _checkpoint_identity(
         manifest_path.parent, payload["aerodynamic"], role="aerodynamic",
-        aerodynamic_kind=contract["aero_kind"],
+        expected_kind=contract["aero_kind"], expected_epoch=contract["aero_epoch"],
+        expected_frozen=contract["aero_frozen"],
     )
-    if flow.model_sha256 != FLOW_MODEL_SHA256 or flow.state_sha256 != FLOW_STATE_SHA256:
+    if not contract.get("p028") and (
+        flow.model_sha256 != FLOW_MODEL_SHA256 or flow.state_sha256 != FLOW_STATE_SHA256
+    ):
         raise ValueError("dual FNO flow checkpoint is not the frozen P009 parent")
+    if contract.get("p028") and (
+        aerodynamic.model_sha256 != P028_AERO_PARENT_MODEL_SHA256
+        or aerodynamic.state_sha256 != P028_AERO_PARENT_STATE_SHA256
+    ):
+        raise ValueError("P028 aerodynamic checkpoint is not the frozen P026 K1 parent")
     if flow.directory == aerodynamic.directory or flow.model == aerodynamic.model or flow.state == aerodynamic.state:
         raise ValueError("dual FNO checkpoint roles are not independently persisted")
     return DualFNOIdentity(manifest_path, manifest_sha, flow, aerodynamic, payload)
@@ -569,16 +652,36 @@ def load_dual_fno(
     )
     if flow_epoch != identity.flow.epoch or aerodynamic_epoch != identity.aerodynamic.epoch:
         raise ValueError("dual FNO loaded checkpoint epoch differs")
-    from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
+    if not contract.get("p028"):
+        from fluid_control.calibrated_checkpoint import validate_calibrated_epoch_zero
 
-    validate_calibrated_epoch_zero(
-        identity.flow.directory,
-        flow_epoch,
-        allow=True,
-        expected_model_sha256=identity.flow.model_sha256,
-        expected_state_sha256=identity.flow.state_sha256,
-        expected_kind=FLOW_KIND,
-    )
+        validate_calibrated_epoch_zero(
+            identity.flow.directory,
+            flow_epoch,
+            allow=True,
+            expected_model_sha256=identity.flow.model_sha256,
+            expected_state_sha256=identity.flow.state_sha256,
+            expected_kind=FLOW_KIND,
+        )
+    else:
+        required_flow_metadata = {
+            "status": P028_FLOW_KIND,
+            "training_experiment": "FC-P028",
+            "checkpoint_epoch": 1,
+            "training_protocol_sha256": identity.payload["training_protocol_sha256"],
+            "training_protocol_file": "training_protocol.json",
+            "accumulation_windows": 8,
+            "training_windows": 1368,
+            "optimizer_steps": 171,
+            "actual_learning_rate": P028_LEARNING_RATE,
+            "parent_manifest_sha256": P028_PARENT_MANIFEST_SHA256,
+            "flow_parent_model_sha256": FLOW_MODEL_SHA256,
+            "flow_parent_state_sha256": FLOW_STATE_SHA256,
+            "aerodynamic_parent_model_sha256": P028_AERO_PARENT_MODEL_SHA256,
+            "aerodynamic_parent_state_sha256": P028_AERO_PARENT_STATE_SHA256,
+        }
+        if any(flow_metadata.get(key) != value for key, value in required_flow_metadata.items()):
+            raise ValueError("P028 flow checkpoint metadata differs")
     required_aero_metadata = {
         "status": contract["aero_kind"],
         "checkpoint_epoch": 1,
@@ -601,7 +704,7 @@ def load_dual_fno(
         "frozen_test_accessed": False,
         "ppo_executed": False,
     }
-    if history_k is not None:
+    if history_k is not None and not contract.get("p028"):
         required_aero_metadata.update(
             {
                 "history_profile": f"p026_k{history_k}",
@@ -616,7 +719,42 @@ def load_dual_fno(
                 "history_inventory": _p026_inventory(),
             }
         )
-    if any(aerodynamic_metadata.get(key) != value for key, value in required_aero_metadata.items()):
+    if contract.get("p028"):
+        required_aero_metadata = {
+            "status": P026_K1_AERO_KIND,
+            "checkpoint_epoch": 1,
+            "flow_parent_model_sha256": FLOW_MODEL_SHA256,
+            "flow_parent_state_sha256": FLOW_STATE_SHA256,
+            "aerodynamic_initial_model_sha256": P026_AERO_INITIAL_MODEL_SHA256,
+            "aerodynamic_initial_state_sha256": P026_AERO_INITIAL_STATE_SHA256,
+            "optimizer_steps": 171,
+            "training_experiment": "FC-P026",
+            "accumulation_windows": 8,
+            "training_windows": 1368,
+            "actual_learning_rate": P026_LEARNING_RATE,
+            "training_protocol_file": "training_protocol.json",
+            "history_profile": "p026_k1",
+            "history_k": 1,
+            "model_in_channels": 6,
+            "training_protocol_sha256": P028_AERO_PROTOCOL_SHA256,
+            "history_state_module_sha256": P026_HISTORY_STATE_SHA256,
+            "history_inference_module_sha256": P026_HISTORY_INFERENCE_SHA256,
+            "sampler_order_sha256": P026_ORDER_SHA256,
+            "history_inventory": _p026_inventory(),
+            "selection_performed": False,
+            "validation_accessed": False,
+            "frozen_test_accessed": False,
+            "ppo_executed": False,
+        }
+        if any(
+            aerodynamic_metadata.get(key) != value
+            for key, value in required_aero_metadata.items()
+        ):
+            raise ValueError("P028 frozen aerodynamic checkpoint metadata differs")
+    elif any(
+        aerodynamic_metadata.get(key) != value
+        for key, value in required_aero_metadata.items()
+    ):
         raise ValueError("dual FNO aerodynamic checkpoint metadata differs")
     if history_k is None:
         return make_dual_fno_adapter(flow_model, aerodynamic_model), identity

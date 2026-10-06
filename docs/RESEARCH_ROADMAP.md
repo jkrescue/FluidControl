@@ -1,5 +1,9 @@
 # Research roadmap and prioritized backlog
 
+## Current — P028 CPU integration complete; real resource probe next
+
+Runner/loader canonical90 CPU tests pass. The418-file resource snapshot is prepared, not executed. Next: bounded verified-project cache advice if necessary → bound no-update H10 GPU resource check → assess actual memory plus optimizer overhead → finish unchanged full-formal caller identity support → fixed171-update flow-only training → original formal acceptance → compatible HydroGym/PPO → paired real-CFD closed loop. No stage is inferred complete from a synthetic test. See `FC_P028_RUNNER_LOADER_CPU_REVIEW_20261006.md` and original P028 plan.
+
 ## Current — 2026-10-06: P027 complete; next intervention design in progress
 
 FC-E039 independently verified44 train-only H10 origins. Free-AR rear-Cl MAE is about45% above true-field conditioning; K4 changes K1 AR MAE by only0.27%. Actual result SHA `7785ebb92ca932b4fb572175b4bd66497fc3b7495f6ecdb534f3b587a0096366`. See `FC_P027_TERMINAL_REVIEW_20261006.md`. Preserve original formal K1/K4 failures. Inspect existing predicted-state training exposure and optimization scale before approving one controlled force-prediction intervention; no blind history-length or tiny-rate sweep. Follow with unchanged full formal evaluation, then compatible HydroGym/PPO training only upon surrogate acceptance, then paired real-CFD closed-loop verification. These downstream requirements are not complete. Older preparation/running sections below are historical.
