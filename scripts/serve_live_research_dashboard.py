@@ -211,6 +211,7 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 .field-stack{display:grid;grid-template-columns:1fr;gap:14px;margin-top:12px}.field-card{background:#101b2b;border:1px solid #2a3d53;border-radius:7px;padding:12px}.field-card h3{margin-bottom:5px}.field-note{line-height:1.6;margin-top:10px}
 @media(max-width:750px){.grid,.resources,.summary,.casegrid,.guide-grid{grid-template-columns:1fr}main{padding:16px}}
 </style></head><body><main>
+<section class="card"><h2>当前 CPU 数据准备 · FC-E065</h2><div id="b00-conversion">等待实际任务状态；不是 GPU 训练。</div></section>
 <div class="top"><div><h1>串列双圆柱流动控制 · 实时进展</h1><div class="muted">目标：降低两圆柱总阻力，同时报告侧向载荷与动作代价</div></div><div class="stamp" id="clock">连接中…</div></div>
 <nav class="guide"><a href="#lead-resources" style="color:#79d5a3">计算资源</a> · <a href="#lead-models" style="color:#79d5a3">当前实验</a> · <a href="#flow-current" style="color:#79d5a3">流场预测与误差图</a> · <a href="#legacy-details" style="color:#79d5a3">完整历史证据</a><span class="small"> · 新版科研总览 / 2026-10-04</span></nav>
 <section id="lead-overview">
@@ -890,7 +891,7 @@ function render(d){latest=d;$('clock').textContent='服务器 '+d.server_time+' 
  $('infer-speed').textContent=d.benchmark?.status==='FNO_REAL_CFD_INFERENCE_BENCHMARK_OK'?`旧数据多步 FNO、真实 CFD 输入：单步中位 ${num(d.benchmark.step_median_ms,2)} ms；连续 100 步 ${num(d.benchmark.rollout_100_step_seconds,2)} s。仅模型前向，不含 CFD 或控制通信。`:'FNO 推理耗时尚未测量。';
  $('cem').textContent=d.cem?'CEM 控制筛选已完成，结果待审计。':`CEM：等待 FNO 的 100 步总阻力误差降至 10% 以下。新增 CFD 平均求解进度 ${num(average,0)}%。`;
  $('ppo').textContent=d.ppo?'HydroGym PPO 有当前目标的新记录。':'当前总阻力目标的 HydroGym PPO 尚未启动。历史末柱目标的 PPO 曾完成 32 步真实 CFD 闭环，但目标差 +0.003855（更差），不能视为当前控制收益。';figure()}
-async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();renderLead(d);renderAdmission(d);renderCurrentFlow(d);render(d);renderActiveExperiment(d)}catch(e){$('clock').textContent='连接失败：'+e.message;$('lead-now').textContent='连接失败，当前页面数值仅是上次采样，不代表实时状态。'}}
+async function refresh(){try{let r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();renderLead(d);renderAdmission(d);renderCurrentFlow(d);render(d);renderActiveExperiment(d);const c=d.b00_train_conversion;$('b00-conversion').textContent=c?`${c.label} · ${c.written_frames}/801 帧 · 仅 CPU Curator→训练 HDF，无模型训练/新 CFD。可用内存 ${c.available_gib==null?'未知':c.available_gib.toFixed(1)+' GiB'}；invocation ${c.invocation}。${c.note}`:'状态不可用，不能据旧计数声称仍运行。'}catch(e){$('clock').textContent='连接失败：'+e.message;$('lead-now').textContent='连接失败，当前页面数值仅是上次采样，不代表实时状态。';$('b00-conversion').textContent='连接失败，转换状态未刷新。'}}
 for(const id of ['flow-model','flow-profile','flow-step','c-preview-step','c-preview-profile'])$(id).onchange=()=>{if(latest)renderCurrentFlow(latest)};
 $('case').onchange=figure;$('horizon').onchange=figure;$('h50-horizon').onchange=()=>{if(latest)renderH50Figures(latest)};window.onresize=()=>{if(latest)render(latest)};refresh();setInterval(refresh,5000);
 </script></body></html>'''
@@ -3631,6 +3632,41 @@ def _fixed_feature_readout(root: Path) -> dict:
         return {"ready": False}
 
 
+def _b00_train_conversion(root: Path) -> dict:
+    unit = 'fluid-control-b00-controlled-train-conversion-20261006.service'
+    invocation = 'f5ee31dd92624f0980a509084de9c756'
+    base = root / 'artifacts/b00_controlled_train_conversion_20261006'
+    info = {'label': '身份未验证', 'written_frames': 0, 'available_gib': None,
+            'invocation': invocation, 'note': '原物理结果与H100失败不变。'}
+    try:
+        approval = root / 'docs/B00_CONTROLLED_TRAIN_CONVERSION_APPROVAL_20261006.json'
+        if _small_file_sha256(approval) != '4fa7192e13bf7ad3a141bffb483710e2400fd8ee243caa60a6e67ab695927686':
+            return info
+        spec = _read_json(approval, {})
+        if _small_file_sha256(root / spec['driver']['path']) != 'f96c882a90e7ecaf4a2f8a5fc327764909ab42b4e6bbb11cde8e99205488b075':
+            return info
+        raw = subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','ActiveState','-p','SubState','-p','ExecMainStatus'],text=True,timeout=3)
+        state = dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID') != invocation:
+            return info
+        progress = _read_json(base / 'progress.json', {})
+        count = progress.get('written_frames')
+        if type(count) is not int or not 0 <= count <= 801:
+            return info
+        info['written_frames'] = count
+        running = state.get('ActiveState') == 'active' and state.get('SubState') == 'running'
+        info['label'] = '转换中' if running else '已停止，等待终态审查'
+        info['note'] = '写入计数不是最终数据验证；GPU未训练。'
+        if not running and state.get('ExecMainStatus') != '0':
+            info['label'] = '转换失败（未自动重启）'
+        rows = _tail_text(base / 'resources.jsonl', 4096).splitlines()
+        if rows:
+            info['available_gib'] = json.loads(rows[-1])['MemAvailable'] / 2**30
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+        info['note'] = '实际状态读取失败，不推断仍在运行。'
+    return info
+
+
 def _latest_evidence(root: Path) -> dict:
     """Load only finalized evidence; missing/incomplete artifacts remain explicit."""
     return {
@@ -4999,6 +5035,7 @@ class Handler(BaseHTTPRequestHandler):
             data["v4_h20_history"] = _read_json(self.root / V4_H20_DEVELOPMENT_RUN / "training_history.json", [])
             data["phase_feedback_pilots"] = [_read_json(self.root / "artifacts/tandem_cylinders" / name / "result.json", None) for name in ("phase_feedback_pair_k075_20261003", "phase_feedback_pair_k020_20261003", "phase_feedback_pair_k050_l15_20261003")]
             data.update(_latest_evidence(self.root))
+            data['b00_train_conversion'] = _b00_train_conversion(self.root)
             data["fixed_feature_readout"] = _fixed_feature_readout(self.root)
             data["full_train_calibration"] = _full_train_calibration(self.root)
             data["free_ar_diagnostic"] = _free_ar_diagnostic(self.root)
