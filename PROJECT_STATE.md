@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E064 最新缓存诊断：动作变化已有覆盖，但不能证明晚期受控状态覆盖
+
+仅小JSON分析已完成，unit `fluid-control-train-cache-coverage-20261006.service` / invocation `08658ea0d6a5435a847df4de1223d21f` PID0/exit0。固定原P027全44条、origin51、前5步及H1/AR/持力三流，独立复算误差与分组差异为0；无新HDF/模型/推理/训练/CFD。反转18条中16来自train16，恒定21条中20来自base，变化不反转5条全来自train8；分层与family强混杂，不构成因果识别。反转组五步rearClMAE .020870(H1)/.023243(AR)，低于恒定 .038894/.045342，不能声称动作反转简单导致更大误差。
+
+三family总轨迹虽长80/20/12.8D-U，但本缓存全部仅elapsed约5.1→5.6D-U；时长不代表晚期状态覆盖，也没有测量OOD。P027 high/TF32与FC-E063 highest/noTF32不精度匹配，stored-HDF插值标签不是新增在线因果证据。结果SHA `34ec16db0540c0dabb2f44caf3240ae386893ea85bd28bc1436e8820212b039d`，独审 `docs/TRAIN_CACHE_COVERAGE_TERMINAL_REVIEW_20261006.md` SHA `582f5d04ef7fcab10349a858cd4c618ddc98e44bcf9eb99da84de552d48a8754`。实际1GiB/noSwap/1CPU限制；MemoryPeak未保存，不写成0。源码精确归档1fbd532c…8317，canonical8CPUtests PASS0.03s。下一长时受控数据研究仍按Lead另行批准；本诊断不自动授权新训练，不改变三相位物理结果与H100 FAIL。
+
 ## FC-E063 最新预测审查：已执行动作条件回放完成，受控轨迹 H1 力预测劣于 persistence
 
 实际推理 invocation `627cb6b8b59a40aca3bb9159fb617eb3` 已 PID0/exit0；16 个 NPZ、80 个 H1–H5 端点独立复算通过。受控分支 H1/H5 rear-Cl MAE 为 **.186710/.149926**（persistence **.088235/.423392**），total-Cd MAE 为 **.048653/.035954**（persistence **.017126/.084684**）；零控制 H1/H5 rear-Cl MAE 仅 **.013311/.010806**。受控 H1 的 rear-Cl/Cd 仅 3/8、1/8 起点优于 persistence；H5 为 8/8、7/8，但不等于普遍准确。起点0误差较小不能代表后续受控状态，合并两分支会掩盖差异。
