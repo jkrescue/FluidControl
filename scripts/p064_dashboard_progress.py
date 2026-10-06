@@ -122,7 +122,7 @@ def previous_candidate_cfd_status(root,run=subprocess.check_output):
         info['status']='身份或状态未验证';info['note']=str(exc)
     return info
 
-def candidate_cfd_status(root,run=subprocess.check_output):
+def trained_candidate_cfd_status(root,run=subprocess.check_output):
     root=Path(root)
     previous=previous_candidate_cfd_status(root,run)
     info={'status':'b07尚未核验启动','cycles':0,'target':800,'invocation':None,
@@ -155,6 +155,28 @@ def candidate_cfd_status(root,run=subprocess.check_output):
             info['note']='b07主(130,190]减阻3.9027%、升力RMS降低18.5005%、均值偏置1.2921%；六个固定窗口均过原标准，早6.2偏置8.3039%也低于10%。b00/b01历史主窗约3.9%通过、早期失败仍保留。b07不是全新holdout；三相位非统计独立，完整代理精度仍FAIL。无当前训练/CFD运行。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['note']=str(exc)
+    return info
+
+def candidate_cfd_status(root,run=subprocess.check_output):
+    root=Path(root)
+    trained=trained_candidate_cfd_status(root,run)
+    info={'status':'初始权重CFD对照尚未核验启动','cycles':0,'target':800,'running':False,'training':False,'physical_pass':None,'terminal_verified':False,'invocation':None,'trained_reference':trained}
+    try:
+        approval=root/'docs/P064_INITIAL_PROJECTED_PPO_LONG_CFD_APPROVAL_20261006.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='f4e35a92a227b29fcf216018f09b3d320b382ffc392d9aad7e73616dc32c3797':raise ValueError('initial policy CFD approval SHA')
+        raw=run(['systemctl','--user','show','fluid-control-p064-initial-projected-ppo-long-cfd-20261006.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!='dbc0e8f47f994e7280694e9ed6714c56':raise ValueError('initial policy CFD invocation')
+        info['invocation']=state['InvocationID']
+        progress=root/'artifacts/p064_initial_projected_ppo_long_cfd_20261006/progress.json'
+        if progress.exists():
+            if progress.stat().st_size>8*2**20:raise ValueError('initial CFD progress size')
+            info.update(cfd_progress_counts(json.loads(progress.read_text()),start=148.))
+        info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['status']='初始权重＋同投影/限幅：b00真实CFD对照进行中' if info['running'] else '初始权重CFD进程已停止，等待独立原始力复核'
+        if not info['running'] and state.get('ExecMainStatus')!='0':info['status']='初始权重CFD失败/停止，保留证据'
+        info['note']='CPU策略推理与真实CFD反馈，不是PPO训练、无在线FNO/MPC。只替换为同seed精确初始权重，归一化/投影/单次限幅/800周期不变；尚无对照收益结论，不凭当前动作预判。历史已训练B在b00/b01/b07主窗有效（b07减阻3.90%、波动降低18.50%、偏置1.29%）；那不是本次初始策略结果。H25新模型未采用，原预测精度FAIL保留。'
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
 FORMAL_TERMINAL_BINDINGS={
@@ -286,7 +308,7 @@ def h25_training_status(root,run=subprocess.check_output):
             review=root/'docs/P064_B_H25_QUICK_AR_TERMINAL_REVIEW_20261006.md'
             if hashlib.sha256(q.read_bytes()).hexdigest()=='1b7bd2a2e99f9d02398df4cbcefc2d7dc5a486a02866d9a64856d0db9e9dafe0' and hashlib.sha256(review.read_bytes()).hexdigest()=='14e9b96dd2d34aa0280707a998ce808d215bffbe3c6561ceecf2a1ac65a9a851':
                 info['status']='真实闭环有效；H25新模型预测退化，未采用'
-                info['note']='训练已完成256窗口／32参数更新，后续同六案例评估已独审：Cl MAE 0.0624→0.0830，Cd MAE 0.0207→0.0467，六案例场误差均退化。保留原B策略：b07减阻3.90%、升力波动降低18.50%、偏置1.29%，三相位各800次真实CFD反馈。原B预测精度仍待改善；PPO训练用FNO，CPU部署无在线FNO/MPC。当前工作为复现文档与集成，不是训练；R1失败保留。'
+                info['note']='训练已完成256窗口／32参数更新，后续同六案例评估已独审：Cl MAE 0.0624→0.0830，Cd MAE 0.0207→0.0467，六案例场误差均退化。保留原B策略：b07减阻3.90%、升力波动降低18.50%、偏置1.29%，三相位各800次真实CFD反馈。原B预测精度仍待改善；PPO训练用FNO，CPU部署无在线FNO/MPC。当前初始权重CFD对照见实时卡，另行整理复现文档，不是训练；R1失败保留。'
                 info['candidate_adopted']=False
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info

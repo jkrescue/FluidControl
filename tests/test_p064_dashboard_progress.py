@@ -166,3 +166,9 @@ def test_unbound_h25_training_is_not_running(tmp_path):
     from p064_dashboard_progress import h25_training_status
     x=h25_training_status(tmp_path)
     assert not x['running'] and not x['training'] and x['updates']==0 and x['invocation'] is None
+
+def test_unbound_initial_control_not_training_or_physical_pass(tmp_path):
+    from p064_dashboard_progress import candidate_cfd_status
+    x=candidate_cfd_status(tmp_path)
+    assert not x['running'] and not x['training'] and x['physical_pass'] is None
+    assert x['invocation'] is None and 'trained_reference' in x

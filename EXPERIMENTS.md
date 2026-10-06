@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E078 — exact initial-weight paired b00 CFD control running; no new training
+
+Actual invocation `dbc0e8f47f994e7280694e9ed6714c56`, unit `fluid-control-p064-initial-projected-ppo-long-cfd-20261006.service`, was independently observed active/running with49/800 cycles at t152.9. Approval `docs/P064_INITIAL_PROJECTED_PPO_LONG_CFD_APPROVAL_20261006.json` SHA `f4e35a92a227b29fcf216018f09b3d320b382ffc392d9aad7e73616dc32c3797`; output `artifacts/p064_initial_projected_ppo_long_cfd_20261006`. No terminal metrics are inserted into CSV while running.
+
+Only weights change relative to the executed B b00 controller: seed20261006 original tensor6bc539, reconstructed CPU policy8a99bc1a with zero optimizer updates and actual float64 space/reload proof. Same identity VecNormalize, reflection, single action filter, paired restart148→228,800 intervals/six windows, resources and original physical thresholds. CPU reconstruction R1/R2 engineering failures remain; R3 corrects exact-space compatibility without weakening guard. This is CPU CFD feedback, not PPO training or online FNO. Existing trained B benefits are a historical comparator, not the present control result; learning attribution awaits independent raw terminal comparison and remains limited to this seed/phase/transformation.
+
 ## FC-E077 — H25 same-six H100 comparison complete; candidate not promoted
 
 Actual invocation `b34a1af84199467bad07b61758b92b49` completed the unchanged batch1/high-TF32 numerical worker, six cases ×100 endpoints, no optimization/CFD. Result SHA `1b7bd2a2e99f9d02398df4cbcefc2d7dc5a486a02866d9a64856d0db9e9dafe0`; [independent review](docs/P064_B_H25_QUICK_AR_TERMINAL_REVIEW_20261006.md) rehashed411 sources/22 inputs and recomputed saved force/window/action metrics. Parent B is reused, not rerun; case/HDF/time/action/truth arrays match exactly.

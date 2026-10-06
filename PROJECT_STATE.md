@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E078 当前实际：初始权重对照已启动，CPU真实CFD，非训练
+
+实际unit `fluid-control-p064-initial-projected-ppo-long-cfd-20261006.service`，invocation `dbc0e8f47f994e7280694e9ed6714c56`，独查PID2315536 active/running、49/800周期、t152.9。批准 `docs/P064_INITIAL_PROJECTED_PPO_LONG_CFD_APPROVAL_20261006.json` SHA `f4e35a92a227b29fcf216018f09b3d320b382ffc392d9aad7e73616dc32c3797`；输出 `artifacts/p064_initial_projected_ppo_long_cfd_20261006`。此启动计数是当时观测，最新进度由同invocation的progress与unit共同确认，active/exited不算运行。
+
+唯一干预是同seed20261006原初始策略权重：CPU新建/保存再加载匹配原tensor SHA `6bc539885d8c63fc922eccaba0363593555cf1b85ece5e48783d79d2ea2fa1cf`，实际R3策略包 SHA `8a99bc1ad855b6ca510950206253021accb186cab393d136dbc4935ac3cc0108`。复用原训练VecNormalize字节（identity、冻结）、同float64空间、镜像投影/单次幅值与速率限幅，148→228配对zero800周期/六窗口/原标准不变。R1 CPU序列化错误与R2空间dtype不匹配均保留，R3不弱化guard。
+
+**尚无该对照的物理结论**，不凭近零动作预判。已有b00/b01/b07收益属于已训练B策略，H25候选退化未采用、原B完整预测FAIL均保持。本实验只检验该seed/相位/同变换下学习权重的贡献，不是RL独占因果证明或优于所有简单控制器。CPU策略反馈，无在线FNO/MPC、无PPO优化；独立终态将核raw force、零对照和旧trained B匹配，不自动重试。
+
 ## 当前摘要：真实闭环已验证；H25训练完成但预测退化，未采用
 
 FC-E077实际同六案例H100评估已完成（inv `b34a1af84199467bad07b61758b92b49`，24.01秒，非训练/CFD），独审600端点及父B逐条同真值/动作匹配。rearCl MAE .062386→.083012，totalCd MAE .020723→.046724，四对动作差误差 .015652→.020167；六案例velocity/pressure均值及H100终点全部退化。Lead决定H25不晋级PPO，保留旧B成功控制策略；没有新训练或CFD正在由本次结果触发。详见 [独审报告](docs/P064_B_H25_QUICK_AR_TERMINAL_REVIEW_20261006.md)，result SHA `1b7bd2a2e99f9d02398df4cbcefc2d7dc5a486a02866d9a64856d0db9e9dafe0`。
