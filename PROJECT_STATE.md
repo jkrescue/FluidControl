@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E072 当前实际：冻结 B-policy 的预定 b07 真实闭环复验运行中
+
+2026-10-06 14:02:02 UTC 实际启动 `fluid-control-p064-b-projected-ppo-b07-long-cfd-20261006.service`，invocation `c45add13aeff41fe9526e835e384a52d`，首查 MainPID1682828 active/running，随后实际41/800周期。批准 `docs/P064_B_PROJECTED_PPO_B07_LONG_CFD_APPROVAL_20261006.json` SHA `df4d7881226f8ebf53da3aa47ac29f32ba2f0c94d59e431dae3a84dced4b7f56`；冻结driver `c3d63d9d9114a2ec32b8a5d6a4e7a6dee5aa8e31143167fb63229951656777d5`。固定110→190、主(130,190]，原800周期/六窗口、策略、投影+单filter和配对zero完全保持。仅初相位改变，检验同冻结B-policy是否继续满足原2%减阻、1.05波动比、10%平均偏置标准。尚无b07终态或物理结论，无新训练/在线FNO。
+
+b07在先前增强计划中预先提出，但其K1固定动作H5数据已打开；这是新的物理开发复验，不是全新holdout或独立泛化证明。旧b00/b01成功与FC-E071代理气动力窗口FAIL均保留，不因预测2.5%门失败阻止经批准的探索性闭环。早6.2启动阶段可另报15%敏感性，但原10%FAIL不改；失败不自动重训、重跑或放宽门槛。实际launch与资源记录见 `docs/P064_B_PROJECTED_PPO_B07_LONG_CFD_LAUNCH_20261006.md`。
+
 ## FC-E071 当前终态：完整预测评估已完成，气动力窗口准入仍失败
 
 R3 同 invocation `3bded2dcb4a24f808879987962a9ef8b` 已独立确认 PID0 / exit0；不是仍在训练或评估。复用 R2 已完成两阶段，R3 完成余下六阶段，完整 receipt SHA `30d3d0746580b8423a9f626a0ebe1b76c129acab7800158f74d7d8df3d8a1799`。独审报告 `docs/P064_B_FORMAL_TERMINAL_REVIEW_20261006.md` SHA `62a6234ed0e08ab70532a5252f34e6c8b203a22c6c6abeea5a67ba2635fc8cd6` 核验35输出、411数值源、7候选文件以及原始六条力时间序列；8容器正常退出、无OOM、当前无容器，合并资源记录 minimum MemAvailable116345077760B。

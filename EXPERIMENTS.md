@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E072 — fixed B-policy b07 paired800 CFD: actual start, no result yet
+
+One Lead-approved run started 2026-10-06 14:02:02 UTC, unit `fluid-control-p064-b-projected-ppo-b07-long-cfd-20261006.service`, invocation `c45add13aeff41fe9526e835e384a52d`, MainPID1682828. A subsequent actual progress snapshot reached41/800. Output `artifacts/p064_b_projected_ppo_b07_long_cfd_20261006` is new/exclusive. Approval SHA `df4d7881226f8ebf53da3aa47ac29f32ba2f0c94d59e431dae3a84dced4b7f56`; driver SHA `c3d63d9d9114a2ec32b8a5d6a4e7a6dee5aa8e31143167fb63229951656777d5`.
+
+Hypothesis: same frozen B-trained projected PPO policy retains original steady physical criteria at prospectively specified b07. Only initial phase changes from the executed b01 adapter: restart110→190, primary(130,190], same six relative windows, 800 intervals, pairedzero, policy/runtime/source closures, reflection and one limiter. Six CPU regression tests passed; final serialized consumer preflight verified9 imported sources,11 inputs and20 restart/constant/system files without loading a policy/model. Controller Type=exec8GiB/noSwap4CPU, solver2×8GiB/noSwap2CPU,3750s outer/3600s inner/120s stop, Available50/22GiB with20GiBreserve; initial Available124073254912B.
+
+Primary criteria remain drag reduction≥2%, rearCl centered RMS ratio≤1.05, mean-bias ratio≤.10. Report all six windows; early15% sensitivity cannot replace original10%failure. b07 historical K1 fixed-action H5 exposure precludes an untouched-holdout claim. Failure implies review, not automatic retry, retraining or threshold change. No scientific CSV row until terminal independent review; FC-E071 model-admission failure and successful prior policies are preserved. Source-only pending spec remains unapproved; the separate final Lead approval authorized this single actual run.
+
 ## FC-E071 — P064-B complete prediction evaluation terminal: admission FAIL
 
 Actual R3 unit `fluid-control-p064-b-formal-r3-20261006.service`, invocation `3bded2dcb4a24f808879987962a9ef8b`, independently verified PID0/exit0. Approval `19be2d6aad903ffc94b807803bd5fd0902c7ec5b7a0f0b4212423744db89cb56`; combined receipt `30d3d0746580b8423a9f626a0ebe1b76c129acab7800158f74d7d8df3d8a1799`. Two completed R2 stages reused with nine exact identities; six remaining stages executed in R3. No numerical protocol change, validation10 rerun, new training or frozen-test access. R1/R2 failures remain preserved.
