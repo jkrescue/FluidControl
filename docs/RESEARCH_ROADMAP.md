@@ -1,5 +1,9 @@
 # Research roadmap and prioritized backlog
 
+## Current priority — D25 rejected; diagnose existing evidence before another experiment
+
+E091 equal-budget D training and E092 fixed development are complete and independently reviewed. [E092 report](P064_B00_B02_COVERAGE_D_DEVELOPMENT_REVIEW_20261007.md) SHAee4258a9733074a8f25912298ab58d5814ef8b8176671a9526bd25d10fc37c58 records H1 lift-error regression alongside small drag/H5/retention improvements. The predeclared jointH1 condition fails; retain B, no D PPO/CFD promotion, no continuation or ratio sweep. Current work is read-only assessment of existing teacher-forced/saved-array evidence separating instantaneous force readout, phase lag and action response—not a newly approved model or CFD run. Overall goal remains active and incomplete, original thresholds and historical failures unchanged. Below approvals/live descriptions are historical snapshots.
+
 ## Current handoff — E090 conversion independently complete
 
 The separately approved thin train view has now also completed and passed [narrow independent review](P064_B02_TRAIN_VIEW_INDEPENDENT_REVIEW_20261007.md), SHAaab1bacba13c6ed8a2611d59d2e46a7f132ae1178a5030398fc512d4e471cdc6: 701 actualDataPipe windows, first0→100/last700→800, originalnorm/sourceHDF unchanged. D25 may bind this data for its separately reviewed preparation; no training execution follows automatically.

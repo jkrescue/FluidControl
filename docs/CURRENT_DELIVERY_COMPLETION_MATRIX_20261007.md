@@ -1,5 +1,9 @@
 # End-to-end delivery / completion matrix
 
+## Latest update — E091/E092 complete; D25 not promoted
+
+[E091 training](P064_B00_B02_COVERAGE_D_TERMINAL_REVIEW_20261007.md) completed256windows/32updates with192original+32b00+32b02 and frozen flow. [E092 independent fixed-development review](P064_B00_B02_COVERAGE_D_DEVELOPMENT_REVIEW_20261007.md), SHAee4258a9733074a8f25912298ab58d5814ef8b8176671a9526bd25d10fc37c58, verifies all80endpoints and exact B/D field/target/action alignment. H1 lift MAE worsens despite slightly better drag, H5 and fixed-six retention, so the predetermined jointH1 improvement rule fails. D is not promoted; B/canonical physical results remain the deployed evidence. Current work is existing-evidence diagnosis only, not new training/CFD. Overall goal remains incomplete; no threshold or historical failure is removed. This paragraph supersedes earlier "D preparation" status below without changing its provenance.
+
 ## Current evidence supplement — through E090 independent conversion review
 
 This section supersedes the *current-status* conclusions of the historical E080 snapshot below, not its recorded failures. The basic official PhysicsNeMo/Curator/HDF5Reader → HydroGym/SB3 training → real OpenFOAM feedback chain is implemented. Deployment uses a frozen CPU policy and real CFD observations; online FNO/MPC is an optional subsequent method, not a missing mandatory component of the original basic closed-loop goal. The overall goal remains incomplete because control-relevant prediction quality and validation under the stated limits are insufficient; the original prediction failure and physical thresholds are unchanged.

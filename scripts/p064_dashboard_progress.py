@@ -665,6 +665,13 @@ def coverage_d_training_status(root,run=subprocess.check_output):
             if hashlib.sha256(result.read_bytes()).hexdigest()!='2c01c3b24a11b30371d40ee9ef799c7fd01090d284778498919080e6323b8733':raise ValueError('D result SHA')
             info.update(status='D25气动力FNO训练完成并独审，精度待评估',terminal_verified=True)
             info['note']='实际256窗口/32更新，192原数据＋32b00＋32b02；28Adam状态及冻结flow/两bias已独审。没有仍在训练，也不表示预测改善；固定开发评估需另批。B/canonical物理收益、早期失败、C50拒绝及完整预测FAIL保留。'
+        devreview=root/'docs/P064_B00_B02_COVERAGE_D_DEVELOPMENT_REVIEW_20261007.md'
+        devresult=root/'artifacts/p064_b00_b02_coverage_d_development_h1_h5_20261007/result.json'
+        if not info['running'] and devreview.exists() and devresult.exists():
+            if hashlib.sha256(devreview.read_bytes()).hexdigest()!='ee4258a9733074a8f25912298ab58d5814ef8b8176671a9526bd25d10fc37c58':raise ValueError('D development review SHA')
+            if hashlib.sha256(devresult.read_bytes()).hexdigest()!='a9c9d2088217b599b6491ed5950e3baab024c8126033548b62d3e27843f0e51b':raise ValueError('D development result SHA')
+            info.update(status='D25训练与评估完成：主指标未同时改善，不采用',development_verified=True,scientific_pass=False)
+            info['note']='同面板H1后Cl MAE B0.138998→D0.139430变差，总Cd0.038065→0.037825略好；H5及训练内保留性略好但不能替代预定双H1条件。flow冻结、场预测完全相同。保留B与已验真实闭环，不续训/扫比例/新PPO或CFD；当前只整理既有诊断证据，整体目标未完成。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['error']=str(exc)
     return info
 

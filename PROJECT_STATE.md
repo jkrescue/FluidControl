@@ -1,5 +1,9 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 当前：E091/E092均完成，D不晋级，保留已验证B控制器
+
+固定dev同 `6538db4425e14b009bacdb93baf03916` 实际exit0，16NPZ/80端点独立复算完成。pooled H1 rearCl MAE B `.13899831660091877`→D `.13943017413839698` 变差，总Cd `.03806537389755249`→`.03782491013407707` 略好，未满足预定两主指标同时改善。H5两项及固定六训练窗H1/AR保留性略改善，均如实保留，不能替代H1失败；flow冻结导致预测场逐值相同。报告 [E092](docs/P064_B00_B02_COVERAGE_D_DEVELOPMENT_REVIEW_20261007.md) SHA `ee4258a9733074a8f25912298ab58d5814ef8b8176671a9526bd25d10fc37c58`；result `a9c9d2088217b599b6491ed5950e3baab024c8126033548b62d3e27843f0e51b`。Lead拒绝D晋级，不续训/扫比例/新PPO或CFD，保留B。下一项仅检查既有teacher-forced/saved-array证据以区分瞬时力映射、相位滞后及动作响应；未批准新科学计算。项目未完成、目标未缩小，原物理收益/早期失败/完整预测FAIL均保持。下方为此前交接和历史。
+
 ## 当前：E091 D25训练已独审完成，候选精度尚未评估
 
 同 `171686b7ec154a0194348d26fd736cec` 已PID0/正常exit0，实际256窗口/32参数更新。独审441source SHA、192original/32b00/32b02精确计划、逐组loss均值/clip、28Adam step32有限、两bias逐tensor及flow保存字节不变；生产官方freshreload成功。报告 [E091独审](docs/P064_B00_B02_COVERAGE_D_TERMINAL_REVIEW_20261007.md) SHA `82a5c50ba114c3aaa96bc33bdb756f950935bdac6d49542a7d0bb5d7a3d8c235`；result `2c01c3b24a11b30371d40ee9ef799c7fd01090d284778498919080e6323b8733`、manifest `93d579b910d5a03385a31fb44c0050fa0b8d498fb6c621289a8d1038b5c1741a`。独审不重跑模型forward；CPU审计前两schema兼容失败保留，R3通过，训练无重试。固定dev需另批；没有精度改善/PPO/CFD晋级结论。以下为实际启动历史。

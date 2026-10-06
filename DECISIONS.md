@@ -1,5 +1,11 @@
 # DECISIONS
 
+## 2026-10-07 — D25 not promoted after its predeclared fixed-development comparison
+
+Lead rejects D promotion, retaining B and the demonstrated canonical controllers. [E092 independent review](docs/P064_B00_B02_COVERAGE_D_DEVELOPMENT_REVIEW_20261007.md), SHAee4258a9733074a8f25912298ab58d5814ef8b8176671a9526bd25d10fc37c58: pooled H1 rearCl MAE .1389983166→.1394301741 worsens while totalCd .03806537390→.03782491013 improves slightly. Both must improve; the joint condition fails. H5 and fixed-six H1/AR retention improve slightly and remain reported, not hidden or substituted for the main criterion. Frozen-flow field predictions are identical, not improved. D changes phase, behavior-policy/state-action coverage and start spacing; it is not a phase-only causal test.
+
+No continuation, ratio sweep, new PPO or CFD follows. The next authorized work is read-only examination of existing teacher-forced and saved-array evidence about instantaneous force mapping, phase lag and action response; no new scientific computation is approved. This is neither project termination nor overall completion. Original physical2%/1.05/10%, earlier seed/startup failures, H25/C50 rejection and full surrogate prediction FAIL remain unchanged. The basic official-components/RL/real-CFD-feedback chain exists; online FNO/MPC remains optional.
+
 ## 2026-10-07 — Reject C50 promotion after the fixed development comparison
 
 Lead decision after FC-E087/E088: C50 executed its equal-budget32updates/256windows training and fixed16×H5 development evaluation successfully, but both designated pooledH1 force errors worsen versus B, as do both metrics for each b01/b03 phase at all five leads. Flow arrays are exactly equal because flow was frozen. Execution/resource success is not prediction improvement. [Independent development review](docs/P064_CONTROLLED_DATA_DOSE_C_DEVELOPMENT_REVIEW_20261007.md), SHA `e26d6e49186616f3818c33f438055d707e3c66b881640696006e280a6bc4e091`.
