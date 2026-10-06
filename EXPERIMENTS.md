@@ -1,5 +1,13 @@
 # Experiment ledger
 
+## FC-E055 — Actual800-cycle final32768-policy paired CFD running
+
+Root launched `fluid-control-exploratory-diverse-32768-ppo-long-cfd-20261006`, invocation `285bea88ff234cd5acfb9cb03c2b3cf3`, initialPID2588512. Approvale103288a0558c10784a43a199a3c4d731ffc0e6509753646da7bb6930cb4dc12; immutable driver17060dda570ead4fdc8e33920fcc559b5bb8ad8d640a7e154579f8a795507afa, source captured afterlaunch. Fixed800cycles148→228, same69observation/CPUdeterministicpolicy/slew/ramp/pairedzero/solver. Sixpredeclared windows retain early124 comparison and final60primary12000 versus explicitlydifferent historicalinclusive12001. Originalcriteria unchanged;20%sensitivity labeled. No extra124trial was executed and no physicaloutcome inferred fromlaunch. Same8G+2×8G/noSwap/Available50,22; time-only3600inner3750outer120stop approved following cumulativeprobe-read estimate. Four independentCPUtests passed.
+
+## FC-E054 — Independent32768 terminal review complete
+
+ActualR2a19900b2bfa64d8d8372b67bc0564139 exited0, resultff3532a604b6816fb3ad4c7a11edfcd579bcb924445abca52a2fdab8ea4dcf20; finalpolicy5ab92ebe04459419bc724b48c6e20bde2464d7b6d880396e504406aa08806d4a. All6artifacts/45source/192runtime hashes rechecked by independentreviewer;32768rows/256epochs/512optimizerhooks andeachphase274+273×5resets. First4096transitions match previous4096run exactly in actions/forces/reset/ledger/reward, notwallclock. Policychanged, executedFNOtensorchecksunchanged; no independent modelreload. Wall575.563s/minAvailable119260291072bytes. Report7bbb772513337bbd67588aa59454fcb1272014d81b52b1a7e3785f4fe7701d19. Preserved firstc406pretrainingJSONfailure and correctedR2approval; trainingcompletion is not physicalsuccess/convergence.
+
 ## FC-E054 R2 — Actual retry running after persisted approval preflight
 
 Root launched `fluid-control-exploratory-diverse-h5-32768-ppo-r2-20261006`, invocation `a19900b2bfa64d8d8372b67bc0564139`, initialPID2560906. Final persisted1cd1d518 approval passed actual frozen validate_spec and exact protocol types beforelaunch. New exclusive_r2 output; failedc406 evidence unchanged. Mandatory future practice: validate final serialized approval using its actual frozen consumer, not just draft JSON. No training result inferred from a live handle.

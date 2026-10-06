@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E055已实际运行：最终32768策略的800周期配对CFD
+
+Root启动 `fluid-control-exploratory-diverse-32768-ppo-long-cfd-20261006`，invocation `285bea88ff234cd5acfb9cb03c2b3cf3`，初始PID2588512。批准 `e103288a0558c10784a43a199a3c4d731ffc0e6509753646da7bb6930cb4dc12`，不可变driver `17060dda570ead4fdc8e33920fcc559b5bb8ad8d640a7e154579f8a795507afa`。唯一最终策略直接CPU驱动148→228真实CFD，无在线FNO/MPC。固定早期12.4及其两半窗、主要(168,228]12000点、历史[168,228]12001点伴随窗和全80窗，不择优统计；10%物理参考不变，20%仅标注敏感性。未执行另外124周期试验。3600inner/3750outer/120stop，8GiB控制器及两个8GiBsolver/noSwap、Available50/22不变。尚无终态物理结论。
+
+FC-E054 R2已独立核验32768/256epoch/512optimizersteps及所有24起点；前4096转移数值与原4096训练完全一致，支持仅预算变化。最终策略 `5ab92ebe04459419bc724b48c6e20bde2464d7b6d880396e504406aa08806d4a`；结果 `ff3532a604b6816fb3ad4c7a11edfcd579bcb924445abca52a2fdab8ea4dcf20`。训练575.563秒、最低Available119260291072字节，FNO冻结检查通过；不推断收敛或真实收益。报告 `docs/EXPLORATORY_DIVERSE_H5_32768_PPO_TERMINAL_REVIEW_20261006.md` SHA `7bbb772513337bbd67588aa59454fcb1272014d81b52b1a7e3785f4fe7701d19`。首个审批类型错误失败保留，以下running状态均为历史。
+
 ## FC-E054 R2已实际运行
 
 Root在最终落盘审批上执行冻结validate_spec及全部protocol类型比较通过后，启动 `fluid-control-exploratory-diverse-h5-32768-ppo-r2-20261006`，invocation `a19900b2bfa64d8d8372b67bc0564139`，初始PID2560906。输出独占 `artifacts/exploratory_diverse_h5_32768_ppo_training_20261006_r2`；同一算法/source/资源限制，未自动覆盖或重启首个失败unit。此后所有执行审批必须在最终序列化落盘文件上运行真实consumer校验，而非只检查draft。
