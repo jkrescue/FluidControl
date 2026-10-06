@@ -201,6 +201,36 @@ def signed_h1_status(root,run=subprocess.check_output):
         info['verification_note']=str(exc)
     return info
 
+def scale_window_count(text):
+    count=0
+    for line in text.splitlines():
+        try:row=json.loads(line)
+        except (ValueError,TypeError):continue
+        if isinstance(row,dict) and row.get('event')=='window_complete' and row.get('mode')=='scales':
+            if row.get('split')!='train':raise ValueError('scales unexpected split')
+            count+=1
+    if count>1368:raise ValueError('scales excess count')
+    return count
+
+def h25_scales_status(root,run=subprocess.check_output):
+    root=Path(root);info={'running':False,'training':False,'optimizer_steps':0,'windows':0,'target':1368,'invocation':None,'status':'H25损失尺度计算尚未核验启动'}
+    try:
+        path=root/'docs/P064_B_H25_SCALES_R2_APPROVAL_20261006.json'
+        if hashlib.sha256(path.read_bytes()).hexdigest()!='cb60cf7bcc146a51f085957d6c4c68a7792fe41803fd925fed1aa7c1b3c1d77e':raise ValueError('scales R2 approval SHA')
+        raw=run(['systemctl','--user','show','fluid-control-p064-b-h25-scales-r2-20261006.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!='88e5e31e611c45dab28dbe6c3ad11c8c':raise ValueError('scales R2 invocation')
+        info['invocation']=state['InvocationID']
+        log=root/'artifacts/fcp064_b_h25_scales_20261006_r2/run.log'
+        if log.exists():
+            if log.stat().st_size>8*2**20:raise ValueError('scales log size')
+            info['windows']=scale_window_count(log.read_text())
+        info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['status']='H25准备：B父模型H10损失尺度计算运行中' if info['running'] else '损失尺度计算进程已停止，等待终态独审'
+        info['note']=f"{info['windows']}/1368训练窗口；0优化器更新，不是模型训练。R1因loader未识别B kind退出，保留失败；R2仅修复来源绑定。日志计数不等于成功。"
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
+    return info
+
 def formal_evaluation_status(root,run=subprocess.check_output):
     root=Path(root)
     info={'status':'完整预测精度评估身份/状态未验证','invocation':None,'training':False,'scientific_pass':None}
@@ -222,6 +252,9 @@ def formal_evaluation_status(root,run=subprocess.check_output):
             diagnostic=signed_h1_status(root,run)
             info['signed_h1']=diagnostic
             info['note']=info['note'].replace('signed H1 batch1诊断准备中、未运行。',diagnostic['status']+'。')
+            scales=h25_scales_status(root,run)
+            info['h25_scales']=scales
+            info['note']+=' '+scales['status']+'。'+scales.get('note','')
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['note']=str(exc)
     return info

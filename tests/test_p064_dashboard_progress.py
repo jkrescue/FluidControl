@@ -126,3 +126,17 @@ def test_signed_h1_unbound_not_busy_or_training(tmp_path):
     x=signed_h1_status(tmp_path)
     assert not x['running'] and not x['training']
     assert x['invocation'] is None and x['completed_endpoints'] is None
+
+def test_scale_counts_only_actual_scales_train_events():
+    import json,pytest
+    from p064_dashboard_progress import scale_window_count
+    row={'event':'window_complete','mode':'scales','split':'train'}
+    assert scale_window_count('loading\n'+json.dumps(row)+'\n'+json.dumps({'event':'group_complete','mode':'scales'}))==1
+    assert scale_window_count(json.dumps(dict(row,mode='train')))==0
+    with pytest.raises(ValueError):scale_window_count(json.dumps(dict(row,split='validation')))
+    with pytest.raises(ValueError):scale_window_count('\n'.join([json.dumps(row)]*1369))
+
+def test_unbound_scales_never_reports_training(tmp_path):
+    from p064_dashboard_progress import h25_scales_status
+    x=h25_scales_status(tmp_path)
+    assert not x['running'] and not x['training'] and x['optimizer_steps']==0
