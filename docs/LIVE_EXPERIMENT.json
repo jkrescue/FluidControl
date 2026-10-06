@@ -1,7 +1,7 @@
 {
   "experiment": "P030-train-horizon",
-  "label": "连续预测诊断重跑：汇总接口已修复",
-  "description": "同一44条真实CFD训练轨迹，旧模型与新模型连续预测100步，无参数更新。首次汇总接口失败已保留；25项回归测试通过，本次在汇总前保存原始预测。尚无新训练或闭环验收结果，20GiB内存守卫不变。",
+  "label": "诊断完成：新模型长时预测仍需改善",
+  "description": "44/44轨迹完成且独立复算一致。新模型第1、10步速度场略好，但第25、50、100步在全部44条轨迹上更差；第100步速度误差5.08%→6.29%，后升力MAE0.0556→0.0665。正在设计更长窗口训练并准备当前CFD场接口；没有新PPO或闭环验收结果。首次失败保留，最低观测CUDA空闲21.34GiB。",
   "unit": "fluid-control-fcp030-train-horizon-r2-20261006.service",
   "invocation": "4b89d3cb85c540448eeebd8ef5c7c3b3",
   "approval": "docs/FC_P030_RECOVERY_EXECUTION_APPROVAL_20261006.json",

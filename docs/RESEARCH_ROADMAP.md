@@ -1,5 +1,21 @@
 # Research roadmap and prioritized backlog
 
+## Current — P030 diagnosis complete; prepare one longer-horizon intervention
+
+At04:26UTC P030r2 is terminalexit0 and independently recomputed. On the fixed
+44 start0 training panel, P029 versus K1 improves velocity at leads1/10 but
+worsens it in44/44 cases at25/50/100. Force errors are already worse overall at
+lead10, with family exceptions. This is not solely unseen-condition failure
+and does not establish one cause. See FC_P030_RECOVERY_TERMINAL_REVIEW_20261006.md.
+
+Priority: design and independently assess a single H25-versus-H10 training
+intervention, preserving official FNO, original parent/data/evaluation and
+resource guards. No new training approved yet. In parallel, prepare only a
+small CPU current-frame validation/normalization adapter reusing existing
+Curator sampling, for later separately verified CFD shadow prediction. This
+does not admit a model/controller or bypass the original closed-loop criteria.
+Prior first-run aggregation failure and all prior evidence remain preserved.
+
 ## Current — P029 rejected; P030 execution integration preparation
 
 At03:56UTC, full P029 formal evaluation and independent review are complete:

@@ -1,5 +1,13 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## 最新结论：连续推演误差在训练轨迹内也恶化（2026-10-06 04:26 UTC）
+
+P030 r2正常结束（同4b89d3cb实例、MainPID0、exit0/noOOM），44条起点相同轨迹的两模型100步预测及全部原始记录已保存。独立重算全汇总一致；额外NumPy重算最大差4.86e-17。结果SHA `b1042b94fde60aed135c60d348431aa1c6177b1b9b12b1ae8ba56bc9fab6ee7f`，报告 `docs/FC_P030_RECOVERY_TERMINAL_REVIEW_20261006.md` SHA `4e21fc05f543b5c90a74e318e9e7ae999b27b8350d7573817b49c4c6670dc5b4`。最低观测CUDA空闲21.3438GiB。
+
+新P029相对K1：第1/10步速度场误差略低；第25/50/100步，44/44条轨迹速度误差均更高。第100步汇总速度相对L2 0.050850→0.062903，后Cl MAE 0.055621→0.066476，总Cd MAE 0.015652→0.018949。第10步气动力已经总体变差；不能把问题完全归于训练外工况。局部例外保留：train16第100步后Cl MAE下降，train8总Cd MAE下降。固定start0早段面板不是完整1368窗口或旧origin51面板，不能推断唯一原因。
+
+下一步正在设计单一更长预测训练窗口的对照（P031，未批准训练），保持官方FNO、原数据及验收不变；并行准备复用现有官方Curator单帧采样器的当前场适配接口，仅CPU工程测试。总体模型准入、兼容策略及真实CFD在线闭环仍未完成。以下“运行中”均为历史。
+
 ## 最新：P030修复后实际重跑（2026-10-06 04:23 UTC）
 
 重跑unit `fluid-control-fcp030-train-horizon-r2-20261006.service`，invocation `4b89d3cb85c540448eeebd8ef5c7c3b3`，初始MainPID1771775；输出 `artifacts/fcp030_train_horizon_diagnostic_20261006_r2`。批准SHA `6c4edae1e955268dcae718c4eb2f6b24a216b8961189d56a09f4d4da7c091378`，v3源码manifest `73ac42127e0ace741c675cb7a5a53a6339171565462d0771c11665124d0f08e6`，恢复独立审查 `docs/FC_P030_RECOVERY_REVIEW_20261006.md` SHA `a0d7865fdde4c10cd754fb2c975b995aaa8bd655b3b0eeb1ec0281b1b043b8df`。
