@@ -1,5 +1,18 @@
 # Research roadmap and prioritized backlog
 
+## Current — P029 rejected; P030 execution integration preparation
+
+At03:56UTC, full P029 formal evaluation and independent review are complete:
+joint2/6, drag6/6, rear-lift RMS2/6, mean4/6. No surrogate admission or new
+PPO. FC-E043 is published (ae99908). The P030 diagnostic core has independent
+15-test CPU acceptance; preparation of the actual official-reader/model
+execution layer is authorized, not numerical execution. Finish source-bound
+integration, obtain separate resource-reviewed approval, and compare continuous
+H1/10/25/50/100 prediction on the fixed44 start-zero training windows. Use the
+measured paired failure pattern to choose the next single intervention. No
+automatic relaxation of acceptance thresholds or reinterpretation of CFD-only
+control as FNO-assisted success. All earlier status sections are historical.
+
 ## Current — P029 full formal running; P030 diagnostic CPU implementation approved
 
 At03:41UTC, actual P029 formal invocation85ae29a422fc48739136418317de8ca5 remains live in dynamic6. Its validation10 endpoint component passed, but H100 field/rear-lift/total-drag errors are worse than K1; no complete admission or new PPO result exists. The two-hour factual report is `TWO_HOUR_CONCLUSION_20261006.md`.
