@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E067 — K1 fixed development baseline executed; independent metrics review pending
+
+Lead launched unit `fluid-control-p064-k1-development-h1-h5-20261006.service`, invocation `a39f8106aa9b4559b1fb1587e7a8e38c`, initialPID425486. Same-handle observation now PID0/active-exited/ExecMainStatus0. Exact approval SHA `05891a360ffaa17d61e6854a8dce632d818a3ab1ec5b4a616244d4abb6a85b79`; executed source SHA `e86ef8ea3c55be63287b0f9d5e9e0cf0034e7fc6959df25e53e49c0fe23d90a8`. Canonical promotion preserves these worker bytes; only test import-path portability changed,6CPUtests PASS0.06s. Output `artifacts/p064_k1_development_h1_h5_20261006`.
+
+Fixed panel: already-opened b01/b03 controlled development,8 origins each,5 leads each,16starts/80endpoints. Exact original K1manifest7adca21e/config07e55/normf1b460, existing validated dual loaderd769; no dependence on unfinished P064 A/B loader. Same FC-E063 numerical rollout and metric core, officialHDF5Reader, pre-load6GiB cap and post-loadhighest/noTF32 override. Requested12GiB/noSwap/GPU0/CPU1, hostAvailable50startup/22runtime,600s supervisor/630s outer. All inputs/source/runtime bound in approval; no new model optimization, CFD, or checkpoint selection. Array/metric/resource verification by an independent reviewer remains pending, so no scientific CSV rows or accuracy certification are recorded here. Original formal H100 failure remains unchanged.
+
 ## FC-E065 — b00 whole-train conversion and dedicated view verified
 
 Originalf5ee31 exited0 at10:38:17UTC after1240s. ResultSHA `f24f2fbc8b283c0781b2a01189d291b43da0203e9ede28208ec575173bbe0bd9`; HDF `45041e79e70043838763e5dd8da0fe9c02dba4cfe6df01356f8dcd1389e32d8f`. Independent1614 source hashes,801 official-reader/HDF finite arrays, actual progress time/action/four-force endpoints and48 retained packets match.753 temporary new packets were deleted, so no independent post-hoc NPZ comparison/resampling claim.16 exporters exit0/OOMfalse/absent; root-owned scratch retained.20571 samples minimumAvailable121431912448B, actual12GiB/noSwap/CPU1, peak2883301376B.

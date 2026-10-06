@@ -1,5 +1,11 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+## FC-E067 当前实际执行：K1 开发集 H1–H5 基线已退出0，数值独审中
+
+Lead实际启动 `fluid-control-p064-k1-development-h1-h5-20261006.service`，invocation `a39f8106aa9b4559b1fb1587e7a8e38c`（启动PID425486）；最新同handle PID0/active-exited/ExecMainStatus0。批准SHA `05891a360ffaa17d61e6854a8dce632d818a3ab1ec5b4a616244d4abb6a85b79`；不可变执行源码 `e86ef8ea3c55be63287b0f9d5e9e0cf0034e7fc6959df25e53e49c0fe23d90a8`，canonical精确归档，6CPU源/合同测试通过0.06s。
+
+固定已打开b01/b03开发96帧，16起点×H1–H5=80端点；原K1、原归一化、官方Reader、post-load最高精度/noTF32，12GiB/noSwap、GPU6GiB allocator、Available50/22、600/630s。输出 `artifacts/p064_k1_development_h1_h5_20261006`。本次仅冻结基线推理，无训练/新CFD/候选选择；程序退出0不代替数组与指标独审，精度结论待closed_loop独立复核。A/B使用同协议但尚未执行，不把已有开发相位称为新测试；H100失败不变。
+
 ## FC-E065 最新终态：b00完整训练轨迹及专用视图已独审
 
 原f5ee31已PID0/exited/exit0。转换结果SHA `f24f2fbc8b283c0781b2a01189d291b43da0203e9ede28208ec575173bbe0bd9`，801帧官方Reader/HDF全量、真实progress时间/动作/四力、1614原源SHA与旧48NPZ一致；753新packet已删除，未独立重采样，不声称全801NPZ复核。16export容器已清理，最低Available121431912448B。
