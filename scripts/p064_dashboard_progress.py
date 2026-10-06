@@ -245,6 +245,42 @@ def h25_scales_status(root,run=subprocess.check_output):
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
+def h25_training_counts(text):
+    windows=0;updates=[]
+    for line in text.splitlines():
+        try:row=json.loads(line)
+        except (ValueError,TypeError):continue
+        if row.get('mode')!='train':continue
+        if row.get('event')=='window_complete':
+            if row.get('split')!='train':raise ValueError('H25 unexpected split')
+            windows+=1
+        elif row.get('event')=='group_complete':updates.append(row['group'])
+    if windows>256 or updates!=list(range(1,len(updates)+1)) or len(updates)>32 or windows<len(updates)*8:raise ValueError('H25 training count sequence')
+    return windows,len(updates)
+
+def h25_training_status(root,run=subprocess.check_output):
+    root=Path(root);info={'running':False,'training':False,'windows':0,'updates':0,'target_windows':256,'target_updates':32,'invocation':None,'status':'H25训练尚未核验启动'}
+    try:
+        approval=root/'docs/P064_B_H25_TRAINING_APPROVAL_20261006.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!='922df0ce388cfb4ac2ed0f65156ce049629f0c7e991910b4ddd633ea926b61b4':raise ValueError('H25 train approval SHA')
+        raw=run(['systemctl','--user','show','fluid-control-p064-b-h25-training-20261006.service','-p','InvocationID','-p','ActiveState','-p','SubState','-p','MainPID','-p','ExecMainStatus'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!='ebea7981d70745889f9a3249977bea16':raise ValueError('H25 train invocation')
+        info['invocation']=state['InvocationID']
+        log=root/'artifacts/fcp064_b_h25_training_20261006/run.log'
+        if log.exists():
+            if log.stat().st_size>8*2**20:raise ValueError('H25 train log size')
+            info['windows'],info['updates']=h25_training_counts(log.read_text())
+            info['last_log_update_unix']=log.stat().st_mtime
+        info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
+        info['training']=info['running']
+        if info['running']:info['status']='H25流场微调运行中（气动力网络冻结）'
+        elif state.get('ExecMainStatus')!='0':info['status']='H25训练工程失败，未完成参数更新'
+        else:info['status']='H25训练进程退出，等待终态独审'
+        info['note']=f"实际窗口{info['windows']}/256，完成更新{info['updates']}/32；日志计数不是训练成功。尺度1368窗及单步资源探针已完成。首次训练在首窗后被旧H10累积器的horizon检查拒绝，失败记录保留；并非已证NaN。完整预测精度FAIL及三相位真实CFD物理成功结论不变。"
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
+    return info
+
 def formal_evaluation_status(root,run=subprocess.check_output):
     root=Path(root)
     info={'status':'完整预测精度评估身份/状态未验证','invocation':None,'training':False,'scientific_pass':None}
@@ -269,6 +305,9 @@ def formal_evaluation_status(root,run=subprocess.check_output):
             scales=h25_scales_status(root,run)
             info['h25_scales']=scales
             info['note']+=' '+scales['status']+'。'+scales.get('note','')
+            training=h25_training_status(root,run)
+            info['h25_training']=training
+            info['note']=training['status']+'。'+training.get('note','')+' '+info['note']
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['note']=str(exc)
     return info

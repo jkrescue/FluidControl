@@ -151,3 +151,18 @@ def test_scales_terminal_requires_exact_review_and_result(tmp_path,monkeypatch):
     assert module.verified_scales_terminal(tmp_path)['terminal_verified']
     review.write_text('changed')
     with pytest.raises(ValueError):module.verified_scales_terminal(tmp_path)
+
+def test_h25_training_counts_do_not_count_failed_first_window_as_update():
+    import json,pytest
+    from p064_dashboard_progress import h25_training_counts
+    row={'event':'window_complete','mode':'train','split':'train'}
+    assert h25_training_counts(json.dumps(row)+'\nFloatingPointError')==(1,0)
+    lines=[json.dumps(row)]*8+[json.dumps({'event':'group_complete','mode':'train','group':1})]
+    assert h25_training_counts('\n'.join(lines))==(8,1)
+    with pytest.raises(ValueError):h25_training_counts(json.dumps({'event':'group_complete','mode':'train','group':1}))
+    with pytest.raises(ValueError):h25_training_counts('\n'.join(lines+[lines[-1]]))
+
+def test_unbound_h25_training_is_not_running(tmp_path):
+    from p064_dashboard_progress import h25_training_status
+    x=h25_training_status(tmp_path)
+    assert not x['running'] and not x['training'] and x['updates']==0 and x['invocation'] is None
