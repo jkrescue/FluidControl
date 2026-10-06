@@ -65,18 +65,22 @@ P064_B_PROTOCOL_SHA256 = "7bb41ca973bfabfc01e73796fb744d628490291d268bdf584d2e6e
 P064_MANIFEST_STATUS = {
     "A": "FC_P064_ARM_A_DUAL_FNO_MANIFEST_VERIFIED",
     "B": "FC_P064_ARM_B_DUAL_FNO_MANIFEST_VERIFIED",
+    "C": "FC_P064_ARM_C_DUAL_FNO_MANIFEST_VERIFIED",
 }
 P064_SYSTEM_KIND = {
     "A": "FC_P064_ARM_A_CONTROLLED_AERO_FORCE_FNO",
     "B": "FC_P064_ARM_B_CONTROLLED_AERO_FORCE_FNO",
+    "C": "FC_P064_ARM_C_CONTROLLED_AERO_FORCE_FNO",
 }
 P064_AERO_KIND = {
     "A": "FC_P064_ARM_A_CONTROLLED_AERO_CHECKPOINT",
     "B": "FC_P064_ARM_B_CONTROLLED_AERO_CHECKPOINT",
+    "C": "FC_P064_ARM_C_CONTROLLED_AERO_CHECKPOINT",
 }
 P064_SCHEDULE_SHA256 = {
     "A": "ec1db78eff3807dc3c3d451ba0bb4542ba531fcb4b7a1c15a39e2b1ac15e1b0c",
     "B": "2c7a129724fdaaf6d7dda16eb992d548e92c56ac392d95814dbb57e77320eb55",
+    "C": "93537e23ce606732dfd48e78a3b92def987918c0cb71b1b8ca7e8126564081d1",
 }
 FLOW_MODEL_SHA256 = "dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31"
 FLOW_STATE_SHA256 = "4998e534d4b82b17393c217357ed18220fb8e739166a88147483bb9cc5fb771e"
@@ -197,7 +201,7 @@ def _experiment_contract(kind: str) -> dict[str, Any]:
                 "training_protocol_file": "training_protocol.json",
             },
         }
-    for arm in ("A", "B"):
+    for arm in ("A", "B", "C"):
         if kind == P064_SYSTEM_KIND[arm]:
             return {
                 "status": P064_MANIFEST_STATUS[arm],
@@ -334,12 +338,14 @@ def _validate_p026_protocol(
             "action_semantics": "stored_prescribed_action_samples_not_exact_nominal_time_commands",
             "controlled_b00_action_semantics": (
                 "actual_closed_loop_applied_endpoint_omega_samples"
-                if arm == "B"
+                if arm in ("B", "C")
                 else "not_applicable_no_b00_windows"
             ),
-            "b00_windows": 0 if arm == "A" else 64,
-            "b00_weight": 0.0 if arm == "A" else 0.25,
-            "replacement_within_each_update": [] if arm == "A" else [0, 4],
+            "b00_windows": {"A": 0, "B": 64, "C": 128}[arm],
+            "b00_weight": {"A": 0.0, "B": 0.25, "C": 0.5}[arm],
+            "replacement_within_each_update": {
+                "A": [], "B": [0, 4], "C": [0, 2, 4, 6]
+            }[arm],
             "allocator_fraction": 0.06,
             "wall_seconds": 3600,
             "validation_accessed": False,
