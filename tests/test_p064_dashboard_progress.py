@@ -140,3 +140,14 @@ def test_unbound_scales_never_reports_training(tmp_path):
     from p064_dashboard_progress import h25_scales_status
     x=h25_scales_status(tmp_path)
     assert not x['running'] and not x['training'] and x['optimizer_steps']==0
+
+def test_scales_terminal_requires_exact_review_and_result(tmp_path,monkeypatch):
+    import hashlib,json,pytest,p064_dashboard_progress as module
+    result=tmp_path/'artifacts/fcp064_b_h25_scales_20261006_r2/payload/result.json'
+    review=tmp_path/'docs/P064_B_H25_SCALES_R2_TERMINAL_REVIEW_20261006.md'
+    result.parent.mkdir(parents=True);review.parent.mkdir(parents=True)
+    result.write_text(json.dumps({'training_windows':1368,'optimizer_steps':0,'model_saved':False,'fixed_scales':{'field':.1,'force':.2}}));review.write_text('reviewed')
+    monkeypatch.setattr(module,'SCALES_TERMINAL_BINDINGS',{'result':hashlib.sha256(result.read_bytes()).hexdigest(),'review':hashlib.sha256(review.read_bytes()).hexdigest()})
+    assert module.verified_scales_terminal(tmp_path)['terminal_verified']
+    review.write_text('changed')
+    with pytest.raises(ValueError):module.verified_scales_terminal(tmp_path)

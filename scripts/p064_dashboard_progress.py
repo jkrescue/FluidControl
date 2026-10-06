@@ -212,6 +212,17 @@ def scale_window_count(text):
     if count>1368:raise ValueError('scales excess count')
     return count
 
+SCALES_TERMINAL_BINDINGS={'result':'4b8d28506bad47d76753848094c1b00195f96bb432cb9d96ef9031c8fdad2a8b','review':'ec796b416e956b2ea84c74517805af77c98462e1f48c96fefb94d6c963e60805'}
+
+def verified_scales_terminal(root):
+    root=Path(root)
+    paths={'result':root/'artifacts/fcp064_b_h25_scales_20261006_r2/payload/result.json','review':root/'docs/P064_B_H25_SCALES_R2_TERMINAL_REVIEW_20261006.md'}
+    for key,path in paths.items():
+        if hashlib.sha256(path.read_bytes()).hexdigest()!=SCALES_TERMINAL_BINDINGS[key]:raise ValueError('scales terminal '+key+' SHA')
+    result=json.loads(paths['result'].read_text())
+    if result['training_windows']!=1368 or result['optimizer_steps']!=0 or result['model_saved'] is not False:raise ValueError('scales terminal counts')
+    return {'terminal_verified':True,'fixed_scales':result['fixed_scales'],'status':'H25损失尺度计算已完成并独审（非训练）'}
+
 def h25_scales_status(root,run=subprocess.check_output):
     root=Path(root);info={'running':False,'training':False,'optimizer_steps':0,'windows':0,'target':1368,'invocation':None,'status':'H25损失尺度计算尚未核验启动'}
     try:
@@ -228,6 +239,9 @@ def h25_scales_status(root,run=subprocess.check_output):
         info['running']=state.get('ActiveState')=='active' and state.get('SubState')=='running' and int(state.get('MainPID','0'))>0
         info['status']='H25准备：B父模型H10损失尺度计算运行中' if info['running'] else '损失尺度计算进程已停止，等待终态独审'
         info['note']=f"{info['windows']}/1368训练窗口；0优化器更新，不是模型训练。R1因loader未识别B kind退出，保留失败；R2仅修复来源绑定。日志计数不等于成功。"
+        if not info['running'] and state.get('MainPID')=='0' and state.get('ExecMainStatus')=='0':
+            info.update(verified_scales_terminal(root))
+            info['note']='1368/1368窗口原始均值已复算；0优化器更新、未保存模型。field尺度0.00145615，force尺度0.00378382；仅供后续单独批准的资源探针。R1 loader身份故障保留。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:info['note']=str(exc)
     return info
 
