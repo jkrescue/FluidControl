@@ -636,7 +636,7 @@ def development_summary(root):
 def c50_training_status(root,run=subprocess.check_output):
     root=Path(root)
     info={'status':'C50状态待核验','running':False,'training':False,'windows':0,'updates':0,'target_windows':256,'target_updates':32,'invocation':None,'last_update_utc':None,'scientific_pass':None,
-          'note':'R1因PYTHONPATH遗漏在项目导入时退出，0模型/0训练；R2仅补运行环境。只训练FNO气动力网络，非PPO。既有闭环收益与预测精度FAIL均保留。'}
+          'note':'R1因PYTHONPATH遗漏在项目导入时退出，0模型/0训练；R2仅补运行环境。气动力FNO分支微调：除两bias外28参数tensor参与优化，非仅末层、非PPO；独立flow分支冻结。既有闭环收益与预测精度FAIL均保留。'}
     try:
         approval=root/'docs/P064_CONTROLLED_DATA_DOSE_C_TRAINING_R2_APPROVAL_20261007.json'
         if hashlib.sha256(approval.read_bytes()).hexdigest()!='6d0d0f8dbdbae17a89d3b7dcc1717145b8e5a44464e928b5cb1a4e6debf2800f':raise ValueError('C50 approval SHA')
@@ -654,7 +654,7 @@ def c50_training_status(root,run=subprocess.check_output):
         result=root/'artifacts/p064_arm_c50_development_h1_h5_20261007/result.json'
         if not info['running'] and review.is_file() and result.is_file() and hashlib.sha256(review.read_bytes()).hexdigest()=='e26d6e49186616f3818c33f438055d707e3c66b881640696006e280a6bc4e091' and hashlib.sha256(result.read_bytes()).hexdigest()=='9fa7c88759bf83fdca87d79ff305c0f3d4654368c7ec3059d7f9ba3f96c48c1a':
             info.update(status='C50训练和开发评估已完成，预测未改善，不采用',terminal_verified=True,scientific_pass=False)
-            info['note']='真实256窗口/32更新已独审；同面板H1后Cl MAE B0.13900→C0.13915、总Cd0.03807→0.04295，H1–H5各phase均退化。流场冻结、预测完全相同。Lead拒绝C晋级PPO/CFD，不自动再扫比例。保留B及两指定seed闭环主窗收益、早期失败和完整预测FAIL。C50任务已结束，其他当前工作见主卡；R1导入工程失败仍保留。'
+            info['note']='气动力FNO分支微调（除两bias外28参数tensor，并非仅末层）；真实256窗口/32更新已独审。同面板H1后Cl MAE B0.13900→C0.13915、总Cd0.03807→0.04295，H1–H5各phase均退化。独立flow分支冻结、预测完全相同。Lead拒绝C晋级PPO/CFD，不自动再扫比例。保留B及两指定seed闭环主窗收益、早期失败和完整预测FAIL。C50任务已结束，其他当前工作见主卡；R1导入工程失败仍保留。'
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as exc:
         info['error']=str(exc)
     return info

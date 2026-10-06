@@ -1,5 +1,7 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
+术语澄清：P064 A/B/C执行的是**气动力FNO分支微调**，该分支除两项冻结bias外共28参数tensor参与优化，不是仅末层readout。独立flow FNO分支冻结，故本轮不会改善流场预测；此澄清不改变任何算法、预算、结果或失败记录。
+
 ## 当前：E090 CPU数据转换实际运行；E089真实采集已独审完成
 
 E090 unit `fluid-control-p064-b02-controlled-train-conversion-20261007.service`，invocation `f7a7550e035e4ee482205379eefa016a`，PID993601 running，已实查48/801写入帧。批准 `docs/P064_B02_CONTROLLED_TRAIN_CONVERSION_APPROVAL_20261007.json` SHA `64e910fc20c7f5beeb0805ad159be3e0ff3e8d599f4560b7a0f42149aa53766a`；输出 `artifacts/p064_b02_controlled_train_conversion_20261007`，不可变converter SHA `2aa5d3e6f52231cd3b5262663b6d33bdd67fcf872788124d42e1d13777098140`。只将已保存受控b02全801帧经既有官方Curator/Reader转train HDF；不混zero，不重新拟合归一化。host12GiB/noSwap+顺序4GiBexport、50/22/20GiB门、3600s。不是GPU/FNO/PPO训练或新CFD，计数未构成终态验收。后续覆盖候选训练仍需另批，C50拒绝/预测FAIL/旧失败保留。以下“尚未转换”属于历史记录。
