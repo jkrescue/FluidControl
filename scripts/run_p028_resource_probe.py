@@ -80,7 +80,7 @@ def readonly_mounts(spec: dict, spec_path: Path) -> list[tuple[Path, Path, bool]
         root = Path(spec["data"][family]["root"])
         # Never mount the whole data root: validation/frozen siblings stay absent.
         for child in (root / "manifest.json", root / "normalization.json", root / "train"):
-            mounts.append((child, child, True))
+            mounts.append((child, Path("/workspace") / family / child.name, True))
     unique: dict[tuple[str, str], tuple[Path, Path, bool]] = {}
     for source, target, read_only in mounts:
         unique[(str(source.resolve()), str(target))] = (source.resolve(), target, read_only)

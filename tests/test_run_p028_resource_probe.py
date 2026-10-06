@@ -68,3 +68,13 @@ def test_source_escape_rejected(tmp_path):
     payload['source_sha256']['../escape.py'] = '0' * 64
     with pytest.raises(RuntimeError, match='escapes'):
         launcher.readonly_mounts(payload, path)
+
+def test_training_mounts_match_unchanged_config_aliases(tmp_path):
+    path, payload = fixture(tmp_path)
+    mounts = launcher.readonly_mounts(payload, path)
+    for family in ('base', 'train8', 'train16'):
+        root = Path(payload['data'][family]['root'])
+        for name in ('manifest.json', 'normalization.json', 'train'):
+            assert (root / name, Path('/workspace') / family / name, True) in mounts
+    assert all(target.name not in ('validation', 'frozen_test', 'test')
+               for _, target, _ in mounts)
