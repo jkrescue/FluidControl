@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## Representative256 train-panel fit — running snapshot, not admission
+
+Lead authorized one bounded continuation from retained B on a fixed panel of 256 real H1 points (192 original-family plus 64 controlled-b00), with the existing four-channel weighting and no development/PPO/CFD authorization. The actual unit is `fluid-control-p064-representative256-training-20261007.service`, invocation `6bc6aca4e1bd48d5938b273d319fc716`, approval SHA `42e8c15d4835ea6696ecb12271246d9babba16b73f869b4802b57bbc8dabc38c`. At `2026-10-07T09:14Z` it was running at 61 accepted points and 129/300 closures; the latest accepted-point loss was `.00495145656`. Trial closures are not accepted measurements. This timestamped launch record is not a terminal result, development improvement, model admission, PPO, CFD, or closed-loop claim; retained B and the E114 physical result remain unchanged.
+
 ## B04 late-state raw acquisition — one train-only trajectory running; no conversion or training
 
 After the preparation contract and thin raw-solver entry passed independent source review, Lead authorized exactly one raw OpenFOAM trajectory. Unit `fluid-control-p064-b04-long-excitation-cfd-20261007.service`, invocation `e2fa5d4e5fa4465a90a2dfbbdd402fc8`, approval [P064_B04_LONG_EXCITATION_RAW_CFD_APPROVAL_20261007.json](docs/P064_B04_LONG_EXCITATION_RAW_CFD_APPROVAL_20261007.json) SHA `f2bfcd8f6d1526af266946448ca452d3c271047466d77a9e439d843081338536`, output `artifacts/p064_b04_long_excitation_raw_20261007`. The immutable hypothesis is late-state coverage under the same fixed b04 PRBS action distribution: repeat the exact201-point table four periods to obtain801 points over120→200, from the bound train-only b04 restart, with16000 OpenFOAM steps and unchanged mesh/Re100/L/D5. Actual controller limits are8GiB/noSwap/CPU100%, with an owned8GiB/noSwap one-CPU solver container, startup/runtime memory and disk guards.

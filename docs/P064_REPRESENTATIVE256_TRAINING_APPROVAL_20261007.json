@@ -1,0 +1,304 @@
+{
+  "status": "P064_REPRESENTATIVE256_SINGLE_TRAINING_AUTHORIZED_NOT_ADMISSION",
+  "execution_authorized": true,
+  "approved_at_utc": "2026-10-07T09:02:48Z",
+  "lead_authorization": "Root explicitly approved ONE representative256 B-continuation training with exact reviewed sources; Root is sole launcher. No automatic development evaluation, PPO, or CFD.",
+  "preparation_sha256": "b15ffbcd87afd7b966d0fb61411072e252cfa6b319e8ce03d37cb244887f0f41",
+  "readiness_evidence": {
+    "frozen_noexecute": "PASS actual curator runtime, CUDA hidden, exit 0; 52 data files and inherited source closures verified; no forward",
+    "producer_tests": "6 PASS; Root independently repeated",
+    "independent_consumer_fixture": "9 PASS, consumer484eb9e/producer00e9921f/fixturef6c4a409; zero closures accepted, negative rejected",
+    "zero_closure_semantics": "Initial training fit target may produce zero updates; terminal status and actual closure count must be retained. Saving is not promotion."
+  },
+  "driver": {
+    "path": "/workspace/fluid_control/artifacts/p064_representative256_source_20261007_immutable/train_representative256.py",
+    "sha256": "00e9921f1614a0a791d4883f08a3bc6e475a6160a5051e3232b588d1a7fa9e35"
+  },
+  "core": {
+    "path": "artifacts/p064_fixed_small_fit_r2_source_20261007_immutable/bounded_lbfgs.py",
+    "sha256": "e0623157281a041b05257d9843ca46e8e1557ffca83c5872d9280fbacdd5a6c0"
+  },
+  "reference_driver": {
+    "path": "artifacts/p064_k1bg_b00_train_fit_source_20261007_immutable/diagnose_k1bg_b00_train_fit.py",
+    "sha256": "0022521f674400668625b71b02828e881f897bb8f7c8545f37c595566b506b5e"
+  },
+  "reference_approval": {
+    "path": "docs/P064_K1BG_B00_TRAIN_FIT_APPROVAL_20261007.json",
+    "sha256": "d03794c76333d3be9cc89d400f60d0928b3ec4fa11810d1e45955844c6875150"
+  },
+  "reference_result": {
+    "path": "artifacts/p064_k1bg_b00_train_fit_20261007/result.json",
+    "sha256": "bb256396fe174f7d1f8ef3cd68a06bc1653c0e8ff039604714479f44391da26c"
+  },
+  "unit": "fluid-control-p064-representative256-training-20261007.service",
+  "output": "artifacts/p064_representative256_training_20261007",
+  "runtime_versions": {
+    "torch": "2.14.1",
+    "numpy": "2.5.3",
+    "nvidia-physicsnemo": "2.2.2"
+  },
+  "resources": {
+    "memory_bytes": 25769803776,
+    "swap_bytes": 0,
+    "cpu_quota_percent": 400,
+    "tasks_max": 64,
+    "inner_seconds": 2400,
+    "outer_seconds": 2430,
+    "stop_seconds": 20,
+    "allocator_bytes": 17179869184,
+    "startup_available_gib": 50,
+    "runtime_available_gib": 22,
+    "physical_reserve_gib": 20
+  },
+  "protocol": {
+    "parent": "B",
+    "source_counts": {
+      "original44": 192,
+      "controlled_b00": 64
+    },
+    "lead_rule": "1+(37*k%100); k zero-based within ScheduleRow.source",
+    "points": 256,
+    "microbatch": 10,
+    "max_outer": 200,
+    "max_closures": 300,
+    "history_size": 5,
+    "lr": 1.0,
+    "line_search": "strong_wolfe",
+    "clip": null,
+    "weight_decay": 0.0,
+    "fit_channel_normalized_rmse": 0.01,
+    "precision": "highest_no_tf32",
+    "no_candidate_save": false,
+    "no_dev": true
+  },
+  "plan": {
+    "path": "/workspace/fluid_control/artifacts/p064_representative256_source_20261007_immutable/PLAN.md",
+    "sha256": "cf36533eaec670d1ba8cd68e04f2dbc42514e3064ea77bb8ee7b719605506fe1"
+  },
+  "panel_adapter": {
+    "path": "/workspace/fluid_control/artifacts/p064_representative256_source_20261007_immutable/panel256.py",
+    "sha256": "ef230ec45fbd6f5f254d258b308b41674c761cdea6d34dba4d46b8c883549724"
+  },
+  "consumer": {
+    "path": "/workspace/fluid_control/artifacts/p064_representative256_source_20261007_immutable/dual_fno_representative256.py",
+    "sha256": "484eb9e26889b4e9efac807447d131113d2b1dd8bd0cb6b77472250f8ba8fbc8"
+  },
+  "panel_receipt": {
+    "path": "/workspace/fluid_control/artifacts/p064_representative_fit256_cpu_panel_r2_20261007/receipt.json",
+    "sha256": "e35a0e323ab249f3e574594ab87296a8aa28c3b71aabb8f2688a3086eb4f13c8"
+  },
+  "b_training_approval": {
+    "path": "/workspace/fluid_control/docs/FC_P064_ARM_B_TRAINING_APPROVAL_20261006.json",
+    "sha256": "a1e79d108f5067027742f08f3e04b2d73cb059286e2bd433e53f4e0d51247b29"
+  },
+  "data_files": [
+    {
+      "path": "/workspace/fluid_control/artifacts/b00_controlled_train_dataset_view_20261006/manifest.json",
+      "sha256": "97a82e2a157b87ecf9b9ea626ad079852a8d29ba89628ca5034ef99545929a5f"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/b00_controlled_train_dataset_view_20261006/normalization.json",
+      "sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/b00_controlled_train_dataset_view_20261006/train/b00_projected_ppo_train.h5",
+      "sha256": "45041e79e70043838763e5dd8da0fe9c02dba4cfe6df01356f8dcd1389e32d8f"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/manifest.json",
+      "sha256": "5213c7bb07c824c6e601636c3cfa974b80ec7c051633b0c8368a045cea41ddd2"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/normalization.json",
+      "sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b00_m0375.h5",
+      "sha256": "85e5b5a60c01c8f3521d580afc68f81f501e4bc94e092a8e873a582e11fd0d82"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b00_m075.h5",
+      "sha256": "bd2622c0c6a1174bc0bc95033240bda410e7cd8fd50722b3de7324be854cdaad"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b00_p0375.h5",
+      "sha256": "df422ad65e1bab16feb233c1ca1023087376fa0191666902bfb7211731821181"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b00_p075.h5",
+      "sha256": "f7aa886ead70e7f2f8e185acc1b3034fcd54d31c9a6c5144e9c0f51a60674ada"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b00_zero.h5",
+      "sha256": "243caa79ac320b421adc1bf0c2cc830a32482dc758c3c0f9ce71d26171a61a01"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b02_m0375.h5",
+      "sha256": "8ebaaf7c763886fe992c266ede94dd01f74069f0739fca541003eef68d4969de"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b02_m075.h5",
+      "sha256": "1fac26417fc1188c04be3c215a84f731446e94d16a924dd05ab393d4692f2704"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b02_p0375.h5",
+      "sha256": "04b522d3946b53831e16422ed0c7377963e0a666ccde08e5837717ceb7195c81"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b02_p075.h5",
+      "sha256": "61bb3f8a741354b407b962a313b7070ab718006f619df121cd5b98737d273b3f"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b02_zero.h5",
+      "sha256": "54f95af21c382145a26a006bad4bc9e90f9cc6c1e6cfbf5c47ab85fc58f43c7e"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b04_m0375.h5",
+      "sha256": "d09265b7c8670a9d3053be18358794c9a8a97ac1d200394fae72656514be2fee"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b04_m075.h5",
+      "sha256": "9fd391090802f7f6a7189d1cbb2ccedf3e667fa4ee78b2f8f1c2c20c1dea0345"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b04_p0375.h5",
+      "sha256": "985d3200548d2b3b587d6c5cd9a37887f37b73a3edc1e125a26c099b5be69be7"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b04_p075.h5",
+      "sha256": "7af58ef6cc51882e6d508f6f75de10c03c049169c6843053c27f4fef8f0075b3"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b04_zero.h5",
+      "sha256": "37c2abc9ef54496c1952239f9c7fba1815d2d1c6694efa3921d459256d27edf2"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b06_m0375.h5",
+      "sha256": "c851e71466892cc9a3f850819a599ca9d9a2f998e4431b96b2c47210bedf9cfc"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b06_m075.h5",
+      "sha256": "36a1aa9b1c53d756d842d47b92b9a2310c904fef6f499899d81e548e6f56f173"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b06_p0375.h5",
+      "sha256": "849fb79ff18906e532ff490fe35e366aa03fc50436d7e7329d6ab804b61f7617"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b06_p075.h5",
+      "sha256": "e5fb2e91369fbfbd06cc8952f41b91aa051fe91670f4a22c39aeb4548a8ff83d"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/train/matched_start_acquisition_train_b06_zero.h5",
+      "sha256": "0d5fc40449700d381eaec3a56eadb0159789065af18f11777fdf848a286b07e8"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/manifest.json",
+      "sha256": "7c62dab94e317442cecf7ea3be547cf6e03c594a2c7ec2a1a695caba2445cf5b"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/normalization.json",
+      "sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env0_ep0002_b00.h5",
+      "sha256": "1830868b5907ac3d53a873e265263da8d462ba72bf85f378a28bdd567bdbafc6"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env0_ep0003_b00.h5",
+      "sha256": "f63d9d91f5609358bf73c9e7911ae456410ace45b6c6facf0b0206ee251844f8"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env0_ep0004_b00.h5",
+      "sha256": "60a3bec559711da8d01f875f4155b7c787fb1d53ba06704fd7c7bd5440e5c816"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env0_ep0005_b00.h5",
+      "sha256": "00cffebb116505b577f69369ba67592f18b293e8ef679af2565924ca660389e6"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env0_ep0006_b00.h5",
+      "sha256": "ec9f914eef1ef2114e59a24e68a9eb4263fabeef11bab66ad7bdfb45f16a817b"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env0_ep0007_b00.h5",
+      "sha256": "792fbbbedeb1a263995b3b314a54f529d168c415a6256648368eda807aaa533a"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env0_ep0008_b00.h5",
+      "sha256": "53492f685155b5ebb1822811d5f281c9f4685d8c2eabfc8a7adec370a3117ee6"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env0_ep0009_b00.h5",
+      "sha256": "270c88a8cd9f58c5d6415e850697c92a1b078141c6f9bf3764b008965d6779a6"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env1_ep0002_b02.h5",
+      "sha256": "c7da5e744f557a4b7272d446ed1673a6c576ef0cc7acbeac04b9166cd5e7485e"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env1_ep0004_b02.h5",
+      "sha256": "cbdd80e888e8a901072094b552b6459bb4869ce99f2ae753f63d9baebd7e8344"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env1_ep0005_b02.h5",
+      "sha256": "78eb2618af72744c2533348ecb09a71f94c11273093981894d08adbaa9713725"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env1_ep0006_b02.h5",
+      "sha256": "cf261484b061b50cd4ef6ed28a518b9263362498ca4fd9f08dbf46647042f991"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env1_ep0007_b02.h5",
+      "sha256": "30ff129169c519c94caaef2a67cc5d1baf579d5c77e17d446148753b6e3f720d"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env1_ep0008_b02.h5",
+      "sha256": "5e5c1cefe57bdaed761b33eaee4bbfeda04c86b4017ffe98428fc441db20c2fb"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/train/direct_cfd_directppo2048_v1_env1_ep0009_b02.h5",
+      "sha256": "c59958b947c8aac477d8f5c11eb46a376f7bd71eb93885a6aca4b40b3a320a74"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train8/manifest.json",
+      "sha256": "a0bd0e3b79d4d43ace407292c31a595d552dbd6e1a5de1fd149b1ca446f53f35"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train8/normalization.json",
+      "sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train8/train/dynamic_train8_b00_multisine.h5",
+      "sha256": "400b3b5f8ea381da59c7806aef19f7cd2b50da303f717ad93cebf505c5949e9f"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train8/train/dynamic_train8_b00_prbs.h5",
+      "sha256": "121e6ec85ae00af0871b51cd8d04cbd907e3cb8ffd24ebb0976b84f101f82768"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train8/train/dynamic_train8_b02_multisine.h5",
+      "sha256": "aa437c31ee951c44e0821fb3d0525d55df3252c0fc9f5fece8fa78294135f210"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train8/train/dynamic_train8_b02_prbs.h5",
+      "sha256": "463cb19bff9f3dd0384065e9d6393585b2ec645c55aa173537d3db5d635a964f"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train8/train/dynamic_train8_b04_multisine.h5",
+      "sha256": "d7bbfbf1d18f40cb613f2564fabf3eafb95afbf3ee7635e29f9c20ae27f6e48b"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train8/train/dynamic_train8_b04_prbs.h5",
+      "sha256": "012eea462332b06298cc2128a47e1705ec9d6ec4effc08569bd73cd51970df0d"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train8/train/dynamic_train8_b06_multisine.h5",
+      "sha256": "b795aeddd0b0fec5af2939ee682badfb81e18c982b85eb2e3c1a8876e8505c94"
+    },
+    {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train8/train/dynamic_train8_b06_prbs.h5",
+      "sha256": "a2cc12e605b6ab40f43b30cb881b9e0d1f7a92a0a0cb1167d3667fc499fa8732"
+    }
+  ]
+}

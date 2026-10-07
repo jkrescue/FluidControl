@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — One representative256 train-panel fit; retain B pending fixed evaluation
+
+Authorize one bounded training-only fit from retained B on the predeclared 256 real H1 points, using the exact reviewed producer, panel adapter and strict new consumer. Permit 0–300 closures because an already-fitted initial point is a legitimate zero-update terminal case; saving a candidate is not promotion. The actual approval SHA is `42e8c15d4835ea6696ecb12271246d9babba16b73f869b4802b57bbc8dabc38c`, and the actual invocation is `6bc6aca4e1bd48d5938b273d319fc716`. Keep the original prediction criteria and retained B unchanged. This decision does not authorize development inference, PPO, CFD, threshold relaxation, or any claim that the basic E114 closed loop has newly improved.
+
 ## 2026-10-07 — One B04 raw late-state trajectory only; conversion and training remain separate
 
 Following independent review of the fixed801-point action contract and thin solver entry, authorize one train-only b04 raw OpenFOAM trajectory from120→200. Keep the exact repeated PRBS table, bound t120 backward restart/mesh, Re100/L/D5,16000 steps,8GiB/noSwap resource limits and exclusive output. The executed approval is [P064_B04_LONG_EXCITATION_RAW_CFD_APPROVAL_20261007.json](docs/P064_B04_LONG_EXCITATION_RAW_CFD_APPROVAL_20261007.json), SHA `f2bfcd8f6d1526af266946448ca452d3c271047466d77a9e439d843081338536`; actual invocation is `e2fa5d4e5fa4465a90a2dfbbdd402fc8`.

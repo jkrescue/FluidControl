@@ -2,12 +2,12 @@
 
 ## 当前唯一摘要 — 优先交付既有B真实闭环；完整预测精度继续独立研究
 
-截至 `2026-10-07T07:35Z`（北京时间 `15:35`），交付分成两层，不能混报：
+截至 `2026-10-07T09:14Z`（北京时间 `17:14`），交付分成两层，不能混报：
 
 1. **基本真实闭环已经交付。** 官方PhysicsNeMo FNO训练代理、HydroGym/SB3 PPO、CPU策略部署和真实OpenFOAM观测反馈链已贯通。默认B在E114同分支延长段新增80 D/U中取得减阻`4.13258915%`、rear-Cl波动RMS比`.820771289`、偏置`1.235202589%`，原`2% / 1.05 / 10%`三门及四个连续20 D/U块均PASS。无需降低10%物理偏置门限；完整预测研究不再阻挡这个PPO闭环case的复现、可视化和整理。
 2. **高精度代理、泛化和MPC仍未达标。** 原预测FAIL没有改写为PASS，默认B不替换，完整目标仍未完成。当前B surrogate的因果历史H5 MPC十周期工程探索已独审：动作与旧K1试验完全相同，1 D/U内配对减阻`-.0078862246%`、rear-Cl波动RMS比`.9836105589`，四项selected-next-step受力MAE均比旧K1更大；因此不延长此MPC、不宣称控制改善。详见[B-H5 MPC终态报告](docs/P064_B_CAUSAL_HISTORY_H5_TERMINAL_REVIEW_20261007.md) SHA `54192af5b7b8fbf0701d55809bcca8d24085b14f28d456505127cc84b793ad61`。
 
-**当前易懂下一步：** 保留E114/B-PPO作为基本交付和默认策略；高精度FNO/MPC作为独立研究保留失败指标。保存状态GPU回放R2已经独立工程核验PASS：10/10 selected index/action与完整candidate-cost排序一致，force/cost最大差分别为`2.4437904e-6 / 1.1830913e-6`；首轮`.74646 s`、后续`.36060–.38808 s`。见[GPU回放R2独审](docs/P064_B_H5_GPU_REPLAY_R2_INDEPENDENT_REVIEW_20261007.md) SHA `daa9afd8f0132700246ac5871e29a86fa6415df9dfdaac356240f5fc83aa772e`。这只证明保存状态推理/算术/身份接线，不是训练、新CFD、bitwise精度证明或控制收益。上述时间点实测仅dashboard与watchdog常驻，GPU利用率`0%`、MemAvailable约`114.38 GiB`；不把已结束任务写成running。安全复现入口仍为 `python3 scripts/reproduce_canonical_closed_loop.py`，本轮实际返回 `PREFLIGHT_PASS_NOT_RUNNING`，绑定B approval `ee010bbe…`与driver `ebc6f266…`且没有启动CFD；两个入口测试另有`16 passed / 0.04 s`。浏览器页面为 `http://localhost:8766/`（需既有端口转发）。
+**当前易懂下一步：** 保留E114/B-PPO作为基本交付和默认策略；高精度FNO/MPC作为独立研究保留失败指标。唯一代表性256点训练已获单次批准并实际运行：unit `fluid-control-p064-representative256-training-20261007.service`、invocation `6bc6aca4e1bd48d5938b273d319fc716`，批准SHA `42e8c15d4835ea6696ecb12271246d9babba16b73f869b4802b57bbc8dabc38c`。`09:14Z`只读快照为接受点`61/200`、closure `129/300`、最近训练目标误差`.00495145656`、主机GPU0利用率`96%`；只记录优化器返回后的接受点，不把line-search trial当最佳值。它是固定256个真实H1点的训练内拟合，不是开发集改善、模型准入或闭环达标；尚未执行dev/PPO/新CFD。安全复现入口仍为 `python3 scripts/reproduce_canonical_closed_loop.py`，最近实际返回 `PREFLIGHT_PASS_NOT_RUNNING`，没有启动CFD。浏览器页面为 `http://localhost:8766/`（需既有端口转发）。
 
 **时序增量辅助实验终态（2026-10-07）：** 唯一批准的B同数据/父模型/256窗口/32更新训练已正常exit0，工程独审PASS；仅在原绝对受力目标上增加99条相邻时刻H1受力误差变化项，官方FNO结构与旧评估不变。固定六窗H1为`.003976309539`，相对B微降`.0137219195%`；连续AR100为`.008947911816`，相对B微升`.0191286021%`。原“两项均不退化”严格AND为FAIL，差异很小但不改门限、不称改善；保留B，不运行dev、PPO或新CFD。见[终态独审](docs/P064_TEMPORAL_INCREMENT_AUX_TERMINAL_REVIEW_20261007.md) SHA `d920030a09a633ba2311068c06129f88fbd1b0a55460c545f27ff4d5774cfeba`；result/manifest SHA为`947871cacbe2a443f6d237426c3d855f9955b4659121797d915afa497cae48e7`/`ef68459da39bcbbaca1449d63bd52a3d43506ee682cd08a956e1232cf965e285`。完整代理精度仍未达成；下一充分拟合证据回顾仅在准备，没有运行新实验。
 
