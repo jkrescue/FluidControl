@@ -1,5 +1,13 @@
 # Research roadmap and prioritized backlog
 
+## Authoritative closeout priority — supersedes every later “current/live/next” heading
+
+From `2026-10-07T09:20:45Z` the project is in a time-bounded closeout. All scientific tests stop by `2026-10-07T12:20:45Z`; archival, report and reproducibility synchronization stop by `2026-10-07T12:50:45Z`. The one in-flight scientific job at this snapshot is the already approved Representative256 fixed-panel fit. Its terminal result may be audited and its predeclared fixed-six check may run only under the existing approvals before the science deadline; it does not authorize dev, PPO or CFD. Do not start another scientific experiment.
+
+The retained deliverable is the E082 policy deployed as CPU PPO in a real OpenFOAM online-feedback loop, with E114 meeting the unchanged physical gates on the added 80 D/U tail and all predeclared blocks/joined windows. High-accuracy surrogate prediction, cross-condition generalization and useful FNO-MPC remain incomplete. Online feedback has been demonstrated; physical real-time operation and net energy savings have not. See [PROJECT_FINAL_REPORT_20261007.md](PROJECT_FINAL_REPORT_20261007.md) and [PROJECT_CLOSEOUT_DEADLINES_20261007.md](PROJECT_CLOSEOUT_DEADLINES_20261007.md).
+
+Every section below is retained as a historical decision/snapshot. Its wording such as “current”, “live”, “next” or “authorized” is superseded by this closeout block and must not be used to relaunch work.
+
 ## Current priority — deliver B and measure same-case continuous reliability
 
 The retained B policy already has a reproducible real-OpenFOAM closed loop meeting the unchanged 2% drag, 1.05 rear-lift RMS ratio and 10% bias criteria. A separately reviewed one-interval E109 recovery replay reproduced the saved action, both 69-channel endpoints and both branches' saved internal fields exactly. The only current scientific execution extends those same two branch states from `t=328` to `t=408` with the same frozen policy, normalization, solver and limiter. It reports the complete new 80 D/U tail, four consecutive 20 D/U blocks and joined 160/140 D/U summaries; it does not discard a new warmup, select a phase, train a model or alter a threshold. This is longer same-condition evidence, not independent generalization.
