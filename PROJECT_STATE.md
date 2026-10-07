@@ -2,11 +2,13 @@
 
 ## 当前唯一摘要 — 优先交付既有B真实闭环；完整预测精度继续独立研究
 
-用户当前优先级是先交付并展示既有B基本真实闭环、可复现入口与可视化；完整代理预测精度继续作为独立研究目标，但不再作为这个基本case展示的前置条件。原物理2%减阻、1.05波动比、10%偏置标准没有降低，预测FAIL也没有改写为PASS；整体代理模型、控制器和限定验证的完整目标仍未完成。当前没有训练或CFD运行，后续精度研究不得自动启动模型训练、PPO或CFD。
+用户当前优先级是先交付并展示既有B基本真实闭环、可复现入口与可视化；完整代理预测精度继续作为独立研究目标，但不再作为这个基本case展示的前置条件。原物理2%减阻、1.05波动比、10%偏置标准没有降低，预测FAIL也没有改写为PASS；整体代理模型、控制器和限定验证的完整目标仍未完成。经单次明确批准，pressure-aux H训练R2现正运行；这项预测研究不阻塞既有B交付，也不自动授权评估、PPO或CFD。
 
 默认安全复现入口 `python3 scripts/reproduce_canonical_closed_loop.py` 已于本轮实际返回 `PREFLIGHT_PASS_NOT_RUNNING`：固定b01/800步，approval `ee010bbe…`、driver `ebc6f266…`，模型、源码、运行时、restart与资源绑定预检通过；它没有启动新CFD，也不是新增物理结果。
 
-FC-E113固定27点CPU coarse-ROI force诊断及独立复算已完成。随后只读覆盖确认原45条train-only轨迹的20,493/20,493帧均有真实OpenFOAM `raw_total`、`pressure`、`viscous`分量标签，缺失0；base20、train8、train16、controlled-b00均保留各自来源，`pressure+viscous-raw_total`最大绝对差`1.3322676295501878e-15`，旧HDF total与raw total的实际差异亦原样报告。紧凑sidecar converter/coverage/spec目前仅完成准备并等待独审：不改原HDF、total标签、train-only归一化、split或mix，不复制大场数据，尚未转换、训练、推理、PPO或CFD。pressure辅助监督只是后续精度研究候选，不是B基本闭环交付的缺项。
+FC-E113固定27点CPU coarse-ROI force诊断及独立复算已完成。随后45条train-only轨迹的20,493/20,493帧真实OpenFOAM `raw_total`、`pressure`、`viscous`分量已机械转换为独立紧凑sidecar，缺失0；base20、train8、train16、controlled-b00分别为20/8/16/1条轨迹，原HDF/total标签/norm/split/mix未改。转换unit `fluid-control-p064-force-component-sidecars-20261007.service`、invocation `19ccdb8f8c3742c49957e9b01f8c707a`、exit0，manifest SHA `f8b2f6564e761d360c6a0101c6d6d036f49f7ce9643ecb7755b86cd43e6f9c3a`；独立审计核实20,493时钟与分量，见[报告](docs/P064_FORCE_COMPONENT_SIDECARS_INDEPENDENT_REVIEW_20261007.md)。`pressure+viscous-raw_total`最大绝对差`1.3322676295501878e-15`，旧HDF total与raw total最大实际差`1.24386e-5`原样保留。它是标签sidecar，不是模型改善。
+
+Pressure-aux H单次训练R1 invocation `4cde8113f05e48888adf88ef7b557343` 因systemd相对supervisor路径在`/home/USER/0更新，失败记录保留。Lead仅批准工作目录/绝对路径与独占身份修复；R2 unit `fluid-control-p064-total-pressure-aux-h-r2-20261007.service`、invocation `7b6a95342f3c4965a2a71b0542ddf574`、启动PID45282，批准SHA `af2057df4a6b010e24ce2d318f24235bf9db5d9c4c2371c4341dc695830baae9`。实际采样时已完成至少7/256窗口，首个controlled-b00窗口旧目标`.0071185859852`、pressure H1 `.0094056772068`、加权aux `.0009405677556`、总反传目标`.0080591533333`，均有限。固定λ=.1、原B数据/旧H1+AR目标/256窗/32更新、24GiB/noSwap/16GiB allocator保持；这是时间戳运行记录，不是终态、准入或改善结论。
 
 FC-E113固定27点CPU coarse-ROI force诊断已完成，unit `fluid-control-p064-coarse-roi-force-recoverability-20261007.service`、invocation `656922d7fdf64f6c85470f4404393644`、exit0。它只读三个固定b00训练case的九个机械帧，未加载模型、未优化、未执行CFD；独立审计逐值复算27行/18个action-minus-zero响应对及全部MAE/RMSE/bias，见[报告](docs/P064_COARSE_ROI_FORCE_RECOVERABILITY_INDEPENDENT_REVIEW_20261007.md)，SHA `ae349872d0e941d4ac55d8cf7f947b3ad04290976abf5000d957aca471aa294d`。固定offset-ring pressure-only proxy对rear Cd/Cl的MAE为`.065175664955/.100648501416`，动作减zero响应MAE为`.085406169742/.133359348752`；黏性分量不可忽略，且这不是精确壁面牵引、模型准入或新模型交付。默认B、已交付真实CFD闭环、E112 retention FAIL及完整预测质量未完成均不变；当前无科学任务运行。
 

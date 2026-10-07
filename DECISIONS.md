@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — Pressure sidecars accepted; one fixed pressure-aux H run only
+
+Accept the mechanical sidecar conversion and its [independent review](docs/P064_FORCE_COMPONENT_SIDECARS_INDEPENDENT_REVIEW_20261007.md): all45 train-only trajectories/20,493 frames retain actual pressure, viscous and raw-total labels while the original HDF total, normalization, split and mix remain unchanged. This does not itself improve or admit a model. Lead authorized exactly one official-FNO out11 pressure-aux H run: preserve original7 outputs and B objective, add four pressure outputs normalized by fixed base20 pressure moments, use fixed lambda `.1` H1-pressure MSE, and retain the original K1/256-window/32-update schedule. R1 path failure is an engineering failure with0 training; R2 changes only launch paths/identity and is the authorized run. Do not retune lambda, run a sweep, infer improvement from finite early losses, or automatically launch evaluation/PPO/CFD. Existing B remains the delivered default closed loop and unchanged gates still govern any later candidate decision.
+
 ## 2026-10-07 — E113 pressure-only coarse recovery is diagnostic evidence, not a model gate
 
 Accept [E113 independent review](docs/P064_COARSE_ROI_FORCE_RECOVERABILITY_INDEPENDENT_REVIEW_20261007.md): the fixed27-point CPU readout and all saved-row arithmetic are reproducible, but the offset-ring pressure-only proxy has material rear-force and action-response errors. Do not treat it as exact surface traction, train a new proxy from these27 points, omit viscous force, or use its metrics as surrogate admission. No model, optimizer or CFD ran. Keep B and the verified real-CFD feedback delivery; full force-prediction quality remains incomplete. Any follow-up must first reuse existing near-wall velocity/traction or force-readout code and test one falsifiable representation hypothesis without a hyperparameter or architecture sweep.
