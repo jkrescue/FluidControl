@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## Implementation-method detail and source review — documentation, not an experiment
+
+At 2026-10-07T12:02Z, the technical report gains actual FNO architecture, training-loop counts/configuration/loss, HydroGym/PPO environment details, and a numerical MPC decision example. Separate reviews checked the network/training counts and the control example against source and saved results. Correctly distinguish 24 E082 reset states from four environment instances, and 512 PPO optimizer steps from the library's 256 epoch counter. Two new figures are implementation schematics, not measured flow fields. The existing MPC result is copied byte-for-byte to `docs/report_20261007/evidence/b_h5_mpc_result.json`, SHA `f189508e962e17c5e98fa8fa6381c18664a4af9a58bd23da5da6977a50324939`. No new model execution, training, inference, PPO, CFD, experiment ID or results.csv row is created. Retained B, physical thresholds and unresolved prediction failure are unchanged.
+
 ## Technical blueprint and implementation framework — documentation, not an experiment
 
 At 2026-10-07T11:29Z, add the requested top-level blueprint and WP0–WP5 implementation framework plus data-stack, surrogate-training and control-roadmap appendices. The combined offline technical page distinguishes current implementation from proposed work, and connects to the existing nine-figure results report. Its architecture diagram is a schematic, not measured data. No training/inference/PPO/CFD, new scientific identifier, result row, threshold change or default-model change is associated with this milestone. Source and generated-page checks are documentation verification only.

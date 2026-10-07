@@ -3,35 +3,53 @@
   "inputs": [
     {
       "path": "docs/TECHNICAL_BLUEPRINT_20261007.md",
-      "sha256": "78765508580cfad583922aa24caf36513d233ae48d1a148607539e2ad143c2d6",
-      "bytes": 25733
+      "sha256": "7e4d2d3401d26e21f357a7daead674f2073d232451db287cd4e9c5468794b81e",
+      "bytes": 30581
     },
     {
       "path": "docs/TECHNICAL_DESIGN_DATA_STACK_20261007.md",
-      "sha256": "b60712bbed3e8a9f406bf5698b0992a3f56e1fa0996568438281ba07dd86e858",
-      "bytes": 12948
+      "sha256": "d6a7551f5de3c192b70e772f6f3fde9fafbb65d26ba11e86517a51894ee7d98a",
+      "bytes": 18135
     },
     {
       "path": "docs/TECHNICAL_DESIGN_SURROGATE_TRAINING_20261007.md",
-      "sha256": "d0a440eb11a8718c0256da76fb368d91ec3dd96546b6335c5870251d56a4080a",
-      "bytes": 14711
+      "sha256": "5d11e475a91833a5a8d55230aedef71a41197c33ce6c8b45d4884ac0e276bb79",
+      "bytes": 18361
     },
     {
       "path": "docs/TECHNICAL_DESIGN_CONTROL_ROADMAP_20261007.md",
-      "sha256": "9987c902ad814474f43ff0e1d2051bf5188d1f7bf01ac6a1bcec897fba75545a",
-      "bytes": 13443
+      "sha256": "02acb743a14dac9b05ef323bc2f252beb508d8cdc505092f1aa7cca440a3cd9b",
+      "bytes": 24635
     },
     {
       "path": "docs/report_20261007/assets/technical_blueprint.svg",
       "sha256": "d8ffa11f6bf33d47c2688701f0ee468b13c369fdfbce836abeac8d2316c47ae0",
       "bytes": 4537,
-      "kind": "architecture schematic, not a measured result"
+      "kind": "implementation schematic, not a measured result"
+    },
+    {
+      "path": "docs/report_20261007/assets/fno_network_structure.svg",
+      "sha256": "f58acca6eb55af2309183c42916bbd927a7fc91d6eac162823375d38eaa21436",
+      "bytes": 5740,
+      "kind": "implementation schematic, not a measured result"
+    },
+    {
+      "path": "docs/report_20261007/assets/training_vs_deployment.svg",
+      "sha256": "fc74a1999b0054067dc6a46ebf89d922698923c46bb17b4ed80c731aa79860a2",
+      "bytes": 5377,
+      "kind": "implementation schematic, not a measured result"
+    },
+    {
+      "path": "docs/report_20261007/evidence/b_h5_mpc_result.json",
+      "sha256": "f189508e962e17c5e98fa8fa6381c18664a4af9a58bd23da5da6977a50324939",
+      "bytes": 448352,
+      "kind": "exact copy of existing ten-cycle result; worked example uses rows[0]"
     }
   ],
   "stylesheet_source": "docs/report_20261007/index.html",
   "stylesheet_sha256": "dd2aebce0352a3c347d65f30e98f6b2e4b9a2df33da331e47132ada2dfa8851b",
-  "renderer_sha256": "458e920999a1f5a41e6c63454e6d53138814be5c74edb5355fc960d1a36fcea8",
-  "html_sha256": "5f83534d81e50520e747856b0e512dd0beb1606c29e3f8a4c78cb7ca7aabd443",
+  "renderer_sha256": "e3d0385b3c7171cbd1b8d3c54cba9a946cd32929c44f0e6cad7346b2d5083cb6",
+  "html_sha256": "4e6766fd20b3085dcdf816a33a6e1ba0e6b61b33d5298da889a401e68db80f75",
   "local_links_missing": [],
-  "html_id_count": 64
+  "html_id_count": 102
 }

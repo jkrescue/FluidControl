@@ -1,107 +1,254 @@
-# 技术设计：串列双圆柱代理训练、诊断与分层验证
+# 代理模型技术设计：从CFD数据到双FNO训练与可靠性验证
 
-2026-10-07。本文是基于实际源码与已执行证据的技术设计，不是新增执行批准。只新增本文，不改变默认B、数据、阈值或训练器。未来实验均需独立批准；当前科学截止12:20:45 UTC、归档截止12:50:45 UTC不因本文顺延。
+2026-10-07修订。面向理解CFD、但不熟悉神经网络训练实现的读者。
+本文解释实际保留模型B，并提出未执行的后续诊断；不批准新训练、推理或CFD，不更换默认策略。
 
-## 1. 当前可复现基线与研究边界
+## 1. 为什么需要代理
 
-物理对象为Re100、中心距L/D5、固定中心串列双柱，后柱旋转；不是VIV或三维尾流验证。OpenFOAM步长.005 D/U，动作反馈间隔.1 D/U，800反馈为80 D/U。E114由冻结CPU PPO读取真实CFD观测，无在线FNO；同分支累计160 D/U不等于独立工况。
+真实OpenFOAM提供物理真值，但强化学习反复尝试动作，直接进行大量CFD交互成本高。
+代理学习近似映射：“当前流场＋当前/下一转速 → 下一流场及圆柱受力”，作为离线策略学习环境。
+策略在代理中训练后冻结，回到真实CFD验证。本项目实际部署由CPU PPO读取真实观测，不逐周期运行FNO。
+必须分别回答：预测是否准确、策略是否学到可用动作、真实CFD控制是否有效。这三件事不能互相替代。
+本case为Re100、中心距L/D5的两个固定中心圆柱，仅后柱旋转；无结构运动方程，不是涡激振动验证。
+保留B的真实PPO闭环已通过原物理门，B完整气动力预测仍未通过。链路贯通不等于全部科学目标完成。
 
-当前默认B双FNO manifest：`artifacts/fcp064_controlled_aero_arm_b_20261006/dual_model_manifest.json`，SHA `92766915cb11ca75d313608a5f75e61a218371dcc789f5b44725f0a8260e7891`。
-flow archive SHA `dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31`；aero archive SHA `57d4634df22ce96c1c4467a2ed52412be452375129af05b89f10a690e363356e`。
-normalization SHA `f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1`；config SHA `07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9`。
+## 2. 网络看什么、预测什么
 
-不能把Git中的当前同名模块当历史原字节；实际运行以approval、immutable source、输入和runtime哈希为准。以下源码路径用于解释接口，不授权无绑定直接重跑。
+### 2.1 相邻时间对与张量
 
-## 2. 数据接口与时间语义
+CFD积分步长0.005 D/U；学习帧/控制反馈间隔0.1 D/U，即20个CFD步。
+以下n表示学习帧。128×256是规则ROI采样网格，不是OpenFOAM非结构网格。
 
-- 原始CFD保留U/p/phi、backward旧时层、网格、BC、动作表及前后柱受力；Curator只转换，不生成新真值。
-- ROI为x=[8,25]、y=[4,11]，state为3×128×256的u/v/gauge-pressure，mask为1×128×256。粗ROI不含逐壁面牵引/法向/面积，集成force标签不能反解成真实局部压力或剪切分布。
-- 依据`src/fluid_control/tandem_datapipe.py`，当前state先按固定train统计标准化再乘mask；target为下一帧四力按同一force mean/std标准化。固体零值是mask约束，不是用于拟合的流体真值。
-- omega_current和omega_next分别对应相邻存储端点；输入动作除manifest的action_scale。不能另把控制上限.75硬写成所有数据集的normalization尺度。
-- 当前动作样本是存储的实际施加端点值，不等价于把名义PRBS命令在float32时钟重新插值。保留源float64时钟与HDF存储时钟的既定对齐规则。
-- `scripts/p026_state_history.py::build_input`只收历史state/action、mask、事先选定next action，无future state/force参数。K1只有一帧；历史padding、跨轨迹边界须保持。
-- B原数据为base20/train8/train16共44轨迹，另加controlled-b00；窗口步幅分别20/2/2/1。B选256窗=192 original+64 b00，8窗累积，不把每窗100个高度相关端点当独立实验样本。
-- 侧车45轨迹20,493帧pressure/viscous标签是另一次已核数据转换，未替换原HDF total力；原total与raw分量和存在已报告小差异，不得靠相减伪造“原始viscous真值”。
+| 数据 | 不含batch的形状 | 解释 |
+|---|---|---|
+| 当前流场q_n | 3×128×256 | u、v、gauge pressure，按训练统计标准化 |
+| 流体mask | 1×128×256 | 流体1、圆柱内0；标准化后再mask |
+| 当前转速ω_n | 1×128×256 | 当前端点动作除action_scale，广播为空间常数 |
+| 下一转速ω_(n+1) | 1×128×256 | 区间已指定的动作端点，不是未来真实场 |
+| 完整输入 | 6×128×256 | 上述3＋1＋1＋1通道 |
+| 网络原始输出 | 7×128×256 | 前3通道场增量；后4通道受力读出图 |
+| 下一受力标签 | 4 | 前柱Cd/Cl、后柱Cd/Cl，时刻为n+1 |
 
-## 3. 官方模型与项目适配
+ROI为x=[8,25]、y=[4,11]；没有壁面法向、逐面面积或壁面剪切张量。
+四个集成力标签来自真实CFD受力记录，不能从这些标签唯一反解真实局部牵引。
+动作是保存的实际端点值，不应把名义PRBS在舍入时间上重插值后当同一数据。
+action_scale来自绑定manifest，不应把部署上限0.75硬当所有数据集的标准化尺度。
 
-每个网络使用官方PhysicsNeMo FNO：in_channels6、out_channels7、latent48、5层、二维modes[32,32]、decoder2层/宽128、padding8、coord_features=true。
-显式输入为归一化u/v/p、mask、current/next omega；坐标由官方模型内部加入。输出前3通道为归一化状态增量，后4通道为force读出。
-项目用mask加权空间平均将后4输出转成frontCd/frontCl/rearCd/rearCl，非真实壁面积分。flow按`q_next=(q+delta)*mask`递推；aero负责四力。
+### 2.2 标准化与还原
 
-`scripts/train_fcp013_independent_force_fno.py`提供冻结flow rollout与true-state H1序列；`scripts/p026_history_objective.py`构造相同动作的H1/AR两支；`scripts/train_fcp064_controlled_aero_ab.py`及`src/fluid_control/p064_controlled_aero_ab.py`约束B调度。
-H1每步使用真实current state；AR使用冻结flow自身预测的current state。aero力预测不反馈成flow输入，不喂真实current force。历史状态/未来动作合同必须在任何新目标下保持。
+流场：`z_j=(q_j−μ_j)/σ_j`，再乘mask；受力：`y_k=(F_k−μ_F,k)/σ_F,k`。
+全部μ/σ来自批准的train统计并保持原字节；开发集不参与拟合这些统计。
+物理预测：`Fhat_k=σ_F,k*yhat_k+μ_F,k`；物理误差：`σ_F,k*(yhat_k−y_k)`。
+不同通道相同normalized误差不代表相同物理误差；不同σ也改变损失对物理误差的曲率。
+这不是参数梯度或Adam更新大小的直接证据。固体mask零值也不是供模型拟合的流体真值。
 
-B训练28个aero参数张量；flow及`spec_encoder.lift_network.0.conv.bias`、`.2.conv.bias`冻结。这里“两个lift bias”指输入升维层偏置，不是物理升力输出bias。
-目标为`.5 L_H1 + .5 L_AR`，每支四力normalized MSE权重[.125,.125,.125,.625]；100步分10个等长chunk，每chunk权重.1，8窗累积后clip1和一次AdamW。
-实际B：32更新、lr1.5625e−7、betas(.9,.999)、eps1e−8、weight_decay1e−4、seed20261003。历史precision为high/TF32；highest/no-TF32是显式后续协议，不能混用缓存B作对照。
+<a id="model-network"></a>
 
-## 4. 现有证据能说明什么
+## 3. 一个官方FNO内部怎样计算
 
-E114真实控制原物理门PASS，但B完整force-window/H100预测仍FAIL。可用策略不意味着精确代理，也不意味着MPC可用。
-F纯H1、Absolute64、AR5 reset、反射、pressure-aux、temporal increment、I晚期覆盖均已尝试；未通过既定组合条件者不重命名为新思路。
-I原six改善而固定dev退化，说明训练覆盖收益未自动泛化。真状态替代结果也不支持“只有flow累积误差”这一单因解释。
-固定40点和Representative256的LBFGS预算结束时loss仍下降；未达到每通道normalized RMSE≤.01，不能据此判定容量不足、收敛或不可拟合。
-Representative256 selected loss下降70.84%，同precision six H1/AR却退化15.8169%/14.2703%。b00的64点贡献rear-Cl/total-Cd MAE总改善87.3%/98.7%，train8所选45点四力MAE全退化；原三family前柱力均变差。
-该failure-map支持来源/通道权衡与选点外失败并存，不能区分梯度干扰、稀疏覆盖或参数漂移。见`docs/P064_REPRESENTATIVE256_FAILURE_MAP_20261007.md`。
+本次直接读Spark已安装PhysicsNeMo 2.2.2的FNO、二维encoder、谱卷积和decoder源码，没有构造/运行模型。
+顶层官方FNO源码SHA与历史批准版本相同，具体证据见末节。
 
-## 5. 优先诊断与可证伪设计（未来，未执行）
+![当前官方FNO的实际计算结构，示意图](report_20261007/assets/fno_network_structure.svg)
 
-先固定问题与计算预算，再决定是否训练；不得靠轮番调lr、loss或modes找偶然通过。
+两个FNO结构相同但权重独立；此图说明计算流程，不是新的性能结果。
 
-| 优先级/问题 | 最小对照与观测 | 可证伪结论与限制 | 建议预算上限 |
-|---|---|---|---|
-| P0 覆盖还是来源权衡 | 固定B父本、train-only配额和记录数；按family/动作/原点lead列误差、重复与相邻相关性。已有saved map先用完 | 旧family选中点已退化，排除“只有选点外泛化”解释；不是来源的因果效应 | 已存数组CPU≤2min，无模型 |
-| P1 参数梯度干扰 | 预注册各family相同数量训练样本，固定原目标/最高精度；一次无更新分组梯度Gram、cos、方向分量。保留源比例的合梯度，报告原始与单位化统计 | 若方向一致且冲突不集中，则反驳该面板的干扰假设；一面板不代表全训练 | 一次GPU诊断≤10min，0optimizer/0save；先做显存预核 |
-| P2 覆盖检验 | 仅当P1/覆盖统计提出具体缺口，固定总sample/forward预算，预声明分层train抽样对照；其余初始化/目标/优化器不变 | 比较等预算训练和独立保留集；改变样本相关性本身是变量，不能称只改数据量 | 两臂预算必须事前合计；不在本轮截止前仓促启动 |
-| P3 normalization/读出 | 先核train统计、每通道误差物理换算、mask/面积归约和参数梯度；对真实raw压力/黏性作已存误差分解 | 输出曲率1/σ²大不等于参数梯度主导；已有单窗梯度否定frontCd必然主导 | CPU统计优先；必要一次无更新梯度≤10min |
-| P4 优化还是容量 | 固定train面板/初值，明确closure与接受点；只在目标停滞且数值/标签/优化诊断充分后比较有限容量候选 | 未拟合≠容量不足；训练内拟合成功也不证明泛化 | 先复用300closure证据，不直接加一轮 |
+### 3.1 实际逐层路径
 
-P1不同于既有单窗四通道loss-scale probe：问题是固定来源间的梯度关系，而非再比较frontCd/rearCl权重。它仍只是未来建议，不能凭结果直接给某family加权；后续改权重必须另列唯一变量和对照。
-梯度夹角不是Adam/LBFGS实际更新的替代。若检查优化器效应，应在同一保存状态上计算实际proposal方向及预算，不能把grad norm、clip后norm和参数delta混称。
+```text
+项目输入 [batch,6,128,256]
+ → 官方追加2个相对坐标平面 [batch,8,128,256]
+ → 1×1升维卷积8→24 → GELU → 1×1升维卷积24→48
+ → 高度/宽度末端各补8个零 [batch,48,136,264]
+ → 5层“二维谱卷积分支＋局部1×1卷积分支”
+      前4层相加后GELU，第5层相加后无GELU
+ → 裁去padding [batch,48,128,256]
+ → 每网格点独立decoder：48→128→128→7
+      两个隐藏层SiLU，最终7维线性输出、无末端激活
+ → [batch,7,128,256]
+```
 
-## 6. 四层验证与停止规则
+`decoder_layers=2`指两个隐藏层，**不是含最终输出在内只有两个线性层**。
+官方坐标是沿两个数组轴的0..1相对坐标，不是直接加入物理x=8..25、y=4..11。
+1×1卷积只混合同一点的通道；它与谱分支相加提供局部映射，不是CFD差分算子。
 
-1. **工程与训练内拟合：** 检查完整数据身份、loss数学、有限梯度/更新、官方save/freshreload、冻结项和资源。`.01`是既定小面板每通道normalized RMSE工程目标，不是预测科学门或物理控制门；未达如实记录。
-2. **原six保留性：** 同一B与候选、同precision、原6来源/起点、H1与continuous AR100、同归一化/动作。原两项均不退化AND不改；保存小force数组支持独立复算。不可用train loss代替。
-3. **固定开发与正式预测：** 原16origin×H1–H5、同B comparator和persistence；完整force-window/H100另按既定协议。开发只支持开发结论；已打开b01/b03不重新包装成sealed。原相应AND/门限不因接近而放宽。
-4. **真实CFD：** 只有独立明确批准的候选才做控制探索；预测FAIL下的探索须单独标注而非模型晋级。配对同restart zero/controlled、原动作/窗口/策略种子，完整六窗与raw受力验证。
+### 3.2 模态数、谱分支和边界
 
-真正物理门：D=1−mean(Cd_front+Cd_rear)_controlled/mean(Cd_front+Cd_rear)_zero≥.02；R=std_de-mean(rearCl_controlled)/std_de-mean(rearCl_zero)≤1.05；Q=abs(mean(rearCl_controlled))/std_de-mean(rearCl_zero)≤.10。
-Q不是两支均值差，也不除以meanCl；omega²不是机械功率。未来新候选不能把训练`.01`、PPO reward或短H5 Cl²当这三门。
+谱层对二维空间做rFFT，对保留系数进行可学习的通道混合，再逆变换回空间域。
+实际SpectralConv2d有两组权重，分别作用于第一轴正/负频率端32行与第二轴rFFT前32列。
+`modes=[32,32]`不是32×32空间网格，也不是只允许32种流动形态。
+每层两组权重形状为`[48,48,32,32,2]`，末维2为复数实/虚部；局部分支及非线性仍处理完整网格。
+padding=8在右/下侧补零，谱计算后裁掉；它处理有限域谱计算边界效应，不等于严格施加OpenFOAM边界条件。
+GELU与SiLU引入非线性。本项目使用官方默认encoder GELU、decoder SiLU，不是自行设计激活。
 
-## 7. 完整预测与控制相关指标
+### 3.3 “28个参数”不是28个数
 
-固定报告matrix，不只挑有利总均值；对每case/origin/horizon、来源family与pooled均保留分母、样本数和实际时刻。
+一个网络有30个参数张量：升维层4、五个谱层10、五个局部卷积10、decoder6。
+B训练其中28个张量，冻结两个升维bias；每个谱权重张量本身包含大量标量。
+按上述已核官方源码与当前配置逐层计算，单个FNO共有 **47,222,783个实数参数标量（约47.22M）**：
 
-- **场：** fluid-mask u/v/p逐通道relative L2及absolute RMSE、空间误差图、bias、压力参考/去均值规则；近零参考范数须另报绝对值，不能靠不透明epsilon掩盖。H1/H5/H100图分别绑定模型/动作/起点，不用历史图冒当前。
-- **力：** 四力与totalCd的MAE/RMSE/均值偏差；rearCl去均值RMS与真值比、幅值与长滚动漂移。先求totalCd误差再absolute，不能加两个Cd的MAE代替。
-- **相位/频谱：** 在足够长且等采样的固定窗比较主频/PSD能量、cross-correlation时滞与相干性；窗函数/去均值/频率分辨率事前固定。不得平移对齐后只报校正误差；保留未校正指标。H5=.5 D/U不足支持可靠整周期PSD/相位准入。
-- **控制动作价值：** 必须同真实q0、因果历史、动作幅值/速率合法的多分支CFD真值；报所有候选cost、pairwise差值/排序/tie、选中动作真实regret及不确定性。realized-action回放不是反事实动作排序证据。
-- **奖励：** 复用`src/fluid_control/canonical_joint_v1.py`及原62点历史；endpoint cost与gamma=.99截断return分开。历史缺失时不能伪造/reset后称原reward。无匹配历史则只报物理分量。
-- **统计：** 同一轨迹重叠origin不是独立重复；报告组内/组间分布。只有预注册独立轨迹/seed足够时才估计泛化或显著性，不能把160D/U切块当多个随机样本。
+| 部分 | 参数标量数（含bias） |
+|---|---:|
+| 升维8→24→48 | 1,416 |
+| 五个谱层，两组复权重/层 | 47,185,920 |
+| 五个48→48局部1×1卷积 | 11,760 |
+| decoder 48→128→128→7 | 23,687 |
+| 单网络合计 | 47,222,783 |
 
-## 8. 模型扩容与batch的有条件方案
+谱层计数为`5×2×48×48×32×32×2`，最后的2已计实部/虚部，不应再乘一次。
+两个独立网络合计94,445,566个标量；B仅训练气动力网络，冻结24＋48个升维bias标量，因此可训练标量为47,222,711。
+这是**官方源码shape与配置推导**，不是本轮重新加载checkpoint逐tensor求和；不包含优化器状态、激活、FFT临时缓冲或显存开销。
+两个网络架构相同，但权重独立、职责不同，不是同一个FNO临时换输出头。
 
-官方2D FNO已能配置层数、宽度、modes与decoder；增加modes不是默认修复。先核采样分辨率/Nyquist、padding边界、mask几何、训练拟合与等预算对照，再考虑单个扩容变量。
-FNO3D必须先验证安装版本官方接口与真实轴语义。本case是二维空间；把时间堆作第三轴是时空算子方案，不是三维物理模拟，且必须严格因果切窗，防把future state作为输入。
-K1→多历史帧会改变输入与checkpoint合同，不能仅改维度后宣称同模型。需要新config/consumer、history padding/时钟fixture与独立baseline；历史K4/P026结果先查重。
-增加microbatch只可作为数值/资源方案：若保持全panel平均，末小batch按真实N加权（256点为25×10+6，权重10/256和6/256）；等权平均26个batch会改变目标。
-effective batch、更新次数、数据顺序、precision和optimizer历史须分开控制。吞吐提高不代表新增训练预算或精度收益；gradient accumulation也不能替代完整AR依赖的数学验证。
+## 4. 流场网络与气动力网络怎样连接
 
-## 9. 无泄露、版本与复现工件
+流场网络输出归一化增量，按`z_(n+1)=(z_n+delta_z)*mask`更新，不直接把前三输出当下一场。
+气动力网络的后4输出做流体mask内空间平均：
 
-- train统计只从批准train来源计算；新normalization属于科学变量，不能悄悄重拟合。保留旧norm字节并报告所有重标度。
-- 将source case/起点/lead/action/history/target SHA写入面板；原重复保留，不靠删除困难点改权重。dev不用于拟合或选择每次closure；未打开测试不得提前画图或扫阈值。
-- 每次记录代码、环境版本、实际import origin、precision/TF32、随机种子及RNG、模型与optimizer状态、数据/norm/split、官方save/load metadata、实际unit/inv/资源和失败日志。
-- 保存initial/final与接受点指标，trial与接受点分开；预算中断要恢复参数/optimizer/grad事务，不能把未接受trial当最佳候选。
-- 推理保存truth/prediction/mask/坐标/时钟/action和force，支持CPU复算；大HDF/checkpoint留主节点，Git只保存源/协议/报告/清单，不能宣称Git-only重建完整链。
-- 复现入口参考`scripts/reproduce_canonical_closed_loop.py`与`docs/CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md`；默认只预检，旧approval不是新运行许可。
+```text
+yhat_k = sum_xy(mask * raw_force_channel_k) / sum_xy(mask)
+Fhat_k = μ_F,k + σ_F,k * yhat_k
+```
 
-## 10. 本次实际检查的源码与尚缺证据
+这是学习的集成力映射，不是预测真实壁面pressure/shear后积分。
+两个FNO都实际计算7输出；flow的受力输出不用来训练aero，aero的前三场输出不用于状态推进。
+不能把这说成只计算3通道/4通道的精简网络。
+训练B时flow完全冻结，无梯度生成预测状态序列。
+aero冻结`spec_encoder.lift_network.0.conv.bias`、`.2.conv.bias`，其余28张量训练。
+英文lift在此是“升维”，不是物理升力；不是冻结前后柱Cl输出偏置。
+预测受力不回填为flow输入，也不输入真实当前force，避免用force直接作预测捷径。
 
-实际检查：B manifest；`src/fluid_control/tandem_datapipe.py`；`src/fluid_control/p064_controlled_aero_ab.py`；`scripts/train_fcp013_independent_force_fno.py`；`scripts/p026_state_history.py`；`scripts/p026_history_objective.py`；`scripts/train_fcp026_history.py`；`scripts/train_fcp064_controlled_aero_ab.py`；`scripts/evaluate_p064_development_h1_h5.py`；`src/fluid_control/canonical_joint_v1.py`。原six流程另见`artifacts/p064_fit256_fixed_six_source_20261007_immutable/p064_fixed_six_same_precision.py`与独立终态报告。
-查重与结果依据：`PROJECT_STATE.md`、`EXPERIMENTS.md`、Representative256训练/fixed-six/failure-map报告、I开发报告、压力aux及temporal-increment报告、B-H5 MPC与saved-action/reward诊断报告。
-仍缺：固定来源分组梯度证据；覆盖干预的等预算因果对照；通过完整气动力预测门的候选；足够独立工况的统计泛化；完整壁面牵引输入与消融；净执行功/实验实时性；优于保留B的有效FNO-MPC。本文不把这些缺项写成已实现或因果结论。
+## 5. 为什么同时训练真实状态一步预测与连续预测
 
-**当前决策：** 保留已交付B-PPO真实CFD案例与所有失败证据。本轮只文档；不再盲训。后续研究先回答一个可证伪问题、固定总预算与验证层级，再决定是否值得进行单因素训练。
+101帧窗口`q_0..q_100`与101动作端点对应100个下一受力标签`F_1..F_100`。
+H1支在每个n使用真实q_n预测F_(n+1)，即100个独立于预测状态误差的一步任务。
+AR支从真实q_0开始，由冻结flow递推qhat_1..qhat_99，aero在这些预测current状态上预测下一力。
+两支使用同一保存动作序列与真实下一force；AR除起点外不重置真实状态。
+目的在于使aero既能读真实场，也接触flow代理在实际递推中产生的输入误差。
+
+每支目标是标准化力误差：
+`L=.125*MSE(frontCd)+.125*MSE(frontCl)+.125*MSE(rearCd)+.625*MSE(rearCl)`。
+每个MSE在100端点平均；完整窗口`L_window=.5*L_H1+.5*L_AR`。
+这是受力预测误差，不是PPO奖励、真实减阻率或机械功率。
+使用PhysicsNeMo不表示本次B训练自动采用Navier–Stokes残差、PINN或严格守恒约束：实际目标只有这里列出的受力监督，流场网络冻结。未来增加物理残差属于新的项目损失和待验证方案，不是当前已有能力。
+100端点分10块；每块10个H1与10个AR输入拼成一次batch20，块loss乘.1再反向。
+分块不是只评价10步，也不是每10步将flow重置成真值。
+
+<a id="model-training"></a>
+
+## 6. 当前B精确训练配置及作用
+
+| 项目 | 实际配置 | 为什么这样记/改变有什么影响 |
+|---|---|---|
+| 初始化 | 已训练FC-P026-K1 | 继续微调已有映射，不是随机从零训练 |
+| 数据来源 | 原44轨迹＋controlled-b00 | 开环和控制访问状态，须分来源评价 |
+| 调度 | 256窗＝192 original＋64 b00 | b00占1/4，8窗组位置0/4替换 |
+| 窗口步幅 | base20/train8/train16/b00为20/2/2/1 | 学习帧索引间隔，决定重叠，非solver dt |
+| 单窗时域 | 100转换＝10 D/U | 递推长度，不是100次更新 |
+| DataLoader batch | 1窗，shuffle=False | 保留预声明顺序 |
+| aero内部batch | 10 H1＋10 AR＝20 | 每窗10次调用，非20条独立轨迹 |
+| 累积窗口数 | 8 | 原梯度累积后除8，再更新一次 |
+| 优化器 | fresh AdamW | 从K1权重开始但不继承上游Adam动量 |
+| learning rate | 1.5625e−7 | 更新尺度，小lr不证明32步充分拟合 |
+| betas / eps | .9/.999；1e−8 | 梯度一/二阶统计与分母稳定项 |
+| weight decay | 1e−4 | 解耦权重衰减，权重变化不全是数据梯度学习 |
+| clip | 平均梯度全局L2上限1 | 每8窗裁一次，非各窗分别裁 |
+| optimizer更新 | 32＝256/8 | 32次参数更新，非32epoch |
+| seed | Python/NumPy/Torch/CUDA均20261003 | 配合数据顺序保证复现，不替代身份检查 |
+| precision | float32、high、CUDA/cuDNN TF32开 | 历史B协议，不与highest缓存混比 |
+| 诊断 | 训练前后各6个固定原训练窗 | 不更新参数，检查旧窗口能力，不是dev |
+
+一个累积组的顺序：清梯度→依次8窗反向→梯度除8→有限性检查→一次clip→一次AdamW更新。
+缺窗或非有限即失败，不跳过困难样本；重复窗口和相邻端点也不宣传为独立样本。
+
+## 7. 一次B训练的逐项计算账
+
+以下是按已执行源码控制流及256窗/32更新完成记录推导的调用数，不是GPU profiler测量。
+每次`run()`调用`frozen_flow_states()`，内部100次flow前向；没有跨窗口持久缓存省掉这些调用。
+本窗100个current状态暂存在内存给aero使用，是临时缓存，不是跨窗预计算库。
+实现还计算qhat_100，但返回current序列只含q_0..qhat_99；最后生成状态不再作本窗后续输入。
+
+| 项目 | 每个训练窗口 | 256个训练窗口 | 梯度/更新 |
+|---|---:|---:|---|
+| flow模块前向 | 100次，batch1 | 25,600次 | 无梯度、权重冻结 |
+| aero模块前向 | 10次，batch20 | 2,560次 | 建立aero梯度图 |
+| aero受力样本数 | 200个四系数向量 | 51,200个向量 | 不等于optimizer步数 |
+| backward调用 | 10次 | 2,560次 | 在8窗组内累积 |
+| optimizer.step | 每8窗1次 | 32次 | 真正参数更新 |
+
+训练前6窗＋训练后6窗仍走同一run但不反向：额外1,200次flow、120次batch20 aero、2,400个受力向量。
+合计训练与这两组诊断：26,800次flow＋2,680次aero＝29,480次模块forward调用。
+不含后续独立正式评价、PPO训练或失败任务；官方checkpoint加载本身不是模型forward。
+32次更新是有界256窗调度，不是遍历全部原始帧；checkpoint的epoch数字也不能直接当数据遍历次数。
+
+## 8. 可核验的上游训练沿革
+
+| 阶段 | 起点/角色 | 本次能确认的预算/事实 |
+|---|---|---|
+| FC-P003C | P009方案绑定的早期epoch2父本 | 本次未重核其完整训练步数，不填推测数 |
+| FC-P009 | 后续链使用其epoch0 flow权重；有force-row校准历史 | P026源码审查明确流场父本P009；不把epoch0当零训练 |
+| FC-P018 | 气动力上游，flow与两升维bias冻结 | 44 HDF、1,368有序窗、171个8窗AdamW更新，lr1.5625e−7 |
+| FC-P026-K1 | flow取P009；aero从P018继续，历史长度1 | 1,368窗、171更新，官方双模型reload通过 |
+| FC-P064-B | K1权重初始化，加入受控b00 | 256窗、32次fresh AdamW更新，flow不变 |
+
+因此B不是32步随机训练完整代理。不同阶段优化器/数据不同，不能把171＋171＋32称作同一连续Adam训练374步。
+P018/K1工程通过不等于完整预测合格。上游总训练成本未完整重核，本文不提供虚构总epoch数。
+依据：`FC_P018_TERMINAL_REVIEW`、`FC_P026_TRAINER_CPU_REVIEW`、`FC_P026_K1_TERMINAL_REVIEW`及B实际manifest。
+
+## 9. 分层评价：每一层只能证明该层
+
+1. 工程层：时钟/数据、梯度、冻结项、官方保存/重载、资源正确；退出0不等于准确。
+2. 训练内：固定点的四系数误差；Representative256每通道normalized RMSE≤.01仅是该面板拟合目标。
+3. 原六窗保持性：B和候选同precision、同6起点、H1及连续AR100，原双项均不退化AND不改。
+4. 开发/正式预测：固定16起点×H1–H5及原force-window/H100按各自协议；已打开开发相位不是新独立测试。
+5. 真实CFD：独立批准、同restart配对zero、同动作限制/窗口与原物理门；预测失败下探索须单独标明，非模型晋级。
+
+场指标报告mask内u/v/p逐通道relative L2、absolute RMSE、偏差及真/预测/误差图；近零分母另报绝对值。
+受力指标报告四系数MAE/RMSE/均值、后柱升力去均值RMS和漂移；totalCd误差先求两Cd误差之和再absolute。
+相位/PSD需足够长、等采样的固定窗，预声明去均值/窗函数/频率分辨率；不通过事后相位移动隐去原误差。
+H5=.5 D/U不足当完整周期频谱证据。动作价值需同q0/真实历史的多动作CFD真值、所有pair差值/tie/regret。
+已发生动作回放不是反事实排序；缺62点历史不得伪造原reward，endpoint cost与gamma=.99回报分开。
+
+真实物理门保持：总平均减阻≥2%；rearCl去均值RMS/zero比≤1.05；`abs(meanCl_controlled)/std(Cl_zero)`≤.10。
+偏置不是两支均值差，也不除以meanCl。omega²不是机械功率，未测扭矩不能称净节能。
+
+## 10. 已有失败及下一步诊断（未执行）
+
+纯H1 F、Absolute64、AR5 reset、反射、压力辅助、时间增量辅助及晚期覆盖I已经尝试，不更名重复。
+I原六窗改善而dev退化；真状态替代也不支持单独归因flow误差。
+40/256点LBFGS预算停止时仍下降，未达.01不能证明容量不足或收敛。
+Representative256训练loss下降70.84%，同precision六窗H1/AR却退化15.8169%/14.2703%，候选拒绝。
+b00的64点贡献rearCl/totalCd改善87.3%/98.7%，所选train8的45点四系数全部变差，旧三family前柱力也退化。
+这是来源/通道权衡与选点外失败共存证据，不能区分采样稀疏、梯度干扰、参数漂移。
+
+未来先复用saved数组，不为同结论重复推理；每项新实验预先固定唯一变量、预算、停止规则与反例。
+若检验来源梯度干扰：固定B、train-only各来源等量小面板、原目标/precision，一次无更新Gram/cos，另报原比例合梯度。
+建议该诊断上限10分钟GPU、0optimizer/0save，须另批；方向一致则反驳该面板干扰假设，不继续盲改权重。
+若检验覆盖：固定总样本/forward预算、训练数据池与评价，只改预声明抽样；不借dev反复调整配额。
+若检验归一化/读出：先核物理换算、压力/黏性组成、mask归约和真实参数梯度；1/σ²曲率比不证明梯度主导。
+已有单窗loss-scale probe不支持前柱Cd必然主导；新来源梯度问题与它不同，但也不能直接证明Adam更新行为。
+排查时钟/标签/优化/覆盖后才讨论容量；不得因尚未拟合就默认增层、增modes、扩大batch。
+
+## 11. 3D、模态和batch仅是有条件方案
+
+安装官方源码支持dimension=3，但二维case不能因此称为三维物理。时间当第三轴是时空算子，须严格因果切窗。
+多历史帧改变输入通道与checkpoint合同，须先查已有K4实验，不冒充原K1。
+增加modes先核采样/Nyquist、mask几何、padding与参数量；更多频率参数不能恢复输入未包含的真实壁面信息。
+更大microbatch若仅工程改动须保留全panel权重：256点25×10＋6时末batch为6/256，不能26个batch等权。
+吞吐、closure数、更新数、effective batch是不同变量，不一次全改后称单因素改善。
+
+## 12. 复现与本次源码证据
+
+train统计不由dev重拟合；case/start/lead/action/target/历史逐项绑定，重复保留，不删除困难点。
+保存初值、终值和接受点；线搜索trial不当最佳候选，预算异常恢复参数/optimizer/grad事务。
+官方save/freshreload、独立保存数组审计与新的forward是不同证据；场/力/mask/坐标/time/action都应保存供复算。
+Git只存源码/配置/报告/清单；大HDF/checkpoint/CFD留主节点。旧approval不是新运行许可。
+
+官方根：`.venv-curator-py312/lib/python3.12/site-packages/physicsnemo/`。
+已读`models/fno/fno.py`、`nn/module/fno_layers.py`、`nn/module/spectral_layers.py`、`models/mlp/fully_connected.py`。
+FNO SHA `e64eb9bef031bfdae5d84f0ed35a1ebb27915f18aed4a333b2dd985a083c71a9`；encoder SHA `3d7a4c3a6f71358ef842d6f6c2ea642f4a95e02fdd3aed33a36b1525fbab0e2d`。
+项目已读：`scripts/train_tandem_fno.py`、`src/fluid_control/tandem_datapipe.py`、`scripts/train_fcp013_independent_force_fno.py`、`scripts/p026_state_history.py`、`scripts/p026_history_objective.py`、`scripts/train_fcp015_window_accumulation.py`、`scripts/train_fcp064_controlled_aero_ab.py`。
+B manifest `artifacts/fcp064_controlled_aero_arm_b_20261006/dual_model_manifest.json` SHA `92766915cb11ca75d313608a5f75e61a218371dcc789f5b44725f0a8260e7891`。
+norm SHA `f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1`；实际历史执行仍以immutable闭包为准。
+仍缺完整预测通过、可靠跨工况泛化、最终策略离散误差/公平对照、净能耗/物理实时性和有效优于B的FNO-MPC。
+当前保留B真实闭环与全部负结果；新研究先解释一个可证伪问题，不靠更多计算替代验证。

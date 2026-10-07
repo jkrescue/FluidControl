@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — Explain actual methods and distinguish training from deployment
+
+At 12:02 UTC, expand the existing technical solution with source-grounded explanations instead of a parameter glossary alone. Document the official FNO layer dimensions, frozen-flow versus trained-force networks, B's 256 windows and 32 optimizer updates, and E082 PPO's 32768 environment transitions and 512 optimizer updates. Explain 69 observations in physical terms, 24 actual reset states and sequential DummyVecEnv execution. Distinguish HydroGym surrogate training from frozen-policy real-OpenFOAM deployment: the successful deployment does not run online FNO/MPC or continue PPO training. Include a five-action MPC worked example with an exact offline copy of its existing 10-cycle JSON. Network parameter and forward-call totals are source-derived counts, not a new profiler/checkpoint experiment. Preserve all scientific conclusions and original deadlines; no new experiment or promotion is authorized by this documentation decision.
+
 ## 2026-10-07 — Add the top-level implementation framework before detailed modules
 
 At 11:29 UTC, the user's requested technical solution is organized as blueprint → implementation work packages → staged acceptance → detailed data/model/control appendices. Preserve the existing B/E082/E114 chain and all scientific failures. `docs/TECHNICAL_BLUEPRINT_20261007.md` defines WP0–WP5 inputs, work, outputs, ownership and evidence handoffs; three linked technical-design documents explain existing APIs and proposed follow-on work. Integrate them in one offline HTML, linked from the results report. This is documentation only, not a new experiment, model promotion, deadline extension or permission to restart old queues. Any later experimental action still needs an explicit hypothesis, frozen protocol and resource budget.
