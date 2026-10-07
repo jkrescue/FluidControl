@@ -1,8 +1,8 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前唯一摘要 — 两项真实CFD均终态六窗通过；B默认，absolute64保留单工况探索身份
+## 当前唯一摘要 — 真实CFD闭环已交付；y镜像配对训练正在运行，B仍为默认
 
-当前下一项物理y镜像训练增强的helper已通过独立13项CPU测试（含真实单窗官方Reader与成对梯度），正式runner接入仍在准备、须另审，无GPU训练或CFD运行；[物理前置](docs/P064_Y_REFLECTION_PHYSICAL_CPU_PRECHECK_REVIEW_20261007.md)和[CPU实现独审](docs/P064_Y_REFLECTION_CPU_IMPLEMENTATION_REVIEW_20261007.md)均为有限工程证据，不代表科学效果通过。默认B和旧预测FAIL保持。
+物理y镜像配对训练已获独立源码/生命周期审查并于 `2026-10-07T02:25:59Z` 唯一启动：unit `fluid-control-p064-y-reflection-paired-20261007.service`，invocation `766ad5ca993d483bb6a42d0f2fc09bd8`，启动PID `3981739`，批准SHA `6e5ca18a42a1ad4410260fb9df4f14b457907ff2b5bceadfcfb0f3d621bb81e6`，output `artifacts/p064_y_reflection_paired_20261007`。首批journal已记录每原窗独立original/reflected两支、各100次冻结flow与10次aero调用及分支输入/flow-history SHA，证明实际配对路径进入训练；当前实时计数以dashboard/unit为准。固定256原窗/512变换分支/32更新、原`.5H1+.5AR`、K1起点与B schedule不变；24GiB/noSwap、16GiB allocator。此运行不是科学改善或最终预测准入，未授权自动评估/PPO/CFD；[物理前置](docs/P064_Y_REFLECTION_PHYSICAL_CPU_PRECHECK_REVIEW_20261007.md)和[CPU实现独审](docs/P064_Y_REFLECTION_CPU_IMPLEMENTATION_REVIEW_20261007.md)仍只是有限工程证据。默认B、完整预测FAIL及原最终验收标准保持；用户允许的探索运行不回溯修改这些结论。
 
 E109固定B未来时段同4b3e已完成200baseline+800paired，主窗减阻3.9948739165%、rear-Cl RMS比0.8165882753、偏置2.8533042395%，原六窗PASS。E111 absolute64 b01同 `6fa0baeb90034371b3b49f3d8d51192a` 已PID0/exited/exit0、800反馈，独立CPU审计b4b0通过3200raw/1600logs/799反馈；主窗减阻4.1362382900%、RMS比0.8101959756、偏置1.6817003164%，全部六窗原PASS，见[报告](docs/P064_ABSOLUTE64_B01_CFD_TERMINAL_REVIEW_20261007.md) SHA `17d9328babbbbbe23f1c4bd830e7347626e1cdd055087bbec7ffac0dbecb4bbe`。E110 PPO已独审32768/512/256完成。目前这些任务均已结束，没有GPU训练或CFD运行。Lead保留B默认，absolute64仅为已验证单工况探索策略：主窗三指标较好不代表整体支配，部分早窗/全窗偏置更差、mean omega²成本代理0.25748高于B0.24045。无净能耗结论、不声称统计显著或新独立工况，预测selection FAIL不变。用户优先原标准下真实闭环探索，完整预测通过不是已明确批准探索前置；原2%/1.05/10%门限不变，尤其不降低10%偏置要求。
 

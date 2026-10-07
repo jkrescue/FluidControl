@@ -4,6 +4,19 @@ Read-only repository/artifact review, 2026-10-07. No model, CFD or data conversi
 
 ## Current conclusion through E111
 
+Current execution note: a separately reviewed physical-y-reflection paired FNO
+training run started at `2026-10-07T02:25:59Z` as unit
+`fluid-control-p064-y-reflection-paired-20261007.service`, invocation
+`766ad5ca993d483bb6a42d0f2fc09bd8`. It keeps the K1 start, B schedule,
+256 original windows/32 optimizer updates and original `.5H1+.5AR` objective,
+while evaluating original/reflected branches at half weight. Actual journal
+events already distinguish the two independent frozen-flow branches and their
+input/history hashes. This live exploratory prediction run has no scientific
+result yet and authorizes no automatic evaluation, PPO or CFD. It does not
+replace retained B, alter prior FAIL decisions or weaken the final acceptance
+standard. The delivered real-feedback chain described below remains usable
+independently of this prediction study.
+
 The fixed tandem-cylinder operating case has an implemented, independently
 audited official-component chain: **existing real curated data and pretrained
 K1** → official PhysicsNeMo FNO fine-tuning → HydroGym/SB3 canonical PPO → CPU

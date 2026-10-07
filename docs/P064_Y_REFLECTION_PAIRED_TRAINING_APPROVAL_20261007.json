@@ -1,0 +1,216 @@
+{
+  "status": "P064_Y_REFLECTION_PAIRED_TRAINING_EXECUTION_APPROVED",
+  "execution_authorized": true,
+  "lead_authorization": "Lead conditionally authorized one execution after independent V4 lifecycle ACCEPT; all conditions were satisfied at 2026-10-07T02:24:57Z. No retry, evaluation, PPO, or CFD is authorized.",
+  "scientific_scope": "One fixed physical-y-reflection paired-loss candidate; no sweep or selection.",
+  "runtime": {
+    "kind": "host_venv_curator_py312",
+    "python": "/workspace/fluid_control/.venv-curator-py312/bin/python",
+    "python_resolved": "/home/USER/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/bin/python3.12",
+    "python_sha256": "001718d5edf61e6fbc3642c9668def38d2bf28cc320e75196e6a95d49614cca8",
+    "pythonpath": "/workspace/fluid_control/artifacts/p064_y_reflection_source_20261007_immutable/src:/workspace/fluid_control/artifacts/p064_y_reflection_source_20261007_immutable/scripts"
+  },
+  "supervisor": {
+    "path": "/workspace/fluid_control/artifacts/p064_y_reflection_source_20261007_immutable/scripts/supervise_p064_y_reflection.py",
+    "sha256": "1ec994ac9b16a659507601be352a9380cc47cc2ee96387c21a5e5b58e2114dc4"
+  },
+  "worker": {
+    "path": "/workspace/fluid_control/artifacts/p064_y_reflection_source_20261007_immutable/scripts/train_p064_y_reflection.py",
+    "sha256": "16de745ab6853ff02276f3ac2f85686c802e2c775904fd28a2402e01dc445b08"
+  },
+  "reflection": {
+    "path": "/workspace/fluid_control/artifacts/p064_y_reflection_source_20261007_immutable/src/fluid_control/p064_y_reflection.py",
+    "sha256": "3e33164042d71a1ebce76fc493111fb095c9cbc77f2ac890da7d36daaf93b1ea"
+  },
+  "source_root": "/workspace/fluid_control/artifacts/p064_y_reflection_source_20261007_immutable",
+  "source_manifest": {
+    "path": "/workspace/fluid_control/artifacts/p064_y_reflection_source_20261007_immutable/source_manifest.json",
+    "sha256": "05c00539ad03cc9059dc101cf9c9cab47d523a8b5bdae29b4af1cea88c66a9c0"
+  },
+  "inputs": {
+    "base_approval": {
+      "path": "/workspace/fluid_control/docs/FC_P064_ARM_B_TRAINING_APPROVAL_20261006.json",
+      "sha256": "a1e79d108f5067027742f08f3e04b2d73cb059286e2bd433e53f4e0d51247b29"
+    },
+    "physical_precheck_review": {
+      "path": "/workspace/fluid_control/docs/P064_Y_REFLECTION_PHYSICAL_CPU_PRECHECK_REVIEW_20261007.md",
+      "sha256": "b4c76265e7164f43088ebb4ac0a667bb777cf4d49749e524eef4f8034ae85101"
+    },
+    "cpu_implementation_review": {
+      "path": "/workspace/fluid_control/docs/P064_Y_REFLECTION_CPU_IMPLEMENTATION_REVIEW_20261007.md",
+      "sha256": "f9a03634e7684f6abda6bbc8e68b696c4f9311174f274e948219b5faae6d66b9"
+    },
+    "config": {
+      "path": "/workspace/fluid_control/artifacts/fcp064_training_source_20261006_immutable/training_config.yaml",
+      "sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
+    },
+    "parent_manifest": {
+      "path": "/workspace/fluid_control/artifacts/fcp026_history_training_k1_20261005/candidate/dual_model_manifest.json",
+      "sha256": "7adca21e3a75691b10f164c342ea91995cc38060e7416dd217b8bd8e5feeacc7"
+    },
+    "parent_order": {
+      "path": "/workspace/fluid_control/artifacts/fcp064_training_source_20261006_immutable/parent_order.json",
+      "sha256": "339f7fe5dc09d8a8e379da639f386649217f2f3500b0a62619d8449cf6bbc122"
+    },
+    "schedule_adapter": {
+      "path": "/workspace/fluid_control/artifacts/p064_y_reflection_source_20261007_immutable/src/fluid_control/p064_controlled_aero_ab.py",
+      "sha256": "8fb617f58721c79b3f2d793246cc63df3020564941a6a6b907378d4b846180fb"
+    },
+    "b00_manifest": {
+      "path": "/workspace/fluid_control/artifacts/b00_controlled_train_dataset_view_20261006/manifest.json",
+      "sha256": "97a82e2a157b87ecf9b9ea626ad079852a8d29ba89628ca5034ef99545929a5f"
+    },
+    "b00_conversion_receipt": {
+      "path": "/workspace/fluid_control/artifacts/b00_controlled_train_conversion_20261006/result.json",
+      "sha256": "f24f2fbc8b283c0781b2a01189d291b43da0203e9ede28208ec575173bbe0bd9"
+    },
+    "b00_source_hdf": {
+      "path": "/workspace/fluid_control/artifacts/b00_controlled_train_conversion_20261006/b00_projected_ppo_train.h5",
+      "sha256": "45041e79e70043838763e5dd8da0fe9c02dba4cfe6df01356f8dcd1389e32d8f"
+    },
+    "candidate_audit": {
+      "path": "/workspace/fluid_control/artifacts/fcp018_reduced_rate_training_20261005/candidate_audit.json",
+      "sha256": "03153fa51e94db01c7abacfb80037d99bb6757ac7aacdc87f1c7266a002323b9"
+    },
+    "base_manifest": {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/manifest.json",
+      "sha256": "5213c7bb07c824c6e601636c3cfa974b80ec7c051633b0c8368a045cea41ddd2"
+    },
+    "base_normalization": {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base/normalization.json",
+      "sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+    },
+    "train8_manifest": {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train8/manifest.json",
+      "sha256": "a0bd0e3b79d4d43ace407292c31a595d552dbd6e1a5de1fd149b1ca446f53f35"
+    },
+    "train8_normalization": {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train8/normalization.json",
+      "sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+    },
+    "train16_manifest": {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/manifest.json",
+      "sha256": "7c62dab94e317442cecf7ea3be547cf6e03c594a2c7ec2a1a695caba2445cf5b"
+    },
+    "train16_normalization": {
+      "path": "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16/normalization.json",
+      "sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+    }
+  },
+  "protocol": {
+    "parent": "FC-P026-K1",
+    "schedule": "original FC-P064 arm B: 192 original plus 64 b00",
+    "seed": 20261003,
+    "original_training_windows": 256,
+    "transformed_window_equivalents": 512,
+    "accumulation_original_windows": 8,
+    "optimizer_steps": 32,
+    "original_loss_weight": 0.5,
+    "reflected_loss_weight": 0.5,
+    "h1_weight_within_each_branch": 0.5,
+    "ar_weight_within_each_branch": 0.5,
+    "learning_rate": 1.5625e-07,
+    "expected_training_flow_calls": 51200,
+    "expected_training_aerodynamic_calls": 5120,
+    "diagnostic_panels": "unchanged original unreflected panel at counts 0 and 256",
+    "save": "final only",
+    "selection": false
+  },
+  "resources": {
+    "gpu": 0,
+    "cuda_allocator_bytes": 17179869184,
+    "systemd_memory_bytes": 25769803776,
+    "systemd_swap_bytes": 0,
+    "systemd_cpu_quota_percent": 800,
+    "systemd_tasks_max": 2048,
+    "startup_mem_available_gib": 50,
+    "runtime_mem_available_gib": 22,
+    "physical_reserve_gib": 20,
+    "inner_deadline_seconds": 3600,
+    "outer_deadline_seconds": 3660,
+    "stop_seconds": 20
+  },
+  "worker_argv": [
+    "/workspace/fluid_control/.venv-curator-py312/bin/python",
+    "-u",
+    "/workspace/fluid_control/artifacts/p064_y_reflection_source_20261007_immutable/scripts/train_p064_y_reflection.py",
+    "--source-root",
+    "/workspace/fluid_control/artifacts/p064_y_reflection_source_20261007_immutable",
+    "--diagnostic-script",
+    "/workspace/fluid_control/artifacts/fcp064_training_source_20261006_immutable/scripts/diagnose_fcp014_train_objective.py",
+    "--accumulation-helper",
+    "/workspace/fluid_control/artifacts/fcp064_training_source_20261006_immutable/scripts/train_fcp015_window_accumulation.py",
+    "--comparison-helper",
+    "/workspace/fluid_control/artifacts/fcp064_training_source_20261006_immutable/scripts/probe_fcp020_symmetric_statistics.py",
+    "--history-module",
+    "/workspace/fluid_control/artifacts/fcp064_training_source_20261006_immutable/scripts/p026_state_history.py",
+    "--history-objective",
+    "/workspace/fluid_control/artifacts/fcp064_training_source_20261006_immutable/scripts/p026_history_objective.py",
+    "--history-inference-module",
+    "/workspace/fluid_control/artifacts/fcp064_training_source_20261006_immutable/scripts/p026_history_inference.py",
+    "--resource-helper",
+    "/workspace/fluid_control/artifacts/fcp064_training_source_20261006_immutable/scripts/probe_fcp026_history_resource.py",
+    "--config",
+    "/workspace/fluid_control/artifacts/fcp064_training_source_20261006_immutable/training_config.yaml",
+    "--parent-manifest",
+    "/workspace/fluid_control/artifacts/fcp026_history_training_k1_20261005/candidate/dual_model_manifest.json",
+    "--parent-order",
+    "/workspace/fluid_control/artifacts/fcp064_training_source_20261006_immutable/parent_order.json",
+    "--schedule-adapter",
+    "/workspace/fluid_control/artifacts/p064_y_reflection_source_20261007_immutable/src/fluid_control/p064_controlled_aero_ab.py",
+    "--schedule-adapter-sha256",
+    "8fb617f58721c79b3f2d793246cc63df3020564941a6a6b907378d4b846180fb",
+    "--b00-data-root",
+    "/workspace/fluid_control/artifacts/b00_controlled_train_dataset_view_20261006",
+    "--b00-manifest",
+    "/workspace/fluid_control/artifacts/b00_controlled_train_dataset_view_20261006/manifest.json",
+    "--b00-manifest-sha256",
+    "97a82e2a157b87ecf9b9ea626ad079852a8d29ba89628ca5034ef99545929a5f",
+    "--b00-conversion-receipt",
+    "/workspace/fluid_control/artifacts/b00_controlled_train_conversion_20261006/result.json",
+    "--b00-conversion-receipt-sha256",
+    "f24f2fbc8b283c0781b2a01189d291b43da0203e9ede28208ec575173bbe0bd9",
+    "--b00-source-hdf",
+    "/workspace/fluid_control/artifacts/b00_controlled_train_conversion_20261006/b00_projected_ppo_train.h5",
+    "--candidate-audit",
+    "/workspace/fluid_control/artifacts/fcp018_reduced_rate_training_20261005/candidate_audit.json",
+    "--output",
+    "/workspace/fluid_control/artifacts/p064_y_reflection_paired_20261007",
+    "--arm",
+    "B",
+    "--base-data-root",
+    "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/base",
+    "--base-manifest-sha256",
+    "5213c7bb07c824c6e601636c3cfa974b80ec7c051633b0c8368a045cea41ddd2",
+    "--base-normalization-sha256",
+    "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+    "--train8-data-root",
+    "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train8",
+    "--train8-manifest-sha256",
+    "a0bd0e3b79d4d43ace407292c31a595d552dbd6e1a5de1fd149b1ca446f53f35",
+    "--train8-normalization-sha256",
+    "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+    "--train16-data-root",
+    "/workspace/fluid_control/artifacts/p064_host_train_only_views_20261006/train16",
+    "--train16-manifest-sha256",
+    "7c62dab94e317442cecf7ea3be547cf6e03c594a2c7ec2a1a695caba2445cf5b",
+    "--train16-normalization-sha256",
+    "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1",
+    "--reflection-module",
+    "/workspace/fluid_control/artifacts/p064_y_reflection_source_20261007_immutable/src/fluid_control/p064_y_reflection.py",
+    "--reflection-module-sha256",
+    "3e33164042d71a1ebce76fc493111fb095c9cbc77f2ac890da7d36daaf93b1ea",
+    "--execute"
+  ],
+  "planned_unit": "fluid-control-p064-y-reflection-paired-20261007.service",
+  "planned_output": "/workspace/fluid_control/artifacts/p064_y_reflection_paired_20261007",
+  "preflight": {
+    "helper_and_runner_cpu_tests": "14 PASS",
+    "physical_precheck": "ACCEPT",
+    "full_source_runtime_input_hashes": "PASS",
+    "worker_noexecute": "PASS",
+    "supervisor_dryrun": "PASS after serialization",
+    "output_absent": true,
+    "gpu_training_performed": false
+  }
+}
