@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — E113 pressure-only coarse recovery is diagnostic evidence, not a model gate
+
+Accept [E113 independent review](docs/P064_COARSE_ROI_FORCE_RECOVERABILITY_INDEPENDENT_REVIEW_20261007.md): the fixed27-point CPU readout and all saved-row arithmetic are reproducible, but the offset-ring pressure-only proxy has material rear-force and action-response errors. Do not treat it as exact surface traction, train a new proxy from these27 points, omit viscous force, or use its metrics as surrogate admission. No model, optimizer or CFD ran. Keep B and the verified real-CFD feedback delivery; full force-prediction quality remains incomplete. Any follow-up must first reuse existing near-wall velocity/traction or force-readout code and test one falsifiable representation hypothesis without a hyperparameter or architecture sweep.
+
 ## 2026-10-07 — E112 retention FAIL; preserve B and avoid unnecessary evaluation
 
 Accept the [E112 terminal review](docs/P064_Y_REFLECTION_PAIRED_TERMINAL_REVIEW_20261007.md): the single paired-reflection run completed correctly, but both unchanged fixed-six objectives worsen B (H1+4.1991%, continuousAR100+1.4529%). The original AND selection condition is already false; do not launch80-endpoint dev merely to search for a favorable result. Its metrics are unmeasured, not retroactively labelled FAIL. No adoption, automatic continuation, CPUload/PPO/CFD, significance claim or change to original physical gates. The existing real-CFD delivery remains usable and B remains default. Next data diagnosis is preparation only, not an authorized scientific run.
