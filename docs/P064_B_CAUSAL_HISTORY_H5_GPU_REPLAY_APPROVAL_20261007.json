@@ -1,0 +1,171 @@
+{
+  "status": "P064_B_CAUSAL_HISTORY_H5_GPU_REPLAY_APPROVED",
+  "execution_authorized": true,
+  "reviewed_by_lead": true,
+  "lead_review": "Lead approved ONE B ten-state GPU replay after CPU terminal independent health acceptance. Explicit highest/noTF32 override; exact selection criterion and all rankings retained; throughput engineering only, no CFD/optimizer or scientific admission.",
+  "scientific_admission": false,
+  "source_sha256": "cf84994502abad61cadd1a74bdbb2bc70880779a30c1b92d3c0bc6f27f893d01",
+  "h5_result_sha256": "f189508e962e17c5e98fa8fa6381c18664a4af9a58bd23da5da6977a50324939",
+  "output": "/workspace/fluid_control/artifacts/p064_b_causal_history_h5_gpu_replay_20261007",
+  "source_restart": "cfd/tandem_cylinders/cases/tandem_backward_dt005",
+  "state_abs_limit": 12.155583713529317,
+  "precision_profile": "post_verified_load_highest_no_tf32_engineering_replay",
+  "selection_consistency_criterion": "10/10 same selected index and exact action",
+  "source_files": {
+    "scripts/run_full40_canonical_ppo_openfoam_feedback.py": "3dbb20106f45ed709e0c91731817540903db961555930177f81f0394104594cc",
+    "scripts/sample_tandem_vtk_frame.py": "bbd04828a4de3c9f54b1c2deb8227c4e8616173ee945d905fed41d905af9cfa6",
+    "src/fluid_control/online_current_frame.py": "2945d38773100ca05e66d4be268839fad7f2d78fca016ab867fdd5c7b742eaa4",
+    "scripts/p026_state_history.py": "2b5b37dc79211bb5c4985a1d44d25262080f503011766206c536938f49a6b64c",
+    "cfd/tandem_cylinders/analyze_baseline.py": "fb2fb651ab498c41ea632581a255cb3e7e4f76d87ccb1daf712ffb03cb0bf7cb",
+    "cfd/tandem_cylinders/make_expanded_control_dataset.py": "1c48ee0e5761ac90d5f04b4cb4dfeb6580b3f0ed2a9863c2dc7f860792020ec2",
+    "cfd/tandem_cylinders/make_probe_feedback_case.py": "9960e38cbfc9afc6ec2a56ae01ce3da3974167b101a3274e33faa770728ebbbd",
+    "scripts/run_tandem_phase_feedback_pair.py": "866b4dce33c7401eb447e897641d734828e04b10b38ccde8a0b724e8b5e65d3d",
+    "src/fluid_control/canonical_joint_v1.py": "138ab2b49ebddcbed2a24486c995b85a3a5ae226ee936ff2ed5de318496ee8bd",
+    "src/fluid_control/openfoam_observation.py": "799d569c3f986a5e0e5cda95a3f07cd3b3993814ff0867763166549ef312293e",
+    "src/fluid_control/exploratory_short_mpc.py": "ec22561f60c183dc7fa9dfe68b32477de60faff9a41a5e051dccdad48d74f587",
+    "src/fluid_control/calibrated_checkpoint.py": "23f004aefb5ab4acf40523b188e1353d48a3cc04d6b2d886b6cdf435353c8a88",
+    "scripts/train_tandem_fno.py": "9e5bbebd338af02b1d73530c9cb74fc2f840455f56b7bf34ed2bb517be19a22a",
+    "scripts/p026_history_inference.py": "fd568f6457b980046a0419be96562291e9f96736270d45f20dd2adb2ffc5878c",
+    "src/fluid_control/exploratory_causal_history_mpc.py": "866c5e14aecb272b9fe4db63bb023fa77be2904159bcefa1e134e3b6c7a8db97",
+    "src/fluid_control/openfoam_force_history.py": "ec8720581e0f362c308a2bf82fb1f05585eaf876cf17956a6c8e7df0ca14c763",
+    "scripts/run_exploratory_causal_history_h5_feedback.py": "0917cd5c62e43fc3f7b2cdc23900aa9d0932dff9ef4842a155bcf4288524b14d",
+    "src/fluid_control/exploratory_causal_history_horizon.py": "bbcebc9d2decba6b14433af12c8a5df75331530fea9ed91192af064bfeeff82e",
+    "src/fluid_control/exploratory_paired_causal_history_h5_feedback.py": "6916d86d817b8fc401b60f3955e35c2865f5b58df45e89a01a8f0d527a8d5d29",
+    "artifacts/p064_candidate_policy_source_20261006_immutable/runtime_src/fluid_control/dual_fno.py": "83ac4e4169bc8179cba00d450742f3c4c37a4a3c291ced323ba6c717424b3d7b",
+    "artifacts/p064_b_h5_mpc_source_20261007_immutable/run_p064_b_causal_history_h5_feedback.py": "761d462d3c1309274bc04816b33d3c687dab574e375b0e64b4cedd3b0479ec9d",
+    "artifacts/p064_b_h5_gpu_replay_source_20261007_immutable/replay_p064_b_causal_h5_gpu.py": "cf84994502abad61cadd1a74bdbb2bc70880779a30c1b92d3c0bc6f27f893d01"
+  },
+  "inputs": {
+    "transport": {
+      "path": "scripts/run_full40_canonical_ppo_openfoam_feedback.py",
+      "sha256": "3dbb20106f45ed709e0c91731817540903db961555930177f81f0394104594cc"
+    },
+    "sampler": {
+      "path": "scripts/sample_tandem_vtk_frame.py",
+      "sha256": "bbd04828a4de3c9f54b1c2deb8227c4e8616173ee945d905fed41d905af9cfa6"
+    },
+    "k1_formal_receipt": {
+      "path": "artifacts/fcp026_history_training_k1_20261005/posteval_fc_p026_k1/receipt.json",
+      "sha256": "f2f7a50a26177c65ee048b58fb20df0aee7f4cfa42aed0edd857f08d911ef948"
+    },
+    "config": {
+      "path": "artifacts/fcp027_diagnostic_source_20261006_immutable/training_config.yaml",
+      "sha256": "07e55fd11df8030313338cef0344490c3453e515aae9c6b6122e997bad5085d9"
+    },
+    "normalization": {
+      "path": "data/curated/tandem_cylinders_matched_start_full40_dev30_v1/normalization.json",
+      "sha256": "f1b4607e2eace8f8d3c2c9aa5dcfa642ed43f470ab62fe3e5c051cce0a292bc1"
+    },
+    "baseline": {
+      "path": "artifacts/matched_start_full40_extension/train20_physics_summary.json",
+      "sha256": "b5b7923f30600eba25c837f3b8d6781f37afbb6fcb1649e0c0d410f32a101ed7"
+    },
+    "reference_sample": {
+      "path": "artifacts/online_current_frame_cpu_20261006/sample.npz",
+      "sha256": "b9bdf87db1b4744633fb3c175050449952a6661ec95676a055d7f62111f80bc9"
+    },
+    "b_manifest": {
+      "path": "artifacts/fcp064_controlled_aero_arm_b_20261006/dual_model_manifest.json",
+      "sha256": "92766915cb11ca75d313608a5f75e61a218371dcc789f5b44725f0a8260e7891"
+    },
+    "b_consumer": {
+      "path": "artifacts/p064_candidate_policy_source_20261006_immutable/runtime_src/fluid_control/dual_fno.py",
+      "sha256": "83ac4e4169bc8179cba00d450742f3c4c37a4a3c291ced323ba6c717424b3d7b"
+    },
+    "b_flow_model": {
+      "path": "artifacts/fcp064_controlled_aero_arm_b_20261006/flow/FNO.0.0.mdlus",
+      "sha256": "dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31"
+    },
+    "b_flow_state": {
+      "path": "artifacts/fcp064_controlled_aero_arm_b_20261006/flow/checkpoint.0.0.pt",
+      "sha256": "4998e534d4b82b17393c217357ed18220fb8e739166a88147483bb9cc5fb771e"
+    },
+    "b_aerodynamic_model": {
+      "path": "artifacts/fcp064_controlled_aero_arm_b_20261006/aerodynamic/FNO.0.1.mdlus",
+      "sha256": "57d4634df22ce96c1c4467a2ed52412be452375129af05b89f10a690e363356e"
+    },
+    "b_aerodynamic_state": {
+      "path": "artifacts/fcp064_controlled_aero_arm_b_20261006/aerodynamic/checkpoint.0.1.pt",
+      "sha256": "abc8eb89523d50a2c019d31b7e6a23dda384e9afc7d465d512abe32a80d1e216"
+    },
+    "b_cpu_driver": {
+      "path": "artifacts/p064_b_h5_mpc_source_20261007_immutable/run_p064_b_causal_history_h5_feedback.py",
+      "sha256": "761d462d3c1309274bc04816b33d3c687dab574e375b0e64b4cedd3b0479ec9d"
+    },
+    "sample_0": {
+      "path": "artifacts/p064_b_causal_history_h5_real_cfd_20261007/current_mpc_148.0.npz",
+      "sha256": "b9bdf87db1b4744633fb3c175050449952a6661ec95676a055d7f62111f80bc9"
+    },
+    "sample_1": {
+      "path": "artifacts/p064_b_causal_history_h5_real_cfd_20261007/current_mpc_148.1.npz",
+      "sha256": "96c7b1fb9bd48ca3fede7e3e96bad9cf4fc19807720b3ba4197c6cfe0d428fc4"
+    },
+    "sample_2": {
+      "path": "artifacts/p064_b_causal_history_h5_real_cfd_20261007/current_mpc_148.2.npz",
+      "sha256": "13a92e937ce18f676165f1c8ac191c70f6f2f1c8856fe44431d066af90e41925"
+    },
+    "sample_3": {
+      "path": "artifacts/p064_b_causal_history_h5_real_cfd_20261007/current_mpc_148.3.npz",
+      "sha256": "be983de912e66f664020a20b69a3e0fd7d4e554fe449143a0cd71913521edde6"
+    },
+    "sample_4": {
+      "path": "artifacts/p064_b_causal_history_h5_real_cfd_20261007/current_mpc_148.4.npz",
+      "sha256": "395ca21ebfcbf2ca1af9869eee23cb769acc29bf1edb4de6c095508f5ab69af2"
+    },
+    "sample_5": {
+      "path": "artifacts/p064_b_causal_history_h5_real_cfd_20261007/current_mpc_148.5.npz",
+      "sha256": "fca65bdc257c7a950ad8b3c6b848040f981443f0caa4a7cf2bb543042635a648"
+    },
+    "sample_6": {
+      "path": "artifacts/p064_b_causal_history_h5_real_cfd_20261007/current_mpc_148.6.npz",
+      "sha256": "a4bff15514df9f9b8c635b3be9706b3f4a7cdbe8b85e7c3cb5e917c8be5f79a9"
+    },
+    "sample_7": {
+      "path": "artifacts/p064_b_causal_history_h5_real_cfd_20261007/current_mpc_148.7.npz",
+      "sha256": "c4c930eaa8f4dfff4f808d519c4188e6056c804e6ea5d80c06777e89347dd94a"
+    },
+    "sample_8": {
+      "path": "artifacts/p064_b_causal_history_h5_real_cfd_20261007/current_mpc_148.8.npz",
+      "sha256": "8a3597d62af1e0ad8aa99c91fb35862da3a6d123bf2ede6ceca9836f888ffab8"
+    },
+    "sample_9": {
+      "path": "artifacts/p064_b_causal_history_h5_real_cfd_20261007/current_mpc_148.9.npz",
+      "sha256": "a2f86dd3e93693d2df2f661f1402468509988a765ead0bf4a7d8296bee42b185"
+    },
+    "cpu_independent_review": {
+      "path": "docs/P064_B_CAUSAL_HISTORY_H5_TERMINAL_REVIEW_20261007.md",
+      "sha256": "54192af5b7b8fbf0701d55809bcca8d24085b14f28d456505127cc84b793ad61"
+    }
+  },
+  "causal_history_sources": {
+    "forceFront": [
+      {
+        "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceFront/0/coefficient.dat",
+        "sha256": "bce88443ce3d19a6411c31b9266af16a3dd4e992f7adb1ddabc659238a1e88d1"
+      }
+    ],
+    "forceRear": [
+      {
+        "path": "cfd/tandem_cylinders/cases/tandem_backward_dt005/postProcessing/forceRear/0/coefficient.dat",
+        "sha256": "654c5bbf64b758505bdfe4d379e153f460862902309e96d2b01974e45536680b"
+      }
+    ]
+  },
+  "resource_contract": {
+    "device": "cuda:0_uma_engineering_replay",
+    "allocator_fraction": 0.06,
+    "memory_max_bytes": 12884901888,
+    "memory_swap_max_bytes": 0,
+    "startup_mem_available_min_bytes": 53687091200,
+    "runtime_mem_available_min_bytes": 23622320128,
+    "cuda_mem_get_info": "observational_only",
+    "deadline_seconds": 300
+  },
+  "unit": "fluid-control-p064-b-causal-history-h5-gpu-replay-20261007.service",
+  "cpu_terminal_invocation": "3dd6413fd91d4ba9bb72c61e49920792",
+  "cpu_independent_review": {
+    "path": "docs/P064_B_CAUSAL_HISTORY_H5_TERMINAL_REVIEW_20261007.md",
+    "sha256": "54192af5b7b8fbf0701d55809bcca8d24085b14f28d456505127cc84b793ad61"
+  },
+  "approval_recorded_utc": "2026-10-07T07:29:16.948958+00:00"
+}
