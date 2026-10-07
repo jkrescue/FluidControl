@@ -1,8 +1,8 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前唯一摘要 — E110 PPO已完成，两项CPU真实CFD探索进行中；B默认保留
+## 当前唯一摘要 — B未来时段六窗通过；absolute64 b01真实CFD仍运行，B默认保留
 
-实际快照 `2026-10-07T01:33:36Z`：E110 PPO同 `5e1c7db703874125bb1556b411d3169c` PID0/exited/exit0，独审32768 transitions、512 optimizer hooks、256 epochs及奖励/动作/来源绑定PASS，见[终态报告](docs/P064_ABSOLUTE64_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md)（SHA `0dbf25b279036c95e216a38ea01efa7e2bced215e03e788bfb9ba45e8e18633c`）。E109固定B未来时段同 `4b3eb2a2fcab4585aafd5740f8d0cea3` PID2922821运行，baseline200/200、paired587/800。新absolute64 b01同 `6fa0baeb90034371b3b49f3d8d51192a` PID3306553运行37/800；unit `fluid-control-p064-absolute64-symmetry-canonical-b01-cfd-20261007.service`，批准SHA `d6303082b0f97087961a9171505a2b4289623eb5f634f2502ac4f7d65639143b`，output `artifacts/p064_absolute64_symmetry_canonical_b01_cfd_20261007`。两项CPU真实CFD均无终态结论，没有GPU训练运行。快照不是永久running声明。用户优先原标准下真实闭环探索，完整代理预测通过不是已明确批准探索的前置；原selection FAIL、B默认和2%/1.05/10%物理标准保持。
+实际快照 `2026-10-07T01:42:06Z`：E109固定B未来时段同 `4b3eb2a2fcab4585aafd5740f8d0cea3` 已PID0/exit0，200baseline+800paired完成，原六窗全部通过。主窗减阻3.9948739165%、rear-Cl RMS比0.8165882753、偏置2.8533042395%；见[原始审计报告](docs/P064_B_FUTURE_TIME_CFD_TERMINAL_REVIEW_20261007.md)。新确定性时间段不是新独立工况，也不改预测FAIL。E110 PPO同5e1c已独审32768/512/256完成，见[报告](docs/P064_ABSOLUTE64_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md)。absolute64 b01同 `6fa0baeb90034371b3b49f3d8d51192a` PID3306553运行449/800，尚无终态物理结果；unit `fluid-control-p064-absolute64-symmetry-canonical-b01-cfd-20261007.service`，批准d6303082，output `artifacts/p064_absolute64_symmetry_canonical_b01_cfd_20261007`。这是CPU真实反馈，无GPU训练。时间戳不是永久running声明。用户优先原标准下真实闭环探索，完整代理预测通过不是已明确批准探索的前置；B默认、原selection FAIL和2%/1.05/10%物理标准保持，无需放宽偏置。
 
 ### 已完成训练/评估与历史启动记录
 

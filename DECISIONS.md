@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — E109 future-time physical validation accepted without changing gates
+
+Accept the [E109 raw report](docs/P064_B_FUTURE_TIME_CFD_TERMINAL_REVIEW_20261007.md): fixed B zero228→248 then paired248→328 completed, all six original physical windows PASS. Primary drag reduction3.9948739165%, RMS ratio0.8165882753, bias2.8533042395%. Do not loosen bias thresholds to obtain a pass. This is additional deterministic-time evidence in the same physical setup, not a new independent condition, prediction-quality admission or authorization to convert/train. Absolute64 b01 remains a separately approved running exploration in the timestamped state; no outcome inferred. Retain B default and all earlier failures.
+
 ## 2026-10-07 — Absolute64 is mixed evidence, original selection FAIL; retain B
 
 Accept the [absolute64 fixed-development independent review](docs/P064_ABSOLUTE64_DEVELOPMENT_REVIEW_20261007.md), SHA `d65af40479613570c935042c866a1dc2639b4c998b9376dcd62f8d6c724dcb32`. Update32 exactly reproduced historical B;64 updates improve both pooledH1 force MAEs and slightly improve pooledH5, but both fixed-six H1 and continuousAR100 retention regress. Apply the original rule unchanged: no automatic promotion or replacement of B, no claim of significance or overall prediction success. Preserve engineering R1guard failure and all historical scientific failures.

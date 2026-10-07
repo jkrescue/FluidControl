@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E109 — retained B fixed future-time terminal: all six original windows PASS
+
+Same invocation `4b3eb2a2fcab4585aafd5740f8d0cea3` completed200 zero baseline segments and800 paired feedback cycles. [Raw review](docs/P064_B_FUTURE_TIME_CFD_TERMINAL_REVIEW_20261007.md) documents3200 force hashes,1600 paired+200 baseline solver logs, actual248 initial observation,799 feedback links and3 owned-container cleanup checks. The source author ran the independently reviewed checker; do not describe it as third-party execution. Result SHA `d53cb2ea32f66af6c4067d0c7eb90e7aecc8b815634588b6fe448d291acc5b98`; audit stdout SHA `f4be832f6d844de4e25d2cccdf470db4a30e9fc794a27c1ffb8ed34cb1b47a89`.
+
+Primary(268,328] drag reduction3.9948739165%, rear-Cl RMS ratio0.8165882753, absolute mean-bias ratio0.02853304239. All six predeclared windows meet original2%/1.05/10% thresholds, including first6.2 bias8.5938139442%. Science wall1454.303642s including baseline; minimum Available119106936832B. Same fixed B/Re100/L/D5/deterministic setup: new time interval, not independent physical regime or prediction admission. No training-data conversion authorized. Earlier failures retained.
+
 ## FC-E110 — absolute64 exploratory PPO terminal; fixed b01 CFD separately launched
 
 Same PPO invocation `5e1c7db703874125bb1556b411d3169c` completed successfully. Independent audit verified32768 transitions/6552 episodes/512 optimizer hooks/256 epochs, six reward means, action/filter clocks,75 source/192 runtime hashes. [Report](docs/P064_ABSOLUTE64_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md) SHA `0dbf25b279036c95e216a38ea01efa7e2bced215e03e788bfb9ba45e8e18633c`; result `7ea78803010b5ebd33c8f5166f63449ad6e9561f894b1273c791d12ff80b1588`. No model forward rerun; recorded orientation consistency is not independent geometric reconstruction. Prediction selection FAIL remains.
