@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E112 — y-reflection paired training actual launch (timestamped, not a result)
+
+Launched once at `2026-10-07T02:25:59Z`: unit `fluid-control-p064-y-reflection-paired-20261007.service`, invocation `766ad5ca993d483bb6a42d0f2fc09bd8`, initial PID3981739. Approval `docs/P064_Y_REFLECTION_PAIRED_TRAINING_APPROVAL_20261007.json` SHA `6e5ca18a42a1ad4410260fb9df4f14b457907ff2b5bceadfcfb0f3d621bb81e6`; output `artifacts/p064_y_reflection_paired_20261007`. Actual original/reflected branch and window events were observed. This is a launch-time record, not a permanent running assertion or accuracy result.
+
+Same K1 parent and B schedule:256 original windows,512 transformed branches,32 updates. Each original/reflected loss receives0.5 weight; each retains the original equal H1/AR objective. Mirror AR independently rolls the frozen flow from mirrored physical inputs, then the unchanged normalization. Original fixed-six diagnostics remain unreflected continuousAR100. The28 aerodynamic FNO tensors train; flow and two biases remain frozen. Bound resources:16GiB allocator/24GiB noSwap/CPU800%, startup50/runtime22GiB Available,3600s inner/3660s outer. No automatic retry, candidate promotion, evaluation, PPO or CFD follows from a successful launch. Existing prediction failures and B-default physical results remain unchanged. CSV awaits actual terminal metrics.
+
 ## FC-E111 — absolute64 b01 physical terminal: six original windows PASS
 
 Science invocation `6fa0baeb90034371b3b49f3d8d51192a` PID0/exited/success0; result `5fa8f47bb3a4939b6b8377f5ccd8c178dec560220929e36e48b8875e90a7504e`. [Independent report](docs/P064_ABSOLUTE64_B01_CFD_TERMINAL_REVIEW_20261007.md) SHA `17d9328babbbbbe23f1c4bd830e7347626e1cdd055087bbec7ffac0dbecb4bbe`, CPUaudit invocation `b4b0efda17754ce092d7bf7c01d393a1`, receipt `d114a326919c1f2abf4b1a35ab51f3de09e33b43eac5de821d776f8fd126dad3`. All3200raw/1600logs/800canonical actions/799feedback/20restart/zero-B exact checks PASS. Separate producer6a6b CPUcheck is disclosed; no science rerun.

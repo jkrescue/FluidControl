@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — One y-reflection paired-loss candidate, not a new physical truth set
+
+Following the [bounded physical precheck](docs/P064_Y_REFLECTION_PHYSICAL_CPU_PRECHECK_REVIEW_20261007.md) and [CPU implementation review](docs/P064_Y_REFLECTION_CPU_IMPLEMENTATION_REVIEW_20261007.md), Lead authorized one fixed256-original/512-branch/32-update run. Actual launch is FC-E112, invocation `766ad5ca993d483bb6a42d0f2fc09bd8`, approval SHA `6e5ca18a42a1ad4410260fb9df4f14b457907ff2b5bceadfcfb0f3d621bb81e6`. The only scientific intervention is physical-y-reflection pairing at equal weights; it is augmentation, not new CFD truth or proof of discrete-grid/FNO equivariance. Keep original parent, schedule, H1/AR weights, normalization, frozen scope, final-only checkpoint and original diagnostic windows. Prespecified fixed-development plus fixed-six comparison remains necessary before any promotion; no loss-only claim or automatic new control experiment. B stays default, all earlier failures and original2%/1.05/10% physical gates remain. This research does not delay or invalidate the already demonstrated real-CFD feedback delivery.
+
 ## 2026-10-07 — E111 physical PASS does not replace B or erase prediction FAIL
 
 Accept [E111 independent review](docs/P064_ABSOLUTE64_B01_CFD_TERMINAL_REVIEW_20261007.md), SHA `17d9328babbbbbe23f1c4bd830e7347626e1cdd055087bbec7ffac0dbecb4bbe`: all six original physical windows pass. Keep B default; absolute64 is a verified single-condition exploratory policy. Its primary drag/RMS/bias are better in this matched deterministic run, but this is not overall dominance: some early/full-window biases worsen and squared-action mean.25748 exceeds B.24045. No statistical significance, physical energy saving or independent generalization claim. Do not lower the10% bias gate or revise predictionselectionFAIL. No automatic new training/CFD is authorized by this terminal result.
