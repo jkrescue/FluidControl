@@ -52,7 +52,7 @@ The release manifest
 fixes a `256 x 128` grid over `x=[8,25]`, `y=[4,11]`, with 801 frames and
 800 adjacent pairs per trajectory.
 
-A metadata-only inspection of
+A bounded inspection of coordinates and the first/last saved masks in
 `train/matched_start_acquisition_train_b00_m0375.h5` found `dx` approximately
 `0.0666667` and `dy` approximately `0.0551181`. The binary mask contains 428
 solid cells and is unchanged between the first and last saved frames. Each
