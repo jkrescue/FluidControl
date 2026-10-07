@@ -1,5 +1,7 @@
 {
-  "argv_template": [
+  "approval_recorded_at_utc": "2026-10-07T06:12:00Z",
+  "approved_from_pending_sha256": "b17b0cf54966abe389a473d028bd5cb410e067357b4d127b5edbe99808367cbf",
+  "argv": [
     "/workspace/fluid_control/.venv-curator-py312/bin/python",
     "-u",
     "/workspace/fluid_control/artifacts/p064_b04_coverage_i_source_20261007_immutable/scripts/train_fcp064_controlled_aero_abi.py",
@@ -107,7 +109,7 @@
     "gpu_inference_authorized": false,
     "protocol": "same fixed b01+b03 starts 0..700 by100 H1-H5/80 endpoints plus unchanged fixed-six retention; total-force metrics unchanged"
   },
-  "execution_authorized": false,
+  "execution_authorized": true,
   "fixed_parent": {
     "aerodynamic_fno_frozen_bias_tensors": 2,
     "aerodynamic_fno_trainable_parameter_tensors": 28,
@@ -129,7 +131,7 @@
     "name": "controlled_train_late_state_excitation_coverage",
     "phase_only_causal_claim": false
   },
-  "lead_approval": null,
+  "lead_approval": "Lead approved exactly one I GPU training after final actual Curator/R2 binding: reviewed adapter03154/runner79c79, immutable source manifest484b6568, schedule010b806, actual result81eb5/manifest5ec761/HDF36da59/R2 review0852d5/receipt216603; 256 windows/32 updates, same K1 fresh parent, frozen flow/two biases, same LR/loss/precision and fixed resources. No dev, PPO, or CFD execution is authorized.",
   "objective": {
     "architecture_changed": false,
     "budget_extension_allowed": false,
@@ -212,5 +214,5 @@
     "source_file_count": 443,
     "source_manifest_sha256": "484b656811cc200601bd5ba5d3349b996644ee20cf6ab39e970661554fc0e6d7"
   },
-  "status": "P064_B04_COVERAGE_I_TRAINING_FINAL_BOUND_PENDING_LEAD_APPROVAL"
+  "status": "P064_B04_COVERAGE_I_TRAINING_EXECUTION_APPROVED"
 }

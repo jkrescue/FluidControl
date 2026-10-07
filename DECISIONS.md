@@ -468,3 +468,9 @@ R3真实H10反向完成，模型未更新。最低物理空闲20.9028GiB，仅�
 # 2026-10-07 — B04 raw generation accepted; conversion remains separate
 
 Lead accepted the independently audited B04 `120→200` raw trajectory as the one planned late-state coverage source. This is a train-only data-generation milestone, not surrogate improvement or admission. The next permitted work is preparation and independent review of a case-local, raw-read-only VTK and official Curator pipeline that reuses the existing normalization bytes and real `t=120` force source. No VTK/Curator/HDF conversion, model training, PPO or CFD follow-on is implied by the raw result.
+
+## 2026-10-07 — B04 late-state coverage receives one fixed-budget training test
+
+The VTK/Curator train-only conversion passed independent Reader, label, finite-array and endpoint Mesh checks without changing the original normalization. Lead therefore authorized one fixed I comparison: 192 unchanged original windows plus 32 existing b00 and 32 fixed-PRBS b04 windows, still 256 windows/32 updates and the original K1 initialization, objective, LR, precision and frozen scope. The intervention jointly changes source profile, phase and visited-state coverage, so a result cannot isolate any one as the cause.
+
+The actual training invocation is `7c1d1d634af94321b638ba6da2febe45`. Its launch and early finite progress are engineering facts, not evidence of improved prediction. Candidate decisions remain prospective: require the unchanged fixed-six retention first, then the unchanged fixed development comparison; on failure retain B and do not tune this run or auto-launch PPO/CFD. The already accepted B real-CFD closed loop remains the bounded delivery while full surrogate accuracy is unresolved.
