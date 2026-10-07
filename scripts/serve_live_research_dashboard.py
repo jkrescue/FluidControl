@@ -527,7 +527,7 @@ function renderActiveExperiment(d){
   if(d.b04_data_stage?.stage==='curator_hdf_only'){const s=d.b04_data_stage;$('lead-monitor').textContent=`当前研究阶段：B04 Curator/HDF数据处理${s.running?'正在运行':s.process_completed?'进程已结束、等待独立数据核验':'进程停止/失败、待诊断'}；日志已报告采样${s.sampled_frames??'未知'}/801帧（不是总体完成率）。VTK文件${s.vtk_frames}/801；HDF输出目录${s.curator_output_exists?'已出现，存在不等于核验通过':'尚未出现'}。这是CPU数据转换，不是GPU训练或新CFD；基本闭环已交付、续跑曲线保留，FNO完整预测精度仍未达标。`;}
   if(d.b04_i_training){const s=d.b04_i_training;$('lead-monitor').textContent=s.verified?`当前研究：I气动力预测模块${s.running?'正在训练':s.process_completed?'训练进程已结束，等待独审':'进程已停止/失败，待诊断'}，真实日志窗口${s.windows}/256、更新${s.updates}/32；loss未在当前日志报告，不估算。流场网络冻结，不是PPO训练或CFD。实际内存${s.memory?.MemoryCurrent!=null?(s.memory.MemoryCurrent/2**30).toFixed(2)+' GiB':'未知'}；上限${s.memory?.MemoryMax!=null?(s.memory.MemoryMax/2**30).toFixed(0)+' GiB':'未知'}。B基本闭环交付及下方真实曲线保持，训练日志不代表预测准入。`:'当前I训练状态暂不可读取，不推断任务已结束；B基本闭环与真实曲线保留。';}
   if(d.b04_i_training?.terminal_verified){const s=d.b04_i_training;$('lead-monitor').textContent=`I训练已完成并核验256窗口/32更新；固定开发评估未通过：单步后柱Cl MAE较B增加${(100*s.development_h1_relative_change.rearCl).toFixed(2)}%、总Cd MAE增加${(100*s.development_h1_relative_change.totalCd).toFixed(2)}%，保留B，不推进I的PPO/CFD。已绑定本轮训练、评估与CFD均结束；当前受管科学任务以实时任务查询为准。B已完成跨已验证恢复的1600个真实反馈区间，不是单个无中断进程。FNO用于PPO策略训练环境；部署是CPU PPO＋真实OpenFOAM，无在线FNO/MPC。完整代理精度仍未达标，不代表项目全部完成。`;}
-  if(d.b_h5_mpc_cfd?.verified){const m=d.b_h5_mpc_cfd;$('lead-now').textContent=`当前实际工作：B气动力代理的因果历史 H5 MPC，CPU 在线选择动作＋配对真实 OpenFOAM；已完成 ${m.cycles}/10 个工程反馈周期${m.last_time==null?'':`，流动时刻 ${num(m.last_time,1)}`}。${m.running?'任务正在运行':m.process_completed?'进程已结束，等待独立终态核验':'进程停止/失败，等待诊断'}。`;$('lead-monitor').textContent=`unit ${m.unit}；inv ${m.invocation}；PID ${m.pid}；最近动作 ${m.selected_omega==null?'尚无':num(m.selected_omega,4)}。这是 CPU B-H5 MPC 探索，不是 GPU 训练，也不是冻结 B-PPO 的重复运行；已交付的 B-PPO/E114 物理结果与默认策略保持不变。10周期只作工程接线验证，未独审前不宣称减阻或完整预测通过；原预测精度 FAIL 不变。`;}
+  if(d.b_h5_mpc_cfd?.verified){const m=d.b_h5_mpc_cfd;if(m.terminal_verified){$('lead-now').textContent='两层交付状态：基本真实闭环已完成，默认B的E114延长段仍按原标准通过；高精度FNO/泛化/MPC仍未达标，继续单列研究。';$('lead-monitor').textContent=`B-H5 MPC十周期工程探索已结束并独审：动作与旧K1试验完全相同，配对减阻 ${num(100*m.drag_reduction,6)}%，rear-Cl波动比 ${num(m.rear_cl_rms_ratio,6)}；未改善执行控制，四项selected-next-step受力MAE也均更大。该段仅1 D/U，不能替代长期物理门；原预测FAIL、B-PPO默认策略和E114的4.1326%减阻/0.82077波动比/1.2352%偏置均保持。本次MPC已结束，其他作业以实时任务列表为准；无需降低已通过的10%物理偏置门限。`;}else{$('lead-now').textContent=`当前实际工作：B气动力代理的因果历史 H5 MPC，CPU 在线选择动作＋配对真实 OpenFOAM；已完成 ${m.cycles}/10 个工程反馈周期${m.last_time==null?'':`，流动时刻 ${num(m.last_time,1)}`}。${m.running?'任务正在运行':m.process_completed?'进程已结束，等待独立终态核验':'进程停止/失败，等待诊断'}。`;$('lead-monitor').textContent=`unit ${m.unit}；inv ${m.invocation}；PID ${m.pid}；最近动作 ${m.selected_omega==null?'尚无':num(m.selected_omega,4)}。这是 CPU B-H5 MPC 探索，不是 GPU 训练，也不是冻结 B-PPO 的重复运行；已交付的 B-PPO/E114 物理结果与默认策略保持不变。10周期只作工程接线验证，未独审前不宣称减阻或完整预测通过；原预测精度 FAIL 不变。`;}}
   return;
  }
   if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5567,6 +5567,39 @@ def _b_h5_mpc_cfd(root):
         approved = json.loads(approval.read_text())
         if approved.get('status') != 'P064_B_PAIRED_CANONICAL_HISTORY_H5_REAL_CFD_EXECUTION_APPROVED' or approved.get('execution_authorized') is not True:
             raise ValueError('approval authorization')
+        pins = [
+            ('docs/P064_B_CAUSAL_HISTORY_H5_TERMINAL_REVIEW_20261007.md',
+             '54192af5b7b8fbf0701d55809bcca8d24085b14f28d456505127cc84b793ad61'),
+            ('artifacts/p064_b_h5_independent_audit_20261007/receipt.json',
+             'fa1b21586896ecf26951a2a663b41ced813e3a018c3f01670978fe27ff840eb7'),
+            ('artifacts/p064_b_causal_history_h5_real_cfd_20261007/result.json',
+             'f189508e962e17c5e98fa8fa6381c18664a4af9a58bd23da5da6977a50324939'),
+        ]
+        if all((root / name).is_file() for name, _ in pins):
+            if any(hashlib.sha256((root / name).read_bytes()).hexdigest() != digest
+                   for name, digest in pins):
+                raise ValueError('terminal hashes')
+            receipt = json.loads((root / pins[1][0]).read_text())
+            result = json.loads((root / pins[2][0]).read_text())
+            if (receipt.get('status') != 'B_CPU10_SAVED_RAW_AND_COST_REVIEW_PASS_NOT_ADMISSION'
+                    or receipt.get('invocation') != invocation
+                    or receipt.get('approval_sha256') != approval_sha256
+                    or receipt.get('result_sha256') != pins[2][1]
+                    or result.get('status') != 'EXPLORATORY_REAL_CFD_CANONICAL_HISTORY_H5_COMPLETE_NOT_ADMISSION'
+                    or result.get('cycles') != 10):
+                raise ValueError('terminal identity')
+            metrics = receipt['metrics']
+            drag_reduction = 1 - metrics['mpc']['total_cd_mean'] / metrics['zero']['total_cd_mean']
+            rear_cl_rms_ratio = (metrics['mpc']['rear_cl_fluctuation_rms'] /
+                                 metrics['zero']['rear_cl_fluctuation_rms'])
+            return dict(verified=True, terminal_verified=True, unit=unit,
+                        invocation=invocation, pid=0, running=False,
+                        process_completed=True, cycles=10, target_cycles=10,
+                        last_time=149.0, selected_omega=-.3,
+                        drag_reduction=drag_reduction,
+                        rear_cl_rms_ratio=rear_cl_rms_ratio,
+                        cpu_online_mpc=True, gpu_training=False,
+                        original_b_ppo_unchanged=True, admitted=False)
         raw = subprocess.check_output(
             ['systemctl', '--user', 'show', unit, '-p', 'InvocationID', '-p', 'MainPID',
              '-p', 'ActiveState', '-p', 'SubState', '-p', 'Result', '-p',

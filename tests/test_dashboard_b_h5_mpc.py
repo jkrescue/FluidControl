@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 import subprocess
+import pytest
 
 
 SOURCE = Path(__file__).resolve().parents[1] / 'scripts/serve_live_research_dashboard.py'
@@ -85,4 +86,28 @@ def test_dashboard_copy_distinguishes_mpc_from_delivered_ppo():
     assert 'CPU 在线选择动作＋配对真实 OpenFOAM' in source
     assert '不是 GPU 训练，也不是冻结 B-PPO 的重复运行' in source
     assert '10周期只作工程接线验证' in source
+    assert '基本真实闭环已完成' in source
+    assert '高精度FNO/泛化/MPC仍未达标' in source
+    assert '无需降低已通过的10%物理偏置门限' in source
     assert "data['b_h5_mpc_cfd'] = _b_h5_mpc_cfd(self.root)" in source
+
+
+def test_actual_terminal_evidence_when_available():
+    root = SOURCE.parents[1]
+    pins = [
+        root / 'docs/P064_B_CAUSAL_HISTORY_H5_TERMINAL_REVIEW_20261007.md',
+        root / 'artifacts/p064_b_h5_independent_audit_20261007/receipt.json',
+        root / 'artifacts/p064_b_causal_history_h5_real_cfd_20261007/result.json',
+    ]
+    if not all(path.is_file() for path in pins):
+        pytest.skip('actual Spark terminal evidence is not present')
+    namespace = {}
+    tree = ast.parse(SOURCE.read_text())
+    node = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == '_b_h5_mpc_cfd')
+    exec(compile(ast.Module(body=[node], type_ignores=[]), str(SOURCE), 'exec'),
+         dict(hashlib=hashlib, json=json, math=__import__('math'), subprocess=subprocess), namespace)
+    value = namespace['_b_h5_mpc_cfd'](root)
+    assert value['terminal_verified'] and value['cycles'] == 10
+    assert not value['running'] and not value['admitted']
+    assert abs(value['drag_reduction'] - (-.000078862246)) < 1e-12
+    assert abs(value['rear_cl_rms_ratio'] - .9836105589) < 1e-10
