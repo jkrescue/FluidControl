@@ -25,7 +25,13 @@
 - 物理主门限始终为：减阻`≥2%`、rear-Cl波动RMS比`≤1.05`、rear-Cl均值偏置`≤10%`；没有为收尾降低标准；
 - 预测验收与控制验收分开：预测门包括H1/H5/H100、固定六窗连续AR100、开发面板及force-window统计；物理门基于配对zero分支的真实OpenFOAM受力。
 
+实际case取`D=U_inf=rho=1`、运动黏度`nu=.01`，因此`Re=100`；无量纲时间`t*=t U_inf/D`。动作`omega*=Omega D/U_inf`在该配置数值等于OpenFOAM角速度，但圆柱表面速度比为`alpha=Omega D/(2U_inf)=omega/2`，所以`|omega|<=.75`对应`|alpha|<=.375`，不能把`.75`称为表面速度比。每个`.1 D/U`反馈周期的单filter限制`|delta_omega|<=.1`（等价`|d omega/dt*|<=1`），OpenFOAM区间内使用线性omega table。
+
+实际求解网格的`checkMesh`记录为19,290 cells、39,336 points、77,539 faces，域`(0,0,0)`到`(30,15,.1)`；准二维单层front/back为`empty`。这与模型ROI的`128×256`采样网格不同。求解器为`pimpleFoam`，`dt=.005`；时间离散`backward`，对流项采用`Gauss linearUpwind grad(U)`，PIMPLE为1个outer corrector、2个corrector、1个non-orthogonal corrector。速度入口`(1,0,0)`、出口`zeroGradient`、上下边界`slip`、前柱`noSlip`、后柱绕`z`轴/中心`(15,7.5,0)`使用`rotatingWallVelocity`；压力出口为0，其余主要边界为`zeroGradient`。力系数配置`rhoInf=1`、`Uinf=1`、`lRef=1`、`Aref=.1`。
+
 论文或演示必须注明：E109/E114是同一已打开分支的连续延长，不是统计独立的新工况；b01/b03已经作为开发相位打开，不是未见测试集。
+
+物理指标的精确定义如下。令总阻力系数`CD=Cd_front+Cd_rear`；同一评价窗内受控/配对zero的均值分别为`mu_D,c`、`mu_D,0`。令受控后柱升力均值为`mu_L,c`，受控/zero去均值标准差为`sigma_L,c`、`sigma_L,0`。则减阻`D=1-mu_D,c/mu_D,0`，波动比`R=sigma_L,c/sigma_L,0`，偏置`Q=abs(mu_L,c)/sigma_L,0`。偏置不是`abs(mu_L,c-mu_L,0)`，也不除以mean Cl。验收为`D>=.02`、`R<=1.05`、`Q<=.10`；报告中的减阻/偏置百分数为`100D/100Q`，波动降低为`100(1-R)`。训练reward的baseline与最终配对物理窗口分别由各自approval绑定，不能混成同一个估计量。
 
 ## 3. 真实数据、OpenFOAM与Curator数据链
 
@@ -54,9 +60,9 @@ B04晚期激励补充了一条120→200 D/U、801帧、16000 solver step的train
 
 默认B manifest固定的每个FNO架构为：`in_channels=6`、`out_channels=7`、`latent_channels=48`、5个FNO层、二维modes`[32,32]`、decoder 2层/宽128、padding 8、启用官方坐标特征。
 
-项目的6个显式输入通道是：归一化`u`、`v`、gauge pressure `p`、fluid mask、当前角速度、下一角速度命令；PhysicsNeMo FNO内部再加入坐标特征。7个输出通道是下一`u/v/p`和4个力通道（front Cd/Cl、rear Cd/Cl）。项目代码对后4个空间输出做mask加权空间均值，监督集成力；这不是壁面积分或pressure/shear场预测。
+项目的6个显式输入通道是：归一化`u`、`v`、gauge pressure `p`、fluid mask、当前角速度、下一角速度命令；PhysicsNeMo FNO内部再加入坐标特征。7个输出通道中，前3个是归一化状态增量`delta(u,v,p)`，通过`q_next=(q+delta)×mask`形成下一状态；后4个是归一化集成力（front Cd/Cl、rear Cd/Cl）的空间读出通道。项目代码对后4个空间输出做mask加权空间均值；这不是壁面积分或pressure/shear场预测。
 
-采用双网络：flow FNO产生连续流场状态，aerodynamic FNO读出状态/动作并预测力。B训练只更新aerodynamic FNO的28个参数张量，flow FNO和两个lifting（特征升维）层偏置冻结。B使用K1历史长度1，100步rollout；原训练目标是归一化四力的`.5 H1 + .5 AR100`平衡损失，其中rear-Cl权重较高。
+采用双网络：flow FNO产生连续流场状态，aerodynamic FNO读出状态/动作并预测力。B训练只更新aerodynamic FNO的28个参数张量，flow FNO和气动力FNO输入升维网络的两个bias（`spec_encoder.lift_network.0.conv.bias`、`.2.conv.bias`）冻结。B使用K1历史长度1，100步rollout；原训练目标是归一化四力的`.5 H1 + .5 AR100`平衡损失，其中rear-Cl权重较高。
 
 ### 4.2 B训练合同
 
@@ -78,6 +84,8 @@ E082/B链实际记录的核心版本为：PhysicsNeMo`2.2.2`、PyTorch`2.14.1`�
 1. **早期纯CFD/direct-PPO数据与基线。** train16等数据中存在直接CFD PPO产生的轨迹，它们是训练数据或历史策略证据，不等于最终默认B策略。
 2. **默认B策略E082。** E082明确绑定冻结B FNO manifest `92766915cb11ca75d313608a5f75e61a218371dcc789f5b44725f0a8260e7891`，在代理环境中从fresh PPO训练32,768 transitions、512 optimizer hooks、256 PPO epochs；69维观测、H5 causal history、24个reset states、4环境。最终policy/VecNormalize由该执行保存，FNO tensor digest在PPO训练前后不变。
 3. **真实CFD部署。** E085/E095/E109/E114加载E082冻结policy和VecNormalize，在CPU上对真实OpenFOAM观测做一次策略预测、物理方向恢复和安全过滤。部署阶段没有FNO forward，也不是在线MPC。因而“FNO代理训练PPO→真实CFD部署”是实际链路；不能写成PPO直接在本次真实CFD长跑中继续学习。
+
+E082的`canonical_joint_v1` reward不是简单的`-Cd-Cl²`。对上节定义的`D/R/Q`，即时成本包含`cD=-clip(D,-1,1)`、阻力门违约`[max(0,(.02-D)/.02)]²`、波动门违约`[max(0,(R-1.05)/.05)]²`、偏置门违约`[max(0,(Q-.10)/.10)]²`，以及动作成本`.01(omega/.75)²`和变化率成本`.01(delta_omega/.1)²`；即时reward为`-.1`乘六项之和。62个因果力样本按`.1 D/U`覆盖6.2 D/U（首末时间戳跨度6.1），目标窗为6.15；历史不足时四项物理成本记0而动作两项仍计算，不读取未来力。PPO的`gamma=.99`只用于回报折扣，不改变即时成本公式。
 
 ## 6. 已完成真实闭环结果
 
@@ -154,7 +162,7 @@ Spark本机：`http://127.0.0.1:8766/`；已有Mac端口转发时：`http://loca
 
 ### 9.3 多阶段复现
 
-完整交接见[CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md](CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md)和`CANONICAL_CHAIN_INPUT_INVENTORY_20261007.json`。历史完整审计曾核验906项；本轮收尾再次运行`check_canonical_chain_inventory.py`，结果为`READ_ONLY_INVENTORY_PASS_NOT_EXECUTION`：851项做SHA校验，另55项只检查payload存在。它未解码模型/HDF、未运行Docker/科学任务，也未独立复核当前已装package版本。起点仍是Spark现有runtime、curated数据和预训练K1，并非从原始CFD开始重新训练upstream flow/K1/B/PPO的全新实跑。
+完整交接见[CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md](CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md)和`CANONICAL_CHAIN_INPUT_INVENTORY_20261007.json`。历史批准的`--verify-payload-bytes`审计（invocation `210169b4918a41d9bb47b02396851a06`）对851项元数据/源码和55个payload合计完成906次SHA校验；本轮收尾运行默认checker时结果为`READ_ONLY_INVENTORY_PASS_NOT_EXECUTION`，只对851项做SHA校验、另55项仅检查payload存在，不能写成本轮再次重hash全部payload。它未运行Docker/科学任务，也未独立复核当前已装package版本。起点仍是Spark现有runtime、curated数据和预训练K1，并非从原始CFD开始重新训练upstream flow/K1/B/PPO的全新实跑。
 
 ## 10. 模型与大文件归档原则
 
