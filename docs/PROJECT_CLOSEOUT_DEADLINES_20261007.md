@@ -14,6 +14,7 @@
 3. 当前Representative256训练的终态与fixed-six结果在生成后填入最终报告；若截止前不能形成独立证据，则明确写“未完成/未知”，不得估算。
 4. 历史批准只证明历史执行身份，不授权重跑。截止后默认仅允许只读复现预检、查看看板和读取已归档证据。
 5. 任何未完成目标进入“限制与后续研究”清单，不再为补齐叙事而临时新增实验。
+6. `2026-10-07T09:23:06Z`已将`training-evaluation-watchdog.timer`从`active/waiting/enabled`精确停为`inactive/dead/disabled`；同名oneshot保持`inactive/dead/static`。该操作未停止dashboard或当时已批准的Representative256训练。
 
 ## 交付文件
 

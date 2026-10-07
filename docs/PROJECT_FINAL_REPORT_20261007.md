@@ -56,7 +56,7 @@ B04晚期激励补充了一条120→200 D/U、801帧、16000 solver step的train
 
 项目的6个显式输入通道是：归一化`u`、`v`、gauge pressure `p`、fluid mask、当前角速度、下一角速度命令；PhysicsNeMo FNO内部再加入坐标特征。7个输出通道是下一`u/v/p`和4个力通道（front Cd/Cl、rear Cd/Cl）。项目代码对后4个空间输出做mask加权空间均值，监督集成力；这不是壁面积分或pressure/shear场预测。
 
-采用双网络：flow FNO产生连续流场状态，aerodynamic FNO读出状态/动作并预测力。B训练只更新aerodynamic FNO的28个参数张量，flow FNO和两个lift-network bias冻结。B使用K1历史长度1，100步rollout；原训练目标是归一化四力的`.5 H1 + .5 AR100`平衡损失，其中rear-Cl权重较高。
+采用双网络：flow FNO产生连续流场状态，aerodynamic FNO读出状态/动作并预测力。B训练只更新aerodynamic FNO的28个参数张量，flow FNO和两个lifting（特征升维）层偏置冻结。B使用K1历史长度1，100步rollout；原训练目标是归一化四力的`.5 H1 + .5 AR100`平衡损失，其中rear-Cl权重较高。
 
 ### 4.2 B训练合同
 
@@ -154,7 +154,7 @@ Spark本机：`http://127.0.0.1:8766/`；已有Mac端口转发时：`http://loca
 
 ### 9.3 多阶段复现
 
-完整交接见[CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md](CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md)和`CANONICAL_CHAIN_INPUT_INVENTORY_20261007.json`。inventory已只读核验906个hash，但起点是Spark现有runtime、curated数据和预训练K1；它不是从原始CFD开始重新训练upstream flow/K1/B/PPO的全新实跑。
+完整交接见[CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md](CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md)和`CANONICAL_CHAIN_INPUT_INVENTORY_20261007.json`。历史完整审计曾核验906项；本轮收尾再次运行`check_canonical_chain_inventory.py`，结果为`READ_ONLY_INVENTORY_PASS_NOT_EXECUTION`：851项做SHA校验，另55项只检查payload存在。它未解码模型/HDF、未运行Docker/科学任务，也未独立复核当前已装package版本。起点仍是Spark现有runtime、curated数据和预训练K1，并非从原始CFD开始重新训练upstream flow/K1/B/PPO的全新实跑。
 
 ## 10. 模型与大文件归档原则
 
@@ -218,7 +218,7 @@ Git保存源代码、配置、审批、报告、测试和SHA清单；以下大�
 ## 14. 收尾待办（不得扩展为新实验）
 
 - [ ] 填写Representative256终态独审和fixed-six结果；若未完成则写未知。
-- [ ] 生成最终模型/数据/策略/镜像SHA与路径清单，标注Git外大文件。
-- [ ] 更新`PROJECT_STATE.md`、`ROADMAP.md`、`EXPERIMENTS.md`、`DECISIONS.md`和`results.csv`的最终状态。
+- [x] 生成最终模型/数据/策略/镜像SHA与路径清单，标注Git外大文件，见[FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md](FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md)。
+- [ ] 更新`PROJECT_STATE.md`、`docs/RESEARCH_ROADMAP.md`、`EXPERIMENTS.md`、`DECISIONS.md`和`results.csv`的最终状态。
 - [ ] 运行文档链接、关键复现预检和有限CPU测试；不启动新科学计算。
 - [ ] 在`12:50:45Z`前完成scoped GitLab push并记录最终commit。
