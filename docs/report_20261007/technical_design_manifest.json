@@ -1,0 +1,37 @@
+{
+  "purpose": "documentation build only; no scientific experiment",
+  "inputs": [
+    {
+      "path": "docs/TECHNICAL_BLUEPRINT_20261007.md",
+      "sha256": "78765508580cfad583922aa24caf36513d233ae48d1a148607539e2ad143c2d6",
+      "bytes": 25733
+    },
+    {
+      "path": "docs/TECHNICAL_DESIGN_DATA_STACK_20261007.md",
+      "sha256": "b60712bbed3e8a9f406bf5698b0992a3f56e1fa0996568438281ba07dd86e858",
+      "bytes": 12948
+    },
+    {
+      "path": "docs/TECHNICAL_DESIGN_SURROGATE_TRAINING_20261007.md",
+      "sha256": "d0a440eb11a8718c0256da76fb368d91ec3dd96546b6335c5870251d56a4080a",
+      "bytes": 14711
+    },
+    {
+      "path": "docs/TECHNICAL_DESIGN_CONTROL_ROADMAP_20261007.md",
+      "sha256": "9987c902ad814474f43ff0e1d2051bf5188d1f7bf01ac6a1bcec897fba75545a",
+      "bytes": 13443
+    },
+    {
+      "path": "docs/report_20261007/assets/technical_blueprint.svg",
+      "sha256": "d8ffa11f6bf33d47c2688701f0ee468b13c369fdfbce836abeac8d2316c47ae0",
+      "bytes": 4537,
+      "kind": "architecture schematic, not a measured result"
+    }
+  ],
+  "stylesheet_source": "docs/report_20261007/index.html",
+  "stylesheet_sha256": "dd2aebce0352a3c347d65f30e98f6b2e4b9a2df33da331e47132ada2dfa8851b",
+  "renderer_sha256": "458e920999a1f5a41e6c63454e6d53138814be5c74edb5355fc960d1a36fcea8",
+  "html_sha256": "5f83534d81e50520e747856b0e512dd0beb1606c29e3f8a4c78cb7ca7aabd443",
+  "local_links_missing": [],
+  "html_id_count": 64
+}

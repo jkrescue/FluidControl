@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="780" viewBox="0 0 1200 780" role="img" aria-labelledby="title desc">
+<title id="title">串列双圆柱代理辅助控制总体技术架构</title>
+<desc id="desc">真实CFD经过Curator与DataPipe形成训练数据，PhysicsNeMo FNO提供代理环境，HydroGym接口与SB3 PPO训练策略。已有部署为真实CFD观测驱动冻结PPO，不在线调用FNO。FNO-MPC为待改进路线。所有结果进入独立评价和项目台账。</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#426681"/></marker></defs>
+<style>text{font-family:Arial,"PingFang SC","Noto Sans CJK SC",sans-serif;fill:#16304a} .title{font-size:28px;font-weight:700}.h{font-size:21px;font-weight:700}.b{font-size:17px}.s{font-size:15px}.box{stroke:#718ea6;stroke-width:1.5;rx:12}.a{fill:none;stroke:#426681;stroke-width:2.5;marker-end:url(#arrow)}.pending{stroke:#bb7b20;stroke-dasharray:9 5}</style>
+<rect width="1200" height="780" fill="#f7fafc"/>
+<text x="35" y="43" class="title">总体蓝图：数据、代理训练与真实反馈控制</text>
+<text x="35" y="73" class="b">固定 Re=100、L/D=5；后柱旋转｜架构示意，不是新增实验结果</text>
+<text x="35" y="112" class="s">第一层 · 真实数据与统一数据接口</text>
+<rect x="35" y="130" width="295" height="105" class="box" fill="#e6f2f7"/>
+<text x="53" y="159" class="h">OpenFOAM · 物理真值</text><text x="53" y="188" class="b">网格 / 边界 / 转速 / restart</text><text x="53" y="213" class="b">U、p、Cd/Cl、探针与日志</text>
+<path d="M333 182H383" class="a"/>
+<rect x="395" y="130" width="360" height="105" class="box" fill="#e6f2f7"/>
+<text x="413" y="159" class="h">PhysicsNeMo Curator</text><text x="413" y="188" class="b">VTK读取 → ROI采样 → HDF5</text><text x="413" y="213" class="b">项目适配负责时钟、标签与质量检查</text>
+<path d="M758 182H803" class="a"/>
+<rect x="815" y="130" width="350" height="105" class="box" fill="#e6f2f7"/>
+<text x="833" y="159" class="h">HDF5Reader / DataPipe</text><text x="833" y="188" class="b">轨迹拆分 / 训练统计 / 动作窗口</text><text x="833" y="213" class="b">版本化张量、mask与数据来源</text>
+<path d="M991 238V258H248V291" class="a"/>
+<text x="35" y="281" class="s">第二层 · 离线模型与策略训练</text>
+<rect x="35" y="305" width="425" height="120" class="box" fill="#e8eefb"/>
+<text x="53" y="336" class="h">PhysicsNeMo · 官方 FNO</text><text x="53" y="365" class="b">状态 + 动作 → 后续流场 / 气动力</text><text x="53" y="393" class="b">已有B代理；完整预测精度仍未达标</text>
+<path d="M464 365H517" class="a"/>
+<rect x="530" y="305" width="635" height="120" class="box" fill="#e8eefb"/>
+<text x="548" y="336" class="h">HydroGym 环境接口 + SB3 PPO</text><text x="548" y="365" class="b">项目适配：观测、动作、reset、奖励、代理推进</text><text x="548" y="393" class="b">冻结代理训练策略；策略与归一化版本一起交付</text>
+<path d="M665 428V456H389V490" class="a"/>
+<text x="35" y="476" class="s">第三层 · 真实在线反馈：已有路线与待改进路线分开</text>
+<rect x="35" y="505" width="715" height="112" class="box" fill="#e4f3eb"/>
+<text x="53" y="536" class="h">已有有效路线 · 冻结 PPO + 真实 CFD</text><text x="53" y="565" class="b">CFD观测 → PPO → 动作约束 → OpenFOAM → 新观测</text><text x="53" y="592" class="b">每0.1 D/U反馈；部署不调用FNO/MPC；E114物理指标通过</text>
+<rect x="805" y="505" width="360" height="112" class="box pending" fill="#fff3db"/>
+<text x="823" y="536" class="h">待改进路线 · FNO-MPC</text><text x="823" y="565" class="b">预测候选动作 → 选择 → CFD复核</text><text x="823" y="592" class="b">已有短探索；尚无有效控制增益</text>
+<path d="M248 428V445H985V490" class="a pending"/>
+<path d="M389 620V653" class="a"/><path d="M985 620V653" class="a pending"/>
+<rect x="35" y="666" width="1130" height="80" class="box" fill="#edf1f5"/>
+<text x="53" y="696" class="h">共同验证与工程管理</text><text x="53" y="726" class="b">场 / 力 / 动作 / 物理收益分层评价 · 公平基线与数值验证 · 资源守卫 · 实验台账 · GitLab</text>
+<text x="35" y="770" class="s">实线：已有链路；虚线：待验证路线。PPO物理成功 ≠ 代理精度通过 ≠ 论文级验证全部完成。</text>
+</svg>

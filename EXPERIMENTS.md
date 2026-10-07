@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## Technical blueprint and implementation framework — documentation, not an experiment
+
+At 2026-10-07T11:29Z, add the requested top-level blueprint and WP0–WP5 implementation framework plus data-stack, surrogate-training and control-roadmap appendices. The combined offline technical page distinguishes current implementation from proposed work, and connects to the existing nine-figure results report. Its architecture diagram is a schematic, not measured data. No training/inference/PPO/CFD, new scientific identifier, result row, threshold change or default-model change is associated with this milestone. Source and generated-page checks are documentation verification only.
+
 ## Final illustrated delivery and read-only evidence packaging — not a scientific experiment
 
 At `2026-10-07T11:13Z`, the verified project evidence was assembled into the Chinese final report, a self-contained offline HTML page, nine bound figures, and compact receipts/tables. Commit `987491b` records the report sources and generated assets; the portable package independently resolved all 9 HTML image references and passed 14 copied-file SHA-256 checks. This entry adds no experiment identifier or metric row: no model was loaded, no training, inference, PPO, CFD, or threshold change was performed, and retained B remains the default. The package preserves both the E114 real-CFD closed-loop result and the unresolved surrogate/FNO/MPC accuracy limitations.

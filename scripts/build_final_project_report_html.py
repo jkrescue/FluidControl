@@ -23,6 +23,7 @@ body = markdown.markdown(
 body = body.replace('src="report_20261007/assets/', 'src="assets/')
 body = body.replace('href="report_20261007/assets/', 'href="assets/')
 body = body.replace('href="report_20261007/index.html"', 'href="index.html"')
+body = body.replace('href="report_20261007/technical_design.html"', 'href="technical_design.html"')
 body = re.sub(
     r'href="((?!https?://|#|assets/|report_20261007/)[^"]+\.(?:md|json))"',
     r'href="../\1"',
@@ -89,7 +90,7 @@ doc = f"""<!doctype html>
 <p>限定 Re=100、L/D=5 案例｜真实 OpenFOAM 反馈闭环已交付｜完整 FNO 精度与 MPC 目标仍未完成</p>
 <div class="status"><span class="pill">默认策略：B</span><span class="pill">E114 新增 80 D/U</span>
 <span class="pill">减阻 4.1326%</span><span class="pill">离线、无 CDN</span></div></header>
-<nav>{toc}</nav><main>{body}</main>
+<nav><a href="technical_design.html">总体技术方案与实施框架</a>{toc}</nav><main>{body}</main>
 <footer>生成自 docs/PROJECT_FINAL_REPORT_20261007.md。图片为已保存实验资产；点击图片可查看同目录原分辨率文件。此页面不包含在线脚本、遥测或 CDN。</footer>
 </div></body></html>"""
 out_path.write_text(doc, encoding="utf-8")

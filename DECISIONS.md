@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — Add the top-level implementation framework before detailed modules
+
+At 11:29 UTC, the user's requested technical solution is organized as blueprint → implementation work packages → staged acceptance → detailed data/model/control appendices. Preserve the existing B/E082/E114 chain and all scientific failures. `docs/TECHNICAL_BLUEPRINT_20261007.md` defines WP0–WP5 inputs, work, outputs, ownership and evidence handoffs; three linked technical-design documents explain existing APIs and proposed follow-on work. Integrate them in one offline HTML, linked from the results report. This is documentation only, not a new experiment, model promotion, deadline extension or permission to restart old queues. Any later experimental action still needs an explicit hypothesis, frozen protocol and resource budget.
+
 ## 2026-10-07 — Resume documentation only under the unchanged hard deadlines
 
 At `2026-10-07T10:47Z`, resume work only to produce the complete Chinese illustrated report and to organize already-saved error decompositions. Keep the scientific-test deadline `2026-10-07T12:20:45Z` and archive deadline `2026-10-07T12:50:45Z`. Retain B, all physical and prediction thresholds, the existing experiment history, and the disabled `training-evaluation-watchdog.timer`. Do not infer a new result from a figure, restart old queues, or authorize training/PPO/CFD through this documentation decision. The prior closeout report remains a valid historical version; the illustrated edition adds explanations and source-labelled graphics only.

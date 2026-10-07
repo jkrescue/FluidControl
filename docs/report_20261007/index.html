@@ -46,8 +46,9 @@ footer { padding:26px 56px; background:#172033; color:#cbd5e1; font-size:13px; }
 <p>限定 Re=100、L/D=5 案例｜真实 OpenFOAM 反馈闭环已交付｜完整 FNO 精度与 MPC 目标仍未完成</p>
 <div class="status"><span class="pill">默认策略：B</span><span class="pill">E114 新增 80 D/U</span>
 <span class="pill">减阻 4.1326%</span><span class="pill">离线、无 CDN</span></div></header>
-<nav><a href="#1">结论</a><a href="#2">目标与判据</a><a href="#3-openfoamcurator">数据链</a><a href="#4">模型</a><a href="#5">策略谱系</a><a href="#6">真实闭环</a><a href="#7">预测实验</a><a href="#8">证据边界</a><a href="#9">复现</a><a href="#14">证据索引</a></nav><main><h1 id="_1">串列双圆柱主动流动控制项目最终图文报告</h1>
+<nav><a href="technical_design.html">总体技术方案与实施框架</a><a href="#1">结论</a><a href="#2">目标与判据</a><a href="#3-openfoamcurator">数据链</a><a href="#4">模型</a><a href="#5">策略谱系</a><a href="#6">真实闭环</a><a href="#7">预测实验</a><a href="#8">证据边界</a><a href="#9">复现</a><a href="#14">证据索引</a></nav><main><h1 id="_1">串列双圆柱主动流动控制项目最终图文报告</h1>
 <blockquote>
+<p><strong>先看完整方案，再看实验结果：</strong> 新增<a href="../TECHNICAL_BLUEPRINT_20261007.md">总体技术方案与实施框架</a>及<a href="technical_design.html">一页集成阅读的技术方案HTML</a>。顺序为：总体蓝图→工作包与交接规则→分阶段实施/验收→数据工具栈→代理训练→MPC/PPO闭环。该方案在既有成果上补足顶层组织，不改变下面的实测结论，不代表启动了新训练或CFD。</p>
 <p>状态基准：<code>2026-10-07T10:47Z</code>，用户恢复继续整理图文报告，但原科学测试硬截止<code>2026-10-07T12:20:45Z</code>和归档硬截止<code>2026-10-07T12:50:45Z</code>不变。Representative256训练与fixed-six均已独立终态并被拒绝；所有“通过/失败”均以已存在的独立报告、receipt和SHA为依据。本次更新只整理已有结果和图片，不改变模型、门限或默认B策略。</p>
 </blockquote>
 <h2 id="1">1. 一页结论</h2>
