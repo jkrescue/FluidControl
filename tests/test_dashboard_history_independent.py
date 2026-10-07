@@ -57,7 +57,7 @@ let rejected=false;try{currentGSeries([{...rows[0],output_observation:[1]}]);}ca
     assert p.returncode==0,p.stderr
     render=html.split('function renderCurrentGClosedLoop(c){',1)[1].split('function renderAbsolute64ClosedLoop(d){',1)[0]
     assert 'currentGSeries(c.rows)' in render and 'reproduction' not in render
-    assert '历史详情 · B默认策略 b01 工程复现（E095，非G曲线）' in html
+    assert '原B b01：130→210（E095）' in html
 
 def test_terminal_and_aux_are_separate():
     html = page()
@@ -181,7 +181,8 @@ def test_reproduction_uses_canvas_and_images_before_return():
     text = page().split('function renderActiveExperiment(d){', 1)[1]
     assert text.index('canonical_seeds_real_cfd_t228') < text.index('if(reproduction?.verified)')
     for name in ['action', 'drag', 'lift']:
-        assert f'<canvas width="1000" height="220" id="canonical-reproduction-{name}"></canvas>' in text
+        assert f'<canvas width="1000" height="220" id="canonical-reproduction-{name}"></canvas>' in page()
+    assert 'renderBSelectedCurves(d)' in text
 
 
 def test_live_reproduction_requires_exact_invocation_and_active_pid(tmp_path):
