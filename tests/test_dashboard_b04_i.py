@@ -43,3 +43,21 @@ def test_wrong_invocation_rejected(tmp_path):
 def test_ui_preserves_delivery():
     s=SOURCE.read_text();assert "data['b04_i_training']" in s and 'loss未在当前日志报告，不估算' in s
     assert '基本闭环已验证：E114新增800次真实CFD反馈' in s
+
+def test_gc_safe_terminal_requires_all_pins(tmp_path):
+    f=fixture(tmp_path)
+    node=next(n for n in ast.parse(SOURCE.read_text()).body if isinstance(n,ast.FunctionDef) and n.name=='_b04_i_training')
+    pins=ast.literal_eval(next(n.value for n in ast.walk(node) if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='terminal' for t in n.targets)))
+    hashes={}
+    for name,(path,digest) in pins.items():
+        p=tmp_path/path;p.parent.mkdir(parents=True,exist_ok=True)
+        data={'name':name}
+        if name=='train_receipt':data.update(unit={'InvocationID':'7c1d1d634af94321b638ba6da2febe45','MainPID':'0','ExecMainStatus':'0'},result_sha256=pins['train_result'][1],consumed=256,records=32,retention={'retention_pass':True})
+        if name=='dev_receipt':data.update(result_sha256=pins['dev_result'][1],comparison={'pooled':{'1':{'I_rearCl':1.0471,'B_rearCl':1.,'I_totalCd':1.0405,'B_totalCd':1.}}})
+        p.write_text(json.dumps(data));hashes[p.read_bytes()]=digest
+    f.__globals__['hashlib'].sha256=lambda b:SimpleNamespace(hexdigest=lambda:hashes.get(b,DIGEST))
+    def gc(*a,**k):raise subprocess.TimeoutExpired('GC',3)
+    f.__globals__['subprocess'].check_output=gc
+    r=f(tmp_path);assert r['terminal_verified'] and not r['running'] and not r['selection_pass'] and r['retention_pass']
+    (tmp_path/pins['dev_result'][0]).write_text('tampered')
+    assert not f(tmp_path)['verified']

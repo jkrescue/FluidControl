@@ -526,6 +526,7 @@ function renderActiveExperiment(d){
   if(d.b04_data_stage){const s=d.b04_data_stage;$('lead-monitor').textContent=s.verified?`当前研究阶段：B04原始CFD数据已生成；VTK导出${s.running?'正在运行':s.process_completed?'进程已完成、待数据核验':'进程停止/失败、待诊断'}，已出现${s.vtk_frames}/801个internal.vtu文件（文件计数不是完整QC）。Curator/HDF${s.curator_output_exists?'输出目录已出现，执行状态尚未绑定、不据此判完成':'尚无输出，未见已绑定执行'}；本VTK作业不训练模型、不运行新CFD，不是GPU训练。下方保留E114续跑真实动作/Cd/Cl，可切原B；同工况累计1600周期经过已验证恢复，不称独立泛化。`:'B04数据处理当前状态暂不可读取；不推断仍运行或已结束。基本闭环成果和原曲线保留。';}
   if(d.b04_data_stage?.stage==='curator_hdf_only'){const s=d.b04_data_stage;$('lead-monitor').textContent=`当前研究阶段：B04 Curator/HDF数据处理${s.running?'正在运行':s.process_completed?'进程已结束、等待独立数据核验':'进程停止/失败、待诊断'}；日志已报告采样${s.sampled_frames??'未知'}/801帧（不是总体完成率）。VTK文件${s.vtk_frames}/801；HDF输出目录${s.curator_output_exists?'已出现，存在不等于核验通过':'尚未出现'}。这是CPU数据转换，不是GPU训练或新CFD；基本闭环已交付、续跑曲线保留，FNO完整预测精度仍未达标。`;}
   if(d.b04_i_training){const s=d.b04_i_training;$('lead-monitor').textContent=s.verified?`当前研究：I气动力预测模块${s.running?'正在训练':s.process_completed?'训练进程已结束，等待独审':'进程已停止/失败，待诊断'}，真实日志窗口${s.windows}/256、更新${s.updates}/32；loss未在当前日志报告，不估算。流场网络冻结，不是PPO训练或CFD。实际内存${s.memory?.MemoryCurrent!=null?(s.memory.MemoryCurrent/2**30).toFixed(2)+' GiB':'未知'}；上限${s.memory?.MemoryMax!=null?(s.memory.MemoryMax/2**30).toFixed(0)+' GiB':'未知'}。B基本闭环交付及下方真实曲线保持，训练日志不代表预测准入。`:'当前I训练状态暂不可读取，不推断任务已结束；B基本闭环与真实曲线保留。';}
+  if(d.b04_i_training?.terminal_verified){const s=d.b04_i_training;$('lead-monitor').textContent=`I训练已完成并核验256窗口/32更新；固定开发评估未通过：单步后柱Cl MAE较B增加${(100*s.development_h1_relative_change.rearCl).toFixed(2)}%、总Cd MAE增加${(100*s.development_h1_relative_change.totalCd).toFixed(2)}%，保留B，不推进I的PPO/CFD。已绑定本轮训练、评估与CFD均结束；当前受管科学任务以实时任务查询为准。B已完成跨已验证恢复的1600个真实反馈区间，不是单个无中断进程。FNO用于PPO策略训练环境；部署是CPU PPO＋真实OpenFOAM，无在线FNO/MPC。完整代理精度仍未达标，不代表项目全部完成。`;}
   return;
  }
   if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5560,6 +5561,19 @@ def _b04_i_training(root):
         approval=root/'docs/P064_B04_COVERAGE_I_TRAINING_APPROVAL_20261007.json'
         if hashlib.sha256(approval.read_bytes()).hexdigest()!=digest:raise ValueError('approval identity')
         spec=json.loads(approval.read_text());runner=root/spec['source']['runner']['path']
+        terminal={
+            'train_receipt':('artifacts/p064_b04_coverage_i_terminal_audit_20261007/receipt.json','b7cc2bbf345848ce1188ad242b84c6d47d3a2738bf51ab686dc62b9d2cf4dfc0'),
+            'train_result':('artifacts/fcp064_controlled_aero_arm_i_b00_b04_20261007/result.json','728bb93b0003db8992a456dfbf0b415dde635a74566deb8ba37a6a5169214d07'),
+            'dev_receipt':('artifacts/p064_b04_coverage_i_dev_independent_audit_20261007/receipt.json','b4589d462c29ba9cb82d25ecb87693de4a6c8401f3e5b24a12ac99a1cb61bead'),
+            'dev_report':('docs/P064_B04_COVERAGE_I_DEVELOPMENT_TERMINAL_REVIEW_20261007.md','f898f14b9136e0a8150635e7f6b18a3993741d4b420f8eed921d321dce8a3bb1'),
+            'dev_result':('artifacts/p064_b04_coverage_i_development_h1_h5_20261007/result.json','924ef17c729235ea351137848b6b9f5439b57e1e89d80f85ae522cdcdcdfe18d')}
+        if all((root/p).is_file() for p,h in terminal.values()):
+            for p,h in terminal.values():
+                if hashlib.sha256((root/p).read_bytes()).hexdigest()!=h:raise ValueError('terminal proof identity')
+            tr=json.loads((root/terminal['train_receipt'][0]).read_text());dev=json.loads((root/terminal['dev_receipt'][0]).read_text())
+            if tr['unit']['InvocationID']!=inv or tr['unit']['MainPID']!='0' or tr['unit']['ExecMainStatus']!='0' or tr['result_sha256']!=terminal['train_result'][1] or dev['result_sha256']!=terminal['dev_result'][1] or tr['consumed']!=256 or tr['records']!=32:raise ValueError('terminal relationship')
+            comparison=dev['comparison']['pooled']['1']
+            return dict(verified=True,terminal_verified=True,running=False,process_completed=True,unit=unit,invocation=inv,pid=0,windows=256,updates=32,loss=None,flow_frozen=True,selection_pass=False,development_h1_relative_change={'rearCl':comparison['I_rearCl']/comparison['B_rearCl']-1,'totalCd':comparison['I_totalCd']/comparison['B_totalCd']-1},retention_pass=tr['retention']['retention_pass'],report=terminal['dev_report'][0])
         if spec.get('execution_authorized') is not True or hashlib.sha256(runner.read_bytes()).hexdigest()!=spec['source']['runner']['sha256']:raise ValueError('source identity')
         raw=subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','Result','-p','ExecMainStatus','-p','ExecStart','-p','MemoryCurrent','-p','MemoryMax','-p','MemorySwapMax'],text=True,timeout=3)
         state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
