@@ -1,5 +1,11 @@
 # DECISIONS
 
+## 2026-10-07 — One B04 raw late-state trajectory only; conversion and training remain separate
+
+Following independent review of the fixed801-point action contract and thin solver entry, authorize one train-only b04 raw OpenFOAM trajectory from120→200. Keep the exact repeated PRBS table, bound t120 backward restart/mesh, Re100/L/D5,16000 steps,8GiB/noSwap resource limits and exclusive output. The executed approval is [P064_B04_LONG_EXCITATION_RAW_CFD_APPROVAL_20261007.json](docs/P064_B04_LONG_EXCITATION_RAW_CFD_APPROVAL_20261007.json), SHA `f2bfcd8f6d1526af266946448ca452d3c271047466d77a9e439d843081338536`; actual invocation is `e2fa5d4e5fa4465a90a2dfbbdd402fc8`.
+
+This decision does not authorize VTK, Curator/HDF conversion, normalization refit, model training, PPO or CFD control. Raw success must be independently checked before a separate case-local801-frame Curator authorization. The intended hypothesis is late feedback-like state coverage, but an eventual B comparison also changes profile/phase/action program/visited states and is not a pure causal decomposition. Basic B closed-loop delivery and E114 continuous-operation PASS remain unaffected.
+
 ## 2026-10-07 — Accept E114 same-case continuous reliability; keep prediction work separate
 
 Accept [E114 independent review](docs/P064_B_CONTINUATION_328_408_TERMINAL_REVIEW_20261007.md), SHA `09e89416e4dc59494fdab362f7316b213762850c742a752a91a3a9b3856fd2e5`: after exact one-interval restart recovery, the frozen retained-B controller continued the same two E109 branches from328→408 for800 additional feedback cycles. The entire new80-D/U tail and each fixed20-D/U block, plus joined160/140-D/U windows, pass the unchanged2% drag/1.05 RMS/10% bias gates. Accept this as stronger same-condition continuous-operation evidence for the basic delivered chain. Do not call it an independent physical regime, surrogate prediction admission or proof of general control robustness; do not require online FNO/MPC as a new basic-case gate.
