@@ -2,7 +2,59 @@
 
 Read-only repository/artifact review, 2026-10-07. No model, CFD or data conversion was executed. Historical approvals are evidence, not permission for a new run.
 
-## Conclusion
+## Current conclusion through E111
+
+The fixed tandem-cylinder operating case has an implemented, independently
+audited official-component chain: **existing real curated data and pretrained
+K1** → official PhysicsNeMo FNO fine-tuning → HydroGym/SB3 canonical PPO → CPU
+policy feedback to real OpenFOAM. This is not a raw-data-only rebuild and does
+not deploy online FNO/MPC. E095 reproduces the retained B b01 loop; E109 extends
+the same fixed case to a predeclared later interval. Both pass all six unchanged
+physical windows, so the basic real closed-loop delivery does not depend on
+relaxing the original2% /1.05 /10% criteria.
+
+The former canonical rebuild-documentation gap is closed at the bounded handoff
+level by [the multistage runbook](CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md) and
+[machine-readable inventory](CANONICAL_CHAIN_INPUT_INVENTORY_20261007.json),
+commit `82f5230cf0605f749bdcbb96926002ea571b8a44`. The readonly checker verified906
+hashes, including all55 payloads, under invocation
+`210169b4918a41d9bb47b02396851a06`. The inventory starts from installed
+runtimes, existing curated data and pretrained K1; it does not claim a fresh
+raw→upstream-flow→K1 reconstruction, provision payloads from Git or constitute
+a new three-stage execution.
+
+E107–E111 add bounded exploratory evidence without changing that default.
+E107 absolute64 exactly matches retained B at update32 and continues to64
+updates. E108 improves fixed-development H1/H5 summaries but regresses both
+fixed-six H1 and AR retention, so prediction selection remains FAIL. E110's
+same-protocol exploratory PPO nevertheless produces an E111 b01 physical run
+that passes all six original windows; the primary values are4.136238% drag
+reduction,0.810196 lift RMS ratio and1.681700% bias, descriptively better than
+matched B/G. This single exposed b01 result is not statistical superiority,
+independent-condition generalization or full forecasting acceptance, and it
+does not silently replace B. Some early/full-window bias comparisons are worse
+than B, while mean omega² is0.257480967 versus B0.240447471; omega² is an action
+proxy only and is not verified mechanical power or net-energy performance.
+
+Therefore the **basic official-component real-feedback case is delivered**, but
+the broader high-accuracy surrogate objective remains incomplete. B formal
+prediction and later candidate retention failures stay FAIL; early-window and
+seed failures remain part of the record. For the present fixed operating-case
+deliverable, no additional architecture, threshold sweep, new Reynolds number
+or online MPC is a mandatory missing element. Broader generalization would need
+a separately preregistered independent condition rather than selecting among
+already opened phases.
+
+Evidence: [E107 engineering review](P064_ABSOLUTE64_TERMINAL_ENGINEERING_REVIEW_20261007.md),
+[E108 development review](P064_ABSOLUTE64_DEVELOPMENT_REVIEW_20261007.md),
+[E109 future-time B review](P064_B_FUTURE_TIME_CFD_TERMINAL_REVIEW_20261007.md),
+[E110 PPO review](P064_ABSOLUTE64_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md)
+and [E111 physical review](P064_ABSOLUTE64_B01_CFD_TERMINAL_REVIEW_20261007.md).
+All sections below are retained historical audit text; their earlier
+"current" or "missing runbook" statements are superseded by this section and
+must not be read as live execution status or authorization.
+
+## Historical conclusion before the canonical inventory and E107–E111
 
 The basic official-component → learned-policy → real CFD feedback case exists and has been reproduced. **The current safe entrypoint reproduces CFD from an existing frozen policy; it does not rebuild the FNO and policy from raw data.** A data-to-model-to-policy handoff guide remains the main engineering delivery gap. This is separate from the scientifically unmet prediction criteria; no threshold is relaxed here.
 
