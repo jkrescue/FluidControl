@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — E111 physical PASS does not replace B or erase prediction FAIL
+
+Accept [E111 independent review](docs/P064_ABSOLUTE64_B01_CFD_TERMINAL_REVIEW_20261007.md), SHA `17d9328babbbbbe23f1c4bd830e7347626e1cdd055087bbec7ffac0dbecb4bbe`: all six original physical windows pass. Keep B default; absolute64 is a verified single-condition exploratory policy. Its primary drag/RMS/bias are better in this matched deterministic run, but this is not overall dominance: some early/full-window biases worsen and squared-action mean.25748 exceeds B.24045. No statistical significance, physical energy saving or independent generalization claim. Do not lower the10% bias gate or revise predictionselectionFAIL. No automatic new training/CFD is authorized by this terminal result.
+
 ## 2026-10-07 — E109 future-time physical validation accepted without changing gates
 
 Accept the [E109 raw report](docs/P064_B_FUTURE_TIME_CFD_TERMINAL_REVIEW_20261007.md): fixed B zero228→248 then paired248→328 completed, all six original physical windows PASS. Primary drag reduction3.9948739165%, RMS ratio0.8165882753, bias2.8533042395%. Do not loosen bias thresholds to obtain a pass. This is additional deterministic-time evidence in the same physical setup, not a new independent condition, prediction-quality admission or authorization to convert/train. Absolute64 b01 remains a separately approved running exploration in the timestamped state; no outcome inferred. Retain B default and all earlier failures.

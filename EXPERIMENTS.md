@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E111 — absolute64 b01 physical terminal: six original windows PASS
+
+Science invocation `6fa0baeb90034371b3b49f3d8d51192a` PID0/exited/success0; result `5fa8f47bb3a4939b6b8377f5ccd8c178dec560220929e36e48b8875e90a7504e`. [Independent report](docs/P064_ABSOLUTE64_B01_CFD_TERMINAL_REVIEW_20261007.md) SHA `17d9328babbbbbe23f1c4bd830e7347626e1cdd055087bbec7ffac0dbecb4bbe`, CPUaudit invocation `b4b0efda17754ce092d7bf7c01d393a1`, receipt `d114a326919c1f2abf4b1a35ab51f3de09e33b43eac5de821d776f8fd126dad3`. All3200raw/1600logs/800canonical actions/799feedback/20restart/zero-B exact checks PASS. Separate producer6a6b CPUcheck is disclosed; no science rerun.
+
+Primary drag4.1362382900%, rearCl RMSratio0.8101959756, bias1.6817003164%; first6.2bias9.0800186317% passes unchanged10%. All six windows recorded in CSV. Sciencewall1109.292s/800=1.386615wallseconds per pairedcycle, not physical real-time proof. Sameb01 B main drag4.00906895%, G3.95134578%; small deterministic differences are descriptive, not significant superiority. Absolute64's mean omega².257480967 exceeds B.240447471 and some early/full bias metrics worsen. RetainB default, absolute64 single-condition exploratory policy, predictionselectionFAIL unchanged. E109 future interval is separate, not pooled.
+
 ## FC-E109 — retained B fixed future-time terminal: all six original windows PASS
 
 Same invocation `4b3eb2a2fcab4585aafd5740f8d0cea3` completed200 zero baseline segments and800 paired feedback cycles. [Raw review](docs/P064_B_FUTURE_TIME_CFD_TERMINAL_REVIEW_20261007.md) documents3200 force hashes,1600 paired+200 baseline solver logs, actual248 initial observation,799 feedback links and3 owned-container cleanup checks. The source author ran the independently reviewed checker; do not describe it as third-party execution. Result SHA `d53cb2ea32f66af6c4067d0c7eb90e7aecc8b815634588b6fe448d291acc5b98`; audit stdout SHA `f4be832f6d844de4e25d2cccdf470db4a30e9fc794a27c1ffb8ed34cb1b47a89`.
