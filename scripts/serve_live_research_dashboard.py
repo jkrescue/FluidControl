@@ -479,6 +479,7 @@ function renderActiveExperiment(d){
   drawActualSeries('canonical-reproduction-lift',x.rows,[{key:'ppo_rear_cl',label:'canonical Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero Cl',color:'#f69d97'}],'真实CFD周期末rear Cl');
   if(d.g_exploratory_cfd?.verified){const c=d.g_exploratory_cfd;$('lead-now').textContent=`最新G探索闭环：${c.terminal_verified?'800次真实反馈已完成并独审，六窗物理标准通过':c.running?'CPU真实反馈运行中':'进程已结束，待独审'}；${c.cycles}/800。${c.terminal_verified?'主窗减阻3.9513%、后升力波动降低18.3622%、偏置3.0717%；本任务已结束，无新训练。':''} B仍为默认，G预测FAIL未改变；当前G三曲线见 #current-closed-loop，B历史见 #canonical-reproduction。`;}
   if(d.absolute64_training){const a=d.absolute64_training;$('lead-now').textContent=`Absolute64气动力训练：${a.status}；更新${a.updates}/64，窗口${a.windows}/512。${a.loss==null?'尚无可读loss记录（不估算）':'最近训练loss '+a.loss}。仅训练日志，不代表预测准入；B默认/G已完成闭环不变。`;$('lead-monitor').textContent=`unit ${a.unit}；inv ${a.invocation||'尚无'}；PID ${a.pid||0}；Available ${num(a.available_gib,2)} GiB。${a.note} 原G当前曲线与B历史均保留。`;}
+  if(d.future_time_cfd?.verified){const f=d.future_time_cfd;$('lead-now').textContent=`固定B新未来时段：${f.status}；zero基线${f.baseline_cycles}/200（228→248），配对反馈${f.paired_cycles}/800（248→328）。${f.phase==='baseline'?'当前为零动作基线生成':f.phase==='handoff'?'基线已完成，待进入配对':'已进入固定策略配对阶段'}，CPU真实OpenFOAM，不是MPC/FNO训练。`;$('lead-monitor').textContent=`unit ${f.unit}；inv ${f.invocation}；PID ${f.pid}；Available ${num(f.available_gib,2)} GiB。原2%/1.05/10%不变，未独审不宣告物理通过；新时间段不等统计独立，保留B/G历史。`;}
   return;
  }
  if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5148,6 +5149,7 @@ class Handler(BaseHTTPRequestHandler):
             data['g_exploratory_ppo'] = _g_exploratory_ppo(self.root)
             data['g_exploratory_cfd'] = _g_exploratory_cfd(self.root)
             data['absolute64_training'] = _absolute64_training(self.root)
+            data['future_time_cfd'] = _future_time_cfd(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5492,6 +5494,35 @@ def _canonical_b01_reproduction(root):
                 'memory_gib': int(memory) / 1024**3 if memory.isdigit() else None}
     except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
         return {'verified': False}
+
+
+def _future_time_cfd(root):
+    unit='fluid-control-p064-b-future-time-cfd-20261007.service'
+    inv='4b3eb2a2fcab4585aafd5740f8d0cea3'
+    approval=root/'docs/P064_B_FUTURE_TIME_CFD_APPROVAL_20261007.json'
+    try:
+        digest=hashlib.sha256(approval.read_bytes()).hexdigest()
+        if digest!='dbcedcce5d680c98e9e611ca092fcd4953879ffef9e8ef9fbf613cd11c93da25':return {'verified':False}
+        raw=subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','Result','-p','ExecMainStatus','-p','ExecStart'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!=inv or str(approval) not in state.get('ExecStart','') or digest not in state.get('ExecStart',''):return {'verified':False}
+        output=root/'artifacts/p064_b_future_time_248_328_cfd_20261007'
+        def count(name,limit,start):
+            path=output/name
+            if not path.exists():return 0
+            value=json.loads(path.read_text());n=value['completed_cycles'];rows=value['rows']
+            if not isinstance(n,int) or not 0<=n<=limit or len(rows)!=n:raise ValueError('invalid progress count')
+            if n and (rows[-1]['step']!=n or abs(rows[-1]['end_time']-(start+.1*n))>1e-8):raise ValueError('invalid progress clock')
+            return n
+        baseline=count('baseline_progress.json',200,228)
+        paired=count('progress.json',800,248)
+        if paired and baseline!=200:raise ValueError('paired before complete baseline')
+        pid=int(state['MainPID']);running=pid>0 and state.get('ActiveState')=='active' and state.get('SubState')=='running'
+        status='实际运行中' if running else ('进程成功结束，待独审' if state.get('Result')=='success' and state.get('ExecMainStatus')=='0' else '进程停止/失败，待诊断')
+        mem=dict(line.split(':',1) for line in Path('/proc/meminfo').read_text().splitlines())
+        phase='paired' if paired else ('handoff' if baseline==200 else 'baseline')
+        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,status=status,baseline_cycles=baseline,paired_cycles=paired,phase=phase,available_gib=int(mem['MemAvailable'].split()[0])/1024**2)
+    except (OSError,ValueError,KeyError,IndexError,TypeError,subprocess.SubprocessError):return {'verified':False}
 
 
 def _absolute64_training(root):
