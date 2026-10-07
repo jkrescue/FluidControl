@@ -1,5 +1,11 @@
 # DECISIONS
 
+## 2026-10-07 — Absolute64 is mixed evidence, original selection FAIL; retain B
+
+Accept the [absolute64 fixed-development independent review](docs/P064_ABSOLUTE64_DEVELOPMENT_REVIEW_20261007.md), SHA `d65af40479613570c935042c866a1dc2639b4c998b9376dcd62f8d6c724dcb32`. Update32 exactly reproduced historical B;64 updates improve both pooledH1 force MAEs and slightly improve pooledH5, but both fixed-six H1 and continuousAR100 retention regress. Apply the original rule unchanged: no automatic promotion or replacement of B, no claim of significance or overall prediction success. Preserve engineering R1guard failure and all historical scientific failures.
+
+Lead separately conditionally approves one same-budget canonicalH5 PPO exploration using the absolute64 surrogate, after source/identity/CPUload checks; it is still preparation here and does not reverse selectionFAIL or authorize CFD. FixedB new-time CFD subsequently passed its own source/resource review and was separately authorized and actually launched as E109; it is not a newRe or independent generalization claim. Basic official-component RL→realOpenFOAM feedback and original physical2%/1.05/10% criteria remain intact. No automatic extension, ratio sweep or checkpoint selection.
+
 ## 2026-10-07 — E106 engineering complete, no residual promotion; bounded absolute follow-up conditional
 
 Accept [R3 independent engineering review](docs/P064_TEMPORAL_FORCE_DELTA_PROBE_TERMINAL_REVIEW_20261007.md), not a scientific candidate: one train-only window, each arm one update, no model saved or dev evaluation. Absolute total improves3.58%; zero-head residual total improves only.023% and remains far worse, H1 slightly worsens. This does not establish convergence, generalization, or that32updates are insufficient. Preserve R1/R2 failures and do not infer a container root cause from isolated migration checks. Lead conditionally approves preparing the original B absolute64-update follow-up, pending original runtime/spec verification; no execution is recorded here. No residual promotion, no automatic continuation/weight scan, no change to physical standards or retained B/G control evidence. P022 current-force input is not reopened by this distinct output-parameterization probe.
