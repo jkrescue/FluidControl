@@ -4,7 +4,7 @@
 
 ## 绝对截止时间
 
-- **停止全部科学测试：`2026-10-07T12:20:45Z`（北京时间 `20:20:45`）。** 到点后不得启动新的训练、推理评估、PPO、CFD、数据转换、超参数扫描或诊断。截止前只允许完成当时已经明确批准且正在运行/收尾的任务，并如实保存成功或失败结果。
+- **停止全部科学测试：`2026-10-07T12:20:45Z`（北京时间 `20:20:45`）。** 到点后不得启动新的训练、推理评估、PPO、CFD、数据转换、超参数扫描或诊断。截止前只允许完成Lead明确授权的科学执行；已明确授权的只读后处理、独立核验、文档和归档可按其范围完成，并如实保存成功或失败结果。
 - **完成归档与同步：`2026-10-07T12:50:45Z`（北京时间 `20:50:45`）。** 在此之前完成代码、配置、审批、结果索引、模型SHA清单、论文素材报告、GitLab同步和最终状态说明。大模型、HDF、CFD场和容器镜像留在Spark主节点，以路径、大小和SHA清单引用，不直接提交Git。
 
 ## 收尾规则
@@ -20,6 +20,6 @@
 
 - 中文最终报告：[PROJECT_FINAL_REPORT_20261007.md](PROJECT_FINAL_REPORT_20261007.md)
 - 当前状态：[`PROJECT_STATE.md`](../PROJECT_STATE.md)
-- 实验与决策台账：[`EXPERIMENTS.md`](../EXPERIMENTS.md)、[`DECISIONS.md`](../DECISIONS.md)、[`results.csv`](../results.csv)
+- 实验与决策台账：[`EXPERIMENTS.md`](../EXPERIMENTS.md)、[`DECISIONS.md`](../DECISIONS.md)、[`results.csv`](../experiments/results.csv)
 - 基本闭环复现：[CANONICAL_CLOSED_LOOP_QUICKSTART.md](CANONICAL_CLOSED_LOOP_QUICKSTART.md)、[CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md](CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md)
-- 大文件/模型清单：最终模型与复现manifest（由收尾任务生成，Git只保存清单）。
+- 大文件/模型清单：[FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md](FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md)（Git只保存清单，大文件留主节点）。
