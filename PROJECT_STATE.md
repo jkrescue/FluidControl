@@ -1,10 +1,14 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前唯一摘要 — Absolute64训练及固定评估已完成，原selection FAIL；B默认保留
+## 当前唯一摘要 — E110 PPO已完成，两项CPU真实CFD探索进行中；B默认保留
+
+实际快照 `2026-10-07T01:33:36Z`：E110 PPO同 `5e1c7db703874125bb1556b411d3169c` PID0/exited/exit0，独审32768 transitions、512 optimizer hooks、256 epochs及奖励/动作/来源绑定PASS，见[终态报告](docs/P064_ABSOLUTE64_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md)（SHA `0dbf25b279036c95e216a38ea01efa7e2bced215e03e788bfb9ba45e8e18633c`）。E109固定B未来时段同 `4b3eb2a2fcab4585aafd5740f8d0cea3` PID2922821运行，baseline200/200、paired587/800。新absolute64 b01同 `6fa0baeb90034371b3b49f3d8d51192a` PID3306553运行37/800；unit `fluid-control-p064-absolute64-symmetry-canonical-b01-cfd-20261007.service`，批准SHA `d6303082b0f97087961a9171505a2b4289623eb5f634f2502ac4f7d65639143b`，output `artifacts/p064_absolute64_symmetry_canonical_b01_cfd_20261007`。两项CPU真实CFD均无终态结论，没有GPU训练运行。快照不是永久running声明。用户优先原标准下真实闭环探索，完整代理预测通过不是已明确批准探索的前置；原selection FAIL、B默认和2%/1.05/10%物理标准保持。
+
+### 已完成训练/评估与历史启动记录
 
 FC-E107训练同 `3c9d8e1bb01649a3b11c892159a73a2b` 已PID0/exited/exit0，512窗/64更新、28 Adam状态step64、flow/两bias不变，update32精确复现原B。见[工程独审](docs/P064_ABSOLUTE64_TERMINAL_ENGINEERING_REVIEW_20261007.md)，result `2d715ff7d474e06ab0fcec2bc22056a020e37e0adf29645785b6fe89f44fbad8`。FC-E108固定dev R2同 `dd78b8303e164f869b3afad7cc33e098` 已正常终态，[16NPZ/80端点独审](docs/P064_ABSOLUTE64_DEVELOPMENT_REVIEW_20261007.md)，result `2b7558530c03808f3e5fac4cd00bec78c79c0c3e6e552f17ba90efdbd1f2a805`。H1 Cl/Cd MAE `.126895332709/.036246638745` 优于B `.138998316601/.038065373898`；pooledH5略改善，但固定six H1 `.003976855262→.004376321197`、AR100 `.008946200483→.009106266196` 都退化，故原selection FAIL，不替换B、不称显著或总体达标。冻结flow逐值相同不是field改善。R1继承12GiB guard拒绝已批24GiB、未模型评估，工程失败保留。
 
-当前上述训练/评估均已结束。FC-E109固定B未来时段CFD已实际启动：unit `fluid-control-p064-b-future-time-cfd-20261007.service`，inv `4b3eb2a2fcab4585aafd5740f8d0cea3`，PID2922821 running，独查baseline27/200；先zero228→248，再配对248→328共800反馈，尚无物理结果。批准SHA `dbcedcce5d680c98e9e611ca092fcd4953879ffef9e8ef9fbf613cd11c93da25`，output `artifacts/p064_b_future_time_248_328_cfd_20261007`；这是CPU真实CFD，不是训练或独立新工况。FC-E110 absolute64短H5探索PPO仅条件批准准备，尚未报告实际启动。基本800步真实OpenFOAM在线反馈及原物理2%/1.05/10%通过证据保持；完整代理预测质量仍未完成。以下启动段是历史快照，不代表当前运行。
+E109协议固定zero228→248，再配对248→328共800反馈，批准SHA `dbcedcce5d680c98e9e611ca092fcd4953879ffef9e8ef9fbf613cd11c93da25`，output `artifacts/p064_b_future_time_248_328_cfd_20261007`。新absolute64 b01按130→210配对800反馈，原六窗门限不变。二者均非独立新工况或模型晋级。基本800步真实OpenFOAM在线反馈已验证，完整代理预测质量仍未完成。以下启动段为历史，不代表当前运行。
 
 FC-E107启动快照（实际采样 `2026-10-07T00:33:18Z`，不是永久running声明）：unit `fluid-control-p064-absolute64-arm-b-20261007.service`，invocation `3c9d8e1bb01649a3b11c892159a73a2b`，PID2799035 active/running；journal已35/512窗口、4/64更新。批准 [P064_ABSOLUTE64_ARM_B_TRAINING_APPROVAL_20261007.json](docs/P064_ABSOLUTE64_ARM_B_TRAINING_APPROVAL_20261007.json) SHA `705c596861cdfaafa9bcd5e10ffeea2f37cbe36cf59c816e019183e92a44d500`；冻结runner `d24de464bd85732a89404cdb91eeef13fff5b17c96e2f73789d06e6ef39aecc4`。output `artifacts/p064_absolute64_arm_b_20261007`。从原K1起点按B固定256窗顺序连续两遍，单一AdamW、64updates/512windows，仅保存最终update64；update32须与原B tensor精确一致。24GiB/noSwap、allocator16GiB、CPU800%、3600/3660秒、Available50启动/22运行/20保留。实时进程以dashboard实际unit状态为准；窗口与更新计数不是预测改善、终态或准入。没有读取live checkpoint，未启动新PPO/CFD。
 

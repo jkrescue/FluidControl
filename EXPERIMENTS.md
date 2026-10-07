@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E110 — absolute64 exploratory PPO terminal; fixed b01 CFD separately launched
+
+Same PPO invocation `5e1c7db703874125bb1556b411d3169c` completed successfully. Independent audit verified32768 transitions/6552 episodes/512 optimizer hooks/256 epochs, six reward means, action/filter clocks,75 source/192 runtime hashes. [Report](docs/P064_ABSOLUTE64_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md) SHA `0dbf25b279036c95e216a38ea01efa7e2bced215e03e788bfb9ba45e8e18633c`; result `7ea78803010b5ebd33c8f5166f63449ad6e9561f894b1273c791d12ff80b1588`. No model forward rerun; recorded orientation consistency is not independent geometric reconstruction. Prediction selection FAIL remains.
+
+At `2026-10-07T01:33:36Z`, separately approved absolute64 b01 CFD unit `fluid-control-p064-absolute64-symmetry-canonical-b01-cfd-20261007.service`, invocation `6fa0baeb90034371b3b49f3d8d51192a`, PID3306553 running37/800. Approval `docs/P064_ABSOLUTE64_SYMMETRY_CANONICAL_B01_CFD_APPROVAL_20261007.json` SHA `d6303082b0f97087961a9171505a2b4289623eb5f634f2502ac4f7d65639143b`; output `artifacts/p064_absolute64_symmetry_canonical_b01_cfd_20261007`. Fixed130→210/primary150→210, original six windows/standards; no outcome yet. Concurrent E109 retained-B future-time CFD same4b3e had baseline200/200 and paired587/800. Both CPU CFD, not training/independent holdouts. No automatic retry. Older launch entries below are historical snapshots.
+
 ## FC-E109 — retained B fixed future-time CFD actual launch; no outcome yet
 
 Actual unit `fluid-control-p064-b-future-time-cfd-20261007.service`, invocation `4b3eb2a2fcab4585aafd5740f8d0cea3`, PID2922821 running; independent sample baseline27/200. Approval `docs/P064_B_FUTURE_TIME_CFD_APPROVAL_20261007.json` SHA `dbcedcce5d680c98e9e611ca092fcd4953879ffef9e8ef9fbf613cd11c93da25`; output `artifacts/p064_b_future_time_248_328_cfd_20261007`. Fixed retainedE082 policy/Vec, zero228→248 pre-roll then paired248→328/800 cycles, primary(268,328], all original six windows/physical thresholds. Driver52cdd010 exact after independent6CPU tests/source/lifecycle review. No phase selection, training, newRe or independent-condition claim.8GiB controller plus one then two8GiB solver containers/noSwap,50startup22runtime20disk,2280inner2400outer. This is a launch snapshot, not terminal success; live unit determines current state.
