@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — Separate concise explanations from the complete methods report
+
+Keep the detailed technical report intact. Add a short formal project brief and a three-section illustrated HydroGym explanation for readers who need the concrete workflow without implementation logs. Distinguish the platform's general solver/environment capabilities from the project's actual FlowEnv plus FNO integration, and distinguish surrogate PPO training from the separately implemented OpenFOAM deployment loop. The three new images are software/process schematics, not simulated fields. This is a documentation decision only.
+
 ## 2026-10-07 — Explain actual methods and distinguish training from deployment
 
 At 12:02 UTC, expand the existing technical solution with source-grounded explanations instead of a parameter glossary alone. Document the official FNO layer dimensions, frozen-flow versus trained-force networks, B's 256 windows and 32 optimizer updates, and E082 PPO's 32768 environment transitions and 512 optimizer updates. Explain 69 observations in physical terms, 24 actual reset states and sequential DummyVecEnv execution. Distinguish HydroGym surrogate training from frozen-policy real-OpenFOAM deployment: the successful deployment does not run online FNO/MPC or continue PPO training. Include a five-action MPC worked example with an exact offline copy of its existing 10-cycle JSON. Network parameter and forward-call totals are source-derived counts, not a new profiler/checkpoint experiment. Preserve all scientific conclusions and original deadlines; no new experiment or promotion is authorized by this documentation decision.

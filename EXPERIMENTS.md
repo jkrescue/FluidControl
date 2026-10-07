@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## Concise brief and HydroGym illustrated explanation — documentation only
+
+Add the formal project brief and three-section HydroGym guide, based on existing E082/E114 evidence and the pinned official FlowEnv source. Check local links and visually inspect the three explanatory diagrams. Preserve actual 69-value observations, 62-point reward history, 24 reset starts, H5 episodes and 32768/512 training counts. No experiment, model execution, changed reward, updated metric or new results.csv row is associated with this reading-material update.
+
 ## Implementation-method detail and source review — documentation, not an experiment
 
 At 2026-10-07T12:02Z, the technical report gains actual FNO architecture, training-loop counts/configuration/loss, HydroGym/PPO environment details, and a numerical MPC decision example. Separate reviews checked the network/training counts and the control example against source and saved results. Correctly distinguish 24 E082 reset states from four environment instances, and 512 PPO optimizer steps from the library's 256 epoch counter. Two new figures are implementation schematics, not measured flow fields. The existing MPC result is copied byte-for-byte to `docs/report_20261007/evidence/b_h5_mpc_result.json`, SHA `f189508e962e17c5e98fa8fa6381c18664a4af9a58bd23da5da6977a50324939`. No new model execution, training, inference, PPO, CFD, experiment ID or results.csv row is created. Retained B, physical thresholds and unresolved prediction failure are unchanged.
