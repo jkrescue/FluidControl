@@ -182,9 +182,9 @@ Git保存源代码、配置、审批、报告、测试和SHA清单；以下大�
 | frozen flow archive | 同B manifest相对路径 | `dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31` |
 | E082 canonical PPO产物 | `artifacts/p064_b_symmetry_canonical_h5_32768_ppo_20261007/payload/` | policy `5c05699e0851787d85d40c407647f80c19d3aebeb7dff82e019336cde77c6c6e`；VecNormalize `1d25005144b6436c3e2641ee89d1585e3c9f8b9fdb1f26b9cd39c7d83610c145` |
 | E114结果 | continuation output/result | `752b92d1063e51a8fb6a45ea539b173c3c5ffbd24c6a83255e0fa649f392063e` |
-| Representative256 | `artifacts/p064_representative256_training_20261007/` | result `50617c1c…b6d6a`；manifest `793bbdab…6848`；工程独审PASS但训练目标未达，fixed-six待测 |
+| Representative256 | `artifacts/p064_representative256_training_20261007/` | result `50617c1c…b6d6a`；manifest `793bbdab…6848`；训练目标未达且fixed-six双退化，候选拒绝 |
 
-最终模型与复现manifest应列出绝对路径、大小、SHA256、生产approval、consumer协议、runtime和是否已独立reload；不能只写“latest”。
+最终模型与复现manifest应列出绝对路径、大小、SHA256、生产approval、consumer协议、runtime和是否已独立reload；不能只写“latest”。Representative256的完整未采用工件清单见[REJECTED_REPRESENTATIVE256_MODEL_MANIFEST_20261007.md](REJECTED_REPRESENTATIVE256_MODEL_MANIFEST_20261007.md)，不得将其路径靠“最新”规则晋级为默认B。
 
 ## 11. 限制与不能宣称的内容
 
@@ -199,7 +199,7 @@ Git保存源代码、配置、审批、报告、测试和SHA清单；以下大�
 
 ## 12. 与港理工唐辉相关研究的关系：方法借鉴，不是严格复现
 
-最接近且已核书目信息的文献是Zhao、Zhou、Ren、Tang、Wang (2024)，*Mitigating the lift of a circular cylinder in wake flow using deep reinforcement learning guided self-rotation*，Ocean Engineering 306, 118138，DOI `10.1016/j.oceaneng.2024.118138`。该工作以传感反馈PPO和自旋转抑制尾流升力波动，为本项目提供了方法动机；摘要中的`L*=5`、800 episodes和约98%升力波动降低是原论文结果，不能移植为本项目成绩。最近这篇同样使用旋转执行器，不能误称执行器不同；喷流论文或历史三柱fluidic pinball方案才属于不同执行器/几何。
+最接近且已核书目信息的文献是Zhao、Zhou、Ren、Tang、Wang (2024)，*Mitigating the lift of a circular cylinder in wake flow using deep reinforcement learning guided self-rotation*，Ocean Engineering 306, 118138（[DOI](https://doi.org/10.1016/j.oceaneng.2024.118138)，[PolyU官方记录](https://research.polyu.edu.hk/en/publications/mitigating-the-lift-of-a-circular-cylinder-in-wake-flow-using-dee/)）。该工作以传感反馈PPO和自旋转抑制尾流升力波动，为本项目提供了方法动机；摘要中的`L*=5`、800 episodes和约98%升力波动降低是原论文结果，不能移植为本项目成绩。最近这篇同样使用旋转执行器，不能误称执行器不同；喷流论文或历史三柱fluidic pinball方案才属于不同执行器/几何。
 
 本项目验证的是Re100、项目定义`L/D=5`的两个固定中心串列圆柱，以后柱旋转控制，评价总阻力、后柱升力波动及均值偏置，没有结构位移耦合，因此不是VIV验证。本项目使用自己的OpenFOAM、PhysicsNeMo FNO、HydroGym/SB3和控制适配；尚未逐项对齐该论文的传感器、动作约束、reward、无量纲定义及训练过程，也未取得作者代码/原始轨迹做重放。现有source audit明确完整正文未形成可复现获取证据，因此不能沿用旧笔记中未核的“32 sensors/q±6/仅后柱旋转”等细节。准确表述应是“受相关研究启发的独立工程案例”，不是该论文严格复现，也未达到或声称其98%指标。
 
