@@ -497,6 +497,7 @@ function renderActiveExperiment(d){
   if(d.absolute64_ppo?.verified){const p=d.absolute64_ppo;$('lead-monitor').textContent+=` 并行 E110 PPO：${p.status}，实际步数${p.timesteps}/32768、已记录PPO epochs ${p.ppo_epochs}/256；inv ${p.invocation}，PID ${p.pid}。不是FNO续训或当前CFD的在线模型，日志不代表物理通过。`;}
   if(d.absolute64_cfd?.verified){const c=d.absolute64_cfd;$('lead-monitor').textContent+=` 并行 Absolute64 b01真实CFD：${c.status}，${c.cycles}/800（130→210）；CPU策略反馈，无GPU训练或在线FNO；inv ${c.invocation}，PID ${c.pid}。原六窗和2%/1.05/10%不变，待终态独审。`;}
   if(d.absolute64_cfd?.terminal_verified&&d.future_time_cfd?.terminal_verified&&d.absolute64_ppo?.terminal_verified){$('lead-now').textContent='本轮训练与两项CFD任务均已结束。Absolute64 b01六窗原物理标准通过；B默认保留，原预测筛选FAIL不变。';$('lead-monitor').textContent='同b01主窗对比与Absolute64完整800点动作/Cd/Cl见下方；B后续248→328时段另列，不能混入同b01比较。单工况差异不是统计显著性或泛化证明。';}
+  if(d.reflection_training?.verified){const r=d.reflection_training;$('lead-now').textContent=`反射配对气动力预测模块训练：${r.status}；原始窗口${r.windows}/256，原始/镜像分支${r.branches}/512，参数更新${r.updates}/32。流场网络冻结；已有真实CFD闭环完成，本任务不运行CFD。`;$('lead-monitor').textContent=`实际inv ${r.invocation}，PID ${r.pid}；Available ${num(r.available_gib,2)} GiB。训练日志不代表精度或控制收益；B默认及已核物理结果保留，完整预测验收尚未通过。允许另行批准闭环探索，不将全预测PASS冒充已完成或自动设为探索前置。`;}
   return;
  }
  if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5169,6 +5170,7 @@ class Handler(BaseHTTPRequestHandler):
             data['future_time_cfd'] = _future_time_cfd(self.root)
             data['absolute64_ppo'] = _absolute64_ppo(self.root)
             data['absolute64_cfd'] = _absolute64_cfd(self.root)
+            data['reflection_training'] = _reflection_training(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5514,6 +5516,32 @@ def _canonical_b01_reproduction(root):
                 'memory_gib': int(memory) / 1024**3 if memory.isdigit() else None}
     except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
         return {'verified': False}
+
+
+def _reflection_training(root):
+    unit='fluid-control-p064-y-reflection-paired-20261007.service'
+    inv='766ad5ca993d483bb6a42d0f2fc09bd8'
+    approval=root/'docs/P064_Y_REFLECTION_PAIRED_TRAINING_APPROVAL_20261007.json'
+    try:
+        digest=hashlib.sha256(approval.read_bytes()).hexdigest()
+        if digest!='6e5ca18a42a1ad4410260fb9df4f14b457907ff2b5bceadfcfb0f3d621bb81e6':return {'verified':False}
+        raw=subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','Result','-p','ExecMainStatus','-p','ExecStart'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!=inv or str(approval) not in state.get('ExecStart','') or digest not in state.get('ExecStart',''):return {'verified':False}
+        log=subprocess.check_output(['journalctl','--user','_SYSTEMD_INVOCATION_ID='+inv,'-n','1200','--no-pager','-o','cat'],text=True,timeout=3)
+        windows=branches=updates=0
+        for line in log.splitlines():
+            try:row=json.loads(line)
+            except ValueError:continue
+            if row.get('event')=='training_window_complete':windows=max(windows,int(row['consumed']))
+            if row.get('event') in ('training_window_complete','training_reflection_branch_complete'):branches=max(branches,int(row['completed_transformed_branches']))
+            if row.get('event')=='accumulation_update_complete':updates=max(updates,int(row['update']))
+        if not 0<=windows<=256 or not 0<=branches<=512 or not 0<=updates<=32 or not 2*windows<=branches<=2*windows+2:raise ValueError('invalid reflection progress')
+        pid=int(state['MainPID']);running=pid>0 and state.get('ActiveState')=='active' and state.get('SubState')=='running'
+        status='GPU训练中' if running else ('训练进程成功结束，待终态核验' if state.get('Result')=='success' and state.get('ExecMainStatus')=='0' else '进程停止/失败，待诊断')
+        mem=dict(line.split(':',1) for line in Path('/proc/meminfo').read_text().splitlines())
+        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,status=status,windows=windows,branches=branches,updates=updates,available_gib=int(mem['MemAvailable'].split()[0])/1024**2)
+    except (OSError,ValueError,KeyError,IndexError,TypeError,subprocess.SubprocessError):return {'verified':False}
 
 
 def _absolute64_cfd(root):
