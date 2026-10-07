@@ -525,6 +525,7 @@ function renderActiveExperiment(d){
   if(d.continuation_cfd?.terminal_verified){const m=d.continuation_cfd.primary;$('lead-now').textContent=`基本闭环已验证：E114新增800次真实CFD反馈，减阻${num(100*m.paired_drag_reduction,6)}%、后柱升力波动降低${num(100*(1-m.paired_rear_cl_fluctuation_rms_ratio),6)}%、均值偏置${num(100*m.absolute_mean_rear_cl_over_paired_zero_rms,6)}%（上限10%）。部署是CPU PPO＋真实OpenFOAM，无在线FNO/MPC；完整模型预测精度仍未达标，是独立研究阶段。`;}
   if(d.b04_data_stage){const s=d.b04_data_stage;$('lead-monitor').textContent=s.verified?`当前研究阶段：B04原始CFD数据已生成；VTK导出${s.running?'正在运行':s.process_completed?'进程已完成、待数据核验':'进程停止/失败、待诊断'}，已出现${s.vtk_frames}/801个internal.vtu文件（文件计数不是完整QC）。Curator/HDF${s.curator_output_exists?'输出目录已出现，执行状态尚未绑定、不据此判完成':'尚无输出，未见已绑定执行'}；本VTK作业不训练模型、不运行新CFD，不是GPU训练。下方保留E114续跑真实动作/Cd/Cl，可切原B；同工况累计1600周期经过已验证恢复，不称独立泛化。`:'B04数据处理当前状态暂不可读取；不推断仍运行或已结束。基本闭环成果和原曲线保留。';}
   if(d.b04_data_stage?.stage==='curator_hdf_only'){const s=d.b04_data_stage;$('lead-monitor').textContent=`当前研究阶段：B04 Curator/HDF数据处理${s.running?'正在运行':s.process_completed?'进程已结束、等待独立数据核验':'进程停止/失败、待诊断'}；日志已报告采样${s.sampled_frames??'未知'}/801帧（不是总体完成率）。VTK文件${s.vtk_frames}/801；HDF输出目录${s.curator_output_exists?'已出现，存在不等于核验通过':'尚未出现'}。这是CPU数据转换，不是GPU训练或新CFD；基本闭环已交付、续跑曲线保留，FNO完整预测精度仍未达标。`;}
+  if(d.b04_i_training){const s=d.b04_i_training;$('lead-monitor').textContent=s.verified?`当前研究：I气动力预测模块${s.running?'正在训练':s.process_completed?'训练进程已结束，等待独审':'进程已停止/失败，待诊断'}，真实日志窗口${s.windows}/256、更新${s.updates}/32；loss未在当前日志报告，不估算。流场网络冻结，不是PPO训练或CFD。实际内存${s.memory?.MemoryCurrent!=null?(s.memory.MemoryCurrent/2**30).toFixed(2)+' GiB':'未知'}；上限${s.memory?.MemoryMax!=null?(s.memory.MemoryMax/2**30).toFixed(0)+' GiB':'未知'}。B基本闭环交付及下方真实曲线保持，训练日志不代表预测准入。`:'当前I训练状态暂不可读取，不推断任务已结束；B基本闭环与真实曲线保留。';}
   return;
  }
   if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5203,6 +5204,7 @@ class Handler(BaseHTTPRequestHandler):
             data['continuation_cfd'] = _continuation_cfd(self.root)
             data['b04_raw_cfd'] = _b04_raw_cfd(self.root)
             data['b04_data_stage'] = _b04_data_stage(self.root)
+            data['b04_i_training'] = _b04_i_training(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5550,6 +5552,33 @@ def _canonical_b01_reproduction(root):
         return {'verified': False}
 
 
+def _b04_i_training(root):
+    unit='fluid-control-p064-b04-coverage-i-training-20261007.service'
+    inv='7c1d1d634af94321b638ba6da2febe45'
+    digest='f380a076a92e1ffa98a497c1fe7933cfb6cc880b4b5e9c3e1708d4cd93a66cf6'
+    try:
+        approval=root/'docs/P064_B04_COVERAGE_I_TRAINING_APPROVAL_20261007.json'
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!=digest:raise ValueError('approval identity')
+        spec=json.loads(approval.read_text());runner=root/spec['source']['runner']['path']
+        if spec.get('execution_authorized') is not True or hashlib.sha256(runner.read_bytes()).hexdigest()!=spec['source']['runner']['sha256']:raise ValueError('source identity')
+        raw=subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','Result','-p','ExecMainStatus','-p','ExecStart','-p','MemoryCurrent','-p','MemoryMax','-p','MemorySwapMax'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!=inv or spec['planned_unit']!=unit or not spec['argv'] or any(str(arg) not in state.get('ExecStart','') for arg in spec['argv']):raise ValueError('direct argv identity')
+        log=subprocess.check_output(['journalctl','--user','_SYSTEMD_INVOCATION_ID='+inv,'-n','900','--no-pager','-o','cat'],text=True,timeout=3)
+        windows=updates=0;source=None
+        for line in log.splitlines():
+            try:row=json.loads(line)
+            except ValueError:continue
+            if row.get('event')=='training_window_complete':windows=max(windows,int(row['consumed']));source=row.get('source')
+            if row.get('event')=='accumulation_update_complete':updates=max(updates,int(row['update']))
+        if not 0<=windows<=256 or not 0<=updates<=32:raise ValueError('counts')
+        pid=int(state['MainPID']);running=pid>0 and state.get('ActiveState')=='active' and state.get('SubState')=='running'
+        completed=pid==0 and state.get('Result')=='success' and state.get('ExecMainStatus')=='0'
+        memory={k:int(state[k]) for k in ('MemoryCurrent','MemoryMax','MemorySwapMax') if state.get(k,'').isdigit()}
+        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,process_completed=completed,terminal_verified=False,windows=windows,updates=updates,source=source,loss=None,memory=memory,flow_frozen=True)
+    except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError):return dict(verified=False,observation_state='unavailable')
+
+
 def _b04_data_stage(root):
     unit='fluid-control-p064-b04-long-excitation-curator-20261007.service'
     inv='777b61f9027244bbb069db9ee8acda90'
@@ -5557,6 +5586,13 @@ def _b04_data_stage(root):
     approval=root/'docs/P064_B04_LONG_EXCITATION_CURATOR_APPROVAL_20261007.json'
     try:
         if hashlib.sha256(approval.read_bytes()).hexdigest()!=digest:raise ValueError('approval identity')
+        receipt=root/'artifacts/p064_b04_curated_independent_audit_r2_20261007/receipt.json'
+        report=root/'docs/P064_B04_CURATED_TERMINAL_REVIEW_20261007.md'
+        if receipt.is_file() and report.is_file():
+            if hashlib.sha256(receipt.read_bytes()).hexdigest()!='21660346df4739ab109b3500867bf5a83068074317d52d7cd4d4e6c6e731a3ca' or hashlib.sha256(report.read_bytes()).hexdigest()!='0852d5daf3845a8185a40f22ba592fe05ba5de0d77b1d4552d0af43f965aaee2':raise ValueError('terminal proof identity')
+            audit=json.loads(receipt.read_text())
+            if audit.get('status')!='B04_CURATED_INDEPENDENT_REVIEW_NOT_TRAINING' or audit.get('science_invocation')!=inv or audit.get('frames')!=801 or audit.get('full_labels_exact') is not True or audit.get('all_saved_fields_finite') is not True:raise ValueError('terminal proof')
+            return dict(verified=True,terminal_verified=True,running=False,process_completed=True,unit=unit,invocation=inv,sampled_frames=801,vtk_frames=801,target_frames=801,stage='curator_hdf_only',gpu_training=False,curator_output_exists=True)
         raw=subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','Result','-p','ExecMainStatus','-p','ExecStart'],text=True,timeout=3)
         state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
         if state.get('InvocationID')!=inv or str(approval) not in state.get('ExecStart','') or digest not in state.get('ExecStart',''):raise ValueError('unit identity')
