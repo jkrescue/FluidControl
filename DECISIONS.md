@@ -1,5 +1,11 @@
 # DECISIONS
 
+## 2026-10-07 — Accept E114 same-case continuous reliability; keep prediction work separate
+
+Accept [E114 independent review](docs/P064_B_CONTINUATION_328_408_TERMINAL_REVIEW_20261007.md), SHA `09e89416e4dc59494fdab362f7316b213762850c742a752a91a3a9b3856fd2e5`: after exact one-interval restart recovery, the frozen retained-B controller continued the same two E109 branches from328→408 for800 additional feedback cycles. The entire new80-D/U tail and each fixed20-D/U block, plus joined160/140-D/U windows, pass the unchanged2% drag/1.05 RMS/10% bias gates. Accept this as stronger same-condition continuous-operation evidence for the basic delivered chain. Do not call it an independent physical regime, surrogate prediction admission or proof of general control robustness; do not require online FNO/MPC as a new basic-case gate.
+
+Full surrogate prediction quality remains incomplete. The B04 late-state coverage contract is accepted only as preparation: before any real data generation, a thin executable solver path, resources, source hashes and801-frame artifact protocol require separate review and approval; Curator conversion and model training remain separately unauthorized. Do not repeat additional B duration extensions in place of addressing prediction quality.
+
 ## 2026-10-07 — Extend the retained B case only after an exact restart replay
 
 Accept the independently checked `327.9→328.0` recovery replay as technical evidence that E109's branch-specific backward state, current 69-vector and double-precision limiter state can be resumed by the existing controller/solver path. On that basis, execute one predeclared same-case continuation from `328→408` using the frozen B policy and unchanged 2% drag, 1.05 rear-lift RMS ratio and 10% bias criteria. Report the entire new80-D/U tail, every consecutive20-D/U block and the joined160/140-D/U summaries; do not discard the first new block as warm-up or change a window after seeing results. Preserve the original E109 six windows and source trees. This longer run is not a new condition, surrogate admission, training or policy selection. Full FNO prediction quality remains incomplete; online FNO/MPC is optional follow-on work rather than a newly imposed gate for the already delivered basic case.
