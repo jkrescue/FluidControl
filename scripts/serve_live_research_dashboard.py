@@ -502,6 +502,7 @@ function renderActiveExperiment(d){
   else if(d.reflection_training){$('lead-now').textContent='当前训练状态暂不可读取；不能据此判断训练已停止或完成。';$('lead-monitor').textContent=`反射配对训练观测${d.reflection_training.observation_state==='identity_mismatch'?'身份校验未通过':'暂不可用'}。保留已有真实CFD结果与曲线，B默认及预测限制不变；不将历史任务终态作为当前训练状态。`;}
   if(d.reflection_training?.terminal_verified){$('lead-now').textContent='反射配对训练已正常结束，256原始窗口/512分支/32更新完成；候选未采用，不是训练崩溃。B默认与已完成真实CFD结果保持。';$('lead-monitor').textContent='固定六窗保留评估较B退化：单步综合预测误差(H1)+4.1991%、100步连续预测综合误差(AR100)+1.45294%，原保留规则未通过。80端点开发评估未运行、结果未知；未推进此候选的PPO/CFD。完整预测验收仍未通过。终态来自已绑定独审报告/机器证据，不依赖已回收的临时unit。';}
   if(d.reflection_training?.terminal_verified&&d.future_time_cfd?.terminal_verified&&d.canonical_b01_reproduction?.terminal_verified){const a=d.delivery_activity;$('lead-now').textContent='已完成：B默认策略800次真实CFD反馈闭环，主窗约4%减阻、后柱升力波动降低约18%、均值偏置约2.9–3.6%（b01与后续时段分别核验）。完整预测精度尚未通过，基本闭环结果已经交付。';$('lead-monitor').textContent=(a?.verified?(a.active_units.length?'检测到新的受管项目任务运行，请以任务监控为准。':'当前未发现受管训练或CFD任务运行；下方展示已完成历史结果，不是实时仿真。'):'当前受管任务状态暂不可读取，不据此判断已停止。')+' 部署为CPU PPO＋真实OpenFOAM反馈，无在线FNO/MPC；原2%/1.05/10%标准不变，同工况结果不是统计独立泛化。';}
+  if(d.pressure_aux_training){const p=d.pressure_aux_training;if(p.verified){const l=p.latest_window_losses||{},fmt=v=>Number.isFinite(v)?num(v,6):'未知';$('lead-monitor').textContent=`当前研究：压力辅助H气动力预测模块，${p.status}；窗口${p.windows}/256、更新${p.updates}/32，流场网络冻结，无当前CFD。最近完整窗口${l.window??'未知'}：原主任务loss ${fmt(l.original_total_loss)}；压力loss ${fmt(l.pressure_h1_loss)}；加权压力项 ${fmt(l.pressure_aux_weighted_loss)}；实际训练目标 ${fmt(l.training_objective)}。Available ${num(p.available_gib,2)} GiB；inv ${p.invocation}。仅训练日志，不代表精度或控制收益；B默认与已交付闭环保持。`;}else{$('lead-monitor').textContent=p.observation_state==='preparation'?'压力辅助H仍在准备，尚无已绑定运行；B闭环交付不受影响。':'当前压力辅助训练状态暂不可读取，不能据此判断结束；B已交付闭环结果保持。';}}
   return;
  }
  if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5176,6 +5177,7 @@ class Handler(BaseHTTPRequestHandler):
             data['absolute64_cfd'] = _absolute64_cfd(self.root)
             data['reflection_training'] = _reflection_training(self.root)
             data['delivery_activity'] = _delivery_activity()
+            data['pressure_aux_training'] = _pressure_aux_training(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5521,6 +5523,37 @@ def _canonical_b01_reproduction(root):
                 'memory_gib': int(memory) / 1024**3 if memory.isdigit() else None}
     except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
         return {'verified': False}
+
+
+def _pressure_aux_training(root):
+    unit='fluid-control-p064-total-pressure-aux-h-r2-20261007.service'
+    inv='7b6a95342f3c4965a2a71b0542ddf574'
+    expected_approval='af2057df4a6b010e24ce2d318f24235bf9db5d9c4c2371c4341dc695830baae9'
+    approval_name='P064_TOTAL_PRESSURE_AUX_H_TRAINING_APPROVAL_R2_20261007.json'
+    if inv is None:return {'verified':False,'observation_state':'preparation'}
+    approval=root/'docs'/approval_name
+    try:
+        digest=hashlib.sha256(approval.read_bytes()).hexdigest()
+        if digest!=expected_approval:return {'verified':False,'observation_state':'identity_mismatch'}
+        raw=subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','Result','-p','ExecMainStatus','-p','ExecStart'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!=inv or str(approval) not in state.get('ExecStart','') or digest not in state.get('ExecStart',''):return {'verified':False,'observation_state':'identity_mismatch'}
+        log=subprocess.check_output(['journalctl','--user','_SYSTEMD_INVOCATION_ID='+inv,'-n','900','--no-pager','-o','cat'],text=True,timeout=3)
+        windows=updates=0;losses=None
+        for line in log.splitlines():
+            try:row=json.loads(line)
+            except ValueError:continue
+            if row.get('event')=='training_window_complete':
+                n=int(row['consumed']);values={k:row.get(k) for k in ('original_total_loss','pressure_h1_loss','pressure_aux_weighted_loss','training_objective')}
+                if any(v is not None and (type(v) not in (int,float) or not math.isfinite(v)) for v in values.values()):raise ValueError('invalid loss')
+                if n>=windows:windows=n;losses=dict(window=n,**values)
+            if row.get('event')=='accumulation_update_complete':updates=max(updates,int(row['update']))
+        if not 0<=windows<=256 or not 0<=updates<=32:raise ValueError('invalid fixed budget')
+        pid=int(state['MainPID']);running=pid>0 and state.get('ActiveState')=='active' and state.get('SubState')=='running'
+        status=('GPU训练中' if windows else '进程初始化；尚无完整窗口/loss') if running else ('训练进程成功结束，待终态核验' if state.get('Result')=='success' and state.get('ExecMainStatus')=='0' else '进程停止/失败，待诊断')
+        mem=dict(line.split(':',1) for line in Path('/proc/meminfo').read_text().splitlines())
+        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,status=status,windows=windows,updates=updates,latest_window_losses=losses,available_gib=int(mem['MemAvailable'].split()[0])/1024**2)
+    except (OSError,ValueError,KeyError,IndexError,TypeError,subprocess.SubprocessError):return {'verified':False,'observation_state':'unavailable'}
 
 
 def _delivery_activity():
