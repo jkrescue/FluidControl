@@ -6497,7 +6497,10 @@ def _representative256_training(root):
                 gpu = subprocess.check_output(
                     ['nvidia-smi', '--query-gpu=utilization.gpu,memory.used,memory.total',
                      '--format=csv,noheader,nounits', '-i', '0'], text=True, timeout=3).strip()
-                gpu_util, gpu_used, gpu_total = [int(value.strip()) for value in gpu.split(',')]
+                values = [value.strip() for value in gpu.split(',')]
+                gpu_util = int(values[0]) if values[0].isdigit() else None
+                gpu_used = int(values[1]) if values[1].isdigit() else None
+                gpu_total = int(values[2]) if values[2].isdigit() else None
             except (OSError, ValueError, subprocess.SubprocessError):
                 pass
         quota = state.get('CPUQuotaPerSecUSec', '')
