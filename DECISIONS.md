@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — E106 engineering complete, no residual promotion; bounded absolute follow-up conditional
+
+Accept [R3 independent engineering review](docs/P064_TEMPORAL_FORCE_DELTA_PROBE_TERMINAL_REVIEW_20261007.md), not a scientific candidate: one train-only window, each arm one update, no model saved or dev evaluation. Absolute total improves3.58%; zero-head residual total improves only.023% and remains far worse, H1 slightly worsens. This does not establish convergence, generalization, or that32updates are insufficient. Preserve R1/R2 failures and do not infer a container root cause from isolated migration checks. Lead conditionally approves preparing the original B absolute64-update follow-up, pending original runtime/spec verification; no execution is recorded here. No residual promotion, no automatic continuation/weight scan, no change to physical standards or retained B/G control evidence. P022 current-force input is not reopened by this distinct output-parameterization probe.
+
 ## 2026-10-07 — E105 limited train-fit improvement; prepare no-save temporal-delta probe
 
 Accept [E105 independent audit](docs/P064_K1BG_B00_TRAIN_FIT_TERMINAL_REVIEW_20261007.md), not admission: B/G improve true-state pooled force fit on40 fixed b00 training points versus K1; G improves rearCl/totalCd MAE1.46%/8.08% versusB, but material residual errors remain. These points do not establish convergence/generalization. Retain B default, G's verified physical single condition, original prediction failures and physical thresholds.

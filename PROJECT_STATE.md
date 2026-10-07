@@ -1,10 +1,14 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前唯一摘要 — temporal probe R1迁移OOM；恢复准备中，B默认/G闭环与预测FAIL保留
+## 当前唯一摘要 — temporal probe R3工程终态通过；不是候选，B默认/G闭环与预测FAIL保留
+
+FC-E106无保存probe同 `7b7e12c6f9374a1da4b8ca7dd44a6030` PID0/exited/exit0，采用[既有独审报告](docs/P064_TEMPORAL_FORCE_DELTA_PROBE_TERMINAL_REVIEW_20261007.md) SHA `95b014d76e12706148751c7d7affa52cf32971a8a4ddebfcf448588ae764fe9c`。固定b00训练start0/H100、同K1，两臂各1个真实AdamW step、0保存：absolute total `.007118585985→.006863759831`，residual `.624243736267→.624100089073`；residual H1略升，仍远劣absolute。只是单训练窗工程/梯度证据，未做开发验证、未产生候选或准入。独审核算记录算术/身份/梯度清单，不能从未保存的预测和模型独立重算loss。result `200b7763b1fa73bd1380fbcc00c4645f7096f2cd0501a3e6482816b2d071bb17`，receipt `c4c82f24a8188b8aa94a54c7f438879a31231ef7a8cbdee6e0c8b9067df33d5a`。R3采用24GiB/noSwap、16GiB allocator；wall22.17秒，最低Available105.288GiB。
+
+下一Lead条件批准方向为原B absolute固定延长至64updates，仍待spec/原runtime核验，当前未启动；不由此probe推断32步未收敛或64步必然有效，不自动训练/更换控制器。B默认、G已完成单工况物理闭环及原预测FAIL保持。
 
 FC-E105已终态独审：[报告](docs/P064_K1BG_B00_TRAIN_FIT_TERMINAL_REVIEW_20261007.md) SHA `1f0516357ffc069a9c516e080c68554af073cfcaa8406caccfabb63d7b4e4d20`，result `bb256396fe174f7d1f8ef3cd68a06bc1653c0e8ff039604714479f44391da26c`。同 `04335bedb4954871ac118381da81721c` PID0/exited/exit0；120行＝K1/B/G×8固定b00训练起点×5个真实状态单步，40三方输入/动作/target配对、2025统计复算差0；120aero/0flow/0optimizer。全部40点 rearCl/totalCd MAE：K1 .200856927/.051195516，B .181738779/.050531504，G .179079254/.046448530。B/G确有训练轨迹拟合改善，但残差仍在；不是5步AR、独立泛化或收敛证明，不改G原选择FAIL。906项来源/大文件inventory验证另属工程交付检查，不是E105新增模型计算。
 
-[temporal force delta no-save probe](docs/P064_TEMPORAL_FORCE_DELTA_PLAN_20261007.md) R1已经实际执行，但在第一个 absolute 模型 `.to(cuda)` 时OOM退出，尚未进行模型forward或optimizer更新，未产生候选或科学比较结果。后续host和固定b40-r2单模型迁移检查均成功，不能据此认定容器是OOM根因，也不能把迁移成功当作两臂probe成功。下一动作是保持相同worker/core的host两臂各1step恢复准备；本摘要核验时尚未启动。恢复执行须绑定其独立批准和实际handle，不自动重试/续训。不是重复P022 current-force输入平面；原物理2%/1.05/10%不变，B默认和下述G已验单工况结果、代理预测FAIL保留。
+[temporal force delta no-save probe](docs/P064_TEMPORAL_FORCE_DELTA_PLAN_20261007.md) 的历史失败保留：R1在第一个absolute模型 `.to(cuda)` OOM，0forward/optimizer；host R2完成100次冻结flow构建后，在absolute初始loss forward触及6GiB allocator cap，0backward/update。host和b40-r2单模型迁移检查均成功，R1确切根因仍未证实，不能归因容器。R3仅按批准提高R2资源限制/变更身份后完成两臂单步，不是修改科学目标。不是重复P022 current-force输入平面，原物理2%/1.05/10%不变。
 
 ### R1失败与有限恢复证据（不含科学结果）
 
