@@ -530,7 +530,7 @@ function renderActiveExperiment(d){
   if(d.b_h5_mpc_cfd?.verified){const m=d.b_h5_mpc_cfd;if(m.terminal_verified){$('lead-now').textContent='两层交付状态：基本真实闭环已完成，默认B的E114延长段仍按原标准通过；高精度FNO/泛化/MPC仍未达标，继续单列研究。';$('lead-monitor').textContent=`B-H5 MPC十周期工程探索已结束并独审：动作与旧K1试验完全相同，配对减阻 ${num(100*m.drag_reduction,6)}%，rear-Cl波动比 ${num(m.rear_cl_rms_ratio,6)}；未改善执行控制，四项selected-next-step受力MAE也均更大。该段仅1 D/U，不能替代长期物理门；原预测FAIL、B-PPO默认策略和E114的4.1326%减阻/0.82077波动比/1.2352%偏置均保持。本次MPC已结束，其他作业以实时任务列表为准；无需降低已通过的10%物理偏置门限。`;}else{$('lead-now').textContent=`当前实际工作：B气动力代理的因果历史 H5 MPC，CPU 在线选择动作＋配对真实 OpenFOAM；已完成 ${m.cycles}/10 个工程反馈周期${m.last_time==null?'':`，流动时刻 ${num(m.last_time,1)}`}。${m.running?'任务正在运行':m.process_completed?'进程已结束，等待独立终态核验':'进程停止/失败，等待诊断'}。`;$('lead-monitor').textContent=`unit ${m.unit}；inv ${m.invocation}；PID ${m.pid}；最近动作 ${m.selected_omega==null?'尚无':num(m.selected_omega,4)}。这是 CPU B-H5 MPC 探索，不是 GPU 训练，也不是冻结 B-PPO 的重复运行；已交付的 B-PPO/E114 物理结果与默认策略保持不变。10周期只作工程接线验证，未独审前不宣称减阻或完整预测通过；原预测精度 FAIL 不变。`;}}
   if(d.temporal_increment_training?.verified){const t=d.temporal_increment_training,l=t.latest_window||{},u=t.latest_update||{};if(t.terminal_verified){$('lead-now').textContent='时序增量辅助训练已完成并通过工程独审，但原保留规则未通过；候选未采用。';$('lead-monitor').textContent=`256窗口/32更新完成。固定六窗H1较B变化 ${num(100*t.retention.h1.relative_change,6)}%，连续AR100变化 +${num(100*t.retention.ar.relative_change,6)}%；H1微降、AR微升，原两项均不退化AND为FAIL，不把微小差异包装成改善。保留B与E114基本闭环；未运行dev、PPO或新CFD，完整代理精度仍未达成。`;}else{$('lead-now').textContent=`当前实际工作：时序增量辅助气动力FNO训练，窗口 ${t.windows}/256、更新 ${t.updates}/32；${t.running?'训练进程正在运行（配置GPU0）':t.process_completed?'训练进程已结束，等待独立终态核验':'进程停止/失败，等待诊断'}。`;$('lead-monitor').textContent=`最近完整窗口${l.consumed??'尚无'}：原受力误差 ${Number.isFinite(l.original_total_loss)?num(l.original_total_loss,8):'未知'}，相邻时刻变化误差 ${Number.isFinite(l.temporal_increment_loss)?num(l.temporal_increment_loss,8):'未知'}，训练总目标 ${Number.isFinite(l.training_objective)?num(l.training_objective,8):'未知'}（本次权重为1，加权变化项 ${Number.isFinite(l.temporal_increment_weighted_loss)?num(l.temporal_increment_weighted_loss,8):'未知'}）。资源：CPU配额${t.cpu_quota_percent}%，内存 ${num(t.memory_current/2**30,2)}/${num(t.memory_max/2**30,0)} GiB（peak ${num(t.memory_peak/2**30,2)} GiB，swap上限 ${num(t.swap_max/2**30,0)} GiB），配置GPU0。最近更新${u.update??'尚无'}的裁剪前梯度范数 ${Number.isFinite(u.preclip_mean_gradient_norm)?num(u.preclip_mean_gradient_norm,6):'未知'}、裁剪比例 ${Number.isFinite(u.applied_clip_scale)?num(u.applied_clip_scale,6):'未知'}。这是训练日志，不代表精度改善或准入；独立评估前B/E114交付与原预测FAIL保持。`;}}
   if(d.fixed_small_fit?.verified){const f=d.fixed_small_fit,a=f.latest_accepted||{};if(f.failed){$('lead-now').textContent='固定40点训练内拟合诊断进程工程失败，尚未形成可接受拟合结论。';$('lead-monitor').textContent=`实际unit已结束（inv ${f.invocation}，exit ${f.exit_status}），已接受优化步${f.accepted_steps}。它不是容量或科学假设失败，也没有“最佳试探值”。B-PPO＋真实OpenFOAM的E114基本闭环仍按原标准通过：减阻4.1326%、后柱升力波动比0.82077、偏置1.2352%；完整代理精度仍未达标。`;}else{$('lead-now').textContent=`固定40点训练内拟合诊断${f.terminal_verified?'已结束并独立核验':f.running?'正在运行':f.process_completed?'已结束，等待独立核验':'停止/失败，等待诊断'}；已接受优化步 ${f.accepted_steps}/200，closure ${f.closures}/300。${f.terminal_verified?'固定预算内未达到四通道0.01目标，但误差仍持续下降；不解释为停滞或容量不足。':''}`;$('lead-monitor').textContent=`最近已接受步${a.outer??'尚无'}：接受点目标误差 ${Number.isFinite(a.loss)?num(a.loss,8):'未知'}，四通道归一化RMSE ${Array.isArray(a.normalized_rmse)?a.normalized_rmse.map(x=>num(x,6)).join(' / '):'未知'}；物理total-Cd MAE ${Number.isFinite(a.total_cd_mae)?num(a.total_cd_mae,6):'未知'}，rear-Cl MAE ${Number.isFinite(a.rear_cl_mae)?num(a.rear_cl_mae,6):'未知'}。只显示优化器返回后重新测量的接受点；线搜索trial值不展示、不当作最佳结果。R1在模型加载精度校验处工程失败、0前向/0优化器，已保留且不是科学失败；R2只修加载顺序。该诊断未保存候选、未运行dev/PPO/CFD，也不是代理准入；E114基本闭环已交付，完整代理精度仍未达标。inv ${f.invocation}。`;}}
-  if(d.representative256_training?.verified){const r=d.representative256_training,a=r.latest_accepted||{};$('lead-now').textContent=`当前模型训练：固定256个真实H1点的代表性拟合，已接受更新 ${r.accepted_steps}/200，closure ${r.closures}/300；${r.running?(r.accepted_steps?'训练正在运行':'模型加载/预检中，尚无接受更新'):r.process_completed?'训练进程已结束，等待独立核验':'任务未运行或状态异常'}。`;$('lead-monitor').textContent=`最近接受点${a.outer??'尚无'}：训练目标误差 ${Number.isFinite(a.loss)?num(a.loss,8):'未知'}，四通道归一化RMSE ${Array.isArray(a.normalized_rmse)?a.normalized_rmse.map(x=>num(x,6)).join(' / '):'未知'}；物理total-Cd MAE ${Number.isFinite(a.total_cd_mae)?num(a.total_cd_mae,6):'未知'}，rear-Cl MAE ${Number.isFinite(a.rear_cl_mae)?num(a.rear_cl_mae,6):'未知'}。只显示优化器返回后重新测量的接受点，不展开256点预测或把line-search trial当结果。资源：CPU配额${r.cpu_quota_percent}%（约${r.cpu_quota_percent/100}核），unit内存 ${num(r.memory_current/2**30,2)}/${num(r.memory_max/2**30,0)} GiB；主机GPU0利用率 ${r.gpu_util_percent==null?'未知':r.gpu_util_percent+'%'}、显存 ${r.gpu_memory_used_mib==null?'未知':r.gpu_memory_used_mib+'/'+r.gpu_memory_total_mib+' MiB'}。这是训练内拟合，不是开发集改善、模型准入或新闭环达标；B-PPO/E114真实CFD闭环保持，完整代理精度仍未达标。inv ${r.invocation}。`;}
+  if(d.representative256_training?.verified){const r=d.representative256_training,a=r.latest_accepted||{};$('lead-now').textContent=r.terminal_verified?`Representative256已结束并拒绝：${r.accepted_steps}个接受点/closure ${r.closures}，训练目标未达；同precision fixed-six H1/AR分别退化15.8169%/14.2703%，不替换B、不执行dev/PPO/CFD。`:`当前模型训练：固定256个真实H1点的代表性拟合，已接受更新 ${r.accepted_steps}/200，closure ${r.closures}/300；${r.running?(r.accepted_steps?'训练正在运行':'模型加载/预检中，尚无接受更新'):'任务未运行或状态异常'}。`;$('lead-monitor').textContent=`最近接受点${a.outer??'尚无'}：训练目标误差 ${Number.isFinite(a.loss)?num(a.loss,8):'未知'}，四通道归一化RMSE ${Array.isArray(a.normalized_rmse)?a.normalized_rmse.map(x=>num(x,6)).join(' / '):'未知'}；物理total-Cd MAE ${Number.isFinite(a.total_cd_mae)?num(a.total_cd_mae,6):'未知'}，rear-Cl MAE ${Number.isFinite(a.rear_cl_mae)?num(a.rear_cl_mae,6):'未知'}。只显示优化器返回后重新测量的接受点，不展开256点预测或把line-search trial当结果。${r.running?`资源：CPU配额${r.cpu_quota_percent}%（约${r.cpu_quota_percent/100}核），unit内存 ${num(r.memory_current/2**30,2)}/${num(r.memory_max/2**30,0)} GiB；主机GPU0利用率 ${r.gpu_util_percent==null?'未知':r.gpu_util_percent+'%'}、显存 ${r.gpu_memory_used_mib==null?'未知':r.gpu_memory_used_mib+'/'+r.gpu_memory_total_mib+' MiB'}。`:''}这是训练内拟合，不是开发集改善、模型准入或新闭环达标；B-PPO/E114真实CFD闭环保持，完整代理精度仍未达标。inv ${r.invocation}。`;}
   return;
  }
   if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -6422,6 +6422,13 @@ def _representative256_training(root):
     approval_sha256 = '42e8c15d4835ea6696ecb12271246d9babba16b73f869b4802b57bbc8dabc38c'
     approval_path = root / 'docs/P064_REPRESENTATIVE256_TRAINING_APPROVAL_20261007.json'
     output = root / 'artifacts/p064_representative256_training_20261007'
+    terminal_pins = {
+        output / 'result.json': '50617c1c49cebcdc2198fb1cc427f7a7289dc1912846d3f882b0a257025b6d6a',
+        root / 'docs/P064_REPRESENTATIVE256_TERMINAL_REVIEW_20261007.md': 'b6d794a6f4d817fdac8a10899700b348584c78b142944110b1d57fe02b4d944d',
+        root / 'artifacts/p064_representative256_terminal_audit_r2_20261007/receipt.json': 'd3286db5da8c4919718e0d70e651df2c9a92eaffb083ee34275bf6b16ce1992f',
+        root / 'artifacts/p064_fit256_fixed_six_20261007/result.json': '57add3a45f4cedcde94fbc242337e64cd6d54d51156e4d2be27c29cb8c309289',
+        root / 'docs/P064_REPRESENTATIVE256_FIXED_SIX_INDEPENDENT_REVIEW_20261007.md': '9c7403f0df5b0f6de7d680d5690d03af856b2e3b414367de850fc1ae80fd731b',
+    }
     expected_sources = {
         'driver': '00e9921f1614a0a791d4883f08a3bc6e475a6160a5051e3232b588d1a7fa9e35',
         'core': 'e0623157281a041b05257d9843ca46e8e1557ffca83c5872d9280fbacdd5a6c0',
@@ -6452,12 +6459,18 @@ def _representative256_training(root):
              '-p', 'MemoryPeak', '-p', 'MemoryMax', '-p', 'MemorySwapMax'],
             text=True, timeout=3)
         state = dict(line.split('=', 1) for line in raw.splitlines() if '=' in line)
-        if state.get('InvocationID') != invocation:
+        terminal_verified = all(path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == digest
+                                for path, digest in terminal_pins.items())
+        retained_identity = state.get('InvocationID') == invocation
+        observed_pid = int(state.get('MainPID') or 0)
+        if observed_pid > 0 and not retained_identity:
+            raise ValueError('conflicting live unit identity')
+        if not retained_identity and not terminal_verified:
             raise ValueError('unit invocation')
         command = state.get('ExecStart', '')
-        if (str(Path(approved['driver']['path'])) not in command
+        if (retained_identity and (str(Path(approved['driver']['path'])) not in command
                 or str(approval_path) not in command
-                or approval_sha256 not in command or '--execute' not in command):
+                or approval_sha256 not in command or '--execute' not in command)):
             raise ValueError('unit identity')
         accepted, trials = [], 0
         progress = output / 'progress.jsonl'
@@ -6487,9 +6500,14 @@ def _representative256_training(root):
         if [row['outer'] for row in accepted] != list(range(1, len(accepted) + 1)):
             raise ValueError('accepted sequence')
         closures = max(trials, accepted[-1]['closures'] if accepted else 0)
+        if terminal_verified:
+            result = json.loads((output / 'result.json').read_text())
+            closures = int(result['closures'])
+            if result['status'] != 'BUDGET_STOP_NOT_FITTED' or closures != 300:
+                raise ValueError('terminal result')
         if not 0 <= len(accepted) <= 200 or not 0 <= closures <= 300:
             raise ValueError('budget')
-        pid = int(state.get('MainPID') or 0)
+        pid = observed_pid
         running = pid > 0 and state.get('ActiveState') == 'active' and state.get('SubState') == 'running'
         gpu_util = gpu_used = gpu_total = None
         if running:
@@ -6505,17 +6523,22 @@ def _representative256_training(root):
                 pass
         quota = state.get('CPUQuotaPerSecUSec', '')
         cpu_quota_percent = int(float(quota[:-1]) * 100) if quota.endswith('s') else None
+        def resource_int(value):
+            text = str(value or '')
+            return int(text) if text.isdigit() else 0
         return dict(verified=True, unit=unit, invocation=invocation, pid=pid,
                     running=running,
-                    process_completed=pid == 0 and state.get('SubState') in ('exited', 'dead', 'failed'),
+                    process_completed=terminal_verified or (pid == 0 and state.get('SubState') in ('exited', 'dead')),
+                    terminal_verified=terminal_verified,
+                    selection_passed=False if terminal_verified else None,
                     accepted_steps=len(accepted), closures=closures,
                     latest_accepted=accepted[-1] if accepted else None,
                     trial_values_displayed=False, scientific_admission=False,
                     cpu_quota_percent=cpu_quota_percent,
-                    memory_current=int(state.get('MemoryCurrent') or 0),
-                    memory_peak=int(state.get('MemoryPeak') or 0),
-                    memory_max=int(state.get('MemoryMax') or 0),
-                    swap_max=int(state.get('MemorySwapMax') or 0),
+                    memory_current=resource_int(state.get('MemoryCurrent')),
+                    memory_peak=resource_int(state.get('MemoryPeak')),
+                    memory_max=resource_int(state.get('MemoryMax')),
+                    swap_max=resource_int(state.get('MemorySwapMax')),
                     gpu_util_percent=gpu_util, gpu_memory_used_mib=gpu_used,
                     gpu_memory_total_mib=gpu_total)
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,

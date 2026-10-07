@@ -1,6 +1,6 @@
 # 串列双圆柱主动流动控制项目最终报告（限时收尾版）
 
-> 状态基准：`2026-10-07T09:20:45Z`以后进入限时收尾。科学测试硬截止为`2026-10-07T12:20:45Z`，归档硬截止为`2026-10-07T12:50:45Z`。当前Representative256训练终态尚待填入；所有“通过/失败”均以已存在的独立报告、receipt和SHA为依据。
+> 状态基准：`2026-10-07T09:40Z`，项目已进入限时收尾。科学测试硬截止为`2026-10-07T12:20:45Z`，归档硬截止为`2026-10-07T12:50:45Z`。Representative256训练与fixed-six均已独立终态并被拒绝；所有“通过/失败”均以已存在的独立报告、receipt和SHA为依据。
 
 ## 1. 一页结论
 
@@ -131,7 +131,14 @@ B工程训练和官方reload通过，但完整预测准入FAIL。H100 validation
 
 result SHA为`50617c1c49cebcdc2198fb1cc427f7a7289dc1912846d3f882b0a257025b6d6a`，candidate manifest SHA为`793bbdab1da9fb26ebfa27a2efe607b1ccb24c10a4bd73dcc726d4253b696848`，独立receipt SHA为`d3286db5da8c4919718e0d70e651df2c9a92eaffb083ee34275bf6b16ce1992f`，报告见[P064_REPRESENTATIVE256_TERMINAL_REVIEW_20261007.md](P064_REPRESENTATIVE256_TERMINAL_REVIEW_20261007.md)，SHA `b6d794a6f4d817fdac8a10899700b348584c78b142944110b1d57fe02b4d944d`。官方fresh reload由producer完成；独立审计无模型构建/forward，并核验256个真实target、原normalization、LBFGS state、父/候选tensor digest、冻结bias与flow文件。R1只因NumPy 2.5拒绝`float(shape(1,))`而审计失败，R2仅修scalar读取，没有重训。
 
-原fixed-six H1/AR100仍待单独已冻结评估；本报告此刻不猜测其结果。该评估只属于训练保留性，不是独立开发集。没有Representative256的dev、PPO或CFD执行授权，默认B保持不变。
+随后完成同`highest/no-TF32`条件下的原fixed-six训练保留性检查；必须与本次同precision重算的B比较，不能借用历史`high/TF32`缓存。结果如下：
+
+| 指标 | 同precision B | Representative256 | 相对变化 | 判定 |
+|---|---:|---:|---:|---|
+| fixed-six H1 balanced | `.004181029586` | `.004842338987` | `+15.816903%` | 退化 |
+| fixed-six AR100 balanced | `.009002923189` | `.010287666596` | `+14.270292%` | 退化 |
+
+工程执行和12行/2,400个四力向量（9,600 scalar）的独立数组复算均PASS，但原“双项均不退化”AND明确FAIL。工程result SHA为`57add3a45f4cedcde94fbc242337e64cd6d54d51156e4d2be27c29cb8c309289`；[独立评审](P064_REPRESENTATIVE256_FIXED_SIX_INDEPENDENT_REVIEW_20261007.md) SHA为`9c7403f0df5b0f6de7d680d5690d03af856b2e3b414367de850fc1ae80fd731b`。这正体现训练面板loss下降不等于连续预测改善。该候选不替换B，不执行dev、PPO或CFD。
 
 ## 8. 训练误差、泛化误差和控制收益的关系
 
@@ -157,6 +164,8 @@ python3 scripts/reproduce_canonical_closed_loop.py
 ### 9.2 看板
 
 Spark本机：`http://127.0.0.1:8766/`；已有Mac端口转发时：`http://localhost:8766/`。API为`/api/state`。看板展示真实unit/invocation、训练接受点或CFD反馈曲线；浏览器打不开不等于科学进程停止，应以systemd和artifact为准。
+
+现有真实流场图入口`#canonical-seeds-real-cfd-t228`对应E083/E086的两个指定canonical seed，不是E114末帧，也不是FNO预测。图路径为`artifacts/p064_canonical_seeds_real_cfd_t228_comparison_20261007/real_cfd_t228_comparison.png`（SHA `7926b3ba6919afc211faa941644df3df37ff75614604acba35869161653d4afe`），manifest SHA `fd63bbfbd5adb3a04606cd7335c76de9ecab04f4bc53025afa928abe223b10c1`，来源分别绑定canonical seed20261007、seed20261006及zero的`t=228`真实U/p保存场。E114的动作/Cd/Cl曲线由看板对应continuation结果展示；当前没有把E083/E086瞬时流场冒充E114场图。
 
 ### 9.3 多阶段复现
 
@@ -186,9 +195,17 @@ Git保存源代码、配置、审批、报告、测试和SHA清单；以下大�
 5. 减阻没有扣除旋转执行器机械功；omega²/action penalty不是净能耗。
 6. E114是恢复后连续同case证据，不是单一进程不间断160 D/U，也不是独立随机复现实验。
 7. Git不携带全部数据、模型、镜像和环境；离开Spark仅凭Git不能完整重建历史结果。
-8. Representative256训练工程终态已独立核验，但fixed-six及任何后续评估在形成独立证据前必须保持“未知”，不以日志最后一行替代终态报告。
+8. Representative256训练与fixed-six均已独立核验并拒绝；任何未执行的后续评估仍必须写“未执行/未知”，不能以日志或训练面板代替开发/控制证据。
 
-## 12. 论文可用结论与建议表述
+## 12. 与港理工唐辉相关研究的关系：方法借鉴，不是严格复现
+
+最接近且已核书目信息的文献是Zhao、Zhou、Ren、Tang、Wang (2024)，*Mitigating the lift of a circular cylinder in wake flow using deep reinforcement learning guided self-rotation*，Ocean Engineering 306, 118138，DOI `10.1016/j.oceaneng.2024.118138`。该工作以传感反馈PPO和自旋转抑制尾流升力波动，为本项目提供了方法动机；摘要中的`L*=5`、800 episodes和约98%升力波动降低是原论文结果，不能移植为本项目成绩。最近这篇同样使用旋转执行器，不能误称执行器不同；喷流论文或历史三柱fluidic pinball方案才属于不同执行器/几何。
+
+本项目验证的是Re100、项目定义`L/D=5`的两个固定中心串列圆柱，以后柱旋转控制，评价总阻力、后柱升力波动及均值偏置，没有结构位移耦合，因此不是VIV验证。本项目使用自己的OpenFOAM、PhysicsNeMo FNO、HydroGym/SB3和控制适配；尚未逐项对齐该论文的传感器、动作约束、reward、无量纲定义及训练过程，也未取得作者代码/原始轨迹做重放。现有source audit明确完整正文未形成可复现获取证据，因此不能沿用旧笔记中未核的“32 sensors/q±6/仅后柱旋转”等细节。准确表述应是“受相关研究启发的独立工程案例”，不是该论文严格复现，也未达到或声称其98%指标。
+
+HydroGym相关官方工作提供标准环境接口、solver-independent方法和代理策略向CFD迁移的背景，但不是本案例的直接性能对标；本报告不作“最新”或“SOTA”结论。引用可信度边界见[POLYU_ZHAO_2024_SOURCE_AUDIT_20261003.md](POLYU_ZHAO_2024_SOURCE_AUDIT_20261003.md)。
+
+## 13. 论文可用结论与建议表述
 
 ### 可支持的结论
 
@@ -205,7 +222,7 @@ Git保存源代码、配置、审批、报告、测试和SHA清单；以下大�
 - “全部链路只使用官方开箱即用组件”；
 - “仅凭Git可以从零复现全部模型和CFD”。
 
-## 13. 核心证据索引
+## 14. 核心证据索引
 
 - 当前简明交付：[CURRENT_DELIVERY_SUMMARY_ZH.md](CURRENT_DELIVERY_SUMMARY_ZH.md)
 - E114持续闭环：[P064_B_CONTINUATION_328_408_TERMINAL_REVIEW_20261007.md](P064_B_CONTINUATION_328_408_TERMINAL_REVIEW_20261007.md)
@@ -214,6 +231,8 @@ Git保存源代码、配置、审批、报告、测试和SHA清单；以下大�
 - B完整预测FAIL：[P064_B_FORMAL_TERMINAL_REVIEW_20261006.md](P064_B_FORMAL_TERMINAL_REVIEW_20261006.md)
 - I固定开发FAIL：[P064_B04_COVERAGE_I_DEVELOPMENT_TERMINAL_REVIEW_20261007.md](P064_B04_COVERAGE_I_DEVELOPMENT_TERMINAL_REVIEW_20261007.md)
 - 时序增量FAIL：[P064_TEMPORAL_INCREMENT_AUX_TERMINAL_REVIEW_20261007.md](P064_TEMPORAL_INCREMENT_AUX_TERMINAL_REVIEW_20261007.md)
+- Representative256训练终态：[P064_REPRESENTATIVE256_TERMINAL_REVIEW_20261007.md](P064_REPRESENTATIVE256_TERMINAL_REVIEW_20261007.md)
+- Representative256 fixed-six FAIL：[P064_REPRESENTATIVE256_FIXED_SIX_INDEPENDENT_REVIEW_20261007.md](P064_REPRESENTATIVE256_FIXED_SIX_INDEPENDENT_REVIEW_20261007.md)
 - 数据表示审计：[P064_FORCE_REPRESENTATION_DATA_AUDIT_20261007.md](P064_FORCE_REPRESENTATION_DATA_AUDIT_20261007.md)
 - 安全入口：[CANONICAL_CLOSED_LOOP_QUICKSTART.md](CANONICAL_CLOSED_LOOP_QUICKSTART.md)
 - 多阶段runbook：[CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md](CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md)
@@ -221,9 +240,9 @@ Git保存源代码、配置、审批、报告、测试和SHA清单；以下大�
 - 硬截止：[PROJECT_CLOSEOUT_DEADLINES_20261007.md](PROJECT_CLOSEOUT_DEADLINES_20261007.md)
 - 模型与复现清单：[FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md](FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md)
 
-## 14. 收尾待办（不得扩展为新实验）
+## 15. 收尾待办（不得扩展为新实验）
 
-- [x] 填写Representative256训练终态独审；fixed-six仍为未知，待既批冻结评估后再更新。
+- [x] 填写Representative256训练终态与fixed-six独审；训练loss下降但fixed-six双项退化，候选拒绝。
 - [x] 生成最终模型/数据/策略/镜像SHA与路径清单，标注Git外大文件，见[FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md](FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md)。
 - [ ] 更新`PROJECT_STATE.md`、`docs/RESEARCH_ROADMAP.md`、`EXPERIMENTS.md`、`DECISIONS.md`和`results.csv`的最终状态。
 - [ ] 运行文档链接、关键复现预检和有限CPU测试；不启动新科学计算。

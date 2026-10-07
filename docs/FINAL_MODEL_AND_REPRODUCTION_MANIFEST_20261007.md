@@ -10,7 +10,15 @@
 - [E109后续时段](P064_B_FUTURE_TIME_CFD_TERMINAL_REVIEW_20261007.md)与[E114延长段](P064_B_CONTINUATION_328_408_TERMINAL_REVIEW_20261007.md)：累计1600反馈周期，经历已核验恢复，不是一个无中断进程。最新800主窗减阻4.13258915%，波动降低17.9228711%，偏置1.235202589%；四个20 D/U块及规定joined窗均通过原门限。
 - 完整代理预测精度仍未达标；同Re100/L/D5的新时间段不等于独立物理工况或统计独立样本。不声称泛化、净节能、硬件实时性或整体项目完成。
 - G及absolute64各有单工况探索物理PASS，但预测选择FAIL、无全面优越性，均不替换B。I及多个辅助目标未通过原选择规则。
-- 代表性256点候选本快照仍在运行：unit `fluid-control-p064-representative256-training-20261007.service`，inv `6bc6aca4e1bd48d5938b273d319fc716`。未读取其live checkpoint；未来路径 `artifacts/p064_representative256_training_20261007/candidate/dual_model_manifest.json` **不属于已交付模型**。必须终态工程审计、同精度六窗与固定开发评价、Lead决定，不能以训练误差或文件存在晋级。
+- 代表性256点候选已正常终态并经独立工程审计，但未达到四通道`.01`训练拟合目标；同`highest/no-TF32` fixed-six的H1/AR又相对同precision B退化`15.8169%/14.2703%`，原AND FAIL。Lead已拒绝该候选替换B及其dev/PPO/CFD。以下候选文件仅为负结果复现工件，**不属于默认交付模型**，不以“最新”覆盖B。
+
+| Representative256负结果工件 | 字节 | SHA256 |
+|---|---:|---|
+| `artifacts/p064_representative256_training_20261007/candidate/dual_model_manifest.json` | 8699 | `793bbdab1da9fb26ebfa27a2efe607b1ccb24c10a4bd73dcc726d4253b696848` |
+| `artifacts/p064_representative256_training_20261007/candidate/aerodynamic/FNO.0.1.mdlus` | 188903667 | `f0c8ada71225b2d2015aad7805c91455eb9e9311a45abe41439cc3c2509162ac` |
+| `artifacts/p064_representative256_training_20261007/candidate/aerodynamic/checkpoint.0.1.pt` | 2266698142 | `b040cfd15ff0710abcfda5a1cab468874f889a9b814b1a3cc3c85b1dd5ca2cc8` |
+
+其flow文件与默认B逐文件SHA相同，故不在此重复列出。训练result/工程独审/fixed-six result SHA分别为`50617c1c49cebcdc2198fb1cc427f7a7289dc1912846d3f882b0a257025b6d6a`、`b6d794a6f4d817fdac8a10899700b348584c78b142944110b1d57fe02b4d944d`、`57add3a45f4cedcde94fbc242337e64cd6d54d51156e4d2be27c29cb8c309289`。
 
 ## 完整B检查点与部署工件
 

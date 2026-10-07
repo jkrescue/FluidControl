@@ -506,3 +506,9 @@ Keep the already delivered B PPO/OpenFOAM E114 result and its original physical 
 The approved 256-point fit completed and passed engineering/checkpoint audit. It reduced the fixed-panel objective by about 70.84%, with the last ten accepted points still decreasing, but exhausted 300 closures while all four normalized RMSE values remained above `.01`; front-Cl physical MAE increased. Therefore do not label this run as fitted, converged, capacity-limited, uniformly improved or admitted.
 
 Retain B as the delivered default and E114 as the bounded real-feedback control result. The already frozen fixed-six evaluation may separately measure training retention before the science deadline, but it is not an independent development set and does not authorize dev, PPO or CFD. No threshold, model architecture or physical gate changes are justified by this train-only result.
+
+## 2026-10-07 — Reject Representative256 after fixed-six H1 and AR both regress
+
+The matched `highest/no-TF32` fixed-six check removes a precision-comparison ambiguity and shows substantive regression against the same-precision B: H1 `+15.816903%`, AR100 `+14.270292%`. Training-panel loss reduction therefore did not preserve the original continuous force objectives. The predeclared nondegradation AND fails.
+
+Retain B. Do not execute Representative256 development inference, PPO or CFD, and do not lower prediction or physical thresholds. This negative result closes the candidate within the time-bounded closeout; it does not alter E114's already accepted real-feedback physical result.

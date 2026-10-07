@@ -1,0 +1,16 @@
+{
+  "status": "APPROVED_ONE_FIXED_SIX_EVALUATION",
+  "execution_authorized": true,
+  "training_engineering_accept": true,
+  "unit": "fluid-control-p064-fit256-fixed-six-20261007.service",
+  "output": "artifacts/p064_fit256_fixed_six_20261007",
+  "driver": {"path": "artifacts/p064_fit256_fixed_six_source_20261007_immutable/run_fit256_fixed_six.py", "sha256": "85ead7362025e7974c23b413f8dce71e21c0e244f705fa0e50d1a76c342256bc"},
+  "helper": {"path": "artifacts/p064_fit256_fixed_six_source_20261007_immutable/p064_fixed_six_same_precision.py", "sha256": "d93e76b04e0ea5eb93770268b7ab5e43c4e4c81871ddb3eb2a2be8286fa9b77a"},
+  "consumer": {"path": "artifacts/p064_representative256_source_20261007_immutable/dual_fno_representative256.py", "sha256": "484eb9e26889b4e9efac807447d131113d2b1dd8bd0cb6b77472250f8ba8fbc8"},
+  "training_approval": {"path": "docs/P064_REPRESENTATIVE256_TRAINING_APPROVAL_20261007.json", "sha256": "42e8c15d4835ea6696ecb12271246d9babba16b73f869b4802b57bbc8dabc38c"},
+  "training_result": {"path": "artifacts/p064_representative256_training_20261007/result.json", "sha256": "50617c1c49cebcdc2198fb1cc427f7a7289dc1912846d3f882b0a257025b6d6a"},
+  "training_review": {"path": "docs/P064_REPRESENTATIVE256_TERMINAL_REVIEW_20261007.md", "sha256": "b6d794a6f4d817fdac8a10899700b348584c78b142944110b1d57fe02b4d944d"},
+  "candidate_manifest": {"path": "artifacts/p064_representative256_training_20261007/candidate/dual_model_manifest.json", "sha256": "793bbdab1da9fb26ebfa27a2efe607b1ccb24c10a4bd73dcc726d4253b696848"},
+  "b_manifest": {"path": "artifacts/fcp064_controlled_aero_arm_b_20261006/dual_model_manifest.json", "sha256": "92766915cb11ca75d313608a5f75e61a218371dcc789f5b44725f0a8260e7891"},
+  "resources": {"memory_bytes": 25769803776, "allocator_bytes": 17179869184, "cpu": 4, "tasks": 64, "seconds": 1200, "outer_seconds": 1230, "start_gib": 50, "run_gib": 22}
+}
