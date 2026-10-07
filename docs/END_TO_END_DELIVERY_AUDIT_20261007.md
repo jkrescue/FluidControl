@@ -2,20 +2,17 @@
 
 Read-only repository/artifact review, 2026-10-07. No model, CFD or data conversion was executed. Historical approvals are evidence, not permission for a new run.
 
-## Current conclusion through E111
+## Current conclusion through E112
 
-Current execution note: a separately reviewed physical-y-reflection paired FNO
-training run started at `2026-10-07T02:25:59Z` as unit
-`fluid-control-p064-y-reflection-paired-20261007.service`, invocation
-`766ad5ca993d483bb6a42d0f2fc09bd8`. It keeps the K1 start, B schedule,
-256 original windows/32 optimizer updates and original `.5H1+.5AR` objective,
-while evaluating original/reflected branches at half weight. Actual journal
-events already distinguish the two independent frozen-flow branches and their
-input/history hashes. This live exploratory prediction run has no scientific
-result yet and authorizes no automatic evaluation, PPO or CFD. It does not
-replace retained B, alter prior FAIL decisions or weaken the final acceptance
-standard. The delivered real-feedback chain described below remains usable
-independently of this prediction study.
+Current execution note: E112 physical-y-reflection training has ended and passed
+independent engineering review (256 original windows/512 branches/32 updates).
+Both original fixed-six retention objectives worsen B: H1+4.1991%, AR100+1.4529%.
+The candidate is not adopted;80-endpoint development evaluation was not run and
+its metrics remain unknown. See the [terminal review](P064_Y_REFLECTION_PAIRED_TERMINAL_REVIEW_20261007.md).
+No training or CFD currently runs; next data diagnosis is preparation only.
+B remains default, prior failures and final acceptance standards are unchanged.
+The delivered real-feedback chain below remains usable independently of this
+negative prediction study.
 
 The fixed tandem-cylinder operating case has an implemented, independently
 audited official-component chain: **existing real curated data and pretrained

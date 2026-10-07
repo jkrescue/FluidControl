@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — E112 retention FAIL; preserve B and avoid unnecessary evaluation
+
+Accept the [E112 terminal review](docs/P064_Y_REFLECTION_PAIRED_TERMINAL_REVIEW_20261007.md): the single paired-reflection run completed correctly, but both unchanged fixed-six objectives worsen B (H1+4.1991%, continuousAR100+1.4529%). The original AND selection condition is already false; do not launch80-endpoint dev merely to search for a favorable result. Its metrics are unmeasured, not retroactively labelled FAIL. No adoption, automatic continuation, CPUload/PPO/CFD, significance claim or change to original physical gates. The existing real-CFD delivery remains usable and B remains default. Next data diagnosis is preparation only, not an authorized scientific run.
+
 ## 2026-10-07 — One y-reflection paired-loss candidate, not a new physical truth set
 
 Following the [bounded physical precheck](docs/P064_Y_REFLECTION_PHYSICAL_CPU_PRECHECK_REVIEW_20261007.md) and [CPU implementation review](docs/P064_Y_REFLECTION_CPU_IMPLEMENTATION_REVIEW_20261007.md), Lead authorized one fixed256-original/512-branch/32-update run. Actual launch is FC-E112, invocation `766ad5ca993d483bb6a42d0f2fc09bd8`, approval SHA `6e5ca18a42a1ad4410260fb9df4f14b457907ff2b5bceadfcfb0f3d621bb81e6`. The only scientific intervention is physical-y-reflection pairing at equal weights; it is augmentation, not new CFD truth or proof of discrete-grid/FNO equivariance. Keep original parent, schedule, H1/AR weights, normalization, frozen scope, final-only checkpoint and original diagnostic windows. Prespecified fixed-development plus fixed-six comparison remains necessary before any promotion; no loss-only claim or automatic new control experiment. B stays default, all earlier failures and original2%/1.05/10% physical gates remain. This research does not delay or invalidate the already demonstrated real-CFD feedback delivery.

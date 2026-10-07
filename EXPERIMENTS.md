@@ -1,5 +1,11 @@
 # Experiment ledger
 
+## FC-E112 — engineering complete; both original fixed-six retention conditions FAIL
+
+[Independent terminal review](docs/P064_Y_REFLECTION_PAIRED_TERMINAL_REVIEW_20261007.md), SHA `8b129933430694791609083c0609503cbcd0ad9636c30ef907704022e70295c9`, binds result `fa57ada9b47414c20c5ee245e8b9e9663e6f568c5f06e4ac9d17dd16b9b53d60` and independent audit `cb367f5183394782ac482b0d40f1b91e` / receipt `10ab43ae2c8f7d73833e1b119da4f7f0dca5c74fa9b1962df118b5b706a350f5`. Actual256/512/32 counts,28 Adam states at32, frozen flow/two biases and saved checkpoint identities pass. Science unit766ad5 was collected after normal completion; exact supervisor receipt/invocation journal/manager completion are used, not invented retained limits. Wall2050.827562s, minimum Available105.87978GiB.
+
+Same-six saved-channel/mean arithmetic independently confirms H1 `.004143848258536309` versus B `.003976855262105043` (+4.1991%) and continuousAR100 `.009076183021534234` versus `.008946200483478606` (+1.4529%). Both retention conditions fail. No80-endpoint dev or candidate CPUload was run; those metrics remain unknown. Retain B, no automatic training/PPO/CFD, no gate changes. The launch entry below is historical.
+
 ## FC-E112 — y-reflection paired training actual launch (timestamped, not a result)
 
 Launched once at `2026-10-07T02:25:59Z`: unit `fluid-control-p064-y-reflection-paired-20261007.service`, invocation `766ad5ca993d483bb6a42d0f2fc09bd8`, initial PID3981739. Approval `docs/P064_Y_REFLECTION_PAIRED_TRAINING_APPROVAL_20261007.json` SHA `6e5ca18a42a1ad4410260fb9df4f14b457907ff2b5bceadfcfb0f3d621bb81e6`; output `artifacts/p064_y_reflection_paired_20261007`. Actual original/reflected branch and window events were observed. This is a launch-time record, not a permanent running assertion or accuracy result.
