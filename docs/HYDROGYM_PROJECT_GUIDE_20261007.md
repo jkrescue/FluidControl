@@ -71,3 +71,9 @@ HydroGym是面向流动建模与控制的开源平台，提供标准环境接口
 [1] [HydroGym官方项目](https://github.com/dynamicslab/hydrogym)。平台概述与项目实际使用范围分开说明，不将最新版全部功能视为本项目已使用能力。
 
 [2] [项目固定版本的FlowEnv源码](https://github.com/dynamicslab/hydrogym/blob/4ab9854dea3d84e38a59c25e0f5835a00cf8225f/hydrogym/core.py)；[项目技术栈说明](TECHNICAL_DESIGN_DATA_STACK_20261007.md)、[E082训练核查](P064_B_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md)、[E114闭环验证](P064_B_CONTINUATION_328_408_TERMINAL_REVIEW_20261007.md)。图示省略坐标对称变换、文件校验等工程细节；精确实现以这些记录为准。
+
+### 一次控制策略的练习与验证
+
+研究人员想让后圆柱自动调整转速，于是先准备CFD起始状态、训练好的FNO和评分规则，把它们接入HydroGym。PPO读到流动观测，提出一个转速；环境程序限制动作，再调用FNO预测后果，返回新观测和得分。这样反复练习，PPO根据积累的记录学习更合适的动作，HydroGym负责把每次练习组织起来。
+
+练习结束后，研究人员固定PPO策略，把它交给OpenFOAM验证。策略仍然根据观测调整转速，但这次反馈来自实际CFD求解，不再来自FNO预测。只有与无旋转对照比较后，才能判断减阻和升力波动是否真的改善。HydroGym帮助组织了训练，却不能替代这场验证；代理预测有误，练习得分高也可能控制不好。

@@ -4,7 +4,7 @@
   "inputs": [
     {
       "path": "docs/HYDROGYM_PROJECT_GUIDE_20261007.md",
-      "sha256": "5b0037e2c91b435647337802050b00603d95d8b639a69d094530916c47391c23"
+      "sha256": "acef01160bfa78118f0150749054811cd47d4d2f4be9cfa6e12562138f5c4234"
     },
     {
       "path": "scripts/build_hydrogym_guide.py",
@@ -23,5 +23,5 @@
       "sha256": "b4ab46b865956b11eef1ba8587511a86ce14baf36978157c480dda05946792cd"
     }
   ],
-  "html_sha256": "3c1a0851be55da88bcb8bd1902e28847ed8cac52cccc3e3978a9dfbd8c3766fa"
+  "html_sha256": "4c1e40881a22fe4fc8e8fbc6ec000838d955a3e63edbed7d1360cd54eefdcd89"
 }
