@@ -465,3 +465,6 @@ ID、记录时间、状态、待检验假设、对应实验ID、所依据证据/
 # 2026-10-06 — P028资源实测之后的训练决策
 
 R3真实H10反向完成，模型未更新。最低物理空闲20.9028GiB，仅比20GiB要求多约0.9GiB；不能忽略至少0.35184GiB的Adam动量和其他训练临时内存。先核对已结束且无写入的项目CFD案例，必要时仅用既有POSIX_FADV_DONTNEED工具释放这些明确文件的缓存；不删除数据、不全局清缓存、不改变物理目标或模型规模。训练仍需独立执行配置及连续资源守卫，保持原1368窗口/171更新。实际证据及前两次工程失败见 `docs/FC_P028_RESOURCE_TERMINAL_REVIEW_20261006.md`。原完整代理验收和真实CFD闭环要求不变。
+# 2026-10-07 — B04 raw generation accepted; conversion remains separate
+
+Lead accepted the independently audited B04 `120→200` raw trajectory as the one planned late-state coverage source. This is a train-only data-generation milestone, not surrogate improvement or admission. The next permitted work is preparation and independent review of a case-local, raw-read-only VTK and official Curator pipeline that reuses the existing normalization bytes and real `t=120` force source. No VTK/Curator/HDF conversion, model training, PPO or CFD follow-on is implied by the raw result.
