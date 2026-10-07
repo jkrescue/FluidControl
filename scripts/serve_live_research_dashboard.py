@@ -498,6 +498,7 @@ function renderActiveExperiment(d){
   if(d.absolute64_cfd?.verified){const c=d.absolute64_cfd;$('lead-monitor').textContent+=` 并行 Absolute64 b01真实CFD：${c.status}，${c.cycles}/800（130→210）；CPU策略反馈，无GPU训练或在线FNO；inv ${c.invocation}，PID ${c.pid}。原六窗和2%/1.05/10%不变，待终态独审。`;}
   if(d.absolute64_cfd?.terminal_verified&&d.future_time_cfd?.terminal_verified&&d.absolute64_ppo?.terminal_verified){$('lead-now').textContent='本轮训练与两项CFD任务均已结束。Absolute64 b01六窗原物理标准通过；B默认保留，原预测筛选FAIL不变。';$('lead-monitor').textContent='同b01主窗对比与Absolute64完整800点动作/Cd/Cl见下方；B后续248→328时段另列，不能混入同b01比较。单工况差异不是统计显著性或泛化证明。';}
   if(d.reflection_training?.verified){const r=d.reflection_training;$('lead-now').textContent=`反射配对气动力预测模块训练：${r.status}；原始窗口${r.windows}/256，原始/镜像分支${r.branches}/512，参数更新${r.updates}/32。流场网络冻结；已有真实CFD闭环完成，本任务不运行CFD。`;$('lead-monitor').textContent=`实际inv ${r.invocation}，PID ${r.pid}；Available ${num(r.available_gib,2)} GiB。训练日志不代表精度或控制收益；B默认及已核物理结果保留，完整预测验收尚未通过。允许另行批准闭环探索，不将全预测PASS冒充已完成或自动设为探索前置。`;}
+  else if(d.reflection_training){$('lead-now').textContent='当前训练状态暂不可读取；不能据此判断训练已停止或完成。';$('lead-monitor').textContent=`反射配对训练观测${d.reflection_training.observation_state==='identity_mismatch'?'身份校验未通过':'暂不可用'}。保留已有真实CFD结果与曲线，B默认及预测限制不变；不将历史任务终态作为当前训练状态。`;}
   return;
  }
  if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5524,10 +5525,10 @@ def _reflection_training(root):
     approval=root/'docs/P064_Y_REFLECTION_PAIRED_TRAINING_APPROVAL_20261007.json'
     try:
         digest=hashlib.sha256(approval.read_bytes()).hexdigest()
-        if digest!='6e5ca18a42a1ad4410260fb9df4f14b457907ff2b5bceadfcfb0f3d621bb81e6':return {'verified':False}
+        if digest!='6e5ca18a42a1ad4410260fb9df4f14b457907ff2b5bceadfcfb0f3d621bb81e6':return {'verified':False,'observation_state':'identity_mismatch'}
         raw=subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','Result','-p','ExecMainStatus','-p','ExecStart'],text=True,timeout=3)
         state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
-        if state.get('InvocationID')!=inv or str(approval) not in state.get('ExecStart','') or digest not in state.get('ExecStart',''):return {'verified':False}
+        if state.get('InvocationID')!=inv or str(approval) not in state.get('ExecStart','') or digest not in state.get('ExecStart',''):return {'verified':False,'observation_state':'identity_mismatch'}
         log=subprocess.check_output(['journalctl','--user','_SYSTEMD_INVOCATION_ID='+inv,'-n','1200','--no-pager','-o','cat'],text=True,timeout=3)
         windows=branches=updates=0
         for line in log.splitlines():
@@ -5541,7 +5542,7 @@ def _reflection_training(root):
         status='GPU训练中' if running else ('训练进程成功结束，待终态核验' if state.get('Result')=='success' and state.get('ExecMainStatus')=='0' else '进程停止/失败，待诊断')
         mem=dict(line.split(':',1) for line in Path('/proc/meminfo').read_text().splitlines())
         return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,status=status,windows=windows,branches=branches,updates=updates,available_gib=int(mem['MemAvailable'].split()[0])/1024**2)
-    except (OSError,ValueError,KeyError,IndexError,TypeError,subprocess.SubprocessError):return {'verified':False}
+    except (OSError,ValueError,KeyError,IndexError,TypeError,subprocess.SubprocessError):return {'verified':False,'observation_state':'unavailable'}
 
 
 def _absolute64_cfd(root):
