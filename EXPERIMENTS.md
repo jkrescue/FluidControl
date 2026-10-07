@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## Final illustrated delivery and read-only evidence packaging — not a scientific experiment
+
+At `2026-10-07T11:13Z`, the verified project evidence was assembled into the Chinese final report, a self-contained offline HTML page, nine bound figures, and compact receipts/tables. Commit `987491b` records the report sources and generated assets; the portable package independently resolved all 9 HTML image references and passed 14 copied-file SHA-256 checks. This entry adds no experiment identifier or metric row: no model was loaded, no training, inference, PPO, CFD, or threshold change was performed, and retained B remains the default. The package preserves both the E114 real-CFD closed-loop result and the unresolved surrogate/FNO/MPC accuracy limitations.
+
 ## Representative256 train-panel fit — running snapshot, not admission
 
 Lead authorized one bounded continuation from retained B on a fixed panel of 256 real H1 points (192 original-family plus 64 controlled-b00), with the existing four-channel weighting and no development/PPO/CFD authorization. The actual unit is `fluid-control-p064-representative256-training-20261007.service`, invocation `6bc6aca4e1bd48d5938b273d319fc716`, approval SHA `42e8c15d4835ea6696ecb12271246d9babba16b73f869b4802b57bbc8dabc38c`. At `2026-10-07T09:14Z` it was running at 61 accepted points and 129/300 closures; the latest accepted-point loss was `.00495145656`. Trial closures are not accepted measurements. This timestamped launch record is not a terminal result, development improvement, model admission, PPO, CFD, or closed-loop claim; retained B and the E114 physical result remain unchanged.
