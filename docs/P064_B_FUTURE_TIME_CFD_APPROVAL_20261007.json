@@ -1,0 +1,167 @@
+{
+  "repo": "/workspace/fluid_control",
+  "source_restart": "artifacts/p064_b_symmetry_canonical_ppo_long_cfd_20261007/case_zero",
+  "source_restart_tree_sha256": {
+    "228": {
+      "U": "545818653354236a42208c0cbfb202171c9b8caea3995a4ed1cb0df1b0dbe533",
+      "U_0": "6e9abfd21a5d7a8f0989f68e52818a046ad397c2262cd5e5a880ff0e38930615",
+      "p": "5bf3964e39e89468b7ab731182847ada5feecef714929a42031258bb9e545e98",
+      "phi": "870c1b5441a3c83863eada7f8a3880b6efd58a69febfdb5d6c00aa3024484737",
+      "phi_0": "575b2e5268e5d03ddafb6b4ea2748be2142b74694d13badf131fe2999574e9a1",
+      "uniform/cumulativeContErr": "f43a0163b5d2859b6f10978e6a99cca9558376676a5583ae73b1c26e5d688ad4",
+      "uniform/functionObjects/functionObjectProperties": "e6c9103a73e29f9251a7bcf0662dc8079a393c02306f6da1d045da15caccbabc",
+      "uniform/time": "245635b3255a70047b71b49accd29c9a7231da11f664960e9e335d26917bd62d"
+    },
+    "constant": {
+      "polyMesh/boundary": "c4c245add642a3a724d6215bca30d8d36afbbbe132148e5c7174dbd1d142d29b",
+      "polyMesh/faces": "244553acb1682cafddbaa1b3f5f30dba5b7893a91aacfff379ee332edc629b55",
+      "polyMesh/neighbour": "7531e36b8010d9c27cf595cccf92d0c9bc97a37a0a4f3072b74b0aebf6c73e86",
+      "polyMesh/owner": "3b588f0eda45d795bf1dabe765006fc5d55f445042dc87a348b6c77fc968c1ca",
+      "polyMesh/points": "918d6531db25f5d241d0fa81930ecd064cf06f09429a500d7cc920b11b77eb49",
+      "transportProperties": "a784053859cf96cdf4a3d06abce219a4f5e977b2557d408cc86a7771c95b1996",
+      "turbulenceProperties": "e9851724678491c7618adda5757d313afdcd9f3af09ee8261696d3aba76a4269"
+    },
+    "system": {
+      "blockMeshDict": "a3faf63c69548315b5346ec4d0969ea52fefe3b18e8aad811a972a10d9408ee6",
+      "controlDict": "f860472475d232358818709ac49c40cfc115d93897fe681e246bc1382d6da2f8",
+      "fvSchemes": "7d86a42aa20d2af384dc9512bf3407032a89da801a93e177d9c39eff664d7856",
+      "fvSolution": "2e1095094118f7efb7c985794f1816e6289494e199ee897c2e3cf01420afb448",
+      "setFieldsDict": "5f9a102d86505b3427d52d522a1372ce3375af63ff1471c2762a1aa4f195df62"
+    }
+  },
+  "openfoam_image_id": "sha256:24205c9677d39c95221eb903988094dd7a228fc41a2054df3eaa13f80e465fcb",
+  "status": "P064_B_FUTURE_TIME_CANONICAL_PPO_LONG_CFD_EXECUTION_APPROVED",
+  "intended_execution_status": "P064_B_FUTURE_TIME_CANONICAL_PPO_LONG_CFD_EXECUTION_APPROVED",
+  "execution_authorized": true,
+  "steps": 800,
+  "start_time": 248,
+  "deadline_seconds": 2280,
+  "inference_device": "cpu",
+  "scientific_admission": false,
+  "output": "artifacts/p064_b_future_time_248_328_cfd_20261007",
+  "driver_sha256": "52cdd010d24d2ea382b6738dae232134371e4b0a6d4cb3f9a266ea4198a0cf2e",
+  "source_files": {
+    "cfd/tandem_cylinders/analyze_baseline.py": "fb2fb651ab498c41ea632581a255cb3e7e4f76d87ccb1daf712ffb03cb0bf7cb",
+    "cfd/tandem_cylinders/make_expanded_control_dataset.py": "1c48ee0e5761ac90d5f04b4cb4dfeb6580b3f0ed2a9863c2dc7f860792020ec2",
+    "cfd/tandem_cylinders/make_probe_feedback_case.py": "9960e38cbfc9afc6ec2a56ae01ce3da3974167b101a3274e33faa770728ebbbd",
+    "scripts/run_exploratory_causal_history_h5_feedback.py": "0917cd5c62e43fc3f7b2cdc23900aa9d0932dff9ef4842a155bcf4288524b14d",
+    "scripts/run_full40_canonical_ppo_openfoam_feedback.py": "3dbb20106f45ed709e0c91731817540903db961555930177f81f0394104594cc",
+    "scripts/run_tandem_phase_feedback_pair.py": "866b4dce33c7401eb447e897641d734828e04b10b38ccde8a0b724e8b5e65d3d",
+    "src/fluid_control/__init__.py": "fb12ae7ff289ab8cba77024b3589ec96b0201a59ceaf11880d9f527e9cb6253d",
+    "src/fluid_control/canonical_joint_v1.py": "138ab2b49ebddcbed2a24486c995b85a3a5ae226ee936ff2ed5de318496ee8bd",
+    "src/fluid_control/openfoam_observation.py": "799d569c3f986a5e0e5cda95a3f07cd3b3993814ff0867763166549ef312293e",
+    "artifacts/p064_symmetry_canonical_policy_source_20261007_immutable/src/fluid_control/symmetry_canonical_wrapper.py": "a55b569986b6e62fd23d1c46dbe4f117659795aef3953cac81359506d1ac38ae"
+  },
+  "inputs": {
+    "training_result": {
+      "path": "artifacts/p064_b_symmetry_canonical_h5_32768_ppo_20261007/payload/result.json",
+      "sha256": "44ef56114e17db88077d5f3e7920a2a9031023be74e31d359bd8c66be7441d1e"
+    },
+    "policy": {
+      "path": "artifacts/p064_b_symmetry_canonical_h5_32768_ppo_20261007/payload/ppo_final.zip",
+      "sha256": "5c05699e0851787d85d40c407647f80c19d3aebeb7dff82e019336cde77c6c6e"
+    },
+    "vecnormalize": {
+      "path": "artifacts/p064_b_symmetry_canonical_h5_32768_ppo_20261007/payload/vecnormalize.pkl",
+      "sha256": "1d25005144b6436c3e2641ee89d1585e3c9f8b9fdb1f26b9cd39c7d83610c145"
+    },
+    "training_approval": {
+      "path": "docs/P064_B_SYMMETRY_CANONICAL_PPO_APPROVAL_20261007.json",
+      "sha256": "1a49d9a72a8dabcb1159b2d04ebcf19f039cbdb70f87ba1e1c4d714d898368c7"
+    },
+    "training_review": {
+      "path": "docs/P064_B_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md",
+      "sha256": "72a03435e0ed954743694ca785e8de1616c6860db457b2ad20ef6f40d330e562"
+    },
+    "pair_driver": {
+      "path": "scripts/run_exploratory_causal_history_h5_feedback.py",
+      "sha256": "0917cd5c62e43fc3f7b2cdc23900aa9d0932dff9ef4842a155bcf4288524b14d"
+    },
+    "transport": {
+      "path": "scripts/run_full40_canonical_ppo_openfoam_feedback.py",
+      "sha256": "3dbb20106f45ed709e0c91731817540903db961555930177f81f0394104594cc"
+    },
+    "symmetry_adapter": {
+      "path": "artifacts/p064_symmetry_canonical_policy_source_20261007_immutable/src/fluid_control/symmetry_canonical_wrapper.py",
+      "sha256": "a55b569986b6e62fd23d1c46dbe4f117659795aef3953cac81359506d1ac38ae"
+    },
+    "parent_cfd_result": {
+      "path": "artifacts/p064_b_symmetry_canonical_ppo_long_cfd_20261007/result.json",
+      "sha256": "165b78194f84676b5ea0091b1d160ccf25f913a9f49c74a9424a7d0f03cde7dc"
+    }
+  },
+  "required_systemd": {
+    "MemoryMax": "8G",
+    "MemorySwapMax": 0,
+    "CPUQuota": "400%",
+    "RuntimeMaxSec": 2400,
+    "TimeoutStopSec": 120,
+    "KillMode": "control-group",
+    "OOMPolicy": "stop"
+  },
+  "runtime_env": {
+    "CUDA_VISIBLE_DEVICES": "",
+    "OMP_NUM_THREADS": "4",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONNOUSERSITE": "1",
+    "PYTHONPATH": "/workspace/fluid_control/.runtime/exploratory-h5-ppo-py312"
+  },
+  "interpretation": "Prospectively fixed future time, not independent physical generalization; no new FNO/PPO or model selection; retained B/G and prediction failures unchanged.",
+  "immutable_driver": "artifacts/p064_b_future_time_source_20261007_immutable/scripts/run_p064_b_future_time_cfd.py",
+  "resource_contract": {
+    "startup_memavailable_gib": 50,
+    "runtime_memavailable_gib": 22,
+    "physical_reserve_gib": 20,
+    "memfree_observational_only": true,
+    "solver_memory_gib_each": 8,
+    "solver_swap_bytes": 0,
+    "solver_cpus_each": 2,
+    "disk_reserve_gib": 20
+  },
+  "training_execution": {
+    "unit": "fluid-control-p064-b-symmetry-canonical-ppo-20261007.service",
+    "invocation_id": "029124675a0d459e82455c59f831ba3b"
+  },
+  "reviewed_by_lead": true,
+  "lead_statement": "Lead conditionally approved ONE entire fixed B workflow: zero228→248 then paired248→328/800, primary268→328 with unchanged2%/1.05/10%. Recovery independent source/config review ACCEPT with6CPUtests PASS; same-byte immutable freeze verified. Actual final metadata/resource/exclusivity checks required before launch. No phase selection, model change, new training conversion, automatic retry, or independent-physical-condition claim.",
+  "candidate_arm": "B",
+  "candidate_manifest_sha256": "92766915cb11ca75d313608a5f75e61a218371dcc789f5b44725f0a8260e7891",
+  "training_payload": "artifacts/p064_b_symmetry_canonical_h5_32768_ppo_20261007/payload",
+  "baseline_start_time": 228,
+  "baseline_end_time": 248,
+  "planned_unit": "fluid-control-p064-b-future-time-cfd-20261007.service",
+  "driver_path": "/workspace/fluid_control/artifacts/p064_b_future_time_source_20261007_immutable/scripts/run_p064_b_future_time_cfd.py",
+  "future_time_protocol": {
+    "baseline_zero": [
+      228,
+      248
+    ],
+    "paired": [
+      248,
+      328
+    ],
+    "primary_open_left": [
+      268,
+      328
+    ],
+    "select_start_after_observation": false,
+    "fixed_policy": "E082 B canonical seed20261007",
+    "hypothesis": "Fixed retained B satisfies unchanged physical constraints on a prospectively fixed new future time segment.",
+    "decision_rule": "Report all six windows; primary drag>=0.02/RMSratio<=1.05/bias<=0.10. Failure retained; no automatic retuning or restart selection.",
+    "independence": "Same deterministic limit cycle; neither new physical condition nor guaranteed statistical independence.",
+    "future_access_evidence": "Source branch metadata latest saved time228; future248 absent before this preparation. No assertion of global OS access audit.",
+    "initial_observation": "New baseline exact t248 wakeProbes plus front/rear forces and zero omega; never old148 or zero-filled channels.",
+    "estimated_wall_minutes": 25,
+    "outer_max_minutes": 40,
+    "estimated_new_storage_gib": 6,
+    "conversion_training_authorized": false
+  },
+  "approved_at_utc": "2026-10-07T01:15:06Z",
+  "independent_review": {
+    "reviewer": "recovery_evaluation_review",
+    "source_sha256": "52cdd010d24d2ea382b6738dae232134371e4b0a6d4cb3f9a266ea4198a0cf2e",
+    "pending_frozen_sha256": "bd0855fd50473d7b1f92ee22e1c51323efb81bbecff1c8a9376f9ebdc9be5634",
+    "result": "ACCEPT",
+    "cpu_tests": "6 passed in0.05s; entire source diff/PLAN/pending reviewed"
+  }
+}

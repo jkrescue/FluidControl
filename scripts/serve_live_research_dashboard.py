@@ -480,6 +480,7 @@ function renderActiveExperiment(d){
   if(d.g_exploratory_cfd?.verified){const c=d.g_exploratory_cfd;$('lead-now').textContent=`最新G探索闭环：${c.terminal_verified?'800次真实反馈已完成并独审，六窗物理标准通过':c.running?'CPU真实反馈运行中':'进程已结束，待独审'}；${c.cycles}/800。${c.terminal_verified?'主窗减阻3.9513%、后升力波动降低18.3622%、偏置3.0717%；本任务已结束，无新训练。':''} B仍为默认，G预测FAIL未改变；当前G三曲线见 #current-closed-loop，B历史见 #canonical-reproduction。`;}
   if(d.absolute64_training){const a=d.absolute64_training;$('lead-now').textContent=`Absolute64气动力训练：${a.status}；更新${a.updates}/64，窗口${a.windows}/512。${a.loss==null?'尚无可读loss记录（不估算）':'最近训练loss '+a.loss}。仅训练日志，不代表预测准入；B默认/G已完成闭环不变。`;$('lead-monitor').textContent=`unit ${a.unit}；inv ${a.invocation||'尚无'}；PID ${a.pid||0}；Available ${num(a.available_gib,2)} GiB。${a.note} 原G当前曲线与B历史均保留。`;}
   if(d.future_time_cfd?.verified){const f=d.future_time_cfd;$('lead-now').textContent=`固定B新未来时段：${f.status}；zero基线${f.baseline_cycles}/200（228→248），配对反馈${f.paired_cycles}/800（248→328）。${f.phase==='baseline'?'当前为零动作基线生成':f.phase==='handoff'?'基线已完成，待进入配对':'已进入固定策略配对阶段'}，CPU真实OpenFOAM，不是MPC/FNO训练。`;$('lead-monitor').textContent=`unit ${f.unit}；inv ${f.invocation}；PID ${f.pid}；Available ${num(f.available_gib,2)} GiB。原2%/1.05/10%不变，未独审不宣告物理通过；新时间段不等统计独立，保留B/G历史。`;}
+  if(d.future_time_cfd?.terminal_verified){$('lead-now').textContent='固定B后续流动时段验证完成：zero 228→248、配对反馈248→328，800/800；六窗原物理标准全部通过。主窗减阻3.9949%、后升力波动比0.8166、均值偏置2.8533%。';$('lead-monitor').textContent='原始受力和真实反馈时序已复算；新时间段不等于独立物理工况或统计独立，原预测精度限制不变。B/G历史曲线保留，另一个策略的结果仍须单独验证。';}
   if(d.absolute64_ppo?.verified){const p=d.absolute64_ppo;$('lead-monitor').textContent+=` 并行 E110 PPO：${p.status}，实际步数${p.timesteps}/32768、已记录PPO epochs ${p.ppo_epochs}/256；inv ${p.invocation}，PID ${p.pid}。不是FNO续训或当前CFD的在线模型，日志不代表物理通过。`;}
   if(d.absolute64_cfd?.verified){const c=d.absolute64_cfd;$('lead-monitor').textContent+=` 并行 Absolute64 b01真实CFD：${c.status}，${c.cycles}/800（130→210）；CPU策略反馈，无GPU训练或在线FNO；inv ${c.invocation}，PID ${c.pid}。原六窗和2%/1.05/10%不变，待终态独审。`;}
   return;
@@ -5574,7 +5575,11 @@ def _future_time_cfd(root):
         status='实际运行中' if running else ('进程成功结束，待独审' if state.get('Result')=='success' and state.get('ExecMainStatus')=='0' else '进程停止/失败，待诊断')
         mem=dict(line.split(':',1) for line in Path('/proc/meminfo').read_text().splitlines())
         phase='paired' if paired else ('handoff' if baseline==200 else 'baseline')
-        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,status=status,baseline_cycles=baseline,paired_cycles=paired,phase=phase,available_gib=int(mem['MemAvailable'].split()[0])/1024**2)
+        proof=root/'docs/P064_B_FUTURE_TIME_CFD_TERMINAL_REVIEW_20261007.md'
+        result=output/'result.json'
+        terminal_verified=(not running and pid==0 and state.get('Result')=='success' and state.get('ExecMainStatus')=='0' and baseline==200 and paired==800 and proof.is_file() and result.is_file() and hashlib.sha256(proof.read_bytes()).hexdigest()=='da193912d5c6a773d382d4b874c304660e3f732f247f679bf0f6636ea6d6fc75' and hashlib.sha256(result.read_bytes()).hexdigest()=='d53cb2ea32f66af6c4067d0c7eb90e7aecc8b815634588b6fe448d291acc5b98')
+        if terminal_verified:status='后续流动时段验证完成'
+        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,status=status,baseline_cycles=baseline,paired_cycles=paired,phase=phase,terminal_verified=terminal_verified,available_gib=int(mem['MemAvailable'].split()[0])/1024**2)
     except (OSError,ValueError,KeyError,IndexError,TypeError,subprocess.SubprocessError):return {'verified':False}
 
 
