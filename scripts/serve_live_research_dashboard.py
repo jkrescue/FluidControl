@@ -521,6 +521,7 @@ function renderActiveExperiment(d){
   if(d.pressure_aux_training?.terminal_verified){const p=d.pressure_aux_training;$('lead-monitor').textContent=`压力辅助H训练工程已完成：256窗口/32更新。固定六窗单步综合预测误差(H1)较B降低${num(-100*p.retention.h1.relative_change,4)}%，100步连续预测综合误差(AR100)升高${num(100*p.retention.ar.relative_change,4)}%；原两项均不退化条件未通过，候选未采用。开发评估未运行、未知，未推进此候选PPO/CFD。B默认与约4%减阻真实闭环保留，完整预测精度仍未通过。这不是训练崩溃；已绑定独审证据，不依赖已回收unit。`;}
   if(d.continuation_cfd){const x=d.continuation_cfd;$('lead-monitor').textContent=(x.verified?`当前阶段：固定B策略延长真实CFD运行验证，${x.running?'运行中':x.process_completed?'进程已结束，结果待独审':'进程停止/失败，待诊断'}；${x.cycles}/800反馈周期，流动时刻${x.last_time??'初始化未知'}（328→408）。`:'延长CFD验证状态暂不可读取，不据此判断运行或结束。')+' 在线策略推理使用CPU＋真实OpenFOAM，不是GPU训练，无在线FNO/MPC；基本闭环已验证，完整FNO预测精度未达标，B默认及原2%/1.05/10%标准保持。这里只延长同工况时段，不代表独立工况或统计泛化。';}
   if(d.continuation_cfd?.terminal_verified){const c=d.continuation_cfd,m=c.primary,j=c.joined;$('lead-monitor').textContent=`固定B续跑328→408已完成并独审800周期：减阻${num(100*m.paired_drag_reduction,4)}%、后柱升力波动比${num(m.paired_rear_cl_fluctuation_rms_ratio,6)}、偏置${num(100*m.absolute_mean_rear_cl_over_paired_zero_rms,4)}%；四个20 D/U分段均通过原2%/1.05/10%标准。累计248→408单列：减阻${num(100*j.paired_drag_reduction,4)}%、波动比${num(j.paired_rear_cl_fluctuation_rms_ratio,6)}、偏置${num(100*j.absolute_mean_rear_cl_over_paired_zero_rms,4)}%。累计1600周期经历已验证恢复，不是无中断进程、独立新工况或统计泛化。下方B曲线默认显示本次续跑，可切换原b01。CPU推理＋真实OpenFOAM，无在线FNO/MPC，本轮续跑已结束，FNO完整精度未通过，B默认保持。`;}
+  if(d.b04_raw_cfd){const c=d.b04_raw_cfd;$('lead-monitor').textContent=c.verified?`当前研究：b04真实CFD训练数据生成，${c.running?'正在运行':c.process_completed?'进程完成、数据待独审':'进程停止/失败、待诊断'}；求解日志时刻${c.live_time??'初始化未知'}（120→200 D/U），已写U/p场帧${c.frames}/801（含初始帧）。这是固定激励数据采集，不是反馈闭环控制，不是GPU训练；尚未转换数据或训练模型。既有B真实闭环与续跑曲线保留，完整FNO预测精度未达标；数据生成进度不代表预测改善。`:'当前b04数据生成状态暂不可读取，不据此判断已停止；保留已核验闭环结果。';}
   return;
  }
   if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5197,6 +5198,7 @@ class Handler(BaseHTTPRequestHandler):
             data['delivery_activity'] = _delivery_activity()
             data['pressure_aux_training'] = _pressure_aux_training(self.root)
             data['continuation_cfd'] = _continuation_cfd(self.root)
+            data['b04_raw_cfd'] = _b04_raw_cfd(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5542,6 +5544,38 @@ def _canonical_b01_reproduction(root):
                 'memory_gib': int(memory) / 1024**3 if memory.isdigit() else None}
     except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
         return {'verified': False}
+
+
+def _b04_raw_cfd(root):
+    unit='fluid-control-p064-b04-long-excitation-cfd-20261007.service'
+    inv='e2fa5d4e5fa4465a90a2dfbbdd402fc8'
+    digest='f2bfcd8f6d1526af266946448ca452d3c271047466d77a9e439d843081338536'
+    approval=root/'docs/P064_B04_LONG_EXCITATION_RAW_CFD_APPROVAL_20261007.json'
+    output=root/'artifacts/p064_b04_long_excitation_raw_20261007'
+    try:
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!=digest:raise ValueError('approval identity')
+        raw=subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','Result','-p','ExecMainStatus','-p','ExecStart'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!=inv or str(approval) not in state.get('ExecStart','') or digest not in state.get('ExecStart',''):raise ValueError('unit identity')
+        pid=int(state['MainPID']);running=pid>0 and state.get('ActiveState')=='active' and state.get('SubState')=='running'
+        completed=pid==0 and state.get('SubState')=='exited' and state.get('Result')=='success' and state.get('ExecMainStatus')=='0'
+        live_time=None;log=output/'log.pimpleFoam'
+        if log.is_file():
+            with log.open('rb') as stream:
+                stream.seek(0,2);stream.seek(max(0,stream.tell()-65536));tail=stream.read().decode('utf-8',errors='replace')
+            times=re.findall(r'^Time = ([0-9.eE+-]+)\s*$',tail,re.M)
+            if times:
+                live_time=float(times[-1])
+                if not math.isfinite(live_time) or not 120<=live_time<=200:raise ValueError('solver clock')
+        frames=0;case=output/'case'
+        if case.is_dir():
+            for p in case.iterdir():
+                try:t=float(p.name)
+                except ValueError:continue
+                if 120<=t<=200 and abs((t-120)*10-round((t-120)*10))<1e-7 and p.is_dir() and (p/'U').is_file() and (p/'p').is_file():frames+=1
+        if frames>801:raise ValueError('frame count')
+        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,process_completed=completed,live_time=live_time,frames=frames,target_frames=801,gpu_training=False,closed_loop_control=False)
+    except (OSError,ValueError,KeyError,subprocess.SubprocessError):return {'verified':False,'observation_state':'unavailable'}
 
 
 def _continuation_cfd(root):
