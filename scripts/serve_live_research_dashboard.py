@@ -480,6 +480,7 @@ function renderActiveExperiment(d){
   if(d.g_exploratory_cfd?.verified){const c=d.g_exploratory_cfd;$('lead-now').textContent=`最新G探索闭环：${c.terminal_verified?'800次真实反馈已完成并独审，六窗物理标准通过':c.running?'CPU真实反馈运行中':'进程已结束，待独审'}；${c.cycles}/800。${c.terminal_verified?'主窗减阻3.9513%、后升力波动降低18.3622%、偏置3.0717%；本任务已结束，无新训练。':''} B仍为默认，G预测FAIL未改变；当前G三曲线见 #current-closed-loop，B历史见 #canonical-reproduction。`;}
   if(d.absolute64_training){const a=d.absolute64_training;$('lead-now').textContent=`Absolute64气动力训练：${a.status}；更新${a.updates}/64，窗口${a.windows}/512。${a.loss==null?'尚无可读loss记录（不估算）':'最近训练loss '+a.loss}。仅训练日志，不代表预测准入；B默认/G已完成闭环不变。`;$('lead-monitor').textContent=`unit ${a.unit}；inv ${a.invocation||'尚无'}；PID ${a.pid||0}；Available ${num(a.available_gib,2)} GiB。${a.note} 原G当前曲线与B历史均保留。`;}
   if(d.future_time_cfd?.verified){const f=d.future_time_cfd;$('lead-now').textContent=`固定B新未来时段：${f.status}；zero基线${f.baseline_cycles}/200（228→248），配对反馈${f.paired_cycles}/800（248→328）。${f.phase==='baseline'?'当前为零动作基线生成':f.phase==='handoff'?'基线已完成，待进入配对':'已进入固定策略配对阶段'}，CPU真实OpenFOAM，不是MPC/FNO训练。`;$('lead-monitor').textContent=`unit ${f.unit}；inv ${f.invocation}；PID ${f.pid}；Available ${num(f.available_gib,2)} GiB。原2%/1.05/10%不变，未独审不宣告物理通过；新时间段不等统计独立，保留B/G历史。`;}
+  if(d.absolute64_ppo?.verified){const p=d.absolute64_ppo;$('lead-monitor').textContent+=` 并行 E110 PPO：${p.status}，实际步数${p.timesteps}/32768、已记录PPO epochs ${p.ppo_epochs}/256；inv ${p.invocation}，PID ${p.pid}。不是FNO续训或当前CFD的在线模型，日志不代表物理通过。`;}
   return;
  }
  if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5150,6 +5151,7 @@ class Handler(BaseHTTPRequestHandler):
             data['g_exploratory_cfd'] = _g_exploratory_cfd(self.root)
             data['absolute64_training'] = _absolute64_training(self.root)
             data['future_time_cfd'] = _future_time_cfd(self.root)
+            data['absolute64_ppo'] = _absolute64_ppo(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5494,6 +5496,30 @@ def _canonical_b01_reproduction(root):
                 'memory_gib': int(memory) / 1024**3 if memory.isdigit() else None}
     except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
         return {'verified': False}
+
+
+def _absolute64_ppo(root):
+    unit='fluid-control-p064-absolute64-symmetry-canonical-ppo-20261007.service'
+    inv='5e1c7db703874125bb1556b411d3169c'
+    approval=root/'docs/P064_ABSOLUTE64_SYMMETRY_CANONICAL_PPO_APPROVAL_20261007.json'
+    try:
+        digest=hashlib.sha256(approval.read_bytes()).hexdigest()
+        if digest!='5cf4862882caa99eb600c76737927d45fdbc6fe7d9099a66c134fbd5bc73fa4b':return {'verified':False}
+        raw=subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','Result','-p','ExecMainStatus','-p','ExecStart'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!=inv or str(approval) not in state.get('ExecStart','') or digest not in state.get('ExecStart',''):return {'verified':False}
+        path=root/'artifacts/p064_absolute64_symmetry_canonical_32768_ppo_20261007/payload/progress.json'
+        steps=epochs=0
+        for line in path.read_text().splitlines() if path.exists() else []:
+            try:row=json.loads(line)
+            except ValueError:continue  # A concurrently appended final line may be incomplete.
+            steps=max(steps,int(row.get('time/total_timesteps',0)))
+            epochs=max(epochs,int(row.get('train/n_updates',0)))
+        if not 0<=steps<=32768 or not 0<=epochs<=256:raise ValueError('PPO progress outside fixed budget')
+        pid=int(state['MainPID']);running=pid>0 and state.get('ActiveState')=='active' and state.get('SubState')=='running'
+        status='GPU策略训练中' if running else ('进程成功结束，待独审' if state.get('Result')=='success' and state.get('ExecMainStatus')=='0' else '进程停止/失败，待诊断')
+        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,status=status,timesteps=steps,ppo_epochs=epochs)
+    except (OSError,ValueError,KeyError,IndexError,TypeError,subprocess.SubprocessError):return {'verified':False}
 
 
 def _future_time_cfd(root):
