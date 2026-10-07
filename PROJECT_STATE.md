@@ -1,10 +1,15 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前唯一摘要 — E105训练拟合诊断完成；B默认、G物理结果与预测FAIL保留
+## 当前唯一摘要 — temporal probe R1迁移OOM；恢复准备中，B默认/G闭环与预测FAIL保留
 
 FC-E105已终态独审：[报告](docs/P064_K1BG_B00_TRAIN_FIT_TERMINAL_REVIEW_20261007.md) SHA `1f0516357ffc069a9c516e080c68554af073cfcaa8406caccfabb63d7b4e4d20`，result `bb256396fe174f7d1f8ef3cd68a06bc1653c0e8ff039604714479f44391da26c`。同 `04335bedb4954871ac118381da81721c` PID0/exited/exit0；120行＝K1/B/G×8固定b00训练起点×5个真实状态单步，40三方输入/动作/target配对、2025统计复算差0；120aero/0flow/0optimizer。全部40点 rearCl/totalCd MAE：K1 .200856927/.051195516，B .181738779/.050531504，G .179079254/.046448530。B/G确有训练轨迹拟合改善，但残差仍在；不是5步AR、独立泛化或收敛证明，不改G原选择FAIL。906项来源/大文件inventory验证另属工程交付检查，不是E105新增模型计算。
 
-下一明确动作仅为[temporal force delta no-save probe准备](docs/P064_TEMPORAL_FORCE_DELTA_PLAN_20261007.md)：审查因果当前力skip/时间增量参数化的有限无保存probe及CPU测试，目前未执行GPU、未产生候选或准入结论。不是重复已未获局部支持的P022 current-force输入平面；实际probe/训练须另批，不自动续训/换控制器。原物理2%/1.05/10%不变，B默认和下述G已验单工况结果保留。
+[temporal force delta no-save probe](docs/P064_TEMPORAL_FORCE_DELTA_PLAN_20261007.md) R1已经实际执行，但在第一个 absolute 模型 `.to(cuda)` 时OOM退出，尚未进行模型forward或optimizer更新，未产生候选或科学比较结果。后续host和固定b40-r2单模型迁移检查均成功，不能据此认定容器是OOM根因，也不能把迁移成功当作两臂probe成功。下一动作是保持相同worker/core的host两臂各1step恢复准备；本摘要核验时尚未启动。恢复执行须绑定其独立批准和实际handle，不自动重试/续训。不是重复P022 current-force输入平面；原物理2%/1.05/10%不变，B默认和下述G已验单工况结果、代理预测FAIL保留。
+
+### R1失败与有限恢复证据（不含科学结果）
+
+- R1：`fluid-control-p064-temporal-force-delta-probe-20261007.service`，invocation `aa850705c7c04a2a81e3cce45fea77dd`，PID0/exit1；批准 `docs/P064_TEMPORAL_FORCE_DELTA_PROBE_APPROVAL_20261007.json` SHA `1de4a55ed9feec118ec2c681cd5babcf50018b3243c21447c62f0f36c8da2eee`。失败证据为该invocation的systemd journal（首模型CUDA迁移OOM），输出目录无result/receipt；不得补写成功收据。
+- host单模型迁移：`artifacts/p064_runtime_migration_host_20261007/receipt.json` SHA `efe460b178496c26f06e9da45105be270a6160c3f7bcdf1ebc351c6395881cef`；b40-r2：`artifacts/p064_runtime_migration_b40_20261007_r2/receipt.json` SHA `8cb2b7a36f6932c1c2dd51995c4651db86581f91c21f3f22914bb394df6024bf`。两者均记录migration_succeeded=true、同亲本tensor digest、6GiB allocator cap、high/TF32、0forward/0optimizer/0save。此前b40迁移R1缓存失败仍保留，不与r2成功混淆。不同runtime版本及单模型范围不支持完整两臂工作负载已解决的结论。
 
 ### 已完成的G物理闭环（E104）
 
