@@ -244,6 +244,8 @@ HydroGym相关官方工作提供标准环境接口、solver-independent方法和
 
 - [x] 填写Representative256训练终态与fixed-six独审；训练loss下降但fixed-six双项退化，候选拒绝。
 - [x] 生成最终模型/数据/策略/镜像SHA与路径清单，标注Git外大文件，见[FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md](FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md)。
-- [ ] 更新`PROJECT_STATE.md`、`docs/RESEARCH_ROADMAP.md`、`EXPERIMENTS.md`、`DECISIONS.md`和`results.csv`的最终状态。
-- [ ] 运行文档链接、关键复现预检和有限CPU测试；不启动新科学计算。
-- [ ] 在`12:50:45Z`前完成scoped GitLab push并记录最终commit。
+- [x] 更新`PROJECT_STATE.md`、`docs/RESEARCH_ROADMAP.md`、`EXPERIMENTS.md`、`DECISIONS.md`和`experiments/results.csv`的最终状态；CSV最终检查为1,356行、22列且每行schema一致。
+- [x] 完成有限只读/CPU验证：Representative256及复现相关非Torch回归37项PASS，fixed-six Torch fixture 3项PASS，Root独立四文件smoke 25项PASS；6份收尾核心文档及后续终态报告/清单共106个相对链接全部存在。安全复现入口实际返回`PREFLIGHT_PASS_NOT_RUNNING`；inventory本轮返回851 SHA＋55存在性检查，不启动CFD、训练或模型推理。
+- [x] 完成scoped GitLab同步。收尾提交链为`91d3f47`（总报告/截止/清单首版）、`05d4d00`、`cc94986`、`c9594f0`、`60be91e`、`2c66bb7`（Representative256终态、fixed-six、UI、台账和拒绝模型清单）及`41f9819`（官方文献与清单链接修订）；这些均已推送到`origin/sanitized-main`。
+
+限时科学收尾现已结束：没有训练、推理评估、PPO、CFD或数据转换任务继续运行，dashboard和只读资源监控保留。旧`training-evaluation-watchdog.timer`自`2026-10-07T09:23:06Z`起保持`inactive/dead/disabled`，避免历史post-eval自动复启。交付的基本B-PPO/OpenFOAM在线反馈案例保持原物理门限PASS；完整高精度FNO预测、跨工况泛化和有效FNO-MPC目标仍未完成，未被收尾文档改写为PASS。
