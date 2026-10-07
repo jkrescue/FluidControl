@@ -527,6 +527,7 @@ function renderActiveExperiment(d){
   if(d.b04_data_stage?.stage==='curator_hdf_only'){const s=d.b04_data_stage;$('lead-monitor').textContent=`当前研究阶段：B04 Curator/HDF数据处理${s.running?'正在运行':s.process_completed?'进程已结束、等待独立数据核验':'进程停止/失败、待诊断'}；日志已报告采样${s.sampled_frames??'未知'}/801帧（不是总体完成率）。VTK文件${s.vtk_frames}/801；HDF输出目录${s.curator_output_exists?'已出现，存在不等于核验通过':'尚未出现'}。这是CPU数据转换，不是GPU训练或新CFD；基本闭环已交付、续跑曲线保留，FNO完整预测精度仍未达标。`;}
   if(d.b04_i_training){const s=d.b04_i_training;$('lead-monitor').textContent=s.verified?`当前研究：I气动力预测模块${s.running?'正在训练':s.process_completed?'训练进程已结束，等待独审':'进程已停止/失败，待诊断'}，真实日志窗口${s.windows}/256、更新${s.updates}/32；loss未在当前日志报告，不估算。流场网络冻结，不是PPO训练或CFD。实际内存${s.memory?.MemoryCurrent!=null?(s.memory.MemoryCurrent/2**30).toFixed(2)+' GiB':'未知'}；上限${s.memory?.MemoryMax!=null?(s.memory.MemoryMax/2**30).toFixed(0)+' GiB':'未知'}。B基本闭环交付及下方真实曲线保持，训练日志不代表预测准入。`:'当前I训练状态暂不可读取，不推断任务已结束；B基本闭环与真实曲线保留。';}
   if(d.b04_i_training?.terminal_verified){const s=d.b04_i_training;$('lead-monitor').textContent=`I训练已完成并核验256窗口/32更新；固定开发评估未通过：单步后柱Cl MAE较B增加${(100*s.development_h1_relative_change.rearCl).toFixed(2)}%、总Cd MAE增加${(100*s.development_h1_relative_change.totalCd).toFixed(2)}%，保留B，不推进I的PPO/CFD。已绑定本轮训练、评估与CFD均结束；当前受管科学任务以实时任务查询为准。B已完成跨已验证恢复的1600个真实反馈区间，不是单个无中断进程。FNO用于PPO策略训练环境；部署是CPU PPO＋真实OpenFOAM，无在线FNO/MPC。完整代理精度仍未达标，不代表项目全部完成。`;}
+  if(d.b_h5_mpc_cfd?.verified){const m=d.b_h5_mpc_cfd;$('lead-now').textContent=`当前实际工作：B气动力代理的因果历史 H5 MPC，CPU 在线选择动作＋配对真实 OpenFOAM；已完成 ${m.cycles}/10 个工程反馈周期${m.last_time==null?'':`，流动时刻 ${num(m.last_time,1)}`}。${m.running?'任务正在运行':m.process_completed?'进程已结束，等待独立终态核验':'进程停止/失败，等待诊断'}。`;$('lead-monitor').textContent=`unit ${m.unit}；inv ${m.invocation}；PID ${m.pid}；最近动作 ${m.selected_omega==null?'尚无':num(m.selected_omega,4)}。这是 CPU B-H5 MPC 探索，不是 GPU 训练，也不是冻结 B-PPO 的重复运行；已交付的 B-PPO/E114 物理结果与默认策略保持不变。10周期只作工程接线验证，未独审前不宣称减阻或完整预测通过；原预测精度 FAIL 不变。`;}
   return;
  }
   if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5206,6 +5207,7 @@ class Handler(BaseHTTPRequestHandler):
             data['b04_raw_cfd'] = _b04_raw_cfd(self.root)
             data['b04_data_stage'] = _b04_data_stage(self.root)
             data['b04_i_training'] = _b04_i_training(self.root)
+            data['b_h5_mpc_cfd'] = _b_h5_mpc_cfd(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5551,6 +5553,62 @@ def _canonical_b01_reproduction(root):
                 'memory_gib': int(memory) / 1024**3 if memory.isdigit() else None}
     except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
         return {'verified': False}
+
+
+def _b_h5_mpc_cfd(root):
+    unit = 'fluid-control-p064-b-causal-history-h5-real-cfd-20261007.service'
+    invocation = '3dd6413fd91d4ba9bb72c61e49920792'
+    approval_sha256 = '70c2e91fdab53731d43cf0c561262c385dad2396a2291ca4f6fcaea6465aeef9'
+    approval = root / 'docs/P064_B_CAUSAL_HISTORY_H5_CFD_APPROVAL_20261007.json'
+    output = root / 'artifacts/p064_b_causal_history_h5_real_cfd_20261007'
+    try:
+        if hashlib.sha256(approval.read_bytes()).hexdigest() != approval_sha256:
+            raise ValueError('approval identity')
+        approved = json.loads(approval.read_text())
+        if approved.get('status') != 'P064_B_PAIRED_CANONICAL_HISTORY_H5_REAL_CFD_EXECUTION_APPROVED' or approved.get('execution_authorized') is not True:
+            raise ValueError('approval authorization')
+        raw = subprocess.check_output(
+            ['systemctl', '--user', 'show', unit, '-p', 'InvocationID', '-p', 'MainPID',
+             '-p', 'ActiveState', '-p', 'SubState', '-p', 'Result', '-p',
+             'ExecMainStatus', '-p', 'ExecStart'], text=True, timeout=3)
+        state = dict(line.split('=', 1) for line in raw.splitlines() if '=' in line)
+        if (state.get('InvocationID') != invocation or str(approval) not in state.get('ExecStart', '')
+                or approval_sha256 not in state.get('ExecStart', '') or str(output) not in state.get('ExecStart', '')):
+            raise ValueError('unit identity')
+        pid = int(state['MainPID'])
+        running = pid > 0 and state.get('ActiveState') == 'active' and state.get('SubState') == 'running'
+        completed = (pid == 0 and state.get('SubState') == 'exited'
+                     and state.get('Result') == 'success' and state.get('ExecMainStatus') == '0')
+        progress_path = output / 'progress.json'
+        cycles = 0
+        rows = []
+        last_time = selected_omega = None
+        if progress_path.is_file():
+            progress = json.loads(progress_path.read_text())
+            if progress.get('status') != 'EXPLORATORY_REAL_CFD_CANONICAL_HISTORY_H5_RUNNING_NOT_ADMISSION':
+                raise ValueError('progress status')
+            cycles = int(progress['completed_cycles'])
+            rows = progress['rows']
+            if not 0 <= cycles <= 10 or len(rows) != cycles:
+                raise ValueError('progress count')
+            for index, row in enumerate(rows, 1):
+                end_time = float(row['end_time'])
+                omega = float(row['selected_omega'])
+                if int(row['step']) != index or abs(end_time - (148.0 + index * .1)) > 1e-8:
+                    raise ValueError('progress clock')
+                if not math.isfinite(omega) or abs(omega) > .75:
+                    raise ValueError('selected action')
+            if rows:
+                last_time = float(rows[-1]['end_time'])
+                selected_omega = float(rows[-1]['selected_omega'])
+        return dict(verified=True, unit=unit, invocation=invocation, pid=pid,
+                    running=running, process_completed=completed, cycles=cycles,
+                    target_cycles=10, last_time=last_time,
+                    selected_omega=selected_omega, cpu_online_mpc=True,
+                    gpu_training=False, original_b_ppo_unchanged=True)
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
+            subprocess.SubprocessError):
+        return {'verified': False, 'observation_state': 'unavailable'}
 
 
 def _b04_i_training(root):
