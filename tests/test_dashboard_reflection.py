@@ -51,3 +51,17 @@ def test_reflection_has_current_priority_without_hiding_curves():
     assert active.index('renderAbsolute64ClosedLoop(d)')<active.index('if(d.reflection_training?.verified)')
     assert active.index('本轮训练与两项CFD任务均已结束')<active.index('if(d.reflection_training?.verified)')
     assert 'else if(d.reflection_training)' in active and '不能据此判断训练已停止或完成' in active
+
+def test_bound_terminal_survives_unit_gc(tmp_path):
+    f,_=fixture(tmp_path)
+    pins=[('docs/P064_Y_REFLECTION_PAIRED_TERMINAL_REVIEW_20261007.md','8b129933430694791609083c0609503cbcd0ad9636c30ef907704022e70295c9'),('artifacts/p064_y_reflection_terminal_audit_20261007/receipt.json','10ab43ae2c8f7d73833e1b119da4f7f0dca5c74fa9b1962df118b5b706a350f5'),('artifacts/p064_y_reflection_paired_20261007/result.json','fa57ada9b47414c20c5ee245e8b9e9663e6f568c5f06e4ac9d17dd16b9b53d60')]
+    receipt=dict(status='Y_REFLECTION_TERMINAL_ENGINEERING_ACCEPT_NOT_ADMISSION',terminal_evidence={'invocation':'766ad5ca993d483bb6a42d0f2fc09bd8'},approval_sha256=DIGEST,result_sha256=pins[2][1],original_windows=256,branches=512,updates=32,min_available_gib=105.)
+    values=[b'review',json.dumps(receipt).encode(),b'result'];digests={b'{}':DIGEST}
+    for (name,expected),value in zip(pins,values):
+        p=tmp_path/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(value);digests[value]=expected
+    f.__globals__['hashlib'].sha256=lambda b:SimpleNamespace(hexdigest=lambda:digests.get(b,'bad'))
+    def unavailable(*args,**kwargs):raise AssertionError('terminal must not query GC unit')
+    f.__globals__['subprocess'].check_output=unavailable
+    r=f(tmp_path);assert r['terminal_verified'] and not r['running'] and not r['promoted']
+    assert r['development_evaluation']=='not_run_unknown' and r['updates']==32
+    (tmp_path/pins[2][0]).write_bytes(b'changed');assert f(tmp_path)['observation_state']=='identity_mismatch'

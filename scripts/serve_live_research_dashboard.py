@@ -499,6 +499,7 @@ function renderActiveExperiment(d){
   if(d.absolute64_cfd?.terminal_verified&&d.future_time_cfd?.terminal_verified&&d.absolute64_ppo?.terminal_verified){$('lead-now').textContent='本轮训练与两项CFD任务均已结束。Absolute64 b01六窗原物理标准通过；B默认保留，原预测筛选FAIL不变。';$('lead-monitor').textContent='同b01主窗对比与Absolute64完整800点动作/Cd/Cl见下方；B后续248→328时段另列，不能混入同b01比较。单工况差异不是统计显著性或泛化证明。';}
   if(d.reflection_training?.verified){const r=d.reflection_training;$('lead-now').textContent=`反射配对气动力预测模块训练：${r.status}；原始窗口${r.windows}/256，原始/镜像分支${r.branches}/512，参数更新${r.updates}/32。流场网络冻结；已有真实CFD闭环完成，本任务不运行CFD。`;$('lead-monitor').textContent=`实际inv ${r.invocation}，PID ${r.pid}；Available ${num(r.available_gib,2)} GiB。训练日志不代表精度或控制收益；B默认及已核物理结果保留，完整预测验收尚未通过。允许另行批准闭环探索，不将全预测PASS冒充已完成或自动设为探索前置。`;}
   else if(d.reflection_training){$('lead-now').textContent='当前训练状态暂不可读取；不能据此判断训练已停止或完成。';$('lead-monitor').textContent=`反射配对训练观测${d.reflection_training.observation_state==='identity_mismatch'?'身份校验未通过':'暂不可用'}。保留已有真实CFD结果与曲线，B默认及预测限制不变；不将历史任务终态作为当前训练状态。`;}
+  if(d.reflection_training?.terminal_verified){$('lead-now').textContent='反射配对训练已正常结束，256原始窗口/512分支/32更新完成；候选未采用，不是训练崩溃。B默认与已完成真实CFD结果保持。';$('lead-monitor').textContent='固定六窗保留评估较B退化：单步综合预测误差(H1)+4.1991%、100步连续预测综合误差(AR100)+1.45294%，原保留规则未通过。80端点开发评估未运行、结果未知；未推进此候选的PPO/CFD。完整预测验收仍未通过。终态来自已绑定独审报告/机器证据，不依赖已回收的临时unit。';}
   return;
  }
  if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5526,6 +5527,12 @@ def _reflection_training(root):
     try:
         digest=hashlib.sha256(approval.read_bytes()).hexdigest()
         if digest!='6e5ca18a42a1ad4410260fb9df4f14b457907ff2b5bceadfcfb0f3d621bb81e6':return {'verified':False,'observation_state':'identity_mismatch'}
+        pins=[('docs/P064_Y_REFLECTION_PAIRED_TERMINAL_REVIEW_20261007.md','8b129933430694791609083c0609503cbcd0ad9636c30ef907704022e70295c9'),('artifacts/p064_y_reflection_terminal_audit_20261007/receipt.json','10ab43ae2c8f7d73833e1b119da4f7f0dca5c74fa9b1962df118b5b706a350f5'),('artifacts/p064_y_reflection_paired_20261007/result.json','fa57ada9b47414c20c5ee245e8b9e9663e6f568c5f06e4ac9d17dd16b9b53d60')]
+        if all((root/name).is_file() for name,_ in pins):
+            if any(hashlib.sha256((root/name).read_bytes()).hexdigest()!=expected for name,expected in pins):return {'verified':False,'observation_state':'identity_mismatch'}
+            receipt=json.loads((root/pins[1][0]).read_text())
+            if (receipt['status']!='Y_REFLECTION_TERMINAL_ENGINEERING_ACCEPT_NOT_ADMISSION' or receipt['terminal_evidence']['invocation']!=inv or receipt['approval_sha256']!=digest or receipt['result_sha256']!=pins[2][1] or (receipt['original_windows'],receipt['branches'],receipt['updates'])!=(256,512,32)):return {'verified':False,'observation_state':'identity_mismatch'}
+            return dict(verified=True,terminal_verified=True,unit=unit,invocation=inv,pid=0,running=False,status='训练正常结束，候选未采用',windows=256,branches=512,updates=32,available_gib=None,minimum_available_gib=receipt['min_available_gib'],retention_passed=False,development_evaluation='not_run_unknown',promoted=False,review_sha256=pins[0][1],receipt_sha256=pins[1][1],result_sha256=pins[2][1])
         raw=subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','Result','-p','ExecMainStatus','-p','ExecStart'],text=True,timeout=3)
         state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
         if state.get('InvocationID')!=inv or str(approval) not in state.get('ExecStart','') or digest not in state.get('ExecStart',''):return {'verified':False,'observation_state':'identity_mismatch'}
