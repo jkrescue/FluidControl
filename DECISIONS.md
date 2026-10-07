@@ -500,3 +500,9 @@ Retain B and the already accepted E114 PPO/OpenFOAM delivery. Do not run develop
 The fixed 40-point LBFGS diagnostic materially reduced its exact accepted-point train loss but exhausted the predeclared 300-closure budget before any of the four normalized RMSE channels reached `.01`. Because the last accepted points were still improving, do not label this as optimizer stagnation, insufficient capacity, insufficient inputs, or convergence. Line-search trial values are never candidate-best evidence; only the 140 returned, remeasured accepted points are reported. No model was saved.
 
 Keep the already delivered B PPO/OpenFOAM E114 result and its original physical gates unchanged. Complete surrogate precision remains a separate unmet target. The next authorized activity is preparation only for the same bounded fitting question on the original 256 H1 schedule (192 original plus 64 controlled windows), with unchanged force weights; it is not yet a GPU execution authorization and must not be used to lower prediction or physical standards.
+
+## 2026-10-07 — Representative256 train fit reduces error but misses every fixed RMSE target
+
+The approved 256-point fit completed and passed engineering/checkpoint audit. It reduced the fixed-panel objective by about 70.84%, with the last ten accepted points still decreasing, but exhausted 300 closures while all four normalized RMSE values remained above `.01`; front-Cl physical MAE increased. Therefore do not label this run as fitted, converged, capacity-limited, uniformly improved or admitted.
+
+Retain B as the delivered default and E114 as the bounded real-feedback control result. The already frozen fixed-six evaluation may separately measure training retention before the science deadline, but it is not an independent development set and does not authorize dev, PPO or CFD. No threshold, model architecture or physical gate changes are justified by this train-only result.

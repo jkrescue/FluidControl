@@ -123,17 +123,15 @@ B工程训练和官方reload通过，但完整预测准入FAIL。H100 validation
 
 固定40点LBFGS训练内诊断把loss从`.0404872`降到`.00142033`，rear-Cl MAE降到`.0249836`、total-Cd MAE降到`.00773824`，但四通道normalized RMSE仍高于`.01`且只是同40点拟合。这说明优化并未“完全停滞”，也不能证明泛化或模型容量充分。
 
-### 7.3 Representative256当前状态（终态待填）
+### 7.3 Representative256训练终态
 
-本次限时收尾前最后一个已批准训练，是固定256个真实H1点（192 original＋64 controlled-b00）的有界LBFGS拟合，父模型仍为B，模型结构不变，precision为`highest/no-TF32`，最多200个接受点/300 closures。实际unit为`fluid-control-p064-representative256-training-20261007.service`，invocation `6bc6aca4e1bd48d5938b273d319fc716`，approval SHA `42e8c15d4835ea6696ecb12271246d9babba16b73f869b4802b57bbc8dabc38c`。
+限时收尾前最后一个已批准训练，是固定256个真实H1点（192 original＋64 controlled-b00）的有界LBFGS拟合，父模型仍为B，模型结构不变，precision为`highest/no-TF32`，最多200个接受点/300 closures。unit `fluid-control-p064-representative256-training-20261007.service`、invocation `6bc6aca4e1bd48d5938b273d319fc716`正常结束；approval SHA为`42e8c15d4835ea6696ecb12271246d9babba16b73f869b4802b57bbc8dabc38c`。
 
-**待终态独审后填写，不得估算：**
+独立R2审计PASS，但结论仅是工程/保存数组/checkpoint检查通过，不是科学准入。训练完成144个接受点、300次closure，按固定预算停止并恢复最后接受点；300个gradient panel加145个no-grad panel、每个26个microbatch，共11,570次aero forward，flow forward为0。加权训练loss从`.01087838225`降到`.00317233591`（约70.84%），末10个接受点仍下降；最终四通道normalized RMSE为`.07350795/.04681488/.09940523/.03975477`，全部高于不变的`.01`训练拟合目标。rear-Cl MAE从`.07402691`降到`.03843786`，total-Cd MAE从`.02099059`降到`.01288914`，但front-Cl MAE从`.00944933`升到`.01125044`，不能写成所有误差均改善，也不能据此证明容量不足、收敛或泛化。
 
-- 工程状态、接受点数、closure数、initial/final四通道RMSE；
-- candidate result/manifest/model/state SHA；
-- 原fixed-six H1与AR100相对B变化；
-- 是否继续固定开发集评估（须在科学截止前已有明确批准；否则写未执行）；
-- 无论结果如何，不自动启动PPO/CFD。
+result SHA为`50617c1c49cebcdc2198fb1cc427f7a7289dc1912846d3f882b0a257025b6d6a`，candidate manifest SHA为`793bbdab1da9fb26ebfa27a2efe607b1ccb24c10a4bd73dcc726d4253b696848`，独立receipt SHA为`d3286db5da8c4919718e0d70e651df2c9a92eaffb083ee34275bf6b16ce1992f`，报告见[P064_REPRESENTATIVE256_TERMINAL_REVIEW_20261007.md](P064_REPRESENTATIVE256_TERMINAL_REVIEW_20261007.md)，SHA `b6d794a6f4d817fdac8a10899700b348584c78b142944110b1d57fe02b4d944d`。官方fresh reload由producer完成；独立审计无模型构建/forward，并核验256个真实target、原normalization、LBFGS state、父/候选tensor digest、冻结bias与flow文件。R1只因NumPy 2.5拒绝`float(shape(1,))`而审计失败，R2仅修scalar读取，没有重训。
+
+原fixed-six H1/AR100仍待单独已冻结评估；本报告此刻不猜测其结果。该评估只属于训练保留性，不是独立开发集。没有Representative256的dev、PPO或CFD执行授权，默认B保持不变。
 
 ## 8. 训练误差、泛化误差和控制收益的关系
 
@@ -175,7 +173,7 @@ Git保存源代码、配置、审批、报告、测试和SHA清单；以下大�
 | frozen flow archive | 同B manifest相对路径 | `dc41fc91d42476e052970b39fc66aed22fa72aa8b6f218a341a3abb095f42e31` |
 | E082 canonical PPO产物 | `artifacts/p064_b_symmetry_canonical_h5_32768_ppo_20261007/payload/` | policy `5c05699e0851787d85d40c407647f80c19d3aebeb7dff82e019336cde77c6c6e`；VecNormalize `1d25005144b6436c3e2641ee89d1585e3c9f8b9fdb1f26b9cd39c7d83610c145` |
 | E114结果 | continuation output/result | `752b92d1063e51a8fb6a45ea539b173c3c5ffbd24c6a83255e0fa649f392063e` |
-| Representative256 | `artifacts/p064_representative256_training_20261007/` | 当前训练；终态后补result/manifest/checkpoint SHA |
+| Representative256 | `artifacts/p064_representative256_training_20261007/` | result `50617c1c…b6d6a`；manifest `793bbdab…6848`；工程独审PASS但训练目标未达，fixed-six待测 |
 
 最终模型与复现manifest应列出绝对路径、大小、SHA256、生产approval、consumer协议、runtime和是否已独立reload；不能只写“latest”。
 
@@ -188,7 +186,7 @@ Git保存源代码、配置、审批、报告、测试和SHA清单；以下大�
 5. 减阻没有扣除旋转执行器机械功；omega²/action penalty不是净能耗。
 6. E114是恢复后连续同case证据，不是单一进程不间断160 D/U，也不是独立随机复现实验。
 7. Git不携带全部数据、模型、镜像和环境；离开Spark仅凭Git不能完整重建历史结果。
-8. Representative256及其后续评估若未在硬截止前完成独立核验，必须保持“未知”，不以日志最后一行替代终态报告。
+8. Representative256训练工程终态已独立核验，但fixed-six及任何后续评估在形成独立证据前必须保持“未知”，不以日志最后一行替代终态报告。
 
 ## 12. 论文可用结论与建议表述
 
@@ -225,7 +223,7 @@ Git保存源代码、配置、审批、报告、测试和SHA清单；以下大�
 
 ## 14. 收尾待办（不得扩展为新实验）
 
-- [ ] 填写Representative256终态独审和fixed-six结果；若未完成则写未知。
+- [x] 填写Representative256训练终态独审；fixed-six仍为未知，待既批冻结评估后再更新。
 - [x] 生成最终模型/数据/策略/镜像SHA与路径清单，标注Git外大文件，见[FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md](FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md)。
 - [ ] 更新`PROJECT_STATE.md`、`docs/RESEARCH_ROADMAP.md`、`EXPERIMENTS.md`、`DECISIONS.md`和`results.csv`的最终状态。
 - [ ] 运行文档链接、关键复现预检和有限CPU测试；不启动新科学计算。
