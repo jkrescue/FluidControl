@@ -1,0 +1,198 @@
+{
+  "status": "SAVED_BASELINE_FAIRNESS_EVIDENCE_AUDIT_NOT_NEW_PHYSICS",
+  "started_at": "2026-10-07T11:05:33.384658+00:00",
+  "completed_at": "2026-10-07T11:05:33.392856+00:00",
+  "inputs": {
+    "periodic_result": {
+      "path": "artifacts/tandem_cylinders/periodic_rotation_benchmark_result_20261003.json",
+      "bytes": 9200,
+      "sha256": "46b573daf70399c514c1422579c255d6ba32b8bdcee2936ddfe91e8de39a0d7f"
+    },
+    "periodic_actions": {
+      "path": "artifacts/tandem_cylinders/periodic_rotation_action_audit_20261003.json",
+      "bytes": 822,
+      "sha256": "6819521baa978b2fb5616b445be40545c1aa20dfe0ba3791bec03f0a12b488c7"
+    },
+    "periodic_source": {
+      "path": "cfd/tandem_cylinders/make_periodic_rotation_benchmark.py",
+      "bytes": 5982,
+      "sha256": "883cf6c0b4b0073dfa77b17f475a0383eb7a6e45d516864330e4dad7f2469f59"
+    },
+    "constant_grid": {
+      "path": "artifacts/tandem_cylinders/constant_p100_grid_comparison.json",
+      "bytes": 1307,
+      "sha256": "d98b8d96f478ebeeffe6f6bb415b5641bef322d48da502f2bf7f27bbf5bfb987"
+    },
+    "B_approval": {
+      "path": "docs/P064_B_E109_CONTINUATION_328_408_APPROVAL_20261007.json",
+      "bytes": 6104,
+      "sha256": "6e08555e336e271fe0baf6790feaf3d92c7c6e0771fc9aa93d7b0fd608f3f812"
+    },
+    "B_result": {
+      "path": "artifacts/p064_b_continuation_328_408_cfd_20261007/result.json",
+      "bytes": 8361716,
+      "sha256": "752b92d1063e51a8fb6a45ea539b173c3c5ffbd24c6a83255e0fa649f392063e"
+    },
+    "B_review": {
+      "path": "docs/P064_B_CONTINUATION_328_408_TERMINAL_REVIEW_20261007.md",
+      "bytes": 5331,
+      "sha256": "09e89416e4dc59494fdab362f7316b213762850c742a752a91a3a9b3856fd2e5"
+    },
+    "B_receipt": {
+      "path": "artifacts/p064_b_continuation_328_408_independent_audit_20261007/receipt.json",
+      "bytes": 2892,
+      "sha256": "a26368b60007b53a422351f1d086fcda095cd823a98ded331e513c324de07af1"
+    },
+    "restart_audit": {
+      "path": "docs/P064_INDEPENDENT_CONTROL_RESTART_AUDIT_20261007.md",
+      "bytes": 5051,
+      "sha256": "59596b685b6603b41818fa2416b9fed347443a7c78c68d2de3010f9ad0b465e4"
+    },
+    "paper_reproduction": {
+      "path": "docs/PAPER_REPRODUCTION.md",
+      "bytes": 13502,
+      "sha256": "1d0a47cd34c1a18ee874ffcea16a3b2c7c411aea866d953028a826c4640c1a38"
+    },
+    "paper_value": {
+      "path": "docs/PAPER_VALUE_AUDIT.md",
+      "bytes": 8388,
+      "sha256": "d994ebe3e0ae1b6759e0915eb5d55e5326aafbb25b575c7feda896cbb1e11d5b"
+    },
+    "pre_execution_plan": {
+      "path": "docs/CLOSED_LOOP_PAPER_VALIDATION_GAPS_20261007.md",
+      "bytes": 1529,
+      "sha256": "e083cf28637d6032c8f00a30e86b938ef9f7968e771da5a0177110766f60e035"
+    }
+  },
+  "periodic": {
+    "source_restart": "tandem_backward_dt005/t=80",
+    "analysis_window": [
+      120.0,
+      160.0
+    ],
+    "action_table_summary": {
+      "periodic_val_p10_20261003": {
+        "period": 10.0,
+        "max_abs_omega": 1.0,
+        "max_abs_domega_dt": 1.8709994101401062
+      },
+      "periodic_val_p20_20261003": {
+        "period": 20.0,
+        "max_abs_omega": 1.0,
+        "max_abs_domega_dt": 0.9442128206100537
+      }
+    },
+    "decisions": [
+      {
+        "case": "periodic_val_p10_20261003",
+        "total_cd_reduction": -0.005860701173878935,
+        "rear_cl_fluctuation_rms_ratio": 1.103223419974653,
+        "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.07029102849076836,
+        "rear_cl_total_rms_ratio": 1.1029216070402366,
+        "checks": {
+          "total_drag_reduction_at_least_2pct": false,
+          "rear_cl_fluctuation_increase_at_most_5pct": false,
+          "abs_mean_rear_cl_at_most_10pct_zero_fluct_rms": true
+        },
+        "one_phase_coarse_grid_screen_pass": false
+      },
+      {
+        "case": "periodic_val_p20_20261003",
+        "total_cd_reduction": 0.009186015999283703,
+        "rear_cl_fluctuation_rms_ratio": 1.1379833379020519,
+        "abs_mean_rear_cl_over_zero_fluctuation_rms": 0.06474663438068214,
+        "rear_cl_total_rms_ratio": 1.1372060265268282,
+        "checks": {
+          "total_drag_reduction_at_least_2pct": false,
+          "rear_cl_fluctuation_increase_at_most_5pct": false,
+          "abs_mean_rear_cl_at_most_10pct_zero_fluct_rms": true
+        },
+        "one_phase_coarse_grid_screen_pass": false
+      }
+    ],
+    "fair_matched_B_comparison": false,
+    "reason": "Different restart/time window and action amplitude; P10 also exceeds current B slew limit. P20 rate is below B limit but amplitude remains unequal."
+  },
+  "constant_grid": {
+    "reference": "control_small_p100",
+    "candidate": "control_grid_p100_medium",
+    "window": [
+      80.0,
+      160.0
+    ],
+    "force_relative_difference": {
+      "front": {
+        "cd_mean": 0.004982167070515455,
+        "cl_rms": 0.024642014350007957,
+        "st_zero_crossing": 0.007944591959565555,
+        "values": {
+          "cd_mean": [
+            1.3909477683041684,
+            1.3840178341361165
+          ],
+          "cl_rms": [
+            0.3153072333037993,
+            0.30753742793606575
+          ],
+          "st_zero_crossing": [
+            0.16103316860649136,
+            0.16231251142302586
+          ]
+        }
+      },
+      "rear": {
+        "cd_mean": 0.0015624250877258365,
+        "cl_rms": 0.010615281534503739,
+        "st_zero_crossing": 0.007926158132932336,
+        "values": {
+          "cd_mean": [
+            0.8137181182077495,
+            0.8124467446055247
+          ],
+          "cl_rms": [
+            1.1370378897047575,
+            1.1491078670193715
+          ],
+          "st_zero_crossing": [
+            0.1610303457833392,
+            0.1623066977682187
+          ]
+        }
+      }
+    },
+    "probe_max_absolute_difference": {
+      "mean": [
+        0.024509913562026586,
+        0.006731082164058377
+      ],
+      "rms": [
+        0.023994859921251083,
+        0.013671203959264744
+      ]
+    },
+    "probe_samples": [
+      16001,
+      16001
+    ]
+  },
+  "B_existing_audit_reused": {
+    "receipt": {
+      "path": "artifacts/p064_b_continuation_328_408_independent_audit_20261007/receipt.json",
+      "bytes": 2892,
+      "sha256": "a26368b60007b53a422351f1d086fcda095cd823a98ded331e513c324de07af1"
+    },
+    "new_cycles": 800,
+    "feedback_links": 799,
+    "solver_logs": 1600,
+    "max_abs_delta": 0.10000000000000003,
+    "action_clock_or_raw_solver_reaudit_performed": false
+  },
+  "unknown_or_unverified": [
+    "Final B feedback policy medium-grid and halved-dt validation",
+    "Best constant/periodic versus B with matched initial state, limits, action effort and statistics window",
+    "Unopened prospectively sealed independent phases",
+    "Actuator torque/net-power saving"
+  ],
+  "scope": "Re100 L/D5 unchanged; no model/solver/optimizer; descriptive evidence compatibility only; no reclassification of prior physical gates",
+  "source_unchanged": true
+}

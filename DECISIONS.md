@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — Resume documentation only under the unchanged hard deadlines
+
+At `2026-10-07T10:47Z`, resume work only to produce the complete Chinese illustrated report and to organize already-saved error decompositions. Keep the scientific-test deadline `2026-10-07T12:20:45Z` and archive deadline `2026-10-07T12:50:45Z`. Retain B, all physical and prediction thresholds, the existing experiment history, and the disabled `training-evaluation-watchdog.timer`. Do not infer a new result from a figure, restart old queues, or authorize training/PPO/CFD through this documentation decision. The prior closeout report remains a valid historical version; the illustrated edition adds explanations and source-labelled graphics only.
+
 ## 2026-10-07 — One representative256 train-panel fit; retain B pending fixed evaluation
 
 Authorize one bounded training-only fit from retained B on the predeclared 256 real H1 points, using the exact reviewed producer, panel adapter and strict new consumer. Permit 0–300 closures because an already-fitted initial point is a legitimate zero-update terminal case; saving a candidate is not promotion. The actual approval SHA is `42e8c15d4835ea6696ecb12271246d9babba16b73f869b4802b57bbc8dabc38c`, and the actual invocation is `6bc6aca4e1bd48d5938b273d319fc716`. Keep the original prediction criteria and retained B unchanged. This decision does not authorize development inference, PPO, CFD, threshold relaxation, or any claim that the basic E114 closed loop has newly improved.

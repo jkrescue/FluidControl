@@ -1,6 +1,6 @@
-# 串列双圆柱主动流动控制项目最终报告（限时收尾版）
+# 串列双圆柱主动流动控制项目最终图文报告
 
-> 状态基准：`2026-10-07T09:40Z`，项目已进入限时收尾。科学测试硬截止为`2026-10-07T12:20:45Z`，归档硬截止为`2026-10-07T12:50:45Z`。Representative256训练与fixed-six均已独立终态并被拒绝；所有“通过/失败”均以已存在的独立报告、receipt和SHA为依据。
+> 状态基准：`2026-10-07T10:47Z`，用户恢复继续整理图文报告，但原科学测试硬截止`2026-10-07T12:20:45Z`和归档硬截止`2026-10-07T12:50:45Z`不变。Representative256训练与fixed-six均已独立终态并被拒绝；所有“通过/失败”均以已存在的独立报告、receipt和SHA为依据。本次更新只整理已有结果和图片，不改变模型、门限或默认B策略。
 
 ## 1. 一页结论
 
@@ -14,6 +14,29 @@
 
 1. **可交付的基本案例：** Re100、L/D=5串列双圆柱，冻结B策略，CPU PPO＋真实OpenFOAM反馈；复现入口、800点真实反馈曲线、真实U/p场、动作/Cd/Cl及独立报告齐备。
 2. **尚未完成的研究目标：** 代理对旋转动作下气动力的完整H1–H100预测质量、独立工况泛化、能稳定改善动作选择的FNO-MPC，以及统计意义上的多工况/多seed控制优势。
+
+### 1.1 先读懂这些名词
+
+| 名词 | 本项目里的准确含义 |
+|---|---|
+| FNO | Fourier Neural Operator（傅里叶神经算子），在规则网格上学习“当前流场＋动作→后续流场/受力”的代理模型；它不是CFD求解器。 |
+| Curator / DataPipe | Curator负责把OpenFOAM/VTK结果整理为受约束的HDF训练数据；DataPipe按固定窗口、mask、normalization和动作历史把数据送入模型。二者都不产生新的物理真值。 |
+| HydroGym / PPO | HydroGym提供环境接口；PPO（近端策略优化）用代理环境中的观测、动作和reward学习控制策略。真实部署时PPO读真实CFD观测，但不继续训练。 |
+| MPC | Model Predictive Control（模型预测控制），用模型比较候选未来动作再选动作。本项目只完成有限工程探索，没有形成优于B-PPO的有效FNO-MPC。 |
+| Cd / Cl | 阻力系数/升力系数。`Cd_front+Cd_rear`是总阻力；报告重点观察后柱`Cl`的波动和均值偏置。 |
+| RMS / bias | RMS本义是均方根；本报告的“升力波动RMS”特指去均值后的`sqrt(mean((Cl−mean Cl)²))`，不同于包含均值偏置的`sqrt(mean(Cl²))`。bias是后柱平均升力相对zero去均值波动尺度的绝对比值。二者分别表示“抖动有多大”和“平均是否偏向一侧”。 |
+| H1 / H5 / H100 | H1（teacher forcing）每个预测起点都使用真实状态，只向前一步；H5/H100多步AR把前一步预测继续作为后续输入，误差可能累积。H100滚动100个`.1 D/U`反馈间隔，共10 D/U，并非100个epoch。fixed-six使用事先给定的动作序列，不是测试时由PPO实时选动作，所以它是预测评估而非在线闭环。 |
+| iteration / update / step | `solver step`是OpenFOAM的`.005 D/U`时间推进；`feedback step`是每`.1 D/U`一次控制；optimizer `update`是一次参数更新；LBFGS `closure`可在一次外层iteration中多次计算loss/梯度。它们不能互换。 |
+| train / dev / test | train用于拟合参数；dev用于选择方案，反复查看后不再是独立测试；test应在选择冻结后一次使用。本项目多个开发相位已打开，因此不宣称独立泛化。 |
+| closed loop / real time | closed loop表示每步由真实观测决定下一动作；real time要求计算延迟满足物理设备时限。本项目验证了前者，没有证明后者。 |
+
+时间采用`D/U_inf`无量纲化：`t*=t U_inf/D`。因此`.1 D/U`就是无量纲时间增加0.1；在本case中一个反馈周期含20个`.005 D/U` CFD solver steps。
+
+### 1.2 全流程怎么读
+
+`OpenFOAM真实数据 → Curator/HDF → PhysicsNeMo FNO代理 → HydroGym/SB3 PPO训练 → 冻结CPU策略 → 真实OpenFOAM反馈验证`
+
+这是一条**方法流程示意**，不是新的仿真结果。前半段用真实CFD训练代理和策略；最终E114部署只运行“冻结PPO策略＋真实OpenFOAM”，没有在线FNO推理。看图时必须分别问：图是CFD真值、代理预测，还是两者的误差；训练曲线下降也不能代替开发集或真实闭环证据。
 
 ## 2. 研究目标与判据
 
@@ -87,6 +110,10 @@ E082/B链实际记录的核心版本为：PhysicsNeMo`2.2.2`、PyTorch`2.14.1`�
 
 E082的`canonical_joint_v1` reward不是简单的`-Cd-Cl²`。对上节定义的`D/R/Q`，即时成本包含`cD=-clip(D,-1,1)`、阻力门违约`[max(0,(.02-D)/.02)]²`、波动门违约`[max(0,(R-1.05)/.05)]²`、偏置门违约`[max(0,(Q-.10)/.10)]²`，以及动作成本`.01(omega/.75)²`和变化率成本`.01(delta_omega/.1)²`；即时reward为`-.1`乘六项之和。62个因果力样本按`.1 D/U`覆盖6.2 D/U（首末时间戳跨度6.1），目标窗为6.15；历史不足时四项物理成本记0而动作两项仍计算，不读取未来力。PPO的`gamma=.99`只用于回报折扣，不改变即时成本公式。
 
+[![E082在冻结B代理环境中的PPO学习日志](report_20261007/assets/e082_ppo_learning.png)](report_20261007/assets/e082_ppo_learning.png)
+
+**怎么看：** 横轴是累计代理环境交互步数，覆盖512→32768；上图是Stable-Baselines3 logger保存的滚动episode平均reward，下图是PPO value loss。图严格按65条保存日志连接，不额外平滑；episode reward的周期性与reset/episode组成有关，value loss下降是价值函数训练诊断。它们都不是Cd、Cl或真实CFD减阻曲线，不能用来挑选最终物理窗口或证明闭环收益；真正的物理结果见下一节E114。
+
 ## 6. 已完成真实闭环结果
 
 以下是独立核验的主窗结果；RMS降低=`1−RMS比`：
@@ -101,6 +128,16 @@ E082的`canonical_joint_v1` reward不是简单的`-Cd-Cl²`。对上节定义的
 E114是当前最强的持续运行证据：同一case经精确restart回放后累计验证至160 D/U，但它不是独立Re、独立几何或统计泛化。动作平方只是一种动作代理，不是已核机械功率或净节能。
 
 E114 result明确记录`fno_inference=false`、800 cycles、`start=328`、`end=408`。joined 160 D/U来自恢复连续的同一验证轨迹，不是第二个独立样本；约`1.3735 s/feedback`仅是墙钟吞吐，不能外推为实验装置的实时延迟。
+
+[![E114新增80 D/U真实CFD反馈曲线](report_20261007/assets/e114_closed_loop.png)](report_20261007/assets/e114_closed_loop.png)
+
+**怎么看：** 横轴是无量纲时间`t*=tU/D`，范围328.1→408；上/中排分别是每个`.1 D/U`端点保存的总Cd与后柱Cl，灰色为配对zero，蓝色为冻结B-PPO控制分支；下排是实际施加的无量纲角速度`omega*=Omega D/U`，虚线为`±.75`幅值界。每条线含800个反馈端点，不平滑、不降采样；连线只帮助阅读，并非`.005 D/U` solver-rate原始受力。图显示控制分支总阻力整体下移、Cl振幅收窄；正式门限仍由完整预注册时间窗统计而非肉眼判定。它不能证明跨工况泛化、净节能或物理实时性。
+
+### 6.1 真实CFD场图（canonical E083/E086，非E114末帧）
+
+[![E083/E086在t=228保存的真实OpenFOAM速度与压力场](report_20261007/assets/canonical_real_cfd_t228.png)](report_20261007/assets/canonical_real_cfd_t228.png)
+
+**怎么看：** 上排是速度模长、下排是每帧ROI去均值压力；三列使用相同行色标，依次为配对zero、canonical seed20261007（E083）和seed20261006（E086）。横纵轴是solver坐标，圆柱内部留白。来源是已保存的`t=228`真实OpenFOAM场，模型/策略分别绑定E083/E086 canonical执行，`model_inference=false`、`new_cfd_steps=0`。这张图只能比较单个时刻的尾流形态，不能从颜色直接读出80 D/U平均减阻，也不能冒充E114的`t=408`末帧。
 
 ## 7. 预测实验沿革：成功、失败与学到什么
 
@@ -129,6 +166,10 @@ B工程训练和官方reload通过，但完整预测准入FAIL。H100 validation
 
 独立R2审计PASS，但结论仅是工程/保存数组/checkpoint检查通过，不是科学准入。训练完成144个接受点、300次closure，按固定预算停止并恢复最后接受点；300个gradient panel加145个no-grad panel、每个26个microbatch，共11,570次aero forward，flow forward为0。加权训练loss从`.01087838225`降到`.00317233591`（约70.84%），末10个接受点仍下降；最终四通道normalized RMSE为`.07350795/.04681488/.09940523/.03975477`，全部高于不变的`.01`训练拟合目标。rear-Cl MAE从`.07402691`降到`.03843786`，total-Cd MAE从`.02099059`降到`.01288914`，但front-Cl MAE从`.00944933`升到`.01125044`，不能写成所有误差均改善，也不能据此证明容量不足、收敛或泛化。
 
+[![Representative256训练面板的接受点loss与四通道RMSE](report_20261007/assets/rep256_accepted_fit.png)](report_20261007/assets/rep256_accepted_fit.png)
+
+**怎么看：** 横轴0是父模型初值，之后每一点都是优化器实际返回并保存的accepted point；300次closure中的线搜索trial没有混入，也没有事后挑“最佳trial”。上图为训练目标，下图为四个归一化受力通道RMSE，虚线`.01`只是事前训练内拟合目标，不是控制准入。曲线持续下降但全部通道仍高于`.01`，且只针对固定256个训练点；因此只能说明“预算内继续拟合”，不能说明泛化或闭环改善。
+
 result SHA为`50617c1c49cebcdc2198fb1cc427f7a7289dc1912846d3f882b0a257025b6d6a`，candidate manifest SHA为`793bbdab1da9fb26ebfa27a2efe607b1ccb24c10a4bd73dcc726d4253b696848`，独立receipt SHA为`d3286db5da8c4919718e0d70e651df2c9a92eaffb083ee34275bf6b16ce1992f`，报告见[P064_REPRESENTATIVE256_TERMINAL_REVIEW_20261007.md](P064_REPRESENTATIVE256_TERMINAL_REVIEW_20261007.md)，SHA `b6d794a6f4d817fdac8a10899700b348584c78b142944110b1d57fe02b4d944d`。官方fresh reload由producer完成；独立审计无模型构建/forward，并核验256个真实target、原normalization、LBFGS state、父/候选tensor digest、冻结bias与flow文件。R1只因NumPy 2.5拒绝`float(shape(1,))`而审计失败，R2仅修scalar读取，没有重训。
 
 随后完成同`highest/no-TF32`条件下的原fixed-six训练保留性检查；必须与本次同precision重算的B比较，不能借用历史`high/TF32`缓存。结果如下：
@@ -138,7 +179,37 @@ result SHA为`50617c1c49cebcdc2198fb1cc427f7a7289dc1912846d3f882b0a257025b6d6a`�
 | fixed-six H1 balanced | `.004181029586` | `.004842338987` | `+15.816903%` | 退化 |
 | fixed-six AR100 balanced | `.009002923189` | `.010287666596` | `+14.270292%` | 退化 |
 
+[![Representative256与同precision B的fixed-six H1和AR100比较](report_20261007/assets/rep256_fixed_six.png)](report_20261007/assets/rep256_fixed_six.png)
+
+**怎么看：** 每组柱是固定六个原训练窗口之一，左图是teacher-forced H1，右图是连续AR100；蓝色B和橙色Representative256在相同`highest/no-TF32`精度下比较，虚线是六窗算术均值。数值是归一化balanced force MSE，不是减阻百分数。候选均值分别恶化15.8169%和14.2703%，所以即使上图训练loss下降，原保留性AND仍FAIL。
+
 工程执行和12行/2,400个四力向量（9,600 scalar）的独立数组复算均PASS，但原“双项均不退化”AND明确FAIL。工程result SHA为`57add3a45f4cedcde94fbc242337e64cd6d54d51156e4d2be27c29cb8c309289`；[独立评审](P064_REPRESENTATIVE256_FIXED_SIX_INDEPENDENT_REVIEW_20261007.md) SHA为`9c7403f0df5b0f6de7d680d5690d03af856b2e3b414367de850fc1ae80fd731b`。这正体现训练面板loss下降不等于连续预测改善。该候选不替换B，不执行dev、PPO或CFD。
+
+### 7.4 为什么“继续把训练loss压低”未必有效
+
+已保存数组的failure-map把Representative256前后误差按数据来源和力通道拆开。训练集平均改善高度集中在64个controlled-b00点：rear-Cl MAE从`.180123`降到`.055894`、total-Cd MAE从`.045752`降到`.013783`，分别贡献整体对应MAE下降的87.3%和98.7%。但选入面板的45个train8点上，四个力通道MAE全部变差；在真正用于保留性判断的fixed-six H1中，front-Cl六个case又全部变差。
+
+这说明平均loss下降掩盖了来源与通道之间的权衡：既有选点之外的退化，也有选中点自身的退化。因此剩余时间内盲目增加closure/训练步数，没有直接证据能修复连续AR或跨来源泛化。现有证据仍不能区分究竟是采样稀疏、共享参数梯度干扰还是参数漂移；这些是后续可证伪假设，不是本项目已经确定的根因。
+
+[![Representative256按数据来源与受力通道拆分的failure map](report_20261007/assets/rep256_failure_map.png)](report_20261007/assets/rep256_failure_map.png)
+
+**怎么看：** 图画的是Representative256候选相对B父模型的`MAE差值（candidate−B）`，按数据family分面，包含front/rear Cd/Cl四个通道及total-Cd；零线下方的负值表示改善，零线上方的正值表示退化。它用于发现平均loss背后的不均匀变化，不是新的准入门，也没有通过挑选family改变原fixed-six结论。样本数和来源不同，不能从柱高直接推导统计显著性或唯一因果机制。
+
+### 7.5 当前B冻结流场分支的H1/H5保存回放
+
+[![当前B冻结K1流场分支H1的u/v/p真值、预测与有符号误差](report_20261007/assets/retained_b_fields_h1.png)](report_20261007/assets/retained_b_fields_h1.png)
+
+**H1怎么看：** 三行是反归一化后的无量纲`u/U_inf`、`v/U_inf`和去均值`p/(rho U_inf²)`；左/中列是真实CFD和当前B双FNO所用冻结K1流场分支的预测，共用色标；右列是`prediction−truth`有符号误差，用独立对称色标。来源是绑定B manifest的已保存b01起点0开发回放，`t*=130→130.1`；本次只画已有NPZ，没有加载模型或新增推理。H1使用真实起点，因此误差较小并不证明长滚动稳定。
+
+[![当前B冻结K1流场分支H5的u/v/p真值、预测与有符号误差](report_20261007/assets/retained_b_fields_h5.png)](report_20261007/assets/retained_b_fields_h5.png)
+
+**H5怎么看：** 布局与H1相同，时间为`t*=130→130.5`。这是realized-action retrospective replay：动作来自已经发生的轨迹，而非模型面对未知动作的前瞻选择；b01起点也已是打开的development数据，不是独立测试。误差色标相较H1扩大，说明多步误差会累积，但单个起点不能代表完整force-window或H100总体质量。
+
+### 7.6 历史代理流场误差图（仅诊断，不是当前B或Representative256）
+
+[![历史FCP003c模型H100真实、预测与绝对误差](report_20261007/assets/historical_fcp003c_h100.png)](report_20261007/assets/historical_fcp003c_h100.png)
+
+**怎么看：** 三行依次为`u/U_inf`、`v/U_inf`和`p/(rho U_inf^2)`，三列依次为ground truth、prediction、absolute error；真值与预测共享色标，误差列使用独立的非负色标。该图来自历史`FCP003c final`模型、`full40_dynamic_validation_b01_plus`、start 0、H100（滚动10 D/U），动作由`omega=0→-0.281`。图中真值和预测都可见涡街结构，同时存在广泛局部误差；相位、频率是否一致仍需专门时序指标，不能凭图断言。**它不是当前B、I或Representative256模型的图，也不是当前候选精度证据**；不能用它宣称当前B场预测通过或解释E114控制收益。
 
 ## 8. 训练误差、泛化误差和控制收益的关系
 
@@ -164,6 +235,10 @@ python3 scripts/reproduce_canonical_closed_loop.py
 ### 9.2 看板
 
 Spark本机：`http://127.0.0.1:8766/`；已有Mac端口转发时：`http://localhost:8766/`。API为`/api/state`。看板展示真实unit/invocation、训练接受点或CFD反馈曲线；浏览器打不开不等于科学进程停止，应以systemd和artifact为准。
+
+本报告的完整离线图文版为[report_20261007/index.html](report_20261007/index.html)。HTML不依赖CDN或在线脚本，核心图片均在同目录`assets/`，可点击打开PNG原分辨率或直接下载；复制整个`report_20261007/`目录即可离线阅读正文和图片。若要打开正文链接的独立审计报告、runbook等外部证据，还需一并复制完整`docs/`树。
+
+离线目录另附少量可直接检查的论文表格/审计证据：`evidence/rep256_failure_map_metrics.csv`、`evidence/rep256_fixed_six_result.json`、`evidence/paper_baseline_fairness_receipt.json`和`evidence/paper_baseline_fairness_pre_execution_plan.md`。它们不包含大HDF、CFD场、checkpoint或完整历史artifact；这些大文件仍只在Spark并由SHA清单引用，不能声称复制本目录即可离线重放全部项目。
 
 现有真实流场图入口`#canonical-seeds-real-cfd-t228`对应E083/E086的两个指定canonical seed，不是E114末帧，也不是FNO预测。图路径为`artifacts/p064_canonical_seeds_real_cfd_t228_comparison_20261007/real_cfd_t228_comparison.png`（SHA `7926b3ba6919afc211faa941644df3df37ff75614604acba35869161653d4afe`），manifest SHA `fd63bbfbd5adb3a04606cd7335c76de9ecab04f4bc53025afa928abe223b10c1`，来源分别绑定canonical seed20261007、seed20261006及zero的`t=228`真实U/p保存场。E114的动作/Cd/Cl曲线由看板对应continuation结果展示；当前没有把E083/E086瞬时流场冒充E114场图。
 
@@ -196,6 +271,24 @@ Git保存源代码、配置、审批、报告、测试和SHA清单；以下大�
 6. E114是恢复后连续同case证据，不是单一进程不间断160 D/U，也不是独立随机复现实验。
 7. Git不携带全部数据、模型、镜像和环境；离开Spark仅凭Git不能完整重建历史结果。
 8. Representative256训练与fixed-six均已独立核验并拒绝；任何未执行的后续评估仍必须写“未执行/未知”，不能以日志或训练面板代替开发/控制证据。
+
+### 11.1 尚未完成、若继续研究应怎样验证
+
+1. **旋转动作下的受力预测：** 仍需在冻结且未参与选择的origin/相位上，同时验证H1、H5、连续AR100和原force-window的Cd/Cl幅值、相位、均值与波动；不能只看平均训练loss。
+2. **远期可选的跨工况扩展：** 当前任务物理范围仍固定为Re100、L/D=5；若未来要主张跨Re、间距或网格泛化，才需要事前固定新工况并保留独立zero/controlled truth。它不是当前基本案例交付的必补项，现阶段指标未知。
+3. **FNO-MPC动作价值：** 必须用相同真实起点、候选动作和完整因果62点历史，对代理动作排序做配对CFD反事实验证，再运行足够长的真实闭环。现有10周期探索动作未区别于K1且无物理收益。
+4. **统计复现：** 需要多个独立策略seed和独立CFD起点；E114的joined窗口是同一连续轨迹，不可替代独立重复。
+5. **工程部署：** 需要测量端到端传感、推理、执行器和求解/实验延迟，并核算旋转功率，才能回答物理实时性与净节能。
+6. **配对公平性复核：** 若要把当前物理结果上升为更强控制结论，还应明确复核control/zero两分支使用相同网格、离散设置、起点和事前固定且覆盖足够脱落周期的比较窗；当前长轨迹门限PASS不自动替代该专门审计。
+7. **网格与时间步独立性：** control/zero使用同网格只能保证配对公平，不能证明结果对网格或`dt`收敛。后者需要预先设计的多分辨率/多时间步计算，当前尚未完成，也不是本轮基本案例PASS的既有证据。
+
+这些条目是未完成验证清单，不是新的准入放宽或已授权实验。截止前不再通过增加相同训练步数来替代上述证据。
+
+### 11.2 已保存基线的公平性审计结论
+
+本轮只读审计进一步确认：历史P10/P20周期控制使用峰值`omega=1`且起点/窗口不同，不能作为当前B（`|omega|≤.75`、`|delta omega|≤.1/反馈周期`）的公平开环对照；历史恒`omega=+1`粗/中网格对显示后Cd均值差`.15624%`、后Cl去均值RMS差`1.06153%`，但它验证的不是当前反馈策略，不能外推B约4%减阻的数值不确定度。E114既有审计已经覆盖800 cycles、799 feedback links、1600 solver logs、`.005`时钟和动作filter，不需要重复同一raw核验。
+
+因此，论文若要增加“优于开环基线”或“网格/时间步收敛”的更强结论，应分别执行事前冻结、同初态/网格/时间步/窗口/动作约束的开环比较，以及B/zero成对的半时间步和独立中网格验证；目前均未执行、未授权，不能用历史结果补位。完整边界见[CLOSED_LOOP_PAPER_VALIDATION_GAPS_20261007.md](CLOSED_LOOP_PAPER_VALIDATION_GAPS_20261007.md)。
 
 ## 12. 与港理工唐辉相关研究的关系：方法借鉴，不是严格复现
 
@@ -233,6 +326,8 @@ HydroGym相关官方工作提供标准环境接口、solver-independent方法和
 - 时序增量FAIL：[P064_TEMPORAL_INCREMENT_AUX_TERMINAL_REVIEW_20261007.md](P064_TEMPORAL_INCREMENT_AUX_TERMINAL_REVIEW_20261007.md)
 - Representative256训练终态：[P064_REPRESENTATIVE256_TERMINAL_REVIEW_20261007.md](P064_REPRESENTATIVE256_TERMINAL_REVIEW_20261007.md)
 - Representative256 fixed-six FAIL：[P064_REPRESENTATIVE256_FIXED_SIX_INDEPENDENT_REVIEW_20261007.md](P064_REPRESENTATIVE256_FIXED_SIX_INDEPENDENT_REVIEW_20261007.md)
+- Representative256 failure-map：[P064_REPRESENTATIVE256_FAILURE_MAP_20261007.md](P064_REPRESENTATIVE256_FAILURE_MAP_20261007.md)
+- 闭环论文验证缺项与公平基线：[CLOSED_LOOP_PAPER_VALIDATION_GAPS_20261007.md](CLOSED_LOOP_PAPER_VALIDATION_GAPS_20261007.md)
 - 数据表示审计：[P064_FORCE_REPRESENTATION_DATA_AUDIT_20261007.md](P064_FORCE_REPRESENTATION_DATA_AUDIT_20261007.md)
 - 安全入口：[CANONICAL_CLOSED_LOOP_QUICKSTART.md](CANONICAL_CLOSED_LOOP_QUICKSTART.md)
 - 多阶段runbook：[CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md](CANONICAL_MULTI_STAGE_RUNBOOK_20261007.md)
@@ -240,7 +335,7 @@ HydroGym相关官方工作提供标准环境接口、solver-independent方法和
 - 硬截止：[PROJECT_CLOSEOUT_DEADLINES_20261007.md](PROJECT_CLOSEOUT_DEADLINES_20261007.md)
 - 模型与复现清单：[FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md](FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md)
 
-## 15. 收尾待办（不得扩展为新实验）
+## 15. 收尾待办与后续授权边界
 
 - [x] 填写Representative256训练终态与fixed-six独审；训练loss下降但fixed-six双项退化，候选拒绝。
 - [x] 生成最终模型/数据/策略/镜像SHA与路径清单，标注Git外大文件，见[FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md](FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md)。
@@ -248,4 +343,6 @@ HydroGym相关官方工作提供标准环境接口、solver-independent方法和
 - [x] 完成有限只读/CPU验证：Representative256及复现相关非Torch回归37项PASS，fixed-six Torch fixture 3项PASS，Root独立四文件smoke 25项PASS；6份收尾核心文档及后续终态报告/清单共106个相对链接全部存在。安全复现入口实际返回`PREFLIGHT_PASS_NOT_RUNNING`；inventory本轮返回851 SHA＋55存在性检查，不启动CFD、训练或模型推理。
 - [x] 完成scoped GitLab同步。收尾提交链为`91d3f47`（总报告/截止/清单首版）、`05d4d00`、`cc94986`、`c9594f0`、`60be91e`、`2c66bb7`（Representative256终态、fixed-six、UI、台账和拒绝模型清单）及`41f9819`（官方文献与清单链接修订）；这些均已推送到`origin/sanitized-main`。
 
-限时科学收尾现已结束：没有训练、推理评估、PPO、CFD或数据转换任务继续运行，dashboard和只读资源监控保留。旧`training-evaluation-watchdog.timer`自`2026-10-07T09:23:06Z`起保持`inactive/dead/disabled`，避免历史post-eval自动复启。交付的基本B-PPO/OpenFOAM在线反馈案例保持原物理门限PASS；完整高精度FNO预测、跨工况泛化和有效FNO-MPC目标仍未完成，未被收尾文档改写为PASS。
+此前限时阶段的科学任务已结束：本次图文更新时没有训练、推理评估、PPO、CFD或数据转换任务继续运行，dashboard和只读资源监控保留。旧`training-evaluation-watchdog.timer`自`2026-10-07T09:23:06Z`起保持`inactive/dead/disabled`，避免历史post-eval自动复启。交付的基本B-PPO/OpenFOAM在线反馈案例保持原物理门限PASS；完整高精度FNO预测、跨工况泛化和有效FNO-MPC目标仍未完成，未被收尾文档改写为PASS。
+
+用户已允许继续完善有价值的验证与图文证据，但任何新科学评估仍须先明确缺口、固定协议并获得Lead审批；本报告本身不授权自动启动训练、推理、PPO或CFD。原硬截止和旧watchdog禁用状态保持。
