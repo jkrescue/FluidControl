@@ -211,12 +211,13 @@ details.archive{margin:18px 0;border:1px solid #2a3d53;border-radius:8px;backgro
 .field-stack{display:grid;grid-template-columns:1fr;gap:14px;margin-top:12px}.field-card{background:#101b2b;border:1px solid #2a3d53;border-radius:7px;padding:12px}.field-card h3{margin-bottom:5px}.field-note{line-height:1.6;margin-top:10px}
 @media(max-width:750px){.grid,.resources,.summary,.casegrid,.guide-grid{grid-template-columns:1fr}main{padding:16px}}
 </style></head><body><main>
-<section class="card"><h2>当前阶段 · P064 等预算数据对照</h2><div id="b00-conversion">等待实际任务身份；A/B各32次更新、256窗口，未启动不显示运行。</div></section>
+<details class="guide"><summary>历史模型开发记录（展开查看，不代表当前运行）</summary><div id="b00-conversion">正在读取历史记录…</div></details>
 <div class="top"><div><h1>串列双圆柱流动控制 · 实时进展</h1><div class="muted">目标：降低两圆柱总阻力，同时报告侧向载荷与动作代价</div></div><div class="stamp" id="clock">连接中…</div></div>
 <nav class="guide"><a href="#lead-resources" style="color:#79d5a3">计算资源</a> · <a href="#lead-models" style="color:#79d5a3">当前实验</a> · <a href="#flow-current" style="color:#79d5a3">流场预测与误差图</a> · <a href="#legacy-details" style="color:#79d5a3">完整历史证据</a><span class="small"> · 新版科研总览 / 2026-10-04</span></nav>
 <section id="lead-overview">
 <div class="banner"><b>研究目标不变：</b>只研究串列双圆柱、后圆柱旋转控制。最终在真实 CFD 中验证：总阻力降低 ≥2%，后圆柱升力波动不超过无控制的 1.05 倍，平均升力偏置不超过基准波动的 10%。<br><span class="small">保留已有数据、模型和 PPO。当前重点是确认 FNO 能否准确预测控制动作的长期影响，而不只是单步流场。</span></div>
 <div class="card"><h3>当前工作与下一步</h3><div id="lead-now">正在读取实际运行记录…</div><p class="small" id="lead-monitor"></p><div class="small">判断依据：真实任务进程、模型评估结果和实验记录。GPU 忙碌不等于科研目标已完成；训练结束也不等于模型通过验证。</div></div>
+<nav class="guide" aria-label="真实闭环结果导航"><b>查看已完成的真实结果：</b> <a href="#canonical-seeds-real-cfd-t228">真实流场（历史t228）</a> · <a href="#canonical-reproduction-action">B默认策略动作</a> · <a href="#canonical-reproduction-drag">总阻力Cd</a> · <a href="#canonical-reproduction-lift">后柱升力Cl</a> · <a href="#absolute64-closed-loop">探索策略同工况对比</a><p class="small">下方图像和曲线是已完成实验的历史结果展示，不是正在运行的仿真；不把旧流场冒充新候选预测。</p></nav>
 <h2>两台计算节点 · 实际资源</h2><div class="grid" id="lead-resources"></div>
 <p class="small">Spark 的 CPU 与 GPU 共享物理内存；这里显示系统可用统一内存，不把它当作独立显存。至少保留 20 GiB。页面每 5 秒刷新，资源采样约 10 秒，任务监控约 60 秒。</p>
 <h2>当前 FNO 对照实验</h2><div class="grid" id="lead-models"></div>
@@ -500,6 +501,7 @@ function renderActiveExperiment(d){
   if(d.reflection_training?.verified){const r=d.reflection_training;$('lead-now').textContent=`反射配对气动力预测模块训练：${r.status}；原始窗口${r.windows}/256，原始/镜像分支${r.branches}/512，参数更新${r.updates}/32。流场网络冻结；已有真实CFD闭环完成，本任务不运行CFD。`;$('lead-monitor').textContent=`实际inv ${r.invocation}，PID ${r.pid}；Available ${num(r.available_gib,2)} GiB。训练日志不代表精度或控制收益；B默认及已核物理结果保留，完整预测验收尚未通过。允许另行批准闭环探索，不将全预测PASS冒充已完成或自动设为探索前置。`;}
   else if(d.reflection_training){$('lead-now').textContent='当前训练状态暂不可读取；不能据此判断训练已停止或完成。';$('lead-monitor').textContent=`反射配对训练观测${d.reflection_training.observation_state==='identity_mismatch'?'身份校验未通过':'暂不可用'}。保留已有真实CFD结果与曲线，B默认及预测限制不变；不将历史任务终态作为当前训练状态。`;}
   if(d.reflection_training?.terminal_verified){$('lead-now').textContent='反射配对训练已正常结束，256原始窗口/512分支/32更新完成；候选未采用，不是训练崩溃。B默认与已完成真实CFD结果保持。';$('lead-monitor').textContent='固定六窗保留评估较B退化：单步综合预测误差(H1)+4.1991%、100步连续预测综合误差(AR100)+1.45294%，原保留规则未通过。80端点开发评估未运行、结果未知；未推进此候选的PPO/CFD。完整预测验收仍未通过。终态来自已绑定独审报告/机器证据，不依赖已回收的临时unit。';}
+  if(d.reflection_training?.terminal_verified&&d.future_time_cfd?.terminal_verified&&d.canonical_b01_reproduction?.terminal_verified){const a=d.delivery_activity;$('lead-now').textContent='已完成：B默认策略800次真实CFD反馈闭环，主窗约4%减阻、后柱升力波动降低约18%、均值偏置约2.9–3.6%（b01与后续时段分别核验）。完整预测精度尚未通过，基本闭环结果已经交付。';$('lead-monitor').textContent=(a?.verified?(a.active_units.length?'检测到新的受管项目任务运行，请以任务监控为准。':'当前未发现受管训练或CFD任务运行；下方展示已完成历史结果，不是实时仿真。'):'当前受管任务状态暂不可读取，不据此判断已停止。')+' 部署为CPU PPO＋真实OpenFOAM反馈，无在线FNO/MPC；原2%/1.05/10%标准不变，同工况结果不是统计独立泛化。';}
   return;
  }
  if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5173,6 +5175,7 @@ class Handler(BaseHTTPRequestHandler):
             data['absolute64_ppo'] = _absolute64_ppo(self.root)
             data['absolute64_cfd'] = _absolute64_cfd(self.root)
             data['reflection_training'] = _reflection_training(self.root)
+            data['delivery_activity'] = _delivery_activity()
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5518,6 +5521,15 @@ def _canonical_b01_reproduction(root):
                 'memory_gib': int(memory) / 1024**3 if memory.isdigit() else None}
     except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
         return {'verified': False}
+
+
+def _delivery_activity():
+    try:
+        raw=subprocess.check_output(['systemctl','--user','list-units','fluid-control-*.service','--state=running','--no-legend','--plain','--no-pager'],text=True,timeout=3)
+        monitors={'fluid-control-dashboard-20261002.service','fluid-control-dual-node-watchdog-20261003.service'}
+        active=[line.split()[0] for line in raw.splitlines() if line.split() and line.split()[0] not in monitors]
+        return {'verified':True,'active_units':active}
+    except (OSError,subprocess.SubprocessError):return {'verified':False}
 
 
 def _reflection_training(root):
