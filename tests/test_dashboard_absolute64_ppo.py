@@ -30,6 +30,15 @@ def test_missing_no_claim(tmp_path):
 def test_budget_failclosed(tmp_path):
     f,_=fixture(tmp_path,steps=32769);assert not f(tmp_path)['verified']
 
+def test_reviewed_terminal_binds_both_hashes(tmp_path):
+    f,_=fixture(tmp_path,True,32768)
+    proof=tmp_path/'docs/P064_ABSOLUTE64_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md';proof.write_bytes(b'proof')
+    result=tmp_path/'artifacts/p064_absolute64_symmetry_canonical_32768_ppo_20261007/payload/result.json';result.write_bytes(b'result')
+    digests={b'{}':DIGEST,b'proof':'0dbf25b279036c95e216a38ea01efa7e2bced215e03e788bfb9ba45e8e18633c',b'result':'7ea78803010b5ebd33c8f5166f63449ad6e9561f894b1273c791d12ff80b1588'}
+    f.__globals__['hashlib']=SimpleNamespace(sha256=lambda b:SimpleNamespace(hexdigest=lambda:digests.get(b,'bad')))
+    r=f(tmp_path);assert r['terminal_verified'] and not r['running'] and r['ppo_epochs']==116
+    result.write_bytes(b'changed');assert not f(tmp_path)['terminal_verified']
+
 def test_appends_after_cfd_not_replaces():
     s=SOURCE.read_text();line=next(x for x in s.splitlines() if '并行 E110 PPO' in x)
     assert "$('lead-monitor').textContent+=" in line and 'lead-now' not in line

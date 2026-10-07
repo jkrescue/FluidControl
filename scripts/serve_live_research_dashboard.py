@@ -481,6 +481,7 @@ function renderActiveExperiment(d){
   if(d.absolute64_training){const a=d.absolute64_training;$('lead-now').textContent=`Absolute64气动力训练：${a.status}；更新${a.updates}/64，窗口${a.windows}/512。${a.loss==null?'尚无可读loss记录（不估算）':'最近训练loss '+a.loss}。仅训练日志，不代表预测准入；B默认/G已完成闭环不变。`;$('lead-monitor').textContent=`unit ${a.unit}；inv ${a.invocation||'尚无'}；PID ${a.pid||0}；Available ${num(a.available_gib,2)} GiB。${a.note} 原G当前曲线与B历史均保留。`;}
   if(d.future_time_cfd?.verified){const f=d.future_time_cfd;$('lead-now').textContent=`固定B新未来时段：${f.status}；zero基线${f.baseline_cycles}/200（228→248），配对反馈${f.paired_cycles}/800（248→328）。${f.phase==='baseline'?'当前为零动作基线生成':f.phase==='handoff'?'基线已完成，待进入配对':'已进入固定策略配对阶段'}，CPU真实OpenFOAM，不是MPC/FNO训练。`;$('lead-monitor').textContent=`unit ${f.unit}；inv ${f.invocation}；PID ${f.pid}；Available ${num(f.available_gib,2)} GiB。原2%/1.05/10%不变，未独审不宣告物理通过；新时间段不等统计独立，保留B/G历史。`;}
   if(d.absolute64_ppo?.verified){const p=d.absolute64_ppo;$('lead-monitor').textContent+=` 并行 E110 PPO：${p.status}，实际步数${p.timesteps}/32768、已记录PPO epochs ${p.ppo_epochs}/256；inv ${p.invocation}，PID ${p.pid}。不是FNO续训或当前CFD的在线模型，日志不代表物理通过。`;}
+  if(d.absolute64_cfd?.verified){const c=d.absolute64_cfd;$('lead-monitor').textContent+=` 并行 Absolute64 b01真实CFD：${c.status}，${c.cycles}/800（130→210）；CPU策略反馈，无GPU训练或在线FNO；inv ${c.invocation}，PID ${c.pid}。原六窗和2%/1.05/10%不变，待终态独审。`;}
   return;
  }
  if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5152,6 +5153,7 @@ class Handler(BaseHTTPRequestHandler):
             data['absolute64_training'] = _absolute64_training(self.root)
             data['future_time_cfd'] = _future_time_cfd(self.root)
             data['absolute64_ppo'] = _absolute64_ppo(self.root)
+            data['absolute64_cfd'] = _absolute64_cfd(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5498,6 +5500,27 @@ def _canonical_b01_reproduction(root):
         return {'verified': False}
 
 
+def _absolute64_cfd(root):
+    unit='fluid-control-p064-absolute64-symmetry-canonical-b01-cfd-20261007.service'
+    inv='6fa0baeb90034371b3b49f3d8d51192a'
+    approval=root/'docs/P064_ABSOLUTE64_SYMMETRY_CANONICAL_B01_CFD_APPROVAL_20261007.json'
+    try:
+        digest=hashlib.sha256(approval.read_bytes()).hexdigest()
+        if digest!='d6303082b0f97087961a9171505a2b4289623eb5f634f2502ac4f7d65639143b':return {'verified':False}
+        raw=subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','Result','-p','ExecMainStatus','-p','ExecStart'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!=inv or str(approval) not in state.get('ExecStart','') or digest not in state.get('ExecStart',''):return {'verified':False}
+        path=root/'artifacts/p064_absolute64_symmetry_canonical_b01_cfd_20261007/progress.json'
+        value=json.loads(path.read_text()) if path.exists() else {'completed_cycles':0,'rows':[]}
+        n=value['completed_cycles'];rows=value['rows']
+        if not isinstance(n,int) or not 0<=n<=800 or len(rows)!=n:raise ValueError('invalid progress count')
+        if n and (rows[-1]['step']!=n or abs(rows[-1]['end_time']-(130+.1*n))>1e-8):raise ValueError('invalid progress clock')
+        pid=int(state['MainPID']);running=pid>0 and state.get('ActiveState')=='active' and state.get('SubState')=='running'
+        status='实际运行中' if running else ('进程成功结束，待独审' if state.get('Result')=='success' and state.get('ExecMainStatus')=='0' else '进程停止/失败，待诊断')
+        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,status=status,cycles=n)
+    except (OSError,ValueError,KeyError,IndexError,TypeError,subprocess.SubprocessError):return {'verified':False}
+
+
 def _absolute64_ppo(root):
     unit='fluid-control-p064-absolute64-symmetry-canonical-ppo-20261007.service'
     inv='5e1c7db703874125bb1556b411d3169c'
@@ -5518,7 +5541,11 @@ def _absolute64_ppo(root):
         if not 0<=steps<=32768 or not 0<=epochs<=256:raise ValueError('PPO progress outside fixed budget')
         pid=int(state['MainPID']);running=pid>0 and state.get('ActiveState')=='active' and state.get('SubState')=='running'
         status='GPU策略训练中' if running else ('进程成功结束，待独审' if state.get('Result')=='success' and state.get('ExecMainStatus')=='0' else '进程停止/失败，待诊断')
-        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,status=status,timesteps=steps,ppo_epochs=epochs)
+        proof=root/'docs/P064_ABSOLUTE64_SYMMETRY_CANONICAL_PPO_TERMINAL_REVIEW_20261007.md'
+        result=path.parent/'result.json'
+        terminal_verified=(not running and pid==0 and state.get('Result')=='success' and state.get('ExecMainStatus')=='0' and proof.is_file() and result.is_file() and hashlib.sha256(proof.read_bytes()).hexdigest()=='0dbf25b279036c95e216a38ea01efa7e2bced215e03e788bfb9ba45e8e18633c' and hashlib.sha256(result.read_bytes()).hexdigest()=='7ea78803010b5ebd33c8f5166f63449ad6e9561f894b1273c791d12ff80b1588')
+        if terminal_verified:status='训练已完成，训练记录核验通过'
+        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,status=status,timesteps=steps,ppo_epochs=epochs,terminal_verified=terminal_verified)
     except (OSError,ValueError,KeyError,IndexError,TypeError,subprocess.SubprocessError):return {'verified':False}
 
 
