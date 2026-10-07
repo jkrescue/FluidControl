@@ -28,6 +28,7 @@ def test_terminal_summary_does_not_skip_historical_curves():
     program += ''.join(f'function {name}(){{calls.push({json.dumps(name)});}}\n' for name in renderers)
     program += 'function renderHistoricalClosedLoopEvidence(d){' + history
     program += 'function renderCurrentGClosedLoop(){}\n'
+    program += 'function renderAbsolute64ClosedLoop(){}\n'
     program += 'function renderActiveExperiment(d){' + active
     program += '''renderActiveExperiment({p064_coverage_d:{invocation:'old-terminal',training:false,windows:256,updates:32}});
 if (!calls.includes('renderProjectedCFD') || !calls.includes('renderFinalPPORealCFD') || !calls.includes('renderExploratoryDiverse32768LongCFD')) throw Error('historical rendering skipped');
@@ -54,7 +55,7 @@ let rejected=false;try{currentGSeries([{...rows[0],output_observation:[1]}]);}ca
 '''
     p=subprocess.run(['node'],input=program,text=True,capture_output=True)
     assert p.returncode==0,p.stderr
-    render=html.split('function renderCurrentGClosedLoop(c){',1)[1].split('function renderActiveExperiment(d){',1)[0]
+    render=html.split('function renderCurrentGClosedLoop(c){',1)[1].split('function renderAbsolute64ClosedLoop(d){',1)[0]
     assert 'currentGSeries(c.rows)' in render and 'reproduction' not in render
     assert '历史详情 · B默认策略 b01 工程复现（E095，非G曲线）' in html
 

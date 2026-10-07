@@ -457,10 +457,23 @@ function renderCurrentGClosedLoop(c){
  drawActualSeries('current-g-drag',rows,[{key:'ppo_total_cd',label:'G总Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'配对zero总Cd',color:'#f2c879'}],'真实CFD周期末总Cd，非主窗均值');
  drawActualSeries('current-g-lift',rows,[{key:'ppo_rear_cl',label:'G后柱Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'配对zero后柱Cl',color:'#f69d97'}],'真实CFD周期末后柱Cl');
 }
+function renderAbsolute64ClosedLoop(d){
+ const c=d.absolute64_cfd;
+ let card=$('absolute64-closed-loop');if(!card){card=document.createElement('div');card.id='absolute64-closed-loop';card.className='card';$('current-closed-loop').before(card);card.innerHTML='<h3>最新完成 · Absolute64策略真实CFD（B仍为默认）</h3><p id="absolute64-summary"></p><div id="b01-primary-comparison"></div><canvas width="1000" height="220" id="absolute64-action"></canvas><canvas width="1000" height="220" id="absolute64-drag"></canvas><canvas width="1000" height="220" id="absolute64-lift"></canvas>';}
+ card.hidden=c?.terminal_verified!==true;if(card.hidden)return;
+ const rows=currentGSeries(c.rows);
+ $('absolute64-summary').textContent='800个周期末真实CFD观测，t=130.1→210；不是FNO预测或新场图。六窗原2%/1.05/10%通过，原预测筛选FAIL不变。早窗/全窗部分偏置较B差，动作平方均值0.25748高于B的0.24045（非物理能耗）；不称全面优越或净节能，B默认不自动替换。';
+ const peers=[['B（默认）',d.canonical_b01_reproduction],['G（探索）',d.g_exploratory_cfd],['Absolute64（探索）',c]];
+ $('b01-primary-comparison').innerHTML=peers.every(([,p])=>p?.terminal_verified&&p.primary)?'<p>同b01主窗 (150,210]；独立核验配对zero一致。单工况描述性对比，不声明统计显著性。</p><table><thead><tr><th>策略</th><th>减阻 %</th><th>后Cl波动比</th><th>均值偏置 %</th></tr></thead><tbody>'+peers.map(([name,p])=>`<tr><td>${name}</td><td>${num(100*p.primary.paired_drag_reduction,6)}</td><td>${num(p.primary.paired_rear_cl_fluctuation_rms_ratio,6)}</td><td>${num(100*p.primary.absolute_mean_rear_cl_over_paired_zero_rms,6)}</td></tr>`).join('')+'</tbody></table><p class="small">E109固定B后续时段 (268,328] 单列：减阻3.9949%、波动比0.8166、偏置2.8533%；不纳入此同b01比较。</p>':'等待三项已绑定终态证据，不拼接未核数据。';
+ drawActualSeries('absolute64-action',rows,[{key:'omega',label:'实际ω',color:'#60c9fb'}],'Absolute64真实施加动作（一次物理滤波）');
+ drawActualSeries('absolute64-drag',rows,[{key:'ppo_total_cd',label:'策略总Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'配对zero总Cd',color:'#f2c879'}],'Absolute64真实CFD周期末总Cd');
+ drawActualSeries('absolute64-lift',rows,[{key:'ppo_rear_cl',label:'策略后Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'配对zero后Cl',color:'#f69d97'}],'Absolute64真实CFD周期末后Cl');
+}
 function renderActiveExperiment(d){
  // Historical evidence renders independently of the current-summary priority.
  renderHistoricalClosedLoopEvidence(d);
  renderCurrentGClosedLoop(d.g_exploratory_cfd);
+ renderAbsolute64ClosedLoop(d);
  for(const [key,section,route] of [['canonical_seeds_real_cfd_t228','canonical-seeds-real-cfd-t228','/canonical-seeds-real-cfd-t228.png'],['real_cfd_t228_comparison','real-cfd-t228','/real-cfd-t228-comparison.png']]){const f=d[key];$(section).hidden=f?.verified!==true;if(f?.verified){const img=$(section+'-image'),url=route+'?v='+f.sha256;if(img.getAttribute('src')!==url)img.src=url;}}
  const reproduction=d.canonical_b01_reproduction;
  if(reproduction?.verified){
@@ -483,6 +496,7 @@ function renderActiveExperiment(d){
   if(d.future_time_cfd?.terminal_verified){$('lead-now').textContent='固定B后续流动时段验证完成：zero 228→248、配对反馈248→328，800/800；六窗原物理标准全部通过。主窗减阻3.9949%、后升力波动比0.8166、均值偏置2.8533%。';$('lead-monitor').textContent='原始受力和真实反馈时序已复算；新时间段不等于独立物理工况或统计独立，原预测精度限制不变。B/G历史曲线保留，另一个策略的结果仍须单独验证。';}
   if(d.absolute64_ppo?.verified){const p=d.absolute64_ppo;$('lead-monitor').textContent+=` 并行 E110 PPO：${p.status}，实际步数${p.timesteps}/32768、已记录PPO epochs ${p.ppo_epochs}/256；inv ${p.invocation}，PID ${p.pid}。不是FNO续训或当前CFD的在线模型，日志不代表物理通过。`;}
   if(d.absolute64_cfd?.verified){const c=d.absolute64_cfd;$('lead-monitor').textContent+=` 并行 Absolute64 b01真实CFD：${c.status}，${c.cycles}/800（130→210）；CPU策略反馈，无GPU训练或在线FNO；inv ${c.invocation}，PID ${c.pid}。原六窗和2%/1.05/10%不变，待终态独审。`;}
+  if(d.absolute64_cfd?.terminal_verified&&d.future_time_cfd?.terminal_verified&&d.absolute64_ppo?.terminal_verified){$('lead-now').textContent='本轮训练与两项CFD任务均已结束。Absolute64 b01六窗原物理标准通过；B默认保留，原预测筛选FAIL不变。';$('lead-monitor').textContent='同b01主窗对比与Absolute64完整800点动作/Cd/Cl见下方；B后续248→328时段另列，不能混入同b01比较。单工况差异不是统计显著性或泛化证明。';}
   return;
  }
  if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5492,6 +5506,7 @@ def _canonical_b01_reproduction(root):
                 and hashlib.sha256(report_path.read_bytes()).hexdigest() == '67f583b80fbe8f2bf4a68fe181eef70d7c1261cf865d3e959d89eca540a198d6')
         return {'verified': True, 'unit': unit, 'invocation': state['InvocationID'], 'pid': pid,
                 'terminal_verified': terminal_verified, 'result_sha256': result_sha if terminal_verified else None,
+                'primary': json.loads(result_path.read_text())['windows']['primary_final_60'] if terminal_verified else None,
                 'receipt_sha256': receipt_sha if terminal_verified else None,
                 'running': pid > 0 and state.get('ActiveState') == 'active' and state.get('SubState') == 'running',
                 'cycles': len(rows), 'current_time': rows[-1]['end_time'] if rows else 130,
@@ -5518,7 +5533,12 @@ def _absolute64_cfd(root):
         if n and (rows[-1]['step']!=n or abs(rows[-1]['end_time']-(130+.1*n))>1e-8):raise ValueError('invalid progress clock')
         pid=int(state['MainPID']);running=pid>0 and state.get('ActiveState')=='active' and state.get('SubState')=='running'
         status='实际运行中' if running else ('进程成功结束，待独审' if state.get('Result')=='success' and state.get('ExecMainStatus')=='0' else '进程停止/失败，待诊断')
-        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,status=status,cycles=n)
+        proof=root/'docs/P064_ABSOLUTE64_B01_CFD_TERMINAL_REVIEW_20261007.md';result=path.parent/'result.json'
+        terminal=(not running and pid==0 and n==800 and state.get('Result')=='success' and state.get('ExecMainStatus')=='0' and proof.is_file() and result.is_file() and hashlib.sha256(proof.read_bytes()).hexdigest()=='17d9328babbbbbe23f1c4bd830e7347626e1cdd055087bbec7ffac0dbecb4bbe' and hashlib.sha256(result.read_bytes()).hexdigest()=='5fa8f47bb3a4939b6b8377f5ccd8c178dec560220929e36e48b8875e90a7504e')
+        payload=json.loads(result.read_text()) if terminal else None
+        if terminal and payload['rows']!=rows:raise ValueError('progress differs from verified terminal rows')
+        if terminal:status='已完成，六窗原物理标准核验通过'
+        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,status=status,cycles=n,rows=rows,terminal_verified=terminal,primary=payload['windows']['primary_final_60'] if terminal else None)
     except (OSError,ValueError,KeyError,IndexError,TypeError,subprocess.SubprocessError):return {'verified':False}
 
 

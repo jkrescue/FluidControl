@@ -31,3 +31,23 @@ def test_budget(tmp_path):
 def test_append_not_replace():
     s=SOURCE.read_text();line=next(x for x in s.splitlines() if '并行 Absolute64 b01真实CFD' in x)
     assert 'textContent+=' in line and 'lead-now' not in line
+
+def test_verified_payload_rows_required(tmp_path):
+    f,_=fixture(tmp_path,800,True)
+    proof=tmp_path/'docs/P064_ABSOLUTE64_B01_CFD_TERMINAL_REVIEW_20261007.md';proof.write_bytes(b'proof')
+    result=tmp_path/'artifacts/p064_absolute64_symmetry_canonical_b01_cfd_20261007/result.json'
+    rows=json.loads((result.parent/'progress.json').read_text())['rows']
+    result.write_text(json.dumps({'rows':rows,'windows':{'primary_final_60':{'paired_drag_reduction':.04}}}))
+    result_bytes=result.read_bytes()
+    digests={b'{}':DIGEST,b'proof':'17d9328babbbbbe23f1c4bd830e7347626e1cdd055087bbec7ffac0dbecb4bbe',result_bytes:'5fa8f47bb3a4939b6b8377f5ccd8c178dec560220929e36e48b8875e90a7504e'}
+    f.__globals__['hashlib']=SimpleNamespace(sha256=lambda b:SimpleNamespace(hexdigest=lambda:digests.get(b,'bad')))
+    r=f(tmp_path);assert r['terminal_verified'] and len(r['rows'])==800 and not r['running']
+    rows[0]['end_time']=0
+    (result.parent/'progress.json').write_text(json.dumps({'completed_cycles':800,'rows':rows}))
+    assert not f(tmp_path)['verified']
+
+def test_comparison_keeps_future_time_separate_and_failure():
+    s=SOURCE.read_text();fn=s.split('function renderAbsolute64ClosedLoop(d){')[1].split('function renderActiveExperiment')[0]
+    assert 'd.canonical_b01_reproduction' in fn and 'd.g_exploratory_cfd' in fn
+    assert 'const rows=currentGSeries(c.rows)' in fn and '不纳入此同b01比较' in fn
+    assert '预测筛选FAIL' in fn and '非物理能耗' in fn
