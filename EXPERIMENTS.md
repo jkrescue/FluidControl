@@ -1,5 +1,9 @@
 # Experiment ledger
 
+## HydroGym application overview expansion — documentation only
+
+The follow-on guide update adds two introductory sections with primary-source scenario references, solver choices, actual FNO/CFD stage separation and implementation limitations. Re-read the immutable project's environment construction and timestepper, checked fixed-version HydroGym source, rebuilt the five-section HTML and visually reviewed the introductory layout. No new model, PPO interaction, CFD run, performance claim or result row is generated.
+
 ## Concise brief and HydroGym illustrated explanation — documentation only
 
 Add the formal project brief and three-section HydroGym guide, based on existing E082/E114 evidence and the pinned official FlowEnv source. Check local links and visually inspect the three explanatory diagrams. Preserve actual 69-value observations, 62-point reward history, 24 reset starts, H5 episodes and 32768/512 training counts. No experiment, model execution, changed reward, updated metric or new results.csv row is associated with this reading-material update.

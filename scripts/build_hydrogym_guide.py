@@ -1,4 +1,4 @@
-"""Render a three-section, print-paginated HydroGym project explanation."""
+"""Render the five-section, print-paginated HydroGym project explanation."""
 import hashlib
 import json
 import re
@@ -10,7 +10,7 @@ root = Path(__file__).resolve().parents[1]
 source = root / 'docs/HYDROGYM_PROJECT_GUIDE_20261007.md'
 out = root / 'docs/report_20261007'
 sections = source.read_text().split('<!-- pagebreak -->')
-assert len(sections) == 3
+assert len(sections) == 5
 pages = []
 for i, raw in enumerate(sections, 1):
     body = markdown.markdown(raw, extensions=['tables'])
@@ -20,7 +20,7 @@ for i, raw in enumerate(sections, 1):
             value = value.removeprefix('report_20261007/') if value.startswith('report_20261007/') else '../' + value
         return f'{attr}="{value}"'
     body = re.sub(r'(href|src)="([^"]+)"', relocate, body)
-    pages.append(f'<section class="page" id="page{i}">{body}<footer>{i} / 3</footer></section>')
+    pages.append(f'<section class="page" id="page{i}">{body}<footer>{i} / {len(sections)}</footer></section>')
 css = '''
 @page{size:A4;margin:15mm 17mm}
 *{box-sizing:border-box}body{margin:0;background:#eee;color:#222;font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.75}
@@ -36,6 +36,6 @@ local = [out / v for v in re.findall(r'(?:src|href)="([^"]+)"', page) if not url
 assert all(p.exists() for p in local), [str(p) for p in local if not p.exists()]
 (out / 'hydrogym_guide.html').write_text(page)
 bound = [source, Path(__file__).resolve()] + [p for p in local if p.suffix == '.svg']
-manifest = {'kind':'documentation only; diagrams are schematics, not CFD results', 'sections':3, 'inputs':[{'path':str(p.relative_to(root)), 'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in bound], 'html_sha256':hashlib.sha256(page.encode()).hexdigest()}
+manifest = {'kind':'documentation only; diagrams are schematics, not CFD results', 'sections':len(sections), 'inputs':[{'path':str(p.relative_to(root)), 'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in bound], 'html_sha256':hashlib.sha256(page.encode()).hexdigest()}
 (out / 'hydrogym_guide_manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
-print(json.dumps({'sections':3,'local_links_checked':len(local),'output':str(out/'hydrogym_guide.html')}))
+print(json.dumps({'sections':len(sections),'local_links_checked':len(local),'output':str(out/'hydrogym_guide.html')}))

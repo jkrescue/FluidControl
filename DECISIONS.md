@@ -1,5 +1,9 @@
 # DECISIONS
 
+## 2026-10-07 — Integrate sourced HydroGym context into the existing guide
+
+At the user's follow-on documentation request, prepend platform selection, representative AFC research and explicit backend-stage choices to the existing illustrated guide. Cite primary papers/official APIs, distinguish simulation from experiment and fixed-centre force control from VIV, and preserve the final two-paragraph story. Present verified facts directly, without a pasted-text comparison section. Current RL training uses fixed FNO stepping from saved CFD states; the successful deployment uses the separate OpenFOAM bridge. Do not add new science or treat possible active learning as implemented.
+
 ## 2026-10-07 — Separate concise explanations from the complete methods report
 
 Keep the detailed technical report intact. Add a short formal project brief and a three-section illustrated HydroGym explanation for readers who need the concrete workflow without implementation logs. Distinguish the platform's general solver/environment capabilities from the project's actual FlowEnv plus FNO integration, and distinguish surrogate PPO training from the separately implemented OpenFOAM deployment loop. The three new images are software/process schematics, not simulated fields. This is a documentation decision only.

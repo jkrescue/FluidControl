@@ -1,14 +1,14 @@
 {
   "kind": "documentation only; diagrams are schematics, not CFD results",
-  "sections": 3,
+  "sections": 5,
   "inputs": [
     {
       "path": "docs/HYDROGYM_PROJECT_GUIDE_20261007.md",
-      "sha256": "acef01160bfa78118f0150749054811cd47d4d2f4be9cfa6e12562138f5c4234"
+      "sha256": "bac363782a464b529b356bed38658a92260161e58ef4d73bdc4870bf3f63642d"
     },
     {
       "path": "scripts/build_hydrogym_guide.py",
-      "sha256": "b28a0567f04e87a5b371dc6493e1a2ea34dac8c3d1698394377dcf74e2924885"
+      "sha256": "2ac04d518c2677bce862419f5371078dfc00f77fb2cc557e54998dac73524808"
     },
     {
       "path": "docs/report_20261007/assets/hydrogym_roles.svg",
@@ -23,5 +23,5 @@
       "sha256": "b4ab46b865956b11eef1ba8587511a86ce14baf36978157c480dda05946792cd"
     }
   ],
-  "html_sha256": "4c1e40881a22fe4fc8e8fbc6ec000838d955a3e63edbed7d1360cd54eefdcd89"
+  "html_sha256": "6a99f5bd92272112b02d511db3b7b891e8bfe9151276e1b535728f264ecdee60"
 }
