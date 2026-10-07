@@ -504,6 +504,7 @@ function renderActiveExperiment(d){
   if(d.reflection_training?.terminal_verified&&d.future_time_cfd?.terminal_verified&&d.canonical_b01_reproduction?.terminal_verified){const a=d.delivery_activity;$('lead-now').textContent='已完成：B默认策略800次真实CFD反馈闭环，主窗约4%减阻、后柱升力波动降低约18%、均值偏置约2.9–3.6%（b01与后续时段分别核验）。完整预测精度尚未通过，基本闭环结果已经交付。';$('lead-monitor').textContent=(a?.verified?(a.active_units.length?'检测到新的受管项目任务运行，请以任务监控为准。':'当前未发现受管训练或CFD任务运行；下方展示已完成历史结果，不是实时仿真。'):'当前受管任务状态暂不可读取，不据此判断已停止。')+' 部署为CPU PPO＋真实OpenFOAM反馈，无在线FNO/MPC；原2%/1.05/10%标准不变，同工况结果不是统计独立泛化。';}
   if(d.pressure_aux_training){const p=d.pressure_aux_training;if(p.verified){const l=p.latest_window_losses||{},fmt=v=>Number.isFinite(v)?num(v,6):'未知';$('lead-monitor').textContent=`当前研究：压力辅助H气动力预测模块，${p.status}；窗口${p.windows}/256、更新${p.updates}/32，流场网络冻结，无当前CFD。最近完整窗口${l.window??'未知'}：原主任务loss ${fmt(l.original_total_loss)}；压力loss ${fmt(l.pressure_h1_loss)}；加权压力项 ${fmt(l.pressure_aux_weighted_loss)}；实际训练目标 ${fmt(l.training_objective)}。Available ${num(p.available_gib,2)} GiB；inv ${p.invocation}。仅训练日志，不代表精度或控制收益；B默认与已交付闭环保持。`;}else{$('lead-monitor').textContent=p.observation_state==='preparation'?'压力辅助H仍在准备，尚无已绑定运行；B闭环交付不受影响。':'当前压力辅助训练状态暂不可读取，不能据此判断结束；B已交付闭环结果保持。';}}
   if(d.pressure_aux_training?.terminal_verified){const p=d.pressure_aux_training;$('lead-monitor').textContent=`压力辅助H训练工程已完成：256窗口/32更新。固定六窗单步综合预测误差(H1)较B降低${num(-100*p.retention.h1.relative_change,4)}%，100步连续预测综合误差(AR100)升高${num(100*p.retention.ar.relative_change,4)}%；原两项均不退化条件未通过，候选未采用。开发评估未运行、未知，未推进此候选PPO/CFD。B默认与约4%减阻真实闭环保留，完整预测精度仍未通过。这不是训练崩溃；已绑定独审证据，不依赖已回收unit。`;}
+  if(d.continuation_cfd){const x=d.continuation_cfd;$('lead-monitor').textContent=(x.verified?`当前阶段：固定B策略延长真实CFD运行验证，${x.running?'运行中':x.process_completed?'进程已结束，结果待独审':'进程停止/失败，待诊断'}；${x.cycles}/800反馈周期，流动时刻${x.last_time??'初始化未知'}（328→408）。`:'延长CFD验证状态暂不可读取，不据此判断运行或结束。')+' 在线策略推理使用CPU＋真实OpenFOAM，不是GPU训练，无在线FNO/MPC；基本闭环已验证，完整FNO预测精度未达标，B默认及原2%/1.05/10%标准保持。这里只延长同工况时段，不代表独立工况或统计泛化。';}
   return;
  }
   if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5179,6 +5180,7 @@ class Handler(BaseHTTPRequestHandler):
             data['reflection_training'] = _reflection_training(self.root)
             data['delivery_activity'] = _delivery_activity()
             data['pressure_aux_training'] = _pressure_aux_training(self.root)
+            data['continuation_cfd'] = _continuation_cfd(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5524,6 +5526,31 @@ def _canonical_b01_reproduction(root):
                 'memory_gib': int(memory) / 1024**3 if memory.isdigit() else None}
     except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
         return {'verified': False}
+
+
+def _continuation_cfd(root):
+    unit='fluid-control-p064-b-continuation-328-408-cfd-20261007.service'
+    inv='73a2568857074c70b494639269a602bf'
+    digest='6e08555e336e271fe0baf6790feaf3d92c7c6e0771fc9aa93d7b0fd608f3f812'
+    approval=root/'docs/P064_B_E109_CONTINUATION_328_408_APPROVAL_20261007.json'
+    try:
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!=digest:raise ValueError('approval identity')
+        raw=subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','Result','-p','ExecMainStatus','-p','ExecStart'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!=inv or str(approval) not in state.get('ExecStart','') or digest not in state.get('ExecStart',''):raise ValueError('unit identity')
+        pid=int(state['MainPID'])
+        running=pid>0 and state.get('ActiveState')=='active' and state.get('SubState')=='running'
+        completed=pid==0 and state.get('SubState')=='exited' and state.get('Result')=='success' and state.get('ExecMainStatus')=='0'
+        progress=root/'artifacts/p064_b_continuation_328_408_cfd_20261007/progress.json'
+        cycles=0;last_time=None
+        if progress.is_file():
+            data=json.loads(progress.read_text());cycles=int(data['completed_cycles']);rows=data['rows']
+            if not 0<=cycles<=800 or len(rows)!=cycles:raise ValueError('progress count')
+            if rows:
+                last_time=float(rows[-1]['end_time'])
+                if int(rows[-1]['step'])!=cycles or abs(last_time-(328+cycles*.1))>1e-8:raise ValueError('progress clock')
+        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,process_completed=completed,cycles=cycles,last_time=last_time,phase='fixed_b_continuation',inference_device='cpu',gpu_training=False)
+    except (OSError,ValueError,KeyError,subprocess.SubprocessError):return {'verified':False,'observation_state':'unavailable'}
 
 
 def _pressure_aux_training(root):
