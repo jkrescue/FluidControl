@@ -529,6 +529,7 @@ function renderActiveExperiment(d){
   if(d.b04_i_training?.terminal_verified){const s=d.b04_i_training;$('lead-monitor').textContent=`I训练已完成并核验256窗口/32更新；固定开发评估未通过：单步后柱Cl MAE较B增加${(100*s.development_h1_relative_change.rearCl).toFixed(2)}%、总Cd MAE增加${(100*s.development_h1_relative_change.totalCd).toFixed(2)}%，保留B，不推进I的PPO/CFD。已绑定本轮训练、评估与CFD均结束；当前受管科学任务以实时任务查询为准。B已完成跨已验证恢复的1600个真实反馈区间，不是单个无中断进程。FNO用于PPO策略训练环境；部署是CPU PPO＋真实OpenFOAM，无在线FNO/MPC。完整代理精度仍未达标，不代表项目全部完成。`;}
   if(d.b_h5_mpc_cfd?.verified){const m=d.b_h5_mpc_cfd;if(m.terminal_verified){$('lead-now').textContent='两层交付状态：基本真实闭环已完成，默认B的E114延长段仍按原标准通过；高精度FNO/泛化/MPC仍未达标，继续单列研究。';$('lead-monitor').textContent=`B-H5 MPC十周期工程探索已结束并独审：动作与旧K1试验完全相同，配对减阻 ${num(100*m.drag_reduction,6)}%，rear-Cl波动比 ${num(m.rear_cl_rms_ratio,6)}；未改善执行控制，四项selected-next-step受力MAE也均更大。该段仅1 D/U，不能替代长期物理门；原预测FAIL、B-PPO默认策略和E114的4.1326%减阻/0.82077波动比/1.2352%偏置均保持。本次MPC已结束，其他作业以实时任务列表为准；无需降低已通过的10%物理偏置门限。`;}else{$('lead-now').textContent=`当前实际工作：B气动力代理的因果历史 H5 MPC，CPU 在线选择动作＋配对真实 OpenFOAM；已完成 ${m.cycles}/10 个工程反馈周期${m.last_time==null?'':`，流动时刻 ${num(m.last_time,1)}`}。${m.running?'任务正在运行':m.process_completed?'进程已结束，等待独立终态核验':'进程停止/失败，等待诊断'}。`;$('lead-monitor').textContent=`unit ${m.unit}；inv ${m.invocation}；PID ${m.pid}；最近动作 ${m.selected_omega==null?'尚无':num(m.selected_omega,4)}。这是 CPU B-H5 MPC 探索，不是 GPU 训练，也不是冻结 B-PPO 的重复运行；已交付的 B-PPO/E114 物理结果与默认策略保持不变。10周期只作工程接线验证，未独审前不宣称减阻或完整预测通过；原预测精度 FAIL 不变。`;}}
   if(d.temporal_increment_training?.verified){const t=d.temporal_increment_training,l=t.latest_window||{},u=t.latest_update||{};if(t.terminal_verified){$('lead-now').textContent='时序增量辅助训练已完成并通过工程独审，但原保留规则未通过；候选未采用。';$('lead-monitor').textContent=`256窗口/32更新完成。固定六窗H1较B变化 ${num(100*t.retention.h1.relative_change,6)}%，连续AR100变化 +${num(100*t.retention.ar.relative_change,6)}%；H1微降、AR微升，原两项均不退化AND为FAIL，不把微小差异包装成改善。保留B与E114基本闭环；未运行dev、PPO或新CFD，完整代理精度仍未达成。`;}else{$('lead-now').textContent=`当前实际工作：时序增量辅助气动力FNO训练，窗口 ${t.windows}/256、更新 ${t.updates}/32；${t.running?'训练进程正在运行（配置GPU0）':t.process_completed?'训练进程已结束，等待独立终态核验':'进程停止/失败，等待诊断'}。`;$('lead-monitor').textContent=`最近完整窗口${l.consumed??'尚无'}：原受力误差 ${Number.isFinite(l.original_total_loss)?num(l.original_total_loss,8):'未知'}，相邻时刻变化误差 ${Number.isFinite(l.temporal_increment_loss)?num(l.temporal_increment_loss,8):'未知'}，训练总目标 ${Number.isFinite(l.training_objective)?num(l.training_objective,8):'未知'}（本次权重为1，加权变化项 ${Number.isFinite(l.temporal_increment_weighted_loss)?num(l.temporal_increment_weighted_loss,8):'未知'}）。资源：CPU配额${t.cpu_quota_percent}%，内存 ${num(t.memory_current/2**30,2)}/${num(t.memory_max/2**30,0)} GiB（peak ${num(t.memory_peak/2**30,2)} GiB，swap上限 ${num(t.swap_max/2**30,0)} GiB），配置GPU0。最近更新${u.update??'尚无'}的裁剪前梯度范数 ${Number.isFinite(u.preclip_mean_gradient_norm)?num(u.preclip_mean_gradient_norm,6):'未知'}、裁剪比例 ${Number.isFinite(u.applied_clip_scale)?num(u.applied_clip_scale,6):'未知'}。这是训练日志，不代表精度改善或准入；独立评估前B/E114交付与原预测FAIL保持。`;}}
+  if(d.fixed_small_fit?.verified){const f=d.fixed_small_fit,a=f.latest_accepted||{};if(f.failed){$('lead-now').textContent='固定40点训练内拟合诊断进程工程失败，尚未形成可接受拟合结论。';$('lead-monitor').textContent=`实际unit已结束（inv ${f.invocation}，exit ${f.exit_status}），已接受优化步${f.accepted_steps}。它不是容量或科学假设失败，也没有“最佳试探值”。B-PPO＋真实OpenFOAM的E114基本闭环仍按原标准通过：减阻4.1326%、后柱升力波动比0.82077、偏置1.2352%；完整代理精度仍未达标。`;}else{$('lead-now').textContent=`固定40点训练内拟合诊断${f.terminal_verified?'已结束并独立核验':f.running?'正在运行':f.process_completed?'已结束，等待独立核验':'停止/失败，等待诊断'}；已接受优化步 ${f.accepted_steps}/200，closure ${f.closures}/300。${f.terminal_verified?'固定预算内未达到四通道0.01目标，但误差仍持续下降；不解释为停滞或容量不足。':''}`;$('lead-monitor').textContent=`最近已接受步${a.outer??'尚无'}：接受点目标误差 ${Number.isFinite(a.loss)?num(a.loss,8):'未知'}，四通道归一化RMSE ${Array.isArray(a.normalized_rmse)?a.normalized_rmse.map(x=>num(x,6)).join(' / '):'未知'}；物理total-Cd MAE ${Number.isFinite(a.total_cd_mae)?num(a.total_cd_mae,6):'未知'}，rear-Cl MAE ${Number.isFinite(a.rear_cl_mae)?num(a.rear_cl_mae,6):'未知'}。只显示优化器返回后重新测量的接受点；线搜索trial值不展示、不当作最佳结果。R1在模型加载精度校验处工程失败、0前向/0优化器，已保留且不是科学失败；R2只修加载顺序。该诊断未保存候选、未运行dev/PPO/CFD，也不是代理准入；E114基本闭环已交付，完整代理精度仍未达标。inv ${f.invocation}。`;}}
   return;
  }
   if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5210,6 +5211,7 @@ class Handler(BaseHTTPRequestHandler):
             data['b04_i_training'] = _b04_i_training(self.root)
             data['b_h5_mpc_cfd'] = _b_h5_mpc_cfd(self.root)
             data['temporal_increment_training'] = _temporal_increment_training(self.root)
+            data['fixed_small_fit'] = _fixed_small_fit(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5555,6 +5557,132 @@ def _canonical_b01_reproduction(root):
                 'memory_gib': int(memory) / 1024**3 if memory.isdigit() else None}
     except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
         return {'verified': False}
+
+
+def _fixed_small_fit(root):
+    unit = 'fluid-control-p064-fixed-small-fit-r2-20261007.service'
+    invocation = 'a36a5f0f9d21455c84e7cf0c85e67d9f'
+    approval_sha256 = 'f3f5701dca46f10e31647b843cd1e4840d2f90d4f1fc2b12645e30d70b91a6ba'
+    approval = root / 'docs/P064_FIXED_SMALL_FIT_R2_APPROVAL_20261007.json'
+    output = root / 'artifacts/p064_fixed_small_fit_r2_20261007'
+    try:
+        if hashlib.sha256(approval.read_bytes()).hexdigest() != approval_sha256:
+            raise ValueError('approval identity')
+        approved = json.loads(approval.read_text())
+        if (approved.get('status') != 'P064_FIXED_SMALL_FIT_R2_RECOVERY_EXECUTION_APPROVED'
+                or approved.get('execution_authorized') is not True
+                or approved.get('unit') != unit
+                or (root / approved.get('output', '')).resolve() != output.resolve()):
+            raise ValueError('approval contract')
+        for key, digest in (
+                ('driver', '2f43366dde682bfc8e7fadf76140ddb2c5dc5ce7d4b4d0d5077ad17f9bf85c9c'),
+                ('core', 'e0623157281a041b05257d9843ca46e8e1557ffca83c5872d9280fbacdd5a6c0')):
+            item = approved[key]
+            path = root / item['path']
+            if item['sha256'] != digest or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+                raise ValueError(key + ' identity')
+        raw = subprocess.check_output(
+            ['systemctl', '--user', 'show', unit, '-p', 'InvocationID', '-p', 'MainPID',
+             '-p', 'ActiveState', '-p', 'SubState', '-p', 'Result', '-p',
+             'ExecMainStatus', '-p', 'ExecStart', '-p', 'CPUQuotaPerSecUSec',
+             '-p', 'MemoryCurrent', '-p', 'MemoryPeak', '-p', 'MemoryMax',
+             '-p', 'MemorySwapMax'], text=True, timeout=3)
+        state = dict(line.split('=', 1) for line in raw.splitlines() if '=' in line)
+        terminal_pins = (
+            ('docs/P064_FIXED_SMALL_FIT_R2_INDEPENDENT_REVIEW_20261007.md',
+             'e9cf0c968e53e040efcd75167858a03d3a3e9ea5c1812d6edc3f14dede756532'),
+            ('artifacts/p064_fixed_small_fit_r2_20261007/result.json',
+             'cfee8ea602cc70990094041acc10d6fcaa723be5179905fa6e3bc2b57d6c1d6c'),
+            ('artifacts/p064_fixed_small_fit_r2_20261007/supervisor_receipt.json',
+             '607bcb742c8805fd1bc468ed922f930564b93facb63e6546402f46c6dad7d891'))
+        terminal_verified = all((root / name).is_file()
+                                and hashlib.sha256((root / name).read_bytes()).hexdigest() == digest
+                                for name, digest in terminal_pins)
+        if state.get('InvocationID') != invocation:
+            if not (terminal_verified and not state.get('InvocationID')):
+                raise ValueError('unit invocation')
+        elif (str(root / approved['driver']['path']) not in state.get('ExecStart', '')
+              or str(approval) not in state.get('ExecStart', '')
+              or approval_sha256 not in state.get('ExecStart', '')
+              or '--execute' not in state.get('ExecStart', '')):
+            raise ValueError('unit identity')
+        accepted = []
+        trials = 0
+        progress = output / 'progress.jsonl'
+        if progress.is_file():
+            for line in progress.read_text().splitlines():
+                row = json.loads(line)
+                if row.get('event') == 'lbfgs_trial_closure':
+                    if row.get('trial_not_accepted') is not True:
+                        raise ValueError('trial semantics')
+                    trials += 1
+                    continue
+                if row.get('event') != 'lbfgs_returned_point':
+                    raise ValueError('unknown progress event')
+                measurement = row['measurement']
+                values = [float(measurement['loss']),
+                          *[float(value) for value in measurement['normalized_rmse']]]
+                physical_rmse = [float(value) for value in measurement['physical_rmse']]
+                total_cd_rmse = float(measurement['total_cd_physical']['rmse'])
+                physical_mae = [float(value) for value in measurement['physical_mae']]
+                total_cd_mae = float(measurement['total_cd_physical']['mae'])
+                if (len(values) != 5 or len(physical_rmse) != 4
+                        or len(physical_mae) != 4
+                        or not all(math.isfinite(value) for value in (*values, *physical_rmse,
+                                                                      *physical_mae, total_cd_rmse,
+                                                                      total_cd_mae))):
+                    raise ValueError('accepted measurement')
+                accepted.append(dict(outer=int(row['outer']), closures=int(row['closures']),
+                                     loss=values[0], normalized_rmse=values[1:],
+                                     total_cd_mae=total_cd_mae,
+                                     rear_cl_mae=physical_mae[3]))
+        if [row['outer'] for row in accepted] != list(range(1, len(accepted) + 1)):
+            raise ValueError('accepted sequence')
+        closures = max(trials, accepted[-1]['closures'] if accepted else 0)
+        if not 0 <= len(accepted) <= 200 or not 0 <= closures <= 300:
+            raise ValueError('budget')
+        pid = int(state.get('MainPID') or 0)
+        running = pid > 0 and state.get('ActiveState') == 'active' and state.get('SubState') == 'running'
+        completed = terminal_verified or (pid == 0 and state.get('SubState') in ('exited', 'dead', 'failed'))
+        failed = completed and (state.get('Result') != 'success' or state.get('ExecMainStatus') != '0')
+        if terminal_verified:
+            result = json.loads((root / terminal_pins[1][0]).read_text())
+            receipt = json.loads((root / terminal_pins[2][0]).read_text())
+            child = json.loads((output / 'child.json').read_text())
+            if (result.get('status') != 'BUDGET_STOP_NOT_FITTED'
+                    or result.get('closures') != 300 or len(result.get('records', ())) != 141
+                    or len(accepted) != 140 or closures != 300
+                    or receipt.get('approval_sha256') != approval_sha256
+                    or receipt.get('returncode') != 0 or receipt.get('error') is not None
+                    or child.get('execution', {}).get('InvocationID') != invocation):
+                raise ValueError('terminal evidence')
+            failed = False
+        if failed:
+            receipt = json.loads((output / 'supervisor_receipt.json').read_text())
+            if (receipt.get('approval_sha256') != approval_sha256
+                    or receipt.get('returncode') != 1
+                    or receipt.get('error') != "RuntimeError('worker failed')"
+                    or accepted):
+                raise ValueError('failure receipt')
+        def unit_number(name, *, quota=False):
+            value = state.get(name, '')
+            if value in ('', '[not set]', 'infinity'):
+                return None
+            return int(float(value.removesuffix('s')) * 100) if quota else int(value)
+        return dict(verified=True, unit=unit, invocation=invocation, pid=pid,
+                    running=running, process_completed=completed, failed=failed,
+                    terminal_verified=terminal_verified,
+                    exit_status=int(state.get('ExecMainStatus') or 0),
+                    accepted_steps=len(accepted), closures=closures,
+                    latest_accepted=accepted[-1] if accepted else None,
+                    trial_values_displayed=False, scientific_admission=False,
+                    cpu_quota_percent=unit_number('CPUQuotaPerSecUSec', quota=True),
+                    memory_current=unit_number('MemoryCurrent'),
+                    memory_peak=unit_number('MemoryPeak'), memory_max=unit_number('MemoryMax'),
+                    swap_max=unit_number('MemorySwapMax'))
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
+            subprocess.SubprocessError):
+        return {'verified': False, 'observation_state': 'unavailable'}
 
 
 def _temporal_increment_training(root):
