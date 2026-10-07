@@ -490,3 +490,9 @@ Keep the original prediction FAIL and B as the deployed default. The saved six-b
 The fixed intervention completed its only authorized 256-window/32-update run and independent engineering audit. H1 changed by `-0.0137219195%`, but continuous AR100 changed by `+0.0191286021%`; therefore the unchanged two-metric nondegradation AND fails. The effect sizes are recorded without being promoted as meaningful improvement or used to alter thresholds.
 
 Retain B and the already accepted E114 PPO/OpenFOAM delivery. Do not run development inference, PPO, CFD, a weight sweep, or another temporal-increment training variant from this result. The next representation/fit evidence review is preparation only until separately approved and executed; complete surrogate precision remains unresolved.
+
+## 2026-10-07 — Forty train points do not establish a fit plateau or surrogate admission
+
+The fixed 40-point LBFGS diagnostic materially reduced its exact accepted-point train loss but exhausted the predeclared 300-closure budget before any of the four normalized RMSE channels reached `.01`. Because the last accepted points were still improving, do not label this as optimizer stagnation, insufficient capacity, insufficient inputs, or convergence. Line-search trial values are never candidate-best evidence; only the 140 returned, remeasured accepted points are reported. No model was saved.
+
+Keep the already delivered B PPO/OpenFOAM E114 result and its original physical gates unchanged. Complete surrogate precision remains a separate unmet target. The next authorized activity is preparation only for the same bounded fitting question on the original 256 H1 schedule (192 original plus 64 controlled windows), with unchanged force weights; it is not yet a GPU execution authorization and must not be used to lower prediction or physical standards.

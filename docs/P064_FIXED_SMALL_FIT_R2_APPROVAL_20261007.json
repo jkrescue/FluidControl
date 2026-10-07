@@ -1,0 +1,100 @@
+{
+  "status": "P064_FIXED_SMALL_FIT_R2_RECOVERY_EXECUTION_APPROVED",
+  "execution_authorized": true,
+  "driver": {
+    "path": "artifacts/p064_fixed_small_fit_r2_source_20261007_immutable/run_fixed_small_fit.py",
+    "sha256": "2f43366dde682bfc8e7fadf76140ddb2c5dc5ce7d4b4d0d5077ad17f9bf85c9c"
+  },
+  "core": {
+    "path": "artifacts/p064_fixed_small_fit_r2_source_20261007_immutable/bounded_lbfgs.py",
+    "sha256": "e0623157281a041b05257d9843ca46e8e1557ffca83c5872d9280fbacdd5a6c0"
+  },
+  "reference_driver": {
+    "path": "artifacts/p064_k1bg_b00_train_fit_source_20261007_immutable/diagnose_k1bg_b00_train_fit.py",
+    "sha256": "0022521f674400668625b71b02828e881f897bb8f7c8545f37c595566b506b5e"
+  },
+  "reference_approval": {
+    "path": "docs/P064_K1BG_B00_TRAIN_FIT_APPROVAL_20261007.json",
+    "sha256": "d03794c76333d3be9cc89d400f60d0928b3ec4fa11810d1e45955844c6875150"
+  },
+  "reference_result": {
+    "path": "artifacts/p064_k1bg_b00_train_fit_20261007/result.json",
+    "sha256": "bb256396fe174f7d1f8ef3cd68a06bc1653c0e8ff039604714479f44391da26c"
+  },
+  "unit": "fluid-control-p064-fixed-small-fit-r2-20261007.service",
+  "output": "artifacts/p064_fixed_small_fit_r2_20261007",
+  "runtime_versions": {
+    "torch": "2.14.1",
+    "numpy": "2.5.3",
+    "nvidia-physicsnemo": "2.2.2"
+  },
+  "resources": {
+    "memory_bytes": 25769803776,
+    "swap_bytes": 0,
+    "cpu_quota_percent": 400,
+    "tasks_max": 64,
+    "inner_seconds": 1200,
+    "outer_seconds": 1230,
+    "stop_seconds": 20,
+    "allocator_bytes": 17179869184,
+    "startup_available_gib": 50,
+    "runtime_available_gib": 22,
+    "physical_reserve_gib": 20
+  },
+  "protocol": {
+    "parent": "B",
+    "starts": [
+      0,
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700
+    ],
+    "leads": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "points": 40,
+    "microbatch": 10,
+    "max_outer": 200,
+    "max_closures": 300,
+    "history_size": 5,
+    "lr": 1,
+    "line_search": "strong_wolfe",
+    "clip": null,
+    "weight_decay": 0,
+    "fit_channel_normalized_rmse": 0.01,
+    "precision": "highest_no_tf32",
+    "no_candidate_save": true,
+    "no_dev": true
+  },
+  "plan": {
+    "path": "docs/P064_FIXED_SMALL_FIT_PLAN_20261007.md",
+    "sha256": "9814e91783f3575fa15472818723b26c58a1958f229b13e39c5435024cf1ab18"
+  },
+  "preparation_record": {
+    "path": "/tmp/p064-fixed-small-fit-review/PENDING_R2_FROZEN.json",
+    "sha256": "5326463ac8caef54feb23e993109e4f1dee7239cdf5fb787f3cc2af2a3c412f1"
+  },
+  "runtime_notes": "Final approved 24GiB cgroup/16GiB allocator. Fit deadline1140s reserves60s within1200s supervisor. Each LBFGS closure is a trial; only remeasured returned points are accepted-point evidence. Budget/optimization failure is not capacity failure or prediction admission.",
+  "recovery": {
+    "r1_invocation": "95cb2c7ac66543cdbc143c8038dcbcd7",
+    "r1_approval": {
+      "path": "docs/P064_FIXED_SMALL_FIT_APPROVAL_20261007.json",
+      "sha256": "2947f402c390656e81585dc5ae8c02354170cf981ad0cc5ab71bae4d28e26a89"
+    },
+    "r1_outcome": "Load-time precision validator exit1; no forward/optimizer; all R1 evidence retained",
+    "only_code_change": "Set high/TF32 true before original B loader, then original highest/noTF32 before any model forward, exactly as E105 load sequence. Objective/data/optimizer/resource unchanged."
+  },
+  "lead_authorization": {
+    "at_utc": "2026-10-07T08:30:36Z",
+    "scope": "ONE R2 recovery only; Root is sole launcher. Exact2f43366d worker/e062 core, no objective/data/budget change.",
+    "evidence": "Recovery actual curator 5PASS/.82s; Root 5PASS/.65s; producer actual curator5PASS and frozen metadata noexecutePASS. Preserve R1; no automatic retry or follow-up."
+  }
+}
