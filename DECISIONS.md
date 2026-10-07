@@ -484,3 +484,9 @@ Retain B as the delivered controller/surrogate baseline. Do not tune I, choose a
 ## 2026-10-07 — Short saved reward evidence does not admit a controller
 
 Keep the original prediction FAIL and B as the deployed default. The saved six-branch diagnostic shows that short-horizon drag direction is often recoverable, but exact canonical cumulative reward still has fixed action-ranking errors and drag-only choices carry material rear-lift cost. Do not tune reward weights, lower physical gates, or repeat the old K1 H5 experiment unchanged. The next approved work is preparation only for a scientifically distinct current-B H5 held-action MPC engineering run at start148 for ten feedback cycles. Its selector retains the frozen canonical objective and action/rate limits and has independent action authority; nonfinite prediction, state-bound failure, or bounded timeout is fail-stop in this initial run, with no new PPO-fallback dependency. Ten cycles cannot establish physical benefit; a paired 80-D/U run remains separately reviewable and must retain the original `2%/1.05/10%` criteria.
+
+## 2026-10-07 — Temporal-increment auxiliary is not promoted
+
+The fixed intervention completed its only authorized 256-window/32-update run and independent engineering audit. H1 changed by `-0.0137219195%`, but continuous AR100 changed by `+0.0191286021%`; therefore the unchanged two-metric nondegradation AND fails. The effect sizes are recorded without being promoted as meaningful improvement or used to alter thresholds.
+
+Retain B and the already accepted E114 PPO/OpenFOAM delivery. Do not run development inference, PPO, CFD, a weight sweep, or another temporal-increment training variant from this result. The next representation/fit evidence review is preparation only until separately approved and executed; complete surrogate precision remains unresolved.

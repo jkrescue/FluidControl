@@ -4,6 +4,7 @@ import math
 from pathlib import Path
 from types import SimpleNamespace
 import subprocess
+import pytest
 
 
 SOURCE = Path(__file__).resolve().parents[1] / 'scripts/serve_live_research_dashboard.py'
@@ -73,4 +74,28 @@ def test_copy_does_not_claim_improvement():
     source = SOURCE.read_text()
     assert '原受力误差' in source and '相邻时刻变化误差' in source and '训练总目标' in source
     assert '训练日志，不代表精度改善或准入' in source
+    assert 'H1微降、AR微升' in source
+    assert '未运行dev、PPO或新CFD' in source
     assert "data['temporal_increment_training'] = _temporal_increment_training(self.root)" in source
+
+
+def test_actual_terminal_evidence_when_available():
+    root = SOURCE.parents[1]
+    pins = [
+        root / 'docs/P064_TEMPORAL_INCREMENT_AUX_TERMINAL_REVIEW_20261007.md',
+        root / 'artifacts/p064_temporal_increment_terminal_audit_r2_20261007/receipt.json',
+        root / 'artifacts/p064_temporal_increment_aux_20261007/result.json',
+        root / 'artifacts/p064_temporal_increment_aux_20261007/dual_model_manifest.json',
+    ]
+    if not all(path.is_file() for path in pins):
+        pytest.skip('actual Spark terminal evidence is not present')
+    namespace = dict(Path=Path, hashlib=__import__('hashlib'), json=json,
+                     math=math, subprocess=subprocess)
+    node = next(n for n in ast.parse(SOURCE.read_text()).body
+                if isinstance(n, ast.FunctionDef) and n.name == '_temporal_increment_training')
+    exec(compile(ast.Module(body=[node], type_ignores=[]), str(SOURCE), 'exec'), namespace)
+    value = namespace['_temporal_increment_training'](root)
+    assert value['terminal_verified'] and value['windows'] == 256 and value['updates'] == 32
+    assert not value['promoted'] and value['development_evaluation'] == 'not_run'
+    assert value['retention']['h1']['nondegrading']
+    assert not value['retention']['ar']['nondegrading']
