@@ -478,6 +478,7 @@ function renderActiveExperiment(d){
   drawActualSeries('canonical-reproduction-drag',x.rows,[{key:'ppo_total_cd',label:'canonical Cd',color:'#79d5a3'},{key:'zero_total_cd',label:'zero Cd',color:'#f2c879'}],'真实CFD周期末总Cd（非窗口均值）');
   drawActualSeries('canonical-reproduction-lift',x.rows,[{key:'ppo_rear_cl',label:'canonical Cl',color:'#d994ff'},{key:'zero_rear_cl',label:'zero Cl',color:'#f69d97'}],'真实CFD周期末rear Cl');
   if(d.g_exploratory_cfd?.verified){const c=d.g_exploratory_cfd;$('lead-now').textContent=`最新G探索闭环：${c.terminal_verified?'800次真实反馈已完成并独审，六窗物理标准通过':c.running?'CPU真实反馈运行中':'进程已结束，待独审'}；${c.cycles}/800。${c.terminal_verified?'主窗减阻3.9513%、后升力波动降低18.3622%、偏置3.0717%；本任务已结束，无新训练。':''} B仍为默认，G预测FAIL未改变；当前G三曲线见 #current-closed-loop，B历史见 #canonical-reproduction。`;}
+  if(d.absolute64_training){const a=d.absolute64_training;$('lead-now').textContent=`Absolute64气动力训练：${a.status}；更新${a.updates}/64，窗口${a.windows}/512。${a.loss==null?'尚无可读loss记录（不估算）':'最近训练loss '+a.loss}。仅训练日志，不代表预测准入；B默认/G已完成闭环不变。`;$('lead-monitor').textContent=`unit ${a.unit}；inv ${a.invocation||'尚无'}；PID ${a.pid||0}；Available ${num(a.available_gib,2)} GiB。${a.note} 原G当前曲线与B历史均保留。`;}
   return;
  }
  if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5145,6 +5146,7 @@ class Handler(BaseHTTPRequestHandler):
             data['ar5_reset_g'] = _ar5_reset_g(self.root)
             data['g_exploratory_ppo'] = _g_exploratory_ppo(self.root)
             data['g_exploratory_cfd'] = _g_exploratory_cfd(self.root)
+            data['absolute64_training'] = _absolute64_training(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5489,6 +5491,56 @@ def _canonical_b01_reproduction(root):
                 'memory_gib': int(memory) / 1024**3 if memory.isdigit() else None}
     except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
         return {'verified': False}
+
+
+def _absolute64_training(root):
+    unit = 'fluid-control-p064-absolute64-arm-b-20261007.service'
+    out = dict(unit=unit, running=False, status='未启动', updates=0, windows=0,
+               invocation=None, pid=0, loss=None, available_gib=None,
+               note='等待实际批准及unit；不依据目录存在声明运行。')
+    try:
+        mem = dict(line.split(':', 1) for line in Path('/proc/meminfo').read_text().splitlines())
+        out['available_gib'] = int(mem['MemAvailable'].split()[0]) / 1024**2
+        approval = root / 'docs/P064_ABSOLUTE64_ARM_B_TRAINING_APPROVAL_20261007.json'
+        if not approval.is_file(): return out
+        spec = json.loads(approval.read_text())
+        if spec.get('execution_authorized') is not True:
+            return out
+        raw = subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','Result','-p','ExecMainStatus','-p','ExecStart'],text=True,timeout=3)
+        state = dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        inv = state.get('InvocationID','')
+        if not inv: return out
+        argv = spec['argv']
+        runner = Path(argv[2])
+        output = str(root / 'artifacts/p064_absolute64_arm_b_20261007')
+        if (spec['planned_unit'] != unit or spec['planned_output'] != output
+                or hashlib.sha256(runner.read_bytes()).hexdigest() != spec['runner_sha256']
+                or '--execute' not in argv
+                or any(str(arg) not in state.get('ExecStart','') for arg in argv)):
+            raise ValueError('unit direct-worker argv/source binding mismatch')
+        out['approval_sha256'] = hashlib.sha256(approval.read_bytes()).hexdigest()
+        out.update(invocation=inv, pid=int(state.get('MainPID','0')))
+        log = subprocess.check_output(['journalctl','--user','_SYSTEMD_INVOCATION_ID='+inv,'-n','3000','--no-pager','-o','cat'],text=True,timeout=3)
+        for line in log.splitlines():
+            try: row=json.loads(line)
+            except ValueError: continue
+            if row.get('event')=='training_window_complete': out['windows']=max(out['windows'],int(row['consumed']))
+            if row.get('event')=='accumulation_update_complete':
+                if row.get('updates_total')!=64: raise ValueError('wrong update budget')
+                out['updates']=max(out['updates'],int(row['update']))
+        if not 0<=out['updates']<=64 or not 0<=out['windows']<=512:
+            raise ValueError('progress outside fixed budget')
+        out['running'] = out['pid']>0 and state.get('ActiveState')=='active' and state.get('SubState')=='running'
+        if out['running']:
+            out.update(status='实际运行中',note='GPU气动力分支训练；flow冻结，不是PPO或CFD。')
+        elif state.get('Result')=='success' and state.get('ExecMainStatus')=='0':
+            out.update(status='进程成功结束，待独审',note='exit0不是科学准入；不从旧32更新候选读取指标。')
+        else:
+            out.update(status='进程已停止/失败，待诊断',note='不自动重启，不把终态显示为running。')
+        return out
+    except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError) as exc:
+        out.update(running=False,status='状态不可核验',note=str(exc),updates=0,windows=0)
+        return out
 
 
 def _response_aux_e(root):
