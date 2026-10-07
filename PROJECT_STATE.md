@@ -1,10 +1,12 @@
 # PROJECT_STATE — 串联双圆柱主动流动控制
 
-## 当前唯一摘要 — temporal probe R3工程终态通过；不是候选，B默认/G闭环与预测FAIL保留
+## 当前唯一摘要 — Absolute64已实际启动；B默认/G闭环与预测FAIL保留
+
+FC-E107启动快照（实际采样 `2026-10-07T00:33:18Z`，不是永久running声明）：unit `fluid-control-p064-absolute64-arm-b-20261007.service`，invocation `3c9d8e1bb01649a3b11c892159a73a2b`，PID2799035 active/running；journal已35/512窗口、4/64更新。批准 [P064_ABSOLUTE64_ARM_B_TRAINING_APPROVAL_20261007.json](docs/P064_ABSOLUTE64_ARM_B_TRAINING_APPROVAL_20261007.json) SHA `705c596861cdfaafa9bcd5e10ffeea2f37cbe36cf59c816e019183e92a44d500`；冻结runner `d24de464bd85732a89404cdb91eeef13fff5b17c96e2f73789d06e6ef39aecc4`。output `artifacts/p064_absolute64_arm_b_20261007`。从原K1起点按B固定256窗顺序连续两遍，单一AdamW、64updates/512windows，仅保存最终update64；update32须与原B tensor精确一致。24GiB/noSwap、allocator16GiB、CPU800%、3600/3660秒、Available50启动/22运行/20保留。实时进程以dashboard实际unit状态为准；窗口与更新计数不是预测改善、终态或准入。没有读取live checkpoint，未启动新PPO/CFD。
 
 FC-E106无保存probe同 `7b7e12c6f9374a1da4b8ca7dd44a6030` PID0/exited/exit0，采用[既有独审报告](docs/P064_TEMPORAL_FORCE_DELTA_PROBE_TERMINAL_REVIEW_20261007.md) SHA `95b014d76e12706148751c7d7affa52cf32971a8a4ddebfcf448588ae764fe9c`。固定b00训练start0/H100、同K1，两臂各1个真实AdamW step、0保存：absolute total `.007118585985→.006863759831`，residual `.624243736267→.624100089073`；residual H1略升，仍远劣absolute。只是单训练窗工程/梯度证据，未做开发验证、未产生候选或准入。独审核算记录算术/身份/梯度清单，不能从未保存的预测和模型独立重算loss。result `200b7763b1fa73bd1380fbcc00c4645f7096f2cd0501a3e6482816b2d071bb17`，receipt `c4c82f24a8188b8aa94a54c7f438879a31231ef7a8cbdee6e0c8b9067df33d5a`。R3采用24GiB/noSwap、16GiB allocator；wall22.17秒，最低Available105.288GiB。
 
-下一Lead条件批准方向为原B absolute固定延长至64updates，仍待spec/原runtime核验，当前未启动；不由此probe推断32步未收敛或64步必然有效，不自动训练/更换控制器。B默认、G已完成单工况物理闭环及原预测FAIL保持。
+此前原B absolute64updates条件批准已完成必要绑定并转为上述唯一实际启动；不由probe推断32步未收敛或64步必然有效，不自动延长/更换控制器。B默认、G已完成单工况物理闭环及原预测FAIL保持。
 
 FC-E105已终态独审：[报告](docs/P064_K1BG_B00_TRAIN_FIT_TERMINAL_REVIEW_20261007.md) SHA `1f0516357ffc069a9c516e080c68554af073cfcaa8406caccfabb63d7b4e4d20`，result `bb256396fe174f7d1f8ef3cd68a06bc1653c0e8ff039604714479f44391da26c`。同 `04335bedb4954871ac118381da81721c` PID0/exited/exit0；120行＝K1/B/G×8固定b00训练起点×5个真实状态单步，40三方输入/动作/target配对、2025统计复算差0；120aero/0flow/0optimizer。全部40点 rearCl/totalCd MAE：K1 .200856927/.051195516，B .181738779/.050531504，G .179079254/.046448530。B/G确有训练轨迹拟合改善，但残差仍在；不是5步AR、独立泛化或收敛证明，不改G原选择FAIL。906项来源/大文件inventory验证另属工程交付检查，不是E105新增模型计算。
 
