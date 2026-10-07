@@ -528,6 +528,7 @@ function renderActiveExperiment(d){
   if(d.b04_i_training){const s=d.b04_i_training;$('lead-monitor').textContent=s.verified?`当前研究：I气动力预测模块${s.running?'正在训练':s.process_completed?'训练进程已结束，等待独审':'进程已停止/失败，待诊断'}，真实日志窗口${s.windows}/256、更新${s.updates}/32；loss未在当前日志报告，不估算。流场网络冻结，不是PPO训练或CFD。实际内存${s.memory?.MemoryCurrent!=null?(s.memory.MemoryCurrent/2**30).toFixed(2)+' GiB':'未知'}；上限${s.memory?.MemoryMax!=null?(s.memory.MemoryMax/2**30).toFixed(0)+' GiB':'未知'}。B基本闭环交付及下方真实曲线保持，训练日志不代表预测准入。`:'当前I训练状态暂不可读取，不推断任务已结束；B基本闭环与真实曲线保留。';}
   if(d.b04_i_training?.terminal_verified){const s=d.b04_i_training;$('lead-monitor').textContent=`I训练已完成并核验256窗口/32更新；固定开发评估未通过：单步后柱Cl MAE较B增加${(100*s.development_h1_relative_change.rearCl).toFixed(2)}%、总Cd MAE增加${(100*s.development_h1_relative_change.totalCd).toFixed(2)}%，保留B，不推进I的PPO/CFD。已绑定本轮训练、评估与CFD均结束；当前受管科学任务以实时任务查询为准。B已完成跨已验证恢复的1600个真实反馈区间，不是单个无中断进程。FNO用于PPO策略训练环境；部署是CPU PPO＋真实OpenFOAM，无在线FNO/MPC。完整代理精度仍未达标，不代表项目全部完成。`;}
   if(d.b_h5_mpc_cfd?.verified){const m=d.b_h5_mpc_cfd;if(m.terminal_verified){$('lead-now').textContent='两层交付状态：基本真实闭环已完成，默认B的E114延长段仍按原标准通过；高精度FNO/泛化/MPC仍未达标，继续单列研究。';$('lead-monitor').textContent=`B-H5 MPC十周期工程探索已结束并独审：动作与旧K1试验完全相同，配对减阻 ${num(100*m.drag_reduction,6)}%，rear-Cl波动比 ${num(m.rear_cl_rms_ratio,6)}；未改善执行控制，四项selected-next-step受力MAE也均更大。该段仅1 D/U，不能替代长期物理门；原预测FAIL、B-PPO默认策略和E114的4.1326%减阻/0.82077波动比/1.2352%偏置均保持。本次MPC已结束，其他作业以实时任务列表为准；无需降低已通过的10%物理偏置门限。`;}else{$('lead-now').textContent=`当前实际工作：B气动力代理的因果历史 H5 MPC，CPU 在线选择动作＋配对真实 OpenFOAM；已完成 ${m.cycles}/10 个工程反馈周期${m.last_time==null?'':`，流动时刻 ${num(m.last_time,1)}`}。${m.running?'任务正在运行':m.process_completed?'进程已结束，等待独立终态核验':'进程停止/失败，等待诊断'}。`;$('lead-monitor').textContent=`unit ${m.unit}；inv ${m.invocation}；PID ${m.pid}；最近动作 ${m.selected_omega==null?'尚无':num(m.selected_omega,4)}。这是 CPU B-H5 MPC 探索，不是 GPU 训练，也不是冻结 B-PPO 的重复运行；已交付的 B-PPO/E114 物理结果与默认策略保持不变。10周期只作工程接线验证，未独审前不宣称减阻或完整预测通过；原预测精度 FAIL 不变。`;}}
+  if(d.temporal_increment_training?.verified){const t=d.temporal_increment_training,l=t.latest_window||{},u=t.latest_update||{};$('lead-now').textContent=`当前实际工作：时序增量辅助气动力FNO训练，窗口 ${t.windows}/256、更新 ${t.updates}/32；${t.running?'训练进程正在运行（配置GPU0）':t.process_completed?'训练进程已结束，等待独立终态核验':'进程停止/失败，等待诊断'}。`;$('lead-monitor').textContent=`最近完整窗口${l.consumed??'尚无'}：原受力误差 ${Number.isFinite(l.original_total_loss)?num(l.original_total_loss,8):'未知'}，相邻时刻变化误差 ${Number.isFinite(l.temporal_increment_loss)?num(l.temporal_increment_loss,8):'未知'}，训练总目标 ${Number.isFinite(l.training_objective)?num(l.training_objective,8):'未知'}（本次权重为1，加权变化项 ${Number.isFinite(l.temporal_increment_weighted_loss)?num(l.temporal_increment_weighted_loss,8):'未知'}）。资源：CPU配额${t.cpu_quota_percent}%，内存 ${num(t.memory_current/2**30,2)}/${num(t.memory_max/2**30,0)} GiB（peak ${num(t.memory_peak/2**30,2)} GiB，swap上限 ${num(t.swap_max/2**30,0)} GiB），配置GPU0。最近更新${u.update??'尚无'}的裁剪前梯度范数 ${Number.isFinite(u.preclip_mean_gradient_norm)?num(u.preclip_mean_gradient_norm,6):'未知'}、裁剪比例 ${Number.isFinite(u.applied_clip_scale)?num(u.applied_clip_scale,6):'未知'}。这是训练日志，不代表精度改善或准入；独立评估前B/E114交付与原预测FAIL保持。`;}
   return;
  }
   if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5208,6 +5209,7 @@ class Handler(BaseHTTPRequestHandler):
             data['b04_data_stage'] = _b04_data_stage(self.root)
             data['b04_i_training'] = _b04_i_training(self.root)
             data['b_h5_mpc_cfd'] = _b_h5_mpc_cfd(self.root)
+            data['temporal_increment_training'] = _temporal_increment_training(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5553,6 +5555,88 @@ def _canonical_b01_reproduction(root):
                 'memory_gib': int(memory) / 1024**3 if memory.isdigit() else None}
     except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
         return {'verified': False}
+
+
+def _temporal_increment_training(root):
+    unit = 'fluid-control-p064-temporal-increment-aux-20261007.service'
+    invocation = '0d2508de79b646f08c87d7c0f0c1d53c'
+    approval_sha256 = '98f5638ae454e532b9ddb22b90937c95468214400b0cfe31b3031f7e3dc565f2'
+    approval = root / 'docs/P064_TEMPORAL_INCREMENT_AUX_TRAINING_APPROVAL_20261007.json'
+    output = root / 'artifacts/p064_temporal_increment_aux_20261007'
+    try:
+        if hashlib.sha256(approval.read_bytes()).hexdigest() != approval_sha256:
+            raise ValueError('approval identity')
+        approved = json.loads(approval.read_text())
+        if (approved.get('status') != 'FC_P064_TEMPORAL_INCREMENT_AUX_TRAINING_EXECUTION_APPROVED'
+                or approved.get('execution_authorized') is not True
+                or approved.get('planned_unit') != unit
+                or Path(approved.get('planned_output', '')).resolve() != output.resolve()):
+            raise ValueError('approval contract')
+        runner = Path(approved['argv'][2])
+        if hashlib.sha256(runner.read_bytes()).hexdigest() != approved['runner_sha256']:
+            raise ValueError('runner identity')
+        raw = subprocess.check_output(
+            ['systemctl', '--user', 'show', unit, '-p', 'InvocationID', '-p', 'MainPID',
+             '-p', 'ActiveState', '-p', 'SubState', '-p', 'Result', '-p',
+             'ExecMainStatus', '-p', 'ExecStart', '-p', 'CPUQuotaPerSecUSec',
+             '-p', 'MemoryCurrent', '-p', 'MemoryPeak', '-p', 'MemoryMax',
+             '-p', 'MemorySwapMax'], text=True, timeout=3)
+        state = dict(line.split('=', 1) for line in raw.splitlines() if '=' in line)
+        if (state.get('InvocationID') != invocation or str(runner) not in state.get('ExecStart', '')
+                or str(output) not in state.get('ExecStart', '') or '--execute' not in state.get('ExecStart', '')):
+            raise ValueError('unit identity')
+        log = subprocess.check_output(
+            ['journalctl', '--user', '_SYSTEMD_INVOCATION_ID=' + invocation,
+             '-n', '1600', '--no-pager', '-o', 'cat'], text=True, timeout=3)
+        windows = updates = 0
+        latest_window = latest_update = None
+        loss_keys = ('original_total_loss', 'temporal_increment_loss',
+                     'temporal_increment_weighted_loss', 'training_objective')
+        for line in log.splitlines():
+            try:
+                row = json.loads(line)
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if row.get('event') == 'training_window_complete':
+                consumed = int(row['consumed'])
+                values = {key: float(row[key]) for key in loss_keys}
+                if not all(math.isfinite(value) for value in values.values()):
+                    raise ValueError('nonfinite window loss')
+                if consumed >= windows:
+                    windows = consumed
+                    latest_window = dict(consumed=consumed, **values)
+            elif row.get('event') == 'accumulation_update_complete':
+                update = int(row['update'])
+                values = {key: float(row[key]) for key in
+                          ('original_total_loss', 'temporal_increment_loss',
+                           'training_objective')}
+                values.update(preclip_mean_gradient_norm=float(row['preclip_mean_gradient_norm']),
+                              applied_clip_scale=float(row['applied_clip_scale']),
+                              consumed_windows=int(row['consumed_windows']))
+                if not all(math.isfinite(value) for key, value in values.items()
+                           if key != 'consumed_windows'):
+                    raise ValueError('nonfinite update')
+                if update >= updates:
+                    updates = update
+                    latest_update = dict(update=update, **values)
+        if not 0 <= windows <= 256 or not 0 <= updates <= 32:
+            raise ValueError('budget')
+        pid = int(state['MainPID'])
+        running = pid > 0 and state.get('ActiveState') == 'active' and state.get('SubState') == 'running'
+        completed = (pid == 0 and state.get('SubState') == 'exited'
+                     and state.get('Result') == 'success' and state.get('ExecMainStatus') == '0')
+        return dict(verified=True, unit=unit, invocation=invocation, pid=pid,
+                    running=running, process_completed=completed, windows=windows,
+                    updates=updates, latest_window=latest_window,
+                    latest_update=latest_update,
+                    cpu_quota_percent=int(float(state['CPUQuotaPerSecUSec'].removesuffix('s')) * 100),
+                    memory_current=int(state['MemoryCurrent']),
+                    memory_peak=int(state['MemoryPeak']), memory_max=int(state['MemoryMax']),
+                    swap_max=int(state['MemorySwapMax']), gpu_device='CUDA:0',
+                    improvement_claimed=False)
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError,
+            subprocess.SubprocessError):
+        return {'verified': False, 'observation_state': 'unavailable'}
 
 
 def _b_h5_mpc_cfd(root):
