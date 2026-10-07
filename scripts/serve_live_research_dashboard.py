@@ -522,6 +522,8 @@ function renderActiveExperiment(d){
   if(d.continuation_cfd){const x=d.continuation_cfd;$('lead-monitor').textContent=(x.verified?`当前阶段：固定B策略延长真实CFD运行验证，${x.running?'运行中':x.process_completed?'进程已结束，结果待独审':'进程停止/失败，待诊断'}；${x.cycles}/800反馈周期，流动时刻${x.last_time??'初始化未知'}（328→408）。`:'延长CFD验证状态暂不可读取，不据此判断运行或结束。')+' 在线策略推理使用CPU＋真实OpenFOAM，不是GPU训练，无在线FNO/MPC；基本闭环已验证，完整FNO预测精度未达标，B默认及原2%/1.05/10%标准保持。这里只延长同工况时段，不代表独立工况或统计泛化。';}
   if(d.continuation_cfd?.terminal_verified){const c=d.continuation_cfd,m=c.primary,j=c.joined;$('lead-monitor').textContent=`固定B续跑328→408已完成并独审800周期：减阻${num(100*m.paired_drag_reduction,4)}%、后柱升力波动比${num(m.paired_rear_cl_fluctuation_rms_ratio,6)}、偏置${num(100*m.absolute_mean_rear_cl_over_paired_zero_rms,4)}%；四个20 D/U分段均通过原2%/1.05/10%标准。累计248→408单列：减阻${num(100*j.paired_drag_reduction,4)}%、波动比${num(j.paired_rear_cl_fluctuation_rms_ratio,6)}、偏置${num(100*j.absolute_mean_rear_cl_over_paired_zero_rms,4)}%。累计1600周期经历已验证恢复，不是无中断进程、独立新工况或统计泛化。下方B曲线默认显示本次续跑，可切换原b01。CPU推理＋真实OpenFOAM，无在线FNO/MPC，本轮续跑已结束，FNO完整精度未通过，B默认保持。`;}
   if(d.b04_raw_cfd){const c=d.b04_raw_cfd;$('lead-monitor').textContent=c.verified?`当前研究：b04真实CFD训练数据生成，${c.running?'正在运行':c.process_completed?'进程完成、数据待独审':'进程停止/失败、待诊断'}；求解日志时刻${c.live_time??'初始化未知'}（120→200 D/U），已写U/p场帧${c.frames}/801（含初始帧）。这是固定激励数据采集，不是反馈闭环控制，不是GPU训练；尚未转换数据或训练模型。既有B真实闭环与续跑曲线保留，完整FNO预测精度未达标；数据生成进度不代表预测改善。`:'当前b04数据生成状态暂不可读取，不据此判断已停止；保留已核验闭环结果。';}
+  if(d.continuation_cfd?.terminal_verified){const m=d.continuation_cfd.primary;$('lead-now').textContent=`基本闭环已验证：E114新增800次真实CFD反馈，减阻${num(100*m.paired_drag_reduction,6)}%、后柱升力波动降低${num(100*(1-m.paired_rear_cl_fluctuation_rms_ratio),6)}%、均值偏置${num(100*m.absolute_mean_rear_cl_over_paired_zero_rms,6)}%（上限10%）。部署是CPU PPO＋真实OpenFOAM，无在线FNO/MPC；完整模型预测精度仍未达标，是独立研究阶段。`;}
+  if(d.b04_data_stage){const s=d.b04_data_stage;$('lead-monitor').textContent=s.verified?`当前研究阶段：B04原始CFD数据已生成；VTK导出${s.running?'正在运行':s.process_completed?'进程已完成、待数据核验':'进程停止/失败、待诊断'}，已出现${s.vtk_frames}/801个internal.vtu文件（文件计数不是完整QC）。Curator/HDF${s.curator_output_exists?'输出目录已出现，执行状态尚未绑定、不据此判完成':'尚无输出，未见已绑定执行'}；本VTK作业不训练模型、不运行新CFD，不是GPU训练。下方保留E114续跑真实动作/Cd/Cl，可切原B；同工况累计1600周期经过已验证恢复，不称独立泛化。`:'B04数据处理当前状态暂不可读取；不推断仍运行或已结束。基本闭环成果和原曲线保留。';}
   return;
  }
   if(d.p064_coverage_d?.invocation){const x=d.p064_coverage_d;$('lead-now').textContent=`${x.status}：窗口 ${x.windows}/256，参数更新 ${x.updates}/32。${x.note}`;$('lead-monitor').textContent=`实际 invocation ${x.invocation}；最后训练事件 ${x.last_update_utc||'尚无'}。${x.training?'GPU气动力FNO分支训练，非PPO、非CFD':'该训练已结束；无自动新训练或CFD'}；原闭环结果在历史卡保留。`;return;}
@@ -5199,6 +5201,7 @@ class Handler(BaseHTTPRequestHandler):
             data['pressure_aux_training'] = _pressure_aux_training(self.root)
             data['continuation_cfd'] = _continuation_cfd(self.root)
             data['b04_raw_cfd'] = _b04_raw_cfd(self.root)
+            data['b04_data_stage'] = _b04_data_stage(self.root)
             from p064_dashboard_progress import b02_acquisition_status
             data['p064_b02_acquisition'] = b02_acquisition_status(self.root)
             from p064_dashboard_progress import b02_conversion_status
@@ -5544,6 +5547,25 @@ def _canonical_b01_reproduction(root):
                 'memory_gib': int(memory) / 1024**3 if memory.isdigit() else None}
     except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
         return {'verified': False}
+
+
+def _b04_data_stage(root):
+    unit='fluid-control-p064-b04-long-excitation-vtk-20261007.service'
+    inv='81fbe9225839460f9501d880ac56e6e5'
+    digest='8bcd7fe0dbcac80b78262d7179e456ad99a26e42cd9eea61753cff7c39396308'
+    approval=root/'docs/P064_B04_LONG_EXCITATION_VTK_APPROVAL_20261007.json'
+    try:
+        if hashlib.sha256(approval.read_bytes()).hexdigest()!=digest:raise ValueError('approval identity')
+        raw=subprocess.check_output(['systemctl','--user','show',unit,'-p','InvocationID','-p','MainPID','-p','ActiveState','-p','SubState','-p','Result','-p','ExecMainStatus','-p','ExecStart'],text=True,timeout=3)
+        state=dict(line.split('=',1) for line in raw.splitlines() if '=' in line)
+        if state.get('InvocationID')!=inv or str(approval) not in state.get('ExecStart','') or digest not in state.get('ExecStart','') or '--mode vtk' not in state.get('ExecStart',''):raise ValueError('unit identity')
+        pid=int(state['MainPID']);running=pid>0 and state.get('ActiveState')=='active' and state.get('SubState')=='running'
+        completed=pid==0 and state.get('SubState')=='exited' and state.get('Result')=='success' and state.get('ExecMainStatus')=='0'
+        files=(root/'artifacts/p064_b04_long_excitation_vtk_view_20261007/VTK_curator').glob('*/internal.vtu')
+        frames=sum(p.is_file() for p in files)
+        if frames>801:raise ValueError('VTK count')
+        return dict(verified=True,unit=unit,invocation=inv,pid=pid,running=running,process_completed=completed,vtk_frames=frames,target_frames=801,curator_output_exists=(root/'artifacts/p064_b04_long_excitation_curated_20261007').exists(),gpu_training=False,stage='vtk_export_only')
+    except (OSError,ValueError,KeyError,subprocess.SubprocessError):return {'verified':False,'observation_state':'unavailable'}
 
 
 def _b04_raw_cfd(root):
