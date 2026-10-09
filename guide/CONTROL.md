@@ -4,7 +4,7 @@
 
 HydroGym 将流动计算组织成控制算法可以交互的环境：接收动作、推进状态、返回观测与奖励。本项目使用环境接口接入 FNO，不直接运行平台自带案例。FNO 是预测器，SB3 PPO 学习动作，OpenFOAM 提供真实数据与最终数值验证。
 
-![训练阶段的软件分工](../research_records/report_20261007/assets/hydrogym_roles.svg)
+![训练阶段的软件分工](../research_records/assets/hydrogym_roles.svg)
 
 固定版本按 `PDEBase` 保存状态、`TransientSolver` 推进、`FlowEnv` 组织交互。`Full40CanonicalSurrogateFlow` 和 `TandemFNOStepper` 是项目适配程序；OpenFOAM 连接也由项目实现，不是 HydroGym 原生求解器配置。[固定版本接口](https://github.com/dynamicslab/hydrogym/blob/4ab9854dea3d84e38a59c25e0f5835a00cf8225f/hydrogym/core.py)
 
@@ -33,7 +33,7 @@ HydroGym 将流动计算组织成控制算法可以交互的环境：接收动�
 | 采集与学习 | 每环境 n_steps=128；4 环境共 512 条；batch=256，4 epochs |
 | 超参数 | 学习率 3×10⁻⁴，γ=0.99，GAE=0.95，clip=0.2 |
 
-![代理训练与真实 CFD 验证](../research_records/report_20261007/assets/hydrogym_training_validation.svg)
+![代理训练与真实 CFD 验证](../research_records/assets/hydrogym_training_validation.svg)
 
 训练后固定策略，在 CPU 上读取真实 CFD 观测，把动作交给 OpenFOAM，再取得下一观测。部署没有 FNO 推进，也不继续训练 PPO；HydroGym 主要用于此前策略训练。这是在线数值反馈，不是硬件实验或硬实时证明。
 
@@ -49,4 +49,4 @@ RL 可用于圆柱尾流、翼型分离、空腔振荡等反馈控制问题；�
 
 主要风险是连续预测漂移与策略利用模型误差。真实起点、短段训练和动作限制只能缓解风险。后续可补充策略访问状态的 CFD 数据，重训代理和兼容策略，再独立验证；按不确定性选样的主动学习尚未实现。
 
-[完整 HydroGym 图文说明与研究场景](../research_records/HYDROGYM_PROJECT_GUIDE_20261007.md) · [MPC 与代价细节](../research_records/TECHNICAL_DESIGN_CONTROL_ROADMAP_20261007.md) · [评估结果](RESULTS.md)
+[评估结果](../research_records/RESULTS.md) · [原始 MPC 记录](../reproducibility/report_20261007/evidence/b_h5_mpc_result.json)

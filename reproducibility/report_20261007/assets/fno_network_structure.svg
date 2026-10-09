@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="980" viewBox="0 0 1200 980" role="img" aria-labelledby="title desc">
+<title id="title">当前PhysicsNeMo FNO的实际网络结构</title>
+<desc id="desc">六个输入通道添加两个坐标平面，升维卷积8到24到48，右侧下侧补8，五层谱卷积与局部一乘一卷积相加，裁回原网格，再由48到128到128到7的逐点网络输出。两个FNO结构相同而权重独立，一个用于场增量，一个用于气动力。</desc>
+<defs><marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9Z" fill="#48677e"/></marker></defs>
+<style>text{font-family:Arial,"PingFang SC","Noto Sans CJK SC",sans-serif;fill:#18364c}.t{font-size:27px;font-weight:700}.h{font-size:20px;font-weight:700}.b{font-size:17px}.s{font-size:15px}.box{stroke:#6d8da5;stroke-width:1.3;rx:10}.a{stroke:#48677e;stroke-width:2.3;fill:none;marker-end:url(#arr)}</style>
+<rect width="1200" height="980" fill="#f7fafc"/>
+<text x="32" y="42" class="t">一个FNO怎样把当前场和动作变成下一步预测</text>
+<text x="32" y="73" class="b">按项目已安装PhysicsNeMo 2.2.2源码绘制；省略batch维。结构示意，不是新增实验结果。</text>
+<rect x="38" y="101" width="736" height="93" class="box" fill="#e8f1fa"/>
+<text x="57" y="131" class="h">输入：6 × 128 × 256</text>
+<text x="57" y="162" class="b">u、v、压力、流体标记、当前转速、下一转速，共6张图</text>
+<text x="57" y="184" class="s">官方模型再添加2张相对坐标图，得到8通道；不是8个物理量。</text>
+<path d="M407 198V217" class="a"/>
+<rect x="38" y="231" width="736" height="90" class="box" fill="#e8f1fa"/>
+<text x="57" y="261" class="h">升维：8 → 24 → 48个通道</text>
+<text x="57" y="291" class="b">1×1卷积 → GELU → 1×1卷积；在每个网格点组合输入信息</text>
+<text x="57" y="312" class="s">右侧和下侧各补8个零，供后续计算的大小变成48 × 136 × 264。</text>
+<path d="M407 324V345" class="a"/>
+<rect x="38" y="359" width="736" height="270" class="box" fill="#edf0fc"/>
+<text x="57" y="389" class="h">下面的计算块连续做5次，通道数始终为48</text>
+<rect x="63" y="416" width="340" height="116" class="box" fill="white"/>
+<text x="80" y="446" class="h">谱分支：学习跨区域关联</text>
+<text x="80" y="475" class="b">二维FFT → 保留频率并变换</text>
+<text x="80" y="503" class="b">→ 逆FFT回到网格场</text>
+<rect x="439" y="416" width="308" height="116" class="box" fill="white"/>
+<text x="456" y="446" class="h">局部分支：逐点混合</text>
+<text x="456" y="475" class="b">1×1卷积，48 → 48</text>
+<text x="456" y="503" class="b">不移动网格、不做CFD差分</text>
+<path d="M230 535V552H395V568" class="a"/><path d="M596 535V552H419V568" class="a"/>
+<text x="196" y="594" class="h">两分支相加；前4块再经过GELU</text>
+<text x="178" y="618" class="s">第5块相加后不再加GELU；然后裁去补零区。</text>
+<path d="M407 632V652" class="a"/>
+<rect x="38" y="666" width="736" height="105" class="box" fill="#e8f1fa"/>
+<text x="57" y="696" class="h">逐点输出网络：48 → 128 → 128 → 7</text>
+<text x="57" y="726" class="b">两个隐藏层使用SiLU；最后7维输出不加激活函数</text>
+<text x="57" y="753" class="s">decoder_layers=2指两个隐藏层；空间大小保持128 × 256。</text>
+<path d="M407 774V794" class="a"/>
+<rect x="38" y="808" width="736" height="116" class="box" fill="#e4f3ea"/>
+<text x="57" y="838" class="h">原始输出：7 × 128 × 256</text>
+<text x="57" y="867" class="b">前3通道：状态增量，加到当前场后得到下一场</text>
+<text x="57" y="896" class="b">后4通道：在流体区域平均、还原尺度，得到前后柱Cd/Cl</text>
+<rect x="810" y="101" width="352" height="220" class="box" fill="#fff4df"/>
+<text x="828" y="132" class="h">“32个模态”不是32个像素</text>
+<text x="828" y="168" class="b">每层保留两方向指定的频率。</text>
+<text x="828" y="198" class="b">modes = [32,32]；FFT频域</text>
+<text x="828" y="228" class="b">含正/负频率端的两组权重。</text>
+<text x="828" y="266" class="b">输入仍是128×256网格，</text>
+<text x="828" y="296" class="b">不是缩成32×32的流场。</text>
+<rect x="810" y="359" width="352" height="270" class="box" fill="#e4f3ea"/>
+<text x="828" y="390" class="h">项目有两个这样的FNO</text>
+<text x="828" y="427" class="b">结构相同，参数各自独立。</text>
+<text x="828" y="468" class="h">流场网络</text>
+<text x="828" y="496" class="b">使用前3个输出，推进状态；</text>
+<text x="828" y="523" class="b">B微调时保持全部参数不变。</text>
+<text x="828" y="560" class="h">受力网络</text>
+<text x="828" y="588" class="b">使用后4个输出，预测受力；</text>
+<text x="828" y="615" class="b">B微调时更新28个参数张量。</text>
+<rect x="810" y="666" width="352" height="258" class="box" fill="#fff4df"/>
+<text x="828" y="697" class="h">这些输出不是壁面积分</text>
+<text x="828" y="737" class="b">受力网络输出的是供平均的</text>
+<text x="828" y="767" class="b">数值图，不代表真实壁面</text>
+<text x="828" y="797" class="b">压力或剪切力分布。</text>
+<text x="828" y="840" class="b">因此场图看起来接近，</text>
+<text x="828" y="870" class="b">仍可能有较大的受力误差；</text>
+<text x="828" y="900" class="b">场和受力必须分别验证。</text>
+<text x="32" y="956" class="s">GELU/SiLU是非线性激活函数；1×1卷积组合通道；FFT分支在整个规则网格上学习空间关联。</text>
+</svg>

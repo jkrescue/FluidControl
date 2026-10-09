@@ -10,7 +10,7 @@ PhysicsNeMo Curator 将 VTK 网格场采样、整理为 HDF5；官方 Reader 与
 
 采用 PhysicsNeMo 2.2.2 官方二维 FNO；两个网络结构相同、权重独立，分别用于流场和气动力预测。
 
-![FNO 网络计算结构](../research_records/report_20261007/assets/fno_network_structure.svg)
+![FNO 网络计算结构](../research_records/assets/fno_network_structure.svg)
 
 | 配置 | 实际值 |
 |---|---|
@@ -44,4 +44,4 @@ PhysicsNeMo Curator 将 VTK 网格场采样、整理为 HDF5；官方 Reader 与
 
 B 已用于训练有效的限定工况 PPO，但完整预测评估未通过。Representative256 虽然降低训练拟合损失，在同精度固定六窗口上单步/连续误差分别增加 15.82%/14.27%，未替换 B。受力训练损失下降不能描述为流场网络精度提高。
 
-[详细损失与实现记录](../research_records/TECHNICAL_DESIGN_SURROGATE_TRAINING_20261007.md) · [模型及 SHA 清单](../research_records/FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md) · [评估结果](RESULTS.md)
+[模型索引](../research_records/MODEL_INDEX.md) · [评估结果](../research_records/RESULTS.md)

@@ -14,9 +14,9 @@ GitHub 包含代码、配置、批准、报告及部分紧凑证据，**不包�
 | PPO | artifacts/p064_b_symmetry_canonical_h5_32768_ppo_20261007/payload/ppo_final.zip |
 | PPO SHA256 | 5c05699e0851787d85d40c407647f80c19d3aebeb7dff82e019336cde77c6c6e |
 | 策略归一化 | 同目录 vecnormalize.pkl，必须与策略一起使用 |
-| 数据依赖 | [CANONICAL_CHAIN_INPUT_INVENTORY](../research_records/CANONICAL_CHAIN_INPUT_INVENTORY_20261007.json) |
+| 数据依赖 | [CANONICAL_CHAIN_INPUT_INVENTORY](../reproducibility/CANONICAL_CHAIN_INPUT_INVENTORY_20261007.json) |
 
-[完整文件与 SHA 清单](../research_records/FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md)包含模型、训练状态、统计与父模型依赖；不以未采用候选替换默认工件。
+[模型索引](../research_records/MODEL_INDEX.md)列出默认工件；完整文件与 SHA 见上述机器清单，不以未采用候选替换默认工件。
 
 ## 默认只读预检
 
@@ -34,8 +34,10 @@ python3 scripts/check_canonical_chain_inventory.py --repo "$PWD" --inventory doc
 
 ## GitHub 阅读版组织
 
-主要文档在 `guide/`。原 docs 的全部文件原字节归档为 `research_records/`，docs 符号链接指向该目录，保持 Linux/Spark 上已有程序路径；没有删除历史证据。
+主要方法文档在 `guide/`，结果与模型索引在 `research_records/`。被代码、配置或复现入口引用的旧文件在 `reproducibility/` 保持原字节，docs 符号链接指向该目录。
+
+旧计划、重复报告与运行快照已从主分支移除，完整记录保存在 [research-history-20261009 分支](https://github.com/jkrescue/FluidControl/tree/research-history-20261009)。历史链接或旧 HTML 报告的完整重建应使用该分支；主分支只保留当前阅读材料及检索到的程序依赖。
 
 Linux/Spark checkout 应保留符号链接；Windows 未启用 Git 符号链接支持时可能得到文本文件，应改用支持符号链接的环境运行。GitLab 科研工作目录未因 GitHub 文档整理而修改。
 
-[数据与分段运行说明](../research_records/CURRENT_CLOSED_LOOP_REPRODUCTION_GUIDE_20261006.md) · [CFD 配置](../cfd/tandem_cylinders/CASE_SPEC.md) · [训练](TRAINING.md) · [控制](CONTROL.md)
+[数据与分段运行原始说明](../reproducibility/CURRENT_CLOSED_LOOP_REPRODUCTION_GUIDE_20261006.md) · [CFD 配置](../cfd/tandem_cylinders/CASE_SPEC.md) · [训练](TRAINING.md) · [控制](CONTROL.md)

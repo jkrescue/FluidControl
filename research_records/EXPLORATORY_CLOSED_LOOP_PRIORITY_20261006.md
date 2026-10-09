@@ -1,9 +1,0 @@
-# Priority update after the user's time-limited instruction
-
-The user explicitly asked to advance control experiments without waiting for every prediction-accuracy requirement. Keep the full scientific objective: official PhysicsNeMo/Curator/DataPipe, HydroGym/PPO or MPC, real tandem-cylinder CFD closed loop and measured drag/lift behavior. This is not project completion or a change to recorded strict results.
-
-Immediate sequence: (1) run the already reviewed two real-CFD segments and current-field input bridge; (2) verify short-horizon predictions from each newly observed CFD field; (3) conduct a clearly labelled exploratory constrained short-horizon MPC/CFD feedback trial with paired no-control reference. The old full long-rollout surrogate gate is NOT a prerequisite for this separately approved exploratory trial. It remains the original scientific comparison standard. Do not relabel any failed candidate PASS, CFD-only PPO as FNO-assisted, shadow inference as feedback, or exploratory trial as robust final validation.
-
-Preserve Re100, spacing5D, fixed upstream/rotating downstream cylinder, real CFD, existing geometry/data, official models, action magnitude/rate limits and actual physical drag/lift reporting. The existing10% mean-lift-bias criterion remains reported; it is not the current primary blocker. No new broad training architecture or different physical problem. Preserve the >=20GiB memory requirement, use stronger operational buffers, and isolate environments.
-
-Parallel training work is secondary and must not prevent the first real control trial. P031 guarded H25 resource check and training remain a reproducible comparison, not a required route before any engineering feedback. Each action must have actual runtime/result evidence, not merely a plan. Any experimental relaxation is recorded explicitly with original and exploratory results shown separately.

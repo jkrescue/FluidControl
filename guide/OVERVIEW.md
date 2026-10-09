@@ -8,7 +8,7 @@
 
 ## 技术架构
 
-![训练与验证架构](../research_records/report_20261007/assets/training_vs_deployment.svg)
+![训练与验证架构](../research_records/assets/training_vs_deployment.svg)
 
 | 层次 | 输入与工作 | 交付与状态 |
 |---|---|---|
@@ -35,4 +35,4 @@
 
 Lead 负责范围、实验决策和整合；数据、代理、控制和独立评价各承担明确职责。每个实验记录假设、父模型、代码/配置版本、数据划分、指标、结果与下一步。当前整理不新增训练或改变物理标准。
 
-[模型训练](TRAINING.md) · [控制实现](CONTROL.md) · [评估结果](RESULTS.md) · [历史完整蓝图](../research_records/TECHNICAL_BLUEPRINT_20261007.md)
+[模型训练](TRAINING.md) · [控制实现](CONTROL.md) · [评估结果](../research_records/RESULTS.md)

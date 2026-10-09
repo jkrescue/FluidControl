@@ -1,5 +1,0 @@
-# One scoped P031 cache-advice pass
-
-Lead approves one execution of `/tmp/p031-impl-sota-20261006/scripts/advise_p031_verified_train_cache_once.py`, SHA256 `43e16e39e6d05d4f42cd01f7f14d66d8a1680edaa43250e5ade6f8ff86165226`, after checking no current readers of the fixed44 train HDFs and no project model container running. Wrapper and underlying helper were read in full. Underlying helper SHA `98efe4a3c7fd08268d82cac9be97b79f3eadfe69217d7f1943b250f28f43ae2c` is unchanged.
-
-Only routing changes to exclusive `artifacts/fcp031_cache_advice_20261006/cache_advice_20261006_r1.jsonl`. Same read-only confined descriptors, complete SHA verification, before/after inode metadata, physical-memory guards and POSIX_FADV_DONTNEED; no data deletion/modification, no global cache operation. Purpose: recover startup headroom from completed diagnostics before H25 resource probe. Cap300 seconds; preserve failed receipt, no automatic retry. Actual probe requires its own approved specification and startup checks.

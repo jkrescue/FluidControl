@@ -31,13 +31,13 @@ OpenFOAM 生成真实流场与圆柱受力
 | B-FNO H5 MPC，10 个反馈周期 | 配对减阻 **−0.0079%**，即轻微增阻 | 短时流程已运行，未证明有效控制 |
 | Representative256 候选，同精度固定六窗口比较 | 单步误差增加 **15.82%**；连续 100 步误差增加 **14.27%** | 候选未采用，保留 B |
 
-物理标准为减阻 ≥2%，后柱去均值升力 RMS 不超过对照的 105%，平均升力偏置不超过对照波动尺度的 10%。偏置列按最后一种尺度归一化，**不是相对平均升力的百分比**；预测误差变化也不是物理减阻。[指标定义和原始证据](guide/RESULTS.md)
+物理标准为减阻 ≥2%，后柱去均值升力 RMS 不超过对照的 105%，平均升力偏置不超过对照波动尺度的 10%。偏置列按最后一种尺度归一化，**不是相对平均升力的百分比**；预测误差变化也不是物理减阻。[指标定义和评估数据](research_records/RESULTS.md)
 
-![E114 真实 CFD 闭环的受力及动作](research_records/report_20261007/assets/e114_closed_loop.png)
+![E114 真实 CFD 闭环的受力及动作](research_records/assets/e114_closed_loop.png)
 
 曲线来自 E114 受控与无旋转配对 CFD，展示总阻力、后柱升力及旋转动作。
 
-![保留 B 模型五步预测与 CFD 对照](research_records/report_20261007/assets/retained_b_fields_h5.png)
+![保留 B 模型五步预测与 CFD 对照](research_records/assets/retained_b_fields_h5.png)
 
 图为一个已保存样例的 CFD、FNO 五步预测及误差分布，不代表完整预测验收通过。
 
@@ -54,7 +54,7 @@ OpenFOAM 生成真实流场与圆柱受力
 | [总体技术方案](guide/OVERVIEW.md) | 目标、软件分工、分阶段实施路线 |
 | [代理模型与训练](guide/TRAINING.md) | FNO 结构、输入输出、数据与有效训练参数 |
 | [HydroGym 与控制实现](guide/CONTROL.md) | 观测、动作、奖励、PPO 和 MPC 的实际用法 |
-| [评估结果](guide/RESULTS.md) | 成功与失败结果、指标定义、图片及证据 |
+| [评估结果](research_records/RESULTS.md) | 成功与失败结果、指标定义、图片及证据 |
 | [复现指南](guide/REPRODUCTION.md) | 环境、模型索引、预检和必要数据 |
 
 ## 仓库结构与使用范围
@@ -64,8 +64,11 @@ OpenFOAM 生成真实流场与圆柱受力
 | `cfd/tandem_cylinders/` | OpenFOAM 工况构建与[CFD 配置说明](cfd/tandem_cylinders/CASE_SPEC.md) |
 | `src/fluid_control/`、`scripts/`、`conf/` | 数据、训练、评价及控制程序与配置 |
 | `guide/` | 主要阅读文档 |
-| `research_records/` | 完整历史报告、运行批准、审查证据和离线 HTML；按需查阅 |
-| `docs` | 指向 `research_records/` 的兼容链接，保留已有程序查找路径 |
+| `research_records/` | 精简的评估结果、模型索引及关键图片 |
+| `reproducibility/` | 被程序或固定配置引用的原始文件；不作为阅读材料 |
+| `docs` | 指向 `reproducibility/` 的兼容链接，保留已有程序查找路径 |
 | `experiments/results.csv` | 结构化实验账本 |
 
 Git 保存代码、配置及报告，**不包含全部 CFD/HDF5 数据和模型权重**。已验证环境与大文件在 DGX Spark；首次 clone 不是一键复现。Linux/Spark checkout 应保留 `docs` 符号链接，勿转成普通文本文件。[完整依赖和安全预检](guide/REPRODUCTION.md)
+
+旧计划、进度快照和完整历史报告见 [research-history-20261009](https://github.com/jkrescue/FluidControl/tree/research-history-20261009/research_records)。主分支不再保留这些重复阅读材料。

@@ -1,7 +1,0 @@
-# Bounded metadata-only exposure review
-
-No frozen HDF payloads were opened or hashed. Read existing full40 and dev30 manifests, frozen split manifest and seal; inspected historical full40 release documents and current model/confirmation code. The seal explicitly records `FROZEN_TEST_SEALED_NO_MODEL_ACCESS`. Full40 frozen phases b03/b07 differ from train b00/b02/b04/b06 and repeatedly used validation b01/b05. Dynamic6 is validation-only b01/b05.
-
-Metadata text search over canonical docs (`*.md`, `*.json`) for exact frozen case prefix/b03/b07 returned no case-level evaluation reports. Existing K1 formal execution approval and terminal report bind validation10/dynamic6, not frozen-test. The development-only release explicitly omitted frozen payloads. This supports consistency with a sealed final-test policy, but does NOT prove universal historical non-access: filesystem reads are not comprehensively audited and unregistered external runs cannot be excluded by these searches. Creation/curation/QC metadata is not model-evaluation evidence.
-
-The Lead must acknowledge this bounded provenance evidence and authorize final-test opening only after the candidate freeze. If any actual prior model-result evidence for these ten cases emerges, stop the unseen-confirmation claim and disclose it; do not relabel used validation as fresh testing. No new data generation is authorized by this note.
