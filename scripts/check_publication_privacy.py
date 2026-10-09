@@ -30,8 +30,7 @@ def main():
         objects = subprocess.check_output(["git", "ls-tree", "-r", "HEAD"]).splitlines()
         ids = sorted({line.split()[2] for line in objects})
         process = subprocess.Popen(["git", "cat-file", "--batch"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        # Tree IDs fit comfortably in the pipe for this repository; communicate
-        # uses a helper thread to prevent pipe deadlock for larger repositories.
+        # communicate drains output while sending IDs, avoiding pipe deadlock.
         raw, _ = process.communicate(b"\n".join(ids) + b"\n")
         import io
         process.stdout = io.BytesIO(raw)
