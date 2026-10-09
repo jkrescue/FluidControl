@@ -1,75 +1,71 @@
-# PhysicsNeMo 串列双圆柱流动控制
+# FluidControl · 串列双圆柱主动流动控制
 
-## 项目概述
+利用真实 CFD 数据训练流场与受力代理模型，在代理环境中训练强化学习策略，再将固定策略接入 OpenFOAM，形成反馈控制闭环。目标是降低两圆柱的总平均阻力，同时限制后圆柱升力波动和平均侧向力。
 
-本项目面向串列双圆柱流动控制，使用 OpenFOAM 生成 CFD 数据，并基于 NVIDIA PhysicsNeMo 完成数据处理和 FNO 流场预测。
+**已完成限定工况的基本 PPO–CFD 闭环：总平均阻力降低 4.13%，后圆柱升力波动降低 17.92%。完整代理预测精度仍未达标，MPC 暂未取得有效减阻收益。** 这些是数值仿真结果，不是风洞或实物控制结果。
 
-场景固定为 Re=100、L/D=5 的两个固定串列圆柱，仅通过后圆柱转动控制流动；目标是降低两柱总阻力，同时限制后柱升力波动与平均侧向力。
+## 物理场景与技术路线
 
-## 当前进展（2026-10-06）
-
-| 工作 | 已核实的结果 | 尚未完成 |
-| --- | --- | --- |
-| 已验证核心链 | 真实 OpenFOAM CFD → 官方 Curator/DataPipe/FNO → HydroGym 接口 + SB3 PPO → 冻结 CPU PPO 的真实 OpenFOAM 反馈；模型、策略、数据、运行源和批准均有 SHA 绑定 | 尚未在全新输出上按复现指南重放后三阶段；原始 CFD 获取、Curator 转换和 K1 parent 训练没有单一总入口 |
-| B 策略真实 CFD 闭环 | 同一冻结 B-32768 PPO 在 b00/b01/b07 各完成 800 个 paired 控制周期；主 60 D/U 总减阻分别约 3.895% / 3.928% / 3.903%，后柱升力 RMS ratio 均约 0.815，平均偏置主窗满足原标准 | 已观察相位不构成统计独立泛化；b00/b01 早期偏置失败仍保留；不宣称净能耗或硬件实时性 |
-| PhysicsNeMo FNO 状态 | P064-B 作为冻结 surrogate 完成对应 fresh PPO 训练；真实闭环收益已独立复核 | B 完整预测 formal gate 仍 FAIL；H25 后续候选在同六工况快速评估中恶化并被拒绝，不进入新 PPO/CFD |
-| 学习贡献归因 | 同 seed、b00 restart、投影/滤波及 identity VecNormalize 的初始权重对照已独审：主窗减阻 −0.007557%，训练后 B 为 +3.895284%；RMS ratio 1.000882→0.815623，平均偏置 1.650279%→1.137815%；paired-zero 全 16000 行逐值相同 | 初始策略两项升力标准通过、仅减阻失败；结果支持本次训练权重有实际贡献，不证明胜过所有简单控制器、去掉投影仍达标或跨 seed 泛化 |
-
-当前 B-policy 是在冻结 PhysicsNeMo FNO surrogate 环境中训练的 SB3 PPO，因此不再沿用“只有 CFD-only PPO 有收益”的旧摘要。实际部署阶段仍是 **CPU PPO 策略 + 真实 OpenFOAM 观测/动作反馈**：不调用 online FNO，也不是 MPC。HydroGym 提供环境接口，OpenFOAM 才是真实数值求解器；“在线反馈”不是硬件实验。
-
-最新证据与下一步依据：
-
-- [当前闭环复现入口、版本和职责](docs/CURRENT_CLOSED_LOOP_REPRODUCTION_GUIDE_20261006.md)
-- [B-policy b00 真实 CFD 独审](docs/P064_B_PROJECTED_PPO_LONG_CFD_TERMINAL_REVIEW_20261006.md)
-- [B-policy b01 真实 CFD 独审](docs/P064_B_PROJECTED_PPO_B01_LONG_CFD_TERMINAL_REVIEW_20261006.md)
-- [B-policy b07 真实 CFD 独审](docs/P064_B_PROJECTED_PPO_B07_LONG_CFD_TERMINAL_REVIEW_20261006.md)
-- [相同投影/滤波下初始权重与训练后 B 的匹配 CFD 对照](docs/P064_INITIAL_POLICY_CFD_TERMINAL_REVIEW_20261006.md)
-- [B surrogate 完整 formal 评估](docs/P064_B_FORMAL_TERMINAL_REVIEW_20261006.md)
-- [当前权威状态](PROJECT_STATE.md)、[实验账本](EXPERIMENTS.md)与[结构化结果](experiments/results.csv)
-
-旧 CFD-only PPO 仍是独立历史基线，不被新 B-policy 结果覆盖：
-
-- [2026-10-04 真实 CFD-only PPO 结果及限制](docs/DIRECT_CFD_PPO_RESULTS_20261004.md)
-- [当时的 FNO–HydroGym–OpenFOAM 接口审计](docs/FNO_HYDROGYM_PPO_OPENFOAM_INTEGRATION_AUDIT_20261004.md)
-- [历史连续受力窗口检查](docs/FNO_FORCE_WINDOW_DIAGNOSTIC_20261004.md)
-
-## 技术流程
+研究对象为两个固定中心的串列圆柱，雷诺数 Re=100，中心间距 L/D=5。前圆柱不转，仅控制后圆柱转速；不涉及结构运动或涡激振动求解。
 
 ```text
-OpenFOAM CFD
-  → VTK
-  → PhysicsNeMo Curator
-  → PhysicsNeMo DataPipe
-  → FNO 训练与评估
-  → HydroGym 接口中的冻结 FNO 环境
-  → Stable-Baselines3 PPO 训练
-  → 冻结 CPU PPO
-  → 真实 OpenFOAM 配对反馈验证（无 online FNO / MPC）
+OpenFOAM 生成真实流场与圆柱受力
+  → PhysicsNeMo Curator / 官方 Reader + 项目 DataPipe 整理数据
+  → PhysicsNeMo 官方双 FNO：流场预测、受力预测
+  → HydroGym 接口 + 项目 FNO 推进器：构建训练环境
+  → Stable-Baselines3 PPO：学习旋转控制策略
+  → 固定 CPU 策略 + 真实 OpenFOAM：在线数值反馈验证
 ```
 
-## 代码结构
+训练期间 FNO 保持固定，每段从真实 CFD 状态开始，连续预测 5 步供 PPO 学习。验证期间策略读取真实 CFD 观测，每隔 0.1 D/U∞ 调整一次转速；**不在线调用 FNO，不继续训练 PPO，也不是 MPC 控制**。HydroGym 提供训练环境接口，OpenFOAM 接入、奖励及动作限制由项目程序实现。
 
-| 路径 | 内容 |
-| --- | --- |
-| `cfd/tandem_cylinders/` | CFD 工况生成与校验 |
-| `conf/` | 训练和控制配置 |
-| `scripts/` | 数据处理、训练、评估及 VTK 导出脚本 |
-| `src/fluid_control/` | PhysicsNeMo DataPipe 和公共模块 |
-| `docs/` | 补充资料与历史记录 |
+## 主要评估结果
 
-## 使用指南
+已保存实验的最新汇总日期为 **2026-10-07**，本次文档整理未新增科学实验。默认模型为保留的 B 双 FNO，默认策略为 E082 canonical PPO，不以最新训练候选替换已验证版本。
 
-完整环境配置、执行命令和验收标准见以下文档：
+| 验证 | 结果 | 结论 |
+|---|---|---|
+| E114 真实 CFD 闭环，800 个反馈周期，t*=328–408 | 总平均减阻 **4.1326%**；后柱升力波动降低 **17.9229%**；平均升力偏置 **1.2352%** | 主窗口及四个连续子窗口通过原物理标准 |
+| E095 基本闭环复现，800 个反馈周期；主评估窗 t*=150–210 | 减阻 **4.0091%**；波动降低 **18.2810%**；偏置 **3.6366%** | 已完成真实 CFD 复现 |
+| B FNO 完整预测评估 | 验证集 100 步末端速度相对 L2 误差 **4.36%**；6 个受力统计分支仅 **2/6** 同时达标 | 控制成功不等于代理精度充分 |
+| B-FNO H5 MPC，10 个反馈周期 | 配对减阻 **−0.0079%**，即轻微增阻 | 短时流程已运行，未证明有效控制 |
+| Representative256 候选，同精度固定六窗口比较 | 单步误差增加 **15.82%**；连续 100 步误差增加 **14.27%** | 候选未采用，保留 B |
 
-- [不可静默变更的研究目标](docs/RESEARCH_OBJECTIVE.md)
-- [训练操作手册](train_recipe.md)
-- [CFD 工况说明](cfd/tandem_cylinders/CASE_SPEC.md)
-- [论文复现对照](docs/PAPER_REPRODUCTION.md)
-- [闭环控制方案](closed_loop_control_spec.md)
-- [PhysicsNeMo–HydroGym 研究路线](docs/HYDROGYM_RESEARCH_ROADMAP.md)
+物理标准为减阻 ≥2%，后柱去均值升力 RMS 不超过对照的 105%，平均升力偏置不超过对照波动尺度的 10%。偏置列按最后一种尺度归一化，**不是相对平均升力的百分比**；预测误差变化也不是物理减阻。[指标定义和原始证据](guide/RESULTS.md)
 
-已验运行使用项目隔离的 `.venv-curator-py312`、PPO overlay、固定 PhysicsNeMo b40 镜像和固定 OpenFOAM 镜像。版本、入口、systemd 资源合同与不可直接重跑的历史批准见[当前闭环复现指南](docs/CURRENT_CLOSED_LOOP_REPRODUCTION_GUIDE_20261006.md)。不要为复现实验无条件新建或覆盖 Python 环境。
+![E114 真实 CFD 闭环的受力及动作](research_records/report_20261007/assets/e114_closed_loop.png)
 
-普通 editable install 仅适合开发和 CPU 单元测试，不代表已验的训练/闭环运行时；开发者如需安装，应另建独立环境并遵循项目依赖声明，不能据此声称复现实验结果。
+曲线来自 E114 受控与无旋转配对 CFD，展示总阻力、后柱升力及旋转动作。
 
-原始 CFD 数据、VTK、HDF5、模型文件和运行日志不纳入版本控制，可按操作手册重新生成。
+![保留 B 模型五步预测与 CFD 对照](research_records/report_20261007/assets/retained_b_fields_h5.png)
+
+图为一个已保存样例的 CFD、FNO 五步预测及误差分布，不代表完整预测验收通过。
+
+## 当前结论与后续重点
+
+基本流程已贯通，在当前 Re 与几何下验证了减阻和升力波动改善。E114 是同一策略、同一工况的延长时段，不构成跨工况泛化或独立统计重复。目前不宣称净节能、硬实时控制、风洞迁移或完整研究目标完成。
+
+下一阶段保留已验证 PPO 闭环作为对照，优先改进控制相关受力预测与连续预测稳定性，再按相同评价方法验证 MPC 或新策略。论文级结论还需网格/时间步独立性、简单控制基线、重复试验及执行器能耗分析。
+
+## 核心文档
+
+| 文档 | 内容 |
+|---|---|
+| [总体技术方案](guide/OVERVIEW.md) | 目标、软件分工、分阶段实施路线 |
+| [代理模型与训练](guide/TRAINING.md) | FNO 结构、输入输出、数据与有效训练参数 |
+| [HydroGym 与控制实现](guide/CONTROL.md) | 观测、动作、奖励、PPO 和 MPC 的实际用法 |
+| [评估结果](guide/RESULTS.md) | 成功与失败结果、指标定义、图片及证据 |
+| [复现指南](guide/REPRODUCTION.md) | 环境、模型索引、预检和必要数据 |
+
+## 仓库结构与使用范围
+
+| 路径 | 用途 |
+|---|---|
+| `cfd/tandem_cylinders/` | OpenFOAM 工况构建与[CFD 配置说明](cfd/tandem_cylinders/CASE_SPEC.md) |
+| `src/fluid_control/`、`scripts/`、`conf/` | 数据、训练、评价及控制程序与配置 |
+| `guide/` | 主要阅读文档 |
+| `research_records/` | 完整历史报告、运行批准、审查证据和离线 HTML；按需查阅 |
+| `docs` | 指向 `research_records/` 的兼容链接，保留已有程序查找路径 |
+| `experiments/results.csv` | 结构化实验账本 |
+
+Git 保存代码、配置及报告，**不包含全部 CFD/HDF5 数据和模型权重**。已验证环境与大文件在 DGX Spark；首次 clone 不是一键复现。Linux/Spark checkout 应保留 `docs` 符号链接，勿转成普通文本文件。[完整依赖和安全预检](guide/REPRODUCTION.md)
