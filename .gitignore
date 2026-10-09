@@ -12,6 +12,12 @@ results/
 logs/
 *.log
 .DS_Store
+.env
+.env.*
+.publication-private-terms
+id_rsa
+id_ed25519
+*.pem
 cfd/tandem_cylinders/cases/
 cfd/tandem_cylinders/processor*/
 cfd/tandem_cylinders/postProcessing/

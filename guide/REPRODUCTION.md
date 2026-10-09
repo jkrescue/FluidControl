@@ -42,4 +42,10 @@ python3 scripts/check_canonical_chain_inventory.py --repo "$PWD" --inventory doc
 
 Linux/Spark checkout 应保留符号链接；Windows 未启用 Git 符号链接支持时可能得到文本文件，应改用支持符号链接的环境运行。GitLab 科研工作目录未因 GitHub 文档整理而修改。
 
+## 发布检查
+
+在独立的脱敏发布副本运行 `python3 scripts/check_publication_privacy.py --all-history`。检查用户路径、内网 IP、私钥、常见令牌及提交身份；只输出类别和对象编号，不显示匹配值。可通过 `--terms-file` 使用未跟踪的本地敏感词清单。
+
+发布分支历史已重写，旧克隆应重新获取。原科研仓库不应直接推送到 GitHub，避免重新引入机器信息。GitHub 服务端缓存及旧克隆不由本地检查覆盖。
+
 [CFD 配置](../cfd/tandem_cylinders/CASE_SPEC.md) · [训练](TRAINING.md) · [控制](CONTROL.md)
