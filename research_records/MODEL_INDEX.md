@@ -4,7 +4,7 @@
 
 ## Spark 工件
 
-路径相对 `/workspace/fluid_control`；大数据与权重不包含在 GitHub clone 中。
+路径相对项目根目录；不发布真实部署路径。大数据与权重不包含在 GitHub clone 中。
 
 | 工件 | 路径 |
 |---|---|
@@ -15,7 +15,7 @@
 | PPO 与归一化 | `artifacts/p064_b_symmetry_canonical_h5_32768_ppo_20261007/payload/{ppo_final.zip,vecnormalize.pkl}` |
 | 固定训练统计 | `artifacts/b00_controlled_train_dataset_view_20261006/normalization.json` |
 
-PPO SHA256 为 `5c05699e0851787d85d40c407647f80c19d3aebeb7dff82e019336cde77c6c6e`。其余完整路径、字节数与 SHA 见[原始交付清单](../reproducibility/FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md)及[机器依赖清单](../reproducibility/CANONICAL_CHAIN_INPUT_INVENTORY_20261007.json)。
+PPO SHA256 为 `5c05699e0851787d85d40c407647f80c19d3aebeb7dff82e019336cde77c6c6e`。其余工件、字节数与 SHA 见[历史交付清单](https://github.com/jkrescue/FluidControl/blob/research-history-20261009/research_records/FINAL_MODEL_AND_REPRODUCTION_MANIFEST_20261007.md)及[机器依赖清单](../reproducibility/CANONICAL_CHAIN_INPUT_INVENTORY_20261007.json)。科学工件哈希与脱敏源码校验不同，不混用。
 
 ## 图片来源
 

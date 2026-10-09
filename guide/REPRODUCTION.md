@@ -1,10 +1,12 @@
 # 复现指南
 
-## 已验证环境
+## 代码与原运行环境
 
-科学计算与大数据位于 DGX Spark 的 `/workspace/fluid_control`，不是 Mac。使用项目隔离 Python 环境、固定 PhysicsNeMo 和 OpenFOAM 镜像，不覆盖系统 Python 或其他项目环境。
+原科学计算在 DGX Spark 完成，使用隔离 Python 环境和固定 PhysicsNeMo / OpenFOAM 镜像。GitHub 不发布真实账户、地址或部署路径；`/workspace/fluid_control` 为占位路径，不是节点实际目录。
 
-GitHub 包含代码、配置、批准、报告及部分紧凑证据，**不包含全部 HDF5、CFD 重启状态和模型权重**。新 clone 后仅安装依赖不能复现实验；已有入口依赖固定的 Spark 路径、版本和数据。上游数据生成与从零训练尚无单一完整入口。
+GitHub 包含脱敏代码、配置、记录和报告，**不包含全部 HDF5、CFD 重启状态和权重**。新 clone 后仅安装依赖不能复现实验；上游数据生成与从零训练尚无单一完整入口。
+
+脱敏修改了机器路径及部分文件字节。保留的历史 SHA 用于追溯原科研工件，不能校验脱敏源码，也不能直接运行原哈希绑定的执行入口。新部署需要配置本机路径、补齐工件并重新审核运行配置；不将旧实验记录当作新运行授权。
 
 ## 默认模型与策略
 
@@ -18,9 +20,9 @@ GitHub 包含代码、配置、批准、报告及部分紧凑证据，**不包�
 
 [模型索引](../research_records/MODEL_INDEX.md)列出默认工件；完整文件与 SHA 见上述机器清单，不以未采用候选替换默认工件。
 
-## 默认只读预检
+## 原环境的只读预检
 
-在**已有完整工件的 Spark 仓库**执行：
+以下命令记录原科研环境的预检方式，不是 GitHub 脱敏版本的可直接运行承诺：
 
 ```sh
 cd /workspace/fluid_control
@@ -34,10 +36,10 @@ python3 scripts/check_canonical_chain_inventory.py --repo "$PWD" --inventory doc
 
 ## GitHub 阅读版组织
 
-主要方法文档在 `guide/`，结果与模型索引在 `research_records/`。被代码、配置或复现入口引用的旧文件在 `reproducibility/` 保持原字节，docs 符号链接指向该目录。
+方法文档在 `guide/`，结果与模型索引在 `research_records/`。`reproducibility/` 仅保留默认 B 训练、canonical PPO、CFD 验证及已有 G 配置的必要依赖；docs 符号链接指向该目录。
 
-旧计划、重复报告与运行快照已从主分支移除，完整记录保存在 [research-history-20261009 分支](https://github.com/jkrescue/FluidControl/tree/research-history-20261009)。历史链接或旧 HTML 报告的完整重建应使用该分支；主分支只保留当前阅读材料及检索到的程序依赖。
+旧计划、重复报告和快照从主分支移除；[历史分支](https://github.com/jkrescue/FluidControl/tree/research-history-20261009)保留脱敏的完整记录。旧探索脚本和报告重建所需的资料应在对应历史版本查找，不再保留在主分支。
 
 Linux/Spark checkout 应保留符号链接；Windows 未启用 Git 符号链接支持时可能得到文本文件，应改用支持符号链接的环境运行。GitLab 科研工作目录未因 GitHub 文档整理而修改。
 
-[数据与分段运行原始说明](../reproducibility/CURRENT_CLOSED_LOOP_REPRODUCTION_GUIDE_20261006.md) · [CFD 配置](../cfd/tandem_cylinders/CASE_SPEC.md) · [训练](TRAINING.md) · [控制](CONTROL.md)
+[CFD 配置](../cfd/tandem_cylinders/CASE_SPEC.md) · [训练](TRAINING.md) · [控制](CONTROL.md)

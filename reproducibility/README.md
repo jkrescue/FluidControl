@@ -1,9 +1,14 @@
-# 程序依赖资料
+# 核心依赖索引
 
-本目录保留代码、配置、复现入口引用的原始文件。审批 JSON、受哈希校验的审查报告和固定图像均保持原字节；这些文件用于查验，不属于主要阅读文档。`docs` 符号链接指向此目录。
+本目录仅保留当前训练与闭环链的 15 份依赖记录，以及本说明和研究路线。其他旧实验资料保存在[历史分支](https://github.com/jkrescue/FluidControl/tree/research-history-20261009/research_records)。
 
-主分支已移除未被上述依赖检索引用的旧计划、重复摘要与运行快照。完整历史资料在 [research-history-20261009](https://github.com/jkrescue/FluidControl/tree/research-history-20261009/research_records)；历史报告中的旧链接和旧 HTML 完整重建应使用该分支。
+| 内容 | 用途 |
+|---|---|
+| CANONICAL_CHAIN_INPUT_INVENTORY | B 数据、模型、策略、环境及输入工件索引 |
+| B 训练、canonical PPO、b01 CFD 配置 | 已验证默认链的有效参数及历史输入 |
+| 对应工程和终态记录 | 上述配置引用的来源与结果 |
+| G 策略和 CFD 配置 | 保留现有入口的可选配置依赖，不替换 B |
 
-保留范围依据版本控制内的 Python、Shell、JSON、YAML、TOML 和 systemd 文件引用，加上当前复现清单及研究路线。动态传入的历史文件不能仅靠静态检索确认，复现旧实验时应使用对应历史版本。科研代码、物理标准和实验账本未改变。
+`docs` 符号链接指向本目录。所有发布内容均脱敏：占位路径不是实际目录，历史 SHA 指向原科研工件，不是修改后文件的字节校验值。历史执行批准不代表新运行授权。
 
-[项目首页](../README.md) · [评估结果](../research_records/RESULTS.md) · [复现指南](../guide/REPRODUCTION.md)
+[配置与使用说明](../guide/REPRODUCTION.md) · [当前结果](../research_records/RESULTS.md)

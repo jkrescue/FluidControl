@@ -49,4 +49,4 @@ RL 可用于圆柱尾流、翼型分离、空腔振荡等反馈控制问题；�
 
 主要风险是连续预测漂移与策略利用模型误差。真实起点、短段训练和动作限制只能缓解风险。后续可补充策略访问状态的 CFD 数据，重训代理和兼容策略，再独立验证；按不确定性选样的主动学习尚未实现。
 
-[评估结果](../research_records/RESULTS.md) · [原始 MPC 记录](../reproducibility/report_20261007/evidence/b_h5_mpc_result.json)
+[评估结果](../research_records/RESULTS.md) · [历史 MPC 原始记录](https://github.com/jkrescue/FluidControl/blob/research-history-20261009/research_records/report_20261007/evidence/b_h5_mpc_result.json)
