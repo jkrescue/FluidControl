@@ -9,6 +9,7 @@
   <img src="https://img.shields.io/badge/CUDA-13-76B900?logo=nvidia&logoColor=white" alt="CUDA 13">
   <a href="checkpoints/MANIFEST.json"><img src="https://img.shields.io/badge/model-6.27M_params-blue" alt="Model 6.27M parameters"></a>
   <a href="docs/FSI_GRAPHNET.md"><img src="https://img.shields.io/badge/docs-FSI__GRAPHNET-informational" alt="Documentation"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="License: Apache 2.0"></a>
 </p>
 
 <p align="center">
@@ -19,7 +20,8 @@
   <a href="#results">Results</a> ·
   <a href="#installation">Installation</a> ·
   <a href="#quick-start">Quick start</a> ·
-  <a href="docs/FSI_GRAPHNET.md">Docs</a>
+  <a href="docs/FSI_GRAPHNET.md">Docs</a> ·
+  <a href="#license">License</a>
 </p>
 
 FSIGraphNet predicts the flow field and the structural response of vortex-induced vibration (VIV) jointly, one forward pass per time step, without a CFD solver at inference.
@@ -178,3 +180,7 @@ The model, training, data, evaluation metrics and development history are covere
 - Pfaff et al., *Learning Mesh-Based Simulation with Graph Networks*, ICLR 2021.
 - RealPDEBench, arXiv:2601.01829, for the field metrics.
 - Williamson & Govardhan, *Vortex-Induced Vibrations*, Annu. Rev. Fluid Mech. 2004, for the VIV response metrics.
+
+## License
+
+Copyright 2026 the FSIGraphNet authors. Released under the [Apache License 2.0](LICENSE).
