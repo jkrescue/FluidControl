@@ -1,74 +1,122 @@
-# FluidControl · 串列双圆柱主动流动控制
+# FSIGraphNet
 
-利用真实 CFD 数据训练流场与受力代理模型，在代理环境中训练强化学习策略，再将固定策略接入 OpenFOAM，形成反馈控制闭环。目标是降低两圆柱的总平均阻力，同时限制后圆柱升力波动和平均侧向力。
+**A physics-constrained graph neural network for strongly coupled fluid–structure interaction.**
 
-**已完成限定工况的基本 PPO–CFD 闭环：总平均阻力降低 4.13%，后圆柱升力波动降低 17.92%。完整代理预测精度仍未达标，MPC 暂未取得有效减阻收益。** 这些是数值仿真结果，不是风洞或实物控制结果。
+FSIGraphNet predicts the flow field and the structural response of vortex-induced vibration (VIV) jointly, one forward pass per time step, without a CFD solver at inference.
 
-## 物理场景与技术路线
+<p align="center">
+  <b>Tandem cylinders · Re ≈ 100 · 13,824-cell native mesh · autonomous rollout over 4+ shedding cycles</b>
+</p>
 
-研究对象为两个固定中心的串列圆柱，雷诺数 Re=100，中心间距 L/D=5。前圆柱不转，仅控制后圆柱转速；不涉及结构运动或涡激振动求解。
+---
 
-```text
-OpenFOAM 生成真实流场与圆柱受力
-  → PhysicsNeMo Curator / 官方 Reader + 项目 DataPipe 整理数据
-  → PhysicsNeMo 官方双 FNO：流场预测、受力预测
-  → HydroGym 接口 + 项目 FNO 推进器：构建训练环境
-  → Stable-Baselines3 PPO：学习旋转控制策略
-  → 固定 CPU 策略 + 真实 OpenFOAM：在线数值反馈验证
+## Overview
+
+- **One network, both physics.** A MeshGraphNet with a structure node outputs the flow field (u, v, p, face flux) and the rear-cylinder state (y, v, a) in each step. The structure node is coupled two-way to the wall cells through wall–structure edges.
+- **Strong coupling inside the network.** Every step runs three fixed coupling stages: predict the flow → integrate the wall force → update the structure → move the mesh → feed physics residuals back into the network. No fixed-point iteration, no solve.
+- **Physics in training, not in inference.** Fluid–structure equilibrium, continuity, wall no-penetration and Newmark kinematics are augmented-Lagrangian constraints in the loss. At inference they are only explicit evaluations fed back as features.
+- **Trained for long horizons.** Before each training window the model rolls out 16–128 steps on its own outputs. Errors are therefore learned from the states the model actually reaches.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  S["State n<br/>flow · structure · memory"] --> E[Encoder]
+  E --> C1
+  subgraph C1["Coupling stage × 3"]
+    direction LR
+    P["Message passing<br/>graph U-Net + global attention"] --> D["Decode flow"]
+    D --> F["Wall force"]
+    F --> T["Decode structure"]
+    T --> R["Physics residuals"]
+    R --> P
+  end
+  C1 --> O["State n+1"]
+  O -. autoregressive .-> S
 ```
 
-训练期间 FNO 保持固定，每段从真实 CFD 状态开始，连续预测 5 步供 PPO 学习。验证期间策略读取真实 CFD 观测，每隔 0.1 D/U∞ 调整一次转速；**不在线调用 FNO，不继续训练 PPO，也不是 MPC 控制**。HydroGym 提供训练环境接口，OpenFOAM 接入、奖励及动作限制由项目程序实现。
-
-## 主要评估结果
-
-已保存实验的最新汇总日期为 **2026-10-07**，本次整理未新增科学实验。默认模型为 B 双 FNO，默认策略为 canonical PPO（训练编号 E082）。实验编号用于追溯记录，不是模型名称。
-
-| 验证 | 结果 | 结论 |
-|---|---|---|
-| 延长时段闭环验证（E114），800 个反馈周期，t*=328–408 | 总平均减阻 **4.1326%**；后柱升力波动降低 **17.9229%**；平均升力偏置 **1.2352%** | 主窗口及四个连续子窗口通过原物理标准 |
-| 基本闭环复现（E095），800 个反馈周期；主评估窗 t*=150–210 | 减阻 **4.0091%**；波动降低 **18.2810%**；偏置 **3.6366%** | 已完成真实 CFD 复现 |
-| B FNO 完整预测评估 | 验证集 100 步末端速度相对 L2 误差 **4.36%**；6 个受力统计分支仅 **2/6** 同时达标 | 控制成功不等于代理精度充分 |
-| B-FNO H5 MPC，10 个反馈周期 | 配对减阻 **−0.0079%**，即轻微增阻 | 短时流程已运行，未证明有效控制 |
-| Representative256 候选，同精度固定六窗口比较 | 单步误差增加 **15.82%**；连续 100 步误差增加 **14.27%** | 候选未采用，保留 B |
-
-物理标准为减阻 ≥2%，后柱去均值升力 RMS 不超过对照的 105%，平均升力偏置不超过对照波动尺度的 10%。偏置列按最后一种尺度归一化，**不是相对平均升力的百分比**；预测误差变化也不是物理减阻。[指标定义和评估数据](research_records/RESULTS.md)
-
-![E114 真实 CFD 闭环的受力及动作](research_records/assets/e114_closed_loop.png)
-
-曲线来自 E114 受控与无旋转配对 CFD，展示总阻力、后柱升力及旋转动作。
-
-![保留 B 模型五步预测与 CFD 对照](research_records/assets/retained_b_fields_h5.png)
-
-图为一个已保存样例的 CFD、FNO 五步预测及误差分布，不代表完整预测验收通过。
-
-## 当前结论与后续重点
-
-基本流程已贯通，在当前 Re 与几何下验证了减阻和升力波动改善。延长时段验证（E114）使用同一策略和工况，不构成跨工况泛化或独立统计重复。目前不宣称净节能、硬实时控制、风洞迁移或完整研究目标完成。
-
-下一阶段保留已验证 PPO 闭环作为对照，优先改进控制相关受力预测与连续预测稳定性，再按相同评价方法验证 MPC 或新策略。论文级结论还需网格/时间步独立性、简单控制基线、重复试验及执行器能耗分析。
-
-## 核心文档
-
-| 文档 | 内容 |
+| Component | Setting |
 |---|---|
-| [总体技术方案](guide/OVERVIEW.md) | 目标、软件分工、分阶段实施路线 |
-| [代理模型与训练](guide/TRAINING.md) | FNO 结构、输入输出、数据与有效训练参数 |
-| [HydroGym 与控制实现](guide/CONTROL.md) | 观测、动作、奖励、PPO 和 MPC 的实际用法 |
-| [评估结果](research_records/RESULTS.md) | 成功与失败结果、指标定义、图片及证据 |
-| [复现指南](guide/REPRODUCTION.md) | 环境、模型索引、预检和必要数据 |
+| Graph | 13,824 cell nodes · 54,688 directed face edges · 1 structure node · 64 wall edges |
+| Processor | 3 coupling stages; 3-level graph U-Net (→ 215 clusters) with 4-head global attention |
+| Temporal memory | 64-d GRU state per cell |
+| Structure head | Closed-form Newmark equation of motion with the predicted lift + learned correction |
+| Parameters | 6.27 M (physics layers: 0) |
 
-## 仓库结构与使用范围
+## Results
 
-| 路径 | 用途 |
-|---|---|
-| `cfd/tandem_cylinders/` | OpenFOAM 工况构建与[CFD 配置说明](cfd/tandem_cylinders/CASE_SPEC.md) |
-| `src/fluid_control/`、`scripts/`、`conf/` | 数据、训练、评价及控制程序与配置 |
-| `guide/` | 主要阅读文档 |
-| `research_records/` | 精简的评估结果、模型索引及关键图片 |
-| `reproducibility/` | 默认训练与闭环链的关键依赖索引和历史校验记录 |
-| `docs` | 指向 `reproducibility/` 的兼容链接，保留已有程序查找路径 |
-| `experiments/results.csv` | 结构化实验账本 |
+Development case F+ (unseen in training); autonomous 300-step prediction from 20 known frames.
 
-GitHub 是脱敏的代码与报告版本，**不包含全部 CFD/HDF5 数据和模型权重**。已验证环境与大文件在科研节点；首次 clone 不是一键复现。机器路径、账户与地址已替换为占位信息。历史 SHA 指向原科研工件，不是脱敏文件的现行校验值，不能直接执行原哈希绑定的预检或批准。[依赖与配置说明](guide/REPRODUCTION.md)
+| Metric | Cycle 1 | Cycle 2 | Cycle 3 | Cycle 4 |
+|---|:-:|:-:|:-:|:-:|
+| Displacement correlation | 1.00 | 1.00 | 1.00 | 1.00 |
+| Frequency ratio | 0.98 | 1.02 | 1.03 | 0.98 |
+| Phase error | 0° | 6° | 0° | 11° |
+| Amplitude ratio | 1.04 | 0.90 | 0.76 | 0.76 |
 
-旧计划、进度快照和完整历史报告见 [research-history-20261009](https://github.com/jkrescue/FluidControl/tree/research-history-20261009/research_records)。主分支不再保留这些重复阅读材料。
+Inference: 0.40 s per step on a single GB10 GPU (FP32).
+
+## Installation
+
+Use the NVIDIA PhysicsNeMo 26.06 container (PyTorch, CUDA). The released model is stored with Git LFS.
+
+```bash
+git lfs install && git lfs pull      # in a clone of this branch
+export PYTHONPATH=src
+```
+
+## Quick start
+
+**Inference.** A case directory holds `sequence.npz` and `report.json`. Only the first 20 frames are read.
+
+```bash
+python fsi_mgn_infer.py --checkpoint checkpoints/fsi_graphnet.pt \
+    --case <case_dir> --steps 300 --out out/ --fields
+```
+
+**Training.** All hyperparameters are in `configs/fsi_graphnet.json`. Runs data-parallel with torchrun in a container.
+
+```bash
+tools/release.sh <tag> <root>
+python3 tools/make_recipe.py <root> <run_id> <tag> [<init_checkpoint>]
+python3 tools/launch_train.py <root> <root>/experiments/recipes/<run_id>.json
+```
+
+**Evaluation.** Each checkpoint gets a 300-step autonomous rollout, field and VIV metrics, and figures.
+
+```bash
+bash tools/eval_checkpoint.sh <root> <run_id> <update> <case>
+```
+
+**Tests.**
+
+```bash
+python tests/no_solver.py                      # forward path: torch, numpy, stdlib only; no solve
+python tests/smoke.py '<case_json>' 0 2        # train == infer, gradients, timing
+python tests/physics_truth.py '<case_json>'    # physics residuals on CFD truth
+```
+
+## Repository structure
+
+```
+configs/            model and training configuration
+src/fsi_mgn/        model: data, physics (explicit, parameter-free), net, model, metrics
+fsi_mgn_train.py    training
+fsi_mgn_eval.py     evaluation
+fsi_mgn_infer.py    inference
+tools/              launch, release, evaluation, rendering
+tests/              structural and physics checks
+data/splits/        train / val / dev / held-out split
+checkpoints/        released model
+docs/               full documentation
+```
+
+## Documentation
+
+The model, training, data, evaluation metrics and development history are covered in [docs/FSI_GRAPHNET.md](docs/FSI_GRAPHNET.md).
+
+## References
+
+- Pfaff et al., *Learning Mesh-Based Simulation with Graph Networks*, ICLR 2021.
+- RealPDEBench, arXiv:2601.01829, for the field metrics.
+- Williamson & Govardhan, *Vortex-Induced Vibrations*, Annu. Rev. Fluid Mech. 2004, for the VIV response metrics.

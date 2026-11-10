@@ -1,0 +1,105 @@
+{
+ "model": {
+  "network": {
+   "hidden": 128,
+   "stages": 3,
+   "layers": 2,
+   "levels": 3,
+   "coarse_layers": 2,
+   "heads": 4,
+   "attention_layers": 1,
+   "memory_dim": 64,
+   "memory_warmup": 8
+  },
+  "network_dtype": "float32",
+  "known_frames": 20,
+  "dt": 0.1
+ },
+ "train": {
+  "seed": 2026,
+  "split": "fsi_viv",
+  "ranks": 4,
+  "windows_per_rank": 6,
+  "window_stride": 1,
+  "total_updates": 300,
+  "horizon_schedule": [
+   [
+    1,
+    8
+   ]
+  ],
+  "burn_in_schedule": [
+   [
+    1,
+    [
+     16,
+     32,
+     64
+    ]
+   ],
+   [
+    51,
+    [
+     32,
+     64,
+     128
+    ]
+   ]
+  ],
+  "optimizer": {
+   "lr": 0.0001,
+   "weight_decay": 0.0,
+   "warmup_updates": 10,
+   "min_lr_ratio": 0.05
+  },
+  "grad_clip": 1.0,
+  "loss_weights": {
+   "u": 5.0,
+   "du": 5.0,
+   "hf": 1.0,
+   "p": 0.5,
+   "phi": 0.5,
+   "w": 0.25,
+   "y": 1.0,
+   "v": 1.0,
+   "a": 0.5,
+   "kin": 1.0,
+   "dec": 0.5,
+   "Fy": 1.0,
+   "Fp": 0.5,
+   "Fv": 0.25,
+   "pw": 1.0,
+   "dp": 0.5,
+   "dpw": 1.0,
+   "dFy": 1.0,
+   "mFy": 2.0,
+   "my": 2.0
+  },
+  "stage_weights": [
+   0.25,
+   0.5,
+   1.0
+  ],
+  "augmented_lagrangian": {
+   "every": 10,
+   "start": 1,
+   "ramp": 1,
+   "rho": {
+    "fsi": 0.05,
+    "cont": 0.05,
+    "wall": 0.05
+   },
+   "tol": {
+    "fsi": 0.02,
+    "cont": 0.0001,
+    "wall": 0.001
+   }
+  },
+  "checkpoint_every": 25,
+  "keep_checkpoints": 2,
+  "milestone_every": 50,
+  "minimum_available_gib": 10,
+  "activation_checkpoint": true,
+  "gpu_memory_fraction": 0.18
+ }
+}

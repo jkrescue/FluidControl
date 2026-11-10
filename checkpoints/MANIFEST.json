@@ -1,0 +1,10 @@
+{
+ "fsi_graphnet.pt": {
+  "sha256": "645e9375caed2ce2b99b492431d97dcce2e7a7b09adabc2b2194c242263efff9",
+  "parameters": 6274312,
+  "content": "model state dict, model config, normalizer",
+  "config": "configs/fsi_graphnet.json (model)",
+  "training": "warm start + 50 updates of configs/fsi_graphnet.json (train)",
+  "evaluation": "DEV F+, 300-step autonomous rollout: displacement correlation 1.00 in cycles 1-4, phase error <= 11 deg"
+ }
+}

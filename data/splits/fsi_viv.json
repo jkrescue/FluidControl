@@ -1,0 +1,226 @@
+{
+ "split_id": "fsi_viv",
+ "roles": {
+  "TRAIN": [
+   {
+    "dataset": "rotviv_re100_v1",
+    "name": "rotation_mature2_c_plus_20261019",
+    "sequence_sha256": "ea91a8e9fa2f6d2a345c86ac549a4089da3d11085500dc14f8e2c018ea01581a",
+    "report_sha256": "75770fd14378808d6a5b138f2e02164e3778f55025eae68f502a661274b9a7eb",
+    "U_inf": 1.0,
+    "omega": 0.1
+   },
+   {
+    "dataset": "rotviv_re100_v1",
+    "name": "rotation_mature2_c_minus_20261019",
+    "sequence_sha256": "724d88bf65b70d68ca9b4e72c19be1cc0a276de7b54b3b9417e3491199ff6e4f",
+    "report_sha256": "43e81194216b6c5c8f5958e9fede0f652e6304c061c580bb854cc74ff20e138f",
+    "U_inf": 1.0,
+    "omega": -0.1
+   },
+   {
+    "dataset": "rotviv_re100_v1",
+    "name": "rotation_mature2_e_plus_20261019",
+    "sequence_sha256": "1ca62057dc40b91bae694728524cd507d249d2e4d92a056d8906128908125695",
+    "report_sha256": "41852aa95df07af8f686a323b635a91dafd4bcbd69f1b52b1cc4f81143c2f7eb",
+    "U_inf": 1.0,
+    "omega": 0.1
+   },
+   {
+    "dataset": "rotviv_re100_v1",
+    "name": "rotation_mature2_e_minus_20261019",
+    "sequence_sha256": "0cc26c92a3c243ec2043d5dc72942d72c756ccbc3ec5915cc8acab852397304f",
+    "report_sha256": "834c849b1cadec353b6ef3cb3655de3cc70c513f68e71095896816a1df7f3cba",
+    "U_inf": 1.0,
+    "omega": -0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u080_c_plus_20261107",
+    "sequence_sha256": "b226f7547212762d7a42bc7ead2c6c3d2e3eeed0cf36afc2d84bd33ccfb25c5b",
+    "report_sha256": "555e42bd9dfc9f10fb9c5ec2b4d41e0d227783f681d227c68b6e95c717e13177",
+    "U_inf": 0.8,
+    "omega": 0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u080_c_minus_20261107",
+    "sequence_sha256": "814b519e556d47e9c48834abe9937ac73712f6f99ef6be8e3e67bb53e866d3bb",
+    "report_sha256": "9cd19e6d19d5021562b2134215993bdd259347e0e50790266d74d17f8f0e1a70",
+    "U_inf": 0.8,
+    "omega": -0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u090_c_plus_20261107",
+    "sequence_sha256": "631ab259bdf06480a23aaf3ac3576a8ee86dcdbb52e8b54b08ddd028af58d5ee",
+    "report_sha256": "dc16b04834938bf341c1e32ce8e230ac1e3122ab4fe429eb01680ff28d19b804",
+    "U_inf": 0.9,
+    "omega": 0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u090_c_minus_20261107",
+    "sequence_sha256": "947a86939a8a14dbb6b7fd89ee45c2c177338750c8469780f8e4e29358116176",
+    "report_sha256": "e046165b223588272fe57cb688b87fcdb6e82f90fbc24d8d4bf9bb53636efbbc",
+    "U_inf": 0.9,
+    "omega": -0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u110_c_plus_20261107",
+    "sequence_sha256": "6fed4cf491a6ed1f55c346cd20a2226b217007f46c686f62bddfc5cc5e2c2720",
+    "report_sha256": "01e0e6170ae52c8dc69bba3f90d652e32f4f3ec369baedf50605e450f6ed98b9",
+    "U_inf": 1.1,
+    "omega": 0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u110_c_minus_20261107",
+    "sequence_sha256": "eb06e6caf42fd5f1d4ee7ce4fb644c1f4d04cdea5e5866cbc82f709b40633fe3",
+    "report_sha256": "2ac01aa9c108a84204c7e7f9c61d07c21433923f9cf39bd7cf4313144ddb6cf9",
+    "U_inf": 1.1,
+    "omega": -0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u075_c_plus_20261107",
+    "sequence_sha256": "9b2c1fce29ef82ea8600b4d56f144251f80e9ae60ab7b240e91d81cdcb263ac6",
+    "report_sha256": "6a00ebe8a25e6536c133d270fe0bc994a41d110e188ece1bdf33eddbc65fa9e4",
+    "U_inf": 0.75,
+    "omega": 0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u075_c_minus_20261107",
+    "sequence_sha256": "90c916a48f3c259b73ad165c79a90904d6f9ca627e05dc7b914f6e4faf9d9bcc",
+    "report_sha256": "7694325d88c84be63aca5348e9000aa16cf93411f4f0b77276b53a8c8b1c8dba",
+    "U_inf": 0.75,
+    "omega": -0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u085_c_plus_20261107",
+    "sequence_sha256": "df4037016ef14c4793ebf2ad6f68e4c16dcad7798b3dc65dc952714afcf420fa",
+    "report_sha256": "1f9869098b4152c6a175c755783ac448aa32b801325db4ccf2c391c99302e0a0",
+    "U_inf": 0.85,
+    "omega": 0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u085_c_minus_20261107",
+    "sequence_sha256": "fd5f7f577b6b0c8814eb1cf81b8efe3e8551aba887a920e24387cca960ca22c6",
+    "report_sha256": "c09e76b11f23d2f314f7a0a56370f01dacdeddd2fbb883b5059d6723b8a55a6e",
+    "U_inf": 0.85,
+    "omega": -0.1
+   }
+  ],
+  "DEV": [
+   {
+    "dataset": "rotviv_re100_v1",
+    "name": "rotation_mature2_f_plus_20261019",
+    "sequence_sha256": "ef8ed113689a014385697564b0350cb3625aea6c9cada57d4640fef163c7a6d5",
+    "report_sha256": "0af4bb87ce7d0dbfa98c3c9f303af4ed5d6bc0e74d29e2f6b00c8ede39cc7ca2",
+    "U_inf": 1.0,
+    "omega": 0.1
+   },
+   {
+    "dataset": "rotviv_re100_v1",
+    "name": "rotation_mature2_f_minus_20261019",
+    "sequence_sha256": "a98a2c3cc7645edf4b08d682d1769670c09bea5d2831fe456e9988fdbe25d3e9",
+    "report_sha256": "8d3a3178f7b58bb1b6036114ca88e87fa5332440895d6d8cbd4e1a74174987b4",
+    "U_inf": 1.0,
+    "omega": -0.1
+   }
+  ],
+  "HELDOUT": [
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u095_c_plus_20261107",
+    "sequence_sha256": "bea9c9875a23e0b508ac2fe70d40c7f76a5801f387ce8562ce764a492b60d335",
+    "report_sha256": "ad90c95d238ea10ff3facbd4bc0047df6de629bb9017ac0b3463538325b2be2f",
+    "U_inf": 0.95,
+    "omega": 0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u095_c_minus_20261107",
+    "sequence_sha256": "0bdae05f973791dbad25c00007ba810c37260c63f1e9fb42caee8dae1f14b40c",
+    "report_sha256": "5e248d0b62d34092179e55104399bf36edcfab8f41e4d8bba1be413c9d1a2f60",
+    "U_inf": 0.95,
+    "omega": -0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u105_c_plus_20261107",
+    "sequence_sha256": "204fe48c0baef5a0088d9e8d690b0562614347e0b275ec71201c1d0ae3ee6e9c",
+    "report_sha256": "b5f4b966cf750e2a163fa128a318ca0e726608f7108c0c05341d1e6393ff68c3",
+    "U_inf": 1.05,
+    "omega": 0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u105_c_minus_20261107",
+    "sequence_sha256": "e677464d77fd9d963c501582d4593cca3540c17d7e1b87632ba77670d61aabeb",
+    "report_sha256": "0065004496e260a9547d9ab4b2911d5bd780093277120b7469d7b8d34e12580e",
+    "U_inf": 1.05,
+    "omega": -0.1
+   }
+  ],
+  "VAL": [
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u080_e_plus_20261107",
+    "sequence_sha256": "ac5e0dd2e7ec47bd8787a557d962a97fbde2eea1108ed790068c42c97a22e294",
+    "report_sha256": "b25592578ab42da149bfea65bb105ee1fd4860513f6a2c0d63d878217c3340fe",
+    "U_inf": 0.8,
+    "omega": 0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u080_e_minus_20261107",
+    "sequence_sha256": "02eb76691ba94c1e6635e9e7592b3b5808b0676271317eb09f2a103d1e2e0ff7",
+    "report_sha256": "59a5dd61975ec5567f1fd1bf2fda27d61a11786e349fae5cd9f44b69499a8658",
+    "U_inf": 0.8,
+    "omega": -0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u090_e_plus_20261107",
+    "sequence_sha256": "740a03ccc0d1fda5319bc76bcdc29b9318342ee9565ee41a39371bf1a28875c2",
+    "report_sha256": "453c8f9f17847165b786463bcb91d590324b1226ecf78d737f73020763599be2",
+    "U_inf": 0.9,
+    "omega": 0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u090_e_minus_20261107",
+    "sequence_sha256": "97db12ab30b4528d67ceeecaaa63f0cbddbd35ed6e2289e505ab012621c07138",
+    "report_sha256": "6fdaba96faae2d9f31c39676dcc5603176264618e3be7d8cd0ad6d325a7fee19",
+    "U_inf": 0.9,
+    "omega": -0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u110_e_plus_20261107",
+    "sequence_sha256": "84732afc02aaf3bb05783f9e4631fcb16b8886b0ae6ef94d21fd538e7ad7efff",
+    "report_sha256": "613eaecd4d6f62cb890dd195dc5a84d3c77b55ae97daee74442913e4fd359936",
+    "U_inf": 1.1,
+    "omega": 0.1
+   },
+   {
+    "dataset": "rotviv_inflow_v1",
+    "name": "inflow_u110_e_minus_20261107",
+    "sequence_sha256": "bb9d7174fb60c2c6b113d9340bc129a6685bd6c28fa2d261188b574e87275305",
+    "report_sha256": "5bc6f15b75b9075039ff2e235c7b67918179f6c22a92441a67f7d009c577129b",
+    "U_inf": 1.1,
+    "omega": -0.1
+   }
+  ]
+ },
+ "excluded": {
+  "inflow_u120_c_plus_20261107": "rear y 0.76 D > native operational limit 0.5 D (CFD contract)",
+  "inflow_u120_c_minus_20261107": "rear y 0.76 D > native operational limit 0.5 D (CFD contract)"
+ },
+ "rules": "TRAIN optimisation only; DEV development/selection (disclosed); HELDOUT never trained, tuned or selected on; VAL selection only (with DEV); HELDOUT confirmed once at the end"
+}
