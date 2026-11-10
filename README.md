@@ -32,18 +32,47 @@ FSIGraphNet predicts the flow field and the structural response of vortex-induce
 | Structure head | Closed-form Newmark equation of motion with the predicted lift + learned correction |
 | Parameters | 6.27 M (physics layers: 0) |
 
+## Metrics
+
+Each model is evaluated on a case unseen in training. Starting from 20 known frames, it rolls out 300 steps (≈ 4.7 shedding cycles) on its own outputs, without CFD reset. Cycles are delimited by upward zero crossings of the CFD displacement.
+
+| Group | Metric | Definition | Target |
+|---|---|---|:-:|
+| Structure | Amplitude ratio | half peak-to-peak of <i>y</i> / CFD, per cycle | 1 ± 5 % |
+| | Frequency ratio | <i>T</i><sub>CFD</sub> / <i>T</i>, per cycle | 1 ± 2 % |
+| | Phase error | zero-crossing lag × 360° / <i>T</i> | ≤ 10° |
+| | Lift RMS ratio | std(<i>F<sub>y</sub></i>) / std(<i>F</i><sub><i>y</i>,CFD</sub>) | 1 ± 10 % |
+| | Energy-transfer error | cycle work ∮ <i>F<sub>y</sub> ẏ</i> d<i>t</i> vs CFD | ≤ 5 % |
+| Flow field | Relative error | ‖<i>q̂</i> − <i>q</i>‖ / ‖<i>q</i> − <i>q̄</i><sub>t</sub>‖ for <i>u, v, p</i> | ≤ 1 at step 300 |
+| | Field correlation | Pearson correlation of the fluctuations | ≥ 0.7 at step 150 |
+| Physics | Residuals | <i>R</i><sub>FSI</sub>, continuity, wall flux, relative to their CFD floor | — |
+
+The field metrics follow RealPDEBench, and the structural metrics follow standard VIV practice. Per-cycle structural metrics are computed in `src/fsi_mgn/metrics.py`.
+
 ## Results
 
-Development case F+ (unseen in training); autonomous 300-step prediction from 20 known frames.
+DEV case F+, released model; 300-step autonomous rollout.
 
-| Metric | Cycle 1 | Cycle 2 | Cycle 3 | Cycle 4 |
+| Per cycle | 1 | 2 | 3 | 4 |
 |---|:-:|:-:|:-:|:-:|
-| Displacement correlation | 1.00 | 1.00 | 1.00 | 1.00 |
-| Frequency ratio | 0.98 | 1.02 | 1.03 | 0.98 |
-| Phase error | 0° | 6° | 0° | 11° |
 | Amplitude ratio | 1.04 | 0.90 | 0.76 | 0.76 |
+| Frequency ratio | 1.00 | 1.02 | 1.00 | 1.00 |
+| Phase error | 0° | 0° | −5.6° | −5.6° |
+| Lift RMS ratio | 1.07 | 0.85 | 0.71 | 0.79 |
+| Energy-transfer error | −1 % | −13 % | −12 % | −4 % |
 
-Inference: 0.40 s per step on a single GB10 GPU (FP32).
+| Step | 10 | 32 | 65 | 150 | 300 |
+|---|:-:|:-:|:-:|:-:|:-:|
+| Relative error <i>u</i> / <i>v</i> / <i>p</i> | 0.55 / 0.20 / 0.57 | 1.10 / 0.45 / 1.14 | 1.23 / 0.81 / 1.11 | 1.85 / 1.24 / 1.38 | 2.32 / 1.42 / 1.58 |
+| Correlation <i>v</i> | 0.98 | 0.91 | 0.60 | −0.02 | −0.22 |
+
+<p align="center"><img src="docs/figures/fsi_graphnet_results.png" alt="FSIGraphNet results" width="100%"></p>
+
+**a, b** Rear-cylinder displacement and lift against CFD; grey lines mark CFD cycles. **c, d** Per-cycle amplitude and frequency ratios, and phase errors; shaded bands show the targets. **e** Field correlation with CFD. **f, g** Velocity <i>u</i> and pressure <i>p</i> at <i>t</i> = 3.2 s.
+
+The phase and frequency stay locked for four cycles. From cycle 3 on, the amplitude is ≈ 24 % low because the lift fluctuation is too weak. The flow field decorrelates from CFD after about one cycle.
+
+Inference takes ≈ 0.4 s per step on a single GB10 GPU (FP32).
 
 ## Installation
 
