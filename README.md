@@ -5,7 +5,7 @@
 FSIGraphNet predicts the flow field and the structural response of vortex-induced vibration (VIV) jointly, one forward pass per time step, without a CFD solver at inference.
 
 <p align="center">
-  <b>Tandem cylinders · Re ≈ 100 · 13,824-cell native mesh · autonomous rollout over 4+ shedding cycles</b>
+  <b>Tandem cylinders · Re 75–110 · 26 CFD cases · 13,824-cell native mesh · autonomous rollout over 4+ shedding cycles</b>
 </p>
 
 ---
@@ -32,9 +32,29 @@ FSIGraphNet predicts the flow field and the structural response of vortex-induce
 | Structure head | Closed-form Newmark equation of motion with the predicted lift + learned correction |
 | Parameters | 6.27 M (physics layers: 0) |
 
+## Dataset
+
+All data come from 2-D incompressible CFD simulations run with OpenFOAM (`pimpleFoam`, moving mesh). The setup is two tandem cylinders of diameter *D* = 1 at 5*D* spacing. The front cylinder is fixed. The rear cylinder vibrates transversely on a spring–damper (*m* = 0.785, *c* = 0.0197, *k* = 1.24) and spins at a prescribed rate ω = ±0.1 rad/s. The mesh has 13,824 cells, and snapshots are written every Δ*t* = 0.1 s.
+
+| Group | Conditions | Cases | Frames per case |
+|---|---|:-:|:-:|
+| Base | Re 100 (*U*<sub>∞</sub> = 1.0), ω = ±0.1; three independent runs C, E, F | 6 | 333–341 |
+| Inflow | Re 75–110 (*U*<sub>∞</sub> = 0.75–1.10), branched from the base runs C/E by changing the inlet velocity, then 160 s of adaptation | 20 | 401 |
+
+Each frame stores cell velocity and pressure, face fluxes, mesh points, and the rear-cylinder displacement, velocity, acceleration and forces. That is about 10,000 frames in total.
+
+| Split | Cases | Role |
+|---|---|---|
+| TRAIN | 14: base C±, E±; inflow C± at *U*<sub>∞</sub> 0.75 / 0.8 / 0.85 / 0.9 / 1.1 | optimisation |
+| VAL | 6: inflow E± at *U*<sub>∞</sub> 0.8 / 0.9 / 1.1 | selection |
+| DEV | 2: base F± (separate runs at the training condition Re 100) | development; Results below |
+| HELDOUT | 4: inflow C± at *U*<sub>∞</sub> 0.95 / 1.05 (conditions never trained on) | final acceptance only |
+
+Case names and SHA-256 checksums are listed in `data/splits/fsi_viv.json`. The data files are not included in the repository. Each case is stored as `sequence.npz` plus `report.json`.
+
 ## Metrics
 
-Each model is evaluated on a case unseen in training. Starting from 20 known frames, it rolls out 300 steps (≈ 4.7 shedding cycles) on its own outputs, without CFD reset. Cycles are delimited by upward zero crossings of the CFD displacement.
+Each model is evaluated on a CFD run that is not part of the training data. Starting from 20 known frames, it rolls out 300 steps (≈ 4.7 shedding cycles) on its own outputs, without CFD reset. Cycles are delimited by upward zero crossings of the CFD displacement.
 
 | Group | Metric | Definition | Target |
 |---|---|---|:-:|
@@ -51,7 +71,7 @@ The field metrics follow RealPDEBench, and the structural metrics follow standar
 
 ## Results
 
-DEV case F+, released model; 300-step autonomous rollout.
+DEV case F+ (a separate run at the Re 100 training condition), released model; 300-step autonomous rollout.
 
 | Per cycle | 1 | 2 | 3 | 4 |
 |---|:-:|:-:|:-:|:-:|
