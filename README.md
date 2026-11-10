@@ -19,26 +19,15 @@ FSIGraphNet predicts the flow field and the structural response of vortex-induce
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  S["State n<br/>flow · structure · memory"] --> E[Encoder]
-  E --> C1
-  subgraph C1["Coupling stage × 3"]
-    direction LR
-    P["Message passing<br/>graph U-Net + global attention"] --> D["Decode flow"]
-    D --> F["Wall force"]
-    F --> T["Decode structure"]
-    T --> R["Physics residuals"]
-    R --> P
-  end
-  C1 --> O["State n+1"]
-  O -. autoregressive .-> S
-```
+<p align="center"><img src="docs/figures/fsi_graphnet_arch.svg" alt="FSIGraphNet architecture" width="100%"></p>
+
+**a** One time step: three coupling stages inside a single forward pass, with physics residuals fed back between stages.
+**b, c** Details of the message-passing and graph U-Net blocks in **a**. **d** Training scheme (not used at inference).
 
 | Component | Setting |
 |---|---|
 | Graph | 13,824 cell nodes · 54,688 directed face edges · 1 structure node · 64 wall edges |
-| Processor | 3 coupling stages; 3-level graph U-Net (→ 215 clusters) with 4-head global attention |
+| Processor | 3 coupling stages; 3-level graph U-Net (→ ≈215 clusters) with 4-head global attention |
 | Temporal memory | 64-d GRU state per cell |
 | Structure head | Closed-form Newmark equation of motion with the predicted lift + learned correction |
 | Parameters | 6.27 M (physics layers: 0) |
