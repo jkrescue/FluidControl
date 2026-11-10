@@ -1,6 +1,26 @@
-# FSIGraphNet
+<h1 align="center">FSIGraphNet</h1>
 
-**A physics-constrained graph neural network for strongly coupled fluid–structure interaction.**
+<p align="center"><b>A physics-constrained graph neural network for strongly coupled fluid–structure interaction</b></p>
+
+<p align="center">
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white" alt="Python 3.12"></a>
+  <a href="https://pytorch.org/"><img src="https://img.shields.io/badge/PyTorch-2.13-EE4C2C?logo=pytorch&logoColor=white" alt="PyTorch 2.13"></a>
+  <a href="https://github.com/NVIDIA/physicsnemo"><img src="https://img.shields.io/badge/PhysicsNeMo-26.06-76B900?logo=nvidia&logoColor=white" alt="PhysicsNeMo 26.06"></a>
+  <img src="https://img.shields.io/badge/CUDA-13-76B900?logo=nvidia&logoColor=white" alt="CUDA 13">
+  <a href="checkpoints/MANIFEST.json"><img src="https://img.shields.io/badge/model-6.27M_params-blue" alt="Model 6.27M parameters"></a>
+  <a href="docs/FSI_GRAPHNET.md"><img src="https://img.shields.io/badge/docs-FSI__GRAPHNET-informational" alt="Documentation"></a>
+</p>
+
+<p align="center">
+  <a href="#overview">Overview</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#dataset">Dataset</a> ·
+  <a href="#metrics">Metrics</a> ·
+  <a href="#results">Results</a> ·
+  <a href="#installation">Installation</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="docs/FSI_GRAPHNET.md">Docs</a>
+</p>
 
 FSIGraphNet predicts the flow field and the structural response of vortex-induced vibration (VIV) jointly, one forward pass per time step, without a CFD solver at inference.
 
