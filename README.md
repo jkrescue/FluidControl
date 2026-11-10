@@ -134,11 +134,11 @@ python fsi_mgn_infer.py --checkpoint checkpoints/fsi_graphnet.pt \
     --case <case_dir> --steps 300 --out out/ --fields
 ```
 
-**Training.** All hyperparameters are in `configs/fsi_graphnet.json`. Runs data-parallel with torchrun in a container.
+**Training.** All hyperparameters of the released model are in `configs/fsi_graphnet.json`; `configs/finetune_lift*.json` add the lift-oscillation fine-tuning on top of it (`--config`). Runs data-parallel with torchrun in a container.
 
 ```bash
 tools/release.sh <tag> <root>
-python3 tools/make_recipe.py <root> <run_id> <tag> [<init_checkpoint>]
+python3 tools/make_recipe.py [--config <config>] <root> <run_id> <tag> [<init_checkpoint>]
 python3 tools/launch_train.py <root> <root>/experiments/recipes/<run_id>.json
 ```
 
@@ -173,7 +173,7 @@ docs/               full documentation
 
 ## Documentation
 
-The model, training, data, evaluation metrics and development history are covered in [docs/FSI_GRAPHNET.md](docs/FSI_GRAPHNET.md).
+The model, training, data, evaluation metrics, development history, current experiments and next steps are covered in [docs/FSI_GRAPHNET.md](docs/FSI_GRAPHNET.md).
 
 ## References
 

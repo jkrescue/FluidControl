@@ -1,0 +1,9 @@
+{
+ "base": "finetune_lift.json",
+ "train": {
+  "ranks": 2,
+  "horizon_schedule": [[1, 16]],
+  "optimizer": {"lr": 3e-05, "warmup_updates": 20},
+  "gpu_memory_fraction": 0.32
+ }
+}

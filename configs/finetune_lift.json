@@ -1,0 +1,7 @@
+{
+ "base": "fsi_graphnet.json",
+ "train": {
+  "burn_in_schedule": [[1, [16, 32, 64]]],
+  "loss_weights": {"sFy": 5.0, "mP": 10.0}
+ }
+}

@@ -13,6 +13,7 @@ Loss per stage s (weight stage_weights[s]):
                 h_wall = rms((phi - mesh flux) / (U_inf |S|)) on the rear wall
               Newmark kinematic consistency of (y, v, a); stage decrease relu(h_j(s) - h_j(s-1))
   bias        window-mean error of lift and displacement (final stage), squared
+  oscillation window std of the lift and window-mean lift power Fy*v vs CFD (final stage), squared
 Multipliers: every `every` updates, lambda_j <- max(0, lambda_j + rho_j (mean h_j / tol_j - 1)).
 
 Data parallel with torchrun (gloo; gradients averaged on the host in FP64).
@@ -98,7 +99,7 @@ def main():
         c, L = cases[ci], labels[ci]; s = L.scales; a = off + NK - 1 + burn; acc = {}; hs = {}
         wall_cells = torch.unique(c.owner[c.front | c.rear])                      # cells touching either cylinder
         T = lambda x: torch.as_tensor(np.array(x), dtype=torch.float64, device=dev)
-        Uprev = start_U; total = 0.0; n = len(outs); eF, ey = [], []
+        Uprev = start_U; total = 0.0; n = len(outs); eF, ey, Fp_, Fc_, Pp_, Pc_ = [], [], [], [], [], []
         pprev = outs[0][1].stages[0].p; Fprev = outs[0][1].stages[0].ev.Fy   # stage 0 = the window's start flow (no parameters)
         for i, (st, out) in enumerate(outs):
             k = a + 1 + i
@@ -138,10 +139,16 @@ def main():
                 for nm, v in t.items(): acc['L_' + nm] = acc.get('L_' + nm, 0.0) + float(v.detach()) * SW[si - 1] / n
                 prev_h = h
             Uprev = out.stages[-1].U; pprev = out.stages[-1].p; Fprev = out.stages[-1].ev.Fy
-            eF.append((out.stages[-1].ev.Fy - float(L.F[k, 0])) / s['Fy']); ey.append((out.stages[-1].y - float(L.y[k])) / s['y'])
+            fin = out.stages[-1]
+            eF.append((fin.ev.Fy - float(L.F[k, 0])) / s['Fy']); ey.append((fin.y - float(L.y[k])) / s['y'])
+            Fp_.append(fin.ev.Fy); Fc_.append(float(L.F[k, 0])); Pp_.append(fin.ev.Fy * fin.v); Pc_.append(float(L.F[k, 0] * L.v[k]))
         # low-frequency bias: window-mean lift / displacement error of the final stage. Slow drift of the mean lift over
         # long rollouts is weighted by per-step terms no more than any single-step miss, so it is penalised explicitly.
-        mb = {'mFy': torch.stack(eF).mean().square(), 'my': torch.stack(ey).mean().square()}
+        Fp_ = torch.stack(Fp_); Fc_ = Fp_.new_tensor(Fc_)
+        mb = {'mFy': torch.stack(eF).mean().square(), 'my': torch.stack(ey).mean().square(),
+              # lift oscillation within the window: fluctuation strength and the work done on the body (energy transfer)
+              'sFy': ((Fp_.std() - Fc_.std()) / s['dFy']).square(),
+              'mP': ((torch.stack(Pp_).mean() - sum(Pc_) / len(Pc_)) / (s['Fy'] * s['v'])).square()}
         for nm, v in mb.items():
             total = total + W.get(nm, 0.0) * v; acc['L_' + nm] = float(v.detach())
         return total, acc, hs
