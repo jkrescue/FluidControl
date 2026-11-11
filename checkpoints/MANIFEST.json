@@ -1,10 +1,10 @@
 {
  "fsi_graphnet.pt": {
-  "sha256": "645e9375caed2ce2b99b492431d97dcce2e7a7b09adabc2b2194c242263efff9",
+  "sha256": "1d106264f4e3794a231e5e456d44b2f171484cdcf4c5e492d84249ae0e6113a8",
   "parameters": 6274312,
   "content": "model state dict, model config, normalizer",
   "config": "configs/fsi_graphnet.json (model)",
-  "training": "warm start + 50 updates of configs/fsi_graphnet.json (train)",
-  "evaluation": "DEV F+, 300-step autonomous rollout: displacement correlation 1.00 in cycles 1-4, phase error <= 11 deg"
+  "training": "configs/fsi_graphnet.json (50 updates from warm start) -> configs/finetune_lift_h16.json (100 updates) -> configs/finetune_lift_long.json (150 updates)",
+  "evaluation": "DEV F+, 300-step autonomous rollout: amplitude ratio 1.10/1.12/1.03/0.89, frequency ratio 1.02/1.03/1.00/0.98, phase error 0/-6/-17/-17 deg, lift RMS ratio 1.06/1.00/0.98/0.96 (cycles 1-4); v correlation 0.84 at step 150"
  }
 }

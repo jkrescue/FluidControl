@@ -37,7 +37,7 @@ FSIGraphNet predicts the flow field and the structural response of vortex-induce
 - **One network, both physics.** A MeshGraphNet with a structure node outputs the flow field (u, v, p, face flux) and the rear-cylinder state (y, v, a) in each step. The structure node is coupled two-way to the wall cells through wall–structure edges.
 - **Strong coupling inside the network.** Every step runs three fixed coupling stages: predict the flow → integrate the wall force → update the structure → move the mesh → feed physics residuals back into the network. No fixed-point iteration, no solve.
 - **Physics in training, not in inference.** Fluid–structure equilibrium, continuity, wall no-penetration and Newmark kinematics are augmented-Lagrangian constraints in the loss. At inference they are only explicit evaluations fed back as features.
-- **Trained for long horizons.** Before each training window the model rolls out 16–128 steps on its own outputs. Errors are therefore learned from the states the model actually reaches.
+- **Trained for long horizons.** Before each training window the model rolls out up to 192 steps (≈ 3 shedding cycles) on its own outputs. Errors are therefore learned from the states the model actually reaches. Window-level loss terms on the lift mean, lift fluctuation and lift power (energy transfer) keep the oscillation from drifting or decaying.
 
 ## Architecture
 
@@ -97,24 +97,29 @@ DEV case F+ (a separate run at the Re 100 training condition), released model; 3
 
 | Per cycle | 1 | 2 | 3 | 4 |
 |---|:-:|:-:|:-:|:-:|
-| Amplitude ratio | 1.04 | 0.90 | 0.76 | 0.76 |
-| Frequency ratio | 1.00 | 1.02 | 1.00 | 1.00 |
-| Phase error | 0° | 0° | −5.6° | −5.6° |
-| Lift RMS ratio | 1.07 | 0.85 | 0.71 | 0.79 |
-| Energy-transfer error | −1 % | −13 % | −12 % | −4 % |
+| Amplitude ratio | 1.10 | 1.12 | 1.03 | 0.89 |
+| Frequency ratio | 1.02 | 1.03 | 1.00 | 0.98 |
+| Phase error | 0° | −5.5° | −16.9° | −16.9° |
+| Lift RMS ratio | 1.06 | 1.00 | 0.98 | 0.96 |
+| Lift–displacement phase error | 2.9° | −0.3° | −4.5° | −5.1° |
+| Energy-transfer error | 8 % | −1 % | −15 % | −15 % |
 
 | Step | 10 | 32 | 65 | 150 | 300 |
 |---|:-:|:-:|:-:|:-:|:-:|
-| Relative error <i>u</i> / <i>v</i> / <i>p</i> | 0.55 / 0.20 / 0.57 | 1.10 / 0.45 / 1.14 | 1.23 / 0.81 / 1.11 | 1.85 / 1.24 / 1.38 | 2.32 / 1.42 / 1.58 |
-| Correlation <i>v</i> | 0.98 | 0.91 | 0.60 | −0.02 | −0.22 |
+| Relative error <i>u</i> / <i>v</i> / <i>p</i> | 0.48 / 0.17 / 0.54 | 0.84 / 0.37 / 1.11 | 0.73 / 0.42 / 0.84 | 0.88 / 0.58 / 1.06 | 1.58 / 1.06 / 1.38 |
+| Correlation <i>u</i> / <i>v</i> / <i>p</i> | 0.89 / 0.99 / 0.87 | 0.69 / 0.94 / 0.54 | 0.67 / 0.91 / 0.71 | 0.72 / 0.84 / 0.49 | −0.04 / 0.41 / 0.19 |
 
 <p align="center"><img src="docs/figures/fsi_graphnet_results.png" alt="FSIGraphNet results" width="100%"></p>
 
 **a, b** Rear-cylinder displacement and lift against CFD; grey lines mark CFD cycles. **c, d** Per-cycle amplitude and frequency ratios, and phase errors; shaded bands show the targets. **e** Field correlation with CFD. **f, g** Velocity <i>u</i> and pressure <i>p</i> at <i>t</i> = 3.2 s.
 
-The phase and frequency stay locked for four cycles. From cycle 3 on, the amplitude is ≈ 24 % low because the lift fluctuation is too weak. The flow field decorrelates from CFD after about one cycle.
+<p align="center"><img src="docs/figures/fsi_graphnet_fields.png" alt="FSIGraphNet flow fields against CFD" width="100%"></p>
 
-Inference takes ≈ 0.4 s per step on a single GB10 GPU (FP32).
+Pressure <i>p</i>, velocity <i>u</i> and <i>v</i>, and vorticity ω<sub><i>z</i></sub> against CFD at half a shedding cycle (<i>t</i> = 3.2 s) and two cycles (<i>t</i> = 12.8 s); each row shares one colour scale.
+
+The lift strength stays within 6 % of CFD for four cycles, and the transverse velocity field stays correlated with CFD (≥ 0.84) for more than two cycles. The frequency is up to 3 % high, so the displacement leads CFD by ≈ 17° from cycle 3 on. The far-wake vortices weaken over the rollout, which lowers the pressure correlation, and grid-scale noise appears around the moving rear cylinder.
+
+Inference takes ≈ 0.07 s per step on a single GB10 GPU (FP32).
 
 ## Installation
 
@@ -134,11 +139,11 @@ python fsi_mgn_infer.py --checkpoint checkpoints/fsi_graphnet.pt \
     --case <case_dir> --steps 300 --out out/ --fields
 ```
 
-**Training.** All hyperparameters of the released model are in `configs/fsi_graphnet.json`; `configs/finetune_lift*.json` add the lift-oscillation fine-tuning on top of it (`--config`). Runs data-parallel with torchrun in a container.
+**Training.** The released model is trained in three stages, each warm-started from the previous one: `configs/fsi_graphnet.json` (50 updates), `configs/finetune_lift_h16.json` (100 updates, adds the lift-oscillation terms) and `configs/finetune_lift_long.json` (150 updates, self-rollout up to 192 steps). Fine-tuning configs overlay their `base` config (`--config`). Runs data-parallel with torchrun in a container.
 
 ```bash
 tools/release.sh <tag> <root>
-python3 tools/make_recipe.py [--config <config>] <root> <run_id> <tag> [<init_checkpoint>]
+python3 tools/make_recipe.py [--config <config>] <root> <run_id> <tag> [<init_checkpoint> [warm|resume]]
 python3 tools/launch_train.py <root> <root>/experiments/recipes/<run_id>.json
 ```
 
@@ -146,6 +151,7 @@ python3 tools/launch_train.py <root> <root>/experiments/recipes/<run_id>.json
 
 ```bash
 bash tools/eval_checkpoint.sh <root> <run_id> <update> <case>
+python3 tools/render_compare.py <case_view_dir> <out_dir> <label>=<eval_dir> ...   # fields and loads of one or more models vs CFD
 ```
 
 **Tests.**

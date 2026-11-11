@@ -1,0 +1,7 @@
+{
+ "base": "finetune_lift_h16.json",
+ "train": {
+  "total_updates": 150,
+  "burn_in_schedule": [[1, [32, 64, 128, 192]]]
+ }
+}
