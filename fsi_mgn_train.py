@@ -99,7 +99,7 @@ def main():
         c, L = cases[ci], labels[ci]; s = L.scales; a = off + NK - 1 + burn; acc = {}; hs = {}
         wall_cells = torch.unique(c.owner[c.front | c.rear])                      # cells touching either cylinder
         T = lambda x: torch.as_tensor(np.array(x), dtype=torch.float64, device=dev)
-        Uprev = start_U; total = 0.0; n = len(outs); eF, ey, Fp_, Fc_, Pp_, Pc_ = [], [], [], [], [], []
+        Uprev = start_U; total = 0.0; n = len(outs); eF, ey, Fp_, Fc_, Pp_, Pc_, Qp_, Qc_ = [], [], [], [], [], [], [], []; y0 = float(L.y.mean())
         pprev = outs[0][1].stages[0].p; Fprev = outs[0][1].stages[0].ev.Fy   # stage 0 = the window's start flow (no parameters)
         for i, (st, out) in enumerate(outs):
             k = a + 1 + i
@@ -142,13 +142,16 @@ def main():
             fin = out.stages[-1]
             eF.append((fin.ev.Fy - float(L.F[k, 0])) / s['Fy']); ey.append((fin.y - float(L.y[k])) / s['y'])
             Fp_.append(fin.ev.Fy); Fc_.append(float(L.F[k, 0])); Pp_.append(fin.ev.Fy * fin.v); Pc_.append(float(L.F[k, 0] * L.v[k]))
+            Qp_.append(fin.ev.Fy * (fin.y - y0)); Qc_.append(float(L.F[k, 0] * (L.y[k] - y0)))
         # low-frequency bias: window-mean lift / displacement error of the final stage. Slow drift of the mean lift over
         # long rollouts is weighted by per-step terms no more than any single-step miss, so it is penalised explicitly.
         Fp_ = torch.stack(Fp_); Fc_ = Fp_.new_tensor(Fc_)
         mb = {'mFy': torch.stack(eF).mean().square(), 'my': torch.stack(ey).mean().square(),
               # lift oscillation within the window: fluctuation strength and the work done on the body (energy transfer)
               'sFy': ((Fp_.std() - Fc_.std()) / s['dFy']).square(),
-              'mP': ((torch.stack(Pp_).mean() - sum(Pc_) / len(Pc_)) / (s['Fy'] * s['v'])).square()}
+              'mP': ((torch.stack(Pp_).mean() - sum(Pc_) / len(Pc_)) / (s['Fy'] * s['v'])).square(),
+              # lift in phase with the displacement (added stiffness): sets the oscillation frequency, as F_y v sets the energy transfer
+              'mQ': ((torch.stack(Qp_).mean() - sum(Qc_) / len(Qc_)) / (s['Fy'] * s['y'])).square()}
         for nm, v in mb.items():
             total = total + W.get(nm, 0.0) * v; acc['L_' + nm] = float(v.detach())
         return total, acc, hs

@@ -41,6 +41,7 @@
 - **物理约束**：增广拉格朗日，以容差为单位，λ·h/tol + ρ/2·(h/tol)²。约束项为 R_FSI = m â + c v̂ + k ŷ − F_y(Û, p̂)、连续性、壁面无穿透；另有 Newmark 运动学一致性，以及"残差应逐阶段下降"项。
 - **低频偏置项**：窗口内升力和位移平均误差的平方，权重 2（`mFy`、`my`）。
 - **升力振荡项**（`sFy`、`mP`）：窗口内升力标准差与 CFD 之差，以及升力功率 F_y·v 的窗口均值（能量传递）与 CFD 之差，均取平方。基础配置中权重为 0；微调配置 `configs/finetune_lift*.json` 中为 5 和 10。
+- **升力–位移同相项**（`mQ`）：F_y·(y − ȳ) 的窗口均值与 CFD 之差的平方，约束频率；默认权重 0，`configs/finetune_phase.json` 中为 10（实验中，见 10.2）。
 - **耦合阶段权重**：0.25 / 0.5 / 1.0。
 - **优化器**：AdamW，lr 1e-4（热启动），预热 10 次更新后余弦衰减；梯度裁剪 1.0。
 - **并行与精度**：torchrun 4 rank × 每 rank 6 个窗口；严格 FP32，确定性算法。
@@ -125,7 +126,7 @@ B、C 层采用 RealPDEBench（arXiv 2601.01829）的定义。A 层参考 VIV �
 
 ## 8. 使用方法
 
-- **配置**：`configs/fsi_graphnet.json` 包含模型和基础训练的全部超参数。微调配置通过 `base` 字段在其上逐层叠加：`finetune_lift.json`（升力振荡项，H = 8）→ `finetune_lift_h16.json`（H = 16，2 rank，lr 3e-5）→ `finetune_lift_long.json`（自滚动 32–192 步，150 次更新）。
+- **配置**：`configs/fsi_graphnet.json` 包含模型和基础训练的全部超参数。微调配置通过 `base` 字段在其上逐层叠加：`finetune_lift.json`（升力振荡项，H = 8）→ `finetune_lift_h16.json`（H = 16，2 rank，lr 3e-5）→ `finetune_lift_long.json`（自滚动 32–192 步，150 次更新）。`finetune_phase.json` 在其上加入 `mQ`（实验中）。
 - **发布模型的训练链**：`fsi_graphnet.json` 热启动 50 次更新 → `finetune_lift_h16.json` 100 次更新 → `finetune_lift_long.json` 150 次更新，每一阶段从上一阶段的最后一个 checkpoint 热启动（`make_recipe.py` 的 `warm` 模式）。
 - **代码发布**：`tools/release.sh <tag> <root>` 把 git 标签导出到 `<root>/code_releases/<tag>`（只读，附带逐文件 SHA 清单）。训练和评估运行时复制并校验这份代码。
 - **训练**：
@@ -162,22 +163,34 @@ B、C 层采用 RealPDEBench（arXiv 2601.01829）的定义。A 层参考 VIV �
 - 频率在训练中来回摆动（偏高 2–5 % 与偏低 2–4 % 交替），现有损失项都不直接约束频率。
 - FP32 严格确定性；训练 = 推理。
 
-## 10. 当前状态与下一步（2026-11-11）
+## 10. 当前状态与下一步（2026-11-11 02:00 UTC）
 
 ### 10.1 模型
 
 - **发布模型**：`checkpoints/fsi_graphnet.pt`（Git LFS，SHA-256 1d106264…），训练链见第 8 节，结果见第 7 节。文件只含模型参数、模型配置和归一化量；用它重新评估 DEV F+ 与训练中的里程碑评估逐位一致。
 - 选择依据：与上一版发布模型相比，第 3–4 周期振幅从 0.76 提高到 1.03 / 0.89，升力 RMS 比从 0.71–0.85 提高到 0.96–1.00，第 150 步 u 误差从 1.85 降到 0.88，v 场相关从 −0.02 提高到 0.84；代价是第 3–4 周期相位超前 17°（上一版 6°）。
 
-### 10.2 下一步
+### 10.2 正在进行：频率与相位微调
 
-1. **频率与相位**：在窗口损失中加入升力与位移乘积 F_y·y 的窗口均值与 CFD 之差。它对应升力中与位移同相的分量，即附加刚度，决定振动频率；写法与 `mP`（F_y·v，决定能量传递）相同，默认权重 0。从发布模型热启动，用 `configs/finetune_lift_long.json` 加该项微调约 100 次更新。
-2. **流场**：下游尾迹涡变弱、后柱周围网格噪声、升力黏性部分偏高，需要另行设计损失项（例如尾迹涡量强度、动网格区高频分量）。
-3. **替换发布模型的条件**：DEV F+ 上 4 个周期相位误差 ≤ 10°、频率比 1 ± 2 %，振幅比和升力 RMS 比不差于当前发布模型，u 误差和 v 场相关不差于当前发布模型。
-4. **替换步骤**：只保留模型参数、模型配置和归一化量写入 `checkpoints/fsi_graphnet.pt`，重新评估并确认指标一致；更新 `checkpoints/MANIFEST.json`、README 与第 7 节、`docs/figures/`（`results.png` 由评估数据生成，`fields.png` 由 `tools/render_compare.py` 生成）；GitLab `fsi-graphnet` 与 GitHub `fsi-graph` 同步推送。
-5. **HELDOUT**（U∞ 0.95 / 1.05）尚未评估，只在最终确定模型后运行一次。
+- **新损失项 `mQ`**（`fsi_mgn_train.py`，默认权重 0）：窗口内 F_y·(y − ȳ) 的均值与 CFD 之差的平方，以 std(F_y)·std(y) 归一化，ȳ 为该工况 CFD 位移均值。它对应升力中与位移同相的分量（附加刚度），决定振动频率；`mP`（F_y·v）对应能量传递。
+- **实验**（代码标签 `exp-phase-20261111`，均从发布模型热启动，H = 16，2 rank，自滚动 32–192 步，100 次更新，约 150 s/次，2026-11-11 01:50Z 启动，预计 06:00Z 结束）：
 
-### 10.3 运行环境与操作
+| 实验 | 主机 | 配置 | mQ 权重 |
+|---|---|---|---|
+| V19A | 78 | `configs/finetune_phase.json` | 10 |
+| V19B | 97 | `configs/finetune_phase.json` 叠加 mQ = 30（主机上的 `configs/finetune_phase_w30.json`） | 30 |
+
+- 两台主机都在后台运行 `tools/eval_milestones.sh`，在第 25 / 50 / 75 / 100 次更新自动评估 DEV F+，结果在 `experiments/runs/eval_fsi_V19X_uN/`。
+- **判断**：与发布模型比较（第 7 节）。相位误差 ≤ 10°、频率比 1 ± 2 %，且振幅比、升力 RMS 比、u 误差、v 场相关不差于发布模型 → 替换发布模型（步骤见下）。若相位改善但流场变差，或 mQ 无效，记录结论后转向 10.3 第 2 项。
+
+### 10.3 下一步
+
+1. 读取 V19 的里程碑评估并决定是否替换发布模型。
+2. **流场**：下游尾迹涡变弱、后柱周围网格噪声、升力黏性部分偏高约 0.005 N，需要另行设计损失项（例如尾迹涡量强度、动网格区高频分量）。
+3. **替换步骤**：只保留模型参数、模型配置和归一化量写入 `checkpoints/fsi_graphnet.pt`，重新评估并确认指标与里程碑评估一致；更新 `checkpoints/MANIFEST.json`、README 与第 7 节、`docs/figures/`（`fsi_graphnet_results.png` 由评估数据生成，`fsi_graphnet_fields.png` 由 `tools/render_compare.py` 生成，需评估时保存场数据）；GitLab `fsi-graphnet` 与 GitHub `fsi-graph` 同步推送。仓库只放发布模型及其结果，不放其他实验的结果。
+4. **HELDOUT**（U∞ 0.95 / 1.05）尚未评估，只在最终确定模型后运行一次。
+
+### 10.4 运行环境与操作
 
 - **主机**：两台 DGX Spark（GB10，121 GiB 统一内存）。项目根目录：97 为 `/home/briany/workspace/fsi_project`，78 为 `/home/nvidia/temp_jk/fsi_project`。登录信息不在仓库中。
 - **容器镜像**：`fluid-control-physicsnemo:2.2.2`（环境变量 `FSI_IMAGE` 可改）。训练容器名即 `run_id`（如 `fsi_V18A`），评估容器名为 `eval_<run_id>_u<N>`。
@@ -191,5 +204,6 @@ B、C 层采用 RealPDEBench（arXiv 2601.01829）的定义。A 层参考 VIV �
 - **注意事项**：
   - 97 在 4 rank 训练时内存紧张，评估可能显存不足；此时把 checkpoint 复制到 78 的 `experiments/runs/IMPORT_<名称>/` 下评估。
   - 远程停止进程时不要用 `pkill -f <run_id>`，它会匹配到执行命令的 shell 本身；用 `docker stop <容器名>` 或 `STOP` 文件。
-  - 新代码先用 `tools/release.sh <tag> <root>` 发布到主机，再用该 tag 生成配方。
+  - 新代码先用 `tools/release.sh <tag> <root>` 发布到主机，再用该 tag 生成配方；主机上的 `tools/make_recipe.py` 需与发布版本一致（旧版不支持 `--config`）。
+  - 远程启动后台进程时用 `(setsid nohup … &)` 包起来，否则 `&` 会把整条 `&&` 命令链放到后台，远程会话不返回。
   - GitLab 单文件上限 5 MiB，模型用 Git LFS 存储；GitHub 仓库公开，不提交登录信息和内网地址。

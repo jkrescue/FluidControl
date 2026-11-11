@@ -1,0 +1,7 @@
+{
+ "base": "finetune_lift_long.json",
+ "train": {
+  "total_updates": 100,
+  "loss_weights": {"mQ": 10.0}
+ }
+}
