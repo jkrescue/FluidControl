@@ -14,6 +14,10 @@ Loss per stage s (weight stage_weights[s]):
               Newmark kinematic consistency of (y, v, a); stage decrease relu(h_j(s) - h_j(s-1))
   bias        window-mean error of lift and displacement (final stage), squared
   oscillation window std of the lift and window-mean lift power Fy*v vs CFD (final stage), squared
+Input noise (optional, input_noise): the window's start state gets a random velocity perturbation (grid-scale + smooth);
+  the loss still targets CFD, so the network learns to return perturbed states to the reference trajectory.
+Step checkpointing (optional, step_checkpoint): each step's internals are recomputed in the backward pass, so the gradient
+  window can cover a whole oscillation period and the window terms (mP, mQ, sFy) become per-cycle statistics.
 Multipliers: every `every` updates, lambda_j <- max(0, lambda_j + rho_j (mean h_j / tol_j - 1)).
 
 Data parallel with torchrun (gloo; gradients averaged on the host in FP64).
@@ -22,6 +26,7 @@ Container mounts: /work (code), /contracts/config.json, /views (TRAIN cases), /r
 from pathlib import Path
 from datetime import datetime, timezone
 import hashlib, json, math, os, random, sys, time, traceback
+from dataclasses import replace
 
 
 def sha(p):
@@ -99,6 +104,22 @@ def main():
         adv = lambda th: torch.remainder(th[1:] - th[:-1] + math.pi, 2 * math.pi) - math.pi
         dp = adv(torch.atan2(-vp / w0, yp)).sum(); dc = adv(torch.atan2(-yp.new_tensor(vc) / w0, yp.new_tensor(yc))).sum()
         return ((dp - dc) / dc.abs().clamp_min(1e-6)).square()
+
+    NOISE = cfg.get('input_noise')
+
+    def perturb_state(c, L, st, seed, kept):
+        """Input-state noise (training only): the window starts from the model's state plus a random velocity perturbation of
+        relative size NOISE['u'] (per-case velocity fluctuation scale), split between a grid-scale (cell-wise white) part and a
+        smooth part (white noise averaged over NOISE['smooth_iters'] neighbour means). The loss still targets CFD, so the
+        network learns to pull perturbed states back to the reference trajectory (rollout stability)."""
+        g = torch.Generator(device=dev).manual_seed(seed); r = lambda: torch.randn(st.U.shape, generator=g, device=dev, dtype=st.U.dtype)
+        unit = lambda x: x / (x.square().sum(1).mean().sqrt() + 1e-30)
+        sm = r()
+        for _ in range(int(NOISE.get('smooth_iters', 8))): sm = ph.neighbour_mean(c, sm)
+        share = float(NOISE.get('smooth_share', 0.5))
+        noise = (math.sqrt(1 - share) * unit(r()) + math.sqrt(share) * unit(sm)) * float(NOISE['u']) * L.scales['u']
+        kept['U'] = st.U
+        return replace(st, U=st.U + noise)
 
     def window_loss(ci, off, outs, burn, start_U):
         """Loss on every coupling stage (1..K) of every step; returns total, scalar terms, constraint values per stage."""
@@ -229,8 +250,10 @@ def main():
             for wi, (ci, off) in enumerate(batch):
                 tw = time.monotonic(); rs = random.Random(int(cfg['seed']) * 7919 + u * 101 + rank * 13 + wi)
                 burn = rs.choice(burn_choices_at(u))
-                outs = list(model.rollout(cases[ci], off, H, burn_in=burn))
-                start_U = outs[0][0].U1                                                   # the state the window starts from
+                kept = {}
+                perturb = (lambda st, ci=ci, seed=rs.randrange(2 ** 31): perturb_state(cases[ci], labels[ci], st, seed, kept)) if NOISE else None
+                outs = list(model.rollout(cases[ci], off, H, burn_in=burn, perturb=perturb, step_checkpoint=bool(cfg.get('step_checkpoint'))))
+                start_U = kept.get('U', outs[0][0].U1)                                    # the (unperturbed) state the window starts from
                 loss, terms, hs = window_loss(ci, off, outs, burn, start_U)
                 (loss / K).backward()
                 rows.append({'case': cases[ci].name, 'offset': off, 'burn_in': burn, 'loss': float(loss.detach()), **terms,

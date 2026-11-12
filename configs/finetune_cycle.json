@@ -1,0 +1,31 @@
+{
+ "base": "finetune_lift_long.json",
+ "train": {
+  "total_updates": 60,
+  "horizon_schedule": [
+   [
+    1,
+    64
+   ]
+  ],
+  "burn_in_schedule": [
+   [
+    1,
+    [
+     32,
+     64,
+     128
+    ]
+   ]
+  ],
+  "step_checkpoint": true,
+  "checkpoint_every": 10,
+  "loss_weights": {
+   "mQ": 10.0
+  },
+  "windows_per_rank": 6,
+  "milestone_every": 10,
+  "keep_checkpoints": 2,
+  "stall_dump_s": 3600
+ }
+}

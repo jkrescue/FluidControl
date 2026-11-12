@@ -119,6 +119,18 @@ Pressure <i>p</i>, velocity <i>u</i> and <i>v</i>, and vorticity ω<sub><i>z</i>
 
 The lift strength stays within 6 % of CFD for four cycles, and the transverse velocity field stays correlated with CFD (≥ 0.84) for more than two cycles. The frequency is up to 3 % high, so the displacement leads CFD by ≈ 17° from cycle 3 on. The far-wake vortices weaken over the rollout, which lowers the pressure correlation, and grid-scale noise appears around the moving rear cylinder.
 
+Across all eight DEV and VAL cases (base F±, inflow E± at <i>U</i><sub>∞</sub> 0.8 / 0.9 / 1.1; 300-step rollouts from step 0):
+
+| Metric | Mean | Worst case |
+|---|:-:|:-:|
+| Largest per-cycle phase error | 18.7° | 34.5° (E−, <i>U</i><sub>∞</sub> 0.9) |
+| Amplitude error \|A − 1\| per cycle | 0.080 | 0.30 (E−, <i>U</i><sub>∞</sub> 0.9, cycle 3) |
+| Lift RMS error per cycle | 0.042 | — |
+| Correlation <i>u</i> / <i>v</i> / <i>p</i> at step 150 | 0.65 / 0.86 / 0.52 | — |
+| Relative error <i>u</i> at step 300 | 1.30 | — |
+
+Three of the eight cases stay within 10° of CFD in phase. In the low-speed cases with negative spin (E− at <i>U</i><sub>∞</sub> 0.8 / 0.9) the amplitude decays from cycle to cycle.
+
 Inference takes ≈ 0.07 s per step on a single GB10 GPU (FP32).
 
 ## Installation

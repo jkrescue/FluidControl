@@ -1,0 +1,4 @@
+{
+ "base": "finetune_cycle.json",
+ "train": {"horizon_schedule": [[1, 192]], "total_updates": 40}
+}

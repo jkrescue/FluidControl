@@ -41,8 +41,10 @@
 - **物理约束**：增广拉格朗日，以容差为单位，λ·h/tol + ρ/2·(h/tol)²。约束项为 R_FSI = m â + c v̂ + k ŷ − F_y(Û, p̂)、连续性、壁面无穿透；另有 Newmark 运动学一致性，以及"残差应逐阶段下降"项。
 - **低频偏置项**：窗口内升力和位移平均误差的平方，权重 2（`mFy`、`my`）。
 - **升力振荡项**（`sFy`、`mP`）：窗口内升力标准差与 CFD 之差，以及升力功率 F_y·v 的窗口均值（能量传递）与 CFD 之差，均取平方。基础配置中权重为 0；微调配置 `configs/finetune_lift*.json` 中为 5 和 10。
-- **升力–位移同相项**（`mQ`）：F_y·(y − ȳ) 的窗口均值与 CFD 之差的平方，约束频率；默认权重 0，`configs/finetune_phase.json` 中为 10（实验中，见 10.2）。
-- **振荡速率项**（`mW`）：窗口内位移相量 (y − ȳ, −v/ω) 的相位推进总量与 CFD 在同一组步上的相位推进之比减 1 的平方，ω 取该工况 CFD 的 std(v)/std(y)。它与振幅和自滚动中已积累的相位偏移无关，只约束频率；在 1/4 周期窗口内对频率误差的平均响应无偏。默认权重 0，`configs/finetune_freq.json` 中为 2500（实验中，见 10.2）。
+- **升力–位移同相项**（`mQ`）：F_y·(y − ȳ) 的窗口均值与 CFD 之差的平方，约束频率；默认权重 0，`configs/finetune_phase.json` 中为 10。
+- **振荡速率项**（`mW`）：窗口内位移相量 (y − ȳ, −v/ω) 的相位推进总量与 CFD 在同一组步上的相位推进之比减 1 的平方，ω 取该工况 CFD 的 std(v)/std(y)。它与振幅和自滚动中已积累的相位偏移无关，只约束频率；在 1/4 周期窗口内对频率误差的平均响应无偏。默认权重 0，`configs/finetune_freq.json` 中为 2500。
+- **输入噪声**（`input_noise`，默认关闭）：窗口起点状态叠加随机速度扰动（网格尺度 + 平滑部分），损失仍以 CFD 为目标，让网络学会把偏离的状态拉回。`configs/finetune_noise.json`（实验结论见第 9 节）。
+- **步级重算**（`step_checkpoint`，默认关闭）：反向传播时逐步重算前向，显存基本与梯度窗口长度无关。H = 64 / 128 / 192 时每个窗口峰值约 3.8 / 5.7 / 7.6 GiB，因此梯度窗口可以覆盖 1–3 个振荡周期；代价是每次更新 6–18 分钟（2 rank × 6 窗口）。`configs/finetune_cycle*.json`。
 - **耦合阶段权重**：0.25 / 0.5 / 1.0。
 - **优化器**：AdamW，lr 1e-4（热启动），预热 10 次更新后余弦衰减；梯度裁剪 1.0。
 - **并行与精度**：torchrun 4 rank × 每 rank 6 个窗口；严格 FP32，确定性算法。
@@ -123,20 +125,21 @@ B、C 层采用 RealPDEBench（arXiv 2601.01829）的定义。A 层参考 VIV �
   - 下游尾迹涡随推进变弱，压力相关在约 1 个周期后降到 0.5 左右。
   - 后柱周围（动网格区）有网格尺度噪声。
   - 升力黏性部分整体偏高约 0.005 N。
+- **8 个 DEV + VAL 工况**（300 步，从第 0 步起自主推进）：每个工况的最大相位误差均值 18.7°、最差 34.5°（U∞ 0.9 E−），3/8 个工况 ≤ 10°；逐周期振幅误差 |A − 1| 平均 0.080，频率误差 0.023，升力 RMS 误差 0.042；第 150 步 u / v / p 场相关平均 0.65 / 0.86 / 0.52，第 300 步 u 误差平均 1.30；27 个周期中 8 个同时满足相位、振幅、频率目标。低流速 E− 工况振幅逐周期衰减（U∞ 0.9 E− 第 3 周期 0.70），是目前最差的一类。
 - 结果图：`docs/figures/fsi_graphnet_results.png`（位移、升力、逐周期指标、场相关）和 `docs/figures/fsi_graphnet_fields.png`（压力、速度、涡量与 CFD 对比）。
 
 ## 8. 使用方法
 
-- **配置**：`configs/fsi_graphnet.json` 包含模型和基础训练的全部超参数。微调配置通过 `base` 字段在其上逐层叠加：`finetune_lift.json`（升力振荡项，H = 8）→ `finetune_lift_h16.json`（H = 16，2 rank，lr 3e-5）→ `finetune_lift_long.json`（自滚动 32–192 步，150 次更新）。`finetune_phase.json` 在其上加入 `mQ`（实验中）。
+- **配置**：`configs/fsi_graphnet.json` 包含模型和基础训练的全部超参数。微调配置通过 `base` 字段在其上逐层叠加：`finetune_lift.json`（升力振荡项，H = 8）→ `finetune_lift_h16.json`（H = 16，2 rank，lr 3e-5）→ `finetune_lift_long.json`（自滚动 32–192 步，150 次更新）。在 `finetune_lift_long.json` 上叠加的实验配置：`finetune_phase.json`（`mQ`）、`finetune_freq.json`（`mW`）、`finetune_noise.json`（输入噪声）、`finetune_cycle.json` / `_h128.json` / `_h192.json` / `_h128_nowin.json`（步级重算，梯度窗口 1 / 2 / 3 个周期，以及 2 个周期且去掉 `mQ`、`mP`）。
 - **发布模型的训练链**：`fsi_graphnet.json` 热启动 50 次更新 → `finetune_lift_h16.json` 100 次更新 → `finetune_lift_long.json` 150 次更新，每一阶段从上一阶段的最后一个 checkpoint 热启动（`make_recipe.py` 的 `warm` 模式）。
 - **代码发布**：`tools/release.sh <tag> <root>` 把 git 标签导出到 `<root>/code_releases/<tag>`（只读，附带逐文件 SHA 清单）。训练和评估运行时复制并校验这份代码。
 - **训练**：
   1. `tools/make_recipe.py [--config <配置>] <root> <run_id> <tag> [<init checkpoint>]` 生成配方；init 路径相对 `experiments/runs`。
   2. `tools/launch_train.py <root> <recipe>` 在容器中启动 torchrun。
   3. 运行目录为 `experiments/runs/<run_id>/{contracts, results, control}`。在 `control/` 下创建 `STOP` 文件即可停止训练。
-- **评估**：`tools/eval_checkpoint.sh` 等待指定 checkpoint 生成后，用 `tools/launch_eval.py` 评估，并用 `tools/render.py` 出图；`tools/eval_milestones.sh` 依次处理各里程碑。`tools/render_compare.py` 把一个或多个评估结果与 CFD 并排画出压力、速度、涡量场和受力（需评估时保存场数据）。
+- **评估**：`tools/eval_checkpoint.sh` 等待指定 checkpoint 生成后，用 `tools/launch_eval.py` 评估，并用 `tools/render.py` 出图；`tools/eval_milestones.sh` 依次处理各里程碑。`tools/multi_eval.sh <root> <tag> <标签=checkpoint> …` 在全部 DEV + VAL 工况上评估（300 步），结果在 `experiments/runs/mev_<标签>/`。`tools/diagnose.py` 对比自主推进与一步预测（从 CFD 状态出发）的受力、结构和分区场误差，`tools/diagnose_filter.py` 检验网格尺度阻尼对振幅和相位的影响（仅诊断，不是模型的一部分）。`tools/render_compare.py` 把一个或多个评估结果与 CFD 并排画出压力、速度、涡量场和受力（需评估时保存场数据）。
 - **数据目录**：`<root>/data/processed/<dataset>/<case>/{sequence.npz, report.json}`，启动时逐文件校验 SHA。训练只使用划分中的 TRAIN 工况。
-- **资源**：每台机器保留 ≥ 10 GiB 空闲内存。H = 8：每 rank 约 14 GiB，4 rank 每次更新约 2 分钟；H = 16：每 rank 约 28 GiB，2 rank 每次更新约 1.5 分钟。300 步评估约 1 分钟，另需约 20 GiB 空闲内存。
+- **资源**：每台机器保留 ≥ 10 GiB 空闲内存。H = 8：每 rank 约 14 GiB，4 rank 每次更新约 2 分钟；H = 16：每 rank 约 28 GiB，2 rank 每次更新约 1.5 分钟；步级重算下 H = 64 / 128 / 192：每次更新约 6 / 10 / 18 分钟（2 rank），`stall_dump_s` 须大于一次更新的时间。300 步评估约 1 分钟，另需约 20 GiB 空闲内存。
 
 
 ## 9. 开发记录
@@ -153,6 +156,11 @@ B、C 层采用 RealPDEBench（arXiv 2601.01829）的定义。A 层参考 VIV �
 | 长程训练（V15 → V16） | 长程自滚动训练 + 低频偏置损失 | 只用短窗口训练时，越训练长程误差越大（第 300 步 3.96 → 9.15），第 3 周期起升力正向漂移、周期短 12 %、振幅发散。改进后 V16A 训练 50 次更新：相位锁定，振幅不再发散，第 300 步误差 2.32，作为发布模型。V16A 继续训练到 100 次反而振幅更小（第 4 周期 0.63）；V16B（更长自滚动、偏置权重 4）振幅发散到 1.58 |
 | 升力振荡约束（V17） | 损失加入升力标准差 `sFy` 与升力功率 `mP`；比较 H = 8 与 H = 16 | 第 1–2 周期振幅衰减解决；H = 16 流场明显更好；但继续训练后第 3–4 周期振幅重新衰减，因为损失窗口最远只到约 80 步（1.25 个周期） |
 | 长自滚动微调（V18） | 自滚动加长到 32–192 步，使损失覆盖第 3–4 周期 | 第 3–4 周期振幅不再衰减；流场达到目前最好；第 150 次更新作为发布模型。H = 8 的对照组相位较好但流场明显较差 |
+| 升力–位移同相项（V19） | 加入 `mQ`，权重 10 / 30 | 振幅变大、过零提前更多（第 25 次更新时提前 1.07 s），停止 |
+| 振荡速率项（V20） | 加入 `mW`，直接约束窗口内的相位推进 | 权重 2500 时靠削弱升力减慢振荡，振幅降到 0.60；权重 500 时第 4 周期过零误差 −0.46 s，比发布模型差。单窗口灵敏度不稳定，停止 |
+| 误差诊断 | `tools/diagnose.py`：同一模型的自主推进与一步预测对比 | 一步预测的升力与结构响应都准；误差来自自主推进中流场的逐步漂移，而不是受力或结构头 |
+| 输入噪声（V21） | 窗口起点叠加速度扰动 | 8 工况上与发布模型持平（最大相位均值 17.1° vs 18.7°，最差 46° vs 35°），不替换 |
+| 长梯度窗口（V22） | 步级重算，梯度窗口 H = 64 / 128 / 192（1 / 2 / 3 个周期） | 长时流场明显变好（H = 128、去掉 `mQ`/`mP` 后 8 工况第 300 步 u 误差 1.12 vs 1.30，第 150 步 v 相关 0.88 vs 0.86），但频率随窗口长度单向偏移：H = 64 / 128 周期偏短、振幅偏大，H = 192 周期偏长、振幅偏小；相位与振幅不优于发布模型，暂不替换 |
 
 经验：
 - 使用原生单元图，避免单元与节点之间的插值误差。
@@ -162,47 +170,50 @@ B、C 层采用 RealPDEBench（arXiv 2601.01829）的定义。A 层参考 VIV �
 - H = 16 训练在 lr 1e-4 下发散（梯度范数约 1e3），需要 lr 3e-5、预热 20。
 - 损失窗口（自滚动 + H）必须覆盖要评估的周期，否则训练越久，窗口之外的周期越差。
 - 频率在训练中来回摆动（偏高 2–5 % 与偏低 2–4 % 交替），现有损失项都不直接约束频率。
+- 只靠逐步损失约束不了振荡频率：梯度窗口越长流场越好，但频率误差的方向随窗口长度改变，不会自行消失。
+- 判断一个模型要看全部 DEV + VAL 工况：只看一个工况时 V22B、V22C2 都显得更好，8 工况上则不然；低流速 E− 工况最敏感。
 - FP32 严格确定性；训练 = 推理。
 
-## 10. 当前状态与下一步（2026-11-11 02:00 UTC）
+## 10. 当前状态与下一步（2026-11-12 06:45 UTC）
 
 ### 10.1 模型
 
 - **发布模型**：`checkpoints/fsi_graphnet.pt`（Git LFS，SHA-256 1d106264…），训练链见第 8 节，结果见第 7 节。文件只含模型参数、模型配置和归一化量；用它重新评估 DEV F+ 与训练中的里程碑评估逐位一致。
 - 选择依据：与上一版发布模型相比，第 3–4 周期振幅从 0.76 提高到 1.03 / 0.89，升力 RMS 比从 0.71–0.85 提高到 0.96–1.00，第 150 步 u 误差从 1.85 降到 0.88，v 场相关从 −0.02 提高到 0.84；代价是第 3–4 周期相位超前 17°（上一版 6°）。
+- 第 9 节 V19–V22 的实验在 8 个 DEV + VAL 工况上都没有在相位、振幅、流场上同时不差于它，发布模型不变。
 
-### 10.2 正在进行：频率与相位微调
+### 10.2 正在进行：长梯度窗口
 
-- **新损失项 `mQ`**（`fsi_mgn_train.py`，默认权重 0）：窗口内 F_y·(y − ȳ) 的均值与 CFD 之差的平方，以 std(F_y)·std(y) 归一化，ȳ 为该工况 CFD 位移均值。它对应升力中与位移同相的分量（附加刚度），决定振动频率；`mP`（F_y·v）对应能量传递。
-- **问题**：发布模型每个周期比 CFD 短 1–3 %，过零时刻的误差逐周期累积，到第 4 周期提前约 0.36 s（约 20°）。
-- **实验**（均从发布模型热启动，H = 16，2 rank，自滚动 32–192 步，100 次更新，约 150 s/次）：
+- **问题**：多个周期后过零时刻对不上（发布模型第 4 周期提前约 0.36 s），低流速 E− 工况振幅衰减。诊断表明误差来自自主推进中的流场漂移（第 9 节）。
+- **实验**（从发布模型热启动，2 rank × 6 窗口，自滚动 32–128 步后接梯度窗口 H，每 10 次更新保存并评估 DEV F+）：
 
-| 实验 | 主机 | 代码标签 / 配置 | 新项 | 状态 |
-|---|---|---|---|---|
-| V19A | 78 | `exp-phase-20261111` / `finetune_phase.json` | mQ = 10 | 第 25 次更新时振幅偏大、过零提前 1.07 s，第 27 次更新时停止 |
-| V19B | 97 | 同上，主机上的 `finetune_phase_w30.json` | mQ = 30 | 运行中（2026-11-11 01:50Z 起） |
-| V20A | 78 | `exp-freq-20261111` / `finetune_freq.json` | mW = 2500 | 运行中（2026-11-11 03:20Z 起） |
+| 实验 | 配置 | 状态与结果 |
+|---|---|---|
+| V22B | `finetune_cycle_h128.json`（H = 128，`mQ` 10、`mP` 10） | 已停。第 40 次更新：8 工况第 300 步 u 误差 1.06（发布 1.30），最大相位均值 / 最差 19.3° / 46° |
+| V22C2 | `finetune_cycle_h192.json`（H = 192） | 运行中，共 40 次更新。第 20 次更新：DEV F+ 相位 −6°，但周期逐周期变长、第 4 周期振幅 0.82；8 工况最差 69°，场比发布差 |
+| V22D | `finetune_cycle_h128_nowin.json`（H = 128，去掉 `mQ`、`mP`） | 运行中，共 60 次更新。第 40 次更新：8 工况流场全面优于发布（第 300 步 u 误差 1.12，第 150 步 v 相关 0.88），最大相位均值 / 最差 19.3° / 44°，振幅误差 0.088 |
 
-- 两台主机都在后台运行 `tools/eval_milestones.sh`，在第 25 / 50 / 75 / 100 次更新自动评估 DEV F+，结果在 `experiments/runs/eval_<run_id>_uN/`。
-- **判断**：与发布模型比较（第 7 节）。相位误差 ≤ 10°、频率比 1 ± 2 %，且振幅比、升力 RMS 比、u 误差、v 场相关不差于发布模型 → 替换发布模型（步骤见下）。若相位改善但流场变差，或 mQ 无效，记录结论后转向 10.3 第 2 项。
+- **替换判断**：在 8 个 DEV + VAL 工况上，过零相位误差 ≤ 10°、频率比 1 ± 2 % 的周期不少于发布模型，且振幅、升力 RMS、流场指标不差于发布模型 → 替换（步骤见 10.3）。
 
 ### 10.3 下一步
 
-1. 读取 V19 的里程碑评估并决定是否替换发布模型。
-2. **流场**：下游尾迹涡变弱、后柱周围网格噪声、升力黏性部分偏高约 0.005 N，需要另行设计损失项（例如尾迹涡量强度、动网格区高频分量）。
-3. **替换步骤**：只保留模型参数、模型配置和归一化量写入 `checkpoints/fsi_graphnet.pt`，重新评估并确认指标与里程碑评估一致；更新 `checkpoints/MANIFEST.json`、README 与第 7 节、`docs/figures/`（`fsi_graphnet_results.png` 由评估数据生成，`fsi_graphnet_fields.png` 由 `tools/render_compare.py` 生成，需评估时保存场数据）；GitLab `fsi-graphnet` 与 GitHub `fsi-graph` 同步推送。仓库只放发布模型及其结果，不放其他实验的结果。
-4. **HELDOUT**（U∞ 0.95 / 1.05）尚未评估，只在最终确定模型后运行一次。
+1. V22D 第 60 次更新与 V22C2 第 40 次更新完成后做 8 工况评估，在发布模型、V22D 第 40 / 60 次更新之间按 10.2 的判断选择。
+2. **频率与振幅**：长窗口改善了流场但管不住频率。下一步在长窗口基础上加入按周期计算的频率与振幅约束（逐周期过零间隔、峰值），而不是逐步损失；重点检查低流速 E− 工况。
+3. **流场**：下游尾迹涡变弱、后柱周围网格噪声、升力黏性部分偏高约 0.005 N。
+4. **替换步骤**：只保留模型参数、模型配置和归一化量写入 `checkpoints/fsi_graphnet.pt`，重新评估并确认指标与里程碑评估一致；更新 `checkpoints/MANIFEST.json`、README 与第 7 节、`docs/figures/`（`fsi_graphnet_results.png` 由评估数据生成，`fsi_graphnet_fields.png` 由 `tools/render_compare.py` 生成，需评估时保存场数据）；GitLab `fsi-graphnet` 与 GitHub `fsi-graph` 同步推送。仓库只放发布模型及其结果，不放其他实验的结果。
+5. **HELDOUT**（U∞ 0.95 / 1.05）尚未评估，只在最终确定模型后运行一次。
 
 ### 10.4 运行环境与操作
 
 - **主机**：两台 DGX Spark（GB10，121 GiB 统一内存）。项目根目录：97 为 `/home/briany/workspace/fsi_project`，78 为 `/home/nvidia/temp_jk/fsi_project`。登录信息不在仓库中。
 - **容器镜像**：`fluid-control-physicsnemo:2.2.2`（环境变量 `FSI_IMAGE` 可改）。训练容器名即 `run_id`（如 `fsi_V18A`），评估容器名为 `eval_<run_id>_u<N>`。
-- **根目录结构**：`code_releases/<tag>`（只读代码快照）、`configs/`、`tools/`、`data/{processed, splits, views}`、`models/`（热启动模型；78 上 `models/fsi-graphnet-v18a-u150/checkpoint.pt` = 当前发布模型，`models/fsi-graphnet-u50/checkpoint.pt` = 基础训练阶段的模型）、`experiments/{recipes, runs}`。
+- **根目录结构**：`code_releases/<tag>`（只读代码快照）、`configs/`、`tools/`、`data/{processed, splits, views}`、`models/`（两台主机的 `models/fsi-graphnet-v18a-u150/checkpoint.pt` = 当前发布模型）、`experiments/{recipes, runs}`。
 - **监控**：
   - 训练进度：`experiments/runs/<run_id>/results/progress.jsonl`，每次更新一行（loss 及各项、H、lr）。
   - 评估进度：`experiments/runs/<run_id>/results/eval.log`，每完成一个里程碑写一行 `done <评估目录>`。
   - 评估结果：`experiments/runs/eval_<run_id>_u<N>/results/metrics.json`，`runs[0].cycles` 为逐周期指标，`runs[0].per_step` 为逐步场误差与相关；轨迹在 `results/rotation_mature2_f_plus_20261019/o000/trajectory.json`；图在 `figures/`。
-  - checkpoint：`results/checkpoint_u<NNNNN>.pt`，每 25 次更新保存，保留最近 2 个以及每 50 次的里程碑。
+  - checkpoint：`results/checkpoint_u<NNNNN>.pt`，按配置的 `checkpoint_every` 保存（基础与长自滚动配置 25 次，长梯度窗口配置 10 次）；要保留的 checkpoint 硬链接或复制到 `experiments/runs/IMPORT_<名称>/results/`。
+  - 多工况评估：`tools/multi_eval.sh`，结果在 `experiments/runs/mev_<标签>/results/metrics.json`（`runs` 按工况排列）。
 - **停止训练**：在 `experiments/runs/<run_id>/control/` 下创建 `STOP`，训练在下一次更新开始前退出。
 - **注意事项**：
   - 97 在 4 rank 训练时内存紧张，评估可能显存不足；此时把 checkpoint 复制到 78 的 `experiments/runs/IMPORT_<名称>/` 下评估。

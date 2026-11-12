@@ -21,6 +21,7 @@ from dataclasses import dataclass, replace
 
 import numpy as np
 import torch
+import torch.utils.checkpoint
 from torch import Tensor, nn
 
 from .data import Case, Normalizer, State
@@ -149,15 +150,22 @@ class FSIGraphModel(nn.Module):
                     y=P.y, v=P.v, a=P.a, y1=st.y, v1=st.v, a1=st.a, time_s=st.time_s + dt, mem=mem)
         return new, StepOutput(stages)
 
-    def rollout(self, c: Case, offset: int, steps: int, *, burn_in: int = 0):
+    def rollout(self, c: Case, offset: int, steps: int, *, burn_in: int = 0, perturb=None, step_checkpoint: bool = False):
         """Autonomous prediction from the known frames ending at offset + known_frames - 1. The first `burn_in` steps run the
-        same model without gradient (training then starts from the model's own state); the next `steps` steps are yielded."""
+        same model without gradient (training then starts from the model's own state); the next `steps` steps are yielded.
+        perturb (training only): state -> state, applied once to the state the yielded steps start from.
+        step_checkpoint (training only): keep only each step's inputs and outputs for the backward pass and recompute the
+        step's internals then, so that the gradient window can span a whole oscillation period."""
         w = c.morph_weights(offset, self.known_frames); st = c.initial_state(offset, self.known_frames)
         st = replace(st, mem=self._warm_memory(c, offset, w))
         for _ in range(burn_in):
             with torch.no_grad(): st, _ = self.step(c, st, w)
+        if perturb is not None: st = perturb(st)
+        step = self.step
+        if step_checkpoint and self.training and torch.is_grad_enabled():
+            step = lambda c_, st_, w_: torch.utils.checkpoint.checkpoint(self.step, c_, st_, w_, use_reentrant=False)
         for _ in range(steps):
-            st, out = self.step(c, st, w); yield st, out
+            st, out = step(c, st, w); yield st, out
 
     def _warm_memory(self, c: Case, offset: int, w: Tensor):
         """Fill the temporal memory from the last `memory_warmup` known frames (anchor and before): encoder + GRU only."""

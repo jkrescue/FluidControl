@@ -1,0 +1,7 @@
+{
+ "base": "finetune_lift_long.json",
+ "train": {
+  "total_updates": 100,
+  "input_noise": {"u": 0.05, "smooth_iters": 8, "smooth_share": 0.5}
+ }
+}

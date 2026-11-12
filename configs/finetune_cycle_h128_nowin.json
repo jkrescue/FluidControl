@@ -1,0 +1,4 @@
+{
+ "base": "finetune_cycle_h128.json",
+ "train": {"loss_weights": {"mQ": 0.0, "mP": 0.0}}
+}

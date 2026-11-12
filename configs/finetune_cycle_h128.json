@@ -1,0 +1,11 @@
+{
+ "base": "finetune_cycle.json",
+ "train": {
+  "horizon_schedule": [
+   [
+    1,
+    128
+   ]
+  ]
+ }
+}
